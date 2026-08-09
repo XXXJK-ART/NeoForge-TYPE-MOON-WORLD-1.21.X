@@ -154,6 +154,10 @@ public final class GilgameshDuelState {
          && a.getPersistentData().hasUUID(PARTNER) && b.getUUID().equals(a.getPersistentData().getUUID(PARTNER));
    }
 
+   public static boolean isActive(LivingEntity entity) {
+      return entity != null && entity.getPersistentData().getBoolean(ACTIVE);
+   }
+
    /** Called by Enkidu on the exact tick its final rush starts. */
    public static void markEnkiduRushStarted(EnkiduEntity enkidu, ServerLevel level, long now) {
       CompoundTag data = enkidu.getPersistentData();
@@ -297,6 +301,7 @@ public final class GilgameshDuelState {
    }
 
    private static void forceDeath(LivingEntity entity) {
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(entity)) return;
       entity.setInvulnerable(false); entity.invulnerableTime = 0; entity.setHealth(0.0F); entity.die(entity.damageSources().genericKill());
    }
 

@@ -1,0 +1,177 @@
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if "Windows_NT" == "Windows_NT" setlocal
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set DIRNAME=H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\ 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if "H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\" == "" set DIRNAME=. 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set APP_BASE_NAME=gradlew 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set APP_HOME=H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\ 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>for %i in ("H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\") do set APP_HOME=%~fi 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set APP_HOME=H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\ 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m" 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if defined JAVA_HOME goto findJavaFromJavaHome 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set JAVA_EXE=java.exe 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>java.exe -version  1>NUL 2>&1 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if 0 EQU 0 goto execute 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set CLASSPATH=H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\\gradle\wrapper\gradle-wrapper.jar 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>"java.exe" "-Xmx64m" "-Xms64m"   "-Dorg.gradle.appname=gradlew" -classpath "H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\\gradle\wrapper\gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain runServer --no-daemon 
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :neoFormListLibraries UP-TO-DATE
+> Task :cacheVersionManifest1.21.1 UP-TO-DATE
+> Task :cacheVersionExecutableClient1.21.1 UP-TO-DATE
+> Task :cacheVersionExecutableServer1.21.1 UP-TO-DATE
+> Task :cacheVersionExtractedServer1.21.1 UP-TO-DATE
+> Task :cacheVersionMappingsClient1.21.1 UP-TO-DATE
+> Task :create1.21.1ClientExtraJar UP-TO-DATE
+> Task :selectRawArtifactNg_dummy_ng.net.minecraft_client_1.21.1_client-extra UP-TO-DATE
+> Task :neoFormListTransformLibraries UP-TO-DATE
+> Task :neoFormStripClient UP-TO-DATE
+> Task :neoFormStripServer UP-TO-DATE
+> Task :neoFormMerge UP-TO-DATE
+> Task :neoFormMergeMappings UP-TO-DATE
+> Task :neoFormRename UP-TO-DATE
+> Task :neoFormDecompile UP-TO-DATE
+> Task :neoFormInject UP-TO-DATE
+> Task :neoFormPatch UP-TO-DATE
+> Task :neoFormPatchUserDev UP-TO-DATE
+> Task :neoFormTransformSource UP-TO-DATE
+> Task :neoFormRecompile UP-TO-DATE
+> Task :supplyRawJarForneoFormJoined1.21.1-20240808.144430 UP-TO-DATE
+> Task :selectRawArtifactNg_dummy_ng.net.neoforged_neoforge_21.1.242 UP-TO-DATE
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :neoFormJoined1.21.1-20240808.144430DownloadAssets UP-TO-DATE
+> Task :neoFormJoined1.21.1-20240808.144430ExtractNatives UP-TO-DATE
+> Task :writeMinecraftClasspathServer
+
+> Task :runServer
+[20:33:30.556] [main/INFO] [Launcher/MODLAUNCHER]: ModLauncher running: args [--nogui, --launchTarget, forgeserverdev, --gameDir, ., --fml.fmlVersion, 4.0.43, --fml.mcVersion, 1.21.1, --fml.neoForgeVersion, 21.1.242, --fml.neoFormVersion, 20240808.144430] 
+[20:33:30.560] [main/INFO] [Launcher/MODLAUNCHER]: JVM identified as Oracle Corporation Java HotSpot(TM) 64-Bit Server VM 21.0.8+12-LTS-250 
+[20:33:30.561] [main/INFO] [Launcher/MODLAUNCHER]: ModLauncher 11.0.5+main.901c6ea8 starting: java version 21.0.8 by Oracle Corporation; OS Windows 10 arch amd64 version 10.0 
+[20:33:30.653] [main/INFO] [loading.ImmediateWindowHandler/]: ImmediateWindowProvider not loading because launch target is forgeserverdev 
+[20:33:30.701] [main/INFO] [mixin/]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=union:/C:/Users/1/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar%23142!/ Service=ModLauncher Env=SERVER 
+[20:33:30.782] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "neoforge-21.1.242.jar" [locator: neoforge devenv provider ([H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\.gradle\repositories\ng_dummy_ng\net\neoforged\neoforge\21.1.242\neoforge-21.1.242.jar])] 
+[20:33:30.804] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "neoforge-21.1.242.jar" [locator: neoforge devenv provider ([H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\.gradle\repositories\ng_dummy_ng\net\neoforged\neoforge\21.1.242\neoforge-21.1.242.jar])] 
+[20:33:30.817] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "main" [locator: userdev mods and services, reader: mod manifest] 
+[20:33:30.826] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "neoforge-21.1.242.jar" [locator: userdev mods and services, reader: mod manifest] 
+[20:33:30.831] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "geckolib-neoforge-1.21.1-4.9.2.jar" [locator: userdev mods and services, reader: mod manifest] 
+[20:33:30.838] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found mod file "terrablender-6e8GCrLb.jar" [locator: userdev mods and services, reader: mod manifest] 
+[20:33:30.887] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found gamelibrary file "mixinextras-neoforge-0.5.3.jar" [locator: userdev mods and services, reader: mod manifest] 
+[20:33:31.035] [main/WARN] [selection.JarSelector/]: Attempted to select a dependency jar for JarJar which was passed in as source: library:mixinextras.neoforge. Using Mod File: C:\Users\1\.gradle\caches\modules-2\files-2.1\io.github.llamalad7\mixinextras-neoforge\0.5.3\a0919957808de97707c5fb4ce073e66aeef3e187\mixinextras-neoforge-0.5.3.jar 
+[20:33:31.036] [main/INFO] [loading.moddiscovery.locators.JarInJarDependencyLocator/]: Found 1 dependencies adding them to mods collection 
+[20:33:31.036] [main/INFO] [loading.moddiscovery.ModDiscoverer/SCAN]: Found library file "net.neoforged.neoforge-coremods-21.1.242.jar" [parent: neoforge-21.1.242.jar, locator: jarinjar, reader: mod manifest] 
+[20:33:31.038] [main/INFO] [loading.moddiscovery.ModDiscoverer/]: 
+     Mod List:
+		Name Version (Mod Id)
+
+		GeckoLib 4 4.9.2 (geckolib)
+		Minecraft 1.21.1 (minecraft)
+		NeoForge 21.1.242 (neoforge)
+		TerraBlender 4.1.0.8 (terrablender)
+		Type_Moon_World Mod 3.2.4 (typemoonworld) 
+[20:33:31.415] [main/INFO] [mixin/]: Compatibility level set to JAVA_17 
+[20:33:31.427] [main/INFO] [LaunchServiceHandler/MODLAUNCHER]: Launching target 'forgeserverdev' with arguments [--gameDir, ., --nogui] 
+[20:33:31.515] [main/WARN] [mixin/]: Reference map 'terrablender.refmap.json' for terrablender.mixins.json could not be read. If this is a development environment you can ignore this message 
+[20:33:31.516] [main/WARN] [mixin/]: Reference map 'terrablender.refmap.json' for terrablender_neoforge.mixins.json could not be read. If this is a development environment you can ignore this message 
+[20:33:31.517] [main/WARN] [mixin/]: Reference map 'geckolib.refmap.json' for geckolib.mixins.json could not be read. If this is a development environment you can ignore this message 
+WARN StatusConsoleListener Advanced terminal features are not available in this environment
+[20:33:31] [main/INFO] [MixinExtras|Service/]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.3).
+[20:33:36] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:33:36] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, location] and [teleport, targets] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:33:36] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, destination] and [teleport, targets] with inputs: [Player, 0123, @e, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[20:33:36] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets] and [teleport, destination] with inputs: [Player, 0123, dd12be42-52a9-4a91-a8a1-11c01849e498]
+[20:33:36] [main/WARN] [minecraft/Commands]: Ambiguity between arguments [teleport, targets, location] and [teleport, targets, destination] with inputs: [0.1 -0.5 .9, 0 0 0]
+[20:33:36] [modloading-worker-0/INFO] [ne.ne.ne.co.NeoForgeMod/NEOFORGE-MOD]: NeoForge mod loading, version 21.1.242, for MC 1.21.1
+[20:33:36] [modloading-worker-0/INFO] [co.ex.ty.TypeMoonAddon/]: Integrated Type Moon addon systems initialized
+[20:33:36] [modloading-sync-worker/WARN] [ne.ne.fm.co.ConfigTracker/CONFIG]: Configuration file H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X\runs\server\config\typemoonworld-common.toml is not correct. Correcting
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded magic addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded servant addon entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded servant addon extension entrypoint: typemoonworld
+[20:33:36] [modloading-sync-worker/INFO] [terrablender/]: Registered region minecraft:overworld to index 0 for type OVERWORLD
+[20:33:36] [modloading-sync-worker/INFO] [terrablender/]: Registered region minecraft:nether to index 0 for type NETHER
+[20:33:36] [modloading-sync-worker/INFO] [terrablender/]: Registered region typemoonworld:gem_region to index 1 for type OVERWORLD
+[20:33:36] [modloading-sync-worker/INFO] [terrablender/]: Registered region typemoonworld:city_region to index 2 for type OVERWORLD
+[20:33:37] [main/INFO] [mojang/YggdrasilAuthenticationService]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[20:33:37] [main/WARN] [ne.ne.ne.co.CommonHooks/WP]: The following mods have version differences that were not resolved:
+typemoonworld (version 3.2.2.3 -> 3.2.4)
+Things may not work well.
+[20:33:37] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/H:/Minecraft/JAVAmod/MOD/NeoForge-TYPE-MOON-WORLD-1.21.X/.gradle/repositories/ng_dummy_ng/net/neoforged/neoforge/21.1.242/neoforge-21.1.242.jar%23195!/assets/.mcassetsroot' uses unexpected schema
+[20:33:37] [main/WARN] [minecraft/VanillaPackResourcesBuilder]: Assets URL 'union:/H:/Minecraft/JAVAmod/MOD/NeoForge-TYPE-MOON-WORLD-1.21.X/.gradle/repositories/ng_dummy_ng/net/neoforged/neoforge/21.1.242/neoforge-21.1.242.jar%23195!/data/.mcassetsroot' uses unexpected schema
+[20:33:37] [main/INFO] [minecraft/RecipeManager]: Loaded 1551 recipes
+[20:33:37] [main/INFO] [minecraft/AdvancementTree]: Loaded 1421 advancements
+[20:33:38] [main/INFO] [ne.xx.TY.TYPE_MOON_WORLD/]: Loaded 23 servant definitions: [zhao_yun_rider, enkidu, sasaki_kojiro, gilgamesh, paracelsus, medea, medusa, arash, shadow_hassan, fanatic_assassin, emiya_archer, pale_rider, nightingale, gawain, ushiwakamaru_rider, li_shuwen, cu_chulainn, oda_nobunaga, heracles, cursed_arm_hassan, gilgamesh_caster, senko_muramasa, artoria_pendragon]
+[20:33:38] [Server thread/INFO] [minecraft/DedicatedServer]: Starting minecraft server version 1.21.1
+[20:33:38] [Server thread/INFO] [minecraft/DedicatedServer]: Loading properties
+[20:33:38] [Server thread/INFO] [minecraft/DedicatedServer]: Default game type: SURVIVAL
+[20:33:38] [Server thread/INFO] [minecraft/MinecraftServer]: Generating keypair
+[20:33:38] [Server thread/INFO] [minecraft/DedicatedServer]: Starting Minecraft server on *:25565
+[20:33:38] [Server thread/INFO] [minecraft/ServerConnectionListener]: Using default channel type
+[20:33:38] [Server thread/WARN] [minecraft/DedicatedServer]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[20:33:38] [Server thread/WARN] [minecraft/DedicatedServer]: The server will make no attempt to authenticate usernames. Beware.
+[20:33:38] [Server thread/WARN] [minecraft/DedicatedServer]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[20:33:38] [Server thread/WARN] [minecraft/DedicatedServer]: To change this, set "online-mode" to "true" in the server.properties file.
+[20:33:38] [Server thread/INFO] [terrablender/]: Initialized TerraBlender biomes for level stem minecraft:the_nether
+[20:33:38] [Server thread/INFO] [terrablender/]: Initialized TerraBlender biomes for level stem minecraft:overworld
+[20:33:38] [Server thread/INFO] [minecraft/DedicatedServer]: Preparing level "world"
+[20:33:39] [Server thread/INFO] [minecraft/MinecraftServer]: Preparing start region for dimension minecraft:overworld
+[20:33:39] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 2%
+[20:33:40] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
+[20:33:40] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
+[20:33:41] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
+[20:33:41] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
+[20:33:42] [worldgen/INFO] [minecraft/LoggerChunkProgressListener]: Preparing spawn area: 51%
+[20:33:42] [Server thread/INFO] [minecraft/LoggerChunkProgressListener]: Time elapsed: 2917 ms
+[20:33:42] [Server thread/INFO] [minecraft/DedicatedServer]: Done (4.039s)! For help, type "help"
+[20:33:42] [Server thread/INFO] [ne.ne.ne.ga.GameTestHooks/]: Enabled Gametest Namespaces: []
+[20:33:42] [Server thread/INFO] [ne.ne.ne.se.pe.PermissionAPI/]: Successfully initialized permission handler neoforge:default_handler
+[20:33:42] [Server thread/INFO] [co.ex.ty.TypeMoonAddon/]: Imaginary-space runtime pools: items=1736, blocks=858, entity candidates=148
+[20:33:42] [Server thread/INFO] [co.ex.ty.TypeMoonAddon/]: Imaginary-space item candidates by namespace: {minecraft=1321, typemoonworld=415}
+[20:33:42] [Server thread/INFO] [co.ex.ty.TypeMoonAddon/]: Imaginary-space block candidates by namespace: {minecraft=828, typemoonworld=30}
+[20:33:42] [Server thread/INFO] [co.ex.ty.TypeMoonAddon/]: Imaginary-space entity candidates by namespace: {minecraft=82, typemoonworld=66}
+[20:33:42] [Server thread/INFO] [co.ex.ty.TypeMoonAddon/]: Imaginary-space skipped entries by reason: {not_safe_living_mob=96}
+
+> Task :runServer FAILED
+28 actionable tasks: 2 executed, 26 up-to-date
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if 1 EQU 0 goto mainEnd 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>rem the _cmd.exe /c_ return code! 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>set EXIT_CODE=1 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if 1 EQU 0 set EXIT_CODE=1 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>if not "" == "" exit 1 
+
+H:\Minecraft\JAVAmod\MOD\NeoForge-TYPE-MOON-WORLD-1.21.X>exit /b 1 

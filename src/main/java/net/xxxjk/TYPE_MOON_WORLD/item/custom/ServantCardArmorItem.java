@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import java.util.function.Consumer;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -14,6 +17,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -74,6 +78,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
       consumer.accept(new GeoRenderProvider() {
          private ServantCardArmorRenderer renderer;
+         private final Map<LivingEntity, EnumMap<EquipmentSlot, ServantCardArmorRenderer>> entityRenderers = new WeakHashMap<>();
 
          @Override
          @Nullable
@@ -81,10 +86,16 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
             if (!ServantCardArmorItem.this.hasRealArmorModel()) {
                return null;
             }
-            if (this.renderer == null) {
-               this.renderer = new ServantCardArmorRenderer();
+            if (livingEntity == null) {
+               if (this.renderer == null) {
+                  this.renderer = new ServantCardArmorRenderer();
+               }
+               return this.renderer;
             }
-            return this.renderer;
+            EquipmentSlot slot = equipmentSlot == null ? ServantCardArmorItem.this.slot : equipmentSlot;
+            EnumMap<EquipmentSlot, ServantCardArmorRenderer> renderers =
+               this.entityRenderers.computeIfAbsent(livingEntity, ignored -> new EnumMap<>(EquipmentSlot.class));
+            return renderers.computeIfAbsent(slot, ignored -> new ServantCardArmorRenderer());
          }
       });
    }
@@ -133,6 +144,11 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       Entity entity = state.getData(DataTickets.ENTITY);
       if (!(entity instanceof LivingEntity living)) {
          return false;
+      }
+      // NPC Medusa has no player-variable capability state.  Its synced entity
+      // state is authoritative for the head armor animation on clients.
+      if (living instanceof MedusaEntity medusa) {
+         return medusa.isEyesReleased();
       }
       TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "medusa".equals(vars.servant_card_id) && vars.servant_card_medusa_mystic_eyes_active;

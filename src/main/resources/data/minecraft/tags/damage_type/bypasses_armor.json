@@ -1,15 +1,17 @@
 {
-  "replace": false,
-  "values": [
-    "typemoonworld:time_alter_backlash",
-    "typemoonworld:baptism_rite",
-    "typemoonworld:pale_rider_infection",
-    "typemoonworld:stigma_delayed",
-    "typemoonworld:meditative_sensitivity",
-    "typemoonworld:fanatic_heartbeat",
-    "typemoonworld:fanatic_computer",
-    "typemoonworld:nightingale_healing_reversal",
-    "typemoonworld:qinggang_second_hit",
-    "typemoonworld:tsumukari_muramasa"
-  ]
+    "replace":  false,
+    "values":  [
+                   "typemoonworld:time_alter_backlash",
+                   "typemoonworld:baptism_rite",
+                   "typemoonworld:pale_rider_infection",
+                   "typemoonworld:stigma_delayed",
+                   "typemoonworld:meditative_sensitivity",
+                   "typemoonworld:fanatic_heartbeat",
+                   "typemoonworld:fanatic_computer",
+                   "typemoonworld:nightingale_healing_reversal",
+                   "typemoonworld:qinggang_second_hit",
+                   "typemoonworld:tsumukari_muramasa",
+                   "typemoonworld:imaginary_displacement_reflect",
+                   "typemoonworld:demon_god_curse"
+               ]
 }

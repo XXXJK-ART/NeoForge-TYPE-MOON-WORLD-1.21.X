@@ -13,6 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class GravityShellEffectEntity extends Entity {
    private static final EntityDataAccessor<Float> RADIUS_XZ = SynchedEntityData.defineId(GravityShellEffectEntity.class, EntityDataSerializers.FLOAT);
@@ -86,7 +87,7 @@ public class GravityShellEffectEntity extends Entity {
 
    private boolean refreshFromTarget() {
       LivingEntity target = this.getTargetEntity();
-      if (target == null || !target.isAlive() || target.isRemoved()) {
+      if (target == null || !target.isAlive() || target.isRemoved() || EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       } else {
          int mode = MagicGravityEffectHandler.getCurrentMode(target);

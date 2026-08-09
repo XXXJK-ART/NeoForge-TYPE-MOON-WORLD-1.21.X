@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 
 public final class ServantIdentityHelper {
    private static final String CARD_TRAIT_LIST_TAG = "ServantCardTraitKeys";
@@ -78,6 +79,10 @@ public final class ServantIdentityHelper {
    }
 
    public static boolean hasTrait(LivingEntity entity, ServantTraitTag trait) {
+      if (trait == ServantTraitTag.DIVINE && entity instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (!PassiveService.effectsSuppressed(vars) && PassiveService.has(vars, PassiveService.DIVINITY)) return true;
+      }
       return trait != null && traitsOf(entity).contains(trait);
    }
 

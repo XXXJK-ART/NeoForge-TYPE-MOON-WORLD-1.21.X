@@ -66,7 +66,7 @@ public final class MagicHealing {
       spawnParticles(target);
       target.level().playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.7F, 1.35F);
       if (!vars.isCurrentSelectionFromCrest("healing_magic")) {
-         vars.proficiency_healing_magic = Math.min(100.0, vars.proficiency_healing_magic + (selfTarget ? 0.12 : 0.2));
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "healing_magic", selfTarget ? 0.12 : 0.2);
       }
    }
 

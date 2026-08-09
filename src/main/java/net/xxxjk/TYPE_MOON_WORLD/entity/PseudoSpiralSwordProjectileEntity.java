@@ -45,7 +45,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setTrackedTarget(LivingEntity target) {
-      this.entityData.set(TARGET_ID, target == null ? -1 : target.getId());
+      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
    }
 
    @Override
@@ -68,7 +68,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
          this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       } else {
          Entity targetEntity = this.level().getEntity(this.entityData.get(TARGET_ID));
-         if (targetEntity instanceof LivingEntity target && target.isAlive()) {
+         if (targetEntity instanceof LivingEntity target && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
             Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.35, 0.0).subtract(this.position());
             if (aim.lengthSqr() > 1.0E-4) {
                Vec3 desired = aim.normalize().scale(Math.max(2.2, this.getDeltaMovement().length()));
@@ -80,6 +80,8 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
                this.discard();
                return;
             }
+         } else if (targetEntity != null) {
+            this.entityData.set(TARGET_ID, -1);
          }
          damageAlongPath(previous, this.position());
          if (this.tickCount > 60) {
@@ -132,6 +134,10 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyDirectHit(LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         this.entityData.set(TARGET_ID, -1);
+         return;
+      }
       Entity owner = this.getOwner();
       target.invulnerableTime = 0;
       target.hurt(this.damageSources().thrown(this, owner), DIRECT_HIT_DAMAGE);

@@ -29,10 +29,12 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.typemoonworld.api.event.ServantTransformEvent;
 import net.xxxjk.typemoonworld.api.event.ServantActionEvent;
@@ -53,6 +55,7 @@ public final class ServantCardTransformManager {
    private static final String BOUND_ITEM_TAG = "ServantCardBound";
    private static final String BOUND_WEAPON_TAG = "ServantCardWeapon";
    private static final String EMIYA_WEAPON_EXEMPT_TAG = "ServantCardEmiyaWeaponExempt";
+   static final int SERVANT_CARD_DEFAULT_JUMP_CHARGES = ServantCardJumpRecoveryRules.DEFAULT_JUMP_CHARGES;
 
    private ServantCardTransformManager() {
    }
@@ -83,6 +86,8 @@ public final class ServantCardTransformManager {
       saveFood(player, vars);
       vars.servant_card_transformed = true;
       vars.servant_card_id = servantId;
+      TalentService.suspendActiveEffects(player);
+      PassiveService.suspendEffects(player);
       BodyTrainingService.stashForServantCard(player, vars);
       applyServantCardTags(player, servantId);
       vars.servant_card_master_uuid = "";
@@ -94,7 +99,7 @@ public final class ServantCardTransformManager {
       vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
       vars.servant_card_mana = vars.servant_card_max_mana;
       vars.servant_card_mana_regen = ServantCardManaService.regenPerSecondFor(servantId);
-      vars.servant_card_jump_charges = 4;
+      vars.servant_card_jump_charges = SERVANT_CARD_DEFAULT_JUMP_CHARGES;
       vars.servant_card_jump_recovery_ticks = 0;
       vars.servant_card_jump_recovery_end = 0L;
       vars.servant_card_np_cooldown = 0;
@@ -210,6 +215,8 @@ public final class ServantCardTransformManager {
       vars.servant_card_hassan_zabaniya_animation_until = 0;
       clearServantRuntimeState(player, vars);
       ServantCardTraitService.clear(player);
+      PassiveService.resumeEffects(player);
+      TalentService.resumeActiveEffects(player);
       vars.is_magus = vars.servant_card_was_magus;
       vars.is_magic_circuit_open = vars.servant_card_was_magic_circuit_open;
       vars.servant_card_was_magus = false;
@@ -262,6 +269,8 @@ public final class ServantCardTransformManager {
       ServantCardTraitService.tick(player);
       tickCurrentServant(player, vars);
       if (timersChanged && player.tickCount % 5 == 0) {
+         vars.syncServantCardRuntime(player);
+      } else if (player.tickCount % 40 == 0) {
          vars.syncServantCardRuntime(player);
       }
    }
@@ -523,7 +532,7 @@ public final class ServantCardTransformManager {
       }
       if ("gilgamesh_divine_shield".equals(action.effectId())) {
          if (GilgameshDivineShield.isActive(player)) {
-            if (ServantCardGilgameshSkills.performDivineShield(player)) {
+            if (ServantCardGilgameshSkills.performDivineShield(player, vars)) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
             }
             return true;
@@ -783,7 +792,7 @@ public final class ServantCardTransformManager {
          level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 0.75F, 1.45F);
       }
       vars.servant_card_jump_charges--;
-      vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
+      vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
       vars.servant_card_jump_recovery_end = 0L;
       vars.syncPlayerVariables(player);
       return true;
@@ -938,44 +947,68 @@ public final class ServantCardTransformManager {
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       boolean eightBoatActive = ServantCardUshiwakamaruSkills.isEightBoatActive(player);
       int maxCharges = ServantCardUshiwakamaruRules.jumpLimit(eightBoatActive);
-      if (vars.servant_card_jump_charges > maxCharges) {
-         vars.servant_card_jump_charges = ServantCardUshiwakamaruRules.clampJumpCharges(
-            vars.servant_card_jump_charges, eightBoatActive);
-      }
-      if (vars.servant_card_jump_charges >= maxCharges) {
-         vars.servant_card_jump_recovery_ticks = 0;
-         vars.servant_card_jump_recovery_end = 0L;
-         return false;
-      }
       long now = player.level().getGameTime();
+      ServantCardJumpRecoveryRules.State normalized = ServantCardJumpRecoveryRules.normalize(
+         vars.servant_card_jump_charges,
+         vars.servant_card_jump_recovery_ticks,
+         vars.servant_card_jump_recovery_end,
+         eightBoatActive,
+         now
+      );
+      boolean changed = normalized.changed();
+      vars.servant_card_jump_charges = normalized.charges();
+      vars.servant_card_jump_recovery_ticks = normalized.recoveryTicks();
+      vars.servant_card_jump_recovery_end = normalized.recoveryEnd();
+      if (vars.servant_card_jump_charges >= maxCharges) {
+         return changed;
+      }
       if (!hasJumpRecoverySupport(player)) {
-         boolean changed = false;
          if (vars.servant_card_jump_recovery_end > 0L) {
-            vars.servant_card_jump_recovery_ticks = Math.max(1, remainingTicks(now, vars.servant_card_jump_recovery_end));
+            vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.clampTicks(
+               remainingTicks(now, vars.servant_card_jump_recovery_end));
             vars.servant_card_jump_recovery_end = 0L;
             changed = true;
          } else if (vars.servant_card_jump_recovery_ticks <= 0) {
-            vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
+            vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
             changed = true;
          }
          return changed;
       }
       if (vars.servant_card_jump_recovery_end <= 0L && vars.servant_card_jump_recovery_ticks > 0) {
+         vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.clampTicks(vars.servant_card_jump_recovery_ticks);
          vars.servant_card_jump_recovery_end = now + vars.servant_card_jump_recovery_ticks;
+         changed = true;
       }
       vars.servant_card_jump_recovery_ticks = remainingTicks(now, vars.servant_card_jump_recovery_end);
+      if (vars.servant_card_jump_recovery_ticks > ServantCardJumpRecoveryRules.EMPTY_RECOVERY_TICKS) {
+         vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
+         vars.servant_card_jump_recovery_end = now + vars.servant_card_jump_recovery_ticks;
+         changed = true;
+      }
       if (vars.servant_card_jump_recovery_ticks > 0) {
          return true;
       }
       vars.servant_card_jump_charges = Math.min(maxCharges, vars.servant_card_jump_charges + 1);
-      vars.servant_card_jump_recovery_ticks = vars.servant_card_jump_charges <= 0 ? 100 : 20;
+      vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
       vars.servant_card_jump_recovery_end = vars.servant_card_jump_charges >= maxCharges ? 0L : now + vars.servant_card_jump_recovery_ticks;
       return true;
    }
 
    private static boolean hasJumpRecoverySupport(ServerPlayer player) {
+      if (player.onGround()) {
+         return true;
+      }
+      if (player.getVehicle() != null && player.getVehicle().onGround()) {
+         return true;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if ("oda_nobunaga".equals(vars.servant_card_id)
+         && !vars.servant_card_flying
+         && ServantCardFlightController.hasGroundWithin(player, 2)) {
+         return true;
+      }
       return ServantCardUshiwakamaruRules.canRecoverJump(
-         ServantCardUshiwakamaruSkills.isEightBoatActive(player), player.onGround());
+         ServantCardUshiwakamaruSkills.isEightBoatActive(player), false);
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1351,7 +1384,7 @@ public final class ServantCardTransformManager {
          case "gilgamesh_grand_vault" -> ServantCardGilgameshSkills.performVault(player, true);
          case "gilgamesh_ring_vault" -> ServantCardGilgameshSkills.performRingVault(player);
          case "gilgamesh_elixir" -> ServantCardGilgameshSkills.performElixir(player);
-         case "gilgamesh_divine_shield" -> { if (!ServantCardGilgameshSkills.performDivineShield(player)) return false; }
+         case "gilgamesh_divine_shield" -> { if (!ServantCardGilgameshSkills.performDivineShield(player, vars)) return false; }
          case "gilgamesh_clairvoyance" -> ServantCardGilgameshSkills.performClairvoyance(player);
          case "gilgamesh_charisma" -> ServantCardGilgameshSkills.performCharisma(player);
          case "gilgamesh_laugh_vault" -> ServantCardGilgameshSkills.performLaughVault(player);

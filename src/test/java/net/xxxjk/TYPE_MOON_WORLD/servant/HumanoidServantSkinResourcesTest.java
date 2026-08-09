@@ -32,6 +32,15 @@ class HumanoidServantSkinResourcesTest {
       return -1;
    }
 
+   private static int countMatches(String text, Pattern pattern) {
+      int count = 0;
+      var matcher = pattern.matcher(text);
+      while (matcher.find()) {
+         count++;
+      }
+      return count;
+   }
+
    private static final List<HumanoidServant> CONVERTED = List.of(
       new HumanoidServant("ARASH", "arash", "arash"),
       new HumanoidServant("ARTORIA_PENDRAGON", "artoria_pendragon", "artoria_pendragon"),
@@ -94,6 +103,27 @@ class HumanoidServantSkinResourcesTest {
          assertTrue(Files.notExists(RESOURCES.resolve(
             "assets/typemoonworld/animations/" + resourceName + ".animation.json")), servant.servantId());
       }
+   }
+
+   @Test
+   void humanoidNpcArmorIsAppliedForAllSpawnEntryPointsAndRenderedPerSlot() throws Exception {
+      String commonEvents = Files.readString(JAVA.resolve("event/CommonEvents.java"));
+      assertTrue(commonEvents.contains("onEntityJoin(EntityJoinLevelEvent event)"));
+      assertTrue(commonEvents.contains("event.getEntity() instanceof ServantEntity servant"));
+      assertTrue(commonEvents.contains("servant.ensureDefaultNpcServantCardArmor(false)"));
+      assertTrue(commonEvents.contains("servant.ensureDefaultNpcServantCardArmor(true)"));
+
+      String servantEntity = Files.readString(JAVA.resolve("servant/entity/ServantEntity.java"));
+      assertTrue(servantEntity.contains("public void ensureDefaultNpcServantCardArmor(boolean forceClientSync)"));
+      assertTrue(servantEntity.contains("this.tickCount == 1"));
+      assertTrue(servantEntity.contains("this.setItemSlot(slot, ItemStack.EMPTY)"));
+      assertTrue(servantEntity.contains("this.setItemSlot(slot, current)"));
+      assertTrue(servantEntity.contains("equipNpcServantCardArmorSlot(EquipmentSlot.CHEST, forceClientSync)"));
+      assertTrue(servantEntity.contains("equipNpcServantCardArmorSlot(EquipmentSlot.LEGS, forceClientSync)"));
+
+      String armorItem = Files.readString(JAVA.resolve("item/custom/ServantCardArmorItem.java"));
+      assertTrue(armorItem.contains("EnumMap<EquipmentSlot, ServantCardArmorRenderer>"));
+      assertTrue(armorItem.contains("computeIfAbsent(slot"));
    }
 
    @Test
@@ -223,7 +253,8 @@ class HumanoidServantSkinResourcesTest {
    void generatedHairHelmetsAndLongHairCounterRotationAreWired() throws Exception {
       List<String> hairHelmets = List.of(
          "artoria_pendragon", "sasaki_kojiro", "enkidu", "ushiwakamaru_rider",
-         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "li_shuwen"
+         "oda_nobunaga", "medusa", "zhao_yun_rider", "paracelsus", "li_shuwen",
+         "gilgamesh_caster"
       );
       for (String servantId : hairHelmets) {
          Path itemHead = RESOURCES.resolve(
@@ -248,27 +279,28 @@ class HumanoidServantSkinResourcesTest {
       }
 
       String armorModel = Files.readString(JAVA.resolve("client/model/ServantCardArmorModel.java"));
-      assertTrue(armorModel.contains("_head.geo.json"));
-      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
       assertTrue(armorModel.contains("return EMPTY_ANIMATION;"));
       assertTrue(armorModel.contains(
-         "case \"artoria_pendragon\", \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\","));
-      assertTrue(armorModel.contains(
-         "\"sasaki_kojiro\", \"ushiwakamaru_rider\", \"zhao_yun_rider\", \"li_shuwen\" -> true"));
-      assertTrue(armorModel.contains(
          "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\" -> true"));
-      assertFalse(armorModel.contains(
-         "case \"enkidu\", \"medusa\", \"oda_nobunaga\", \"paracelsus\", \"gilgamesh_caster\" -> true"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair\", pitchRad, 1.25F)"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair1\", pitchRad, 1.35F)"));
       assertTrue(armorModel.contains("counterRotateHair(\"hair2\", pitchRad, 1.35F)"));
-      assertTrue(armorModel.contains("counterRotateHair(\"bone4\", pitchRad, 1.25F)"));
+      assertFalse(armorModel.contains("counterRotateHair(\"bone4\", pitchRad, 1.25F)"));
+      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
 
       String armorItem = Files.readString(JAVA.resolve("item/custom/ServantCardArmorItem.java"));
       assertTrue(armorItem.contains("\"enkidu\","));
 
       String armorRenderer = Files.readString(JAVA.resolve("client/renderer/ServantCardArmorRenderer.java"));
       assertTrue(armorRenderer.contains("withScale(0.95F, 0.95F)"));
+      assertTrue(armorRenderer.contains("public void prepForRender(Entity entity, ItemStack itemStack"));
+      assertTrue(armorRenderer.contains(
+         "super.prepForRender(entity, itemStack, equipmentSlot, original, bufferSource, partialTick"));
+      assertTrue(armorRenderer.contains("public void actuallyRender(PoseStack poseStack"));
+      assertTrue(armorRenderer.contains("private void applyArmorSlotVisibility()"));
+      assertFalse(armorRenderer.contains("usesLayeredHairTexture(animatable)"));
+      assertFalse(armorRenderer.contains("renderingLayeredHairPass"));
+      assertTrue(armorRenderer.contains("applyArmorSlotVisibility();"));
 
       String medusaGeo = Files.readString(RESOURCES.resolve(
          "assets/typemoonworld/geo/servant_card_medusa.geo.json"));
@@ -391,5 +423,108 @@ class HumanoidServantSkinResourcesTest {
       assertTrue(renderer.contains("case \"paracelsus\" -> 0.963F"));
       assertTrue(renderer.contains("case \"zhao_yun_rider\" -> 0.968F"));
       assertTrue(renderer.contains("case \"arash\", \"cu_chulainn\" -> 0.974F"));
+   }
+
+   @Test
+   void shaderSensitiveRenderStateUsesOfficialBuffersAndClearsThreadLocals() throws Exception {
+      String mixins = Files.readString(RESOURCES.resolve("typemoonworld.mixins.json"));
+      assertFalse(mixins.contains("RenderBuffersMixin"));
+      assertTrue(Files.notExists(JAVA.resolve("mixin/client/RenderBuffersMixin.java")));
+
+      String clientEvents = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"));
+      assertTrue(clientEvents.contains("RegisterRenderBuffersEvent"));
+      assertTrue(clientEvents.contains("event.registerRenderBuffer(renderType)"));
+
+      String reinforcement = Files.readString(JAVA.resolve("client/renderer/ReinforcementRenderType.java"));
+      assertTrue(reinforcement.contains("public static RenderType[] glintTypes()"));
+
+      String armorMixin = Files.readString(JAVA.resolve("mixin/client/HumanoidArmorLayerMixin.java"));
+      assertTrue(armorMixin.contains("CURRENT_ARMOR_STACK.remove();"));
+      assertTrue(armorMixin.contains("finally"));
+
+      String itemMixin = Files.readString(JAVA.resolve("mixin/ItemRendererMixin.java"));
+      assertTrue(itemMixin.contains("TARGET_STACK.remove();"));
+      assertTrue(itemMixin.contains("TARGET_IS_GUI_3D.remove();"));
+   }
+
+   @Test
+   void clientRendererRegistrationHasNoDuplicateEntityOrBlockEntries() throws Exception {
+      String registrations = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java")) + "\n"
+         + Files.readString(JAVA.resolve("client/ClientModEventSubscriber.java"));
+      Pattern entityPattern = Pattern.compile("registerEntityRenderer\\(ModEntities\\.([A-Z0-9_]+)\\.get\\(\\)");
+      Pattern blockPattern = Pattern.compile("registerBlockEntityRenderer\\(ModBlockEntities\\.([A-Z0-9_]+)\\.get\\(\\)");
+      var entityMatcher = entityPattern.matcher(registrations);
+      while (entityMatcher.find()) {
+         String field = entityMatcher.group(1);
+         assertEquals(1, countMatches(registrations, Pattern.compile(
+            "registerEntityRenderer\\(ModEntities\\." + field + "\\.get\\(\\)")), field);
+      }
+      var blockMatcher = blockPattern.matcher(registrations);
+      while (blockMatcher.find()) {
+         String field = blockMatcher.group(1);
+         assertEquals(1, countMatches(registrations, Pattern.compile(
+            "registerBlockEntityRenderer\\(ModBlockEntities\\." + field + "\\.get\\(\\)")), field);
+      }
+
+      String genericRenderer = Files.readString(JAVA.resolve("client/renderer/GenericServantRenderer.java"));
+      assertTrue(genericRenderer.contains("case \"gilgamesh_caster\" -> \"caster_gilgamesh\""));
+   }
+
+   @Test
+   void gilgameshProjectileShieldAndCasterBuffCleanupAreThrottled() throws Exception {
+      String gilgamesh = Files.readString(JAVA.resolve("servant/entity/GilgameshCombatHelper.java"));
+      assertTrue(gilgamesh.contains("DIVINE_SHIELD_SCAN_INTERVAL = 5"));
+      assertTrue(gilgamesh.contains("LAST_DIVINE_SHIELD_SCAN"));
+      assertTrue(gilgamesh.contains("entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN)"));
+
+      String caster = Files.readString(JAVA.resolve("servant/entity/CasterGilgameshCombatHelper.java"));
+      assertTrue(caster.contains("DIVINE_SHIELD_SCAN_INTERVAL = 5"));
+      assertTrue(caster.contains("LAST_DIVINE_SHIELD_SCAN"));
+      assertTrue(caster.contains("long leaderUntil = data.getLong(LEADER_UNTIL);"));
+      assertTrue(caster.contains("if (leaderUntil > 0L && now >= leaderUntil)"));
+      assertTrue(caster.contains("data.remove(LEADER_UNTIL);"));
+      assertTrue(caster.contains("if (returnUntil > 0L && now >= returnUntil)"));
+      assertTrue(caster.contains("data.remove(RETURN_UNTIL);"));
+   }
+
+   @Test
+   void npcArmorSyncAndTacticalScansStayLowFrequency() throws Exception {
+      String servantEntity = Files.readString(JAVA.resolve("servant/entity/ServantEntity.java"));
+      assertTrue(servantEntity.contains("this.equipNpcServantCardArmor(this.tickCount % 200 == 0)"));
+      assertTrue(servantEntity.contains("implements GeoEntity"));
+
+      String maneuver = Files.readString(JAVA.resolve("servant/ai/ServantManeuverService.java"));
+      assertEquals(1, countMatches(maneuver, Pattern.compile("getEntitiesOfClass\\(LivingEntity\\.class")));
+      assertTrue(maneuver.contains("List<LivingEntity> nearbyAllies"));
+      assertTrue(maneuver.contains("countAlliesNear(nearbyAllies, safe, 3.0)"));
+
+      String link = Files.readString(JAVA.resolve("servant/card/MasterServantLinkService.java"));
+      assertTrue(link.contains("if (player.tickCount % 20 == 0) removeLegacyServantPenalties(player);"));
+   }
+
+   @Test
+   void compatibilityCleanupAvoidsNoopTicksAndStaleStaticState() throws Exception {
+      String chant = Files.readString(JAVA.resolve("magic/unlimited_blade_works/ChantHandler.java"));
+      assertFalse(chant.contains("UBWInstanceManager.processPendingDeletions(player.getServer())"));
+      assertTrue(chant.contains("MagicSwordBarrelFullOpen.tick(player, vars);"));
+
+      String swordBarrel = Files.readString(JAVA.resolve("magic/unlimited_blade_works/MagicSwordBarrelFullOpen.java"));
+      assertTrue(swordBarrel.contains("public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars)"));
+
+      String ubwManager = Files.readString(JAVA.resolve("magic/unlimited_blade_works/UBWInstanceManager.java"));
+      assertTrue(ubwManager.contains("ServerStoppingEvent"));
+      assertTrue(ubwManager.contains("public static void clearAllInstances(MinecraftServer server)"));
+      assertTrue(ubwManager.contains("OWNER_TICKETS.clear();"));
+      assertTrue(ubwManager.contains("OWNER_DIMENSIONS.clear();"));
+      assertTrue(ubwManager.contains("DIMENSION_OWNERS.clear();"));
+
+      String commonEvents = Files.readString(JAVA.resolve("event/CommonEvents.java"));
+      assertTrue(commonEvents.contains("public static void onLevelUnload(LevelEvent.Unload event)"));
+      assertTrue(commonEvents.contains("SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key);"));
+      assertTrue(commonEvents.contains("SERVANT_IDS_BY_DIMENSION.remove(key);"));
+      assertTrue(commonEvents.contains("SHIKI_IDS_BY_DIMENSION.remove(key);"));
+      assertTrue(commonEvents.contains("SERVANT_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);"));
+      assertTrue(commonEvents.contains("SHIKI_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);"));
+      assertTrue(commonEvents.contains("SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key, ids);"));
    }
 }

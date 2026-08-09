@@ -45,7 +45,8 @@ class CasterGilgameshResourcesTest {
       assertEquals(0, noblePhantasm.get("cooldown_ticks").getAsInt());
       assertEquals(CasterGilgameshCombatHelper.STARTING_AMMO, 500);
       assertEquals(CasterGilgameshCombatHelper.MAX_AMMO, 5000);
-      assertEquals(10, CasterGilgameshCombatHelper.CANNON_SHOTS_PER_ROUND);
+      assertEquals(30, CasterGilgameshCombatHelper.CANNON_SHOTS_PER_ROUND);
+      assertEquals(30.0F, CasterGilgameshCombatHelper.CANNON_DAMAGE_PER_SHOT);
       assertEquals(3.0F, CasterGilgameshCombatHelper.CANNON_EXPLOSION_RADIUS);
       assertEquals("medium", ai.getAsJsonObject("tactical").get("maximum_terrain_impact").getAsString());
    }
@@ -63,6 +64,7 @@ class CasterGilgameshResourcesTest {
          "assets/typemoonworld/models/item/servant_card_gilgamesh_caster_chest.json",
          "assets/typemoonworld/models/item/servant_card_gilgamesh_caster_legs.json",
          "assets/typemoonworld/geo/servant_card_gilgamesh_caster.geo.json",
+         "assets/typemoonworld/geo/servant_card_gilgamesh_caster_head.geo.json",
          "assets/typemoonworld/animations/servant_card_gilgamesh_caster.animation.json",
          "assets/typemoonworld/textures/models/armor/servant_card_gilgamesh_caster.png",
          "assets/typemoonworld/textures/item/card_faces_3d/servant/gilgamesh_caster_card.png",
@@ -75,12 +77,18 @@ class CasterGilgameshResourcesTest {
          assertTrue(Files.isRegularFile(ROOT.resolve(resource)), resource);
       }
       JsonObject armorGeo = readJson("assets/typemoonworld/geo/servant_card_gilgamesh_caster.geo.json");
-      assertTrue(armorGeo.toString().contains("caster_head"));
-      assertTrue(armorGeo.toString().contains("caster_upper_body"));
-      assertTrue(armorGeo.toString().contains("caster_right_hand"));
+      String armorGeoText = armorGeo.toString();
+      assertFalse(armorGeoText.contains("caster_head"));
+      assertTrue(armorGeoText.contains("armorBody"));
+      assertTrue(armorGeoText.contains("armorRightArm"));
+      JsonObject headGeo = readJson("assets/typemoonworld/geo/servant_card_gilgamesh_caster_head.geo.json");
+      assertTrue(headGeo.toString().contains("caster_head"));
       String armorModel = Files.readString(Path.of(
          "src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/model/ServantCardArmorModel.java"));
-      assertTrue(armorModel.contains("\"gilgamesh_caster\".equals(servantId)"));
+      assertTrue(armorModel.contains("hasDedicatedHeadModel(servantId)"));
+      assertTrue(armorModel.contains("\"gilgamesh_caster\""));
+      assertTrue(armorModel.contains("geo/servant_card_\" + servantId + \"_head.geo.json"));
+      assertTrue(armorModel.contains("textures/models/armor/servant_card_\" + servantId + \"_head.png"));
       assertTrue(armorModel.contains("animations/empty.animation.json"));
 
       for (String voice : List.of("np", "shot", "attack1", "attack2", "fail1", "fail2",
@@ -96,6 +104,35 @@ class CasterGilgameshResourcesTest {
       assertFalse(CasterGilgameshCombatHelper.FIRING_TAG.isBlank());
       assertEquals("RoyalCannonAmmo", CasterGilgameshCombatHelper.AMMO_TAG);
       assertEquals("RoyalCannonFiring", CasterGilgameshCombatHelper.FIRING_TAG);
+   }
+
+   @Test
+   void casterGilgameshMeleeModeUsesFangtianAndRestoresSlate() throws Exception {
+      assertEquals(80, CasterGilgameshCombatHelper.MELEE_DURATION_TICKS);
+      assertEquals(300, CasterGilgameshCombatHelper.MELEE_REUSE_TICKS);
+      String helper = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/CasterGilgameshCombatHelper.java"));
+      String entity = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/CasterGilgameshEntity.java"));
+      assertTrue(helper.contains("ModItems.GILGAMESH_FANGTIAN_HUAJI"));
+      assertTrue(helper.contains("ModItems.GILGAMESH_SLATE"));
+      assertTrue(helper.contains("tickIndependentMelee"));
+      assertTrue(entity.contains("CasterGilgameshCombatHelper.isMeleeMode(this)"));
+      assertTrue(entity.contains("25.0F"));
+   }
+
+   @Test
+   void specialStatesRunBeforeTacticalArbitration() throws Exception {
+      String servant = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/ServantEntity.java"));
+      String service = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/ai/ServantSpecialStateService.java"));
+      assertTrue(servant.contains("ServantSpecialStateService.tickBeforeAi(this)"));
+      for (String type : List.of("ArtoriaPendragonEntity", "CasterGilgameshEntity", "GilgameshEntity",
+         "EnkiduEntity", "MedusaEntity", "CursedArmHassanEntity", "EmiyaArcherEntity",
+         "OdaNobunagaEntity", "PaleRiderEntity")) {
+         assertTrue(service.contains("instanceof " + type), type);
+      }
    }
 
    @Test
@@ -119,7 +156,7 @@ class CasterGilgameshResourcesTest {
       assertEquals(CasterGilgameshCombatHelper.FIRING_TAG, ServantCardCasterGilgameshSkills.FIRING_TAG);
       assertEquals(CasterGilgameshCombatHelper.STARTING_AMMO, ServantCardCasterGilgameshSkills.STARTING_AMMO);
       assertEquals(CasterGilgameshCombatHelper.MAX_AMMO, ServantCardCasterGilgameshSkills.MAX_AMMO);
-      assertEquals(10, ServantCardCasterGilgameshSkills.CANNON_SHOTS_PER_ROUND);
+      assertEquals(30, ServantCardCasterGilgameshSkills.CANNON_SHOTS_PER_ROUND);
       assertEquals(1.20F, ServantCardCasterGilgameshSkills.WAND_DOMINION_MULTIPLIER);
    }
 

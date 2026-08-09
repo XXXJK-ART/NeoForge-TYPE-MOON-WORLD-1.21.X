@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSpectacleService;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
@@ -55,6 +56,7 @@ public final class ServantCombatMotionService {
    private static final String PENDING_IMPACT_UNTIL = PREFIX + "PendingImpactUntil";
    private static final String PENDING_WALL = PREFIX + "PendingWall";
    private static final String PENDING_ENERGY = PREFIX + "PendingEnergy";
+   private static final String CHAIN_IMPACTS_LEFT = PREFIX + "ChainImpactsLeft";
    private static final String NPC_RECOVERY_ROLLED = PREFIX + "NpcRecoveryRolled";
    private static final String TERRAIN_PERMISSION = PREFIX + "TerrainPermission";
    private static final int CONTROL_RESET_TICKS = 60;
@@ -83,10 +85,12 @@ public final class ServantCombatMotionService {
       double controlScale = controlScale(depth);
       boolean protectedRecovery = now < data.getLong(RECOVERY_UNTIL);
       if (protectedRecovery) controlScale *= 0.35;
+      double impactScale = ServantCombatSpectacleService.impactScale(attacker instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant ? servant : null, target);
+      double launchScale = Math.max(0.45, Math.min(2.15, controlScale * impactScale));
 
       Vec3 motion = target.getDeltaMovement();
-      double appliedHorizontal = Math.max(0.0, horizontalPower) * controlScale;
-      double appliedVertical = Math.max(0.0, verticalPower) * controlScale;
+      double appliedHorizontal = Math.max(0.0, horizontalPower) * launchScale;
+      double appliedVertical = Math.max(0.0, verticalPower) * (0.72 + launchScale * 0.18);
       target.setDeltaMovement(
          direction.x * appliedHorizontal,
          Math.max(motion.y, appliedVertical),
@@ -99,11 +103,19 @@ public final class ServantCombatMotionService {
          Math.max(12, (int)Math.ceil((appliedHorizontal + appliedVertical) * 10.0))));
       data.putLong(PURSUIT_UNTIL, now + Math.max(0, pursuitTicks));
       data.putUUID(ATTACKER, attacker.getUUID());
-      data.putString(IMPACT_TIER, cappedImpactTier(attacker, impactTier).name());
+      TerrainImpactProfile.Tier resolvedImpactTier = cappedImpactTier(attacker, impactTier);
+      data.putString(IMPACT_TIER, resolvedImpactTier.name());
       data.putInt(CONTROL_DEPTH, depth);
       data.putLong(LAST_CONTROL, now);
       data.putString(STATE, MotionState.AIRBORNE.name());
       data.putString(TERRAIN_PERMISSION, attacker instanceof Player ? "PLAYER" : "NPC");
+      if (attacker instanceof ServantEntity servant
+         && (resolvedImpactTier.ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal()
+            || ServantCombatSpectacleService.isForcedBreaker(servant))) {
+         data.putInt(CHAIN_IMPACTS_LEFT, ServantCombatSpectacleService.chainImpactLimit(servant));
+      } else {
+         data.putInt(CHAIN_IMPACTS_LEFT, 0);
+      }
       data.putLong(LAUNCH_TICK, now);
       data.putInt(LAUNCH_ENTITY_TICK, target.tickCount);
       data.putDouble(TRAVEL_DISTANCE, 0.0);
@@ -195,7 +207,9 @@ public final class ServantCombatMotionService {
       data.putDouble(TRAVEL_DISTANCE, data.getDouble(TRAVEL_DISTANCE) + moved);
       boolean completedMovementTick = now >= data.getLong(LAUNCH_TICK)
          && target.tickCount > data.getInt(LAUNCH_ENTITY_TICK);
-      BlockHitResult wallHit = completedMovementTick && target.horizontalCollision
+      boolean likelyWallStop = target.horizontalCollision
+         || previous.horizontalDistance() >= 0.45 && lostHorizontal >= 0.18;
+      BlockHitResult wallHit = completedMovementTick && likelyWallStop
          ? sweepWall(level, target, previousPosition, previous) : null;
       boolean wallImpact = wallHit != null && lostHorizontal >= 0.18;
       boolean groundImpact = target.onGround() && previous.y <= -0.42;
@@ -203,7 +217,7 @@ public final class ServantCombatMotionService {
          : Math.max(0.0, Math.abs(previous.y) - Math.abs(current.y));
 
       if ((wallImpact || groundImpact) && now >= data.getLong(COLLISION_COOLDOWN)) {
-         data.putLong(COLLISION_COOLDOWN, now + 4L);
+      data.putLong(COLLISION_COOLDOWN, now + 4L);
          if (wallImpact) {
             resolveImpact(level, target, previous, true, Math.max(0.1, impactEnergy), wallHit.getLocation());
             return;
@@ -260,34 +274,53 @@ public final class ServantCombatMotionService {
       TerrainImpactProfile.Tier tier = impactTier(data);
       double energy = Math.max(0.1, impactEnergy);
       boolean heavy = tier.ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
-      double radius = Math.min(heavy ? 4.5 : 3.0, Math.max(1.5, energy * (wallImpact ? 1.25 : 1.6)));
-      TerrainImpactProfile base = TerrainImpactProfile.of(tier);
-      TerrainImpactProfile profile = new TerrainImpactProfile(tier, radius, base.maximumHardness(),
-         Math.min(base.debrisCount(), heavy ? 24 : 12), Math.min(base.dustCount(), 48));
+      LivingEntity source = resolveAttacker(level, data);
+      ServantEntity sourceServant = source instanceof ServantEntity servant ? servant : null;
+      TerrainImpactProfile profile = wallImpact
+         ? ServantCombatSpectacleService.wallTunnelProfile(sourceServant, target, heavy)
+         : ServantCombatSpectacleService.routineGroundProfile(sourceServant, target, energy, heavy);
       Vec3 direction = previous.lengthSqr() < 1.0E-4 ? target.getLookAngle() : previous.normalize();
       Vec3 center = wallImpact && collisionPoint != null ? collisionPoint
-         : target.position().add(direction.scale(wallImpact ? 0.8 : 0.0))
-            .add(0.0, wallImpact ? target.getBbHeight() * 0.45 : 0.1, 0.0);
-      LivingEntity source = resolveAttacker(level, data);
-      TerrainImpactService.impact(level, source, center, profile,
-         terrainPermission(data),
-         wallImpact ? TerrainImpactService.Shape.AIR_SPHERE : TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
+         : target.position().add(direction.scale(wallImpact ? 0.55 : 0.0))
+            .add(0.0, wallImpact ? target.getBbHeight() * 0.4 : 0.15, 0.0);
+      if (wallImpact) {
+         int chain = Math.max(0, data.getInt(CHAIN_IMPACTS_LEFT));
+         if (chain > 0) {
+            data.putInt(CHAIN_IMPACTS_LEFT, chain - 1);
+         }
+         TerrainImpactService.impactWallTunnel(level, source, center, direction, profile, terrainPermission(data),
+            ServantCombatSpectacleService.wallTunnelLength(sourceServant, target, previous.horizontalDistance()),
+            ServantCombatSpectacleService.wallTunnelWidth(sourceServant, target, previous.horizontalDistance()),
+            ServantCombatSpectacleService.wallTunnelHeight(sourceServant, target, Math.abs(previous.y)));
+      } else {
+         TerrainImpactService.impact(level, source, center, profile,
+            terrainPermission(data), TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      }
 
       float damage = (float)Math.min(heavy ? 14.0 : 8.0, Math.max(1.0, energy * (wallImpact ? 3.2 : 2.4)));
       if (!ServantMasterProtection.isProtectedMaster(source, target)) {
          target.hurt(impactDamageSource(target, source), damage);
       }
-      target.setDeltaMovement(previous.x * (wallImpact ? -0.12 : 0.25), wallImpact ? Math.max(0.08, previous.y * 0.18) : 0.08,
-         previous.z * (wallImpact ? -0.12 : 0.25));
+      target.setDeltaMovement(previous.x * (wallImpact ? 0.38 : 0.22), wallImpact ? Math.max(0.08, previous.y * 0.12) : 0.08,
+         previous.z * (wallImpact ? 0.38 : 0.22));
       target.hurtMarked = true;
-      beginImpactStagger(target, level.getGameTime(), wallImpact ? 12 : 8, wallImpact);
+      boolean chainContinues = wallImpact && data.getInt(CHAIN_IMPACTS_LEFT) > 0 && previous.horizontalDistance() >= 0.55;
+      if (chainContinues) {
+         data.putString(STATE, MotionState.AIRBORNE.name());
+         data.putLong(ACTIVE_UNTIL, level.getGameTime() + Math.min(MAX_ACTIVE_TICKS, 8L + data.getInt(CHAIN_IMPACTS_LEFT) * 4L));
+         data.putLong(PURSUIT_UNTIL, Math.max(data.getLong(PURSUIT_UNTIL), level.getGameTime() + 12L));
+         storePreviousMotion(data, target.getDeltaMovement());
+         storePreviousPosition(data, target.position());
+      } else {
+         beginImpactStagger(target, level.getGameTime(), wallImpact ? 14 : 10, wallImpact);
+      }
       if (source instanceof ServantEntity servant) {
          ServantCombatTempoService.recordContact(servant, target, wallImpact
             ? ServantCombatTempoService.ContactType.WALL
             : ServantCombatTempoService.ContactType.LANDING, level.getGameTime());
       }
       level.sendParticles(wallImpact ? ParticleTypes.POOF : ParticleTypes.CLOUD,
-         center.x, center.y, center.z, heavy ? 24 : 14, radius * 0.35, 0.25, radius * 0.35, 0.08);
+         center.x, center.y, center.z, heavy ? 24 : 14, profile.radius() * 0.35, 0.25, profile.radius() * 0.35, 0.08);
       level.playSound(null, target.blockPosition(), wallImpact ? SoundEvents.ZOMBIE_ATTACK_IRON_DOOR : SoundEvents.GENERIC_EXPLODE.value(),
          target instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE, heavy ? 1.1F : 0.75F, heavy ? 0.65F : 0.85F);
    }
@@ -300,6 +333,16 @@ public final class ServantCombatMotionService {
       data.putLong(STAGGER_UNTIL, now + recoveryTicks);
       data.putLong(PURSUIT_UNTIL, Math.max(data.getLong(PURSUIT_UNTIL), now + recoveryTicks));
       data.putLong(RECOVERY_UNTIL, Math.max(data.getLong(RECOVERY_UNTIL), now + recoveryTicks));
+   }
+
+   public static double impactRadius(TerrainImpactProfile.Tier tier, double impactEnergy, boolean wallImpact) {
+      TerrainImpactProfile.Tier resolved = tier == null ? TerrainImpactProfile.Tier.SMALL : tier;
+      boolean heavy = resolved.ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
+      double energy = Math.max(0.1, impactEnergy);
+      if (wallImpact) {
+         return Math.min(heavy ? 7.0 : 4.5, Math.max(2.25, energy * 1.6));
+      }
+      return Math.min(heavy ? 4.5 : 3.2, Math.max(1.5, energy * 1.6));
    }
 
    private static void finishRecovery(LivingEntity target, long now) {

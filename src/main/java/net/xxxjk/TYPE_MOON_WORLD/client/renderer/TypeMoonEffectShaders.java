@@ -6,6 +6,8 @@ public final class TypeMoonEffectShaders {
    private static ShaderInstance gravityShell;
    private static ShaderInstance expandingRing;
    private static ShaderInstance ubwAnalysisRipple;
+   private static ShaderInstance babylonPortal;
+   private static ShaderInstance clippedEntity;
 
    private TypeMoonEffectShaders() {
    }
@@ -22,6 +24,14 @@ public final class TypeMoonEffectShaders {
       ubwAnalysisRipple = shader;
    }
 
+   public static void setBabylonPortal(ShaderInstance shader) {
+      babylonPortal = shader;
+   }
+
+   public static void setClippedEntity(ShaderInstance shader) {
+      clippedEntity = shader;
+   }
+
    public static ShaderInstance getGravityShell() {
       return gravityShell;
    }
@@ -32,5 +42,13 @@ public final class TypeMoonEffectShaders {
 
    public static ShaderInstance getUbwAnalysisRipple() {
       return ubwAnalysisRipple;
+   }
+
+   public static ShaderInstance getBabylonPortal() {
+      return babylonPortal;
+   }
+
+   public static ShaderInstance getClippedEntity() {
+      return clippedEntity;
    }
 }

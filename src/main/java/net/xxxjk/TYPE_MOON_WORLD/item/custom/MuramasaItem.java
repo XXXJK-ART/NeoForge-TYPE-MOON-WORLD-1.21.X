@@ -40,6 +40,9 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final int MAX_CHARGE_TICKS = 100;
+   private static final double TOTAL_MANA_COST = 200.0;
+   private static final double MANA_COST_PER_TICK = TOTAL_MANA_COST / MAX_CHARGE_TICKS;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public MuramasaItem(Properties properties) {
@@ -94,26 +97,20 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
       if (livingEntity instanceof ServerPlayer player) {
          int useDuration = this.getUseDuration(stack, livingEntity) - remainingUseTicks;
          int currentCharge = useDuration;
-         if (useDuration > 100) {
-            currentCharge = 100;
+         if (useDuration > MAX_CHARGE_TICKS) {
+            currentCharge = MAX_CHARGE_TICKS;
          }
 
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         boolean isMaxCharge = currentCharge >= 100;
          boolean muramasaCard = isMuramasaCard(player);
-         boolean canPay = isMaxCharge
+         boolean canPay = !shouldConsumeMana(useDuration)
             || (muramasaCard
-               ? ServantCardManaService.consumeSilently(player, vars, 5.0)
-               : vars.player_mana >= 10.0);
+               ? ServantCardManaService.consumeSilently(player, vars, MANA_COST_PER_TICK)
+               : consumePlayerMana(player, vars, MANA_COST_PER_TICK));
          if (!canPay) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
-            if (!isMaxCharge && !muramasaCard) {
-               vars.player_mana -= 10.0;
-               vars.syncMana(player);
-            }
-
             player.displayClientMessage(
                Component.translatable("message.typemoonworld.muramasa.charge", currentCharge).withStyle(ChatFormatting.RED), true
             );
@@ -133,7 +130,7 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
                }
             }
 
-            if (currentCharge == 100 && useDuration == 100) {
+            if (currentCharge == MAX_CHARGE_TICKS && useDuration == MAX_CHARGE_TICKS) {
                level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.5F, 2.0F);
             }
          }
@@ -145,8 +142,8 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
          if (!level.isClientSide) {
             int useDuration = this.getUseDuration(stack, livingEntity) - timeCharged;
             int charge = useDuration;
-            if (useDuration > 100) {
-               charge = 100;
+            if (useDuration > MAX_CHARGE_TICKS) {
+               charge = MAX_CHARGE_TICKS;
             }
 
             if (charge > 0) {
@@ -212,12 +209,24 @@ public class MuramasaItem extends SwordItem implements GeoItem, NoblePhantasmIte
       return vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id);
    }
 
+   static boolean shouldConsumeMana(int useDuration) {
+      return useDuration > 0 && useDuration <= MAX_CHARGE_TICKS;
+   }
+
+   private static boolean consumePlayerMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (amount <= 0.0) return true;
+      if (vars.player_mana + 1.0E-6 < amount) return false;
+      vars.player_mana -= amount;
+      vars.syncMana(player);
+      return true;
+   }
+
    public int getMaxManaCost() {
-      return 1000;
+      return (int)TOTAL_MANA_COST;
    }
 
    public double getManaCostPerTick() {
-      return 10.0;
+      return MANA_COST_PER_TICK;
    }
 
    public int getMaxSlashDistance() {

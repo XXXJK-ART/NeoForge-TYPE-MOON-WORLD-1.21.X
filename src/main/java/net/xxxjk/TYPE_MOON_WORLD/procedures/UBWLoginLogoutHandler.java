@@ -1,5 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.procedures;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -30,8 +34,6 @@ public class UBWLoginLogoutHandler {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.is_in_ubw) {
             ChantHandler.returnFromUBW(player, vars);
-         } else if (hasHajunReturnData(player)) {
-            returnFromHajunOnRelog(player);
          }
       }
    }
@@ -40,7 +42,15 @@ public class UBWLoginLogoutHandler {
       if (player.server == null) {
          return;
       }
-      var returnLevel = player.server.overworld();
+      String dimensionId = player.getPersistentData().contains("OdaHajunTargetReturnDim")
+         ? player.getPersistentData().getString("OdaHajunTargetReturnDim")
+         : player.getPersistentData().getString("OdaHajunReturnDim");
+      ServerLevel returnLevel = player.server.overworld();
+      ResourceLocation location = ResourceLocation.tryParse(dimensionId);
+      if (location != null) {
+         ServerLevel resolved = player.server.getLevel(ResourceKey.create(Registries.DIMENSION, location));
+         if (resolved != null) returnLevel = resolved;
+      }
       String prefix = player.getPersistentData().contains("OdaHajunTargetReturnDim") ? "OdaHajunTargetReturn" : "OdaHajunReturn";
       double x = player.getPersistentData().contains(prefix + "X") ? player.getPersistentData().getDouble(prefix + "X") : player.getX();
       double y = player.getPersistentData().contains(prefix + "Y") ? player.getPersistentData().getDouble(prefix + "Y") : player.getY();

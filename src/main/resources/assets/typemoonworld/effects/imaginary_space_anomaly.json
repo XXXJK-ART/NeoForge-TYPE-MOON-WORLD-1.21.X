@@ -1,0 +1,39 @@
+{
+  "duration": 2.8,
+  "notes": "A short, low-density anomaly flash for depth events and the outer-god warning.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.5,
+      "rate": 720,
+      "particle_lifetime": 0.9,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.16,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.28, "scale": [4.0, 4.0, 4.0], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [9.0, 9.0, 9.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.2, "color": "#D9D29BFF" },
+        { "t": 0.68, "color": "#88602DAA" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.36, "size": 0.42 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_SPACE_ANOMALY_FLASH",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.5, 0.0], "speed": 0.0, "chance": 0.55 },
+        { "type": "reverse_portal", "count": 1, "spread": [2.0, 2.0, 2.0], "offset": [0.0, 0.5, 0.0], "speed": 0.03, "chance": 0.4 }
+      ]
+    }
+  ]
+}

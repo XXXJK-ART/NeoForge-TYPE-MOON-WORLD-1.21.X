@@ -13,6 +13,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -34,6 +35,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
    private static final EntityDataAccessor<Boolean> FLYING_MODE = SynchedEntityData.defineId(MedusaPegasusEntity.class, EntityDataSerializers.BOOLEAN);
    private static final String TAG_SUMMONER_UUID = "MedusaPegasusSummoner";
+   private static final String TAG_FLIGHT_CONTROL_TICK = "MedusaPegasusFlightControlTick";
    private static final DustParticleOptions TRAIL_LIGHT_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.98F, 0.9F), 1.35F);
    private static final DustParticleOptions TRAIL_GOLD_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.82F, 0.24F), 1.1F);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -78,6 +80,8 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       }
       if (!this.isVehicle() && this.tickCount > 40 && !this.level().isClientSide()) {
          this.discard();
+      } else if (this.isFlyingMode() && this.isVehicle()) {
+         this.tickFallbackFlight(summoner);
       }
    }
 
@@ -187,6 +191,10 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       this.setNoGravity(flyingMode);
    }
 
+   public void markFlightControlled(long now) {
+      this.getPersistentData().putLong(TAG_FLIGHT_CONTROL_TICK, now);
+   }
+
    public void setSummoner(LivingEntity summoner) {
       this.summonerUuid = summoner.getUUID();
       this.getPersistentData().putUUID(TAG_SUMMONER_UUID, this.summonerUuid);
@@ -236,5 +244,33 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
       Vec3 motion = this.getDeltaMovement();
       this.setDeltaMovement(motion.x, 0.0, motion.z);
       this.setOnGround(true);
+   }
+
+   private void tickFallbackFlight(@Nullable LivingEntity summoner) {
+      long now = this.level().getGameTime();
+      if (now - this.getPersistentData().getLong(TAG_FLIGHT_CONTROL_TICK) <= 2L) return;
+      LivingEntity target = summoner instanceof Mob mob ? mob.getTarget() : null;
+      Vec3 motion = this.getDeltaMovement();
+      if (target == null || !target.isAlive() || target.level() != this.level()) {
+         this.setDeltaMovement(motion.x * 0.72, Math.max(-0.24, Math.min(-0.08, motion.y)), motion.z * 0.72);
+         this.hasImpulse = true;
+         return;
+      }
+
+      Vec3 horizontal = target.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
+      Vec3 forward = horizontal.lengthSqr() > 1.0E-4 ? horizontal.normalize() : Vec3.ZERO;
+      double desiredY = Math.max(this.level().getMinBuildHeight() + 1.0,
+         Math.min(this.level().getMaxBuildHeight() - this.getBbHeight() - 1.0, target.getY() + 0.9));
+      double vertical = Math.max(-0.28, Math.min(0.22, (desiredY - this.getY()) * 0.14));
+      Vec3 wanted = new Vec3(motion.x * 0.2 + forward.x * 0.72, vertical,
+         motion.z * 0.2 + forward.z * 0.72);
+      Vec3 limited = Entity.collideBoundingBox(this, wanted, this.getBoundingBox(), this.level(), List.of());
+      this.setDeltaMovement(limited);
+      this.hasImpulse = true;
+      if (horizontal.lengthSqr() > 1.0E-4) {
+         float yaw = (float)(Math.atan2(forward.z, forward.x) * 180.0 / Math.PI) - 90.0F;
+         this.setYRot(yaw);
+         this.yBodyRot = yaw;
+      }
    }
 }

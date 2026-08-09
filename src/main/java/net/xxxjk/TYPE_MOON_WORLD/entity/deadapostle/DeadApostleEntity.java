@@ -35,6 +35,7 @@ import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.HumanNpcEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.NpcScaleHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class DeadApostleEntity extends Monster {
@@ -54,6 +55,14 @@ public abstract class DeadApostleEntity extends Monster {
       if (!canSwim()) {
          this.setPathfindingMalus(PathType.WATER, -1.0F);
       }
+   }
+
+   public static boolean isDeadApostle(LivingEntity entity) {
+      return entity instanceof DeadApostleEntity || NeroChaosBeastLogic.isBeast(entity);
+   }
+
+   public static boolean isDeadApostle(Entity entity) {
+      return entity instanceof LivingEntity living && isDeadApostle(living);
    }
 
    public static AttributeSupplier.Builder attributes(double health, double attack, double armor, double speed) {
@@ -82,7 +91,8 @@ public abstract class DeadApostleEntity extends Monster {
       this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
+         target -> !EntityUtils.isImmunePlayerTarget(target)));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
       this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, HumanNpcEntity.class, true));
@@ -115,12 +125,14 @@ public abstract class DeadApostleEntity extends Monster {
 
    @Override
    public boolean isAlliedTo(Entity entity) {
-      return entity instanceof DeadApostleEntity || super.isAlliedTo(entity);
+      return isDeadApostle(entity) || super.isAlliedTo(entity);
    }
 
    @Override
    public boolean canAttack(LivingEntity target) {
-      return !(target instanceof DeadApostleEntity) && super.canAttack(target);
+      return !EntityUtils.isImmunePlayerTarget(target)
+         && !isDeadApostle(target)
+         && super.canAttack(target);
    }
 
    @Override

@@ -214,6 +214,10 @@ public final class ServantCardShadowHassanSkills {
       setNoblePhantasmConsumed(player, true);
       ShadowHassanPursuitData.get(level.getServer()).addPursuit(level, player.position(), target);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(player)) {
+         vars.syncPlayerVariables(player);
+         return true;
+      }
       player.setHealth(0.0F);
       player.die(player.damageSources().genericKill());
       return true;

@@ -1,0 +1,165 @@
+{
+  "duration": 4.2,
+  "notes": "A broad two-layer storm front with golden lightning for Andrephius.",
+  "environment": [
+    { "type": "screen_tint", "color": "#22FFD43B", "start": 0.0, "end": 0.8, "fade_in": 0.05, "fade_out": 0.45, "intensity": 0.2 }
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 3.4,
+      "rate": 620,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.04,
+      "velocity": [0.0, -0.04, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 0,
+      "component": {
+        "type": "fractal_lightning",
+        "start": [-30.0, 36.0, -24.0],
+        "end": [30.0, 18.0, 24.0],
+        "iterations": 6,
+        "roughness": 0.72,
+        "period": 5.0,
+        "density": 8.0,
+        "randomize_start": true,
+        "randomize_end": true,
+        "random_radius_min": 18.0,
+        "random_radius_max": 50.0,
+        "random_height_min": 16.0,
+        "random_height_max": 40.0,
+        "seed1": 101.0,
+        "seed2": 307.0,
+        "seed3": 509.0,
+        "seed4": 701.0,
+        "seed5": 907.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.1, "color": "#FFFFFFFF" },
+        { "t": 0.42, "color": "#FFFFD43B" },
+        { "t": 0.72, "color": "#FFFF9F1C" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.14, "size": 0.34 },
+        { "t": 0.6, "size": 0.14 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "visibility_condition": "floor(time * 16) % 2 == 0",
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_STORM_LIGHTNING_NETWORK"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 4.2,
+      "rate": 720,
+      "particle_lifetime": 1.15,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.24,
+      "position_variance": 0.16,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 240 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 28.0, 0.0], "scale": [8.0, 1.8, 8.0] },
+        { "t": 0.45, "pos": [0.0, 26.0, 0.0], "scale": [38.0, 5.5, 38.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 30.0, 0.0], "scale": [56.0, 7.0, 56.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00292C31" },
+        { "t": 0.18, "color": "#AA3A3D42" },
+        { "t": 0.55, "color": "#CC181A1F" },
+        { "t": 0.86, "color": "#99101115" },
+        { "t": 1.0, "color": "#00101115" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.2 },
+        { "t": 0.48, "size": 1.05 },
+        { "t": 1.0, "size": 0.18 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ANDREPHIUS_STORM_LOWER_CLOUD_DECK",
+      "vanilla_particles": [
+        { "type": "large_smoke", "count": 2, "spread": [30.0, 2.8, 30.0], "offset": [0.0, 27.0, 0.0], "speed": 0.018, "chance": 0.82 },
+        { "type": "campfire_cosy_smoke", "count": 1, "spread": [27.0, 2.2, 27.0], "offset": [0.0, 28.0, 0.0], "speed": 0.012, "chance": 0.58 },
+        { "type": "end_rod", "count": 1, "spread": [28.0, 2.0, 28.0], "offset": [0.0, 26.0, 0.0], "speed": 0.04, "chance": 0.22 }
+      ]
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 4.2,
+      "rate": 640,
+      "particle_lifetime": 1.35,
+      "size_variance": 0.46,
+      "lifetime_variance": 0.28,
+      "position_variance": 0.2,
+      "velocity": [0.018, 0.006, -0.012],
+      "velocity_variance": 0.024,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 220 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 35.0, 0.0], "scale": [10.0, 1.2, 10.0] },
+        { "t": 0.42, "pos": [0.0, 34.0, 0.0], "scale": [44.0, 3.8, 44.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [2.5, 36.0, -1.5], "scale": [60.0, 5.0, 60.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#0024262B" },
+        { "t": 0.16, "color": "#9932353A" },
+        { "t": 0.52, "color": "#CC121419" },
+        { "t": 0.86, "color": "#AA090B0F" },
+        { "t": 1.0, "color": "#00090B0F" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.32 },
+        { "t": 0.42, "size": 1.28 },
+        { "t": 0.82, "size": 0.92 },
+        { "t": 1.0, "size": 0.2 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ANDREPHIUS_STORM_UPPER_CLOUD_DECK",
+      "vanilla_particles": [
+        { "type": "large_smoke", "count": 2, "spread": [32.0, 2.4, 32.0], "offset": [0.0, 35.0, 0.0], "speed": 0.012, "chance": 0.8 },
+        { "type": "campfire_cosy_smoke", "count": 1, "spread": [30.0, 1.8, 30.0], "offset": [0.0, 34.0, 0.0], "speed": 0.008, "chance": 0.52 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.4,
+      "rate": 1100,
+      "particle_lifetime": 0.75,
+      "size_variance": 0.3,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 1.0, "segments": 220 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [2.0, 1.0, 2.0] },
+        { "t": 1.0, "scale": [52.0, 1.0, 52.0], "easing": "ease_out_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFFFF2A0" },
+        { "t": 0.7, "color": "#99FFD43B" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.4, "size": 0.48 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_STORM_OVERVIEW_RING",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.3, 0.3, 0.3], "offset": [0.0, 18.0, 0.0], "speed": 0.0, "chance": 0.08 }
+      ]
+    }
+  ]
+}

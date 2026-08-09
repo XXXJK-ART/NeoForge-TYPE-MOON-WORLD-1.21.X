@@ -46,6 +46,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
@@ -150,6 +152,7 @@ public final class EnkiduCombatHelper {
    private static final ResourceLocation MODE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_armor");
    private static final ResourceLocation MODE_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_speed");
    private static final ResourceLocation MODE_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "enkidu_mode_health");
+   private static final String TAG_LAST_PERSISTENT_TICK = "EnkiduLastPersistentStateTick";
 
    private static final ItemStack[] EARTH_WEAPONS = new ItemStack[] {
       new ItemStack(Items.IRON_SWORD), new ItemStack(Items.IRON_AXE), new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.IRON_SHOVEL),
@@ -167,15 +170,7 @@ public final class EnkiduCombatHelper {
       }
 
       long now = level.getGameTime();
-      tickBoundTargets(entity, level, now);
-      tickPerfectFormRegen(entity, level, now);
-      tickFireImmunity(entity, level, now);
-      tickPassivePresence(entity, level, now);
-      tickGroundManaRegen(entity, level, now);
-      tickGroundCombatResourceBoost(entity, now);
-      EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
-      tickNatureDropCleanup(entity, level, now);
-      tickEnumaWindup(entity, level, now);
+      tickPersistentState(entity);
       if (GilgameshDuelState.tickEnkidu(entity, level)) {
          return;
       }
@@ -250,6 +245,23 @@ public final class EnkiduCombatHelper {
       if (isFlying(entity) && distance >= 8.0) {
          trySmallAgeOfBabylon(entity, level, target, now);
       }
+   }
+
+   public static void tickPersistentState(EnkiduEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_TICK) && data.getLong(TAG_LAST_PERSISTENT_TICK) == now) return;
+      data.putLong(TAG_LAST_PERSISTENT_TICK, now);
+      tickBoundTargets(entity, level, now);
+      tickPerfectFormRegen(entity, level, now);
+      tickFireImmunity(entity, level, now);
+      tickPassivePresence(entity, level, now);
+      tickGroundManaRegen(entity, level, now);
+      tickGroundCombatResourceBoost(entity, now);
+      EnkiduTemporaryPlantHelper.cleanupExpired(level, now);
+      tickNatureDropCleanup(entity, level, now);
+      tickEnumaWindup(entity, level, now);
    }
 
    public static boolean isFlying(EnkiduEntity entity) {
@@ -576,6 +588,16 @@ public final class EnkiduCombatHelper {
          return;
       }
       double distance = entity.distanceTo(target);
+      if (isFlying(entity) && ServantCombatTempoService.disconnectedTicks(entity, now) >= 8L * 20L) {
+         entity.setNoGravity(false);
+         data.remove(TAG_FLIGHT_WAS_AIRBORNE);
+         data.remove(TAG_FLIGHT_UNTIL);
+         data.putLong(TAG_LAND_UNTIL, now + 120L);
+         data.putLong(TAG_NEXT_FLIGHT_TOGGLE, now + 200L);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity, target, 1.25, now, 2, 0.2, "EnkiduFlightStalled");
+         return;
+      }
       long flightUntil = data.getLong(TAG_FLIGHT_UNTIL);
       boolean lowHealthNeedsEarth = entity.getHealth() <= entity.getMaxHealth() * 0.8F;
       double verticalGap = target.getY() - entity.getY();
@@ -610,6 +632,7 @@ public final class EnkiduCombatHelper {
          }
       }
       if (isFlying(entity)) {
+         ServantFlightCombatService.markControlled(entity, now);
          entity.getNavigation().stop();
          entity.setNoGravity(true);
          double hoverY = ServantFlightHelper.desiredHoverY(entity, target);
@@ -622,7 +645,8 @@ public final class EnkiduCombatHelper {
          double radial = radialDistance < 9.0 ? 0.16 : radialDistance > 15.0 ? -0.14 : 0.0;
          Vec3 orbit = new Vec3(-away.z, 0.0, away.x).scale(0.11);
          double yMotion = ServantFlightHelper.verticalVelocityToward(entity.getY(), hoverY, 0.12, 0.025, 0.18, 0.24);
-         entity.setDeltaMovement(entity.getDeltaMovement().scale(0.65).add(away.scale(radial)).add(orbit).add(0.0, yMotion, 0.0));
+         Vec3 motion = entity.getDeltaMovement().scale(0.65).add(away.scale(radial)).add(orbit).add(0.0, yMotion, 0.0);
+         entity.setDeltaMovement(motion.x, ServantFlightHelper.clampVerticalSpeed(motion.y), motion.z);
       } else {
          entity.setNoGravity(false);
       }
@@ -2113,9 +2137,16 @@ public final class EnkiduCombatHelper {
       if (release <= 0L && finish <= 0L) {
          return;
       }
+      boolean duelFinale = data.getBoolean(TAG_ENUMA_DUEL_FINALE);
+      if (!duelFinale && finish > 0L && now > finish + 60L) {
+         clearEnumaState(entity);
+         entity.setNoGravity(false);
+         entity.setDeltaMovement(Vec3.ZERO);
+         data.putLong(TAG_LAND_UNTIL, now + 160L);
+         return;
+      }
       Entity targetEntity = data.hasUUID(TAG_ENUMA_TARGET) ? level.getEntity(data.getUUID(TAG_ENUMA_TARGET)) : null;
       LivingEntity target = targetEntity instanceof LivingEntity livingTarget && livingTarget.isAlive() ? livingTarget : null;
-      boolean duelFinale = data.getBoolean(TAG_ENUMA_DUEL_FINALE);
       if (target == null) {
          if ((data.getBoolean(TAG_ENUMA_DAMAGE_DONE) || data.getInt(TAG_ENUMA_STAGE) == 1) && now < finish) {
             entity.getNavigation().stop();
@@ -2511,6 +2542,9 @@ public final class EnkiduCombatHelper {
    }
 
    private static void applyNoDefenseDamage(EnkiduEntity entity, LivingEntity target, float amount) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
       target.removeEffect(MobEffects.ABSORPTION);
       target.setAbsorptionAmount(0.0F);

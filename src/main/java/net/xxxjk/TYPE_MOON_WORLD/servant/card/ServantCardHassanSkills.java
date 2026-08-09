@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ServantCardHassanSkills {
@@ -151,6 +152,7 @@ public final class ServantCardHassanSkills {
       if (!player.isAlive()
          || target == null
          || !target.isAlive()
+         || EntityUtils.isImmunePlayerTarget(target)
          || player.distanceToSqr(target) > 8.5 * 8.5
          || CursedArmHassanCombatHelper.isProtectedPigKind(target)) {
          return;

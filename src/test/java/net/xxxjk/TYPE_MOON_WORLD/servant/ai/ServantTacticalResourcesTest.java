@@ -11,6 +11,9 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
+import net.minecraft.resources.ResourceLocation;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile;
 import net.xxxjk.typemoonworld.api.AiCombatStyle;
 import net.xxxjk.typemoonworld.api.AiTacticProfile;
@@ -62,5 +65,25 @@ class ServantTacticalResourcesTest {
          assertTrue(direction.dot(toward) > 0.0, "must retain a forward component");
          assertTrue(Math.abs(direction.z) > 0.5, "must retain a lateral component");
       }
+   }
+
+   @Test
+   void sharedMeleePressureKeepsCloseCombatAndRejectsRangedRepositioning() {
+      assertEquals(100, ServantCombatTempoService.MELEE_PRESSURE_MIN);
+      assertEquals(140, ServantCombatTempoService.MELEE_PRESSURE_MAX);
+      assertTrue(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.MELEE)));
+      assertTrue(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.GUARD)));
+      assertTrue(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.HEAL)));
+      assertFalse(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.PROJECTILE)));
+      assertFalse(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.EVADE)));
+   }
+
+   private static AiActionDescriptor action(AiActionDescriptor.Tag tag) {
+      return new AiActionDescriptor(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "test/" + tag.name().toLowerCase()),
+         Set.of(tag), 0.0, 8.0, 0.0, 0.0,
+         new AiActionDescriptor.Timing(0, 1, 0), AiActionDescriptor.ThreatSpec.NONE,
+         TerrainImpactProfile.Tier.NONE, AiActionDescriptor.ManeuverSpec.NONE
+      );
    }
 }

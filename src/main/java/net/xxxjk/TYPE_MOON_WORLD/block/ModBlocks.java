@@ -12,6 +12,8 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.DeferredRegister.Blocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.GemCarvingTableBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.MagicResearchTableBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.MagicCopyingTableBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.ArtificialLeylineBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.GreenTransparentBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
@@ -47,6 +49,12 @@ public class ModBlocks {
    );
    public static final DeferredBlock<GemCarvingTableBlock> GEM_CARVING_TABLE = registerBlock(
       "gem_carving_table", () -> new GemCarvingTableBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE).strength(2.5F))
+   );
+   public static final DeferredBlock<MagicResearchTableBlock> MAGIC_RESEARCH_TABLE = registerBlock(
+      "magic_research_table", () -> new MagicResearchTableBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE).strength(2.5F))
+   );
+   public static final DeferredBlock<MagicCopyingTableBlock> MAGIC_COPYING_TABLE = registerBlock(
+      "magic_copying_table", () -> new MagicCopyingTableBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE).strength(2.5F))
    );
    public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock(
       "emerald_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))

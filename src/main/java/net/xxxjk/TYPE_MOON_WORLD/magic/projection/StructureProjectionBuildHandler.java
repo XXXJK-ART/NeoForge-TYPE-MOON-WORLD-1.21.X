@@ -370,6 +370,9 @@ public class StructureProjectionBuildHandler {
                if (item != Items.AIR) {
                   ItemStack costStack = item.getDefaultInstance();
                   costStack.setCount(1);
+                  if (MagicStructuralAnalysis.isProjectionBanned(costStack)) {
+                     continue;
+                  }
                   double cost = MagicStructuralAnalysis.calculateStructureCost(costStack, hasSwordAttribute) * Math.max(0.0, costMultiplier);
                   byLayer.computeIfAbsent(savedBlock.y, k -> new ArrayDeque<>())
                      .addLast(new StructureProjectionBuildHandler.BlockPlacement(worldPos, state, cost));

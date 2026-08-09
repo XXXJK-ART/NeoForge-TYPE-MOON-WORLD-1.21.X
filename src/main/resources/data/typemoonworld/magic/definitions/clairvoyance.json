@@ -1,0 +1,12 @@
+{
+  "name_key": "magic.typemoonworld.clairvoyance.name",
+  "category": "typemoonworld:talent",
+  "school": "typemoonworld:none",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": false,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "knowledge_only": false
+}

@@ -131,7 +131,7 @@ public class MagicJewelMachineGun {
                         vars.magic_cooldown = BURST_INTERVAL_TICKS;
                         boolean crestCast = vars.isCurrentSelectionFromCrest("jewel_machine_gun");
                         if (!crestCast) {
-                           vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.1);
+                           net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", 0.1);
                         }
 
                         syncBurstState(player, vars, now, !crestCast);

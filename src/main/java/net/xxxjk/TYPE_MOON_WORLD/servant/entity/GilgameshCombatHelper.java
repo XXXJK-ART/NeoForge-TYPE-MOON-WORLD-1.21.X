@@ -23,7 +23,11 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
@@ -66,36 +70,27 @@ public final class GilgameshCombatHelper {
    private static final String EA_SUMMON_END = "GilgameshEaSummonEnd";
    private static final String EA_DRAW_END = "GilgameshEaDrawEnd";
    private static final String EA_SUMMON_TARGET = "GilgameshEaSummonTarget";
+   private static final String LAST_DIVINE_SHIELD_SCAN = "GilgameshLastDivineShieldScan";
    public static final int EA_SUMMON_TICKS = 72;
    public static final int EA_DRAW_TICKS = 53;
+   private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
    private static final String LAST_CHARISMA = "GilgameshLastCharisma";
    private static final String ENKIDU_BARRAGE_REMAINING = "GilgameshEnkiduBarrageRemaining";
    private static final String ENKIDU_BARRAGE_NEXT = "GilgameshEnkiduBarrageNext";
    private static final String ENKIDU_BARRAGE_COOLDOWN = "GilgameshEnkiduBarrageCooldown";
    private static final String FLIGHT_CYCLE_START = "GilgameshFlightCycleStart";
    private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
+   private static final String LAST_PERSISTENT_TICK = "GilgameshLastPersistentStateTick";
    private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
    private static final int FLIGHT_ACTIVE_TICKS = 12 * 20;
+   private static final long FLIGHT_STALLED_TICKS = 8 * 20L;
    private GilgameshCombatHelper() { }
 
    public static void tick(GilgameshEntity entity) {
       if (!(entity.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      GilgameshDivineShield.tick(entity);
-      tryActivateDivineShield(entity, level);
-      if (!data.getBoolean("GilgameshPassivesInitialized")) {
-         data.putBoolean("GilgameshPassivesInitialized", true);
-         data.putFloat("MagicResistanceDamageReduction", 0.20F);
-         data.putFloat("GilgameshCommandObedienceMin", 0.20F);
-         data.putFloat("GilgameshCommandObedienceMax", 0.60F);
-         data.putBoolean("ClairvoyanceExActive", true);
-      }
-      tickClairvoyance(entity, level, data);
-      updateMonotonicPhase(entity);
-      if (entity.tickCount % 20 == 0) {
-         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
-      }
+      tickPersistentState(entity);
       // The finale owns the pair once it starts. Tick it before the normal
       // target/EA checks so a lost target cannot leave both servants frozen.
       if (GilgameshDuelState.tickGilgamesh(entity, level, now)) {
@@ -158,13 +153,36 @@ public final class GilgameshCombatHelper {
       }
    }
 
+   public static void tickPersistentState(GilgameshEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PERSISTENT_TICK) && data.getLong(LAST_PERSISTENT_TICK) == now) return;
+      data.putLong(LAST_PERSISTENT_TICK, now);
+      GilgameshDivineShield.tick(entity);
+      tryActivateDivineShield(entity, level);
+      if (!data.getBoolean("GilgameshPassivesInitialized")) {
+         data.putBoolean("GilgameshPassivesInitialized", true);
+         data.putFloat("MagicResistanceDamageReduction", 0.20F);
+         data.putFloat("GilgameshCommandObedienceMin", 0.20F);
+         data.putFloat("GilgameshCommandObedienceMax", 0.60F);
+         data.putBoolean("ClairvoyanceExActive", true);
+      }
+      tickClairvoyanceEx(entity, level, data);
+      updateMonotonicPhase(entity);
+      if (entity.tickCount % 20 == 0) {
+         entity.setCurrentMp(Math.min(entity.getMaxMp(),
+            entity.getCurrentMp() + Math.max(0.25, entity.getMaxMp() * 0.013)));
+      }
+   }
+
    private static void updateMonotonicPhase(GilgameshEntity entity) {
       double ratio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
       if (ratio <= 0.40) ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.DECISIVE);
       else if (ratio <= 0.60) ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.NORMAL);
    }
 
-   private static void tickClairvoyance(GilgameshEntity entity, ServerLevel level, CompoundTag data) {
+   public static void tickClairvoyanceEx(LivingEntity entity, ServerLevel level, CompoundTag data) {
       if (!data.getBoolean("ClairvoyanceExActive") || entity.tickCount % 20 != 0) {
          return;
       }
@@ -172,6 +190,7 @@ public final class GilgameshCombatHelper {
          LivingEntity.class,
          entity.getBoundingBox().inflate(100.0),
          target -> target != entity && target.isAlive() && !target.isAlliedTo(entity) && !entity.isAlliedTo(target)
+            && !ServantMasterTargeting.isContractMaster(entity, target)
       )) {
          living.removeEffect(MobEffects.INVISIBILITY);
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
@@ -183,6 +202,11 @@ public final class GilgameshCombatHelper {
          || GilgameshDivineShield.isOnCooldown(entity)) {
          return;
       }
+      CompoundTag data = entity.getPersistentData();
+      if (entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN) < DIVINE_SHIELD_SCAN_INTERVAL) {
+         return;
+      }
+      data.putInt(LAST_DIVINE_SHIELD_SCAN, entity.tickCount);
       boolean incomingProjectile = !level.getEntitiesOfClass(
          Projectile.class,
          entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
@@ -232,7 +256,18 @@ public final class GilgameshCombatHelper {
          return;
       }
       double distance = entity.distanceTo(target);
+      if (entity.isFlyingMode()
+         && ServantCombatTempoService.disconnectedTicks(entity, now) >= FLIGHT_STALLED_TICKS) {
+         data.putLong(MELEE_UNTIL, now + 100L);
+         data.putLong(FLIGHT_CYCLE_START, now + FLIGHT_ACTIVE_TICKS);
+         enterGroundMode(entity);
+         ServantNavigationHelper.moveToTargetThrottled(
+            entity, target, 1.35, now, 2, 0.2, "GilgameshFlightStalled");
+         return;
+      }
       entity.setFlyingMode(true);
+      if (!entity.isFlyingMode()) return;
+      ServantFlightCombatService.markControlled(entity, now);
       entity.getNavigation().stop(); entity.fallDistance = 0.0F;
       double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
       Vec3 away = entity.position().subtract(target.position()).multiply(1, 0, 1);
@@ -246,7 +281,8 @@ public final class GilgameshCombatHelper {
          : distance > band.maximum() ? -0.12 : distance < band.minimum() ? 0.08 : 0.0;
       Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(rangedDuel ? 0.14 : retreat ? 0.06 : 0.10);
       double vertical = net.minecraft.util.Mth.clamp((desiredY - entity.getY()) * 0.08, -0.22, 0.22);
-      entity.setDeltaMovement(entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0));
+      Vec3 motion = entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0);
+      entity.setDeltaMovement(motion.x, ServantFlightHelper.clampVerticalSpeed(motion.y), motion.z);
    }
 
    private static void enterGroundMode(GilgameshEntity entity) {

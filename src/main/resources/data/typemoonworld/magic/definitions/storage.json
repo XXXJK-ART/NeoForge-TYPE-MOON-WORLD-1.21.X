@@ -1,0 +1,15 @@
+{
+  "name_key": "magic.typemoonworld.storage.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "required_attributes": [
+    "typemoonworld:imaginary_number"
+  ],
+  "knowledge_only": false
+}

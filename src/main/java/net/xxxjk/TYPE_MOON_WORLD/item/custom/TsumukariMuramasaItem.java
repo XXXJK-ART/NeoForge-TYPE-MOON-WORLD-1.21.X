@@ -36,7 +36,6 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -51,6 +50,9 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePhantasmItem {
+   private static final double CARD_MURAMASA_TOTAL_MANA_COST = 1000.0;
+   private static final int CARD_MURAMASA_MAX_CHARGE_TICKS = 30;
+   static final int SPECIAL_CHARGE_PERCENT = 10;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public TsumukariMuramasaItem(Properties properties) {
@@ -170,19 +172,15 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             currentCharge = 100;
          }
 
-         TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         boolean isMaxCharge = currentCharge >= 100;
-         if (!isMaxCharge && !(vars.player_mana >= 20.0)) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         boolean paid = currentCharge >= SPECIAL_CHARGE_PERCENT
+            || consumePlayerMana(player, vars, getManaCostPerTick());
+         if (!paid) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          } else {
-            if (!isMaxCharge) {
-               vars.player_mana -= 20.0;
-               vars.syncMana(player);
-            }
-
             Component chargeText = Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", currentCharge)
-               .withStyle(currentCharge > 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED);
+               .withStyle(currentCharge >= SPECIAL_CHARGE_PERCENT ? ChatFormatting.DARK_RED : ChatFormatting.RED);
             player.displayClientMessage(chargeText, true);
             level.playSound(
                null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 0.5F, 1.0F + currentCharge / 100.0F
@@ -197,7 +195,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
                   double px = player.getX() + radius * Math.cos(angle);
                   double pz = player.getZ() + radius * Math.sin(angle);
                   double py = player.getY() + heightOffset + level.random.nextDouble() * 0.5;
-                  if (currentCharge > 60) {
+                  if (currentCharge >= SPECIAL_CHARGE_PERCENT) {
                      serverLevel.sendParticles(ParticleTypes.LAVA, px, py, pz, 1, 0.0, 0.0, 0.0, 0.0);
                      serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, py, pz, 1, 0.0, 0.0, 0.0, 0.05);
                   } else {
@@ -240,19 +238,27 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + charge / 100.0F);
          }
 
-         if (charge >= 60 && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
-            level.explode(null, player.getX(), player.getY(), player.getZ(), 10.0F, true, ExplosionInteraction.TNT);
-            MuramasaDissolutionService.schedule(serverPlayer);
+         if (charge >= SPECIAL_CHARGE_PERCENT && player instanceof ServerPlayer serverPlayer && !hasDivinity(serverPlayer)) {
+            scheduleTsumukariDissolution(serverPlayer, level);
          }
       }
    }
 
    private static void tickCardCharge(Level level, ServerPlayer player, int useDuration) {
-      int charge = Math.max(0, Math.min(30, useDuration));
-      int percent = Math.round(charge * 100.0F / 30.0F);
+      int charge = Math.max(0, Math.min(CARD_MURAMASA_MAX_CHARGE_TICKS, useDuration));
+      int percent = Math.round(charge * 100.0F / CARD_MURAMASA_MAX_CHARGE_TICKS);
+      if (shouldConsumeMuramasaCardMana(percent)) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double costPerTick = CARD_MURAMASA_TOTAL_MANA_COST / CARD_MURAMASA_MAX_CHARGE_TICKS;
+         if (!ServantCardManaService.consumeSilently(player, vars, costPerTick)) {
+            player.releaseUsingItem();
+            player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+            return;
+         }
+      }
       player.displayClientMessage(
          Component.translatable("message.typemoonworld.tsumukari_muramasa.charge", percent)
-            .withStyle(percent >= 60 ? ChatFormatting.DARK_RED : ChatFormatting.RED),
+            .withStyle(percent >= SPECIAL_CHARGE_PERCENT ? ChatFormatting.DARK_RED : ChatFormatting.RED),
          true
       );
       level.playSound(
@@ -268,7 +274,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
             double pz = player.getZ() + radius * Math.sin(angle);
             double py = player.getY() + 0.6 + level.random.nextDouble() * 1.2;
             serverLevel.sendParticles(
-               percent >= 60 ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.FLAME,
+               percent >= SPECIAL_CHARGE_PERCENT ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.FLAME,
                px, py, pz, 1, 0.0, 0.04, 0.0, 0.05
             );
          }
@@ -279,16 +285,17 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       }
    }
 
+   static boolean shouldConsumeMuramasaCardMana(int percent) {
+      return percent < SPECIAL_CHARGE_PERCENT;
+   }
+
    private static void releaseCardCharge(ServerPlayer player, Level level, int useDuration) {
-      int charge = Math.max(0, Math.min(30, useDuration));
+      int charge = Math.max(0, Math.min(CARD_MURAMASA_MAX_CHARGE_TICKS, useDuration));
       if (charge <= 0) {
          return;
       }
-      int percent = Math.round(charge * 100.0F / 30.0F);
-      double cost = 1000.0 * percent / 100.0;
-      boolean paid = consumeCardMana(player, cost);
-      boolean delayedDissolution = percent >= 60 && !hasDivinity(player);
-      boolean forcedDeath = !paid && !delayedDissolution;
+      int percent = Math.round(charge * 100.0F / CARD_MURAMASA_MAX_CHARGE_TICKS);
+      boolean delayedDissolution = percent >= SPECIAL_CHARGE_PERCENT && !hasDivinity(player);
 
       if (level instanceof ServerLevel serverLevel) {
          int color = MagicCircuitColorHelper.ensureColor(player);
@@ -301,45 +308,35 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       level.playSound(null, player.getX(), player.getY(), player.getZ(),
          SoundEvents.TRIDENT_THROW, SoundSource.PLAYERS, 1.0F, 0.5F + percent / 100.0F);
       if (delayedDissolution) {
-         MuramasaDissolutionService.schedule(player);
-      }
-      if (level instanceof ServerLevel serverLevel && forcedDeath) {
-         serverLevel.sendParticles(ParticleTypes.EXPLOSION, player.getX(), player.getY() + 1.0, player.getZ(),
-            4, 0.6, 0.8, 0.6, 0.0);
-         serverLevel.sendParticles(ParticleTypes.LAVA, player.getX(), player.getY() + 0.8, player.getZ(),
-            40, 1.0, 0.8, 1.0, 0.04);
-         if (!player.isCreative()) {
-            player.kill();
-         }
+         scheduleTsumukariDissolution(player, level);
       }
    }
 
-   private static boolean consumeCardMana(ServerPlayer player, double amount) {
-      if (amount <= 0.0) {
-         return true;
+   private static void scheduleTsumukariDissolution(ServerPlayer player, Level level) {
+      if (!(level instanceof ServerLevel serverLevel) || player == null || !player.isAlive()) {
+         return;
       }
-      TypeMoonWorldModVariables.PlayerVariables vars =
-         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double own = Math.min(vars.servant_card_mana, amount);
-      vars.servant_card_mana -= own;
-      double remaining = amount - own;
-      ServerPlayer master = ServantCardManaService.getMaster(player, vars);
-      if (remaining > 0.0 && master != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
-         TypeMoonWorldModVariables.PlayerVariables masterVars =
-            master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         double masterCost = Math.min(masterVars.player_mana, remaining);
-         masterVars.player_mana -= masterCost;
-         remaining -= masterCost;
-         masterVars.syncMana(master);
-      }
-      vars.syncMana(player);
-      return remaining <= 1.0E-6;
+      MuramasaDissolutionService.schedule(player, 20);
+      serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 1.0, player.getZ(),
+         36, 0.6, 0.8, 0.6, 0.04);
+      serverLevel.sendParticles(ParticleTypes.LAVA, player.getX(), player.getY() + 0.8, player.getZ(),
+         24, 0.8, 0.7, 0.8, 0.02);
+      level.playSound(null, player.getX(), player.getY(), player.getZ(),
+         SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundSource.PLAYERS, 0.8F, 0.65F);
    }
 
    private static boolean isMuramasaCard(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars =
          player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id);
+   }
+
+   private static boolean consumePlayerMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (amount <= 0.0) return true;
+      if (vars.player_mana + 1.0E-6 < amount) return false;
+      vars.player_mana -= amount;
+      vars.syncMana(player);
+      return true;
    }
 
    private static boolean hasDivinity(ServerPlayer player) {

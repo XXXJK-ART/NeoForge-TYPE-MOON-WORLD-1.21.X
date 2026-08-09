@@ -1,0 +1,99 @@
+{
+  "duration": 0.48,
+  "notes": "A vertical white-cyan cutting flash and expanding pressure shell at the blade impact point.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.18,
+      "rate": 920,
+      "particle_lifetime": 0.3,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.08,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "ellipsoid", "radius_x": 0.32, "radius_y": 2.65, "radius_z": 0.16, "sample_count": 170 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.18, 0.18, 0.18] },
+        { "t": 0.34, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [1.75, 1.18, 1.75] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.28, "color": "#F0EAFBFF" },
+        { "t": 0.68, "color": "#78BFEAFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.32, "size": 0.42 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "AIRFLOW_BLADE_IMPACT_CUT",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.0, 0.0, 0.0], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.85 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.38,
+      "rate": 620,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.34,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.16,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 150 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.12, 0.12, 0.12] },
+        { "t": 0.4, "scale": [1.8, 1.8, 1.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [3.4, 3.4, 3.4] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#A8E9FAFF" },
+        { "t": 0.42, "color": "#74C6ECFA" },
+        { "t": 1.0, "color": "#00BDEBFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.38, "size": 0.3 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "AIRFLOW_BLADE_IMPACT_PRESSURE_SHELL",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 3, "spread": [1.1, 1.3, 1.1], "offset": [0.0, 0.0, 0.0], "speed": 0.16, "chance": 0.8 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.34,
+      "rate": 480,
+      "particle_lifetime": 0.36,
+      "size_variance": 0.42,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.16, 0.0],
+      "velocity_variance": 0.38,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "line", "start": [-1.5, -2.2, 0.0], "end": [1.5, 2.2, 0.0], "segments": 72 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#B8FFFFFF" },
+        { "t": 0.42, "color": "#80D7F4FF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.36, "size": 0.18 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "AIRFLOW_BLADE_IMPACT_SHARDS",
+      "enable_trail": true
+    }
+  ]
+}

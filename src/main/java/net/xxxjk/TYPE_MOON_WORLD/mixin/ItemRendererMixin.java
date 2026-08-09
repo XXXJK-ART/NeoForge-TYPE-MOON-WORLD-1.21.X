@@ -41,6 +41,8 @@ public abstract class ItemRendererMixin {
       BakedModel model,
       CallbackInfo ci
    ) {
+      TARGET_STACK.remove();
+      TARGET_IS_GUI_3D.remove();
       TARGET_STACK.set(stack);
       TARGET_IS_GUI_3D.set(model.isGui3d());
    }

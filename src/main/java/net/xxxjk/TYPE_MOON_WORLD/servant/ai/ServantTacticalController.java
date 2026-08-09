@@ -70,8 +70,12 @@ public final class ServantTacticalController {
       // must remain uninterrupted.
       boolean keepActionTimeline = plannedActive
          && ServantPlannedActionExecutor.stage(entity) != ServantPlannedActionExecutor.Stage.APPROACH;
-      var candidates = plannedActive ? java.util.List.<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor>of()
-         : ServantActionPlanner.candidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
+      java.util.List<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor> candidates = plannedActive
+         ? java.util.List.of()
+          : ServantActionPlanner.candidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
+      if (tempo.meleePressure() && entity.getTarget() != null && entity.distanceTo(entity.getTarget()) <= 6.0) {
+         candidates = candidates.stream().filter(ServantTacticalController::allowedDuringMeleePressure).toList();
+      }
       var selected = candidates.isEmpty() ? null : candidates.getFirst();
       if (selected == null) entity.getPersistentData().remove("TypeMoonAiSelectedAction");
       else entity.getPersistentData().putString("TypeMoonAiSelectedAction", selected.id().toString());
@@ -100,7 +104,25 @@ public final class ServantTacticalController {
 
       if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
-         if (projectile != null) {
+         ProjectileThreatSensor.IncomingProjectileLike gateProjectile =
+            ProjectileThreatSensor.nearestGateWeapon(entity, 12.0, 8.0);
+         if (gateProjectile != null && (projectile == null
+            || gateProjectile.impactTicks() < projectile.impactTicks())) {
+            Entity owner = gateProjectile.projectile().getOwnerEntity();
+            if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
+               brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
+            }
+            if (!ServantCombatDisposition.isRelentlessAdvance(entity)
+               && (!(entity instanceof HeraclesEntity) && !(entity instanceof GawainEntity)
+                  || entity.getRandom().nextFloat() < 0.04F)
+               && !CombatMatchupEvaluator.canIgnoreProjectile(entity, gateProjectile)) {
+               double utility = 100.0 - gateProjectile.impactTicks() * 8.0;
+               brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
+                  () -> EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
+                     owner instanceof LivingEntity shooter ? shooter : null),
+                  AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
+            }
+         } else if (projectile != null) {
             Entity owner = projectile.projectile().getOwner();
             if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
                brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
@@ -156,6 +178,13 @@ public final class ServantTacticalController {
          }
       }
       return resolution.consumesLegacyControl();
+   }
+
+   static boolean allowedDuringMeleePressure(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor action) {
+      if (action == null) return false;
+      return action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.MELEE)
+         || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.GUARD)
+         || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.HEAL);
    }
 
    private static void submitActivePlannedAction(ServantEntity entity, AiBrain brain, long now) {

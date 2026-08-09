@@ -127,7 +127,8 @@ public class ServantCardHud {
    }
 
    private static void drawGilgameshOmniscience(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!"gilgamesh".equals(vars.servant_card_id) || minecraft.level == null || minecraft.player == null) return;
+      if (!("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id))
+         || minecraft.level == null || minecraft.player == null) return;
       HitResult hit = minecraft.hitResult;
       ItemEntity lookedAtItem = findLookedAtItem(minecraft, hit);
       if ((hit == null || hit.getType() == HitResult.Type.MISS) && lookedAtItem == null) return;

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class MagicDisplayMetadata {
    public static final String CATEGORY_ALL = "all";
@@ -15,9 +16,18 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_OTHER = "other";
    public static final String CATEGORY_NORDIC = "nordic";
    public static final String CATEGORY_MARTIAL = "martial";
+   public static final String CATEGORY_TALENT = "talent";
+   public static final String CATEGORY_IMAGINARY = "imaginary";
+   public static final String CATEGORY_SOLOMON = "solomon";
    private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite", "black_key_fire_engraving", "stigma");
+   private static final Set<String> IMAGINARY_MAGICS = Set.of(
+      "absorption", "storage", "imaginary_displacement", "imaginary_dive", "imaginary_space"
+   );
+   private static final Set<String> SOLOMON_MAGICS = Set.of(
+      "andrasias", "andrephius", "antores", "demon_god_gaze", "kimaris", "nega_summon", "orias", "storm", "zagan"
+   );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
-      "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+      "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu", "mana_burst"
    );
 
    private MagicDisplayMetadata() {
@@ -31,8 +41,20 @@ public final class MagicDisplayMetadata {
       return "bajiquan".equals(magicId) || "ganryu".equals(magicId) || "hokushin_ittoryu".equals(magicId) || "tennen_rishin_ryu".equals(magicId);
    }
 
+   public static boolean isTalent(String magicId) {
+      return TalentService.isTalent(magicId);
+   }
+
+   public static boolean isImaginaryMagic(String magicId) {
+      return magicId != null && IMAGINARY_MAGICS.contains(magicId);
+   }
+
+   public static boolean isSolomonMagic(String magicId) {
+      return magicId != null && SOLOMON_MAGICS.contains(magicId);
+   }
+
    public static boolean canEnterMagicCrest(String magicId) {
-      return magicId != null && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
+      return magicId != null && !isTalent(magicId) && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
    }
 
    public static boolean isSpecialMagic(String magicId) {
@@ -42,10 +64,17 @@ public final class MagicDisplayMetadata {
    public static String categoryOf(String magicId) {
       if (magicId == null || magicId.isEmpty()) {
          return CATEGORY_OTHER;
+      } else if (isTalent(magicId)) {
+         return CATEGORY_TALENT;
+      } else if (isImaginaryMagic(magicId)) {
+         return CATEGORY_IMAGINARY;
+      } else if (isSolomonMagic(magicId)) {
+         return CATEGORY_SOLOMON;
       } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
          || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
          return CATEGORY_JEWEL;
-      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)) {
+      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)
+         || "ubw_sword_control".equals(magicId)) {
          return CATEGORY_UBW;
       } else if ("gander".equals(magicId) || "gandr_machine_gun".equals(magicId)) {
          return CATEGORY_NORDIC;

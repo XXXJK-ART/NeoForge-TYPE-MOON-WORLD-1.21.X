@@ -35,6 +35,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> DAMAGE_START_TICK = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> POWER_SCALE = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Boolean> GOLDEN_VARIANT = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.BOOLEAN);
    private static final double LENGTH = 150.0;
    private static final double HALF_WIDTH = 12.0;
    private static final double HALF_HEIGHT = 7.0;
@@ -43,6 +44,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private static final int BLOCK_DESTROY_PHASE_TICKS = 5;
    private static final float DAMAGE_PER_PULSE = 4000.0F / (150.0F / DAMAGE_INTERVAL);
    private static final float CRATER_DAMAGE = 180.0F;
+   private static final double GOLDEN_LENGTH = 45.0;
+   private static final double GOLDEN_HALF_WIDTH = 4.0;
+   private static final double GOLDEN_HALF_HEIGHT = 2.5;
+   private static final float GOLDEN_DAMAGE_PER_PULSE = 300.0F / (30.0F / DAMAGE_INTERVAL);
    private UUID ownerUuid;
    private boolean craterQueued;
    private boolean clashing;
@@ -63,12 +68,17 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    }
 
    public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick, float powerScale) {
+      this(level, owner, start, duration, damageStartTick, powerScale, false);
+   }
+
+   public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick, float powerScale, boolean goldenVariant) {
       this(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), level);
       this.ownerUuid = owner.getUUID();
       this.setPos(start);
       this.entityData.set(DURATION, duration);
       this.entityData.set(DAMAGE_START_TICK, Math.max(0, Math.min(duration, damageStartTick)));
       this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, powerScale)));
+      this.entityData.set(GOLDEN_VARIANT, goldenVariant);
       this.updateEndFromOwner(owner);
    }
 
@@ -80,6 +90,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       builder.define(DURATION, 150);
       builder.define(DAMAGE_START_TICK, 0);
       builder.define(POWER_SCALE, 1.0F);
+      builder.define(GOLDEN_VARIANT, false);
    }
 
    public Vec3 getEndPos() {
@@ -139,6 +150,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       this.entityData.set(DURATION, tag.getInt("Duration"));
       this.entityData.set(DAMAGE_START_TICK, tag.getInt("DamageStartTick"));
       this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, tag.contains("PowerScale") ? tag.getFloat("PowerScale") : 1.0F)));
+      this.entityData.set(GOLDEN_VARIANT, tag.getBoolean("GoldenVariant"));
       this.craterQueued = tag.getBoolean("CraterQueued");
       this.clashDamageScale = Math.max(0.0F, Math.min(1.0F,
          tag.contains("ClashDamageScale") ? tag.getFloat("ClashDamageScale") : 1.0F));
@@ -155,6 +167,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putInt("DamageStartTick", this.entityData.get(DAMAGE_START_TICK));
       tag.putFloat("PowerScale", this.entityData.get(POWER_SCALE));
+      tag.putBoolean("GoldenVariant", this.entityData.get(GOLDEN_VARIANT));
       tag.putBoolean("CraterQueued", this.craterQueued);
       tag.putFloat("ClashDamageScale", this.clashDamageScale);
       if (this.ownerUuid != null) {
@@ -198,18 +211,21 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    }
 
    private double beamLength() {
-      return LENGTH * (0.35 + this.powerScale() * 0.65);
+      double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_LENGTH : LENGTH;
+      return base * (0.35 + this.powerScale() * 0.65);
    }
 
    public double beamHalfWidth() {
-      return HALF_WIDTH * (0.28 + this.powerScale() * 0.72);
+      double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_HALF_WIDTH : HALF_WIDTH;
+      return base * (0.28 + this.powerScale() * 0.72);
    }
 
    @Override
    public float clashPower() { return this.powerScale(); }
 
    private double beamHalfHeight() {
-      return HALF_HEIGHT * (0.35 + this.powerScale() * 0.65);
+      double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_HALF_HEIGHT : HALF_HEIGHT;
+      return base * (0.35 + this.powerScale() * 0.65);
    }
 
    private boolean isBeamActive() {
@@ -247,7 +263,8 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
          double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / length));
          double allowedWidth = along < 0.0 ? 2.8 : this.beamHalfWidth() * Math.pow(widthScale, 0.35);
          if (side <= allowedWidth && vertical <= this.beamHalfHeight()) {
-            hurtWithoutIFrames(living, source, DAMAGE_PER_PULSE * this.powerScale() * this.clashDamageScale);
+            float baseDamage = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_DAMAGE_PER_PULSE : DAMAGE_PER_PULSE;
+            hurtWithoutIFrames(living, source, baseDamage * this.powerScale() * this.clashDamageScale);
             living.push(forward.x * 0.15, 0.0, forward.z * 0.15);
             living.hurtMarked = true;
          }
@@ -266,7 +283,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       Vec3 up = right.cross(forward).normalize();
       int phase = this.tickCount % BLOCK_DESTROY_PHASE_TICKS;
       int broken = 0;
-      int maxBroken = Math.max(36, (int)Math.floor(260.0F * this.powerScale()));
+      int maxBroken = this.entityData.get(GOLDEN_VARIANT) ? Math.max(8, (int)Math.floor(36.0F * this.powerScale())) : Math.max(36, (int)Math.floor(260.0F * this.powerScale()));
       double length = this.beamLength();
       for (double along = phase + 0.75; along <= length && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
          double widthScale = Math.max(0.25, Math.sin(Math.PI * along / length));
@@ -289,7 +306,8 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private boolean destroyBlock(ServerLevel level, LivingEntity owner, BlockPos pos) {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
-      if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 100.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
+      float maxHardness = this.entityData.get(GOLDEN_VARIANT) ? 25.0F : 100.0F;
+      if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > maxHardness || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
       return level.removeBlock(pos, false);
@@ -297,6 +315,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
 
    private void queueCrater(ServerLevel level, LivingEntity owner, Vec3 center) {
       if (this.craterQueued || center == null) {
+         return;
+      }
+      if (this.entityData.get(GOLDEN_VARIANT)) {
+         this.craterQueued = true;
          return;
       }
       this.craterQueued = true;

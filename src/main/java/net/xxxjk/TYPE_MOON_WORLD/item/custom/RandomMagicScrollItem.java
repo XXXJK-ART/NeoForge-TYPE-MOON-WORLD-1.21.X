@@ -14,6 +14,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,7 +42,7 @@ public class RandomMagicScrollItem extends Item {
             
             // Check Requirement
             if (requiredMagic != null && !requiredMagic.isEmpty()) {
-                if (!vars.learned_magics.contains(requiredMagic)) {
+                if (!MagicLearningStrategy.isLearned(vars, requiredMagic)) {
                     player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.requirement_not_met", 
                         Component.translatable("magic.typemoonworld." + requiredMagic + ".name")), true);
                     return InteractionResultHolder.fail(stack);
@@ -63,25 +65,14 @@ public class RandomMagicScrollItem extends Item {
             Collections.shuffle(unlearnedMagics);
             String magicToLearn = unlearnedMagics.get(0);
             
-            // Attempt to learn
-            if (player.getRandom().nextDouble() < successRate) {
-                vars.learned_magics.add(magicToLearn);
-                vars.syncPlayerVariables(player);
-                
-                player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicToLearn + ".name")), true);
-                player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
-                
-                // Damage Item (Reduce Durability)
-                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-                return InteractionResultHolder.consume(stack);
+            if (MagicLearningStrategy.materialAllowed(vars, magicToLearn)) {
+                MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble());
             } else {
-                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.learn_failed"), true);
-                player.playNotifySound(SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 1.0f);
-                
-                // Damage Item (Reduce Durability)
-                stack.hurtAndBreak(1, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-                return InteractionResultHolder.consume(stack);
+                player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
             }
+            // A fragment is consumed for every attempt, including failure.
+            stack.shrink(1);
+            return InteractionResultHolder.consume(stack);
         }
         
         return InteractionResultHolder.pass(stack);

@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.GawainSunlightRules;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -202,9 +203,10 @@ public final class ServantCardGawainSkills {
    }
 
    private static void tickSunBlessing(ServerPlayer player, ServerLevel level, CompoundTag data) {
-      boolean active = isUnderSun(level, player.blockPosition());
+      boolean active = GawainSunlightRules.isActive(level, player.blockPosition());
       boolean wasActive = data.getBoolean(TAG_SUN_BLESSING);
-      if (active != wasActive) {
+      boolean modifierMismatch = !sunModifiersMatch(player, active);
+      if (active != wasActive || modifierMismatch) {
          float ratio = player.getMaxHealth() > 0.0F ? player.getHealth() / player.getMaxHealth() : 1.0F;
          data.putBoolean(TAG_SUN_BLESSING, active);
          updateModifier(player.getAttribute(Attributes.MAX_HEALTH), SUN_HEALTH_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
@@ -212,7 +214,7 @@ public final class ServantCardGawainSkills {
          updateModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SUN_SPEED_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
          updateModifier(player.getAttribute(Attributes.ARMOR), SUN_ARMOR_ID, active ? 2.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
          player.setHealth(Math.max(1.0F, Math.min(player.getMaxHealth(), player.getMaxHealth() * ratio)));
-         spawnSunTransitionFx(player, level, active);
+         if (active != wasActive) spawnSunTransitionFx(player, level, active);
       }
       if (active && level.getGameTime() - data.getLong(TAG_LAST_SUN_VFX) >= 38L) {
          data.putLong(TAG_LAST_SUN_VFX, level.getGameTime());
@@ -225,12 +227,19 @@ public final class ServantCardGawainSkills {
       ServantSprintCollisionHelper.tryPlayerSprintCollision(player, level, data, TAG_LAST_SUN_COLLISION_BREAK, solar, solar ? 8.0F : 6.0F, solar ? 1.0 : 0.85, solar ? 0.2 : 0.16, 27, 42.0F);
    }
 
-   private static boolean isUnderSun(ServerLevel level, BlockPos pos) {
-      long dayTime = level.getDayTime() % 24000L;
-      return level.dimensionType().hasSkyLight()
-         && dayTime >= 0L && dayTime < 12000L
-         && !level.isRaining() && !level.isThundering()
-         && level.canSeeSky(pos.above());
+   private static boolean sunModifiersMatch(ServerPlayer player, boolean active) {
+      return modifierMatches(player.getAttribute(Attributes.MAX_HEALTH), SUN_HEALTH_ID, active)
+         && modifierMatches(player.getAttribute(Attributes.ATTACK_DAMAGE), SUN_ATTACK_ID, active)
+         && modifierMatches(player.getAttribute(Attributes.MOVEMENT_SPEED), SUN_SPEED_ID, active)
+         && modifierMatches(player.getAttribute(Attributes.ARMOR), SUN_ARMOR_ID, active);
+   }
+
+   private static boolean modifierMatches(AttributeInstance attribute, ResourceLocation id, boolean active) {
+      if (attribute == null) return !active;
+      AttributeModifier modifier = attribute.getModifier(id);
+      return active ? modifier != null
+         && modifier.operation() == AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+         && Math.abs(modifier.amount() - 2.0) < 1.0E-6 : modifier == null;
    }
 
    private static void spawnSunTransitionFx(ServerPlayer player, ServerLevel level, boolean active) {

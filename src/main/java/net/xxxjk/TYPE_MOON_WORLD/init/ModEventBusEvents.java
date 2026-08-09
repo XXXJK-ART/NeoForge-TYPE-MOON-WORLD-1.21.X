@@ -50,10 +50,25 @@ public class ModEventBusEvents {
       event.put(ModEntities.MERLIN.get(), MerlinEntity.createAttributes().build());
       event.put(ModEntities.STONE_MAN.get(), StoneManEntity.createAttributes().build());
       event.put(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_GRAND.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_BRAND.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_PRIDE.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_FES.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_ADEPT.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_UMNOS.get(), MysticMagicianEntity.createAttributes().build());
+      event.put(ModEntities.MYSTIC_MAGICIAN_FRAME.get(), MysticMagicianEntity.createAttributes().build());
       event.put(ModEntities.THE_DEAD.get(), DeadApostleEntity.attributes(20.0, 3.0, 2.0, 0.23).build());
       event.put(ModEntities.GHOUL.get(), DeadApostleEntity.attributes(40.0, 6.0, 4.0, 0.24).build());
       event.put(ModEntities.LIVING_DEAD.get(), DeadApostleEntity.attributes(100.0, 18.0, 12.0, 0.32).build());
       event.put(ModEntities.NIGHT_KIN.get(), DeadApostleEntity.attributes(150.0, 24.0, 16.0, 0.36).build());
+      event.put(ModEntities.NERO_CHAOS.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_HOUND.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosHoundEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_SERPENT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_STAG.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BIRD.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BEAR.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_CAT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity.createAttributes().build());
+      event.put(ModEntities.NERO_CHAOS_BAT.get(), net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity.createAttributes().build());
       event.put(ModEntities.CHURCH_EXECUTOR.get(), ChurchExecutorEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_MASTER.get(), BajiquanMasterEntity.createAttributes().build());
       event.put(ModEntities.BAJIQUAN_APPRENTICE.get(), BajiquanApprenticeEntity.createAttributes().build());
@@ -107,6 +122,27 @@ public class ModEventBusEvents {
    @SubscribeEvent
    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
       event.register(ModEntities.MYSTIC_MAGICIAN.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_GRAND.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_BRAND.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_PRIDE.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_FES.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_ADEPT.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_UMNOS.get(), SpawnPlacementTypes.ON_GROUND,
+         Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.MYSTIC_MAGICIAN_FRAME.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
       event.register(ModEntities.THE_DEAD.get(), SpawnPlacementTypes.ON_GROUND,

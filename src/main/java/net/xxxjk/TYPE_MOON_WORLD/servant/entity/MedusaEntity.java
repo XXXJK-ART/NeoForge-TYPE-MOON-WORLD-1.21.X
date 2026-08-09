@@ -58,9 +58,13 @@ public class MedusaEntity extends ServantEntity {
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
-      this.entityData.set(BLINDFOLD_SEALED, tag.getBoolean("MedusaBlindfoldSealed"));
+      // Prefer the explicit eye state, while keeping saves from before that
+      // field existed readable.  The setter repairs contradictory old flags.
+      boolean eyesReleased = tag.contains("MedusaEyesReleased")
+         ? tag.getBoolean("MedusaEyesReleased")
+         : !tag.getBoolean("MedusaBlindfoldSealed");
+      this.setEyesReleased(eyesReleased);
       this.entityData.set(CROUCH_POSE, tag.getBoolean("MedusaCrouchPose"));
-      this.entityData.set(EYES_RELEASED, tag.getBoolean("MedusaEyesReleased"));
       if (tag.hasUUID(TAG_PEGASUS_UUID)) {
          this.getPersistentData().putUUID(TAG_PEGASUS_UUID, tag.getUUID(TAG_PEGASUS_UUID));
       } else {
@@ -139,6 +143,7 @@ public class MedusaEntity extends ServantEntity {
 
    public void setBlindfoldSealed(boolean sealed) {
       this.entityData.set(BLINDFOLD_SEALED, sealed);
+      this.entityData.set(EYES_RELEASED, !sealed);
    }
 
    public boolean isCrouchPose() {
@@ -155,6 +160,7 @@ public class MedusaEntity extends ServantEntity {
 
    public void setEyesReleased(boolean eyesReleased) {
       this.entityData.set(EYES_RELEASED, eyesReleased);
+      this.entityData.set(BLINDFOLD_SEALED, !eyesReleased);
    }
 
    public void setPegasusUuid(@Nullable UUID uuid) {

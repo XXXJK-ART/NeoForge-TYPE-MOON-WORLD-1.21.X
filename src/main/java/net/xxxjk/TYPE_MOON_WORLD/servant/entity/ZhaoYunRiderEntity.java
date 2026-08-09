@@ -2,10 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import java.util.UUID;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -69,7 +67,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final int NP_COOLDOWN = 800;
    private static final float NP_INITIAL_DAMAGE = 500.0F;
    private static final double NP_INITIAL_DISTANCE = 50.0;
-   private static final float NP_DAMAGE = 100.0F;
+   private static final float NP_DAMAGE = 24.0F;
    private static final double CHANGBANPO_MP_COST = 150.0;
    private static final int AOKO_DURATION = 300;
    private static final int AOKO_COOLDOWN = 400;
@@ -80,7 +78,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final EntityDataAccessor<Integer> COMBAT_PHASE = SynchedEntityData.defineId(
       ZhaoYunRiderEntity.class, EntityDataSerializers.INT);
    @Nullable private UUID mountUuid;
-   private final Set<UUID> npContactTargets = new HashSet<>();
    private final List<PendingAokoStrike> pendingAokoStrikes = new ArrayList<>();
 
    public ZhaoYunRiderEntity(EntityType<? extends ZhaoYunRiderEntity> type, Level level) {
@@ -102,7 +99,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    @Override
    public boolean hurt(DamageSource source, float amount) {
       if (isChangbanpoActive()) {
-         amount *= 0.05F;
+         amount *= 0.10F;
       }
       return super.hurt(source, amount);
    }
@@ -610,7 +607,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       getPersistentData().putDouble(TAG_NP_INITIAL_DISTANCE, 0.0);
       ZhaoYunHakuryuEntity initialMount = getHakuryu();
       if (initialMount != null) rememberNpSafePosition(initialMount);
-      npContactTargets.clear();
       long now = level.getGameTime();
       getPersistentData().putLong(TAG_NP_UNTIL, now + NP_DURATION);
       if (initialMount != null) {
@@ -644,7 +640,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       getPersistentData().remove(TAG_NP_INITIAL_CHARGE);
       getPersistentData().remove(TAG_NP_INITIAL_DISTANCE);
       getPersistentData().remove(TAG_NP_REASSESS_UNTIL);
-      npContactTargets.clear();
       if (getHakuryu() != null) getHakuryu().setNpActive(false);
       getPersistentData().remove(TAG_NP_SAFE_X);
       getPersistentData().remove(TAG_NP_SAFE_Y);
@@ -738,7 +733,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          double updatedDistance = initialDistance + travel;
          data.putDouble(TAG_NP_INITIAL_DISTANCE, updatedDistance);
          if (updatedDistance >= NP_INITIAL_DISTANCE - 1.0E-4) {
-            // The 500-damage opening dash ends at 50 blocks. Any later
+            // The 200-damage opening dash ends at 50 blocks. Any later
             // contacts during the remaining 15-second NP window deal 100.
             data.putBoolean(TAG_NP_INITIAL_CHARGE, false);
             data.putLong(TAG_NP_REASSESS_UNTIL, now + 20L);
@@ -747,26 +742,21 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             mount.setDeltaMovement(0.0, current.y, 0.0);
          }
       }
-      if (verticalVelocity < -0.08 && !hasSolidSupport(level, mount)) {
-         restoreNpSafePosition(mount);
-         endChangbanpo();
-         return;
-      }
       AABB hitBox = mount.getBoundingBox().minmax(nextBox).inflate(2.2, 1.4, 2.2);
       ServerPlayer master = getEntityMaster();
       if (master != null && !master.isPassenger() && mount.getPassengers().size() < 2
          && hitBox.intersects(master.getBoundingBox())) {
          master.startRiding(mount, true);
       }
-      Set<UUID> contactsThisTick = new HashSet<>();
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && entity != mount && entity.isAlive() && entity != getEntityMaster()
             && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
          UUID victimId = victim.getUUID();
-         contactsThisTick.add(victimId);
-         if (!npContactTargets.contains(victimId)) {
+         String cooldownTag = "ZhaoYunNpHitUntil_" + victimId;
+         if (data.getLong(cooldownTag) <= now) {
+            data.putLong(cooldownTag, now + 6L);
             victim.invulnerableTime = 0;
-            float collisionDamage = initialCharge ? NP_INITIAL_DAMAGE : NP_DAMAGE;
+            float collisionDamage = initialCharge ? NP_INITIAL_DAMAGE : NP_DAMAGE + getRandom().nextInt(7);
             // Route collision damage through the normal damage event. Direct
             // setHealth() bypassed Twelve Trials, Battle Continuation, dodge,
             // and other servant-specific defensive rules.
@@ -774,8 +764,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             victim.invulnerableTime = 0;
          }
       }
-      npContactTargets.retainAll(contactsThisTick);
-      npContactTargets.addAll(contactsThisTick);
    }
 
    private void retargetChangbanpo(ServerLevel level, ZhaoYunHakuryuEntity mount) {

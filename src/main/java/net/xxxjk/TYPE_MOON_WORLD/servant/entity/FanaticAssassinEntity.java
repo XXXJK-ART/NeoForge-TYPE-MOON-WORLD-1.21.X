@@ -82,7 +82,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType,
                                        @Nullable SpawnGroupData spawnData) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData);
-      this.setPresenceConcealed(true);
+      this.setPresenceConcealed(false);
       return result;
    }
 
@@ -103,17 +103,15 @@ public final class FanaticAssassinEntity extends ServantEntity {
 
    private void tickConcealment(long now) {
       boolean combat = this.getTarget() != null && this.getTarget().isAlive();
-      long lastCombat = this.getPersistentData().getLong("FanaticLastCombatTick");
       if (combat) {
          this.getPersistentData().putLong("FanaticLastCombatTick", now);
          // Presence concealment is an approach tool, not a combat idle state.
          // Once a target is acquired the NPC must remain visible and keep its
          // attack loop running instead of re-concealing every 30 ticks.
          this.setPresenceConcealed(false);
-      } else if (this.hurtTime > 0) {
+      } else {
+         // Keep an idle NPC visible so its owner can find and command it.
          this.setPresenceConcealed(false);
-      } else if (now - lastCombat >= FanaticAssassinRules.RECONCEAL_DELAY) {
-         this.setPresenceConcealed(true);
       }
    }
 

@@ -1,59 +1,386 @@
 {
-  "type": "minecraft:chest",
-  "pools": [
-    {
-      "rolls": 1,
-      "entries": [
-        { "type": "minecraft:empty", "weight": 78 },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_scroll_basic_jewel_broken", "weight": 16 },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_scroll_advanced_jewel_broken", "weight": 4 },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_scroll_projection_broken", "weight": 1 },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_scroll_broken_phantasm_broken", "weight": 1 }
-      ]
-    },
-    {
-      "rolls": 1,
-      "conditions": [
-        { "condition": "minecraft:random_chance", "chance": 0.28 }
-      ],
-      "entries": [
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_reinforcement" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_magic_bullet" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_suggestion" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_binding" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_fire" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_water" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_wind" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_earth" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_time_alter" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_spiritual_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_baptism_rite" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_black_key_fire_engraving" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_page_stigma" }
-      ]
-    },
-    {
-      "rolls": 1,
-      "conditions": [
-        { "condition": "minecraft:random_chance", "chance": 0.015 }
-      ],
-      "entries": [
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_reinforcement" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_magic_bullet" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_suggestion" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_binding" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_fire" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_water" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_wind" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_earth" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_time_alter" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_spiritual_healing" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_baptism_rite" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_black_key_fire_engraving" },
-        { "type": "minecraft:item", "name": "typemoonworld:magic_book_stigma" }
-      ]
-    }
-  ]
+    "type":  "minecraft:chest",
+    "pools":  [
+                  {
+                      "rolls":  1,
+                      "entries":  [
+                                      {
+                                          "type":  "minecraft:empty",
+                                          "weight":  58
+                                      },
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:magic_scroll_basic_jewel_broken",
+                                          "weight":  16
+                                      },
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:magic_scroll_advanced_jewel_broken",
+                                          "weight":  4
+                                      },
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:magic_scroll_projection_broken",
+                                          "weight":  8
+                                      },
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:unknown_magic_page",
+                                          "weight":  12
+                                      },
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:magic_scroll_broken_phantasm_broken",
+                                          "weight":  1
+                                      }
+                                  ]
+                  },
+                  {
+                      "rolls":  1,
+                      "conditions":  [
+                                         {
+                                             "condition":  "minecraft:random_chance",
+                                             "chance":  0.55
+                                         }
+                                     ],
+                      "entries":  [
+                                      {
+                                          "type":  "minecraft:item",
+                                          "name":  "typemoonworld:unknown_magic_page",
+                                          "weight":  18
+                                      },
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_page_detection",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_page_airflow_blade",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_page_magic_bullet",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_earth",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_fire",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_reinforcement",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_water",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_wind",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_structural_analysis",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_healing",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_page_projection",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_page_binding",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_page_suggestion",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_page_spiritual_healing",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_magic_analysis",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_imaginary_dive",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_black_key_fire_engraving",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_stigma",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_storage",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_page_baptism_rite",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_absorption",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_storm",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_kimaris",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_imaginary_displacement",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_zagan",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_page_orias",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_page_andrasias",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_page_imaginary_space",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_page_andrephius",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_page_antores",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_page_demon_god_gaze",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_page_nega_summon",
+                                          "type":  "minecraft:item"
+                                      }
+                                  ]
+                  },
+                  {
+                      "rolls":  1,
+                      "conditions":  [
+                                         {
+                                             "condition":  "minecraft:random_chance",
+                                             "chance":  0.003
+                                         }
+                                     ],
+                      "entries":  [
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_book_detection",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_book_airflow_blade",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  16,
+                                          "name":  "typemoonworld:magic_book_magic_bullet",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_earth",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_fire",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_reinforcement",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_water",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_wind",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_structural_analysis",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_healing",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  12,
+                                          "name":  "typemoonworld:magic_book_projection",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_book_binding",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_book_suggestion",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  8,
+                                          "name":  "typemoonworld:magic_book_spiritual_healing",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_magic_analysis",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_imaginary_dive",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_black_key_fire_engraving",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_stigma",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_storage",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  5,
+                                          "name":  "typemoonworld:magic_book_baptism_rite",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_absorption",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_storm",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_kimaris",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_imaginary_displacement",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_zagan",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  3,
+                                          "name":  "typemoonworld:magic_book_orias",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_book_andrasias",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_book_imaginary_space",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  2,
+                                          "name":  "typemoonworld:magic_book_andrephius",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_book_antores",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_book_demon_god_gaze",
+                                          "type":  "minecraft:item"
+                                      },
+                                      {
+                                          "weight":  1,
+                                          "name":  "typemoonworld:magic_book_nega_summon",
+                                          "type":  "minecraft:item"
+                                      }
+                                  ]
+                  }
+              ]
 }

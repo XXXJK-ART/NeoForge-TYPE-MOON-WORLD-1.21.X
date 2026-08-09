@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
+import com.example.typemoonaddon.TypeMoonAddon;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -67,8 +68,10 @@ import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ClairvoyanceStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionStructureMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.DeleteProjectionItemMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduTransfigurationPointMessage;
@@ -77,6 +80,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.FirearmPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenGilgameshVaultScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GilgameshVaultSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemCarvingEngraveMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicResearchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.MagicCopyMessage;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService;
 import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
@@ -154,6 +160,7 @@ public class TYPE_MOON_WORLD {
       modEventBus.addListener(this::registerNetworking);
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
+      NeoForge.EVENT_BUS.register(MagicAnalysisService.class);
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);
@@ -163,6 +170,7 @@ public class TYPE_MOON_WORLD {
       ModMobEffects.register(modEventBus);
       ModParticles.register(modEventBus);
       ModSounds.register(modEventBus);
+      new TypeMoonAddon(modEventBus, modContainer);
       ModLootModifiers.register(modEventBus);
       ModBiomes.register(modEventBus);
       TypeMoonWorldModMenus.REGISTRY.register(modEventBus);
@@ -256,8 +264,11 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(SaveStructuralSelectionMessage.TYPE, SaveStructuralSelectionMessage.STREAM_CODEC, SaveStructuralSelectionMessage::handleData);
       registrar.playToServer(SelectProjectionStructureMessage.TYPE, SelectProjectionStructureMessage.STREAM_CODEC, SelectProjectionStructureMessage::handleData);
       registrar.playToServer(DeleteProjectionStructureMessage.TYPE, DeleteProjectionStructureMessage.STREAM_CODEC, DeleteProjectionStructureMessage::handleData);
+      registrar.playToServer(DeleteProjectionItemMessage.TYPE, DeleteProjectionItemMessage.STREAM_CODEC, DeleteProjectionItemMessage::handleData);
       registrar.playToServer(StartStructureProjectionMessage.TYPE, StartStructureProjectionMessage.STREAM_CODEC, StartStructureProjectionMessage::handleData);
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
+      registrar.playToServer(MagicResearchMessage.TYPE, MagicResearchMessage.STREAM_CODEC, MagicResearchMessage::handleData);
+      registrar.playToServer(MagicCopyMessage.TYPE, MagicCopyMessage.STREAM_CODEC, MagicCopyMessage::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
       registrar.playToServer(GilgameshVaultSelectionMessage.TYPE, GilgameshVaultSelectionMessage.STREAM_CODEC, GilgameshVaultSelectionMessage::handleData);
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
@@ -265,6 +276,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardFlightMessage.TYPE, ServantCardFlightMessage.STREAM_CODEC, ServantCardFlightMessage::handleData);
       registrar.playToServer(SetTimeAlterMultiplierMessage.TYPE, SetTimeAlterMultiplierMessage.STREAM_CODEC, SetTimeAlterMultiplierMessage::handleData);
       registrar.playToClient(TimeAlterVisualStateMessage.TYPE, TimeAlterVisualStateMessage.STREAM_CODEC, TimeAlterVisualStateMessage::handleData);
+      registrar.playToClient(ClairvoyanceStateMessage.TYPE, ClairvoyanceStateMessage.STREAM_CODEC, ClairvoyanceStateMessage::handleData);
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);

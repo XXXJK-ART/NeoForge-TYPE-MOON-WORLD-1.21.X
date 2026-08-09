@@ -18,8 +18,7 @@
     "client.MixinMinecraft",
     "client.LocalPlayerHakuryuDismountMixin",
     "client.PlayerModelMixin",
-    "client.PlayerRendererMixin",
-    "client.RenderBuffersMixin"
+    "client.PlayerRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

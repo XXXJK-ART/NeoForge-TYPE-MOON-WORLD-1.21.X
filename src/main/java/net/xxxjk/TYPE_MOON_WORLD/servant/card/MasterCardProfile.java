@@ -16,13 +16,16 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MasterProfileApiRegistry;
 import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.typemoonworld.api.event.MasterProfileEvent;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.neoforged.neoforge.common.NeoForge;
 
 public final class MasterCardProfile {
@@ -76,6 +79,8 @@ public final class MasterCardProfile {
          held.shrink(1);
       }
       saveOriginalStateAndClearPlayer(player, vars, profile.id());
+      TalentService.suspendActiveEffects(player);
+      PassiveService.suspendEffects(player);
       BodyTrainingService.clear(player, vars);
       resetToProfileState(vars);
       // MasterStateManager synchronizes immediately; apply the target attributes first so
@@ -93,6 +98,7 @@ public final class MasterCardProfile {
       vars.player_mana_egenerated_every_moment = profile.regenAmount();
       vars.player_restore_magic_moment = profile.regenIntervalTicks();
       profile.applyMagic(vars);
+      grantMasterDetection(vars);
       TYPE_MOON_WORLD.queueServerWork(2, () -> {
          TypeMoonWorldModVariables.PlayerVariables delayedVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (delayedVars.master_active && delayedVars.master_card_active && profile.id().equals(delayedVars.master_card_id)) {
@@ -142,6 +148,8 @@ public final class MasterCardProfile {
          vars.master_card_saved_inventory = new CompoundTag();
          MasterServantLinkService.clearContractTags(player);
       }
+      PassiveService.resumeEffects(player);
+      TalentService.resumeActiveEffects(player);
       give(player, createCardStack(cardId));
       clearMasterCardTags(player);
       return true;
@@ -223,6 +231,7 @@ public final class MasterCardProfile {
             learn(vars, "unlimited_blade_works");
             vars.proficiency_unlimited_blade_works = Math.max(vars.proficiency_unlimited_blade_works, 50.0);
             vars.has_unlimited_blade_works = true;
+            learn(vars, "ubw_sword_control");
             learn(vars, "sword_barrel_full_open");
             vars.proficiency_sword_barrel_full_open = Math.max(vars.proficiency_sword_barrel_full_open, 10.0);
             addAnalyzedItem(vars, new ItemStack(Items.IRON_SWORD));
@@ -451,6 +460,11 @@ public final class MasterCardProfile {
       if (!vars.learned_magics.contains(magicId)) {
          vars.learned_magics.add(magicId);
       }
+   }
+
+   private static void grantMasterDetection(TypeMoonWorldModVariables.PlayerVariables vars) {
+      learn(vars, "detection");
+      MagicProficiencyService.set(vars, "detection", Math.max(MagicProficiencyService.get(vars, "detection"), 90.0));
    }
 
    private static void learnBajiquan(TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {

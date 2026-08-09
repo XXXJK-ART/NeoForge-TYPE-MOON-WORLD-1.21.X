@@ -66,6 +66,7 @@ public final class CursedArmHassanCombatHelper {
    private static final int SELF_MOD_COOLDOWN = 240;
    private static final float ZABANIYA_USE_CHANCE = 0.45F;
    private static final int FELLOW_HASSAN_RETALIATION_TICKS = 200;
+   private static final String LAST_PERSISTENT_STATE_TICK = "CursedArmLastPersistentStateTick";
    private static final net.minecraft.resources.ResourceLocation CURSE_ATTACK_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "cursed_arm_zabaniya_curse_attack");
    private static final net.minecraft.resources.ResourceLocation CURSE_ARMOR_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
@@ -77,9 +78,7 @@ public final class CursedArmHassanCombatHelper {
 
    public static void tick(CursedArmHassanEntity entity, ServantAiContext context) {
       long now = context.gameTick();
-      tickStealth(entity, now);
-      tickZabaniyaWindup(entity, now);
-      tickCurseCleanup(entity);
+      tickPersistentState(entity);
 
       LivingEntity target = context.target();
       if (target == null || target.isDeadOrDying() || EntityUtils.isImmunePlayerTarget(target)) {
@@ -137,6 +136,17 @@ public final class CursedArmHassanCombatHelper {
          entity.triggerAssassinStabAnimation();
          entity.doHurtTarget(target);
       }
+   }
+
+   public static void tickPersistentState(CursedArmHassanEntity entity) {
+      if (entity == null || !entity.isAlive() || entity.level().isClientSide()) return;
+      long now = entity.level().getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PERSISTENT_STATE_TICK) && data.getLong(LAST_PERSISTENT_STATE_TICK) == now) return;
+      data.putLong(LAST_PERSISTENT_STATE_TICK, now);
+      tickStealth(entity, now);
+      tickZabaniyaWindup(entity, now);
+      tickCurseCleanup(entity);
    }
 
    public static boolean tryDodge(CursedArmHassanEntity entity, DamageSource source) {
@@ -236,6 +246,14 @@ public final class CursedArmHassanCombatHelper {
       long until = data.getLong(ZABANIYA_WINDUP_UNTIL);
       if (until <= 0L || now < until) {
          if (until > 0L && entity.level().getEntity(data.getInt(ZABANIYA_TARGET_ID)) instanceof LivingEntity target && target.isAlive()) {
+            if (EntityUtils.isImmunePlayerTarget(target)) {
+               data.remove(ZABANIYA_WINDUP_UNTIL);
+               data.remove(ZABANIYA_TARGET_ID);
+               entity.setZabaniyaTargetId(0);
+               entity.setNoBandages(false);
+               entity.setTarget(null);
+               return;
+            }
             entity.getLookControl().setLookAt(target, 45.0F, 45.0F);
          }
          return;
@@ -531,6 +549,10 @@ public final class CursedArmHassanCombatHelper {
    }
 
    private static void resolveZabaniya(CursedArmHassanEntity entity, LivingEntity target) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         entity.setTarget(null);
+         return;
+      }
       if (isProtectedPigKind(target)) {
          entity.setTarget(null);
          return;

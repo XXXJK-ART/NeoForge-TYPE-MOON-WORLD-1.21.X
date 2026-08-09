@@ -353,6 +353,9 @@ public final class MasterStateManager {
             yield false;
          }
          case 2 -> {
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(servant)) {
+               yield true;
+            }
             servant.getPersistentData().putBoolean("CausalSevered", true);
             servant.getPersistentData().putInt("GodHandLives", 0);
             servant.getPersistentData().remove("GodHandActive");
@@ -367,9 +370,6 @@ public final class MasterStateManager {
       }
       vars.master_command_spells = Math.max(0, vars.master_command_spells - 1);
       vars.master_command_spell_pose_active = false;
-      if (vars.master_command_spells <= 0) {
-         MasterServantLinkService.terminateContract(master, servant);
-      }
       vars.syncPlayerVariables(master);
       MasterVisualStateSync.broadcast(master, vars);
       master.displayClientMessage(Component.translatable("message.typemoonworld.master.command_spell_used", vars.master_command_spells), true);
@@ -383,10 +383,6 @@ public final class MasterStateManager {
          return false;
       }
       vars.master_command_spells = Math.max(0, count);
-      if (vars.master_command_spells == 0) {
-         ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-         if (servant != null) MasterServantLinkService.terminateContract(player, servant);
-      }
       vars.master_command_spell_style = style;
       vars.master_command_spell_pose_active = false;
       vars.syncPlayerVariables(player);
@@ -416,10 +412,6 @@ public final class MasterStateManager {
          return false;
       }
       vars.master_command_spells--;
-      if (vars.master_command_spells <= 0) {
-         ServerPlayer servant = MasterServantLinkService.getLinkedServant(player, vars);
-         if (servant != null) MasterServantLinkService.terminateContract(player, servant);
-      }
       vars.master_command_spell_pose_active = false;
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);

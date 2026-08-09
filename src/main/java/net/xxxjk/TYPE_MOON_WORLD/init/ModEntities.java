@@ -63,6 +63,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.UbwControlledSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
@@ -108,6 +109,14 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.GhoulEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.LivingDeadEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NightKinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.TheDeadEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosHoundEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosSerpentEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosStagEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBirdEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 
 public class ModEntities {
@@ -276,7 +285,43 @@ public class ModEntities {
       "stone_man", () -> Builder.of(StoneManEntity::new, MobCategory.CREATURE).sized(1.0F, 2.5F).build("stone_man")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN = ENTITY_TYPES.register(
-      "mystic_magician", () -> Builder.of(MysticMagicianEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician")
+      "mystic_magician", () -> Builder.<MysticMagicianEntity>of(MysticMagicianEntity::new, MobCategory.MONSTER)
+         .sized(0.6F, 1.8F).build("mystic_magician")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_GRAND = ENTITY_TYPES.register(
+      "mystic_magician_grand",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.GRAND),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_grand")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_BRAND = ENTITY_TYPES.register(
+      "mystic_magician_brand",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.BRAND),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_brand")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_PRIDE = ENTITY_TYPES.register(
+      "mystic_magician_pride",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.PRIDE),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_pride")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_FES = ENTITY_TYPES.register(
+      "mystic_magician_fes",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.FES),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_fes")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_ADEPT = ENTITY_TYPES.register(
+      "mystic_magician_adept",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.ADEPT),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_adept")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_UMNOS = ENTITY_TYPES.register(
+      "mystic_magician_umnos",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.UMNOS),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_umnos")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MysticMagicianEntity>> MYSTIC_MAGICIAN_FRAME = ENTITY_TYPES.register(
+      "mystic_magician_frame",
+      () -> Builder.<MysticMagicianEntity>of((entityType, level) -> new MysticMagicianEntity(entityType, level, net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank.FRAME),
+         MobCategory.MONSTER).sized(0.6F, 1.8F).build("mystic_magician_frame")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<TheDeadEntity>> THE_DEAD = ENTITY_TYPES.register(
       "the_dead", () -> Builder.of(TheDeadEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F).build("the_dead")
@@ -289,6 +334,38 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<NightKinEntity>> NIGHT_KIN = ENTITY_TYPES.register(
       "night_kin", () -> Builder.of(NightKinEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("night_kin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosEntity>> NERO_CHAOS = ENTITY_TYPES.register(
+      "nero_chaos", () -> Builder.of(NeroChaosEntity::new, MobCategory.MONSTER).sized(0.6F, 1.95F)
+         .clientTrackingRange(64).updateInterval(1).build("nero_chaos")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosHoundEntity>> NERO_CHAOS_HOUND = ENTITY_TYPES.register(
+      "nero_chaos_hound", () -> Builder.<NeroChaosHoundEntity>of(NeroChaosHoundEntity::new, MobCategory.MONSTER)
+         .sized(0.8F, 0.7F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_hound")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosSerpentEntity>> NERO_CHAOS_SERPENT = ENTITY_TYPES.register(
+      "nero_chaos_serpent", () -> Builder.<NeroChaosSerpentEntity>of(NeroChaosSerpentEntity::new, MobCategory.MONSTER)
+         .sized(0.7F, 0.45F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_serpent")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosStagEntity>> NERO_CHAOS_STAG = ENTITY_TYPES.register(
+      "nero_chaos_stag", () -> Builder.<NeroChaosStagEntity>of(NeroChaosStagEntity::new, MobCategory.MONSTER)
+         .sized(1.0F, 1.4F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_stag")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBirdEntity>> NERO_CHAOS_BIRD = ENTITY_TYPES.register(
+      "nero_chaos_bird", () -> Builder.<NeroChaosBirdEntity>of(NeroChaosBirdEntity::new, MobCategory.MONSTER)
+         .sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bird")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBearEntity>> NERO_CHAOS_BEAR = ENTITY_TYPES.register(
+      "nero_chaos_bear", () -> Builder.<NeroChaosBearEntity>of(NeroChaosBearEntity::new, MobCategory.MONSTER)
+         .sized(1.4F, 1.4F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bear")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosCatEntity>> NERO_CHAOS_CAT = ENTITY_TYPES.register(
+      "nero_chaos_cat", () -> Builder.<NeroChaosCatEntity>of(NeroChaosCatEntity::new, MobCategory.MONSTER)
+         .sized(0.6F, 0.7F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_cat")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<NeroChaosBatEntity>> NERO_CHAOS_BAT = ENTITY_TYPES.register(
+      "nero_chaos_bat", () -> Builder.<NeroChaosBatEntity>of(NeroChaosBatEntity::new, MobCategory.MONSTER)
+         .sized(0.5F, 0.9F).clientTrackingRange(48).updateInterval(1).build("nero_chaos_bat")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ChurchExecutorEntity>> CHURCH_EXECUTOR = ENTITY_TYPES.register(
       "church_executor", () -> Builder.of(ChurchExecutorEntity::new, MobCategory.MONSTER).sized(0.6F, 1.8F).build("church_executor")
@@ -358,6 +435,16 @@ public class ModEntities {
          .clientTrackingRange(16)
          .updateInterval(20)
          .build("expanding_ring_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<UbwControlledSwordEntity>> UBW_CONTROLLED_SWORD = ENTITY_TYPES.register(
+      "ubw_controlled_sword",
+      () -> Builder.<UbwControlledSwordEntity>of(
+            (entityType, level) -> new UbwControlledSwordEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.3F, 0.3F)
+         .clientTrackingRange(8)
+         .updateInterval(1)
+         .build("ubw_controlled_sword")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ProjectionCircuitEffectEntity>> PROJECTION_CIRCUIT_EFFECT = ENTITY_TYPES.register(
       "projection_circuit_effect",
@@ -604,7 +691,7 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshGateWeaponProjectileEntity>> GILGAMESH_GATE_PROJECTILE = ENTITY_TYPES.register(
       "gilgamesh_gate_projectile",
       () -> Builder.<GilgameshGateWeaponProjectileEntity>of(GilgameshGateWeaponProjectileEntity::new, MobCategory.MISC)
-         .sized(0.5F, 0.5F).clientTrackingRange(96).updateInterval(1).build("gilgamesh_gate_projectile")
+         .sized(0.5F, 0.5F).clientTrackingRange(96).updateInterval(2).build("gilgamesh_gate_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshCrossSlashEntity>> GILGAMESH_CROSS_SLASH = ENTITY_TYPES.register(
       "gilgamesh_cross_slash",

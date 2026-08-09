@@ -138,7 +138,7 @@ public final class ServantCardDefenseHandler {
       if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
          return true;
       }
-      if ("gilgamesh".equals(vars.servant_card_id)) {
+      if ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id)) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
             player, event.getSource(), event.getAmount()
          );
@@ -214,9 +214,6 @@ public final class ServantCardDefenseHandler {
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
          && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
-         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
-            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
-         }
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -228,9 +225,6 @@ public final class ServantCardDefenseHandler {
 
       Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
-         if ("zhao_yun_rider".equals(vars.servant_card_id)) {
-            ServantCardZhaoYunSkills.recordBreakthroughDefense(player);
-         }
          if (reduced <= 0.0F) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -462,9 +456,8 @@ public final class ServantCardDefenseHandler {
       if (player.getRandom().nextDouble() > chance) {
          return false;
       }
-      boolean zhaoYun = "zhao_yun_rider".equals(vars.servant_card_id);
       double cost = Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * ("emiya_archer".equals(vars.servant_card_id) ? 0.55 : 1.0));
-      if (!zhaoYun && !ServantCardManaService.consume(player, vars, cost)) {
+      if (!ServantCardManaService.consume(player, vars, cost)) {
          return false;
       }
       data.putLong(TAG_LAST_DODGE_TICK, now);

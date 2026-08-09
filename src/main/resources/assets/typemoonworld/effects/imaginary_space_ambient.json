@@ -1,0 +1,35 @@
+{
+  "duration": 2.4,
+  "notes": "Sparse suspended fragments used as the basic imaginary-sea feedback.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.2,
+      "rate": 220,
+      "particle_lifetime": 1.3,
+      "position_variance": 0.16,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 72 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [2.0, 1.1, 2.0] },
+        { "t": 1.0, "scale": [12.0, 6.0, 12.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#665B2B9F" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.03 },
+        { "t": 0.5, "size": 0.11 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "IMAGINARY_SPACE_AMBIENT_FRAGMENT",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [2.0, 1.5, 2.0], "offset": [0.0, 0.5, 0.0], "speed": 0.008, "chance": 0.3 }
+      ]
+    }
+  ]
+}

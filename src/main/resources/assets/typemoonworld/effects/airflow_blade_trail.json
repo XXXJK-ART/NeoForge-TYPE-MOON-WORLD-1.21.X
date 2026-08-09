@@ -1,0 +1,132 @@
+{
+  "duration": 0.26,
+  "notes": "Tall translucent air-cut sheets with bright crescent edges, based on the first visual reference.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.23,
+      "rate": 360,
+      "particle_lifetime": 0.22,
+      "size_variance": 0.28,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.0, -0.5],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "ellipsoid", "radius_x": 1.0, "radius_y": 2.55, "radius_z": 0.08, "sample_count": 190 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.78, 0.78, 0.78] },
+        { "t": 0.48, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, -1.2], "scale": [1.22, 1.08, 0.55] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#58B8E7F5" },
+        { "t": 0.34, "color": "#90E9FAFF" },
+        { "t": 1.0, "color": "#00C9F2FF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.42, "size": 0.22 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "AIRFLOW_BLADE_VERTICAL_SHEET",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.22,
+      "rate": 620,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.22,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.0, -0.35],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 0,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.12 + 1.12 * sqrt(4.0 * t * (1.0 - t))",
+        "expr_y": "(t - 0.5) * 5.2",
+        "expr_z": "0.08 * sin(t * 18.84 + time * 9.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 110
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#B8E9FAFF" },
+        { "t": 0.38, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.34, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "AIRFLOW_BLADE_RIGHT_CRESCENT",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.22,
+      "rate": 620,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.22,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.0, -0.35],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 0,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "-0.12 - 1.12 * sqrt(4.0 * t * (1.0 - t))",
+        "expr_y": "(t - 0.5) * 5.2",
+        "expr_z": "-0.08 * sin(t * 18.84 + time * 9.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 110
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#B8E9FAFF" },
+        { "t": 0.38, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.34, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "AIRFLOW_BLADE_LEFT_CRESCENT",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.2,
+      "rate": 320,
+      "particle_lifetime": 0.24,
+      "size_variance": 0.4,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.0, -2.2],
+      "velocity_variance": 0.22,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "line", "start": [-0.9, -2.1, 0.0], "end": [0.9, 2.1, 0.0], "segments": 46 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#72D9F3FF" },
+        { "t": 0.45, "color": "#A8FFFFFF" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.45, "size": 0.14 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "AIRFLOW_BLADE_BACKWARD_STREAKS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.7, 1.8, 0.15], "offset": [0.0, 0.0, -0.3], "speed": 0.08, "chance": 0.55 }
+      ]
+    }
+  ]
+}

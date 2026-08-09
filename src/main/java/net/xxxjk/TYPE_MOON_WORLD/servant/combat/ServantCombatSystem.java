@@ -41,7 +41,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -371,6 +370,15 @@ public final class ServantCombatSystem {
             return;
          }
 
+         // Do not let a healthy pair remain in an endless probing/normal loop.
+         // The tactical phase service has the same threshold; this mirrors it
+         // for legacy helpers that read the combat-system phase directly.
+         long combatDuration = now - data.getLong(TAG_COMBAT_CONTROL_START);
+         if (combatDuration >= net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.PROLONGED_COMBAT_DECISIVE_TICKS
+            && ServantCombatPhase.fromId(data.getInt(TAG_PHASE)).id() < ServantCombatPhase.DECISIVE.id()) {
+            data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
+         }
+
          double healthRatio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
          if (!(entity instanceof GilgameshEntity) && target instanceof GilgameshEntity) {
             ServantCombatPhase desired = healthRatio <= (entity instanceof EmiyaArcherEntity ? 0.40 : 0.60)
@@ -569,9 +577,8 @@ public final class ServantCombatSystem {
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
       }
-      boolean zhaoYun = servant instanceof ZhaoYunRiderEntity;
       double dodgeCost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45) : ServantCombatFormulas.dodgeMpCost(params);
-      if (!zhaoYun && servant.getCurrentMp() < dodgeCost) {
+      if (servant.getCurrentMp() < dodgeCost) {
          return false;
       }
       int agility = ServantCombatFormulas.agilityStep(params);
@@ -582,9 +589,7 @@ public final class ServantCombatSystem {
       if (agility < 3 && !urgent) {
          return false;
       }
-      if (!zhaoYun) {
-         servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
-      }
+      servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);
       servant.getPersistentData().putLong(TAG_LAST_DODGE_TICK, now);
       int invulnTicks = ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0);
       if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {

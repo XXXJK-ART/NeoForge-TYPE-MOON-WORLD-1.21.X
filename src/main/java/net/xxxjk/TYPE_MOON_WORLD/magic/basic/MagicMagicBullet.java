@@ -37,10 +37,10 @@ public final class MagicMagicBullet {
       if (element != MagicBulletProjectileEntity.ELEMENT_NONE) {
          damage += 10.0F + player.getRandom().nextFloat() * 5.0F;
       }
-      fire(player, player.getLookAngle(), damage, slowPercent(proficiency), range(proficiency), speed(proficiency), element, 0.08F);
+      fire(player, player.getLookAngle(), damage, slowPercent(proficiency), range(proficiency), speed(proficiency), element, 0.08F, proficiency);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.magic_bullet.cast"), true);
       if (!vars.isCurrentSelectionFromCrest("magic_bullet")) {
-         vars.proficiency_magic_bullet = Math.min(100.0, vars.proficiency_magic_bullet + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "magic_bullet", 0.18);
       }
       return true;
    }
@@ -56,7 +56,7 @@ public final class MagicMagicBullet {
       if (element != MagicBulletProjectileEntity.ELEMENT_NONE) {
          damage += 10.0F + caster.getRandom().nextFloat() * 5.0F;
       }
-      fire(caster, direction, damage, slowPercent(p), range(p), speed(p), element, 0.06F);
+      fire(caster, direction, damage, slowPercent(p), range(p), speed(p), element, 0.06F, p);
       return true;
    }
 
@@ -84,7 +84,9 @@ public final class MagicMagicBullet {
       return 1.5F;
    }
 
-   private static void fire(LivingEntity caster, Vec3 direction, float damage, float slowPercent, double range, float speed, int element, float inaccuracy) {
+   private static void fire(
+      LivingEntity caster, Vec3 direction, float damage, float slowPercent, double range, float speed, int element, float inaccuracy, double proficiency
+   ) {
       if (caster == null || caster.level().isClientSide || direction.lengthSqr() < 1.0E-6) {
          return;
       }
@@ -93,6 +95,7 @@ public final class MagicMagicBullet {
       projectile.setNoGravity(true);
       projectile.setItem(new ItemStack(ModItems.MAGIC_FRAGMENTS.get()));
       projectile.configure(damage, slowPercent, range, element, element == MagicBulletProjectileEntity.ELEMENT_NONE ? 0.55F : 0.75F);
+      projectile.setMagicSource("magic_bullet", proficiency);
       projectile.setPos(EntityUtils.getRightHandCastAnchor(caster).add(normalized.scale(0.12)));
       projectile.shoot(normalized.x, normalized.y, normalized.z, speed, inaccuracy);
       caster.level().addFreshEntity(projectile);

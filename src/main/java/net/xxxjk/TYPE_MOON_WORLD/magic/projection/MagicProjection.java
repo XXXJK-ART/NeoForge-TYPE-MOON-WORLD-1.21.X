@@ -40,7 +40,6 @@ public class MagicProjection {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          boolean crestProjectionCast = vars.isCurrentSelectionFromCrest("projection");
          boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestProjectionCast;
-         boolean ubwAdaptiveProjection = vars.has_unlimited_blade_works && !crestProjectionCast;
          InteractionHand handToUse = findAvailableHand(player);
          if (handToUse != null) {
             ItemStack target = vars.projection_selected_item;
@@ -54,41 +53,36 @@ public class MagicProjection {
                   return;
                }
             }
-            ItemStack autoAnalyzeCandidate = ItemStack.EMPTY;
-            if (target.isEmpty() && ubwAdaptiveProjection) {
-               ItemStack dynamicTarget = findProjectionTargetLikeAnalysis(player);
-               if (!dynamicTarget.isEmpty()) {
-                  ItemStack sanitized = sanitizeProjectionTarget(dynamicTarget);
-                  if (!sanitized.isEmpty()) {
-                     target = sanitized;
-                     autoAnalyzeCandidate = sanitized.copy();
-                  }
-               }
-            }
-
             if (target.isEmpty()) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.projection.no_target"), true);
                return;
             }
 
-            if (MagicStructuralAnalysis.isDivineConstruct(target)) {
-               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.cannot_project_divine"), true);
+            if (!isAnalyzedItem(vars, target)) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.projection.requires_analysis"), true);
+               return;
+            }
+
+            if (MagicStructuralAnalysis.isProjectionBanned(target)) {
+               player.displayClientMessage(
+                  Component.translatable(MagicStructuralAnalysis.isBedrock(target)
+                     ? "message.typemoonworld.projection.cannot_project_bedrock"
+                     : "message.typemoonworld.projection.cannot_project_divine"),
+                  true
+               );
                return;
             }
 
             double cost = applyProjectionMagicDiscount(player, calculateCost(target, swordAttributeActive, vars.proficiency_projection));
             if (ManaHelper.consumeOneTimeMagicCost(player, cost)) {
                if (!crestProjectionCast) {
-                  vars.proficiency_projection = Math.min(100.0, vars.proficiency_projection + 0.2);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "projection", 0.2);
                }
 
                ItemStack projected = createProjectedItem(target, swordAttributeActive, player.level().getGameTime());
                player.setItemInHand(handToUse, projected);
                if (vars.has_unlimited_blade_works) {
                   PlayerNoblePhantasmHelper.tryCompleteProjectedKanshouBakuyaPair(player, projected, handToUse);
-               }
-               if (!autoAnalyzeCandidate.isEmpty() && !isAlreadyAnalyzed(vars, autoAnalyzeCandidate)) {
-                  vars.analyzed_items.add(autoAnalyzeCandidate.copy());
                }
 
                vars.syncPlayerVariables(player);
@@ -104,7 +98,9 @@ public class MagicProjection {
    public static boolean tryDirectProjectFromAnalysis(
       ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack analyzedTarget, boolean swordAttributeActive
    ) {
-      if (player == null || vars == null || analyzedTarget.isEmpty()) {
+      if (player == null || vars == null || analyzedTarget.isEmpty()
+         || MagicStructuralAnalysis.isProjectionBanned(analyzedTarget)
+         || !isAnalyzedItem(vars, analyzedTarget)) {
          return false;
       } else {
          InteractionHand handToUse = findAvailableHand(player);
@@ -320,7 +316,11 @@ public class MagicProjection {
       return projected;
    }
 
-   private static boolean isAlreadyAnalyzed(TypeMoonWorldModVariables.PlayerVariables vars, ItemStack stack) {
+   private static boolean isAnalyzedItem(TypeMoonWorldModVariables.PlayerVariables vars, ItemStack stack) {
+      if (vars == null || stack == null || stack.isEmpty()) {
+         return false;
+      }
+
       for (ItemStack analyzed : vars.analyzed_items) {
          if (ItemStack.isSameItemSameComponents(analyzed, stack)) {
             return true;

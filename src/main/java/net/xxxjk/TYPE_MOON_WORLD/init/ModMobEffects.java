@@ -21,11 +21,21 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.PaleRiderInfectionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticCircuitDisruptionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticToxinEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticWoundedEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.MonstrousStrengthEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
    public static final DeferredHolder<MobEffect, MobEffect> NINE_LIVES = MOB_EFFECTS.register(
       "nine_lives", () -> new NineLivesEffect(MobEffectCategory.BENEFICIAL, 9109504)
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> MONSTROUS_STRENGTH = MOB_EFFECTS.register(
+      "monstrous_strength",
+      () -> new MonstrousStrengthEffect().addAttributeModifier(
+         Attributes.ATTACK_DAMAGE,
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "monstrous_strength_damage"),
+         3.0,
+         Operation.ADD_VALUE
+      )
    );
    public static final DeferredHolder<MobEffect, MobEffect> PETRIFIED = MOB_EFFECTS.register(
       "petrified", () -> new PetrifiedEffect(MobEffectCategory.HARMFUL, 0x8E8E8E)

@@ -1,0 +1,72 @@
+{
+  "duration": 0.45,
+  "notes": "One of six compact Gander-style red-black firing cores around the Antores caster.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.4,
+      "rate": 460,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 120 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.18, 0.18, 0.18] },
+        { "t": 0.35, "scale": [0.95, 0.95, 0.95], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.28, 0.28, 0.28], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00100008" },
+        { "t": 0.12, "color": "#EE28000B" },
+        { "t": 0.48, "color": "#FFFF1744" },
+        { "t": 0.78, "color": "#FF7A0018" },
+        { "t": 1.0, "color": "#00100008" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.34, "size": 0.5 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_GANDER_CORE",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.04, 0.04, 0.04], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.36 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.43,
+      "rate": 260,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 0,
+      "component": { "type": "helix", "radius": 0.46, "turns": 3.0, "height": 0.8, "segments": 100 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.4, 0.0], "scale": [0.35, 0.35, 0.35] },
+        { "t": 0.55, "pos": [0.0, -0.4, 0.0], "scale": [1.25, 1.0, 1.25] },
+        { "t": 1.0, "pos": [0.0, -0.35, 0.0], "scale": [0.4, 0.7, 0.4] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF123C" },
+        { "t": 0.22, "color": "#DDFF123C" },
+        { "t": 0.68, "color": "#BB760019" },
+        { "t": 1.0, "color": "#00150008" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.45, "size": 0.14 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_CORE_COMPRESSION"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
 
 @EventBusSubscriber(modid = "typemoonworld", value = Dist.CLIENT)
 public final class BajiquanClientStateEvents {
@@ -15,5 +16,6 @@ public final class BajiquanClientStateEvents {
       GanryuPoseClient.clear();
       CircleRealmClient.clear();
       ObserverConcealmentClient.clear();
+      TypeMoonWorldModKeyMappings.KeyEventListener.clearClientInputState();
    }
 }

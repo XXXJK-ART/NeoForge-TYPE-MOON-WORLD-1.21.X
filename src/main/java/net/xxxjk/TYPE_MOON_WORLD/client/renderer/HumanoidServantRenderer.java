@@ -5,6 +5,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
@@ -12,14 +13,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import org.jetbrains.annotations.Nullable;
+import java.util.function.Function;
 
-public final class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMobRenderer<T, PlayerModel<T>> {
-   private final ResourceLocation texture;
+public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMobRenderer<T, PlayerModel<T>> {
+   private final Function<T, ResourceLocation> textureResolver;
+   private float renderPartialTick;
 
    public HumanoidServantRenderer(EntityRendererProvider.Context context, String textureName) {
+      this(context, entity -> ResourceLocation.fromNamespaceAndPath(
+         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + textureName + ".png"));
+   }
+
+   protected HumanoidServantRenderer(EntityRendererProvider.Context context,
+                                     Function<T, ResourceLocation> textureResolver) {
       super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
-      this.texture = ResourceLocation.fromNamespaceAndPath(
-         TYPE_MOON_WORLD.MOD_ID, "textures/entity/" + textureName + ".png");
+      this.textureResolver = textureResolver;
       this.addLayer(new HumanoidArmorLayer<>(this,
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
@@ -29,6 +38,7 @@ public final class HumanoidServantRenderer<T extends ServantEntity> extends Huma
    public void render(T entity, float yaw, float partialTick, PoseStack poseStack,
                       MultiBufferSource buffers, int packedLight) {
       if (ServantCardConcealmentClient.isPerfectlyConcealed(entity)) return;
+      this.renderPartialTick = partialTick;
       float scale = visualScale(entity.getServantId());
       if (scale == 1.0F) {
          super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
@@ -42,11 +52,30 @@ public final class HumanoidServantRenderer<T extends ServantEntity> extends Huma
 
    @Override
    public ResourceLocation getTextureLocation(T entity) {
-      return this.texture;
+      return this.textureResolver.apply(entity);
+   }
+
+   @Override
+   @Nullable
+   protected RenderType getRenderType(T entity, boolean bodyVisible, boolean translucent, boolean glowing) {
+      if (bodyVisible && ServantClipRenderHelper.shouldClip(entity, this.renderPartialTick)) {
+         return ServantClipRenderHelper.renderType(entity, this.getTextureLocation(entity), this.renderPartialTick);
+      }
+      return super.getRenderType(entity, bodyVisible, translucent, glowing);
+   }
+
+   @Override
+   protected float getFlipDegrees(T livingEntity) {
+      return livingEntity.isSpiritualDissolving() ? 0.0F : super.getFlipDegrees(livingEntity);
    }
 
    private static float visualScale(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      String normalizedId = servantId == null ? "" : servantId;
+      int separator = normalizedId.indexOf(':');
+      if (separator >= 0) {
+         normalizedId = normalizedId.substring(separator + 1);
+      }
+      return switch (normalizedId) {
          case "oda_nobunaga" -> 0.800F;
          case "artoria_pendragon" -> 0.811F;
          case "fanatic_assassin", "medea" -> 0.858F;

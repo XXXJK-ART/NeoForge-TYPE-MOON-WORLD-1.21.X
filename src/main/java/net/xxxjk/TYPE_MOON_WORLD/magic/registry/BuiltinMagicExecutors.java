@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicFireElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicMagicBullet;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
@@ -52,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementSelf;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UbwSwordControlService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -84,9 +86,15 @@ public final class BuiltinMagicExecutors {
       }, "typemoonworld_core");
       registry.register("projection", ctx -> executeSimple(ctx, MagicProjection::execute), "typemoonworld_core");
       registry.register("structural_analysis", ctx -> executeSimple(ctx, MagicStructuralAnalysis::execute), "typemoonworld_core");
+      registry.register("magic_analysis", BuiltinMagicExecutors::executeMagicAnalysis, "typemoonworld_core");
       registry.register("broken_phantasm", ctx -> executeSimple(ctx, MagicBrokenPhantasm::execute), "typemoonworld_core");
       registry.register("unlimited_blade_works", ctx -> executeSimple(ctx, MagicUnlimitedBladeWorks::execute), "typemoonworld_core");
       registry.register("sword_barrel_full_open", ctx -> executeSimple(ctx, MagicSwordBarrelFullOpen::execute), "typemoonworld_core");
+      registry.register("ubw_sword_control", ctx -> {
+         ServerPlayer player = ctx.asServerPlayer();
+         return player != null && UbwSwordControlService.execute(player)
+            ? MagicExecutionResult.SUCCESS : MagicExecutionResult.FAILED;
+      }, "typemoonworld_core");
       registry.register("gravity_magic", ctx -> executeSimple(ctx, MagicGravity::execute), "typemoonworld_core");
       registry.register("gander", ctx -> toResult(MagicGander.execute(ctx.entity())), "typemoonworld_core");
       registry.register("jewel_machine_gun", ctx -> toResult(MagicJewelMachineGun.execute(ctx.entity())), "typemoonworld_core");
@@ -102,6 +110,7 @@ public final class BuiltinMagicExecutors {
       registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
       registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("mana_burst", ManaBurstService::execute, "typemoonworld_core");
       registry.register("black_key_fire_engraving", ctx -> toResult(MagicBlackKeyFireEngraving.execute(ctx.entity())), "typemoonworld_core");
       registry.register("stigma", ctx -> MagicExecutionResult.SUCCESS, "typemoonworld_core");
    }
@@ -113,6 +122,13 @@ public final class BuiltinMagicExecutors {
       }
 
       return MagicExecutionResult.FAILED;
+   }
+
+   private static MagicExecutionResult executeMagicAnalysis(MagicExecutionContext context) {
+      TypeMoonWorldModVariables.PlayerVariables vars = context.vars();
+      vars.magic_analysis_active = !vars.magic_analysis_active;
+      vars.syncPlayerVariables(context.entity());
+      return MagicExecutionResult.SUCCESS;
    }
 
    private static MagicExecutionResult executeReinforcement(MagicExecutionContext context) {

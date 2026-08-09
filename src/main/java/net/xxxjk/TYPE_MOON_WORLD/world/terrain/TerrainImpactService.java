@@ -24,7 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.typemoonworld.api.event.TerrainImpactBlockEvent;
 
 public final class TerrainImpactService {
-   public enum Shape { GROUND_LOWER_HEMISPHERE, SURFACE_HEMISPHERE, AIR_SPHERE }
+   public enum Shape { GROUND_LOWER_HEMISPHERE, SURFACE_HEMISPHERE, AIR_SPHERE, UPPER_SURFACE_CRATER }
    public enum Permission { PLAYER, NPC }
 
    private TerrainImpactService() { }
@@ -65,6 +65,10 @@ public final class TerrainImpactService {
       if (shape == Shape.AIR_SPHERE) {
          DeferredTerrainDestruction.queueSphereDetailed(level, center, profile.radius(), profile.maximumHardness(),
             targetTicks, predicate, callback, completion);
+      } else if (shape == Shape.UPPER_SURFACE_CRATER) {
+         Vec3 shapedCenter = center.add(0.0, Math.max(0.08, profile.radius() * 0.16), 0.0);
+         DeferredTerrainDestruction.queueHemisphere(level, shapedCenter, profile.radius(), false, profile.maximumHardness(),
+            targetTicks, predicate, callback, completion);
       } else {
          Vec3 shapedCenter = shape == Shape.SURFACE_HEMISPHERE ? center.add(0.0, profile.radius() * 0.3, 0.0) : center;
          DeferredTerrainDestruction.queueHemisphere(level, shapedCenter, profile.radius(), true, profile.maximumHardness(),
@@ -73,9 +77,55 @@ public final class TerrainImpactService {
       return true;
    }
 
+   public static boolean impactWallTunnel(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                          Vec3 direction, TerrainImpactProfile profile,
+                                          double length, int width, int height) {
+      return impactWallTunnel(level, source, center, direction, profile, permission(source), length, width, height);
+   }
+
+   public static boolean impactWallTunnel(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                          Vec3 direction, TerrainImpactProfile profile, Permission permission,
+                                          double length, int width, int height) {
+      return impactDirectional(level, source, center, direction, profile, permission, length, width, height, true);
+   }
+
+   public static boolean impactForwardBreakthrough(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                                   Vec3 direction, TerrainImpactProfile profile,
+                                                   double length, int width, int height) {
+      return impactForwardBreakthrough(level, source, center, direction, profile, permission(source), length, width, height);
+   }
+
+   public static boolean impactForwardBreakthrough(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                                   Vec3 direction, TerrainImpactProfile profile, Permission permission,
+                                                   double length, int width, int height) {
+      return impactDirectional(level, source, center, direction, profile, permission, length, width, height, false);
+   }
+
+   private static boolean impactDirectional(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                            Vec3 direction, TerrainImpactProfile profile,
+                                            Permission permission, double length, int width, int height, boolean wallTunnel) {
+      if (level == null || center == null || profile == null || direction == null
+         || profile.tier() == TerrainImpactProfile.Tier.NONE || !allowed(level, permission)) return false;
+      Vec3 horizontal = direction.multiply(1.0, 0.0, 1.0);
+      if (horizontal.lengthSqr() < 1.0E-4) return false;
+      horizontal = horizontal.normalize();
+      double cutLength = Math.max(1.0, length);
+      double cutWidth = Math.max(1.0, width);
+      double cutHeight = Math.max(1.0, height);
+      Vec3 origin = center.add(horizontal.scale(wallTunnel ? 0.35 : 0.15))
+         .add(0.0, wallTunnel ? 0.15 : 0.0, 0.0);
+      DeferredTerrainDestruction.queueDirectionalCut(level, origin, horizontal,
+         cutLength, cutWidth, cutHeight, false, profile.maximumHardness());
+      return impact(level, source, center, profile, permission, Shape.AIR_SPHERE);
+   }
+
    @Nullable
    private static Integer selfFootMinimumY(@Nullable LivingEntity source, Vec3 center, TerrainImpactProfile profile, Shape shape) {
       if (source == null || shape == Shape.AIR_SPHERE || !profile.limitsSelfFootDepth()) return null;
+      if (Config.protectCombatFooting) {
+         int feetY = net.minecraft.util.Mth.floor(source.getY());
+         return shape == Shape.UPPER_SURFACE_CRATER ? feetY : feetY - 1;
+      }
       double dx = source.getX() - center.x;
       double dz = source.getZ() - center.z;
       if (dx * dx + dz * dz > 9.0 || Math.abs(source.getY() - center.y) > 3.0) return null;
@@ -105,7 +155,7 @@ public final class TerrainImpactService {
 
    private static void addVisualSample(List<TerrainDebrisMessage.Sample> debris, TerrainImpactProfile profile,
                                        BlockPos pos, BlockState state) {
-      if (debris.size() < Math.min(48, profile.debrisCount())) {
+      if (debris.size() < Math.min(96, profile.debrisCount())) {
          debris.add(new TerrainDebrisMessage.Sample(pos.immutable(), Block.getId(state)));
       }
    }

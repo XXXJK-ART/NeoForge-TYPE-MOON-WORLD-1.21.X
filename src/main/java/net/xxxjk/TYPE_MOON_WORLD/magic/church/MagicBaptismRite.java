@@ -17,6 +17,8 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.BasicMagecraftHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing;
+import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -51,10 +53,10 @@ public final class MagicBaptismRite {
       }
 
       UUID targetId = target.getUUID();
-      int chantTicks = chantTicks(proficiency);
+      int chantTicks = WheelCastingModifierService.adjustChantTicks(player, chantTicks(proficiency));
       BaptismRiteEventHandler.start(player, targetId, proficiency, chantTicks);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
-      vars.proficiency_baptism_rite = Math.min(100.0, vars.proficiency_baptism_rite + 0.16);
+      net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "baptism_rite", 0.16);
       vars.syncProficiency(player);
       return true;
    }
@@ -72,7 +74,8 @@ public final class MagicBaptismRite {
    }
 
    private static boolean isUndeadLike(LivingEntity target) {
-      return target.getType().is(EntityTypeTags.UNDEAD)
+      return DeadApostleEntity.isDeadApostle(target)
+         || target.getType().is(EntityTypeTags.UNDEAD)
          || target instanceof Zombie
          || target instanceof Skeleton
          || target instanceof Stray

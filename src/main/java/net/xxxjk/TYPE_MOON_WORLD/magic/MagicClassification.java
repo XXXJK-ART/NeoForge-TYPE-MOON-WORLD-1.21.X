@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
 public final class MagicClassification {
    private static final Map<String, MagicClassification.ManaCostType> MAGIC_COST_TYPES = Map.ofEntries(
@@ -24,6 +25,7 @@ public final class MagicClassification {
       Map.entry("gandr_machine_gun", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("projection", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("structural_analysis", MagicClassification.ManaCostType.ONE_TIME),
+      Map.entry("magic_analysis", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("broken_phantasm", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("gravity_magic", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("healing_magic", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
@@ -37,6 +39,7 @@ public final class MagicClassification {
       Map.entry("time_alter", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("spiritual_healing", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("baptism_rite", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("mana_burst", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("black_key_fire_engraving", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("stigma", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("gander", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
@@ -46,6 +49,7 @@ public final class MagicClassification {
       Map.entry("reinforcement_item", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("unlimited_blade_works", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("sword_barrel_full_open", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("ubw_sword_control", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("bajiquan", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("ganryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
       ,Map.entry("hokushin_ittoryu", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT)
@@ -64,7 +68,7 @@ public final class MagicClassification {
    }
 
    public static boolean isKnownMagic(String magicId) {
-      return magicId != null && (MAGIC_COST_TYPES.containsKey(magicId) || MagicDefinitionRegistry.contains(magicId));
+      return magicId != null && (TalentService.isTalent(magicId) || MAGIC_COST_TYPES.containsKey(magicId) || MagicDefinitionRegistry.contains(magicId));
    }
 
    public static MagicClassification.ManaCostType getManaCostType(String magicId) {
@@ -73,6 +77,7 @@ public final class MagicClassification {
 
    public static Set<String> getAllMagicIds() {
       java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(ALL_MAGIC_IDS);
+      ids.addAll(TalentService.IDS);
       ids.addAll(MagicDefinitionRegistry.ids());
       return java.util.Collections.unmodifiableSet(ids);
    }

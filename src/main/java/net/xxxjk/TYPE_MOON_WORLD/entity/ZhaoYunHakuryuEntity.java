@@ -109,6 +109,9 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             player.stopRiding();
          }
       }
+      if (tickCount % 5 == 0) {
+         ejectUnauthorizedPassengers(level);
+      }
       tickLandingImpact(level);
       if (skillOwnerUuid != null) {
          Entity ownerEntity = level.getEntity(skillOwnerUuid);
@@ -186,7 +189,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       }
       riderUuid = rider.getUUID();
       LivingEntity master = rider.getEntityMaster();
-      masterUuid = master == null ? null : master.getUUID();
+      if (master != null) masterUuid = master.getUUID();
       if (rider.getVehicle() != this) {
          setNpActive(false);
          rider.onHakuryuDismounted(this);
@@ -371,7 +374,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    /** Binds the persistent mount to its Zhao Yun owner before either rider mounts. */
    public void bindRider(ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
       riderUuid = rider.getUUID();
-      masterUuid = master == null ? null : master.getUUID();
+      if (master != null) masterUuid = master.getUUID();
       skillOwnerUuid = null;
       npMount = false;
       setNpActive(false);
@@ -454,14 +457,47 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       if (riderUuid != null) {
          if (!(level() instanceof ServerLevel server)) return true;
          ZhaoYunRiderEntity rider = getRider(server);
-         ServerPlayer master = rider == null ? null : rider.getEntityMaster();
          return rider != null
             && riderUuid.equals(rider.getUUID())
-            && masterUuid != null && masterUuid.equals(player.getUUID())
-            && master == player;
+            && getPassengers().size() == 1
+            && getPassengers().get(0) == rider
+            && masterUuid != null && masterUuid.equals(player.getUUID());
       }
       if (skillOwnerUuid != null) return skillOwnerUuid.equals(player.getUUID());
       return false;
+   }
+
+   private boolean mayRemainPassenger(Player player, ServerLevel server) {
+      if (riderUuid != null) {
+         ZhaoYunRiderEntity rider = getRider(server);
+         return rider != null
+            && riderUuid.equals(rider.getUUID())
+            && getPassengers().size() == 2
+            && getPassengers().get(0) == rider
+            && getPassengers().get(1) == player
+            && masterUuid != null
+            && masterUuid.equals(player.getUUID());
+      }
+      return skillOwnerUuid != null
+         && skillOwnerUuid.equals(player.getUUID())
+         && getPassengers().size() == 1
+         && getPassengers().get(0) == player;
+   }
+
+   private void ejectUnauthorizedPassengers(ServerLevel server) {
+      for (Entity passenger : java.util.List.copyOf(getPassengers())) {
+         if (passenger instanceof ZhaoYunRiderEntity rider) {
+            if (riderUuid == null || !riderUuid.equals(rider.getUUID()) || getPassengers().get(0) != rider) {
+               rider.stopRiding();
+            }
+         } else if (passenger instanceof Player player) {
+            if (!mayRemainPassenger(player, server)) {
+               player.stopRiding();
+            }
+         } else {
+            passenger.stopRiding();
+         }
+      }
    }
 
    /** Server-authoritative player boarding check, including force-mount paths. */
@@ -479,7 +515,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
 
    @Override protected void positionRider(Entity passenger, MoveFunction callback) {
       int index = getPassengers().indexOf(passenger);
-      double localZ = -0.15 + index * 0.35;
+      double localZ = index == 0 ? 0.18 : -0.28;
       float yaw = getYRot() * ((float)Math.PI / 180.0F);
       // Entity yaw 0 faces +Z, so rotate the local seat offset around the mount.
       double offsetX = -Math.sin(yaw) * localZ;
@@ -506,7 +542,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          return false;
       }
       if (isNpActive()) {
-         amount *= 0.05F;
+         amount *= 0.10F;
       }
       boolean hurt = super.hurt(source, amount);
       if (hurt && !isAlive()) {

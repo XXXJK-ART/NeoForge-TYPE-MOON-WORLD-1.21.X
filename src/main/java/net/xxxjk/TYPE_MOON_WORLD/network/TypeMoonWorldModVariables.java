@@ -52,7 +52,12 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
@@ -87,6 +92,7 @@ public class TypeMoonWorldModVariables {
             if (vars.master_card_active && !vars.master_active) {
                MasterStateManager.release(player);
             }
+            PassiveService.reconcileAttributes(player, vars);
             vars.syncPlayerVariables(event.getEntity());
          }
       }
@@ -94,7 +100,9 @@ public class TypeMoonWorldModVariables {
       @SubscribeEvent
       public static void onPlayerRespawnedSyncPlayerVariables(PlayerRespawnEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).syncPlayerVariables(event.getEntity());
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            PassiveService.reconcileAttributes(player, vars);
+            vars.syncPlayerVariables(event.getEntity());
          }
       }
 
@@ -156,8 +164,11 @@ public class TypeMoonWorldModVariables {
          }
 
          clone.magic_cooldown = original.magic_cooldown;
+         clone.analysis_lock_ticks = original.analysis_lock_ticks;
+         clone.magic_analysis_active = original.magic_analysis_active;
          clone.reinforcement_level = original.reinforcement_level;
          clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
+         clone.proficiency_magic_analysis = original.proficiency_magic_analysis;
          clone.proficiency_projection = original.proficiency_projection;
          clone.proficiency_reinforcement = original.proficiency_reinforcement;
          clone.proficiency_jewel_magic_shoot = original.proficiency_jewel_magic_shoot;
@@ -237,6 +248,10 @@ public class TypeMoonWorldModVariables {
 
          clone.learned_magics = new ArrayList<>(original.learned_magics);
          clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
+         clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
+         clone.passive_ranks = new HashMap<>(original.passive_ranks);
+         clone.martial_passive_last_threshold = original.martial_passive_last_threshold;
+         clone.magic_passive_last_threshold = original.magic_passive_last_threshold;
          clone.analyzed_items = new ArrayList<>();
 
          for (ItemStack stack : original.analyzed_items) {
@@ -387,6 +402,7 @@ public class TypeMoonWorldModVariables {
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
+         if (event.getEntity() instanceof ServerPlayer player) PassiveService.reconcileAttributes(player, clone);
          if (event.isWasDeath() && event.getEntity() instanceof ServerPlayer player) {
             if (clone.master_card_active) {
                MasterStateManager.release(player);
@@ -965,8 +981,11 @@ public class TypeMoonWorldModVariables {
       public List<TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry> magic_wheels = new ArrayList<>();
       public int magic_system_data_version = 0;
       public double magic_cooldown = 0.0;
+      public int analysis_lock_ticks = 0;
+      public boolean magic_analysis_active = false;
       public int reinforcement_level = 1;
       public double proficiency_structural_analysis = 0.0;
+      public double proficiency_magic_analysis = 0.0;
       public double proficiency_projection = 0.0;
       public double proficiency_reinforcement = 0.0;
       public double proficiency_jewel_magic_shoot = 0.0;
@@ -1018,6 +1037,10 @@ public class TypeMoonWorldModVariables {
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
       public Map<String, Double> magic_proficiencies = new HashMap<>();
+      public Map<String, Double> talent_proficiencies = new HashMap<>();
+      public Map<String, PassiveRank> passive_ranks = new HashMap<>();
+      public int martial_passive_last_threshold = 140;
+      public int magic_passive_last_threshold = 290;
       public boolean is_chanting_ubw = false;
       public int ubw_chant_progress = 0;
       public int ubw_chant_timer = 0;
@@ -1253,7 +1276,7 @@ public class TypeMoonWorldModVariables {
       }
 
       private static boolean isKnownMagicId(String magicId) {
-         return magicId != null && MagicClassification.isKnownMagic(magicId);
+         return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
       }
 
       private static boolean isPresetOptionMagic(String magicId) {
@@ -1262,7 +1285,8 @@ public class TypeMoonWorldModVariables {
             || "gandr_machine_gun".equals(magicId)
             || "projection".equals(magicId)
             || "healing_magic".equals(magicId)
-            || "time_alter".equals(magicId);
+            || "time_alter".equals(magicId)
+            || "mana_burst".equals(magicId);
       }
 
       private static String canonicalSelfKnowledgeMagicId(String magicId) {
@@ -1304,6 +1328,9 @@ public class TypeMoonWorldModVariables {
             payload.putBoolean("projection_lock_empty", true);
          } else if ("time_alter".equals(crestEntry.magicId)) {
             payload.putInt("time_alter_multiplier", 4);
+         } else if ("mana_burst".equals(crestEntry.magicId)) {
+            payload.putInt("mana_burst_mode", Math.floorMod(seed, 3));
+            payload.putInt("mana_burst_level", 1 + Math.floorMod(seed / 3, 5));
          }
 
          payload.putBoolean("preset_locked", true);
@@ -1512,6 +1539,8 @@ public class TypeMoonWorldModVariables {
       public boolean hasLearnedSelfMagic(String magicId) {
          if (magicId == null || magicId.isEmpty()) {
             return false;
+         } else if (TalentService.isTalent(magicId)) {
+            return TalentService.owns(this, magicId);
          } else {
             return !"reinforcement".equals(magicId)
                ? this.learned_magics.contains(magicId)
@@ -1525,6 +1554,8 @@ public class TypeMoonWorldModVariables {
       public boolean isWheelSlotEntryCastable(TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry) {
          if (slotEntry == null || slotEntry.isEmpty() || !isKnownMagicId(slotEntry.magicId)) {
             return false;
+         } else if (TalentService.isTalent(slotEntry.magicId)) {
+            return !"crest".equals(slotEntry.sourceType) && TalentService.owns(this, slotEntry.magicId);
          } else if (!"crest".equals(slotEntry.sourceType)) {
             return this.hasLearnedSelfMagic(slotEntry.magicId);
          } else if (!this.hasValidImplantedCrest()) {
@@ -1676,6 +1707,13 @@ public class TypeMoonWorldModVariables {
                            this.projection_selected_structure_id = "";
                         });
                      }
+                  }
+               } else if ("mana_burst".equals(current.magicId)) {
+                  if (payload.contains("mana_burst_mode")) {
+                     payload.putInt("mana_burst_mode", Mth.clamp(payload.getInt("mana_burst_mode"), 0, 2));
+                  }
+                  if (payload.contains("mana_burst_level")) {
+                     payload.putInt("mana_burst_level", Mth.clamp(payload.getInt("mana_burst_level"), 1, 5));
                   }
                } else {
                   if ("gandr_machine_gun".equals(current.magicId) && payload.contains("gandr_machine_gun_mode")) {
@@ -2039,7 +2077,10 @@ public class TypeMoonWorldModVariables {
          nbt.putBoolean("is_magic_circuit_open", this.is_magic_circuit_open);
          nbt.putDouble("magic_circuit_open_timer", this.magic_circuit_open_timer);
          nbt.putDouble("magic_cooldown", this.magic_cooldown);
+         nbt.putInt("analysis_lock_ticks", this.analysis_lock_ticks);
+         nbt.putBoolean("magic_analysis_active", this.magic_analysis_active);
          nbt.putDouble("proficiency_structural_analysis", this.proficiency_structural_analysis);
+         nbt.putDouble("proficiency_magic_analysis", this.proficiency_magic_analysis);
          nbt.putDouble("proficiency_projection", this.proficiency_projection);
          nbt.putDouble("proficiency_jewel_magic_shoot", this.proficiency_jewel_magic_shoot);
          nbt.putDouble("proficiency_jewel_magic_release", this.proficiency_jewel_magic_release);
@@ -2266,6 +2307,7 @@ public class TypeMoonWorldModVariables {
             dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
          }
          nbt.put("magic_proficiencies", dynamicProficiency);
+         TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
          if (!this.projection_selected_item.isEmpty()) {
             nbt.put("projection_selected_item", this.projection_selected_item.save(lookupProvider));
          }
@@ -2318,7 +2360,10 @@ public class TypeMoonWorldModVariables {
          this.is_magic_circuit_open = nbt.getBoolean("is_magic_circuit_open");
          this.magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
          this.magic_cooldown = nbt.getDouble("magic_cooldown");
+         this.analysis_lock_ticks = Math.max(0, nbt.getInt("analysis_lock_ticks"));
+         this.magic_analysis_active = nbt.getBoolean("magic_analysis_active");
          this.proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
+         this.proficiency_magic_analysis = nbt.contains("proficiency_magic_analysis") ? nbt.getDouble("proficiency_magic_analysis") : 0.0;
          this.proficiency_projection = nbt.getDouble("proficiency_projection");
          this.proficiency_jewel_magic_shoot = nbt.getDouble("proficiency_jewel_magic_shoot");
          this.proficiency_jewel_magic_release = nbt.getDouble("proficiency_jewel_magic_release");
@@ -2671,6 +2716,11 @@ public class TypeMoonWorldModVariables {
                this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
             }
          }
+         double totalMartial = this.bajiquan_proficiency + this.ganryu_proficiency + this.hokushin_proficiency + this.tennen_proficiency;
+         this.martial_passive_last_threshold = TalentPassiveDataCodec.load(
+            nbt, this.talent_proficiencies, this.passive_ranks, totalMartial);
+         this.magic_passive_last_threshold = TalentPassiveDataCodec.loadMagicThreshold(
+            nbt, MagicPassiveProgressionService.totalMagicProficiency(this));
 
          this.projection_selected_item = ItemStack.EMPTY;
          if (nbt.contains("projection_selected_item")) {
@@ -2799,6 +2849,15 @@ public class TypeMoonWorldModVariables {
          if ((this.learned_magics.contains("jewel_magic_release") || this.learned_magics.contains("jewel_machine_gun"))
             && !this.learned_magics.contains("jewel_magic_shoot")) {
             this.learned_magics.add("jewel_magic_shoot");
+         }
+         if (this.proficiency_unlimited_blade_works >= 10.0D
+            && this.learned_magics.contains("unlimited_blade_works")
+            && !this.learned_magics.contains("ubw_sword_control")) {
+            this.learned_magics.add("ubw_sword_control");
+            if (entity instanceof Player player && !player.level().isClientSide()) {
+               player.displayClientMessage(Component.translatable(
+                  "message.typemoonworld.unlimited_blade_works.sword_control.awakened"), false);
+            }
          }
 
          this.ensureAdvancedJewelMagicPrerequisites("ruby_flame_sword", "ruby_throw");
@@ -3249,6 +3308,7 @@ public class TypeMoonWorldModVariables {
 
    public record ProficiencySyncMessage(
       double structural_analysis,
+      double magic_analysis,
       double projection,
       double jewel_magic_shoot,
       double jewel_magic_release,
@@ -3275,6 +3335,7 @@ public class TypeMoonWorldModVariables {
       public static final StreamCodec<RegistryFriendlyByteBuf, TypeMoonWorldModVariables.ProficiencySyncMessage> STREAM_CODEC = StreamCodec.of(
          (buffer, message) -> {
             buffer.writeDouble(message.structural_analysis);
+            buffer.writeDouble(message.magic_analysis);
             buffer.writeDouble(message.projection);
             buffer.writeDouble(message.jewel_magic_shoot);
             buffer.writeDouble(message.jewel_magic_release);
@@ -3315,6 +3376,7 @@ public class TypeMoonWorldModVariables {
             buffer.readDouble(),
             buffer.readDouble(),
             buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readDouble()
          )
       );
@@ -3322,6 +3384,7 @@ public class TypeMoonWorldModVariables {
       public ProficiencySyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
          this(
             vars.proficiency_structural_analysis,
+            vars.proficiency_magic_analysis,
             vars.proficiency_projection,
             vars.proficiency_jewel_magic_shoot,
             vars.proficiency_jewel_magic_release,
@@ -3356,6 +3419,7 @@ public class TypeMoonWorldModVariables {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)context.player()
                      .getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                   vars.proficiency_structural_analysis = message.structural_analysis;
+                  vars.proficiency_magic_analysis = message.magic_analysis;
                   vars.proficiency_projection = message.projection;
                   vars.proficiency_jewel_magic_shoot = message.jewel_magic_shoot;
                   vars.proficiency_jewel_magic_release = message.jewel_magic_release;
@@ -3462,6 +3526,15 @@ public class TypeMoonWorldModVariables {
       }
 
       private static void applyDeleteDelta(TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag tag) {
+         if (tag.contains("deleted_item_index")) {
+            int deletedItemIndex = tag.getInt("deleted_item_index");
+            if (deletedItemIndex >= 0 && deletedItemIndex < vars.analyzed_items.size()) {
+               vars.analyzed_items.remove(deletedItemIndex);
+            }
+         }
+         if (tag.getBoolean("clear_selected_item")) {
+            vars.projection_selected_item = ItemStack.EMPTY;
+         }
          String deletedId = tag.getString("deleted_structure_id");
          if (!deletedId.isEmpty()) {
             vars.removeStructureById(deletedId);

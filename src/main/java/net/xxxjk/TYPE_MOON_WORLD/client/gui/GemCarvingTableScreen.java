@@ -88,7 +88,7 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       int buttonHeight = ENGRAVE_BUTTON_H;
 
       for (String magicId : availableMagics) {
-         Button button = this.vanillaButton(buttonX, buttonY, buttonWidth, buttonHeight, Component.empty(), btn -> {
+         Button button = this.magicButton(buttonX, buttonY, buttonWidth, buttonHeight, magicId, Component.empty(), btn -> {
             this.selectedMagicId = magicId;
             this.updateUiState();
          });
@@ -161,6 +161,12 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
 
    private Button vanillaButton(int x, int y, int width, int height, Component text, OnPress onPress) {
       return new NeonButton(x, y, width, height, text, onPress, GuiUtils.ARCANE_CYAN).setArcaneStyle(true);
+   }
+
+   private Button magicButton(int x, int y, int width, int height, String magicId, Component text, OnPress onPress) {
+      return new NeonButton(x, y, width, height, text, onPress, MagicUiColors.colorFor(magicId, false))
+         .setArcaneStyle(true)
+         .setSelectedColor(MagicUiColors.colorFor(magicId, false));
    }
 
    private void updateUiState() {
@@ -299,11 +305,19 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
       this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
       super.render(guiGraphics, mouseX, mouseY, partialTicks);
+      this.renderSlotMarkers(guiGraphics);
       this.renderTooltip(guiGraphics, mouseX, mouseY);
    }
 
+   private void renderSlotMarkers(GuiGraphics guiGraphics) {
+      for (int i = 0; i < this.menu.slots.size(); i++) {
+         int accent = i == 0 ? GuiUtils.ARCANE_CYAN : i == 1 ? GuiUtils.ARCANE_GOLD : GuiUtils.ARCANE_TEXT_MUTED;
+         GuiUtils.renderArcaneSlotMarker(guiGraphics, this.leftPos + this.menu.slots.get(i).x - 1, this.topPos + this.menu.slots.get(i).y - 1, 18, accent, i < 2);
+      }
+   }
+
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderScreenBaseBackdrop(guiGraphics, this.width, this.height);
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
@@ -315,8 +329,14 @@ public class GemCarvingTableScreen extends AbstractContainerScreen<GemCarvingTab
       this.drawSection(guiGraphics, x + SECTION_CTRL_X, y + SECTION_CTRL_Y, SECTION_CTRL_W, SECTION_CTRL_H);
       this.drawSection(guiGraphics, x + SECTION_INV_X, y + SECTION_INV_Y, SECTION_INV_W, SECTION_INV_H);
       this.renderMagicScrollbar(guiGraphics);
-      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_GEM_X, y + SLOT_GEM_Y, SLOT_SIZE, GuiUtils.ARCANE_CYAN, true);
-      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_TOOL_X, y + SLOT_TOOL_Y, SLOT_SIZE, GuiUtils.ARCANE_GOLD, true);
+      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_GEM_X - 1, y + SLOT_GEM_Y - 1, SLOT_SIZE, GuiUtils.ARCANE_CYAN, true);
+      GuiUtils.renderArcaneSlot(guiGraphics, x + SLOT_TOOL_X - 1, y + SLOT_TOOL_Y - 1, SLOT_SIZE, GuiUtils.ARCANE_GOLD, true);
+      for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) {
+         GuiUtils.renderArcaneSlot(guiGraphics, x + 12 + col * 18, y + 135 + row * 18, 18, GuiUtils.ARCANE_BORDER, false);
+      }
+      for (int col = 0; col < 9; col++) {
+         GuiUtils.renderArcaneSlot(guiGraphics, x + 12 + col * 18, y + 193, 18, GuiUtils.ARCANE_BORDER, false);
+      }
    }
 
    private void renderMagicScrollbar(GuiGraphics guiGraphics) {

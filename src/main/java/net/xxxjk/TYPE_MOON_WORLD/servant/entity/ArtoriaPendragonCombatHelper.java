@@ -26,6 +26,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -36,6 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -95,6 +98,8 @@ public final class ArtoriaPendragonCombatHelper {
    private static final ResourceLocation MANA_BURST_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_attack");
    private static final ResourceLocation MANA_BURST_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_speed");
    private static final ResourceLocation CHARISMA_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_charisma_attack");
+   private static final String TAG_LAST_PERSISTENT_TICK = "ArtoriaLastPersistentStateTick";
+   private static final String TAG_PERSISTENT_BUSY = "ArtoriaPersistentStateBusy";
 
    private ArtoriaPendragonCombatHelper() {
    }
@@ -106,18 +111,10 @@ public final class ArtoriaPendragonCombatHelper {
 
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      tickAvalon(entity, level);
-      tickLakeProtection(entity);
-      tickRidingB(entity);
-      tickTimedModifiers(entity, now);
-      tickInvisibleAirCleanup(data, now);
-      syncExcaliburVisibility(entity);
-      tickInvisibleAirWrapVfx(entity, level, data, now);
-
-      LivingEntity target = context.target();
-      if (tickExcaliburState(entity, target, level, data, now)) {
+      if (tickPersistentState(entity)) {
          return true;
       }
+      LivingEntity target = context.target();
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
@@ -158,21 +155,55 @@ public final class ArtoriaPendragonCombatHelper {
       if (entity instanceof ArtoriaPendragonEntity && entity.getPersistentData().getBoolean(TAG_HAS_AVALON)) {
          return true;
       }
-      return entity instanceof Player player && hasAvalonInInventory(player);
+      return entity instanceof Player player && hasActiveAvalonInInventory(player);
    }
 
-   private static boolean hasAvalonInInventory(Player player) {
+   private static boolean hasActiveAvalonInInventory(Player player) {
       for (ItemStack stack : player.getInventory().items) {
-         if (stack.is(ModItems.AVALON.get())) {
+         if (isActiveAvalonFor(player, stack)) {
             return true;
          }
       }
       for (ItemStack stack : player.getInventory().offhand) {
-         if (stack.is(ModItems.AVALON.get())) {
+         if (isActiveAvalonFor(player, stack)) {
             return true;
          }
       }
       return false;
+   }
+
+   private static boolean isActiveAvalonFor(Player player, ItemStack stack) {
+      if (!stack.is(ModItems.AVALON.get())) {
+         return false;
+      }
+      if (AvalonItem.isAvalonActivated(stack)) {
+         return true;
+      }
+      if (player instanceof ServerPlayer serverPlayer) {
+         TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id);
+      }
+      return false;
+   }
+
+   public static boolean tickPersistentState(ArtoriaPendragonEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return false;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_TICK) && data.getLong(TAG_LAST_PERSISTENT_TICK) == now) {
+         return data.getBoolean(TAG_PERSISTENT_BUSY);
+      }
+      data.putLong(TAG_LAST_PERSISTENT_TICK, now);
+      tickAvalon(entity, level);
+      tickLakeProtection(entity);
+      tickRidingB(entity);
+      tickTimedModifiers(entity, now);
+      tickInvisibleAirCleanup(data, now);
+      syncExcaliburVisibility(entity);
+      tickInvisibleAirWrapVfx(entity, level, data, now);
+      boolean busy = tickExcaliburState(entity, entity.getTarget(), level, data, now);
+      data.putBoolean(TAG_PERSISTENT_BUSY, busy);
+      return busy;
    }
 
    public static boolean isInvisibleAirActive(ArtoriaPendragonEntity entity) {
@@ -203,10 +234,26 @@ public final class ArtoriaPendragonCombatHelper {
       if (hasAvalon(entity)) {
          ServantCombatSystem.forcePhaseAtLeast(entity, ServantCombatPhase.DECISIVE);
       }
-      entity.setExcaliburVisible(shouldRenderExcalibur(entity, data, entity.level().getGameTime()));
+      boolean visible = shouldRenderExcalibur(entity, data, entity.level().getGameTime());
+      entity.setExcaliburVisible(visible);
+      // Humanoid NPCs use the vanilla held-item layer. Keep the synchronized
+      // visibility state and the actual equipment in lockstep so clients do
+      // not render a stale sword or an empty hand indefinitely.
+      ItemStack hand = entity.getMainHandItem();
+      if (visible) {
+         if (!hand.is(ModItems.EXCALIBUR.get())) {
+            entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.EXCALIBUR.get()));
+            entity.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+         }
+      } else if (hand.is(ModItems.EXCALIBUR.get())) {
+         entity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+      }
    }
 
    private static boolean shouldRenderExcalibur(ArtoriaPendragonEntity entity, CompoundTag data, long now) {
+      if (isInvisibleAirActive(entity)) {
+         return false;
+      }
       ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
       if (hasAvalon(entity) || phase == ServantCombatPhase.DECISIVE) {
          return true;
@@ -231,12 +278,11 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    public static boolean tryNegateCertainHitOrDeath(LivingEntity target, String reason) {
+      if (tryProtectWithAvalon(target)) {
+         return true;
+      }
       if (!(target instanceof ArtoriaPendragonEntity artoria)) {
          return false;
-      }
-      if (hasAvalon(artoria)) {
-         spawnInstinctFx(artoria, true);
-         return true;
       }
       if (artoria.getPersistentData().getBoolean("ArtoriaInstinctAActive") && artoria.getRandom().nextFloat() < 0.95F) {
          spawnInstinctFx(artoria, false);
@@ -263,8 +309,25 @@ public final class ArtoriaPendragonCombatHelper {
       if (amount <= 0.0F || !hasAvalon(target)) {
          return amount;
       }
-      spawnAvalonFx(target);
+      tryProtectWithAvalon(target);
       return 0.0F;
+   }
+
+   public static boolean tryProtectWithAvalon(LivingEntity target) {
+      if (target == null || !hasAvalon(target)) {
+         return false;
+      }
+      CompoundTag data = target.getPersistentData();
+      data.remove("CausalSevered");
+      data.remove("MasterLossForcedDeath");
+      data.remove("MasterLossDecayDamage");
+      target.clearFire();
+      target.invulnerableTime = Math.max(target.invulnerableTime, 20);
+      target.setHealth(target.getMaxHealth());
+      target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 80, 4, false, false, true));
+      target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, true));
+      spawnAvalonFx(target);
+      return true;
    }
 
    public static boolean tryNegateMedeaSmallMagic(ArtoriaPendragonEntity entity, DamageSource source, float amount) {

@@ -1,7 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.palerider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 class InfectionRulesTest {
@@ -81,5 +84,18 @@ class InfectionRulesTest {
       for (int level = 1; level <= 5; level++) {
          assertEquals(level * 20, InfectionRules.calamityExitCleanseTicks(level));
       }
+   }
+
+   @Test
+   void deadApostlesCannotBeControlledOrPossessedByPaleRider() throws Exception {
+      String service = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/palerider/PaleRiderInfectionService.java"));
+
+      assertTrue(service.contains("public static boolean isForbiddenControlTarget(Entity entity)"));
+      assertTrue(service.contains("entity instanceof net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity"));
+      assertTrue(service.contains("net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic.isBeast(living)"));
+      assertTrue(service.contains("target instanceof Mob && !isForbiddenControlTarget(target)"));
+      assertTrue(service.contains("|| isForbiddenControlTarget(entity)"));
+      assertTrue(service.contains("if (isForbiddenControlTarget(target) && isControlled(target))"));
    }
 }

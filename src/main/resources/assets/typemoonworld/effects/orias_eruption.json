@@ -1,0 +1,116 @@
+{
+  "duration": 7.0,
+  "notes": "Hualueke magma column segment. The server stacks a bounded number of segments according to actual injected mana.",
+  "emitters": [
+    {
+      "start_time": 0.65,
+      "end_time": 4.8,
+      "rate": 720,
+      "particle_lifetime": 1.15,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.24,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.34, 0.0],
+      "velocity_variance": 0.16,
+      "max_vanilla_particles_per_tick": 8,
+      "component": { "type": "helix", "radius": 2.8, "turns": 8.0, "height": 12.0, "segments": 320 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.25, 0.2, 0.25], "easing": "ease_out_cubic" },
+        { "t": 0.2, "scale": [1.8, 1.0, 1.8], "easing": "ease_out_back" },
+        { "t": 0.72, "scale": [1.45, 1.0, 1.45] },
+        { "t": 1.0, "scale": [0.65, 1.0, 0.65], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.16, "color": "#FFFFC240" },
+        { "t": 0.48, "color": "#FFFF5314" },
+        { "t": 0.78, "color": "#DDAE160B" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.22 },
+        { "t": 0.36, "size": 0.82 },
+        { "t": 0.78, "size": 0.48 },
+        { "t": 1.0, "size": 0.06 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_ERUPTION_MAGMA_COLUMN",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "flame", "count": 2, "spread": [0.7, 1.0, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.13, "chance": 0.9 },
+        { "type": "lava", "count": 1, "spread": [0.55, 0.9, 0.55], "offset": [0.0, 0.0, 0.0], "speed": 0.1, "chance": 0.75 }
+      ]
+    },
+    {
+      "start_time": 0.8,
+      "end_time": 6.4,
+      "rate": 380,
+      "particle_lifetime": 2.0,
+      "size_variance": 0.52,
+      "lifetime_variance": 0.32,
+      "position_variance": 0.22,
+      "velocity": [0.0, 0.22, 0.0],
+      "velocity_variance": 0.14,
+      "max_vanilla_particles_per_tick": 7,
+      "component": { "type": "helix", "radius": 3.7, "turns": 4.0, "height": 12.0, "segments": 220 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.4, 0.45, 0.4] },
+        { "t": 0.35, "scale": [1.55, 1.0, 1.55], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [2.2, 1.25, 2.2] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#CC4A0805" },
+        { "t": 0.3, "color": "#CC1C1515" },
+        { "t": 0.7, "color": "#AA080808" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.38 },
+        { "t": 0.5, "size": 1.1 },
+        { "t": 1.0, "size": 0.18 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ORIAS_ERUPTION_SMOKE_COLUMN",
+      "vanilla_particles": [
+        { "type": "campfire_cosy_smoke", "count": 2, "spread": [0.9, 1.0, 0.9], "offset": [0.0, 0.0, 0.0], "speed": 0.06, "chance": 0.88 },
+        { "type": "large_smoke", "count": 1, "spread": [1.0, 0.8, 1.0], "offset": [0.0, 0.0, 0.0], "speed": 0.05, "chance": 0.7 }
+      ]
+    },
+    {
+      "start_time": 0.72,
+      "end_time": 3.2,
+      "rate": 300,
+      "particle_lifetime": 1.1,
+      "size_variance": 0.46,
+      "lifetime_variance": 0.24,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.42, 0.0],
+      "velocity_variance": 0.32,
+      "max_vanilla_particles_per_tick": 6,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 180 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 1.0, 0.0], "scale": [0.5, 0.5, 0.5] },
+        { "t": 0.45, "pos": [0.0, 8.0, 0.0], "scale": [4.2, 4.2, 4.2], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 12.0, 0.0], "scale": [7.0, 5.0, 7.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFF0B0" },
+        { "t": 0.32, "color": "#FFFF6A12" },
+        { "t": 0.66, "color": "#CC781006" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.5, "size": 0.46 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_ERUPTION_VOLCANIC_DEBRIS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "lava", "count": 1, "spread": [1.0, 1.0, 1.0], "offset": [0.0, 0.0, 0.0], "speed": 0.18, "chance": 0.78 },
+        { "type": "ash", "count": 1, "spread": [1.2, 1.1, 1.2], "offset": [0.0, 0.0, 0.0], "speed": 0.11, "chance": 0.7 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "duration": 0.34,
+  "notes": "Low-power Oriasn crimson hurricane funnel with layered ribbon trails.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.34,
+      "rate": 480,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.14, 0.0],
+      "velocity_variance": 0.055,
+      "max_vanilla_particles_per_tick": 4,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.55 + 1.45 * t) * cos(t * tau * 3.5 + time * 18.0)",
+        "expr_y": "0.1 + 6.0 * t + sin(t * tau * 2.0 + time * 10.0) * 0.18",
+        "expr_z": "(0.55 + 1.45 * t) * sin(t * tau * 3.5 + time * 18.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 220
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#18FFFFFF" },
+        { "t": 0.16, "color": "#C8FFEAF4" },
+        { "t": 0.5, "color": "#D8FF5FAD" },
+        { "t": 0.8, "color": "#A85B102C" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.46, "size": 0.5 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "STORM_HURRICANE_LOW_OUTER_RIBBON",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [0.3, 0.9, 0.3], "offset": [0.0, 0.3, 0.0], "speed": 0.055, "chance": 0.68 },
+        { "type": "gust", "count": 1, "spread": [0.28, 0.55, 0.28], "offset": [0.0, 0.2, 0.0], "speed": 0.065, "chance": 0.5 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.33,
+      "rate": 350,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.1, 0.0],
+      "velocity_variance": 0.045,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.48 + 1.5 * t) * cos(t * tau * 2.8 + time * 16.0 + 2.094)",
+        "expr_y": "0.15 + 5.8 * t",
+        "expr_z": "(0.48 + 1.5 * t) * sin(t * tau * 2.8 + time * 16.0 + 2.094)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#10FFB8D5" },
+        { "t": 0.2, "color": "#B8FF267E" },
+        { "t": 0.62, "color": "#C25C082C" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.38 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "STORM_HURRICANE_LOW_CRIMSON_RIBBON",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.01,
+      "end_time": 0.32,
+      "rate": 260,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.13,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.18, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.28 + 1.1 * t) * cos(t * tau * -5.5 - time * 22.0)",
+        "expr_y": "0.2 + 6.2 * t",
+        "expr_z": "(0.28 + 1.1 * t) * sin(t * tau * -5.5 - time * 22.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 170
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#20FFFFFF" },
+        { "t": 0.2, "color": "#E8FFFFFF" },
+        { "t": 0.58, "color": "#D8FFC4DF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.055 },
+        { "t": 0.5, "size": 0.24 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "STORM_HURRICANE_LOW_WHITE_CUT",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 170,
+      "particle_lifetime": 0.36,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.7, 1.0, 0.7] },
+        { "t": 1.0, "scale": [2.25, 1.0, 2.25], "easing": "ease_out_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#C8FFF0F7" },
+        { "t": 0.5, "color": "#A8D61C68" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.5, "size": 0.24 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "STORM_HURRICANE_LOW_GROUND_INTAKE",
+      "enable_trail": true
+    }
+  ]
+}

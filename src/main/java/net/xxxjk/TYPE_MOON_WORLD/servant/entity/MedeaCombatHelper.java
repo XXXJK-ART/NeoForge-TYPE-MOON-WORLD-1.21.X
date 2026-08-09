@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -400,6 +401,9 @@ public final class MedeaCombatHelper {
       }
 
       if (target.getPersistentData().getBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON)) {
+         if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+            return;
+         }
          target.invulnerableTime = 0;
          target.hurt(attacker != null ? attacker.damageSources().magic() : target.damageSources().magic(), Float.MAX_VALUE);
          if (target.isAlive()) {
@@ -1741,6 +1745,7 @@ public final class MedeaCombatHelper {
       if (!entity.isFlyingMode()) {
          return;
       }
+      ServantFlightCombatService.markControlled(entity, entity.level().getGameTime());
       double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
       double yMotion = ServantFlightHelper.verticalVelocityToward(entity.getY(), desiredY, 0.12, 0.025, 0.18, 0.24);
       if (yMotion != 0.0) {

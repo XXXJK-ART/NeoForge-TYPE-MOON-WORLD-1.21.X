@@ -92,6 +92,15 @@ public record SaveStructuralSelectionMessage(String structureName, int minX, int
                                        if (blockItem != Items.AIR) {
                                           ItemStack analyzedStack = blockItem.getDefaultInstance();
                                           analyzedStack.setCount(1);
+                                          if (MagicStructuralAnalysis.isProjectionBanned(analyzedStack)) {
+                                             player.displayClientMessage(
+                                                Component.translatable(MagicStructuralAnalysis.isBedrock(analyzedStack)
+                                                   ? "message.typemoonworld.structural_analysis.cannot_analyze_bedrock"
+                                                   : "message.typemoonworld.structural_analysis.cannot_analyze_divine"),
+                                                true
+                                             );
+                                             return;
+                                          }
                                           totalCost += MagicStructuralAnalysis.calculateStructureCost(analyzedStack, var32.player_magic_attributes_sword);
                                           String blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
                                           String blockStateProps = serializeBlockStateProperties(state);
@@ -158,7 +167,7 @@ public record SaveStructuralSelectionMessage(String structureName, int minX, int
                                  var32.projection_selected_structure_id = structure.id;
                                  var32.projection_selected_item = ItemStack.EMPTY;
                                  double progressGain = Math.max(0.2, Math.min(2.0, blocks.size() / 256.0));
-                                 var32.proficiency_structural_analysis = Math.min(100.0, var32.proficiency_structural_analysis + progressGain);
+                                 net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(var32, "structural_analysis", progressGain);
                                  var32.syncMana(player);
                                  PacketDistributor.sendToPlayer(player, new TypeMoonWorldModVariables.ProficiencySyncMessage(var32), new CustomPacketPayload[0]);
                                  CompoundTag delta = new CompoundTag();

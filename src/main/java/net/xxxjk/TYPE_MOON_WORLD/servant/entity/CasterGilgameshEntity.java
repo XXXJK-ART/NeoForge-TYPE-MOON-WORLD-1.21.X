@@ -56,7 +56,6 @@ public final class CasterGilgameshEntity extends ServantEntity {
          } else {
             this.setNoGravity(false);
          }
-         CasterGilgameshCombatHelper.tick(this);
       }
    }
 
@@ -161,6 +160,14 @@ public final class CasterGilgameshEntity extends ServantEntity {
       boolean hit = super.doHurtTarget(target);
       if (hit) {
          ServantVoiceHelper.tryPlayAttack(this);
+      }
+      if (hit && target instanceof net.minecraft.world.entity.LivingEntity living
+         && CasterGilgameshCombatHelper.isMeleeMode(this)) {
+         living.invulnerableTime = 0;
+         living.hurt(this.damageSources().mobAttack(this), 25.0F);
+         living.invulnerableTime = 0;
+         living.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+            net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 40, 1, false, true, true));
       }
       if (hit && target instanceof net.minecraft.world.entity.LivingEntity living
          && this.getPersistentData().getBoolean("DivinityActive")) {

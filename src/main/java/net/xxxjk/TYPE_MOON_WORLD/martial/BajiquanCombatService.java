@@ -516,12 +516,14 @@ public final class BajiquanCombatService {
 
    public static void addProficiency(ServerPlayer player, double amount) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double totalBefore = MartialPassiveProgressionService.total(vars);
       double before = vars.bajiquan_proficiency;
       vars.bajiquan_proficiency = Mth.clamp(Math.round((before + amount) * 100.0) / 100.0, 0.0, 100.0);
       if (vars.bajiquan_proficiency >= 30.0) vars.martial_ukemi_learned = true;
       notifyUnlocks(player, before, vars.bajiquan_proficiency);
       if (before < 40.0 && vars.bajiquan_proficiency >= 40.0) TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.BAJIQUAN_GRADUATE);
       if (before < 100.0 && vars.bajiquan_proficiency >= 100.0) TypeMoonAdvancementHelper.grant(player, TypeMoonAdvancementHelper.BAJIQUAN_CIRCLE_REALM);
+      MartialPassiveProgressionService.afterNaturalGain(player, totalBefore);
       if ((int)(before * 20.0) != (int)(vars.bajiquan_proficiency * 20.0)) vars.syncPlayerVariables(player);
    }
 

@@ -6,7 +6,8 @@ public enum MagicResistanceRank {
    D(2, "d"),
    C(3, "c"),
    B(4, "b"),
-   A(5, "a");
+   A(5, "a"),
+   EX(6, "ex");
 
    private final int level;
    private final String key;
@@ -34,6 +35,6 @@ public enum MagicResistanceRank {
             return rank;
          }
       }
-      return level <= 0 ? NONE : A;
+      return level <= 0 ? NONE : EX;
    }
 }

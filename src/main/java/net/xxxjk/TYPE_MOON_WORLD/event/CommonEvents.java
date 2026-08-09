@@ -10,8 +10,10 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -25,12 +27,15 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,10 +54,14 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -91,6 +100,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -113,11 +123,15 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatKnowledgeService;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatMatchupEvaluator;
+import net.xxxjk.TYPE_MOON_WORLD.combat.deadapostle.DeadApostleCombatProfileLoader;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefinitionLoader;
 import net.xxxjk.TYPE_MOON_WORLD.magic.data.MagicDefinitionLoader;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.MerlinWorldEventLimiter;
+import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
@@ -157,7 +171,7 @@ public class CommonEvents {
          event.setCanceled(true);
       }
    }
-
+   
    @SubscribeEvent
    public static void onServantCardFall(LivingFallEvent event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) {
@@ -180,6 +194,7 @@ public class CommonEvents {
       event.addListener(new ServantNoblePhantasmDefinitionLoader());
       event.addListener(new ServantAiDefinitionLoader());
       event.addListener(new ServantActionLoader());
+      event.addListener(new DeadApostleCombatProfileLoader());
    }
 
    @SubscribeEvent
@@ -194,6 +209,12 @@ public class CommonEvents {
          }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
+            servant.ensureDefaultNpcServantCardArmor(false);
+            TYPE_MOON_WORLD.queueServerWork(1, () -> {
+               if (servant.isAlive() && servant.level() == serverLevel) {
+                  servant.ensureDefaultNpcServantCardArmor(true);
+               }
+            });
          }
          if (event.getEntity() instanceof RyougiShikiEntity shiki && event.getLevel() instanceof ServerLevel serverLevel) {
             trackShiki(shiki, serverLevel);
@@ -331,13 +352,27 @@ public class CommonEvents {
             player.setSprinting(false);
             player.stopUsingItem();
          }
+         if (player instanceof ServerPlayer analysisPlayer) {
+            var analysisVars = analysisPlayer.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean activeMovementLock = net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.isActive(analysisVars)
+               && net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService.effectiveMagicAnalysisProficiency(analysisVars) < 75.0;
+            if (activeMovementLock || analysisVars.analysis_lock_ticks > 0) {
+               analysisPlayer.setDeltaMovement(0.0, analysisPlayer.getDeltaMovement().y, 0.0);
+               analysisPlayer.hurtMarked = true;
+               if (analysisVars.analysis_lock_ticks > 0) analysisVars.analysis_lock_ticks--;
+            }
+         }
          if (player instanceof ServerPlayer serverPlayer) {
+            TalentService.tick(serverPlayer);
+            PassiveService.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.tick(serverPlayer);
             if (serverPlayer.tickCount % 20 == 0) {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -446,6 +481,11 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
+         if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
          if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
             event.setCanceled(false);
             event.setAmount(Float.MAX_VALUE);
@@ -456,6 +496,7 @@ public class CommonEvents {
             return;
          }
          if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryIgnoreZhaoYunChangbanpoFriendlyFire(event)) return;
          if (tryRedirectZhaoYunRescueDamage(event)) return;
          applyZhaoYunRescueDefense(event);
          if (event.getSource().getEntity() instanceof ServerPlayer attacker
@@ -512,6 +553,13 @@ public class CommonEvents {
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
+               if (!fanaticDefensePiercing
+                  && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
+                  && PassiveService.tryDodge(player, event.getSource())) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
+                  return;
+               }
                if (!fanaticDefensePiercing && RubyStaffItem.tryAbsorbShield(player, event)) {
                   return;
                }
@@ -519,7 +567,7 @@ public class CommonEvents {
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
                if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(player, event.getSource())) {
-                  CombatKnowledgeService.observeProjectileNegation(player, (Projectile)directEntity);
+                  CombatKnowledgeService.observeProjectileNegation(player, directEntity);
                   event.setCanceled(true);
                   event.setAmount(0.0F);
                   return;
@@ -770,6 +818,12 @@ public class CommonEvents {
 
    @SubscribeEvent
    public static void onMobEffectRemoved(Remove event) {
+      if (event.getEntity() instanceof ServerPlayer player
+         && event.getEffect() == ModMobEffects.MONSTROUS_STRENGTH
+         && TalentService.shouldPreventRemoval(player)) {
+         event.setCanceled(true);
+         return;
+      }
       restorePetrifiedMobState(event.getEntity(), event.getEffect().value());
       clearBasicMagecraftEffectTags(event.getEntity(), event.getEffect().value());
    }
@@ -778,6 +832,11 @@ public class CommonEvents {
       if (event.getAmount() <= 0.0F) return false;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
+      if (isZhaoYunBoundMasterFriendlyFire(event.getEntity(), attacker, direct)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
       if (event.getEntity() instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
          // Zhao Yun, the master/owner, and current passengers must not hurt
          // their own Hakuryu. Enemy damage is allowed through; during
@@ -807,6 +866,49 @@ public class CommonEvents {
       event.setAmount(0.0F);
       mount.hurt(event.getSource(), redirected);
       return true;
+   }
+
+   private static boolean isZhaoYunBoundMasterFriendlyFire(LivingEntity victim, Entity attacker, Entity direct) {
+      if (!(victim instanceof ServerPlayer master)) return false;
+      return isZhaoYunSourceBoundTo(attacker, master) || isZhaoYunSourceBoundTo(direct, master);
+   }
+
+   private static boolean isZhaoYunSourceBoundTo(Entity source, ServerPlayer master) {
+      if (source instanceof ZhaoYunRiderEntity zhaoYun) {
+         return zhaoYun.isBoundTo(master);
+      }
+      if (source instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed
+            && "zhao_yun_rider".equals(vars.servant_card_id)
+            && vars.servant_card_master_uuid != null
+            && vars.servant_card_master_uuid.equals(master.getUUID().toString());
+      }
+      return source instanceof ZhaoYunHakuryuEntity mount && mount.isBoundCompanion(master);
+   }
+
+   private static boolean tryIgnoreZhaoYunChangbanpoFriendlyFire(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      Entity sourceEntity = event.getSource().getEntity();
+      Entity directEntity = event.getSource().getDirectEntity();
+      ZhaoYunHakuryuEntity mount = sourceEntity instanceof ZhaoYunHakuryuEntity zhaoMount ? zhaoMount
+         : directEntity instanceof ZhaoYunHakuryuEntity zhaoDirect ? zhaoDirect : null;
+      if (mount == null || !mount.isAlive() || !mount.isNpActive() || !(event.getEntity() instanceof LivingEntity victim)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(victim) || victim.getVehicle() == mount) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      if (mount.level() instanceof ServerLevel level && mount.getMasterUuid() != null
+         && level.getEntity(mount.getMasterUuid()) instanceof LivingEntity master
+         && (victim == master || victim.isAlliedTo(master) || master.isAlliedTo(victim) || victim.isAlliedTo(mount))) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      return false;
    }
 
    private static boolean tryRedirectZhaoYunRescueDamage(LivingIncomingDamageEvent event) {
@@ -863,6 +965,14 @@ public class CommonEvents {
    }
 
    @SubscribeEvent
+   public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
+         net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
+      }
+   }
+
+   @SubscribeEvent
    public static void onDefinitionSnapshotReload(OnDatapackSyncEvent event) {
       DefinitionSnapshotService.invalidate();
       event.getRelevantPlayers().forEach(DefinitionSnapshotService::send);
@@ -871,6 +981,11 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onMobEffectExpired(Expired event) {
       if (event.getEffectInstance() != null) {
+         if (event.getEntity() instanceof ServerPlayer player
+            && event.getEffectInstance().getEffect() == ModMobEffects.MONSTROUS_STRENGTH) {
+            player.getPersistentData().remove(TalentService.STRENGTH_UNTIL_TAG);
+            player.getPersistentData().remove(TalentService.STRENGTH_AMPLIFIER_TAG);
+         }
          restorePetrifiedMobState(event.getEntity(), event.getEffectInstance().getEffect().value());
          clearBasicMagecraftEffectTags(event.getEntity(), event.getEffectInstance().getEffect().value());
       }
@@ -937,9 +1052,10 @@ public class CommonEvents {
 
       // Record last hurt time for passive combat checks.
       data.putLong("LastHurtTick", currentTick);
-      if (!fanaticDefensePiercing && !originBullet && servant instanceof GilgameshEntity gilgamesh) {
+      if (!fanaticDefensePiercing && !originBullet
+         && (servant instanceof GilgameshEntity || servant instanceof CasterGilgameshEntity)) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
-            gilgamesh, event.getSource(), event.getAmount()
+            servant, event.getSource(), event.getAmount()
          );
          if (shieldHit != null) {
             event.setAmount(shieldHit.remainingDamage());
@@ -1004,8 +1120,7 @@ public class CommonEvents {
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
          CuChulainnCombatHelper.markCombat(servant);
-         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())
-            && event.getSource().getDirectEntity() instanceof Projectile projectile) {
+         if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.END_ROD,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
@@ -1014,7 +1129,7 @@ public class CommonEvents {
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
                   12, 0.3, 0.4, 0.3, 0.03);
             }
-            CombatKnowledgeService.observeProjectileNegation(servant, projectile);
+            CombatKnowledgeService.observeProjectileNegation(servant, event.getSource().getDirectEntity());
             event.setCanceled(true);
             return;
          }
@@ -1240,12 +1355,19 @@ public class CommonEvents {
    @SubscribeEvent(priority = EventPriority.LOWEST)
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+            event.setCanceled(true);
+            return;
+         }
          if (event.getEntity() instanceof Player player) {
             OriginBulletHelper.clearPlayerSeal(player);
          }
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!event.isCanceled()) TalentService.clearActiveState(player);
+            if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
+            if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
             // Contract loss is committed only after every higher-priority death
             // handler has had a chance to cancel the event (revive/protection).
             if (!event.isCanceled() && vars.servant_card_transformed) {
@@ -1446,6 +1568,16 @@ public class CommonEvents {
    }
 
    @SubscribeEvent
+   public static void onLevelUnload(LevelEvent.Unload event) {
+      if (event.getLevel() instanceof ServerLevel serverLevel) {
+         String key = dimensionKey(serverLevel);
+         SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key);
+         SERVANT_IDS_BY_DIMENSION.remove(key);
+         SHIKI_IDS_BY_DIMENSION.remove(key);
+      }
+   }
+
+   @SubscribeEvent
    public static void onLivingDrops(LivingDropsEvent event) {
       if (event.getEntity() instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -1454,7 +1586,42 @@ public class CommonEvents {
             return;
          }
          event.getDrops().removeIf(drop -> ServantCardTransformManager.shouldDeleteBoundDrop(drop.getItem()));
+      } else if (event.getSource().getEntity() instanceof ServerPlayer player && !(event.getEntity() instanceof Player)) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double chance = AdvancedPassiveService.goldenDropChance(vars);
+         if (chance > 0.0 && player.getRandom().nextDouble() < chance) {
+            event.getDrops().add(new ItemEntity(player.level(), event.getEntity().getX(), event.getEntity().getY(), event.getEntity().getZ(), new ItemStack(Items.GOLD_INGOT)));
+         }
       }
+   }
+
+   @SubscribeEvent
+   public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
+      if (event.getEntity() instanceof Piglin piglin && event.getNewAboutToBeSetTarget() instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (AdvancedPassiveService.lootingBonus(vars) > 0 && piglin.getLastHurtByMob() != player) {
+            event.setCanceled(true);
+         }
+      }
+   }
+
+   @SubscribeEvent
+   public static void onBlockDrops(BlockDropsEvent event) {
+      if (!(event.getBreaker() instanceof ServerPlayer player) || player.isCreative()) return;
+      BlockState state = event.getState();
+      if (state == null || !isOreBlock(state)) return;
+      ItemStack tool = event.getTool();
+      if (!tool.isEmpty() && tool.getEnchantments().toString().contains("silk_touch")) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double chance = AdvancedPassiveService.goldenDropChance(vars);
+      if (chance > 0.0 && player.getRandom().nextDouble() < chance) {
+         event.getDrops().add(new ItemEntity(player.level(), event.getPos().getX() + 0.5, event.getPos().getY() + 0.5, event.getPos().getZ() + 0.5, new ItemStack(Items.GOLD_INGOT)));
+      }
+   }
+
+   private static boolean isOreBlock(BlockState state) {
+      ResourceLocation id = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+      return id != null && id.getPath().endsWith("_ore");
    }
 
    private static boolean blocksAttacks(LivingEntity entity) {
@@ -1492,6 +1659,9 @@ public class CommonEvents {
       Set<UUID> ids = SERVANT_IDS_BY_DIMENSION.get(dimensionKey(level));
       if (ids != null) {
          ids.remove(entity.getUUID());
+         if (ids.isEmpty()) {
+            SERVANT_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);
+         }
       }
    }
 
@@ -1502,6 +1672,9 @@ public class CommonEvents {
       Set<UUID> ids = SHIKI_IDS_BY_DIMENSION.get(dimensionKey(level));
       if (ids != null) {
          ids.remove(entity.getUUID());
+         if (ids.isEmpty()) {
+            SHIKI_IDS_BY_DIMENSION.remove(dimensionKey(level), ids);
+         }
       }
    }
 
@@ -1585,13 +1758,21 @@ public class CommonEvents {
          return;
       }
       if (entity.level() instanceof ServerLevel level) {
-         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(dimensionKey(level));
+         String key = dimensionKey(level);
+         Set<UUID> ids = SUGGESTED_MOB_IDS_BY_DIMENSION.get(key);
          if (ids != null) {
             ids.remove(entity.getUUID());
+            if (ids.isEmpty()) {
+               SUGGESTED_MOB_IDS_BY_DIMENSION.remove(key, ids);
+            }
          }
       } else {
-         for (Set<UUID> ids : SUGGESTED_MOB_IDS_BY_DIMENSION.values()) {
+         for (Map.Entry<String, Set<UUID>> entry : SUGGESTED_MOB_IDS_BY_DIMENSION.entrySet()) {
+            Set<UUID> ids = entry.getValue();
             ids.remove(entity.getUUID());
+            if (ids.isEmpty()) {
+               SUGGESTED_MOB_IDS_BY_DIMENSION.remove(entry.getKey(), ids);
+            }
          }
       }
    }
@@ -1795,8 +1976,12 @@ public class CommonEvents {
             && effectInstance.getDuration() > 1
             && effectInstance.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL
             && !living.getPersistentData().getBoolean(EFFECT_RESISTANCE_REENTRY_TAG)) {
-            int adjustedDuration = MagicResistanceHelper.applyDebuffResistance(living, effectInstance.getDuration());
-            if (adjustedDuration < effectInstance.getDuration()) {
+            int adjustedDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(living, effectInstance.getDuration());
+            if (adjustedDuration <= 0) {
+               living.removeEffect(effectInstance.getEffect());
+               clearBasicMagecraftEffectTags(living, effectInstance.getEffect().value());
+               return;
+            } else if (adjustedDuration < effectInstance.getDuration()) {
                living.getPersistentData().putBoolean(EFFECT_RESISTANCE_REENTRY_TAG, true);
                try {
                   living.removeEffect(effectInstance.getEffect());

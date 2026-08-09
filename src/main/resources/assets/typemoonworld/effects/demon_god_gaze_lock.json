@@ -1,0 +1,71 @@
+{
+  "duration": 0.8,
+  "notes": "A server-positioned magenta lock ring around the selected Demon God Gaze target.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.72,
+      "rate": 360,
+      "particle_lifetime": 0.48,
+      "size_variance": 0.12,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.018, 0.0],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 0,
+      "component": { "type": "circle", "radius": 1.0, "segments": 112 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.25, 1.0, 0.25] },
+        { "t": 0.3, "scale": [2.4, 1.0, 2.4], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [1.9, 1.0, 1.9] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF179B" },
+        { "t": 0.18, "color": "#FFFFF0FF" },
+        { "t": 0.58, "color": "#FFFF3CC7" },
+        { "t": 1.0, "color": "#00B91BFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.28, "size": 0.16 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_GAZE_LOCK_RING"
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 0.68,
+      "rate": 180,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 84 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 0.2, 0.2] },
+        { "t": 0.45, "scale": [1.2, 2.2, 1.2], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.7, 3.2, 1.7] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF0FF" },
+        { "t": 0.22, "color": "#AAFFF0FF" },
+        { "t": 0.62, "color": "#99FF179B" },
+        { "t": 1.0, "color": "#00B91BFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.4, "size": 0.16 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "DEMON_GOD_GAZE_LOCK_GLOW",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.45, 0.8, 0.45], "offset": [0.0, 0.8, 0.0], "speed": 0.03, "chance": 0.18 }
+      ]
+    }
+  ]
+}

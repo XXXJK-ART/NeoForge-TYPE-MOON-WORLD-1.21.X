@@ -75,7 +75,7 @@ public class MagicReinforcementSelf {
                   player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.eye"), true);
             }
 
-            vars.proficiency_reinforcement = Math.min(100.0, vars.proficiency_reinforcement + 0.5);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "reinforcement", 0.5);
             vars.syncPlayerVariables(player);
          }
       }

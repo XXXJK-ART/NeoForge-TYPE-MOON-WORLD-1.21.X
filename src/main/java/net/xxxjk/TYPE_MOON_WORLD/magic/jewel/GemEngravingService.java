@@ -49,7 +49,9 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.projection.StructureProjectionBuildHandle
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import org.joml.Vector3f;
 
 public final class GemEngravingService {
@@ -121,7 +123,7 @@ public final class GemEngravingService {
                      }
 
                      setEngravedMagic(offhandStack, selectedMagic);
-                     vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + 0.3);
+                     net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", 0.3);
                      vars.syncPlayerVariables(player);
                      player.displayClientMessage(
                         Component.translatable("message.typemoonworld.gem.engrave.success", getMagicName(selectedMagic)), true
@@ -544,7 +546,10 @@ public final class GemEngravingService {
          LivingEntity.class, area, target -> target != caster && target.isAlive()
             && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
       )) {
-         target.hurt(caster.damageSources().indirectMagic(projectile, caster), damage);
+         float adjustedDamage = MagicResistanceHelper.applyMagicDamageReduction(
+            target, caster.damageSources().indirectMagic(projectile, caster), damage, MagicComplexity.TWO_VERSE,
+            caster, "fire_magic", proficiency);
+         target.hurt(caster.damageSources().indirectMagic(projectile, caster), adjustedDamage);
          target.igniteForSeconds(igniteSeconds);
       }
       if (caster.level() instanceof ServerLevel level) {
@@ -676,6 +681,8 @@ public final class GemEngravingService {
       GanderProjectileEntity projectile = new GanderProjectileEntity(player.level(), player);
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(GANDER_MAX_CHARGE_SECONDS);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      projectile.setMagicSource("gander", vars.isCurrentSelectionFromCrest("gander") ? 100.0 : vars.proficiency_gander);
       projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(GANDER_MAX_CHARGE_SECONDS));
       ItemStack visualGem = gemStack.copy();
       visualGem.setCount(1);
@@ -747,7 +754,7 @@ public final class GemEngravingService {
                }
 
                queueGravityActionbarResult(player, resultMessage);
-               vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.2);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gravity_magic", 0.2);
                vars.syncPlayerVariables(player);
                consumeHeldGem(player, hand, heldStack);
                return true;

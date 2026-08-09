@@ -1,0 +1,74 @@
+{
+  "duration": 2.8,
+  "notes": "Golden spherical shock and ground rings after all Andrephius strikes complete.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.8,
+      "rate": 1700,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.32,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 260 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.0, 1.0, 1.0] },
+        { "t": 0.55, "scale": [42.0, 42.0, 42.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [52.0, 52.0, 52.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.2, "color": "#CCFFF2A0" },
+        { "t": 0.62, "color": "#88FFD43B" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.16 },
+        { "t": 0.46, "size": 0.58 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_AFTERMATH_SPHERE",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 2, "spread": [2.0, 1.0, 2.0], "offset": [0.0, 0.5, 0.0], "speed": 0.1, "chance": 0.3 }
+      ]
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 2.8,
+      "rate": 820,
+      "particle_lifetime": 0.95,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.018, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 1,
+      "component": { "type": "circle", "radius": 1.0, "segments": 240 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.6, 1.0, 0.6] },
+        { "t": 0.55, "scale": [48.0, 1.0, 48.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [58.0, 1.0, 58.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFFFD43B" },
+        { "t": 0.72, "color": "#99FF9F1C" },
+        { "t": 1.0, "color": "#00FF9F1C" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.42, "size": 0.42 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANDREPHIUS_AFTERMATH_RING",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.2, 0.2, 0.2], "offset": [0.0, 0.4, 0.0], "speed": 0.0, "chance": 0.04 }
+      ]
+    }
+  ]
+}

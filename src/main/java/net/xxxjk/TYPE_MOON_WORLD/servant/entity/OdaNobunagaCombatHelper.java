@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
@@ -100,6 +101,8 @@ public final class OdaNobunagaCombatHelper {
    public static final String TAG_FLIGHT_UNTIL = "OdaFlightUntil";
    public static final String TAG_LAND_FOR_NP_UNTIL = "OdaLandForNpUntil";
    public static final String TAG_FOOT_SUPPORT_GUN = "OdaFootSupportGun";
+   private static final String TAG_LAST_PERSISTENT_STATE_TICK = "OdaLastPersistentStateTick";
+   private static final String TAG_PERSISTENT_STATE_BUSY = "OdaPersistentStateBusy";
    private static final int FLIGHT_RAMPUP_TICKS = 20;
    private static final int FLIGHT_HOLD_TICKS = 8 * 20;
    private static final int NP_LAND_TICKS = 10;
@@ -143,12 +146,9 @@ public final class OdaNobunagaCombatHelper {
       }
 
       long now = level.getGameTime();
-      tickThreeThousandWorldsChant(entity, level, now);
-      if (tickHajunChant(entity, level, now) || tickHajunField(entity, level, now)) {
+      if (tickPersistentState(entity)) {
          return;
       }
-
-      expireBuffs(entity, level, now);
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          updateSeriousModeFlight(entity, null, now);
@@ -292,6 +292,21 @@ public final class OdaNobunagaCombatHelper {
          restoreHajunChantTerrain(entity, level, Integer.MAX_VALUE);
          clearHajunState(entity);
       }
+   }
+
+   public static boolean tickPersistentState(OdaNobunagaEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return false;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(TAG_LAST_PERSISTENT_STATE_TICK) && data.getLong(TAG_LAST_PERSISTENT_STATE_TICK) == now) {
+         return data.getBoolean(TAG_PERSISTENT_STATE_BUSY);
+      }
+      data.putLong(TAG_LAST_PERSISTENT_STATE_TICK, now);
+      tickThreeThousandWorldsChant(entity, level, now);
+      boolean busy = tickHajunChant(entity, level, now) || tickHajunField(entity, level, now);
+      if (!busy) expireBuffs(entity, level, now);
+      data.putBoolean(TAG_PERSISTENT_STATE_BUSY, busy);
+      return busy;
    }
 
    private static boolean tryCastStrategy(OdaNobunagaEntity entity, ServerLevel level, long now) {
@@ -1261,6 +1276,18 @@ public final class OdaNobunagaCombatHelper {
       return entity.getPersistentData().getLong(TAG_MAOU_UNTIL) > now;
    }
 
+   public static boolean isCombatFlying(OdaNobunagaEntity entity, long now) {
+      if (entity == null || entity.isSpiritualDissolving()
+         || entity.getPersistentData().getLong(TAG_LAND_FOR_NP_UNTIL) > now) {
+         return false;
+      }
+      return entity.getHealth() <= entity.getMaxHealth() * 0.6F
+         || entity.getPersistentData().getLong(TAG_MAOU_UNTIL) > now
+         || entity.getPersistentData().getLong(TAG_THREE_THOUSAND_CHANT_END) > now
+         || entity.getPersistentData().getLong(TAG_HAJUN_CHANT_END) > now
+         || entity.getPersistentData().getLong(TAG_FLIGHT_UNTIL) > now;
+   }
+
    private static void kiteBack(OdaNobunagaEntity entity, LivingEntity target, double distance) {
       Vec3 away = entity.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
       if (away.lengthSqr() > 1.0E-4) {
@@ -1287,6 +1314,7 @@ public final class OdaNobunagaCombatHelper {
       }
 
       entity.setNoGravity(true);
+      ServantFlightCombatService.markControlled(entity, now);
       entity.fallDistance = 0.0F;
       ensureFootSupportGun(entity, now);
       double hoverY = ServantFlightHelper.desiredHoverY(entity, target);
@@ -1608,7 +1636,7 @@ public final class OdaNobunagaCombatHelper {
       Vec3 center = entity.position().add(target.position()).scale(0.5);
       restoreFromHajunDuel(entity);
       restoreFromHajunDuel(target);
-      if (!entity.isAlive() || !target.isAlive()) {
+      if (!entity.isAlive() || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y + 0.2, center.z, 34, 1.8, 0.2, 1.8, 0.035);

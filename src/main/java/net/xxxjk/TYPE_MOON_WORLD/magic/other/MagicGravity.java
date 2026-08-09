@@ -63,7 +63,7 @@ public class MagicGravity {
             }
 
             queueActionbarResult(player, resultMessage);
-            vars.proficiency_gravity_magic = Math.min(100.0, vars.proficiency_gravity_magic + 0.4);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gravity_magic", 0.4);
             vars.syncPlayerVariables(player);
          }
       }

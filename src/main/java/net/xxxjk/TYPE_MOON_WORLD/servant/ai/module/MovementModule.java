@@ -5,7 +5,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiModule;
-import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaWorkshopHelper;
@@ -62,49 +61,6 @@ public final class MovementModule implements ServantAiModule {
    }
 
    private void tickMedea(MedeaEntity entity, ServantAiContext context) {
-      LivingEntity target = context.target();
-      if (target != null && target.isAlive()) {
-         double distance = entity.distanceTo(target);
-         if (entity.isFlyingMode()) {
-            ServantNavigationHelper.stopIfMoving(entity);
-            Vec3 toTarget = target.position().subtract(entity.position());
-            Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
-            Vec3 forward = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
-            Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
-            double orbit = Math.sin(entity.tickCount * 0.15) * 2.4;
-            double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
-            Vec3 desired = target.position().subtract(forward.scale(10.5)).add(right.scale(orbit));
-            desired = new Vec3(desired.x, desiredY, desired.z);
-            entity.setDeltaMovement(desired.subtract(entity.position()).scale(0.08));
-            entity.hasImpulse = true;
-         } else if (distance <= 4.0) {
-            Vec3 away = entity.position().subtract(target.position());
-            if (away.lengthSqr() > 1.0E-4) {
-               away = away.normalize().scale(5.5);
-               ServantNavigationHelper.moveToPositionThrottled(
-                  entity,
-                  new Vec3(entity.getX() + away.x, entity.getY(), entity.getZ() + away.z),
-                  1.1,
-                  context.gameTick(),
-                  ServantNavigationHelper.SHORT_REPATH_INTERVAL,
-                  1.0,
-                  "MedeaAwayPath"
-               );
-            }
-         } else if (distance > 11.0) {
-            ServantNavigationHelper.moveToTargetThrottled(
-               entity,
-               target,
-               0.95,
-               context.gameTick(),
-               ServantNavigationHelper.DEFAULT_REPATH_INTERVAL,
-               1.0,
-               "MedeaChasePath"
-            );
-         }
-         return;
-      }
-
       entity.setFlyingMode(false);
       Vec3 center = MedeaWorkshopHelper.getWorkshopCenter(entity);
       if (center != null && entity.distanceToSqr(center) > 16.0) {

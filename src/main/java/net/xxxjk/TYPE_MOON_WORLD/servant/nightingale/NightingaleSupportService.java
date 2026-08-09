@@ -92,6 +92,7 @@ public final class NightingaleSupportService {
    }
 
    public static void applyHealingReversal(LivingEntity nightingale, LivingEntity target, float amount) {
+      if (EntityUtils.isImmunePlayerTarget(target)) return;
       PaleRiderInfectionService.cleanse(target, true);
       var source = NightingaleDamageTypes.healingReversal(nightingale);
       if (target.isInvulnerableTo(source)) return;

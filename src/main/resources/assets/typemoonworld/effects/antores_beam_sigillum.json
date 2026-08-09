@@ -1,0 +1,204 @@
+{
+  "duration": 1.18,
+  "notes": "A layered gold-orange Antores gate inspired by the reference formation: demon seal, rotating arcane rings, red halo and a centered beam aperture.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.9,
+      "rate": 520,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.008,
+      "velocity": [0.0, 0.0, 0.015],
+      "velocity_variance": 0.01,
+      "max_vanilla_particles_per_tick": 1,
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/effects/antores_emitter_sigillum.png",
+        "width": 3.3,
+        "height": 3.3,
+        "u_segments": 92,
+        "v_segments": 92,
+        "threshold": 0.28,
+        "reveal": "CENTER_OUT",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.66,
+        "particle_size_multiplier": 0.9
+      },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -1.65, 0.0], "scale": [0.38, 0.38, 0.38], "easing": "ease_out_cubic" },
+        { "t": 0.24, "pos": [0.0, -1.65, 0.0], "scale": [1.08, 1.08, 1.08], "easing": "ease_out_back" },
+        { "t": 0.72, "pos": [0.0, -1.65, 0.0], "scale": [1.0, 1.0, 1.0] },
+        { "t": 1.0, "pos": [0.0, -1.65, 0.05], "scale": [0.82, 0.82, 0.82], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF7A12" },
+        { "t": 0.12, "color": "#FFFFA31C" },
+        { "t": 0.34, "color": "#FFFFF1A0" },
+        { "t": 0.78, "color": "#FFFFC83D" },
+        { "t": 1.0, "color": "#00FF3500" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.28, "size": 0.12 },
+        { "t": 0.75, "size": 0.085 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_GOLDEN_SIGILLUM",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.02, 0.02, 0.02], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.25 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.94,
+      "rate": 320,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.12,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.02],
+      "velocity_variance": 0.008,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(2.42 + 0.12 * sin(t * tau * 12.0 + time * 4.0)) * cos(t * tau)",
+        "expr_y": "(2.42 + 0.12 * sin(t * tau * 12.0 + time * 4.0)) * sin(t * tau)",
+        "expr_z": "0.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 192
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.42, 0.42, 0.42] },
+        { "t": 0.28, "scale": [1.08, 1.08, 1.08], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.9, 0.9, 0.9], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF4B00" },
+        { "t": 0.16, "color": "#EEFF8D12" },
+        { "t": 0.48, "color": "#FFFFE078" },
+        { "t": 0.82, "color": "#CCFF5A00" },
+        { "t": 1.0, "color": "#00FF2100" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.32, "size": 0.16 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_OUTER_RUNE_RING"
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.96,
+      "rate": 280,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.1,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.008,
+      "velocity": [0.0, 0.0, 0.024],
+      "velocity_variance": 0.006,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.86 + 0.08 * cos(t * tau * 8.0 - time * 5.0)) * cos(t * tau)",
+        "expr_y": "(1.86 + 0.08 * cos(t * tau * 8.0 - time * 5.0)) * sin(t * tau)",
+        "expr_z": "0.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 168
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.35] },
+        { "t": 0.25, "scale": [1.04, 1.04, 1.04], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [0.84, 0.84, 0.84] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFF3AE" },
+        { "t": 0.18, "color": "#FFFFF7CA" },
+        { "t": 0.58, "color": "#FFFFC32B" },
+        { "t": 1.0, "color": "#00FF5100" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.3, "size": 0.13 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_INNER_RUNE_RING"
+    },
+    {
+      "start_time": 0.04,
+      "end_time": 0.94,
+      "rate": 240,
+      "particle_lifetime": 0.44,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.03],
+      "velocity_variance": 0.012,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "2.12 * cos(t * tau) + 0.24 * cos(t * tau * 9.0 - time * 3.0)",
+        "expr_y": "2.12 * sin(t * tau) - 0.24 * sin(t * tau * 9.0 - time * 3.0)",
+        "expr_z": "0.015 * sin(t * tau * 6.0 + time * 5.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 184
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.3, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.78, 0.78, 0.78] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF2B00" },
+        { "t": 0.16, "color": "#CCFF4300" },
+        { "t": 0.46, "color": "#FFFFB020" },
+        { "t": 0.76, "color": "#DDFEF4B0" },
+        { "t": 1.0, "color": "#00FF1800" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.028 },
+        { "t": 0.38, "size": 0.115 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_ORNAMENTAL_ORBIT"
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.86,
+      "rate": 180,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.24,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.0, 0.08],
+      "velocity_variance": 0.045,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 120 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.35, 0.05] },
+        { "t": 0.34, "scale": [2.9, 2.9, 0.12], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [3.5, 3.5, 0.2] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FF1700" },
+        { "t": 0.18, "color": "#66FF2D00" },
+        { "t": 0.52, "color": "#55FF7A0A" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.4, "size": 0.28 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_RED_GATE_HALO"
+    }
+  ]
+}

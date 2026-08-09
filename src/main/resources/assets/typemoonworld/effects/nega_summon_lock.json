@@ -1,0 +1,41 @@
+{
+  "duration": 0.62,
+  "notes": "A restrained black-violet contract lock that precedes Nega Summon's server-side forced death.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.56,
+      "rate": 280,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.12,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 128 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.8, 0.0], "scale": [0.25, 1.0, 0.25] },
+        { "t": 0.42, "pos": [0.0, 0.8, 0.0], "scale": [2.0, 1.0, 2.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.8, 0.0], "scale": [1.45, 1.0, 1.45] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#0040065F" },
+        { "t": 0.2, "color": "#D9B930FF" },
+        { "t": 0.62, "color": "#CC5C0A87" },
+        { "t": 1.0, "color": "#0010001A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.32, "size": 0.18 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "NEGA_SUMMON_CONTRACT_LOCK",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "reverse_portal", "count": 1, "spread": [0.35, 0.55, 0.35], "offset": [0.0, 0.75, 0.0], "speed": 0.03, "chance": 0.45 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "duration": 0.32,
+  "notes": "Medium-power Oriasn concentric gale and air-distortion rings.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.31,
+      "rate": 520,
+      "particle_lifetime": 0.4,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.018, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 4,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -1.0, 0.0], "rotate_with_entity": false },
+      "component": { "type": "circle", "radius": 1.0, "segments": 192 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [2.5, 1.0, 2.5] },
+        { "t": 0.55, "scale": [7.5, 1.0, 7.5], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [12.5, 1.0, 12.5] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#EEFFFFFF" },
+        { "t": 0.38, "color": "#E8FF8BC5" },
+        { "t": 0.74, "color": "#A05A1230" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.5, "size": 0.34 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "STORM_GALE_MEDIUM_OUTER_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.8, 0.08, 0.8], "offset": [0.0, 0.05, 0.0], "speed": 0.06, "chance": 0.65 },
+        { "type": "cloud", "count": 1, "spread": [0.7, 0.08, 0.7], "offset": [0.0, 0.08, 0.0], "speed": 0.045, "chance": 0.52 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 300,
+      "particle_lifetime": 0.36,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.03,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, -0.55, 0.0], "rotate_with_entity": false },
+      "component": { "type": "helix", "radius": 4.5, "turns": 2.0, "height": 2.4, "segments": 160 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#B8FF5CA8" },
+        { "t": 0.5, "color": "#CCFFFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.5, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "STORM_GALE_MEDIUM_BODY_SPIRAL",
+      "enable_trail": true
+    }
+  ]
+}

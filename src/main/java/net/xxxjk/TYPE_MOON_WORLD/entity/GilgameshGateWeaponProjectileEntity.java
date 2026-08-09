@@ -46,12 +46,15 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
    private UUID homingTargetUuid;
+   private boolean requireHomingTarget;
    private float damage = 18.0F;
    private final Set<Integer> hit = new HashSet<>();
 
    public GilgameshGateWeaponProjectileEntity(EntityType<?> type, Level level) {
       super(type, level);
-      this.noCulling = true;
+      // Gate entities are numerous during a release. Let the normal frustum
+      // and distance checks discard off-screen models, especially with a GUI open.
+      this.noCulling = false;
       this.setNoGravity(true);
    }
 
@@ -65,6 +68,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    }
 
    public String getWeaponId() { return this.entityData.get(WEAPON_ID); }
+   /** Resolves the living owner for AI threat classification on the server. */
+   public LivingEntity getOwnerEntity() {
+      return this.level() instanceof net.minecraft.server.level.ServerLevel level ? getOwner(level) : null;
+   }
    public int getSourceStyle() { return this.entityData.get(SOURCE_STYLE); }
    public void setSourceStyle(int style) { this.entityData.set(SOURCE_STYLE, style); }
    public void setDuelToken(String token) { this.entityData.set(DUEL_TOKEN, token == null ? "" : token); }
@@ -72,12 +79,13 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    public void setEffectStride(int stride) { this.entityData.set(EFFECT_STRIDE, Math.max(1, stride)); }
    public void setEmpowered(boolean empowered) { this.entityData.set(EMPOWERED, empowered); }
    public void setHomingTarget(LivingEntity target) {
-      if (target == null || !target.isAlive()) {
+      if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          this.homingTargetUuid = null;
          this.entityData.set(HOMING_TARGET_ID, 0);
          return;
       }
       this.homingTargetUuid = target.getUUID();
+      this.requireHomingTarget = true;
       this.entityData.set(HOMING_TARGET_ID, target.getId());
    }
    public int getHomingTargetId() { return this.entityData.get(HOMING_TARGET_ID); }
@@ -129,6 +137,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          }
          String token = this.entityData.get(DUEL_TOKEN);
          if (token.isBlank()) updateHomingTarget(level);
+         if (this.isRemoved()) return;
          next = old.add(this.getDeltaMovement());
          if (!token.isBlank()) {
             GilgameshGateWeaponProjectileEntity counterpart = level.getEntitiesOfClass(GilgameshGateWeaponProjectileEntity.class,
@@ -209,12 +218,20 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          target = resolved instanceof LivingEntity living ? living : null;
          if (target != null) this.entityData.set(HOMING_TARGET_ID, target.getId());
       }
-      if (target == null || !target.isAlive()) return;
+      if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+         this.homingTargetUuid = null;
+         this.entityData.set(HOMING_TARGET_ID, 0);
+         if (this.requireHomingTarget) {
+            this.discard();
+         }
+         return;
+      }
       LivingEntity owner = getOwner(level);
       if (owner != null && (target == owner || target.isAlliedTo(owner)
          || ServantMasterTargeting.isContractMaster(owner, target))) {
          this.homingTargetUuid = null;
          this.entityData.set(HOMING_TARGET_ID, 0);
+         this.discard();
          return;
       }
       Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0)
@@ -250,6 +267,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       this.entityData.set(EFFECT_STRIDE, Math.max(1, tag.getInt("EffectStride")));
       if (tag.hasUUID("HomingTarget")) this.homingTargetUuid = tag.getUUID("HomingTarget");
       this.damage = tag.contains("Damage") ? tag.getFloat("Damage") : 18.0F;
+      this.requireHomingTarget = tag.hasUUID("HomingTarget");
    }
 
    @Override

@@ -678,18 +678,26 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static void activateOdaHajunField(ServerPlayer player, ServerLevel source) {
+      CompoundTag data = player.getPersistentData();
       if (ModDimensions.isHajunDimension(source.dimension().location())) {
+         data.putString(HAJUN_FIELD_RETURN_DIM, source.dimension().location().toString());
+         data.putDouble(HAJUN_FIELD_RETURN_X, player.getX());
+         data.putDouble(HAJUN_FIELD_RETURN_Y, player.getY());
+         data.putDouble(HAJUN_FIELD_RETURN_Z, player.getZ());
          restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
          startOdaHajunLocalField(player, source);
          return;
       }
       ServerLevel hajunLevel = source.getServer().getLevel(ModDimensions.HAJUN_KEY);
       if (hajunLevel == null) {
+         data.putString(HAJUN_FIELD_RETURN_DIM, source.dimension().location().toString());
+         data.putDouble(HAJUN_FIELD_RETURN_X, player.getX());
+         data.putDouble(HAJUN_FIELD_RETURN_Y, player.getY());
+         data.putDouble(HAJUN_FIELD_RETURN_Z, player.getZ());
          restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
          startOdaHajunLocalField(player, source);
          return;
       }
-      CompoundTag data = player.getPersistentData();
       data.putString(HAJUN_FIELD_RETURN_DIM, source.dimension().location().toString());
       data.putDouble(HAJUN_FIELD_RETURN_X, player.getX());
       data.putDouble(HAJUN_FIELD_RETURN_Y, player.getY());
@@ -697,7 +705,8 @@ public final class ServantCardOdaNobunagaSkills {
       ServantCardFlightController.stop(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), true);
       List<LivingEntity> targets = collectOdaHajunTargets(player, source);
       Vec3 randomEntry = UBWInstanceManager.randomEntryPosition(player.getRandom());
-      Vec3 entry = new Vec3(randomEntry.x, findHajunSafeSpawnY(hajunLevel, Mth.floor(randomEntry.x), Mth.floor(randomEntry.z)), randomEntry.z);
+      Vec3 entry = findHajunSafePosition(hajunLevel, randomEntry.x, randomEntry.z,
+         player.getBbWidth(), player.getBbHeight());
       source.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.2F, 0.55F);
       source.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 72, 4.0, 0.18, 4.0, 0.04);
       restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
@@ -718,6 +727,16 @@ public final class ServantCardOdaNobunagaSkills {
             TypeMoonWorldModVariables.PlayerVariables movedVars = movedPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             movedVars.syncPlayerVariables(movedPlayer);
             movedVars.syncServantCardRuntime(movedPlayer);
+            movedPlayer.fallDistance = 0.0F;
+            movedPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, false));
+         } else {
+            // A failed server-side transition must not leave the caster's field state armed.
+            returnOdaHajunTargets(player.getUUID(), hajunLevel, source);
+            data.remove(HAJUN_FIELD_ACTIVE_UNTIL);
+            data.remove(HAJUN_FIELD_RETURN_DIM);
+            data.remove(HAJUN_FIELD_RETURN_X);
+            data.remove(HAJUN_FIELD_RETURN_Y);
+            data.remove(HAJUN_FIELD_RETURN_Z);
          }
       });
    }
@@ -850,8 +869,8 @@ public final class ServantCardOdaNobunagaSkills {
          double relZ = Mth.clamp(living.getZ() - player.getZ(), -16.0, 16.0);
          double targetX = entry.x + relX;
          double targetZ = entry.z + relZ;
-         double targetY = findHajunSafeSpawnY(hajunLevel, Mth.floor(targetX), Mth.floor(targetZ));
-         Entity moved = living.changeDimension(new DimensionTransition(hajunLevel, new Vec3(targetX, targetY, targetZ), Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
+         Vec3 targetPosition = findHajunSafePosition(hajunLevel, targetX, targetZ, living.getBbWidth(), living.getBbHeight());
+         Entity moved = living.changeDimension(new DimensionTransition(hajunLevel, targetPosition, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
          if (moved instanceof LivingEntity movedLiving) {
             CompoundTag movedData = movedLiving.getPersistentData();
             movedData.putUUID(HAJUN_FIELD_OWNER, player.getUUID());
@@ -859,6 +878,8 @@ public final class ServantCardOdaNobunagaSkills {
             movedData.putDouble(HAJUN_FIELD_TARGET_RETURN_X, data.getDouble(HAJUN_FIELD_TARGET_RETURN_X));
             movedData.putDouble(HAJUN_FIELD_TARGET_RETURN_Y, data.getDouble(HAJUN_FIELD_TARGET_RETURN_Y));
             movedData.putDouble(HAJUN_FIELD_TARGET_RETURN_Z, data.getDouble(HAJUN_FIELD_TARGET_RETURN_Z));
+            movedLiving.fallDistance = 0.0F;
+            movedLiving.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, false));
          }
       }
    }
@@ -880,10 +901,15 @@ public final class ServantCardOdaNobunagaSkills {
    private static void returnFromOdaHajunField(ServerPlayer player, ServerLevel level) {
       CompoundTag data = player.getPersistentData();
       ServerLevel returnLevel = resolveDimension(level, data.getString(HAJUN_FIELD_RETURN_DIM));
-      Vec3 returnPos = new Vec3(data.getDouble(HAJUN_FIELD_RETURN_X), data.getDouble(HAJUN_FIELD_RETURN_Y), data.getDouble(HAJUN_FIELD_RETURN_Z));
-      returnOdaHajunTargets(player.getUUID(), level, returnLevel);
-      restoreOdaHajunTerrain(player, level, Integer.MAX_VALUE);
-      restoreOdaHajunChantTerrain(player, level, Integer.MAX_VALUE);
+      Vec3 requestedReturnPos = new Vec3(data.getDouble(HAJUN_FIELD_RETURN_X), data.getDouble(HAJUN_FIELD_RETURN_Y), data.getDouble(HAJUN_FIELD_RETURN_Z));
+      Vec3 returnPos = findSafeReturnPosition(returnLevel, requestedReturnPos, player.getBbWidth(), player.getBbHeight());
+      ServerLevel fieldLevel = ModDimensions.isHajunDimension(level.dimension().location())
+         ? level : level.getServer().getLevel(ModDimensions.HAJUN_KEY);
+      if (fieldLevel != null) {
+         returnOdaHajunTargets(player.getUUID(), fieldLevel, returnLevel);
+         restoreOdaHajunTerrain(player, fieldLevel, Integer.MAX_VALUE);
+         restoreOdaHajunChantTerrain(player, fieldLevel, Integer.MAX_VALUE);
+      }
       data.remove(HAJUN_ACTIVE);
       data.remove(HAJUN_START);
       data.remove(HAJUN_PROGRESS);
@@ -893,14 +919,18 @@ public final class ServantCardOdaNobunagaSkills {
       data.remove(HAJUN_FIELD_RETURN_X);
       data.remove(HAJUN_FIELD_RETURN_Y);
       data.remove(HAJUN_FIELD_RETURN_Z);
-      for (RedSkeletonHajunEntity skeleton : level.getEntitiesOfClass(RedSkeletonHajunEntity.class, player.getBoundingBox().inflate(96.0))) {
-         skeleton.discard();
+      if (fieldLevel != null) {
+         for (RedSkeletonHajunEntity skeleton : fieldLevel.getEntitiesOfClass(RedSkeletonHajunEntity.class, player.getBoundingBox().inflate(96.0))) {
+            skeleton.discard();
+         }
       }
       ServerPlayer syncPlayer = player;
-      if (player.isAlive() && ModDimensions.isHajunDimension(level.dimension().location())) {
+      if (player.isAlive() && ModDimensions.isHajunDimension(level.dimension().location()) && returnLevel != level) {
          Entity moved = player.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
          if (moved instanceof ServerPlayer movedPlayer) {
             syncPlayer = movedPlayer;
+            syncPlayer.fallDistance = 0.0F;
+            syncPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 4, false, false, false));
          }
       }
       TypeMoonWorldModVariables.PlayerVariables vars = syncPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -910,19 +940,30 @@ public final class ServantCardOdaNobunagaSkills {
 
    private static void returnOdaHajunTargets(UUID ownerId, ServerLevel sourceLevel, ServerLevel fallbackLevel) {
       List<LivingEntity> toReturn = new ArrayList<>();
-      for (Entity candidate : sourceLevel.getEntities().getAll()) {
-         if (candidate instanceof LivingEntity living && living.getPersistentData().hasUUID(HAJUN_FIELD_OWNER) && ownerId.equals(living.getPersistentData().getUUID(HAJUN_FIELD_OWNER))) {
-            toReturn.add(living);
+      for (ServerLevel scanLevel : sourceLevel.getServer().getAllLevels()) {
+         for (Entity candidate : scanLevel.getEntities().getAll()) {
+            if (candidate instanceof LivingEntity living && living.getPersistentData().hasUUID(HAJUN_FIELD_OWNER)
+               && ownerId.equals(living.getPersistentData().getUUID(HAJUN_FIELD_OWNER))) {
+               toReturn.add(living);
+            }
          }
       }
       for (LivingEntity living : toReturn) {
          CompoundTag data = living.getPersistentData();
          ServerLevel returnLevel = resolveDimensionOrFallback(sourceLevel, data.getString(HAJUN_FIELD_TARGET_RETURN_DIM), fallbackLevel);
-         Vec3 returnPos = new Vec3(data.getDouble(HAJUN_FIELD_TARGET_RETURN_X), data.getDouble(HAJUN_FIELD_TARGET_RETURN_Y), data.getDouble(HAJUN_FIELD_TARGET_RETURN_Z));
+         Vec3 requestedReturnPos = new Vec3(data.getDouble(HAJUN_FIELD_TARGET_RETURN_X), data.getDouble(HAJUN_FIELD_TARGET_RETURN_Y), data.getDouble(HAJUN_FIELD_TARGET_RETURN_Z));
+         Vec3 returnPos = findSafeReturnPosition(returnLevel, requestedReturnPos, living.getBbWidth(), living.getBbHeight());
          clearOdaHajunTarget(living);
+         if (living.level() == returnLevel) {
+            living.setPos(returnPos);
+            living.fallDistance = 0.0F;
+            continue;
+         }
          Entity moved = living.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
          if (moved instanceof LivingEntity movedLiving) {
             clearOdaHajunTarget(movedLiving);
+            movedLiving.fallDistance = 0.0F;
+            movedLiving.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 4, false, false, false));
          }
       }
    }
@@ -955,11 +996,60 @@ public final class ServantCardOdaNobunagaSkills {
       for (int y = level.getMaxBuildHeight() - 1; y > level.getMinBuildHeight(); y--) {
          pos.setY(y);
          BlockState state = level.getBlockState(pos);
-         if (!state.isAir() && state.isFaceSturdy(level, pos, Direction.UP)) {
+         if (!state.isAir() && state.isFaceSturdy(level, pos, Direction.UP)
+            && level.getBlockState(pos.above()).isAir() && level.getBlockState(pos.above(2)).isAir()) {
             return y + 1;
          }
       }
       return 72;
+   }
+
+   private static Vec3 findHajunSafePosition(ServerLevel level, double x, double z, float width, float height) {
+      level.getChunk(Mth.floor(x) >> 4, Mth.floor(z) >> 4);
+      int baseX = Mth.floor(x);
+      int baseZ = Mth.floor(z);
+      for (int radius = 0; radius <= 8; radius++) {
+         for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+               if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+               int candidateX = baseX + dx;
+               int candidateZ = baseZ + dz;
+               int candidateY = findHajunSafeSpawnY(level, candidateX, candidateZ);
+               if (isSafeStandingPosition(level, candidateX + 0.5, candidateY, candidateZ + 0.5, width, height)) {
+                  return new Vec3(candidateX + 0.5, candidateY, candidateZ + 0.5);
+               }
+            }
+         }
+      }
+      return new Vec3(x, Mth.clamp(72.0, level.getMinBuildHeight() + 1.0, level.getMaxBuildHeight() - 2.0), z);
+   }
+
+   private static Vec3 findSafeReturnPosition(ServerLevel level, Vec3 requested, float width, float height) {
+      if (isSafeStandingPosition(level, requested.x, requested.y, requested.z, width, height)) {
+         return requested;
+      }
+      return findHajunSafePosition(level, requested.x, requested.z, width, height);
+   }
+
+   private static boolean isSafeStandingPosition(ServerLevel level, double x, double y, double z, float width, float height) {
+      int minX = Mth.floor(x - width * 0.5F + 1.0E-4);
+      int maxX = Mth.floor(x + width * 0.5F - 1.0E-4);
+      int minZ = Mth.floor(z - width * 0.5F + 1.0E-4);
+      int maxZ = Mth.floor(z + width * 0.5F - 1.0E-4);
+      int supportY = Mth.floor(y - 0.01);
+      int bodyStart = supportY + 1;
+      int top = Mth.ceil(y + height);
+      for (int blockX = minX; blockX <= maxX; blockX++) {
+         for (int blockZ = minZ; blockZ <= maxZ; blockZ++) {
+            BlockPos supportPos = new BlockPos(blockX, supportY, blockZ);
+            BlockState support = level.getBlockState(supportPos);
+            if (support.isAir() || !support.isFaceSturdy(level, supportPos, Direction.UP)) return false;
+            for (int blockY = bodyStart; blockY < top; blockY++) {
+               if (!level.getBlockState(new BlockPos(blockX, blockY, blockZ)).isAir()) return false;
+            }
+         }
+      }
+      return true;
    }
 
    private static void stainOdaHajunSurface(ServerLevel level, BlockPos center, int attempts) {

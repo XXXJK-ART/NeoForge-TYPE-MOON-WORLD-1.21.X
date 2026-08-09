@@ -7,6 +7,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class OriginBulletHelper {
@@ -38,6 +39,11 @@ public final class OriginBulletHelper {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (AdvancedPassiveService.ignoresOriginBulletSeal(player)) {
+         if (vars.origin_bullet_sealed) vars.origin_bullet_sealed = false;
+         vars.syncPlayerVariables(player);
+         return;
+      }
       vars.origin_bullet_sealed = true;
       vars.is_magic_circuit_open = false;
       vars.magic_circuit_open_timer = 0.0;

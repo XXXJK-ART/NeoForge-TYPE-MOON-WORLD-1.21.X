@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +25,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClick
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
@@ -138,6 +140,12 @@ public class ModPlayerEventHandler {
          }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
+            return;
+         }
+         if (handleAvalonArtoriaCardActivation(event.getEntity(), event.getHand(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
          }
       }
    }
@@ -225,6 +233,25 @@ public class ModPlayerEventHandler {
       // it deliberately bypasses the mana-cost pipeline and only keeps its
       // own 0.5-second action cooldown.
       return ServantCardZhaoYunSkills.performNormalSpearThrust(serverPlayer);
+   }
+
+   private static boolean handleAvalonArtoriaCardActivation(Player player, InteractionHand hand, Entity target) {
+      if (!(player instanceof ServerPlayer serverPlayer)
+         || player.isCrouching()
+         || !(target instanceof ServerPlayer targetPlayer)) {
+         return false;
+      }
+      ItemStack stack = player.getItemInHand(hand);
+      if (!stack.is(ModItems.AVALON.get())) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables targetVars = targetPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!targetVars.servant_card_transformed || !"artoria_pendragon".equals(targetVars.servant_card_id)) {
+         return false;
+      }
+      AvalonItem.activateFor(serverPlayer, stack, targetPlayer);
+      player.displayClientMessage(Component.translatable("item.typemoonworld.avalon.active"), true);
+      return true;
    }
 
    private static void triggerArtoriaManaBurstTerrainBreak(ServerPlayer player, LivingEntity target) {

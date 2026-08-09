@@ -1,0 +1,121 @@
+{
+  "duration": 1.05,
+  "notes": "Original Medusa snare VFX: purple-gold seal and dark-silver constricting chain traces, visually distinct from Enkidu.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.36,
+      "rate": 520,
+      "particle_lifetime": 0.48,
+      "size_variance": 0.05,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "circle", "radius": 1.0, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#003B153F" },
+        { "t": 0.24, "color": "#BB7B2D85" },
+        { "t": 0.62, "color": "#DDBB8A3A" },
+        { "t": 1.0, "color": "#003B153F" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.02 },
+        { "t": 0.48, "size": 0.09 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.08, 0.0], "scale": [0.28, 1.0, 0.28], "easing": "ease_out_cubic" },
+        { "t": 0.55, "pos": [0.0, 0.08, 0.0], "scale": [1.25, 1.0, 1.25], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.08, 0.0], "scale": [0.65, 1.0, 0.65], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "MEDUSA_SNARE_PURPLE_SEAL",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "enchanted_hit", "count": 1, "spread": [0.35, 0.1, 0.35], "offset": [0.0, 0.15, 0.0], "speed": 0.014, "chance": 0.28 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 0.82,
+      "rate": 950,
+      "particle_lifetime": 0.58,
+      "size_variance": 0.06,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.015,
+      "velocity": [0.0, -0.006, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.15 - 0.58 * t) * cos(t * tau * 4.0 - time * 6.0)",
+        "expr_y": "0.15 + 1.45 * t",
+        "expr_z": "(1.15 - 0.58 * t) * sin(t * tau * 4.0 - time * 6.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 190
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#006E6A78" },
+        { "t": 0.28, "color": "#CCB6B5C4" },
+        { "t": 0.58, "color": "#AA8D53A1" },
+        { "t": 1.0, "color": "#003B153F" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.45, "size": 0.07 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.15, 0.95, 1.15], "easing": "ease_out_cubic" },
+        { "t": 0.56, "scale": [0.74, 1.0, 0.74], "easing": "ease_in_cubic" },
+        { "t": 1.0, "scale": [0.62, 1.0, 0.62], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "MEDUSA_SNARE_DARK_SILVER_COIL",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.28,
+      "end_time": 1.05,
+      "rate": 430,
+      "particle_lifetime": 0.52,
+      "size_variance": 0.05,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.012, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 2,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.42 * cos(t * tau * 3.0 + time * 4.0)",
+        "expr_y": "0.05 + 1.65 * t",
+        "expr_z": "0.42 * sin(t * tau * 3.0 + time * 4.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 140
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00BB8A3A" },
+        { "t": 0.25, "color": "#CCBB8A3A" },
+        { "t": 0.58, "color": "#AAE8D8A8" },
+        { "t": 1.0, "color": "#003B153F" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.02 },
+        { "t": 0.44, "size": 0.075 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "MEDUSA_SNARE_LOCK_PULSE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "crit", "count": 1, "spread": [0.24, 0.52, 0.24], "offset": [0.0, 0.75, 0.0], "speed": 0.02, "chance": 0.22 }
+      ]
+    }
+  ]
+}

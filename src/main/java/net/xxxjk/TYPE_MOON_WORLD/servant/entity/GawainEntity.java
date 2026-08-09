@@ -15,6 +15,12 @@ public class GawainEntity extends ServantEntity {
    }
 
    @Override
+   protected void customServerAiStep() {
+      GawainCombatHelper.tickPassiveState(this);
+      super.customServerAiStep();
+   }
+
+   @Override
    public void die(DamageSource cause) {
       if (GawainCombatHelper.tryConsumeGuts(this)) {
          return;

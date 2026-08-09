@@ -15,8 +15,14 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
+@EventBusSubscriber(
+   modid = "typemoonworld"
+)
 public final class UBWInstanceManager {
    public static final double ENTRY_RANGE = 50000.0;
    private static final Map<UUID, ResourceKey<Level>> OWNER_DIMENSIONS = new ConcurrentHashMap<>();
@@ -135,6 +141,30 @@ public final class UBWInstanceManager {
    }
 
    public static void processPendingDeletions(MinecraftServer server) {
+   }
+
+   @SubscribeEvent
+   public static void onServerStopping(ServerStoppingEvent event) {
+      clearAllInstances(event.getServer());
+   }
+
+   public static void clearAllInstances(MinecraftServer server) {
+      if (server != null) {
+         for (Map.Entry<UUID, ChunkPos> entry : OWNER_TICKETS.entrySet()) {
+            ResourceKey<Level> key = OWNER_DIMENSIONS.get(entry.getKey());
+            if (key == null) {
+               continue;
+            }
+            ServerLevel level = server.getLevel(key);
+            if (level != null) {
+               ChunkPos chunkPos = entry.getValue();
+               level.getChunkSource().removeRegionTicket(TicketType.PLAYER, chunkPos, 3, chunkPos);
+            }
+         }
+      }
+      OWNER_TICKETS.clear();
+      OWNER_DIMENSIONS.clear();
+      DIMENSION_OWNERS.clear();
    }
 
    private static ServerLevel acquireStaticDimension(MinecraftServer server, UUID ownerId, ResourceKey<Level> key) {

@@ -23,6 +23,12 @@ public class ModBlockEntities {
    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GemCarvingTableBlockEntity>> GEM_CARVING_TABLE_BLOCK_ENTITY = BLOCK_ENTITIES.register(
       "gem_carving_table_block_entity", () -> Builder.of(GemCarvingTableBlockEntity::new, new Block[]{(Block)ModBlocks.GEM_CARVING_TABLE.get()}).build(null)
    );
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagicResearchTableBlockEntity>> MAGIC_RESEARCH_TABLE = BLOCK_ENTITIES.register(
+      "magic_research_table", () -> Builder.of(MagicResearchTableBlockEntity::new, ModBlocks.MAGIC_RESEARCH_TABLE.get()).build(null)
+   );
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MagicCopyingTableBlockEntity>> MAGIC_COPYING_TABLE = BLOCK_ENTITIES.register(
+      "magic_copying_table", () -> Builder.of(MagicCopyingTableBlockEntity::new, ModBlocks.MAGIC_COPYING_TABLE.get()).build(null)
+   );
    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ArtificialLeylineBlockEntity>> ARTIFICIAL_LEYLINE_BLOCK_ENTITY = BLOCK_ENTITIES.register(
       "artificial_leyline_block_entity", () -> Builder.of(ArtificialLeylineBlockEntity::new, new Block[]{(Block)ModBlocks.ARTIFICIAL_LEYLINE_BLOCK.get()}).build(null)
    );

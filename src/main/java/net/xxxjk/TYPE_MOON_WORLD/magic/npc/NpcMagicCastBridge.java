@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
+import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
+import com.example.typemoonaddon.detection.DetectionService;
+import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,6 +60,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity.GemGravityFieldMagic;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
@@ -128,6 +134,9 @@ public final class NpcMagicCastBridge {
    private static final String TAG_PENDING_MG_SHOT_COUNT = "TypeMoonNpcPendingMgShotCount";
    private static final String TAG_PENDING_MG_BLOCKED_RETRIES = "TypeMoonNpcPendingMgBlockedRetries";
    private static final String TAG_JEWEL_ITEM_NEXT_TICK = "TypeMoonNpcJewelItemNextTick";
+   private static final String TAG_ANALYSIS_TEMPORARY = "TypeMoonNpcAnalysisTemporary";
+   private static final String TAG_ANALYSIS_EXPIRES = "TypeMoonNpcAnalysisExpires";
+   private static final String TAG_ANALYSIS_ALREADY_KNOWN = "TypeMoonNpcAnalysisAlreadyKnown";
    private static final String TAG_ATTR_INIT = "TypeMoonNpcAttrInitV1";
    private static final String TAG_BASE_MAX_HEALTH = "TypeMoonNpcBaseMaxHealth";
    private static final String TAG_BASE_MOVE_SPEED = "TypeMoonNpcBaseMoveSpeed";
@@ -190,8 +199,11 @@ public final class NpcMagicCastBridge {
       "jewel_machine_gun",
       "healing_magic",
       "magic_bullet",
+      "magic_analysis",
       "suggestion_magic",
       "binding_magic",
+      "airflow_blade",
+      "detection",
       "fire_magic",
       "water_magic",
       "wind_magic",
@@ -283,6 +295,7 @@ public final class NpcMagicCastBridge {
          tickProjectedHandItemExpiry(npc, gameTime);
          tickManaRecovery(npc, vars);
          tickLocalCooldown(vars);
+         cleanupTemporaryAnalyzedMagics(npc, vars, gameTime, false);
          NpcMagicCastBridge.MagicCapabilityProfile capabilities = getCachedMagicCapabilities(npc, vars, gameTime);
          syncCapabilityFlags(npc, capabilities);
          NpcMagicCastBridge.EnvironmentHazardProfile environment = getCachedEnvironmentalHazard(npc, gameTime);
@@ -378,6 +391,7 @@ public final class NpcMagicCastBridge {
 
             npc.getPersistentData().putInt(TAG_COMBAT_LEVEL_BONUS, 0);
             clearPendingMachineGun(npc);
+            cleanupTemporaryAnalyzedMagics(npc, vars, gameTime, true);
             maybeCloseCircuit(npc, vars, gameTime);
          }
       }
@@ -496,6 +510,155 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   public static boolean grantTemporaryAnalyzedMagic(
+      MysticMagicianEntity npc,
+      String magicId,
+      double analysisProficiency,
+      long gameTime
+   ) {
+      if (npc == null || npc.level().isClientSide() || magicId == null || magicId.isEmpty()) {
+         return false;
+      }
+      if ("magic_analysis".equals(magicId)
+         || !NpcMagicFilterService.isMagicAllowedForNpc(magicId)
+         || !MagicLearningStrategy.learningRequirementsMet(npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), magicId)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      boolean alreadyKnown = vars.learned_magics.contains(magicId);
+      if (!alreadyKnown) {
+         vars.learned_magics.add(magicId);
+      }
+      double complexity = MagicLearningStrategy.complexity(magicId);
+      double temporaryProficiency = Mth.clamp(28.0 + analysisProficiency * 0.55 - complexity * 0.12, 12.0, 88.0);
+      MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), temporaryProficiency));
+
+      int slot = findTemporaryAnalysisSlot(vars, magicId);
+      if (slot < 0) {
+         slot = findEmptyWheelSlot(vars);
+      }
+      if (slot < 0) {
+         slot = findReplaceableWheelSlot(vars);
+      }
+      if (slot < 0) {
+         return false;
+      }
+
+      CompoundTag payload = NpcMagicFilterService.sanitizePresetForNpc(
+         magicId,
+         NpcMagicFilterService.buildRandomPresetForMagic(magicId, npc.registryAccess(), npc.getRandom()),
+         npc.registryAccess(),
+         npc.getRandom()
+      );
+      payload.putBoolean(TAG_ANALYSIS_TEMPORARY, true);
+      payload.putLong(TAG_ANALYSIS_EXPIRES, gameTime + temporaryAnalysisDurationTicks(analysisProficiency, complexity));
+      payload.putBoolean(TAG_ANALYSIS_ALREADY_KNOWN, alreadyKnown);
+
+      TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry =
+         new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(vars.active_wheel_index, slot);
+      entry.magicId = magicId;
+      entry.sourceType = "analysis";
+      entry.presetPayload = payload;
+      entry.displayNameCache = magicId + " [analysis]";
+      vars.setWheelSlotEntry(vars.active_wheel_index, slot, entry);
+      vars.rebuildSelectedMagicsFromActiveWheel();
+      npc.getPersistentData().remove(TAG_CAP_CACHE_TICK);
+      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+      return true;
+   }
+
+   private static int findTemporaryAnalysisSlot(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (entry != null && magicId.equals(entry.magicId) && isTemporaryAnalysisEntry(entry)) {
+            return slot;
+         }
+      }
+      return -1;
+   }
+
+   private static int findEmptyWheelSlot(TypeMoonWorldModVariables.PlayerVariables vars) {
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (entry == null || entry.isEmpty()) {
+            return slot;
+         }
+      }
+      return -1;
+   }
+
+   private static int findReplaceableWheelSlot(TypeMoonWorldModVariables.PlayerVariables vars) {
+      for (int slot = 11; slot >= 0; slot--) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (entry != null && isTemporaryAnalysisEntry(entry)) {
+            return slot;
+         }
+      }
+      return -1;
+   }
+
+   private static long temporaryAnalysisDurationTicks(double analysisProficiency, double complexity) {
+      return (long)Mth.clamp(240.0 + analysisProficiency * 4.0 - complexity * 1.5, 120.0, 600.0);
+   }
+
+   private static boolean isTemporaryAnalysisEntry(TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry) {
+      return entry != null
+         && entry.presetPayload != null
+         && "analysis".equals(entry.sourceType)
+         && entry.presetPayload.getBoolean(TAG_ANALYSIS_TEMPORARY);
+   }
+
+   private static void cleanupTemporaryAnalyzedMagics(
+      MysticMagicianEntity npc,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      long gameTime,
+      boolean force
+   ) {
+      if (npc == null || vars == null) {
+         return;
+      }
+      boolean changed = false;
+      Set<String> removable = new HashSet<>();
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (!isTemporaryAnalysisEntry(entry)) {
+            continue;
+         }
+         long expires = entry.presetPayload.getLong(TAG_ANALYSIS_EXPIRES);
+         if (force || expires <= gameTime) {
+            if (!entry.presetPayload.getBoolean(TAG_ANALYSIS_ALREADY_KNOWN) && entry.magicId != null && !entry.magicId.isEmpty()) {
+               removable.add(entry.magicId);
+            }
+            vars.setWheelSlotEntry(vars.active_wheel_index, slot, new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(vars.active_wheel_index, slot));
+            changed = true;
+         }
+      }
+      if (changed) {
+         for (String magicId : removable) {
+            if (!hasWheelMagic(vars, magicId)) {
+               vars.learned_magics.remove(magicId);
+            }
+         }
+         vars.rebuildSelectedMagicsFromActiveWheel();
+         npc.getPersistentData().remove(TAG_CAP_CACHE_TICK);
+         syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+      }
+      if (force) {
+         vars.magic_analysis_active = false;
+      }
+   }
+
+   private static boolean hasWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (entry != null && magicId.equals(entry.magicId)) {
+            return true;
+         }
+      }
+      return false;
+   }
+
    private static void initializeIfNeeded(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = npc.getPersistentData();
       ensureCombatAttributesInitialized(npc, data, npc.getRandom());
@@ -527,9 +690,10 @@ public final class NpcMagicCastBridge {
          int fixedLevel = Mth.clamp(data.contains(TAG_FIXED_LEVEL) ? data.getInt(TAG_FIXED_LEVEL) : Mth.nextInt(random, LEVEL_MIN, LEVEL_MAX), LEVEL_MIN, LEVEL_MAX);
          data.putInt(TAG_FIXED_LEVEL, fixedLevel);
          data.putInt(TAG_COMBAT_LEVEL_BONUS, 0);
-         randomizeBaseStats(vars, random);
+         MysticMagicianRank rank = npc.getMagicianRank();
+         randomizeBaseStats(vars, random, rank);
          randomizeMagicAttributes(vars, random);
-         seedSelfKnowledge(vars, random, fixedLevel);
+         seedSelfKnowledge(npc, vars, random, fixedLevel, rank);
          seedCrestKnowledge(npc, vars, random);
          buildWheelEntries(npc, vars, random);
          vars.rebuildSelectedMagicsFromActiveWheel();
@@ -621,9 +785,12 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void randomizeBaseStats(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random) {
+   private static void randomizeBaseStats(
+      TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, MysticMagicianRank rank
+   ) {
       vars.is_magus = true;
-      vars.player_max_mana = round1(100.0 + random.nextDouble() * 900.0);
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
+      vars.player_max_mana = round1(resolvedRank.rollMana(random));
       vars.player_mana = vars.player_max_mana;
       vars.player_mana_egenerated_every_moment = round1(1.0 + random.nextDouble() * 9.0);
       vars.player_restore_magic_moment = round1(1.0 + random.nextDouble() * 9.0);
@@ -687,7 +854,14 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void seedSelfKnowledge(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, int fixedLevel) {
+   private static void seedSelfKnowledge(
+      MysticMagicianEntity npc,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      RandomSource random,
+      int fixedLevel,
+      MysticMagicianRank rank
+   ) {
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
       List<String> pool = new ArrayList<>();
 
       for (String id : NpcMagicFilterService.candidateMagicPool()) {
@@ -697,35 +871,48 @@ public final class NpcMagicCastBridge {
       }
 
       if (!pool.isEmpty()) {
-         Collections.shuffle(pool, new Random(random.nextLong()));
-         int max = Math.min(8, pool.size());
-         int selfCount = Mth.nextInt(random, 4, Math.max(4, max));
+         List<String> orderedPool = prioritizeMagicPool(pool, resolvedRank, npc.getBrandColor(), random);
+         int selfCount = Math.min(resolvedRank.rollMagicCount(random), orderedPool.size());
          boolean reinforcementPicked = false;
-         boolean reinforcementInPool = pool.remove("reinforcement");
+         boolean reinforcementInPool = orderedPool.remove("reinforcement");
          // 90% have reinforcement; 10% get ranged/control compensation and avoid melee preference.
-         if (reinforcementInPool && random.nextFloat() < 0.9F) {
+         if (reinforcementInPool && random.nextFloat() < (resolvedRank.prefersAdvancedMagic() ? 0.75F : 0.9F)) {
             vars.learned_magics.add("reinforcement");
-            seedSelfProficiency(vars, "reinforcement", random, fixedLevel);
+            seedSelfProficiency(vars, "reinforcement", random, resolvedRank, fixedLevel, false);
             reinforcementPicked = true;
          }
 
-         for (int i = 0; i < selfCount && i < pool.size(); i++) {
-            String magicId = pool.get(i);
+         int specialtyCount = resolvedRank == MysticMagicianRank.FES ? Mth.nextInt(random, 1, 2) : 0;
+         int selectedCount = 0;
+         for (String magicId : orderedPool) {
+            if (selectedCount >= selfCount) {
+               break;
+            }
+            if ("reinforcement".equals(magicId) || vars.learned_magics.contains(magicId)) {
+               continue;
+            }
+            boolean specialty = specialtyCount > 0 && isFesSpecialty(magicId);
             vars.learned_magics.add(magicId);
             ensurePrerequisites(vars, magicId);
-            seedSelfProficiency(vars, magicId, random, fixedLevel);
+            seedSelfProficiency(vars, magicId, random, resolvedRank, fixedLevel, specialty);
+            if (specialty) {
+               specialtyCount--;
+            }
+            selectedCount++;
          }
 
          if (!reinforcementPicked) {
-            String[] compensation = new String[]{"gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot", "gravity_magic", "gander"};
-            int compensationCount = Mth.nextInt(random, 2, 3);
+            String[] compensation = resolvedRank.prefersAdvancedMagic()
+               ? new String[]{"gandr_machine_gun", "jewel_machine_gun", "healing_magic", "gravity_magic", "suggestion_magic", "binding_magic", "gander"}
+               : new String[]{"gander", "magic_bullet", "fire_magic", "water_magic", "reinforcement"};
+            int compensationCount = resolvedRank == MysticMagicianRank.FRAME || resolvedRank == MysticMagicianRank.UMNOS ? 1 : 2;
             int added = 0;
 
             for (String extra : compensation) {
                if (NpcMagicFilterService.isMagicAllowedForNpc(extra) && !vars.learned_magics.contains(extra)) {
                   vars.learned_magics.add(extra);
                   ensurePrerequisites(vars, extra);
-                  seedSelfProficiency(vars, extra, random, fixedLevel);
+                  seedSelfProficiency(vars, extra, random, resolvedRank, fixedLevel, false);
                   added++;
                   if (added >= compensationCount) {
                      break;
@@ -736,9 +923,60 @@ public final class NpcMagicCastBridge {
 
          if (!vars.learned_magics.contains("gander")) {
             vars.learned_magics.add("gander");
-            vars.proficiency_gander = Math.max(vars.proficiency_gander, 35.0);
+            vars.proficiency_gander = Math.max(vars.proficiency_gander, resolvedRank == MysticMagicianRank.FRAME ? 20.0 : 35.0);
          }
       }
+   }
+
+   private static List<String> prioritizeMagicPool(
+      List<String> source,
+      MysticMagicianRank rank,
+      MysticMagicianRank.BrandColor brandColor,
+      RandomSource random
+   ) {
+      List<String> shuffled = new ArrayList<>(source);
+      Collections.shuffle(shuffled, new Random(random.nextLong()));
+      if (!rank.prefersAdvancedMagic()) {
+         return shuffled;
+      }
+
+      List<String> preferred = new ArrayList<>();
+      String[] advanced = new String[]{
+         "gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot",
+         "healing_magic", "gravity_magic", "binding_magic", "suggestion_magic",
+         "reinforcement"
+      };
+      for (String id : advanced) {
+         if (shuffled.remove(id)) {
+            preferred.add(id);
+         }
+      }
+      if (rank == MysticMagicianRank.BRAND) {
+         String brandPreferred = switch (brandColor == null ? MysticMagicianRank.BrandColor.RED : brandColor) {
+            case RED -> "fire_magic";
+            case BLUE -> "water_magic";
+            case YELLOW -> "earth_magic";
+            case ORANGE -> "jewel_random_shoot";
+            case PURPLE -> "suggestion_magic";
+            case GREEN -> "healing_magic";
+            case BLACK -> "gravity_magic";
+         };
+         if (shuffled.remove(brandPreferred)) {
+            preferred.add(0, brandPreferred);
+         }
+      }
+      preferred.addAll(shuffled);
+      return preferred;
+   }
+
+   private static boolean isFesSpecialty(String magicId) {
+      return switch (magicId) {
+         case "gandr_machine_gun", "jewel_machine_gun", "healing_magic",
+            "gravity_magic", "binding_magic", "suggestion_magic",
+            "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river",
+            "topaz_reinforcement", "cyan_wind" -> true;
+         default -> false;
+      };
    }
 
    private static void seedCrestKnowledge(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random) {
@@ -859,10 +1097,18 @@ public final class NpcMagicCastBridge {
       vars.rebuildSelectedMagicsFromActiveWheel();
    }
 
-   private static void seedSelfProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, RandomSource random, int fixedLevel) {
-      double min = 10.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 15.0;
-      double max = Math.min(100.0, min + 30.0);
-      double p = min + random.nextDouble() * Math.max(5.0, max - min);
+   private static void seedSelfProficiency(
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      String magicId,
+      RandomSource random,
+      MysticMagicianRank rank,
+      int fixedLevel,
+      boolean specialty
+   ) {
+      MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
+      double min = specialty ? resolvedRank.minSpecialtyProficiency() : resolvedRank.minProficiency();
+      double max = specialty ? resolvedRank.maxSpecialtyProficiency() : resolvedRank.maxProficiency();
+      double p = min + random.nextDouble() * Math.max(1.0, max - min);
       switch (magicId) {
          case "gander":
          case "gandr_machine_gun":
@@ -872,7 +1118,7 @@ public final class NpcMagicCastBridge {
             vars.proficiency_gravity_magic = Math.max(vars.proficiency_gravity_magic, p);
             break;
          case "reinforcement":
-            double reinforcementFloor = 40.0 + (Mth.clamp(fixedLevel, LEVEL_MIN, LEVEL_MAX) - 1) * 10.0;
+            double reinforcementFloor = Math.max(40.0, min);
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, Math.max(p, reinforcementFloor));
             break;
          case "jewel_random_shoot":
@@ -880,6 +1126,9 @@ public final class NpcMagicCastBridge {
             break;
          case "healing_magic":
             vars.proficiency_healing_magic = Math.max(vars.proficiency_healing_magic, p);
+            break;
+         case "magic_analysis":
+            MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), p));
             break;
          case "magic_bullet":
             vars.proficiency_magic_bullet = Math.max(vars.proficiency_magic_bullet, p);
@@ -901,6 +1150,10 @@ public final class NpcMagicCastBridge {
             break;
          case "earth_magic":
             vars.proficiency_earth_magic = Math.max(vars.proficiency_earth_magic, p);
+            break;
+         case "airflow_blade":
+         case "detection":
+            MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), p));
             break;
          case "jewel_machine_gun":
          case "ruby_flame_sword":
@@ -985,6 +1238,7 @@ public final class NpcMagicCastBridge {
       if (vars.is_magic_circuit_open && gameTime - lastCombat >= 120L) {
          vars.is_magic_circuit_open = false;
          vars.magic_circuit_open_timer = 0.0;
+         vars.magic_analysis_active = false;
       }
 
       if (gameTime - lastCombat >= 120L) {
@@ -1191,13 +1445,18 @@ public final class NpcMagicCastBridge {
                   case "water_magic":
                   case "wind_magic":
                   case "earth_magic":
+                  case "detection":
+                  case "magic_analysis":
                   case "sapphire_winter_frost":
                   case "emerald_winter_river":
                      hasControl = true;
-                     hasRanged = true;
+                     if (!"detection".equals(var8) && !"magic_analysis".equals(var8)) {
+                        hasRanged = true;
+                     }
                      break;
                   case "gander":
                   case "magic_bullet":
+                  case "airflow_blade":
                   case "fire_magic":
                   case "gandr_machine_gun":
                   case "jewel_random_shoot":
@@ -2342,10 +2601,11 @@ public final class NpcMagicCastBridge {
                   int shotCount = Math.max(1, data.getInt(TAG_PENDING_MG_SHOT_COUNT));
                   if ("gandr_machine_gun".equals(magicId)) {
                      markCastingPose(npc, 8);
+                     double proficiency = vars == null ? 0.0 : vars.proficiency_gander;
                      if (mode == 1) {
-                        fireNpcBarrage(npc, target, shotCount, charge);
+                        fireNpcBarrage(npc, target, shotCount, charge, proficiency);
                      } else {
-                        fireGandrRapidWave(npc, target, charge);
+                        fireGandrRapidWave(npc, target, charge, proficiency);
                      }
                   } else if ("jewel_machine_gun".equals(magicId)) {
                      markCastingPose(npc, 8);
@@ -3065,6 +3325,14 @@ public final class NpcMagicCastBridge {
    private static boolean tryRetreatRecoveryOrEscapeMagic(
       MysticMagicianEntity npc, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime
    ) {
+      if (target != null && target.isAlive() && npc.distanceToSqr(target) <= 144.0
+         && hasCastableMagic(vars, "entity_displacement")
+         && gameTime >= getMagicCooldownUntil(npc, "entity_displacement")
+         && EntityDisplacementService.swapNpc(npc, target)) {
+         applyPostCastCooldown(npc, vars, "entity_displacement", new CompoundTag(), gameTime, 12);
+         return true;
+      }
+
       double maxHealth = Math.max(1.0, (double)npc.getMaxHealth());
       double ratio = npc.getHealth() / maxHealth;
       if (ratio <= 0.55 && !npc.hasEffect(MobEffects.REGENERATION) && consumeMana(vars, 25.0)) {
@@ -3250,6 +3518,9 @@ public final class NpcMagicCastBridge {
          for (int slot = 0; slot < 12; slot++) {
             TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
             if (entry != null && !entry.isEmpty() && VALID_MAGIC_IDS.contains(entry.magicId) && vars.isWheelSlotEntryCastable(entry)) {
+               if ("magic_analysis".equals(entry.magicId) && MagicAnalysisService.isActive(npc, vars)) {
+                  continue;
+               }
                if (entry.presetPayload == null) {
                   entry.presetPayload = new CompoundTag();
                } else {
@@ -3523,6 +3794,11 @@ public final class NpcMagicCastBridge {
          weight += manaRatio >= 0.25 ? 0.6 : -0.8;
       } else if ("spiritual_healing".equals(magicId)) {
          weight += isSpiritLikeTarget(target) ? 1.8 : 0.35;
+      } else if ("magic_analysis".equals(magicId)) {
+         weight += isLikelyMageTarget(target) ? 2.0 : 0.45;
+         if (manaRatio < 0.22) {
+            weight *= 0.45;
+         }
       } else if ("binding_magic".equals(magicId) && distance <= 8.0) {
          weight += 1.6;
       } else if ("suggestion_magic".equals(magicId) && distance >= 4.0 && distance <= 12.0) {
@@ -3554,6 +3830,14 @@ public final class NpcMagicCastBridge {
       return weight;
    }
 
+   private static boolean isLikelyMageTarget(LivingEntity target) {
+      if (target == null) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars != null && (vars.is_magus || vars.player_max_mana >= 100.0 || !vars.learned_magics.isEmpty());
+   }
+
    private static boolean isSpiritLikeTarget(LivingEntity target) {
       if (target == null) {
          return false;
@@ -3582,6 +3866,7 @@ public final class NpcMagicCastBridge {
          return switch (magicId) {
             case "gander",
                "gandr_machine_gun",
+               "airflow_blade",
                "jewel_random_shoot",
                "jewel_machine_gun",
                "magic_bullet",
@@ -3615,7 +3900,10 @@ public final class NpcMagicCastBridge {
          case "jewel_random_shoot" -> 30.0;
          case "healing_magic" -> 12.0 + proficiency * 0.08;
          case "spiritual_healing" -> 15.0;
+         case "magic_analysis" -> 8.0;
          case "magic_bullet" -> 8.0 + proficiency * 0.06;
+         case "airflow_blade" -> AirflowBladeService.BLADE_MANA_COST;
+         case "detection" -> 6.0;
          case "suggestion_magic" -> 10.0 + proficiency * 0.08;
          case "binding_magic" -> 12.0 + proficiency * 0.08;
          case "fire_magic" -> 10.0 + proficiency * 0.12;
@@ -3708,6 +3996,23 @@ public final class NpcMagicCastBridge {
       return net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSpiritualHealing.healDirect(caster, healTarget, vars, proficiency);
    }
 
+   static boolean castMagicAnalysis(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null || MagicAnalysisService.isActive(caster, vars)) {
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("magic_analysis", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      vars.magic_analysis_active = true;
+      vars.is_magic_circuit_open = true;
+      markCastingPose(caster, 8);
+      if (target != null && target.isAlive()) {
+         caster.lookAt(target, 42.0F, 42.0F);
+      }
+      return true;
+   }
+
    static boolean castMagicBullet(
       MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
    ) {
@@ -3721,6 +4026,38 @@ public final class NpcMagicCastBridge {
       }
       markCastingPose(caster, 8);
       return MagicMagicBullet.castDirect(caster, target, vars, proficiency);
+   }
+
+   static boolean castAirflowBlade(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || target == null || !target.isAlive() || vars == null) {
+         return false;
+      } else if (!hasProjectilePath(caster, target, AirflowBladeService.BLADE_SPEED, 0.0)) {
+         repositionForClearShot(caster, target, 11.0, 1.12);
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("airflow_blade", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 10);
+      Vec3 direction = getAimDirection(caster, target, AirflowBladeService.BLADE_SPEED, 0.0);
+      faceCasterToDirection(caster, direction);
+      return AirflowBladeService.castNpcBlade(caster, target, proficiency);
+   }
+
+   static boolean castDetection(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      } else if (!consumeMana(vars, estimateManaCost("detection", new CompoundTag(), proficiency))) {
+         return false;
+      }
+      markCastingPose(caster, 8);
+      if (target != null && target.isAlive()) {
+         caster.lookAt(target, 45.0F, 45.0F);
+      }
+      return DetectionService.castNpcDetection(caster, target, proficiency);
    }
 
    static boolean castSuggestionMagic(
@@ -3843,6 +4180,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(caster.level(), caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gander", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawnPos);
@@ -3877,7 +4215,7 @@ public final class NpcMagicCastBridge {
          } else {
             markCastingPose(caster, 16);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            fireNpcBarrage(caster, target, shotCountPerWave, chargeSeconds);
+            fireNpcBarrage(caster, target, shotCountPerWave, chargeSeconds, proficiency);
             startPendingMachineGun(
                caster, target, "gandr_machine_gun", waveCount - 1, 4, 1, chargeSeconds, shotCountPerWave
             );
@@ -3894,7 +4232,7 @@ public final class NpcMagicCastBridge {
          } else {
             markCastingPose(caster, 12);
             int chargeSeconds = getGanderChargeSeconds(proficiency);
-            fireGandrRapidWave(caster, target, chargeSeconds);
+            fireGandrRapidWave(caster, target, chargeSeconds, proficiency);
             startPendingMachineGun(
                caster, target, "gandr_machine_gun", waveCount - 1, 3, 0, chargeSeconds, 3
             );
@@ -3904,7 +4242,7 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void fireNpcBarrage(MysticMagicianEntity caster, LivingEntity target, int shotCount, int chargeSeconds) {
+   private static void fireNpcBarrage(MysticMagicianEntity caster, LivingEntity target, int shotCount, int chargeSeconds, double proficiency) {
       Level level = caster.level();
       Vec3 forward = getAimDirection(caster, target, 3.5, 0.0);
       faceCasterToDirection(caster, forward);
@@ -3930,6 +4268,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gandr_machine_gun", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          projectile.setPos(spawn);
@@ -3938,7 +4277,7 @@ public final class NpcMagicCastBridge {
       }
    }
 
-   private static void fireGandrRapidWave(MysticMagicianEntity caster, LivingEntity target, int chargeSeconds) {
+   private static void fireGandrRapidWave(MysticMagicianEntity caster, LivingEntity target, int chargeSeconds, double proficiency) {
       Level level = caster.level();
       Vec3 forward = getAimDirection(caster, target, 3.8, 0.0);
       faceCasterToDirection(caster, forward);
@@ -3950,6 +4289,7 @@ public final class NpcMagicCastBridge {
          GanderProjectileEntity projectile = new GanderProjectileEntity(level, caster);
          projectile.setNoGravity(true);
          projectile.setChargeSeconds(chargeSeconds);
+         projectile.setMagicSource("gandr_machine_gun", proficiency);
          projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(chargeSeconds));
          projectile.setItem(new ItemStack(ModItems.GANDER.get()));
          Vec3 spawn = hand.add(forward.scale(0.08)).add(right.scale(RAPID_SIDE[i])).add(up.scale(RAPID_UP[i]));
@@ -4517,7 +4857,9 @@ public final class NpcMagicCastBridge {
             case "gravity_magic" -> vars.proficiency_gravity_magic;
             case "reinforcement" -> vars.proficiency_reinforcement;
             case "healing_magic" -> vars.proficiency_healing_magic;
+            case "magic_analysis" -> MagicProficiencyService.get(vars, magicId);
             case "magic_bullet" -> vars.proficiency_magic_bullet;
+            case "airflow_blade", "detection" -> MagicProficiencyService.get(vars, magicId);
             case "suggestion_magic" -> vars.proficiency_suggestion_magic;
             case "binding_magic" -> vars.proficiency_binding_magic;
             case "fire_magic" -> vars.proficiency_fire_magic;

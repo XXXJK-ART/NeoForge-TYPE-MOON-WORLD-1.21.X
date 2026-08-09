@@ -1,0 +1,58 @@
+{
+  "duration": 0.72,
+  "notes": "Dense, restrained cyan Oriasn wind sigil bound behind the channeling caster.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.68,
+      "rate": 720,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.08,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.008,
+      "velocity": [0.0, 0.003, 0.0],
+      "velocity_variance": 0.006,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": {
+        "mode": "entity_yaw",
+        "offset": [0.0, -1.35, -1.55],
+        "rotate_with_entity": true
+      },
+      "component": {
+        "type": "image_mask",
+        "texture": "typemoonworld:textures/vfx/orias_sigil.png",
+        "width": 5.35,
+        "height": 5.3,
+        "u_segments": 112,
+        "v_segments": 112,
+        "threshold": 0.18,
+        "reveal": "NONE",
+        "use_mask_texture": false,
+        "sample_density_scale": 0.86,
+        "particle_size_multiplier": 0.74
+      },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.9, 0.9, 0.9], "easing": "ease_out_cubic" },
+        { "t": 0.24, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_back" },
+        { "t": 0.78, "scale": [1.02, 1.02, 1.02] },
+        { "t": 1.0, "scale": [0.94, 0.94, 0.94], "easing": "ease_in_cubic" }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#00DDFBFF" },
+        { "t": 0.12, "color": "#8CEAFBFF" },
+        { "t": 0.56, "color": "#78A6F3FF" },
+        { "t": 0.86, "color": "#5C4FC6E8" },
+        { "t": 1.0, "color": "#00358BB8" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.026 },
+        { "t": 0.24, "size": 0.064 },
+        { "t": 0.76, "size": 0.048 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "STORM_CASTER_SIGIL",
+      "enable_trail": false
+    }
+  ]
+}

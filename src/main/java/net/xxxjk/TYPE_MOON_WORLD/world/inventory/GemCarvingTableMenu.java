@@ -338,7 +338,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
-                  vars.proficiency_jewel_magic_release = Math.min(100.0, vars.proficiency_jewel_magic_release + successCount * 0.3);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", successCount * 0.3);
                   vars.syncPlayerVariables(player);
                   if (attempts == 1) {
                      if (successCount > 0) {

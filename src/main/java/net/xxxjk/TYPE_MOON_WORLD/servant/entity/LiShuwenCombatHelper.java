@@ -137,7 +137,7 @@ public final class LiShuwenCombatHelper {
       }
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      if (data.getLong(TAG_LAST_SELF_STATE_TICK) == now) {
+      if (data.contains(TAG_LAST_SELF_STATE_TICK) && data.getLong(TAG_LAST_SELF_STATE_TICK) == now) {
          return;
       }
       data.putLong(TAG_LAST_SELF_STATE_TICK, now);
@@ -351,6 +351,10 @@ public final class LiShuwenCombatHelper {
    }
 
    private static void resolveWuErDa(LiShuwenEntity entity, LivingEntity target, ServerLevel level) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         entity.setTarget(null);
+         return;
+      }
       applyArmorBreak(target, level.getGameTime() + 60L);
       boolean instantDeathTarget = isInstantDeathTarget(target);
       float chance = instantDeathChance(target);

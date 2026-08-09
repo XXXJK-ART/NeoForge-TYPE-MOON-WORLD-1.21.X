@@ -65,6 +65,9 @@ public class AvalonItem extends SummoningRelicItem implements GeoItem, NoblePhan
       super.inventoryTick(stack, level, entity, slotId, isSelected);
       if (!level.isClientSide && entity instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id) && !isAvalonActivated(stack)) {
+            activateAvalonStack(stack);
+         }
          if (!vars.player_magic_attributes_sword) {
             CustomData customData = (CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
             CompoundTag tag = customData.copyTag();
@@ -83,32 +86,53 @@ public class AvalonItem extends SummoningRelicItem implements GeoItem, NoblePhan
             activateAvalonStack(stack);
             player.getPersistentData().remove(LEGACY_PLAYER_AVALON_UNTIL_TAG);
          }
+         if (!isAvalonActivated(stack) && isHeldBy(player, stack)) {
+            applyInactiveHandEffects(player);
+         }
       }
    }
 
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
       ItemStack stack = player.getItemInHand(usedHand);
-      if (!player.isCrouching()) {
-         return InteractionResultHolder.pass(stack);
-      }
-      if (!level.isClientSide) {
-         activateAvalonStack(stack);
-         applyPlayerAvalonEffects(player);
-         if (player.level() instanceof ServerLevel serverLevel) {
-            ArtoriaPendragonCombatHelper.spawnAvalonFx(player);
-            serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.35F);
+      if (!player.isCrouching() && isArtoriaServantCard(player)) {
+         if (!level.isClientSide) {
+            activateAvalonStack(stack);
+            applyPlayerAvalonEffects(player);
+            if (player.level() instanceof ServerLevel serverLevel) {
+               ArtoriaPendragonCombatHelper.spawnAvalonFx(player);
+               serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.35F);
+            }
          }
-         player.getCooldowns().addCooldown(this, 200);
+         return InteractionResultHolder.success(stack);
       }
-      return InteractionResultHolder.success(stack);
+      return InteractionResultHolder.pass(stack);
    }
 
-   private static boolean isAvalonActivated(ItemStack stack) {
+   public static boolean activateFor(ServerPlayer player, ItemStack stack, Entity fxTarget) {
+      if (player == null || stack == null || stack.isEmpty() || !stack.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.AVALON.get())) {
+         return false;
+      }
+      if (isAvalonActivated(stack)) {
+         return true;
+      }
+      activateAvalonStack(stack);
+      applyPlayerAvalonEffects(player);
+      if (player.level() instanceof ServerLevel serverLevel) {
+         Entity target = fxTarget == null ? player : fxTarget;
+         if (target instanceof net.minecraft.world.entity.LivingEntity living) {
+            ArtoriaPendragonCombatHelper.spawnAvalonFx(living);
+         }
+         serverLevel.playSound(null, target.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F, 1.35F);
+      }
+      return true;
+   }
+
+   public static boolean isAvalonActivated(ItemStack stack) {
       CompoundTag tag = customTag(stack);
       return tag != null && tag.getBoolean(AVALON_ACTIVE_TAG);
    }
 
-   private static void activateAvalonStack(ItemStack stack) {
+   public static void activateAvalonStack(ItemStack stack) {
       updateCustomData(stack, tag -> tag.putBoolean(AVALON_ACTIVE_TAG, true));
       stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
    }
@@ -116,6 +140,23 @@ public class AvalonItem extends SummoningRelicItem implements GeoItem, NoblePhan
    private static void applyPlayerAvalonEffects(Player player) {
       player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 4, false, false, true));
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
+   }
+
+   private static void applyInactiveHandEffects(Player player) {
+      player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 40, 2, false, false, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 1, false, false, true));
+   }
+
+   private static boolean isHeldBy(Player player, ItemStack stack) {
+      return player.getMainHandItem() == stack || player.getOffhandItem() == stack;
+   }
+
+   private static boolean isArtoriaServantCard(Player player) {
+      if (!(player instanceof ServerPlayer serverPlayer)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id);
    }
 
    public void registerControllers(ControllerRegistrar controllers) {

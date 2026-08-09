@@ -25,6 +25,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.joml.Vector3f;
@@ -65,7 +66,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
    }
 
    public void setHomingTarget(LivingEntity target) {
-      this.homingTargetUuid = target == null ? null : target.getUUID();
+      this.homingTargetUuid = target == null || EntityUtils.isImmunePlayerTarget(target) ? null : target.getUUID();
    }
 
    public void setExplosive(float radius) {
@@ -126,7 +127,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
          return;
       }
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(old, next).inflate(0.35),
-         e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !hit.contains(e.getId()))) {
+         e -> isValidVictim(owner, e) && !hit.contains(e.getId()))) {
          impact(level, owner, victim.position().add(0.0, victim.getBbHeight() * 0.45, 0.0));
          discard();
          return;
@@ -156,14 +157,14 @@ public final class RoyalCannonProjectileEntity extends Entity {
 
    private LivingEntity getTarget(ServerLevel level) {
       LivingEntity target = null;
-      if (homingTargetUuid != null) {
-         Entity entity = level.getEntity(homingTargetUuid);
-         if (entity instanceof LivingEntity living && living.isAlive()) target = living;
-      }
       LivingEntity owner = getOwner(level);
+      if (homingTargetUuid != null && owner != null) {
+         Entity entity = level.getEntity(homingTargetUuid);
+         if (entity instanceof LivingEntity living && isValidVictim(owner, living)) target = living;
+      }
       if (target == null && owner != null) {
          target = level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(32.0),
-            e -> e.isAlive() && e != owner && !e.isAlliedTo(owner))
+            e -> isValidVictim(owner, e))
             .stream().min(java.util.Comparator.comparingDouble(this::distanceTo)).orElse(null);
       }
       return target;
@@ -197,7 +198,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
       }
 
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(0.5),
-         e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && hit.add(e.getId()))) {
+         e -> isValidVictim(owner, e) && hit.add(e.getId()))) {
          hurtVictim(owner, victim, damage);
          break;
       }
@@ -209,7 +210,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
       float radius = Math.max(0.1F, explosionRadius);
       double radiusSqr = radius * radius;
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(radius),
-         e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && e.position().add(0.0, e.getBbHeight() * 0.5, 0.0).distanceToSqr(pos) <= radiusSqr)) {
+         e -> isValidVictim(owner, e) && e.position().add(0.0, e.getBbHeight() * 0.5, 0.0).distanceToSqr(pos) <= radiusSqr)) {
          if (hit.add(victim.getId())) {
             hurtVictim(owner, victim, damage);
          }
@@ -245,6 +246,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
    }
 
    private void hurtVictim(LivingEntity owner, LivingEntity victim, float amount) {
+      if (!isValidVictim(owner, victim)) return;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
       victim.invulnerableTime = 0;
       float finalDamage = owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity caster
@@ -252,6 +254,13 @@ public final class RoyalCannonProjectileEntity extends Entity {
          : amount * damageMultiplier;
       victim.hurt(source, finalDamage);
       victim.invulnerableTime = 0;
+   }
+
+   private static boolean isValidVictim(LivingEntity owner, LivingEntity victim) {
+      return owner != null && victim != null && victim.isAlive() && victim != owner
+         && !victim.isAlliedTo(owner) && !owner.isAlliedTo(victim)
+         && !EntityUtils.isImmunePlayerTarget(victim)
+         && !CasterGilgameshCombatHelper.isProtectedMasterTarget(owner, victim);
    }
 
    @Override

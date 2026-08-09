@@ -43,10 +43,7 @@ public final class ElementalMagicHelper {
       }
       amount *= matchingAttribute(vars, magicId) ? 1.5 : 1.0;
       switch (magicId) {
-         case "fire_magic" -> vars.proficiency_fire_magic = Math.min(100.0, vars.proficiency_fire_magic + amount);
-         case "water_magic" -> vars.proficiency_water_magic = Math.min(100.0, vars.proficiency_water_magic + amount);
-         case "wind_magic" -> vars.proficiency_wind_magic = Math.min(100.0, vars.proficiency_wind_magic + amount);
-         case "earth_magic" -> vars.proficiency_earth_magic = Math.min(100.0, vars.proficiency_earth_magic + amount);
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, magicId, amount);
       }
    }
 
@@ -139,6 +136,7 @@ public final class ElementalMagicHelper {
       projectile.setNoGravity(true);
       projectile.setItem(new net.minecraft.world.item.ItemStack(ModItems.MAGIC_FRAGMENTS.get()));
       projectile.configure(element, form, damage, radius, knockback, igniteSeconds, slowTicks, slowPercent, range, pierceArmor, cutBlocks, visualScale);
+      projectile.setMagicSource(magicIdForElement(element), 0.0);
       projectile.setPos(EntityUtils.getRightHandCastAnchor(caster).add(normalized.scale(0.12)));
       projectile.shoot(normalized.x, normalized.y, normalized.z, speed, 0.08F);
       caster.level().addFreshEntity(projectile);
@@ -147,7 +145,7 @@ public final class ElementalMagicHelper {
    }
 
    public static ElementalMagicProjectileEntity spawnProjectile(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, LivingEntity caster, Vec3 direction, int element, int form, float damage, float radius, float knockback, int igniteSeconds, int slowTicks, float slowPercent, double range, float speed, boolean pierceArmor, boolean cutBlocks, float visualScale) {
-      return spawnProjectile(
+      ElementalMagicProjectileEntity projectile = spawnProjectile(
          caster,
          direction,
          element,
@@ -164,6 +162,10 @@ public final class ElementalMagicHelper {
          cutBlocks,
          applyVisualAffinity(vars, magicId, visualScale)
       );
+      if (projectile != null) {
+         projectile.setMagicSource(magicId, proficiency(vars, magicId));
+      }
+      return projectile;
    }
 
    public static ElementalMagicFieldEntity spawnField(LivingEntity caster, BlockPos pos, int element, int form, float radius, float width, int duration, float damagePerSecond) {
@@ -206,5 +208,14 @@ public final class ElementalMagicHelper {
             }
          }
       }
+   }
+
+   private static String magicIdForElement(int element) {
+      return switch (element) {
+         case ElementalMagicProjectileEntity.ELEMENT_WATER -> "water_magic";
+         case ElementalMagicProjectileEntity.ELEMENT_WIND -> "wind_magic";
+         case ElementalMagicProjectileEntity.ELEMENT_EARTH -> "earth_magic";
+         default -> "fire_magic";
+      };
    }
 }

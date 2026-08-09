@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
@@ -112,7 +113,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setTrackedTarget(LivingEntity target) {
-      this.entityData.set(TARGET_ID, target == null ? -1 : target.getId());
+      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
    }
 
    private LivingEntity getTrackedTarget() {
@@ -141,9 +142,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
          return;
       }
+      if (!(this.level() instanceof ServerLevel level)) return;
 
       this.lifeTime++;
-      if (this.getMode() == Mode.SINGLE && this.level() instanceof ServerLevel level) {
+      if (this.getMode() == Mode.SINGLE) {
          Vec3 motion = this.getDeltaMovement();
          Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.42) : Vec3.ZERO;
          for (int i = 0; i < 3; i++) {
@@ -152,6 +154,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
       }
       LivingEntity target = this.getTrackedTarget();
+      if (!isUsableTarget(target)) {
+         this.setTrackedTarget(null);
+         target = acquireNearbyTarget(level);
+      }
       if (target != null && target.isAlive()) {
          if (this.getMode() == Mode.SINGLE) {
             this.steerToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0), 0.85, 0.4);
@@ -184,6 +190,32 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (this.getMode() == Mode.SINGLE) {
          this.syncRotationToMotion();
       }
+   }
+
+   private boolean isUsableTarget(LivingEntity target) {
+      Entity ownerEntity = this.getOwner();
+      return target != null && target.isAlive() && target != ownerEntity
+         && (ownerEntity == null || !target.isAlliedTo(ownerEntity))
+         && (!(ownerEntity instanceof LivingEntity owner) || !ServantMasterTargeting.isContractMaster(owner, target))
+         && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   private LivingEntity acquireNearbyTarget(ServerLevel level) {
+      Entity ownerEntity = this.getOwner();
+      if (!(ownerEntity instanceof LivingEntity owner)) return null;
+      double radius = this.getMode() == Mode.SINGLE ? 32.0 : 24.0;
+      AABB search = this.getBoundingBox().inflate(radius);
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class, search, this::isUsableTarget)) {
+         double distance = this.distanceToSqr(candidate);
+         if (distance < nearestDistance) {
+            nearest = candidate;
+            nearestDistance = distance;
+         }
+      }
+      if (nearest != null) this.setTrackedTarget(nearest);
+      return nearest;
    }
 
    private void recordTrailPoint() {
@@ -486,6 +518,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(source, damage);
@@ -528,6 +563,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyDeathThorn(LivingEntity target, DamageSource source) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+         return;
+      }
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(source, lethalDamage);

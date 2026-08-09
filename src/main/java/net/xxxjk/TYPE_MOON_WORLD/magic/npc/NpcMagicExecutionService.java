@@ -1,13 +1,18 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
+import com.example.typemoonaddon.magic.EntityDisplacementService;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
+import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
+import net.xxxjk.typemoonworld.api.MagicCastContext;
+import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 
 public final class NpcMagicExecutionService {
    private NpcMagicExecutionService() {
@@ -42,6 +47,9 @@ public final class NpcMagicExecutionService {
       String magicId = slot == null ? "" : slot.magicId;
       CompoundTag rawPayload = slot == null || slot.presetPayload == null ? new CompoundTag() : slot.presetPayload;
       CompoundTag payload = MagicPresetRegistry.normalize(magicId, rawPayload).payload();
+      if ("magic_analysis".equals(magicId)) {
+         return NpcMagicCastBridge.castMagicAnalysis(caster, target, vars, effectiveProficiency);
+      }
       // Addon executors are checked before the legacy compatibility table. This keeps
       // the NPC and player paths on the same callback implementation.
       if (MagicDefinitionRegistry.contains(magicId)) {
@@ -51,7 +59,7 @@ public final class NpcMagicExecutionService {
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
          if (external.handled()) return external.success();
       }
-      return switch (magicId) {
+      boolean success = switch (magicId) {
          case "gander" -> NpcMagicCastBridge.castGander(caster, target, vars, payload, effectiveProficiency);
          case "gandr_machine_gun" -> NpcMagicCastBridge.castGandrMachineGun(caster, target, vars, payload, effectiveProficiency);
          case "gravity_magic" -> NpcMagicCastBridge.castGravity(caster, target, vars, payload, effectiveProficiency);
@@ -61,6 +69,9 @@ public final class NpcMagicExecutionService {
          case "healing_magic" -> NpcMagicCastBridge.castHealingMagic(caster, target, vars, effectiveProficiency);
          case "spiritual_healing" -> NpcMagicCastBridge.castSpiritualHealing(caster, target, vars, effectiveProficiency);
          case "magic_bullet" -> NpcMagicCastBridge.castMagicBullet(caster, target, vars, effectiveProficiency);
+         case "airflow_blade" -> NpcMagicCastBridge.castAirflowBlade(caster, target, vars, effectiveProficiency);
+         case "detection" -> NpcMagicCastBridge.castDetection(caster, target, vars, effectiveProficiency);
+         case "entity_displacement" -> EntityDisplacementService.swapNpc(caster, target);
          case "suggestion_magic" -> NpcMagicCastBridge.castSuggestionMagic(caster, target, vars, effectiveProficiency);
          case "binding_magic" -> NpcMagicCastBridge.castBindingMagic(caster, target, vars, effectiveProficiency);
          case "fire_magic" -> NpcMagicCastBridge.castFireMagic(caster, target, vars, payload, effectiveProficiency);
@@ -74,9 +85,39 @@ public final class NpcMagicExecutionService {
          case "cyan_wind" -> NpcMagicCastBridge.castCyanWind(caster, target, vars, effectiveProficiency);
          default -> false;
       };
+      if (success) {
+         postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
+      }
+      return success;
+   }
+
+   private static void postNpcLegacyMagicCast(
+      MysticMagicianEntity caster,
+      LivingEntity target,
+      String magicId,
+      CompoundTag payload,
+      double effectiveProficiency
+   ) {
+      ResourceLocation id = ResourceLocation.tryParse(magicId);
+      if (id == null || caster == null || caster.level().isClientSide()) {
+         return;
+      }
+      MagicCastContext context = new MagicCastContext(
+         caster,
+         target,
+         caster.level(),
+         magicId,
+         payload == null ? new CompoundTag() : payload.copy(),
+         false,
+         effectiveProficiency
+      );
+      NeoForge.EVENT_BUS.post(new MagicCastEvent.Post(id, context, ExecutionResult.SUCCESS));
    }
 
    public static int getGlobalCooldownAfterCast(String magicId, CompoundTag payload) {
+      if ("magic_analysis".equals(magicId)) return 10;
+      if ("airflow_blade".equals(magicId)) return 14;
+      if ("detection".equals(magicId)) return 10;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcGlobalCooldown());
       return switch (magicId) {
@@ -101,6 +142,9 @@ public final class NpcMagicExecutionService {
    }
 
    public static int getPerMagicCooldown(String magicId, CompoundTag payload) {
+      if ("magic_analysis".equals(magicId)) return 260;
+      if ("airflow_blade".equals(magicId)) return 32;
+      if ("detection".equals(magicId)) return 180;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcCooldown());
       return switch (magicId) {

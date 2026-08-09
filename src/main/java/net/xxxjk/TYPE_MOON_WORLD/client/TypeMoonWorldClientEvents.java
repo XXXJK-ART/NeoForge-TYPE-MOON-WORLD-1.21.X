@@ -13,6 +13,7 @@ import net.neoforged.fml.common.EventBusSubscriber.Bus;
 import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers;
+import net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Block;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item;
@@ -49,6 +50,15 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RatSwarmRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderCrowRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.PaleRiderRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosHoundRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosSerpentRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosStagRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosBirdRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosBearRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosCatRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.NeroChaosBatRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShadowHassanDeathShadowRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SoulEchoRenderer;
@@ -59,9 +69,11 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedSkeletonHajunRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.StoneManRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelBlockEntityRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.SwordBarrelProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwControlledSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariWaveProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TsumukariLightColumnEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.TypeMoonEffectShaders;
@@ -212,6 +224,13 @@ public class TypeMoonWorldClientEvents {
    }
 
    @SubscribeEvent
+   public static void registerRenderBuffers(RegisterRenderBuffersEvent event) {
+      for (var renderType : ReinforcementRenderType.glintTypes()) {
+         event.registerRenderBuffer(renderType);
+      }
+   }
+
+   @SubscribeEvent
    @SuppressWarnings("unchecked")
    public static void registerRenderers(RegisterRenderers event) {
       event.registerEntityRenderer(ModEntities.VFX_TRIGGER.get(), VFXTriggerRenderer::new);
@@ -219,10 +238,25 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MERLIN.get(), MerlinRenderer::new);
       event.registerEntityRenderer(ModEntities.STONE_MAN.get(), StoneManRenderer::new);
       event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_GRAND.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_BRAND.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_PRIDE.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_FES.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_ADEPT.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_UMNOS.get(), MysticMagicianRenderer::new);
+      event.registerEntityRenderer(ModEntities.MYSTIC_MAGICIAN_FRAME.get(), MysticMagicianRenderer::new);
       event.registerEntityRenderer(ModEntities.THE_DEAD.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "the_dead"));
       event.registerEntityRenderer(ModEntities.GHOUL.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "ghoul"));
       event.registerEntityRenderer(ModEntities.LIVING_DEAD.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "living_dead"));
       event.registerEntityRenderer(ModEntities.NIGHT_KIN.get(), context -> new net.xxxjk.TYPE_MOON_WORLD.client.renderer.DeadApostleRenderer<>(context, "night_kin"));
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS.get(), NeroChaosRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_HOUND.get(), NeroChaosHoundRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_SERPENT.get(), NeroChaosSerpentRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_STAG.get(), NeroChaosStagRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_BIRD.get(), NeroChaosBirdRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_BEAR.get(), NeroChaosBearRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_CAT.get(), NeroChaosCatRenderer::new);
+      event.registerEntityRenderer(ModEntities.NERO_CHAOS_BAT.get(), NeroChaosBatRenderer::new);
       event.registerEntityRenderer(ModEntities.CHURCH_EXECUTOR.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.ChurchExecutorRenderer::new);
       event.registerEntityRenderer(ModEntities.BAJIQUAN_MASTER.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanMasterRenderer::new);
       event.registerEntityRenderer(ModEntities.BAJIQUAN_APPRENTICE.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.BajiquanApprenticeRenderer::new);
@@ -255,7 +289,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GAWAIN.get(), context -> new HumanoidServantRenderer<>(context, "gawain"));
       event.registerEntityRenderer(ModEntities.LI_SHUWEN.get(), context -> new HumanoidServantRenderer<>(context, "li_shuwen"));
       event.registerEntityRenderer(ModEntities.PARACELSUS.get(), context -> new HumanoidServantRenderer<>(context, "paracelsus"));
-      event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.PALE_RIDER.get(), PaleRiderRenderer::new);
       event.registerEntityRenderer(ModEntities.NIGHTINGALE.get(), context -> new HumanoidServantRenderer<>(context, "nightingale"));
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN.get(), ShadowHassanRenderer::new);
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), ShadowHassanDeathShadowRenderer::new);
@@ -278,6 +312,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.UBW_CONTROLLED_SWORD.get(), UbwControlledSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_INTERCEPTOR_SWORD.get(), UBWInterceptorSwordRenderer::new);
       event.registerBlockEntityRenderer(ModBlockEntities.SWORD_BARREL_BLOCK_ENTITY.get(), SwordBarrelBlockEntityRenderer::new);
       event.registerEntityRenderer(ModEntities.RUBY_PROJECTILE.get(), context -> new GemProjectileRenderer(context, 1.0F, 0.0F, 0.0F));
@@ -337,6 +372,18 @@ public class TypeMoonWorldClientEvents {
             event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ubw_analysis_ripple"), DefaultVertexFormat.POSITION_TEX_COLOR
          ),
          TypeMoonEffectShaders::setUbwAnalysisRipple
+      );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "babylon"), DefaultVertexFormat.POSITION_TEX_COLOR
+         ),
+         TypeMoonEffectShaders::setBabylonPortal
+      );
+      event.registerShader(
+         new ShaderInstance(
+            event.getResourceProvider(), ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "rendertype_servant_clipped"), DefaultVertexFormat.NEW_ENTITY
+         ),
+         TypeMoonEffectShaders::setClippedEntity
       );
    }
 

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -48,6 +49,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class MuramasaCombatHelper {
+   private static final String LAST_PASSIVE_STATE_TICK = "MuramasaLastPassiveStateTick";
    private static final String PROJECTED_TAG = "MuramasaProjectedWeapon";
    private static final String WEAPON_INDEX = "MuramasaWeaponIndex";
    private static final String LAST_WEAPON_TICK = "MuramasaLastWeaponTick";
@@ -80,6 +82,7 @@ public final class MuramasaCombatHelper {
    private static final ResourceLocationLike KNOCKBACK_ID = new ResourceLocationLike("muramasa_knockback");
    private static final int WEAPON_ROTATION_TICKS = 1200;
    private static final int CHARGE_TICKS = 30;
+   private static final int TSUMUKARI_SPECIAL_CHARGE_PERCENT = 10;
    private static final int NP_EXPAND_TICKS = 200;
    private static final int NP_COLLAPSE_TICKS = 80;
 
@@ -91,6 +94,9 @@ public final class MuramasaCombatHelper {
          return;
       }
       long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PASSIVE_STATE_TICK) && data.getLong(LAST_PASSIVE_STATE_TICK) == now) return;
+      data.putLong(LAST_PASSIVE_STATE_TICK, now);
       MuramasaDissolutionService.tick(entity);
       if (!entity.isAlive()) {
          return;
@@ -741,19 +747,22 @@ public final class MuramasaCombatHelper {
    private static void releaseTsumukari(SenkoMuramasaEntity entity, ServerLevel level, int percent) {
       CompoundTag data = entity.getPersistentData();
       data.putBoolean(TSUMUKARI_RELEASED, true);
-      double cost = 1000.0 * Math.max(0.0, Math.min(1.0, percent / 100.0));
-      double servantCost = Math.min(entity.getCurrentMp(), cost);
-      entity.setCurrentMp(entity.getCurrentMp() - servantCost);
-      double remaining = cost - servantCost;
-      ServerPlayer master = entity.getEntityMaster();
-      if (remaining > 0.0 && master != null) {
-         TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         double masterCost = Math.min(vars.player_mana, remaining);
-         vars.player_mana -= masterCost;
-         vars.syncMana(master);
-         remaining -= masterCost;
+      boolean delayedDissolution = !hasDivinity(entity) && percent >= TSUMUKARI_SPECIAL_CHARGE_PERCENT;
+      double remaining = 0.0;
+      if (!delayedDissolution) {
+         double cost = 1000.0 * Math.max(0.0, Math.min(1.0, percent / 100.0));
+         double servantCost = Math.min(entity.getCurrentMp(), cost);
+         entity.setCurrentMp(entity.getCurrentMp() - servantCost);
+         remaining = cost - servantCost;
+         ServerPlayer master = entity.getEntityMaster();
+         if (remaining > 0.0 && master != null) {
+            TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            double masterCost = Math.min(vars.player_mana, remaining);
+            vars.player_mana -= masterCost;
+            vars.syncMana(master);
+            remaining -= masterCost;
+         }
       }
-      boolean delayedDissolution = !hasDivinity(entity) && percent >= 60;
       if (remaining > 0.0 && !delayedDissolution) {
          data.putBoolean(CHARGE_FORCED_DEATH, true);
       }
@@ -771,17 +780,38 @@ public final class MuramasaCombatHelper {
             removeBeneficialEffects(target);
          }
       }
+      spawnMuramasaReleaseEffects(level, entity, percent);
       if (delayedDissolution) {
-         MuramasaDissolutionService.schedule(entity);
+         forceTsumukariDeath(entity, level);
+         return;
       }
       if (data.getBoolean(CHARGE_FORCED_DEATH)) {
          TYPE_MOON_WORLD.queueServerWork(2, () -> {
             if (entity.isAlive()) {
-               entity.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
+               forceTsumukariDeath(entity, level);
             }
          });
       }
-      spawnMuramasaReleaseEffects(level, entity, percent);
+   }
+
+   private static void forceTsumukariDeath(SenkoMuramasaEntity entity, ServerLevel level) {
+      if (entity == null || !entity.isAlive()) {
+         return;
+      }
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(entity)) {
+         return;
+      }
+      level.sendParticles(ParticleTypes.EXPLOSION, entity.getX(), entity.getY() + 1.0, entity.getZ(),
+         4, 0.6, 0.8, 0.6, 0.0);
+      level.sendParticles(ParticleTypes.LAVA, entity.getX(), entity.getY() + 0.8, entity.getZ(),
+         40, 1.0, 0.8, 1.0, 0.04);
+      entity.setInvulnerable(false);
+      entity.invulnerableTime = 0;
+      entity.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);
+      if (entity.isAlive()) {
+         entity.setHealth(0.0F);
+         entity.die(entity.damageSources().genericKill());
+      }
    }
 
    private static void spawnMuramasaFieldEffects(ServerLevel level, SenkoMuramasaEntity entity) {
@@ -1097,7 +1127,7 @@ public final class MuramasaCombatHelper {
    }
 
    private static void applyNoDefenseDamage(SenkoMuramasaEntity entity, LivingEntity target, float amount) {
-      if (amount <= 0.0F || !target.isAlive()) {
+      if (amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       float before = target.getHealth();

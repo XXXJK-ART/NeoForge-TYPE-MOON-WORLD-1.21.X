@@ -25,6 +25,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -35,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
@@ -342,7 +344,7 @@ public final class ArashStellaControllerEntity extends Entity {
             new AABB(center, center).inflate(profile.endRadius()), this::canDamage)) {
             if (target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).distanceToSqr(center)
                <= profile.endRadius() * profile.endRadius()) {
-               target.hurt(level.damageSources().thrown(this, getCaster(level)), profile.coreDamage());
+               hurtStellaTarget(level, target, profile.coreDamage());
             }
          }
          level.sendParticles(WHITE, center.x, center.y, center.z, 420, 4.0, 4.0, 4.0, 0.6);
@@ -368,17 +370,32 @@ public final class ArashStellaControllerEntity extends Entity {
       ArashCombatRules.StellaProfile profile = stellaProfile();
       Vec3 start = origin.add(direction.scale(Math.max(0.0, previous - 1.0)));
       Vec3 end = origin.add(direction.scale(Math.min(profile.length(), current + 1.0)));
-      AABB area = pathBounds(start, end, profile.outerRadius());
+      double damageRadius = profile.outerRadius() + ArashCombatRules.STELLA_DAMAGE_RADIUS_PADDING;
+      AABB area = pathBounds(start, end, damageRadius);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, this::canDamage)) {
          if (lineHits.contains(target.getUUID())) continue;
          double distance = distanceToSegment(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), start, end);
          float damage = distance <= profile.coreRadius() ? profile.coreDamage()
-            : distance <= profile.outerRadius() ? profile.outerDamage() : 0.0F;
+            : distance <= damageRadius ? profile.outerDamage() : 0.0F;
          if (damage > 0.0F) {
             lineHits.add(target.getUUID());
-            target.hurt(level.damageSources().thrown(this, getCaster(level)), damage);
+            hurtStellaTarget(level, target, damage);
          }
       }
+   }
+
+   private void hurtStellaTarget(ServerLevel level, LivingEntity target, float damage) {
+      LivingEntity caster = getCaster(level);
+      DamageSource source = caster != null
+         ? caster.damageSources().source(ArashDamageTypes.STELLA, this, caster)
+         : level.damageSources().generic();
+      target.invulnerableTime = 0;
+      target.hurtTime = 0;
+      target.hurtDuration = 0;
+      target.hurt(source, damage);
+      target.invulnerableTime = 0;
+      target.hurtTime = 0;
+      target.hurtDuration = 0;
    }
 
    private boolean canDamage(LivingEntity target) {

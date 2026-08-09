@@ -14,12 +14,21 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    private static final ResourceLocation EMIYA_MODEL = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "geo/servant_card_emiya_archer.geo.json");
    private static final ResourceLocation EMIYA_TEXTURE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/models/armor/servant_card_emiya_archer.png");
    private static final ResourceLocation EMIYA_ANIMATION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "animations/servant_card_emiya_archer.animation.json");
+   private static final ResourceLocation MEDUSA_ANIMATION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "animations/servant_card_medusa.animation.json");
    private static final ResourceLocation EMPTY_ANIMATION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "animations/empty.animation.json");
 
    @Override
    public ResourceLocation getModelResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
+      if (isHeadSlot(animatable) && usesFullHeadwearModel(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "geo/servant_card_" + servantId + ".geo.json");
+      }
       if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+         if ("artoria_pendragon".equals(servantId)) {
+            return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+               "geo/servant_hair_artoria_pendragon.geo.json");
+         }
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "geo/servant_card_" + servantId + "_head.geo.json");
       }
@@ -31,7 +40,15 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getTextureResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
+      if (isHeadSlot(animatable) && usesFullHeadwearModel(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "textures/models/armor/servant_card_" + servantId + ".png");
+      }
       if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
+         if ("artoria_pendragon".equals(servantId)) {
+            return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+               "textures/entity/servant_hair_artoria_pendragon.png");
+         }
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "textures/models/armor/servant_card_" + servantId + "_head.png");
       }
@@ -43,10 +60,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    @Override
    public ResourceLocation getAnimationResource(ServantCardArmorItem animatable) {
       String servantId = animatable == null ? "" : animatable.servantId();
-      if (isHeadSlot(animatable) && hasDedicatedHeadModel(servantId)) {
-         return EMPTY_ANIMATION;
+      if (isHeadSlot(animatable) && "medusa".equals(servantId)) {
+         return MEDUSA_ANIMATION;
       }
-      if (isHeadSlot(animatable) && "gilgamesh_caster".equals(servantId)) {
+      if (isHeadSlot(animatable)) {
          return EMPTY_ANIMATION;
       }
       return hasDedicatedArmor(servantId)
@@ -60,6 +77,23 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
+         default -> false;
+      };
+   }
+
+   private static boolean hasDedicatedHeadModel(String servantId) {
+      return switch (servantId) {
+         case "artoria_pendragon", "enkidu", "gilgamesh_caster", "li_shuwen",
+            "medusa", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
+   }
+
+   private static boolean usesFullHeadwearModel(String servantId) {
+      return switch (servantId) {
+         case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "ushiwakamaru_rider", "zhao_yun_rider", "gilgamesh_caster" -> true;
          default -> false;
       };
    }
@@ -89,10 +123,13 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
          return;
       }
       float pitchRad = Mth.clamp(entityData.headPitch(), -40.0F, 40.0F) * (float)(Math.PI / 180.0);
+      // The hat/headpiece is a child of armorHead and follows the head. Long
+      // hair must cancel that vertical pitch locally, otherwise it clips
+      // through the face or hat when the servant looks up/down. Child bones
+      // inherit the correction from their nearest hair root.
       counterRotateHair("hair", pitchRad, 1.25F);
       counterRotateHair("hair1", pitchRad, 1.35F);
       counterRotateHair("hair2", pitchRad, 1.35F);
-      counterRotateHair("bone4", pitchRad, 1.25F);
    }
 
    private void counterRotateHair(String boneName, float pitchRad, float strength) {
@@ -100,14 +137,6 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (bone != null) {
          bone.setRotX(-pitchRad * strength);
       }
-   }
-
-   private static boolean hasDedicatedHeadModel(String servantId) {
-      return switch (servantId) {
-         case "artoria_pendragon", "enkidu", "medusa", "oda_nobunaga", "paracelsus",
-            "sasaki_kojiro", "ushiwakamaru_rider", "zhao_yun_rider", "li_shuwen" -> true;
-         default -> false;
-      };
    }
 
    private static boolean usesLongHairCounterRotation(String servantId) {

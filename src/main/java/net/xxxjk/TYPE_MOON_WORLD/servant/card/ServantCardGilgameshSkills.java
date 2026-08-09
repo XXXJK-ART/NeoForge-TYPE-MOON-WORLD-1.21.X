@@ -65,6 +65,7 @@ public final class ServantCardGilgameshSkills {
       player.getPersistentData().remove(CHAIN_TARGET);
       player.getPersistentData().remove(CHAIN_UNTIL);
       player.getPersistentData().remove(CHARISMA_UNTIL);
+      player.getPersistentData().remove("ClairvoyanceActive");
    }
 
    public static void clear(ServerPlayer player) {
@@ -78,6 +79,7 @@ public final class ServantCardGilgameshSkills {
       GilgameshDivineShield.clear(player);
       player.removeEffect(MobEffects.NIGHT_VISION);
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.NONE, 0.0F, 0.0F);
+      player.getPersistentData().remove("ClairvoyanceActive");
       if (player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
       for (int i = 0; i < player.getInventory().getContainerSize(); i++) if (isGenerated(player.getInventory().getItem(i))) player.getInventory().setItem(i, ItemStack.EMPTY);
       if (isGenerated(player.getMainHandItem())) player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -98,14 +100,22 @@ public final class ServantCardGilgameshSkills {
       tickChainPursuit(player, now);
    }
 
-   private static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   public static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      syncDivineShieldCooldown(player, vars, divineShieldSlot(vars.servant_card_id));
+   }
+
+   public static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
       String oldCooldowns = vars.servant_card_skill_cooldowns;
       String oldEnds = vars.servant_card_skill_cooldown_ends;
-      ServantCardTransformManager.setSkillCooldownUntil(player, vars, 5, GilgameshDivineShield.cooldownUntil(player));
+      ServantCardTransformManager.setSkillCooldownUntil(player, vars, slot, GilgameshDivineShield.cooldownUntil(player));
       if (!java.util.Objects.equals(oldCooldowns, vars.servant_card_skill_cooldowns)
          || !java.util.Objects.equals(oldEnds, vars.servant_card_skill_cooldown_ends)) {
          vars.syncPlayerVariables(player);
       }
+   }
+
+   private static int divineShieldSlot(String servantId) {
+      return "gilgamesh_caster".equals(servantId) ? 8 : 5;
    }
 
    public static boolean isVaultAction(String id) {
@@ -120,10 +130,6 @@ public final class ServantCardGilgameshSkills {
 
    public static boolean performKey(ServerPlayer player) {
       if (!hasKey(player)) {
-         if (player.getPersistentData().getBoolean(KEY)) {
-            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_required"), true);
-            return false;
-         }
          ItemStack key = markGilgameshGenerated(ServantCardTransformManager.markGeneratedItem(new ItemStack(ModItems.GILGAMESH_BAB_ILU.get()), true, false));
          player.setItemInHand(InteractionHand.MAIN_HAND, key);
          player.getPersistentData().putBoolean(KEY, true);
@@ -135,12 +141,12 @@ public final class ServantCardGilgameshSkills {
 
    public static boolean selectTreasure(ServerPlayer player, int index) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || !"gilgamesh".equals(vars.servant_card_id) || !hasKey(player) || index < 0 || index >= 7) return false;
+      if (!vars.servant_card_transformed || !isGilgameshVaultUser(vars.servant_card_id) || !hasKey(player) || index < 0 || index >= 7) return false;
       int mask = player.getPersistentData().getInt(MASK);
       if ((mask & (1 << index)) != 0) return false;
       ItemStack treasure = markGilgameshGenerated(ServantCardTransformManager.markGeneratedItem(treasureFor(index), true, false));
       ItemStack main = player.getMainHandItem();
-      if (main.is(ModItems.GILGAMESH_BAB_ILU.get())) {
+      if (main.is(ModItems.GILGAMESH_BAB_ILU.get()) && !isGenerated(main)) {
          if (!player.getInventory().add(main.copy())) return false;
       } else if (!main.isEmpty() && !player.getInventory().add(main.copy())) {
          return false;
@@ -149,6 +155,10 @@ public final class ServantCardGilgameshSkills {
       player.getPersistentData().putInt(MASK, mask | (1 << index));
       player.inventoryMenu.broadcastChanges();
       return true;
+   }
+
+   private static boolean isGilgameshVaultUser(String servantId) {
+      return "gilgamesh".equals(servantId) || "gilgamesh_caster".equals(servantId);
    }
 
    public static ItemStack treasureFor(int index) {
@@ -244,6 +254,14 @@ public final class ServantCardGilgameshSkills {
          return GilgameshDivineShield.deactivate(player);
       }
       return GilgameshDivineShield.activate(player);
+   }
+
+   public static boolean performDivineShield(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      boolean result = performDivineShield(player);
+      if (result) {
+         syncDivineShieldCooldown(player, vars);
+      }
+      return result;
    }
 
    public static void performClairvoyance(ServerPlayer player) {

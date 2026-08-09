@@ -19,6 +19,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
@@ -93,6 +94,8 @@ public final class ServantCardCasterGilgameshSkills {
       }
       tickLeader(player, level, data);
       tickWorkshop(player, vars, level, data);
+      GilgameshDivineShield.tick(player);
+      syncDivineShieldCooldown(player, vars);
       if (data.getBoolean(FIRING_TAG) && level.getGameTime() >= data.getLong(LAST_CANNON_ROUND) + 20L) {
          if (fireCannonRound(player, vars, true)) {
             data.putLong(LAST_CANNON_ROUND, level.getGameTime());
@@ -116,6 +119,7 @@ public final class ServantCardCasterGilgameshSkills {
       data.remove(WORKSHOP_ACTIVE);
       data.remove(LEADER_UNTIL);
       data.remove(RETURN_UNTIL);
+      GilgameshDivineShield.clear(player);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), LEADER_ATTACK_ID);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ARMOR), WORKSHOP_ARMOR_ID);
       if (player.level() instanceof ServerLevel level) {
@@ -124,6 +128,10 @@ public final class ServantCardCasterGilgameshSkills {
             ServantCardSkillUtils.remove(living.getAttribute(Attributes.ARMOR), WORKSHOP_ARMOR_ID);
          }
       }
+   }
+
+   private static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantCardGilgameshSkills.syncDivineShieldCooldown(player, vars, 8);
    }
 
    public static boolean performSlateBasic(ServerPlayer player) {
@@ -256,7 +264,11 @@ public final class ServantCardCasterGilgameshSkills {
       if (syncRoyalCannonAmmo(vars, data)) {
          vars.syncServantCardRuntime(player);
       }
-      CasterGilgameshCombatHelper.spawnRoyalCannonVolley(level, player, target, CANNON_SHOTS_PER_ROUND, 20.0F, WAND_DOMINION_MULTIPLIER, true);
+      CasterGilgameshCombatHelper.spawnRoyalCannonVolley(
+         level, player, target, CANNON_SHOTS_PER_ROUND,
+         CasterGilgameshCombatHelper.CANNON_DAMAGE_PER_SHOT,
+         WAND_DOMINION_MULTIPLIER, true
+      );
       if (!sustained) {
          data.putLong(LAST_CANNON_ROUND, level.getGameTime());
       }

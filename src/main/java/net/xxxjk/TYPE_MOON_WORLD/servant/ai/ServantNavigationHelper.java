@@ -17,6 +17,8 @@ public final class ServantNavigationHelper {
    private static final String PROGRESS_Y = "TypeMoonCombatProgressY";
    private static final String PROGRESS_Z = "TypeMoonCombatProgressZ";
    private static final String PROGRESS_TICK = "TypeMoonCombatProgressTick";
+   private static final String PRESSURE_SIDE = "TypeMoonMeleePressureSide";
+   private static final String PRESSURE_SIDE_UNTIL = "TypeMoonMeleePressureSideUntil";
    private static final long NO_PROGRESS_TIMEOUT = 12L;
 
    private ServantNavigationHelper() {
@@ -40,15 +42,22 @@ public final class ServantNavigationHelper {
       AABB destination = entity.getBoundingBox().move(
          target.x - entity.getX(), target.y - entity.getY(), target.z - entity.getZ());
       if (!entity.level().noCollision(entity, destination)) return NavigationResult.UNSAFE;
+      CompoundTag data = entity.getPersistentData();
+      String failureKey = keyPrefix + "Failure";
+      data.remove(failureKey);
       boolean accepted = moveToPositionThrottled(entity, target, speed, gameTick,
          repathInterval, minTargetMoveSqr, keyPrefix);
-      if (!accepted) return NavigationResult.NO_PATH;
+      if (!accepted) {
+         String failure = data.getString(failureKey);
+         data.remove(failureKey);
+         if (NavigationResult.NO_PROGRESS.name().equals(failure)) return NavigationResult.NO_PROGRESS;
+         return entity.horizontalCollision ? NavigationResult.BLOCKED : NavigationResult.NO_PATH;
+      }
       if (entity.distanceToSqr(target) <= 2.25) return NavigationResult.MOVED;
       if (!actualProgress(entity, gameTick)) {
-         clearMovementState(entity);
+         clearMovementState(entity, keyPrefix);
          return NavigationResult.NO_PROGRESS;
       }
-      CompoundTag data = entity.getPersistentData();
       String progress = keyPrefix + "Progress";
       String px = keyPrefix + "ProgressX";
       String py = keyPrefix + "ProgressY";
@@ -70,7 +79,10 @@ public final class ServantNavigationHelper {
          }
       }
       if (gameTick - data.getLong(progress) >= 12L) {
-         return entity.getNavigation().isDone() ? NavigationResult.BLOCKED : NavigationResult.NO_PROGRESS;
+         NavigationResult result = entity.getNavigation().isDone()
+            ? NavigationResult.BLOCKED : NavigationResult.NO_PROGRESS;
+         clearMovementState(entity, keyPrefix);
+         return result;
       }
       return NavigationResult.MOVED;
    }
@@ -129,8 +141,8 @@ public final class ServantNavigationHelper {
       boolean speedChanged = !data.contains(speedKey) || Math.abs(data.getDouble(speedKey) - speed) > 0.05;
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
          if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
-         if (entity.distanceTo(target) > 4.35 && !actualProgress(entity, gameTick)) {
-            clearMovementState(entity);
+         if (outsideBasicAttackRange(entity, target) && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity, keyPrefix);
             return false;
          }
          rememberMovementWriter(entity, gameTick, keyPrefix);
@@ -149,8 +161,8 @@ public final class ServantNavigationHelper {
       boolean accepted = entity.getNavigation().moveTo(target, speed);
       if (accepted) {
          rememberMovementWriter(entity, gameTick, keyPrefix);
-         if (entity.distanceTo(target) > 4.35 && !actualProgress(entity, gameTick)) {
-            clearMovementState(entity);
+         if (outsideBasicAttackRange(entity, target) && !actualProgress(entity, gameTick)) {
+            clearMovementState(entity, keyPrefix);
             return false;
          }
       }
@@ -244,9 +256,10 @@ public final class ServantNavigationHelper {
       if (!targetMoved && !speedChanged && !entity.getNavigation().isDone() && gameTick - data.getLong(keyPrefix + "LastPathTick") < repathInterval) {
          if (!movementAvailable(entity, gameTick, keyPrefix)) return false;
          LivingEntity combatTarget = entity.getTarget();
-         if (combatTarget != null && entity.distanceTo(combatTarget) > 4.35
+         if (combatTarget != null && outsideBasicAttackRange(entity, combatTarget)
             && !actualProgress(entity, gameTick)) {
-            clearMovementState(entity);
+            data.putString(keyPrefix + "Failure", NavigationResult.NO_PROGRESS.name());
+            clearMovementState(entity, keyPrefix);
             return false;
          }
          rememberMovementWriter(entity, gameTick, keyPrefix);
@@ -264,9 +277,10 @@ public final class ServantNavigationHelper {
       if (accepted) {
          rememberMovementWriter(entity, gameTick, keyPrefix);
          LivingEntity combatTarget = entity.getTarget();
-         if (combatTarget != null && entity.distanceTo(combatTarget) > 4.35
+         if (combatTarget != null && outsideBasicAttackRange(entity, combatTarget)
             && !actualProgress(entity, gameTick)) {
-            clearMovementState(entity);
+            data.putString(keyPrefix + "Failure", NavigationResult.NO_PROGRESS.name());
+            clearMovementState(entity, keyPrefix);
             return false;
          }
       }
@@ -301,6 +315,27 @@ public final class ServantNavigationHelper {
       entity.getNavigation().stop();
    }
 
+   /** Also removes one movement writer's cached destination and progress sample. */
+   public static void clearMovementState(ServantEntity entity, String keyPrefix) {
+      clearMovementState(entity);
+      if (entity == null || keyPrefix == null || keyPrefix.isBlank()) return;
+      CompoundTag data = entity.getPersistentData();
+      data.remove(keyPrefix + "TargetX");
+      data.remove(keyPrefix + "TargetY");
+      data.remove(keyPrefix + "TargetZ");
+      data.remove(keyPrefix + "Speed");
+      data.remove(keyPrefix + "LastPathTick");
+      data.remove(keyPrefix + "WaterPathTick");
+      data.remove(keyPrefix + "Progress");
+      data.remove(keyPrefix + "ProgressX");
+      data.remove(keyPrefix + "ProgressY");
+      data.remove(keyPrefix + "ProgressZ");
+   }
+
+   private static boolean outsideBasicAttackRange(ServantEntity entity, LivingEntity target) {
+      return !ServantCombatTempoService.canAttemptBasicAttack(entity, target);
+   }
+
    private static boolean actualProgress(ServantEntity entity, long gameTick) {
       CompoundTag data = entity.getPersistentData();
       if (!data.contains(PROGRESS_X)) {
@@ -325,24 +360,104 @@ public final class ServantNavigationHelper {
 
    /** Decelerates agile melee units near their opponent and removes excessive lateral drift. */
    public static void limitMeleeApproachMotion(ServantEntity entity, LivingEntity target) {
-      if (!ServantEngagementService.isMeleeDuel(entity, target) || entity.distanceTo(target) > 14.0) return;
+      boolean pressure = ServantCombatTempoService.inMeleePressure(entity, entity.level().getGameTime())
+         || ServantCombatTempoService.isMeleeOverride(entity);
+      if ((!ServantEngagementService.isMeleeDuel(entity, target) && !pressure)
+         || entity.distanceTo(target) > 14.0) return;
       Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       if (toward.lengthSqr() < 1.0E-4) return;
-      toward = toward.normalize();
       Vec3 motion = entity.getDeltaMovement();
-      double forward = motion.x * toward.x + motion.z * toward.z;
       double movementAttribute = entity.getAttributeValue(Attributes.MOVEMENT_SPEED);
       double distance = entity.distanceTo(target);
-      double maxForward = distance <= 4.5 ? 0.24 : Math.min(0.58, 0.34 + movementAttribute * 0.8);
-      forward = Math.max(-0.12, Math.min(maxForward, forward));
-      Vec3 lateral = new Vec3(motion.x - toward.x * forward, 0.0, motion.z - toward.z * forward);
-      double lateralLimit = Math.min(0.18, 0.08 + movementAttribute * 0.3);
-      if (lateral.lengthSqr() > lateralLimit * lateralLimit) lateral = lateral.normalize().scale(lateralLimit);
-      Vec3 adjusted = toward.scale(forward).add(lateral).add(0.0, motion.y, 0.0);
+      Vec3 adjusted = pressure
+         ? stabilizePressureMotion(motion, toward, distance, movementAttribute, target.getDeltaMovement())
+         : stabilizeApproachMotion(motion, toward, distance, movementAttribute, target.getDeltaMovement());
       if (adjusted.distanceToSqr(motion) > 1.0E-6) {
          entity.setDeltaMovement(adjusted);
          entity.hasImpulse = true;
       }
+   }
+
+   /** Target-facing footwork used while a shared melee pressure window is active. */
+   public static void applyMeleePressureFootwork(ServantEntity entity, LivingEntity target, long gameTick) {
+      if (entity == null || target == null || !target.isAlive()) return;
+      stopIfMoving(entity);
+      entity.getLookControl().setLookAt(target, 65.0F, 55.0F);
+      entity.faceToward(target.position());
+      double distance = entity.distanceTo(target);
+      CompoundTag data = entity.getPersistentData();
+      if (!data.contains(PRESSURE_SIDE) || gameTick >= data.getLong(PRESSURE_SIDE_UNTIL)) {
+         int side = data.contains(PRESSURE_SIDE) ? -data.getInt(PRESSURE_SIDE)
+            : (Math.floorMod(entity.getId(), 2) == 0 ? 1 : -1);
+         data.putInt(PRESSURE_SIDE, side == 0 ? 1 : side);
+         data.putLong(PRESSURE_SIDE_UNTIL, gameTick + 18L);
+      }
+      float forward = distance > 2.55 ? 0.58F : 0.12F;
+      float lateral = distance > 2.55 ? 0.0F : data.getInt(PRESSURE_SIDE) * 0.10F;
+      entity.getMoveControl().strafe(forward, lateral);
+      Vec3 motion = entity.getDeltaMovement();
+      Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      Vec3 adjusted = stabilizePressureMotion(motion, toward, distance,
+         entity.getAttributeValue(Attributes.MOVEMENT_SPEED), target.getDeltaMovement());
+      if (adjusted.distanceToSqr(motion) > 1.0E-6) {
+         entity.setDeltaMovement(adjusted);
+         entity.hasImpulse = true;
+      }
+   }
+
+   static Vec3 stabilizePressureMotion(Vec3 motion, Vec3 toward, double distance, double movementAttribute) {
+      return stabilizePressureMotion(motion, toward, distance, movementAttribute, Vec3.ZERO);
+   }
+
+   static Vec3 stabilizePressureMotion(Vec3 motion, Vec3 toward, double distance,
+                                       double movementAttribute, Vec3 targetMotion) {
+      if (motion == null) return Vec3.ZERO;
+      Vec3 direction = toward == null ? Vec3.ZERO : toward.multiply(1.0, 0.0, 1.0);
+      if (direction.lengthSqr() < 1.0E-4) return motion;
+      direction = direction.normalize();
+      double rawForward = motion.x * direction.x + motion.z * direction.z;
+      Vec3 lateral = new Vec3(motion.x - direction.x * rawForward, 0.0,
+         motion.z - direction.z * rawForward);
+      double minimumForward = distance > 2.55 ? Math.min(0.20, 0.10 + movementAttribute * 0.24) : -0.03;
+      double maximumForward = distance > 2.55 ? Math.min(0.36, 0.20 + movementAttribute * 0.45) : 0.15;
+      double forward = Math.max(minimumForward, Math.min(maximumForward, rawForward));
+      if (distance <= 4.8) {
+         forward = Math.min(forward, relativeForwardLimit(targetMotion, direction, 0.26, -0.03));
+      }
+      double lateralLimit = distance > 2.55 ? 0.035 : 0.09;
+      if (lateral.lengthSqr() > lateralLimit * lateralLimit) {
+         lateral = lateral.normalize().scale(lateralLimit);
+      }
+      return direction.scale(forward).add(lateral).add(0.0, motion.y, 0.0);
+   }
+
+   static Vec3 stabilizeApproachMotion(Vec3 motion, Vec3 toward, double distance,
+                                      double movementAttribute) {
+      return stabilizeApproachMotion(motion, toward, distance, movementAttribute, Vec3.ZERO);
+   }
+
+   static Vec3 stabilizeApproachMotion(Vec3 motion, Vec3 toward, double distance,
+                                       double movementAttribute, Vec3 targetMotion) {
+      Vec3 direction = toward.normalize();
+      double rawForward = motion.x * direction.x + motion.z * direction.z;
+      Vec3 lateral = new Vec3(motion.x - direction.x * rawForward, 0.0,
+         motion.z - direction.z * rawForward);
+      double maxForward = distance <= 4.5 ? 0.24 : Math.min(0.58, 0.34 + movementAttribute * 0.8);
+      double forward = Math.max(-0.12, Math.min(maxForward, rawForward));
+      if (distance <= 4.8) {
+         forward = Math.min(forward, relativeForwardLimit(targetMotion, direction, 0.28, -0.04));
+      }
+      double lateralLimit = Math.min(0.18, 0.08 + movementAttribute * 0.3);
+      if (lateral.lengthSqr() > lateralLimit * lateralLimit) lateral = lateral.normalize().scale(lateralLimit);
+      return direction.scale(forward).add(lateral).add(0.0, motion.y, 0.0);
+   }
+
+   private static double relativeForwardLimit(Vec3 targetMotion, Vec3 direction,
+                                              double maximumClosingSpeed, double minimum) {
+      Vec3 target = targetMotion == null ? Vec3.ZERO : targetMotion;
+      double targetForward = target.x * direction.x + target.z * direction.z;
+      targetForward = Math.max(-0.24, Math.min(0.45, targetForward));
+      return Math.max(minimum, targetForward + maximumClosingSpeed);
    }
 
    public static boolean stopIfMoving(ServantEntity entity) {

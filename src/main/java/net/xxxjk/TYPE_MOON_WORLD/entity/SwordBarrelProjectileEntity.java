@@ -233,7 +233,7 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
                boolean locked = false;
                if (targetId != -1) {
                   Entity target = this.level().getEntity(targetId);
-                  if (target != null && target.isAlive()) {
+                  if (target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
                      this.entityData.set(TARGET_X, (float)target.getX());
                      this.entityData.set(TARGET_Y, (float)(target.getY() + target.getBbHeight() * 0.5));
                      this.entityData.set(TARGET_Z, (float)target.getZ());
@@ -299,8 +299,10 @@ public class SwordBarrelProjectileEntity extends ThrowableItemProjectile {
             int targetIdx = (Integer)this.entityData.get(TARGET_ENTITY_ID);
             if (targetIdx != -1) {
                Entity target = this.level().getEntity(targetIdx);
-               if (target != null && target.isAlive()) {
+               if (target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
                   targetPos = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+               } else if (target != null) {
+                  this.entityData.set(TARGET_ENTITY_ID, -1);
                }
             }
 

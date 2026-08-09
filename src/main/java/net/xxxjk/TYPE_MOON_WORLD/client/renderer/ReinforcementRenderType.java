@@ -410,6 +410,26 @@ public class ReinforcementRenderType extends RenderType {
       addIfAbsent(map, entityGlintDirectBlock());
    }
 
+   public static RenderType[] glintTypes() {
+      return new RenderType[]{
+         glint(),
+         glintTranslucent(),
+         entityGlint(),
+         glintDirect(),
+         entityGlintDirect(),
+         glint3d(),
+         glintTranslucent3d(),
+         entityGlint3d(),
+         glintDirect3d(),
+         entityGlintDirect3d(),
+         glintBlock(),
+         glintTranslucentBlock(),
+         entityGlintBlock(),
+         glintDirectBlock(),
+         entityGlintDirectBlock()
+      };
+   }
+
    private static void addIfAbsent(Object2ObjectLinkedOpenHashMap<RenderType, ByteBufferBuilder> map, RenderType renderType) {
       if (!map.containsKey(renderType)) {
          map.put(renderType, new ByteBufferBuilder(renderType.bufferSize()));

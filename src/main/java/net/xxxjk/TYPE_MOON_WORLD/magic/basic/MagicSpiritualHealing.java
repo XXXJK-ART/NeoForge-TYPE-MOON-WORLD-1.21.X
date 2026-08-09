@@ -77,7 +77,7 @@ public final class MagicSpiritualHealing {
       target.level().playSound(null, target.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.8F, 1.65F);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.spiritual_healing.cast", target.getDisplayName(), heal, removed), true);
       if (!crestCast) {
-         vars.proficiency_spiritual_healing = Math.min(100.0, vars.proficiency_spiritual_healing + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "spiritual_healing", 0.18);
          vars.syncProficiency(player);
       }
       return true;
@@ -116,7 +116,7 @@ public final class MagicSpiritualHealing {
       }
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.spiritual_healing.sense", spirits.size()), true);
       if (!crestCast) {
-         vars.proficiency_spiritual_healing = Math.min(100.0, vars.proficiency_spiritual_healing + 0.08);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "spiritual_healing", 0.08);
          vars.syncProficiency(player);
       }
       return true;

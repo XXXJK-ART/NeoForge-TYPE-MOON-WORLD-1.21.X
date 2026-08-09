@@ -1,0 +1,22 @@
+{
+  "id": "nero_chaos",
+  "max_health": 400.0,
+  "attack_damage": 20.0,
+  "movement_speed": 0.42,
+  "armor": 12.0,
+  "armor_toughness": 4.0,
+  "knockback_resistance": 0.30,
+  "follow_range": 48.0,
+  "stamina_max": 140.0,
+  "stamina_regen_per_second": 14.0,
+  "block_reduction": 0.35,
+  "block_stamina_cost": 9.0,
+  "dodge_chance": 0.72,
+  "urgent_dodge_chance": 0.90,
+  "dodge_cooldown_ticks": 13,
+  "dodge_invulnerability_ticks": 9,
+  "poise_max": 170.0,
+  "poise_regen_per_second": 11.0,
+  "poise_damage_per_hit": 10.0,
+  "guard_break_ticks": 18
+}

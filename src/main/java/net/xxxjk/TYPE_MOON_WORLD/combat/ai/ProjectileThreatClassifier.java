@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 
@@ -45,6 +46,21 @@ public final class ProjectileThreatClassifier {
       return Set.copyOf(result);
    }
 
+   /** Classifies projectile-like entities that use a custom Entity base class. */
+   public static Set<FactBypass> classify(Entity projectileLike) {
+      if (projectileLike == null) return Set.of();
+      if (projectileLike instanceof Projectile projectile) return classify(projectile);
+      if (projectileLike instanceof GilgameshGateWeaponProjectileEntity gate
+         && "vajra".equals(gate.getWeaponId())) {
+         return Set.of(FactBypass.EXPLOSION);
+      }
+      return Set.of();
+   }
+
+   public static boolean isProjectileLike(Entity entity) {
+      return entity instanceof Projectile || entity instanceof GilgameshGateWeaponProjectileEntity;
+   }
+
    public static Set<FactBypass> classify(DamageSource source) {
       if (source == null) return Set.of();
       EnumSet<FactBypass> result = EnumSet.noneOf(FactBypass.class);
@@ -54,7 +70,7 @@ public final class ProjectileThreatClassifier {
       if (source.is(FanaticDamageTypes.GUARANTEED_HITS)) result.add(FactBypass.SURE_HIT);
       if (OriginBulletHelper.isOriginBulletDamage(source)) result.add(FactBypass.RULE_BREAKER);
       Entity direct = source.getDirectEntity();
-      if (direct instanceof Projectile projectile) result.addAll(classify(projectile));
+      if (isProjectileLike(direct)) result.addAll(classify(direct));
       return Set.copyOf(result);
    }
 

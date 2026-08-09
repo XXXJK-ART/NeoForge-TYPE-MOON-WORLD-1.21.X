@@ -1,0 +1,42 @@
+{
+  "duration": 0.8,
+  "notes": "Compact black-red spherical rupture at an Antores beam collision.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.72,
+      "rate": 520,
+      "particle_lifetime": 0.5,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.14,
+      "max_vanilla_particles_per_tick": 3,
+      "component": { "type": "sphere", "radius": 1.0, "sample_count": 160 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.15, 0.15, 0.15] },
+        { "t": 0.42, "scale": [2.4, 2.4, 2.4], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [3.8, 3.8, 3.8] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.14, "color": "#FFFF3158" },
+        { "t": 0.55, "color": "#DD770019" },
+        { "t": 0.82, "color": "#AA180008" },
+        { "t": 1.0, "color": "#00100006" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.34, "size": 0.42 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ANTORES_HIT_RUPTURE",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.05, 0.05, 0.05], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.45 },
+        { "type": "smoke", "count": 2, "spread": [0.4, 0.4, 0.4], "offset": [0.0, 0.0, 0.0], "speed": 0.04, "chance": 0.65 }
+      ]
+    }
+  ]
+}

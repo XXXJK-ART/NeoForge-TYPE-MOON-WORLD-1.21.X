@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiControl;
@@ -19,8 +20,8 @@ public final class ServantCombatTempoService {
    public static final int MOBILITY_ESCALATION_TICKS = 100;
    public static final int BREAKOUT_ESCALATION_TICKS = 160;
    public static final int MAX_DISCONNECTED_TICKS = 200;
-   public static final int MELEE_PRESSURE_MIN = 60;
-   public static final int MELEE_PRESSURE_MAX = 100;
+   public static final int MELEE_PRESSURE_MIN = 100;
+   public static final int MELEE_PRESSURE_MAX = 140;
    public static final int ORBIT_DETECTION_TICKS = 40;
    public static final int MELEE_OVERRIDE_TICKS = 100;
 
@@ -44,6 +45,11 @@ public final class ServantCombatTempoService {
    private static final String ORBITING = PREFIX + "Orbiting";
    private static final String MELEE_OVERRIDE = PREFIX + "MeleeOverride";
    private static final int BASIC_COOLDOWN = 10;
+   private static final double MIN_BASIC_REACH = 2.75;
+   private static final double MAX_BASIC_REACH = 4.35;
+   private static final double BASIC_REACH_BASE = 2.65;
+   private static final double BASIC_REACH_WIDTH_SCALE = 0.45;
+   private static final double BASIC_VERTICAL_TOLERANCE = 2.5;
 
    private ServantCombatTempoService() { }
 
@@ -95,12 +101,13 @@ public final class ServantCombatTempoService {
                                          TempoState state) {
       if (servant == null || target == null || brain == null || state == null || !target.isAlive()) return false;
       if (ServantPlannedActionExecutor.isActive(servant)) return false;
-      boolean closeEnough = servant.distanceTo(target) <= 4.2;
+      boolean imminentContact = closingContactImminent(servant, target);
+      boolean closeEnough = canAttemptBasicAttack(servant, target) || imminentContact;
       // Before the first 40-tick deadline, yielding lets character-specific
       // helpers retain final execution authority.  The legacy tail guard still
       // supplies a basic attack when those helpers decline to act.
       boolean forced = state.stage() > 0;
-      if (!forced) return false;
+      if (!forced && !imminentContact) return false;
       if (closeEnough) {
          brain.submit(AiIntent.attempt(
             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("typemoonworld", "ai/basic_attack"),
@@ -120,9 +127,10 @@ public final class ServantCombatTempoService {
    public static void enforceLegacy(ServantEntity servant, LivingEntity target, long now) {
       TempoState state = tick(servant, target, now);
       if (state == TempoState.EMPTY || ServantCombatSystem.cannotAct(servant) || servant.isPerformingAction()) return;
-      if (servant.distanceTo(target) <= 4.2) {
-         tryBasicAttack(servant, target, now);
-      } else if (state.stage() > 0) {
+      if (tryBasicAttack(servant, target, now)) {
+         return;
+      }
+      if (state.stage() > 0) {
          forceApproach(servant, target, now, state.stage());
       }
    }
@@ -130,16 +138,71 @@ public final class ServantCombatTempoService {
    public static boolean tryBasicAttack(ServantEntity servant, LivingEntity target, long now) {
       if (servant == null || target == null || !target.isAlive() || servant.level() != target.level()
          || ServantCombatSystem.cannotAct(servant) || servant.isPerformingAction()
-         || servant.distanceTo(target) > 4.35) return false;
+         || !canAttemptBasicAttack(servant, target) && !closingContactImminent(servant, target)) return false;
       CompoundTag data = servant.getPersistentData();
       if (now - data.getLong(LAST_BASIC) < BASIC_COOLDOWN) return false;
       data.putLong(LAST_BASIC, now);
       servant.getNavigation().stop();
       servant.faceToward(target.position());
-      boolean hit = servant.doHurtTarget(target);
+      if (closingContactImminent(servant, target)) {
+         Vec3 motion = servant.getDeltaMovement();
+         servant.setDeltaMovement(motion.x * 0.28, motion.y, motion.z * 0.28);
+         servant.hasImpulse = true;
+      }
+      boolean hit = servant.doBasicHurtTarget(target);
       servant.triggerBasicAttackAnimation();
       recordContact(servant, target, hit ? ContactType.DAMAGE : ContactType.BLOCKED, now);
       return true;
+   }
+
+   /** Size-aware range shared by ground, flight and high-speed contact handling. */
+   public static double basicAttackReach(LivingEntity attacker, LivingEntity target) {
+      if (attacker == null || target == null) return MIN_BASIC_REACH;
+      return basicAttackReach(attacker.getBbWidth(), target.getBbWidth());
+   }
+
+   static double basicAttackReach(double attackerWidth, double targetWidth) {
+      double widths = Math.max(0.0, attackerWidth) + Math.max(0.0, targetWidth);
+      return Math.max(MIN_BASIC_REACH,
+         Math.min(MAX_BASIC_REACH, BASIC_REACH_BASE + widths * BASIC_REACH_WIDTH_SCALE));
+   }
+
+   public static boolean canAttemptBasicAttack(ServantEntity servant, LivingEntity target) {
+      if (servant == null || target == null || !target.isAlive() || servant.level() != target.level()) return false;
+      double distance = servant.distanceTo(target);
+      double verticalGap = Math.abs(
+         servant.getY() + servant.getBbHeight() * 0.5
+            - target.getY() - target.getBbHeight() * 0.5);
+      boolean lineOfSight = servant.getSensing().hasLineOfSight(target);
+      return basicAttackGeometry(distance, verticalGap, lineOfSight,
+         servant.getBbWidth(), target.getBbWidth());
+   }
+
+   static boolean basicAttackGeometry(double distance, double verticalGap, boolean lineOfSight,
+                                      double attackerWidth, double targetWidth) {
+      return distance <= basicAttackReach(attackerWidth, targetWidth)
+         && verticalGap <= BASIC_VERTICAL_TOLERANCE
+         && (lineOfSight || distance <= 1.8);
+   }
+
+   static boolean sweptContact(AABB attackerBounds, Vec3 motion, AABB targetBounds) {
+      if (attackerBounds == null || motion == null || targetBounds == null) return false;
+      AABB swept = attackerBounds.expandTowards(motion.scale(1.35)).inflate(0.25, 0.15, 0.25);
+      return swept.intersects(targetBounds.inflate(0.05));
+   }
+
+   private static boolean closingContactImminent(ServantEntity servant, LivingEntity target) {
+      if (servant == null || target == null || !target.isAlive() || servant.level() != target.level()) return false;
+      Vec3 motion = servant.getDeltaMovement();
+      Vec3 toward = target.position().subtract(servant.position()).multiply(1.0, 0.0, 1.0);
+      if (motion.horizontalDistanceSqr() < 0.0225 || toward.lengthSqr() < 1.0E-4
+         || motion.dot(toward.normalize()) < 0.12) return false;
+      double verticalGap = Math.abs(
+         servant.getY() + servant.getBbHeight() * 0.5
+            - target.getY() - target.getBbHeight() * 0.5);
+      if (verticalGap > BASIC_VERTICAL_TOLERANCE
+         || !servant.getSensing().hasLineOfSight(target) && servant.distanceTo(target) > 1.8) return false;
+      return sweptContact(servant.getBoundingBox(), motion, target.getBoundingBox());
    }
 
    public static void recordContact(ServantEntity servant, LivingEntity target, ContactType type, long now) {
@@ -206,6 +269,7 @@ public final class ServantCombatTempoService {
       if (servant.isPerformingAction() || ServantCombatSystem.cannotAct(servant)) return false;
       servant.getLookControl().setLookAt(target, 55.0F, 45.0F);
       servant.setSprinting(true);
+      if (ServantFlightCombatService.forceMeleeApproach(servant, target, now)) return true;
       boolean moved = ServantNavigationHelper.moveToTargetThrottled(servant, target,
          stage >= 3 ? 1.9 : stage >= 2 ? 1.65 : 1.4, now, 3, 0.25, "CombatTempoApproach");
       if (ServantCombatDisposition.isRelentlessAdvance(servant)

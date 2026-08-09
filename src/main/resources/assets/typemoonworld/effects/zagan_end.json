@@ -1,0 +1,38 @@
+{
+  "duration": 0.8,
+  "notes": "Dissipating flat water ring.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.75,
+      "rate": 420,
+      "particle_lifetime": 0.55,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.04, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "torus", "radius": 12.0, "tube_radius": 0.2, "u_segments": 72, "v_segments": 8 },
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, -0.35, 0.0], "scale": [0.7, 0.45, 0.7] },
+        { "t": 0.55, "pos": [0.0, 0.0, 0.0], "scale": [1.2, 0.6, 1.2] },
+        { "t": 1.0, "pos": [0.0, 0.2, 0.0], "scale": [1.55, 0.75, 1.55] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#D8FFFFFF" },
+        { "t": 0.48, "color": "#A84BA9E8" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.52, "size": 0.26 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ZAGAN_DISSIPATING_WATER_RING",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 3, "spread": [8.0, 0.5, 8.0], "offset": [0.0, 0.0, 0.0], "speed": 0.05, "chance": 0.74 }
+      ]
+    }
+  ]
+}

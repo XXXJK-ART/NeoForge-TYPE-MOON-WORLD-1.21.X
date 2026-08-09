@@ -1,0 +1,12 @@
+{
+  "name_key": "magic.typemoonworld.detection.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": true,
+  "knowledge_only": false
+}

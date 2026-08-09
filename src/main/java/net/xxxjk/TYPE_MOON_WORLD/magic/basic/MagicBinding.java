@@ -17,9 +17,10 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicProficiencyContestHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 
 public final class MagicBinding {
    private MagicBinding() {
@@ -43,7 +44,7 @@ public final class MagicBinding {
 
       boolean success = applyBinding(player, target, proficiency);
       if (success && !vars.isCurrentSelectionFromCrest("binding_magic")) {
-         vars.proficiency_binding_magic = Math.min(100.0, vars.proficiency_binding_magic + 0.18);
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "binding_magic", 0.18);
       }
       return success;
    }
@@ -74,12 +75,10 @@ public final class MagicBinding {
          List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
             e -> e != caster && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e) && targetFilter.test(e));
          for (LivingEntity living : targets) {
-            applySingle(living, duration, amplifier);
-            any = true;
+            any |= applySingle(caster, living, duration, amplifier, MagicComplexity.TWO_VERSE, p);
          }
       } else {
-         applySingle(target, duration, amplifier);
-         any = true;
+         any = applySingle(caster, target, duration, amplifier, MagicComplexity.ONE_VERSE, p);
       }
       if (any) {
          caster.level().playSound(null, target.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 0.85F, p >= 75.0 ? 0.75F : 1.0F);
@@ -99,13 +98,14 @@ public final class MagicBinding {
          LivingEntity.class, box, target -> target != caster && target.isAlive()
             && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
       );
+      boolean any = false;
       for (LivingEntity target : targets) {
-         applySingle(target, duration, amplifier);
+         any |= applySingle(caster, target, duration, amplifier, MagicComplexity.TWO_VERSE, p);
       }
-      if (!targets.isEmpty()) {
+      if (any) {
          level.playSound(null, BlockPos.containing(center), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 0.85F, p >= 75.0 ? 0.75F : 1.0F);
       }
-      return !targets.isEmpty();
+      return any;
    }
 
    public static int durationTicks(double proficiency) {
@@ -120,24 +120,41 @@ public final class MagicBinding {
       return 3.0 + (p - 70.0) / 30.0 * 2.0;
    }
 
-   private static void applySingle(LivingEntity target, int baseDuration, int amplifier) {
-      int duration = applyResistanceDuration(target, baseDuration);
+   private static boolean applySingle(
+      LivingEntity caster, LivingEntity target, int baseDuration, int amplifier, MagicComplexity complexity, double proficiency
+   ) {
+      MagicProficiencyContestHelper.Result contest = MagicProficiencyContestHelper.contest(
+         caster, target, "binding_magic", proficiency, complexity);
+      if (contest == MagicProficiencyContestHelper.Result.COUNTERED) {
+         applyCounterBinding(target, caster, proficiency);
+         return false;
+      }
+      if (contest == MagicProficiencyContestHelper.Result.RESISTED) {
+         return false;
+      }
+      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, baseDuration, complexity);
       if (duration <= 0) {
-         return;
+         return false;
       }
       target.getPersistentData().putBoolean(BindingEffect.TAG_FULL_BIND, amplifier > 0);
       target.addEffect(new MobEffectInstance(ModMobEffects.BINDING, duration, amplifier, false, true, true));
+      return true;
    }
 
-   private static int applyResistanceDuration(LivingEntity target, int duration) {
-      MagicResistanceRank rank = MagicResistanceHelper.getMagicResistanceRank(target);
-      if (rank.isAtLeast(MagicResistanceRank.A)) {
-         return Math.min(duration, 10);
-      } else if (rank.isAtLeast(MagicResistanceRank.B)) {
-         return Math.max(1, duration / 3);
-      } else if (rank.isAtLeast(MagicResistanceRank.C)) {
-         return Math.max(1, duration / 2);
+   private static void applyCounterBinding(LivingEntity counterCaster, LivingEntity originalCaster, double originalProficiency) {
+      if (counterCaster == null || originalCaster == null || !originalCaster.isAlive() || EntityUtils.isImmunePlayerTarget(originalCaster)) {
+         return;
       }
-      return MagicResistanceHelper.applyDebuffResistance(target, duration);
+      Double targetProficiency = MagicProficiencyContestHelper.getComparableMagicProficiency(counterCaster, "binding_magic");
+      double counterP = targetProficiency == null
+         ? Math.min(100.0, originalProficiency + MagicProficiencyContestHelper.COUNTER_GAP + 1.0)
+         : targetProficiency;
+      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
+         originalCaster, Math.min(120, Math.max(30, durationTicks(counterP) * 2)), MagicComplexity.ONE_VERSE);
+      if (duration <= 0) {
+         return;
+      }
+      originalCaster.getPersistentData().putBoolean(BindingEffect.TAG_FULL_BIND, counterP >= 50.0);
+      originalCaster.addEffect(new MobEffectInstance(ModMobEffects.BINDING, duration, counterP >= 50.0 ? 1 : 0, false, true, true));
    }
 }

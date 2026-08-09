@@ -39,6 +39,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
    NeonButton imagebutton_basic_attributes;
    NeonButton imagebutton_magical_attributes;
    NeonButton imagebutton_magical_properties;
+   NeonButton imagebutton_passives;
 
    public Basic_information_Screen(BasicInformationMenu container, Inventory inventory, Component text) {
       super(container, inventory, text);
@@ -70,7 +71,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
    @Override
    public void renderBackground(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
+      GuiUtils.renderScreenBaseBackdrop(guiGraphics, this.width, this.height);
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
@@ -216,17 +217,17 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       String unitKey,
       boolean positiveIsBeneficial
    ) {
-      gui.drawString(this.font, label, x, y, -5592406, false);
+      gui.drawString(this.font, label, x, y, GuiUtils.ARCANE_TEXT_MUTED, false);
       double totalModifier = reasons.stream().mapToDouble(Basic_information_Screen.ModifierReason::delta).sum();
       String unitText = Component.translatable(unitKey).getString();
       String baseText = this.formatNumber(baseValue, decimals);
       String mainText = baseText + " " + unitText;
       int valueX = x + Math.max(62, this.font.width(label) + 6);
-      gui.drawString(this.font, mainText, valueX, y, -1, false);
+      gui.drawString(this.font, mainText, valueX, y, GuiUtils.ARCANE_TEXT, false);
       if (!(Math.abs(totalModifier) <= 1.0E-4)) {
          String modifierText = "(" + this.formatSignedNumber(totalModifier, decimals) + ")";
          boolean isBuff = positiveIsBeneficial ? totalModifier >= 0.0 : totalModifier <= 0.0;
-         int modifierColor = isBuff ? -11141291 : -34953;
+         int modifierColor = isBuff ? GuiUtils.ARCANE_VALID : GuiUtils.ARCANE_DANGER;
          int modifierX = valueX + this.font.width(mainText) + 4;
          gui.drawString(this.font, modifierText, modifierX, y, modifierColor, false);
          this.statTooltipAreas
@@ -273,7 +274,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
 
          for (Basic_information_Screen.ModifierReason reason : reasons) {
             String detail = String.format(Locale.ROOT, "- %s (%s %s)", reason.label().getString(), this.formatSignedNumber(reason.delta(), decimals), unitText);
-            lines.add(Component.literal(detail).withStyle(ChatFormatting.DARK_GRAY));
+            lines.add(Component.literal(detail).withStyle(ChatFormatting.GRAY));
          }
       }
 
@@ -335,7 +336,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          int textY = tooltipY + padding;
 
          for (FormattedCharSequence line : wrappedLines) {
-            guiGraphics.drawString(this.font, line, tooltipX + padding, textY, -1, false);
+            guiGraphics.drawString(this.font, line, tooltipX + padding, textY, GuiUtils.ARCANE_TEXT, false);
             textY += lineHeight;
          }
 
@@ -354,9 +355,9 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
    public void init() {
       super.init();
       int btnY = this.topPos + 6;
-      int btnWidth = 78;
+      int btnWidth = 70;
       int btnHeight = 16;
-      int startX = this.leftPos + this.imageWidth - btnWidth * 3 - 14;
+      int startX = this.leftPos + this.imageWidth - btnWidth * 4 - 16;
       this.imagebutton_basic_attributes = new NeonButton(
          startX, btnY, btnWidth, btnHeight, Component.translatable("gui.typemoonworld.tab.basic_attributes"), e -> {}
       ).setArcaneStyle(true).setSelected(true);
@@ -375,6 +376,18 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          }
       ).setArcaneStyle(true);
       this.addRenderableWidget(this.imagebutton_magical_properties);
+      this.imagebutton_passives = new NeonButton(
+         startX + (btnWidth + 2) * 3,
+         btnY,
+         btnWidth,
+         btnHeight,
+         Component.translatable("gui.typemoonworld.tab.passives"),
+         e -> {
+            PacketDistributor.sendToServer(new Basic_information_Button_Message(2, this.x, this.y, this.z), new CustomPacketPayload[0]);
+            Basic_information_Button_Message.handleButtonAction(this.entity, 2, this.x, this.y, this.z);
+         }
+      ).setArcaneStyle(true).setSelectedColor(MagicUiColors.TALENT);
+      this.addRenderableWidget(this.imagebutton_passives);
    }
 
    private Component buildBaseAttributes(TypeMoonWorldModVariables.PlayerVariables vars) {

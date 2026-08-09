@@ -8,17 +8,29 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -31,7 +43,8 @@ public final class CasterGilgameshCombatHelper {
    public static final String FIRING_TAG = "RoyalCannonFiring";
    public static final int MAX_AMMO = 5000;
    public static final int STARTING_AMMO = 500;
-   public static final int CANNON_SHOTS_PER_ROUND = 10;
+   public static final int CANNON_SHOTS_PER_ROUND = 30;
+   public static final float CANNON_DAMAGE_PER_SHOT = 30.0F;
    public static final float CANNON_EXPLOSION_RADIUS = 3.0F;
    private static final String LAST_LEADER = "CasterGilgameshLastLeader";
    private static final String LAST_RETURN = "CasterGilgameshLastReturn";
@@ -41,18 +54,33 @@ public final class CasterGilgameshCombatHelper {
    private static final String LAST_MP = "CasterGilgameshLastMp";
    private static final String LAST_SHIELD = "CasterGilgameshLastShield";
    private static final String LAST_CANNON_ROUND = "CasterGilgameshLastCannonRound";
+   private static final String LAST_GATE_OF_BABYLON = "CasterGilgameshLastGateOfBabylon";
    private static final String LAST_APPLIED_PHASE = "CasterGilgameshLastAppliedPhase";
+   private static final String LAST_PERSISTENT_TICK = "CasterGilgameshLastPersistentTick";
+   private static final String MELEE_UNTIL = "CasterGilgameshMeleeUntil";
+   private static final String LAST_MELEE = "CasterGilgameshLastMelee";
+   private static final String LAST_MELEE_EVALUATION = "CasterGilgameshLastMeleeEvaluation";
+   private static final String NEXT_MELEE_SWING = "CasterGilgameshNextMeleeSwing";
    private static final String WORKSHOP_TYPE = "CasterGilgameshWorkshop";
    private static final String CENTER_X = "CasterGilgameshWorkshopX";
    private static final String CENTER_Y = "CasterGilgameshWorkshopY";
    private static final String CENTER_Z = "CasterGilgameshWorkshopZ";
    private static final String WORKSHOP_MANA_TICK = "CasterGilgameshWorkshopManaTick";
+   private static final String LAST_DIVINE_SHIELD_SCAN = "CasterGilgameshLastDivineShieldScan";
    private static final ResourceLocation LEADER_ATTACK_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "caster_gilgamesh_leader_attack");
    private static final ResourceLocation WORKSHOP_ARMOR_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "caster_gilgamesh_workshop_armor");
    private static final DustParticleOptions GOLD =
       new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.12F), 1.15F);
+   private static final String[] GATE_WEAPONS = {"durandal", "gram", "vajra", "harpe", "fangtian_huaji", "pseudo_spiral_sword", "gae_bulg"};
+   private static final long GATE_OF_BABYLON_COOLDOWN = 12L * 20L;
+   private static final long FLIGHT_STALLED_TICKS = 8L * 20L;
+   private static final double DIVINE_SHIELD_MP_COST = 30.0;
+   private static final double DIVINE_SHIELD_DETECTION_RANGE = 24.0;
+   private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
+   public static final int MELEE_DURATION_TICKS = 80;
+   public static final int MELEE_REUSE_TICKS = 300;
 
    private CasterGilgameshCombatHelper() {}
 
@@ -60,21 +88,22 @@ public final class CasterGilgameshCombatHelper {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
       long now = level.getGameTime();
       CompoundTag data = entity.getPersistentData();
-      initialize(entity, data);
-      tickAmmo(entity, data);
-      tickWorkshop(entity, level, data);
-      tickTimedBuffs(entity, level, data, now);
-      tickPhaseEntry(entity, level, data, now);
+      tickPersistentState(entity);
 
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive() || entity.isAlliedTo(target)) {
          data.putBoolean(FIRING_TAG, false);
          entity.setFlyingMode(false);
+         endMeleeMode(entity);
          return;
       }
 
-      updateFlight(entity, target);
+      if (tickMeleeMode(entity, level, target, now, data)) return;
+      updateFlight(entity, target, now, data);
       int phase = entity.getCombatPhase();
+      if (tryGateOfBabylon(entity, level, target, data, now, phase)) {
+         return;
+      }
       if (now >= data.getLong(LAST_LEADER) + leaderCooldown(phase) && entity.getCurrentMp() >= 20.0) {
          useLeader(entity, level, data, now);
       }
@@ -93,6 +122,149 @@ public final class CasterGilgameshCombatHelper {
       }
    }
 
+   /** Maintains passives even when tactical arbitration owns this AI tick. */
+   public static void tickPersistentState(CasterGilgameshEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PERSISTENT_TICK) && data.getLong(LAST_PERSISTENT_TICK) == now) return;
+      data.putLong(LAST_PERSISTENT_TICK, now);
+      initialize(entity, data);
+      tickAmmo(entity, data);
+      tickWorkshop(entity, level, data);
+      tickTimedBuffs(entity, level, data, now);
+      tickPhaseEntry(entity, level, data, now);
+      tickDivineShield(entity, level);
+      if (data.getLong(MELEE_UNTIL) > 0L && data.getLong(MELEE_UNTIL) <= now) {
+         endMeleeMode(entity);
+      }
+   }
+
+   /** Runs after tactical arbitration so an active melee window cannot be replaced by ranged spacing. */
+   public static boolean tickIndependentMelee(CasterGilgameshEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return false;
+      tickPersistentState(entity);
+      LivingEntity target = entity.getTarget();
+      if (target == null || !target.isAlive() || entity.isAlliedTo(target)) {
+         endMeleeMode(entity);
+         return false;
+      }
+      return tickMeleeMode(entity, level, target, level.getGameTime(), entity.getPersistentData());
+   }
+
+   public static boolean isMeleeMode(CasterGilgameshEntity entity) {
+      return entity != null && entity.level() != null
+         && entity.getPersistentData().getLong(MELEE_UNTIL) > entity.level().getGameTime();
+   }
+
+   private static boolean tickMeleeMode(CasterGilgameshEntity entity, ServerLevel level, LivingEntity target,
+                                        long now, CompoundTag data) {
+      boolean active = data.getLong(MELEE_UNTIL) > now;
+      double horizontalDistance = entity.position().multiply(1.0, 0.0, 1.0)
+         .distanceTo(target.position().multiply(1.0, 0.0, 1.0));
+      if (!active && entity.tickCount % 20 == 0 && data.getLong(LAST_MELEE_EVALUATION) != now
+         && horizontalDistance <= 5.0 && Math.abs(entity.getY() - target.getY()) <= 8.0
+         && now - data.getLong(LAST_MELEE) >= MELEE_REUSE_TICKS
+         && !ServantCombatSystem.cannotAct(entity) && !entity.isPerformingAction()
+         && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor.isActive(entity)
+         && (entity.getMainHandItem().is(ModItems.GILGAMESH_SLATE.get()) || entity.getMainHandItem().isEmpty())) {
+         data.putLong(LAST_MELEE_EVALUATION, now);
+         float chance = ServantCombatSystem.getPhase(entity) == net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase.PROBING
+            ? 0.16F : 0.24F;
+         if (entity.getRandom().nextFloat() < chance) {
+            data.putLong(MELEE_UNTIL, now + MELEE_DURATION_TICKS);
+            data.putLong(LAST_MELEE, now);
+            data.putLong(NEXT_MELEE_SWING, now + 8L);
+            entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_FANGTIAN_HUAJI.get()));
+            entity.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL,
+               SoundSource.HOSTILE, 0.9F, 1.7F);
+            active = true;
+         }
+      }
+      if (!active) return false;
+      if (!target.isAlive() || horizontalDistance > 10.0 || now >= data.getLong(MELEE_UNTIL)) {
+         endMeleeMode(entity);
+         return false;
+      }
+
+      entity.setFlyingMode(false);
+      entity.setNoGravity(false);
+      entity.fallDistance = 0.0F;
+      entity.getLookControl().setLookAt(target, 75.0F, 75.0F);
+      entity.faceToward(target.position());
+      if (ServantCombatSystem.cannotAct(entity) || entity.isPerformingAction()
+         || net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor.isActive(entity)) {
+         entity.getNavigation().stop();
+         return true;
+      }
+      if (horizontalDistance > 2.8 || Math.abs(entity.getY() - target.getY()) > 1.8) {
+         entity.getNavigation().moveTo(target, 1.25);
+         if (!entity.onGround()) {
+            Vec3 approach = target.position().subtract(entity.position());
+            if (approach.lengthSqr() > 1.0E-4) {
+               Vec3 motion = approach.normalize().scale(0.16);
+               entity.setDeltaMovement(entity.getDeltaMovement().scale(0.72)
+                  .add(motion.x, Math.min(-0.08, motion.y), motion.z));
+            }
+         }
+      } else {
+         entity.getNavigation().stop();
+         if (now >= data.getLong(NEXT_MELEE_SWING)) {
+            entity.faceToward(target.position());
+            boolean hit = entity.doHurtTarget(target);
+            entity.triggerBasicAttackAnimation();
+            ServantCombatTempoService.recordContact(entity, target,
+               hit ? ServantCombatTempoService.ContactType.DAMAGE : ServantCombatTempoService.ContactType.BLOCKED, now);
+            data.putLong(NEXT_MELEE_SWING, now + 12L);
+         }
+      }
+      return true;
+   }
+
+   private static void endMeleeMode(CasterGilgameshEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      data.remove(MELEE_UNTIL);
+      data.remove(NEXT_MELEE_SWING);
+      if (entity.getMainHandItem().is(ModItems.GILGAMESH_FANGTIAN_HUAJI.get())) {
+         entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_SLATE.get()));
+         entity.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      }
+   }
+
+   private static void tickDivineShield(CasterGilgameshEntity entity, ServerLevel level) {
+      GilgameshDivineShield.tick(entity);
+      CompoundTag data = entity.getPersistentData();
+      if (GilgameshDivineShield.isActive(entity)
+         || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
+         || GilgameshDivineShield.isOnCooldown(entity)) {
+         return;
+      }
+      if (entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN) < DIVINE_SHIELD_SCAN_INTERVAL) {
+         return;
+      }
+      data.putInt(LAST_DIVINE_SHIELD_SCAN, entity.tickCount);
+      boolean incomingProjectile = !level.getEntitiesOfClass(
+         Projectile.class,
+         entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
+         projectile -> isIncomingHostileProjectile(entity, projectile)
+      ).isEmpty();
+      if (!incomingProjectile) return;
+
+      entity.setCurrentMp(entity.getCurrentMp() - DIVINE_SHIELD_MP_COST);
+      GilgameshDivineShield.activate(entity);
+   }
+
+   private static boolean isIncomingHostileProjectile(CasterGilgameshEntity entity, Projectile projectile) {
+      if (!projectile.isAlive() || projectile.getOwner() == entity) return false;
+      Entity owner = projectile.getOwner();
+      if (owner != null && (entity.isAlliedTo(owner) || owner.isAlliedTo(entity))) return false;
+
+      Vec3 towardGilgamesh = entity.getBoundingBox().getCenter().subtract(projectile.position());
+      Vec3 motion = projectile.getDeltaMovement();
+      return motion.lengthSqr() < 1.0E-6 || motion.dot(towardGilgamesh) > 0.0;
+   }
+
    private static void initialize(CasterGilgameshEntity entity, CompoundTag data) {
       if (!data.contains(AMMO_TAG)) data.putInt(AMMO_TAG, STARTING_AMMO);
       if (!data.contains(FIRING_TAG)) data.putBoolean(FIRING_TAG, false);
@@ -103,6 +275,7 @@ public final class CasterGilgameshCombatHelper {
       if (!data.getBoolean("CasterGilgameshPassivesInitialized")) {
          data.putBoolean("CasterGilgameshPassivesInitialized", true);
          data.putBoolean("DivinityActive", true);
+         data.putBoolean("ClairvoyanceExActive", true);
          data.putFloat("DivinityFlatDamage", 5.0F);
          data.putBoolean("CasterWandDominionActive", true);
          data.putFloat("CasterWandDominionMultiplier", 1.20F);
@@ -164,15 +337,20 @@ public final class CasterGilgameshCombatHelper {
    }
 
    private static void tickTimedBuffs(CasterGilgameshEntity entity, ServerLevel level, CompoundTag data, long now) {
-      if (now >= data.getLong(LEADER_UNTIL)) {
+      GilgameshCombatHelper.tickClairvoyanceEx(entity, level, data);
+      long leaderUntil = data.getLong(LEADER_UNTIL);
+      if (leaderUntil > 0L && now >= leaderUntil) {
+         data.remove(LEADER_UNTIL);
          for (LivingEntity ally : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(30.0),
             e -> e.isAlive() && (e == entity || e.isAlliedTo(entity)))) {
             AttributeInstance attack = ally.getAttribute(Attributes.ATTACK_DAMAGE);
             if (attack != null) attack.removeModifier(LEADER_ATTACK_ID);
          }
       }
-      if (now >= data.getLong(RETURN_UNTIL)) {
+      long returnUntil = data.getLong(RETURN_UNTIL);
+      if (returnUntil > 0L && now >= returnUntil) {
          data.remove("CasterGilgameshReturnTargets");
+         data.remove(RETURN_UNTIL);
       }
    }
 
@@ -218,26 +396,76 @@ public final class CasterGilgameshCombatHelper {
       }
    }
 
-   private static void updateFlight(CasterGilgameshEntity entity, LivingEntity target) {
+   private static void updateFlight(CasterGilgameshEntity entity, LivingEntity target, long now, CompoundTag data) {
+      double distance = entity.distanceTo(target);
+      long disconnected = ServantCombatTempoService.disconnectedTicks(entity, now);
+      if (entity.isFlyingMode() && disconnected >= FLIGHT_STALLED_TICKS) {
+         entity.setFlyingMode(false);
+         entity.getNavigation().moveTo(target, 1.25);
+         return;
+      }
       entity.setFlyingMode(true);
+      if (!entity.isFlyingMode()) return;
+      ServantFlightCombatService.markControlled(entity, now);
       entity.getNavigation().stop();
       entity.fallDistance = 0.0F;
       double desiredY = ServantFlightHelper.desiredHoverY(entity, target);
       Vec3 away = entity.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
       if (away.lengthSqr() < 1.0E-4) away = new Vec3(1.0, 0.0, 0.0);
       away = away.normalize();
-      double distance = entity.distanceTo(target);
       int phase = entity.getCombatPhase();
       double preferred = preferredRange(phase);
       double radial = distance < minimumCannonDistance(phase) + 6.0 ? 0.24 + phase * 0.04 : distance > preferred + 8.0 ? -0.08 : 0.0;
       Vec3 orbit = new Vec3(-away.z, 0.0, away.x).scale(Math.sin(entity.tickCount * (0.035 + phase * 0.01)) * (phase >= 2 ? 4.0 : 2.2));
       Vec3 desired = target.position().add(away.scale(preferred)).add(orbit)
-         .subtract(entity.position()).normalize();
+         .subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (desired.lengthSqr() > 1.0E-4) desired = desired.normalize();
       Vec3 motion = desired.scale(0.14 + phase * 0.025).add(new Vec3(0.0,
-         ServantFlightHelper.verticalVelocityToward(entity.getY(), desiredY + (phase - 1) * 0.8, 0.12, 0.02, 0.14, 0.14), 0.0));
+          ServantFlightHelper.verticalVelocityToward(entity.getY(), desiredY + (phase - 1) * 0.8, 0.12, 0.02, 0.14, 0.14), 0.0));
       if (radial != 0.0) motion = motion.add(away.scale(radial));
-      entity.setDeltaMovement(motion);
+      entity.setDeltaMovement(motion.x, ServantFlightHelper.clampVerticalSpeed(motion.y), motion.z);
       entity.faceToward(target.position());
+   }
+
+   private static boolean tryGateOfBabylon(CasterGilgameshEntity entity, ServerLevel level, LivingEntity target,
+                                           CompoundTag data, long now, int phase) {
+      if (now - data.getLong(LAST_GATE_OF_BABYLON) < GATE_OF_BABYLON_COOLDOWN
+         || entity.getCurrentMp() < 18.0
+         || entity.getRandom().nextFloat() > (phase >= 3 ? 0.12F : 0.06F)) {
+         return false;
+      }
+      data.putLong(LAST_GATE_OF_BABYLON, now);
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 18.0));
+      int count = phase >= 3 ? 18 : phase >= 2 ? 12 : 8;
+      fireGateOfBabylon(entity, level, target, count, phase >= 3 ? 24.0F : 18.0F);
+      return true;
+   }
+
+   private static void fireGateOfBabylon(CasterGilgameshEntity entity, ServerLevel level, LivingEntity target,
+                                         int count, float damage) {
+      Vec3 forward = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0)
+         .subtract(entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0));
+      if (forward.lengthSqr() < 1.0E-4) forward = entity.getLookAngle();
+      forward = forward.normalize();
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      if (right.lengthSqr() < 1.0E-4) right = new Vec3(1.0, 0.0, 0.0);
+      right = right.normalize();
+      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.85, 0.0).add(forward.scale(-1.9));
+      for (int i = 0; i < count; i++) {
+         double row = i / 6;
+         double side = (i % 6 - 2.5) * 0.75;
+         Vec3 gate = center.add(right.scale(side)).add(0.0, 0.45 + row * 0.55, 0.0);
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(gate).normalize();
+         GilgameshGateWeaponProjectileEntity projectile = new GilgameshGateWeaponProjectileEntity(
+            level, entity, gate, aim, GATE_WEAPONS[Math.floorMod(i, GATE_WEAPONS.length)], damage);
+         projectile.setHomingTarget(target);
+         projectile.setLaunchDelay(14 + (i / 6) * 4);
+         projectile.setEffectStride(count >= 12 ? 2 : 1);
+         level.addFreshEntity(projectile);
+      }
+      VFXServerEffects.spawnOriented(level, "gilgamesh_gate", center, forward, 128.0);
+      level.sendParticles(GOLD, center.x, center.y, center.z, 24 + count, 1.2, 0.8, 1.2, 0.06);
+      ServantVoiceHelper.tryPlayCasterGilgameshShot(entity);
    }
 
    private static boolean hasValidCannonResources(CasterGilgameshEntity entity, LivingEntity target) {
@@ -252,7 +480,7 @@ public final class CasterGilgameshCombatHelper {
          data.putBoolean(FIRING_TAG, false);
          return;
       }
-      spawnRoyalCannonVolley(level, entity, target, CANNON_SHOTS_PER_ROUND, 20.0F, 1.0F, true);
+      spawnRoyalCannonVolley(level, entity, target, CANNON_SHOTS_PER_ROUND, CANNON_DAMAGE_PER_SHOT, 1.0F, true);
       data.putInt(AMMO_TAG, data.getInt(AMMO_TAG) - CANNON_SHOTS_PER_ROUND);
       entity.setCurrentMp(entity.getCurrentMp() - CANNON_SHOTS_PER_ROUND);
       entity.triggerNamedActionAnimation("standing");
@@ -328,7 +556,16 @@ public final class CasterGilgameshCombatHelper {
    private static boolean isValidVolleyTarget(LivingEntity owner, LivingEntity target) {
       return owner != null && target != null && target.isAlive() && target != owner
          && !target.isAlliedTo(owner) && !owner.isAlliedTo(target)
+         && !isProtectedMasterTarget(owner, target)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   public static boolean isProtectedMasterTarget(LivingEntity owner, LivingEntity target) {
+      if (owner == null || target == null) return false;
+      if (ServantMasterTargeting.isContractMaster(owner, target)) return true;
+      return owner instanceof ServantEntity servant
+         && target instanceof net.minecraft.server.level.ServerPlayer master
+         && servant.isBoundTo(master);
    }
 
    private static void spawnRoyalCannonGateFx(ServerLevel level, Vec3 center, Vec3 forward, Vec3 right, int shots) {

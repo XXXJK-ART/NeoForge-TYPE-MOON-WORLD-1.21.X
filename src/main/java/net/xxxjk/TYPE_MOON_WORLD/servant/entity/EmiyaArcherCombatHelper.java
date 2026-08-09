@@ -146,6 +146,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_OFFSCREEN_PREVIOUS_INVISIBLE = "EmiyaUbwOffscreenPrevInvisible";
    public static final String UBW_OFFSCREEN_PREVIOUS_INVULNERABLE = "EmiyaUbwOffscreenPrevInvulnerable";
    public static final String UBW_OFFSCREEN_PREVIOUS_NO_AI = "EmiyaUbwOffscreenPrevNoAi";
+   private static final String LAST_PERSISTENT_STATE_TICK = "EmiyaLastPersistentStateTick";
    public static final int SPIRAL_COOLDOWN = 18 * 20;
    public static final int CRIMSON_COOLDOWN = 16 * 20;
    public static final int RHO_AIAS_COOLDOWN = 15 * 20;
@@ -203,6 +204,7 @@ public final class EmiyaArcherCombatHelper {
       }
 
       long now = level.getGameTime();
+      tickPersistentState(entity);
       if (entity.getPersistentData().getBoolean(UBW_OFFSCREEN_DUEL)) {
          entity.getNavigation().stop();
          if (now % 10L == 0L) {
@@ -210,10 +212,7 @@ public final class EmiyaArcherCombatHelper {
          }
          return;
       }
-      tickUbw(entity, level, now);
       tickNpcAutoCounter(entity, level, now);
-      expireProjection(entity, now);
-      tickUbwTargetRelock(entity, level, now);
 
       LivingEntity target = entity.getTarget();
       if ((target == null || !target.isAlive()) && entity.getPersistentData().hasUUID(UBW_LOCKED_TARGET)) {
@@ -434,6 +433,22 @@ public final class EmiyaArcherCombatHelper {
       if (normalOrDecisive && distance <= 8.0 && canCastRhoAias(entity, now, phasedCooldown(RHO_AIAS_COOLDOWN, phase)) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
          castRhoAias(entity, level, target, now);
       }
+   }
+
+   public static void tickPersistentState(EmiyaArcherEntity entity) {
+      if (!(entity.level() instanceof ServerLevel level)) return;
+      if (!entity.isAlive() || entity.isSpiritualDissolving()) {
+         cleanupUbw(entity, level);
+         return;
+      }
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (data.contains(LAST_PERSISTENT_STATE_TICK) && data.getLong(LAST_PERSISTENT_STATE_TICK) == now) return;
+      data.putLong(LAST_PERSISTENT_STATE_TICK, now);
+      if (data.getBoolean(UBW_OFFSCREEN_DUEL)) return;
+      tickUbw(entity, level, now);
+      expireProjection(entity, now);
+      tickUbwTargetRelock(entity, level, now);
    }
 
    public static void markProjectionExpiry(ServantEntity entity, long expiresAt, boolean pair) {
@@ -853,7 +868,7 @@ public final class EmiyaArcherCombatHelper {
       Vec3 center = entity.position().add(target.position()).scale(0.5);
       restoreFromOffscreenDuel(entity);
       restoreFromOffscreenDuel(target);
-      if (!entity.isAlive() || !target.isAlive()) {
+      if (!entity.isAlive() || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.2, center.z, 34, 1.8, 0.2, 1.8, 0.035);
@@ -1858,6 +1873,9 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void applyBorrowedGallatinFixedDamage(EmiyaArcherEntity entity, LivingEntity target, float damage) {
+      if (EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(entity.damageSources().mobAttack(entity), damage);

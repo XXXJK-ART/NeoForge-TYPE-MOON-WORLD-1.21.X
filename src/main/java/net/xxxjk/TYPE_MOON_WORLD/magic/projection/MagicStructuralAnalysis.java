@@ -14,6 +14,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.component.CustomData;
@@ -97,8 +98,13 @@ public class MagicStructuralAnalysis {
    private static void analyzeItem(
       ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target, boolean swordAttributeActive, boolean crestAnalysisCast
    ) {
-      if (isDivineConstruct(target)) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.cannot_analyze_divine"), true);
+      if (isProjectionBanned(target)) {
+         player.displayClientMessage(
+            Component.translatable(isBedrock(target)
+               ? "message.typemoonworld.structural_analysis.cannot_analyze_bedrock"
+               : "message.typemoonworld.structural_analysis.cannot_analyze_divine"),
+            true
+         );
       } else {
          boolean isTempleStone = target.getItem() instanceof TempleStoneSwordAxeItem;
          boolean isProjected = hasProjectionTag(target);
@@ -123,6 +129,18 @@ public class MagicStructuralAnalysis {
          || stack.is(ModItems.GILGAMESH_EA.get()));
    }
 
+   /**
+    * Projection magic cannot reproduce either bedrock or divine constructs.
+    * Keep this check centralized so item and structure analysis use the same rule.
+    */
+   public static boolean isProjectionBanned(ItemStack stack) {
+      return isBedrock(stack) || isDivineConstruct(stack);
+   }
+
+   public static boolean isBedrock(ItemStack stack) {
+      return stack != null && !stack.isEmpty() && stack.is(Items.BEDROCK);
+   }
+
    private static boolean tryHandleSpecialAnalysis(
       ServerPlayer player,
       TypeMoonWorldModVariables.PlayerVariables vars,
@@ -139,7 +157,7 @@ public class MagicStructuralAnalysis {
          } else {
             PlayerNoblePhantasmHelper.armTsubameAfterAnalysis(player, target);
             if (!crestAnalysisCast) {
-               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.5);
             }
 
             vars.syncPlayerVariables(player);
@@ -237,7 +255,7 @@ public class MagicStructuralAnalysis {
             } else {
                vars.analyzed_items.add(toSave);
                if (!crestAnalysisCast) {
-                  vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.5);
+                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.5);
                }
 
                vars.syncPlayerVariables(player);
@@ -253,7 +271,7 @@ public class MagicStructuralAnalysis {
             double failCost = cost * 0.3;
             consumeAnalysisManaOrFail(player, vars, failCost);
             if (!crestAnalysisCast) {
-               vars.proficiency_structural_analysis = Math.min(100.0, vars.proficiency_structural_analysis + 0.1);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "structural_analysis", 0.1);
             }
 
             vars.syncPlayerVariables(player);

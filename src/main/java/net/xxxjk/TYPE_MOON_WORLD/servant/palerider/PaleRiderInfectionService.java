@@ -92,6 +92,9 @@ public final class PaleRiderInfectionService {
          }
          return;
       }
+      if (isForbiddenControlTarget(target) && isControlled(target)) {
+         endControl(target);
+      }
       int level = getLevel(target);
       if (level <= 0) {
          if (target.getPersistentData().contains(TAG_LEVEL)) cleanse(target, false);
@@ -201,7 +204,14 @@ public final class PaleRiderInfectionService {
 
    public static boolean isForbiddenPossessionHost(Entity entity) {
       return entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity
-         || entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
+         || entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity
+         || isForbiddenControlTarget(entity);
+   }
+
+   public static boolean isForbiddenControlTarget(Entity entity) {
+      return entity instanceof net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity
+         || entity instanceof LivingEntity living
+            && net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic.isBeast(living);
    }
 
    public static void markStationaryAnchor(Mob mob) {
@@ -275,7 +285,8 @@ public final class PaleRiderInfectionService {
    }
 
    private static boolean canControl(LivingEntity target) {
-      return target instanceof Mob && !(target instanceof Player) && !(target instanceof ServantEntity) && !target.getType().is(Tags.EntityTypes.BOSSES);
+      return target instanceof Mob && !isForbiddenControlTarget(target) && !(target instanceof Player)
+         && !(target instanceof ServantEntity) && !target.getType().is(Tags.EntityTypes.BOSSES);
    }
 
    private static double controlChance(LivingEntity target, int level) {

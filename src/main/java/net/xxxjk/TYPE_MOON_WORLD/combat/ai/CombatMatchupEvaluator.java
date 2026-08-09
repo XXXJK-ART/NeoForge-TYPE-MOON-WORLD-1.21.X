@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 
@@ -84,12 +87,26 @@ public final class CombatMatchupEvaluator {
          && !ProjectileThreatClassifier.bypassesProjectileNegation(threat.bypasses());
    }
 
+   public static boolean canIgnoreProjectile(LivingEntity defender, ProjectileThreatSensor.IncomingProjectileLike threat) {
+      return defender != null && threat != null
+         && CuChulainnCombatHelper.hasActiveProtectionFromArrows(defender)
+         && !ProjectileThreatClassifier.bypassesProjectileNegation(threat.bypasses());
+   }
+
    public static boolean negatesProjectileDamage(LivingEntity defender, net.minecraft.world.damagesource.DamageSource source) {
+      Entity direct = source == null ? null : source.getDirectEntity();
+      Entity owner = projectileOwner(direct);
       return defender != null && source != null
-         && source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.Projectile projectile
-         && projectile.getOwner() != defender
+         && ProjectileThreatClassifier.isProjectileLike(direct)
+         && owner != defender
          && CuChulainnCombatHelper.hasActiveProtectionFromArrows(defender)
          && !ProjectileThreatClassifier.bypassesProjectileNegation(ProjectileThreatClassifier.classify(source));
+   }
+
+   private static Entity projectileOwner(Entity direct) {
+      if (direct instanceof Projectile projectile) return projectile.getOwner();
+      if (direct instanceof GilgameshGateWeaponProjectileEntity gate) return gate.getOwnerEntity();
+      return null;
    }
 
    public static double clampMultiplier(double value) {

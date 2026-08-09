@@ -1,0 +1,78 @@
+{
+  "duration": 1.6,
+  "notes": "Hualueke pre-eruption warning: molten cracks, seismic rings and outward heat ripples.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.55,
+      "rate": 680,
+      "particle_lifetime": 0.78,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 6,
+      "component": { "type": "schlafli_star", "radius": 1.0, "points": 12, "step": 5, "segments": 240 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 1.0, 0.35], "easing": "ease_out_cubic" },
+        { "t": 0.6, "scale": [8.5, 1.0, 8.5], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [10.5, 1.0, 10.5] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFF4D0" },
+        { "t": 0.25, "color": "#FFFF8A1A" },
+        { "t": 0.68, "color": "#DDB71B0C" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.48, "size": 0.36 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_WARNING_MOLTEN_CRACKS",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "lava", "count": 1, "spread": [0.35, 0.08, 0.35], "offset": [0.0, 0.05, 0.0], "speed": 0.02, "chance": 0.62 },
+        { "type": "ash", "count": 1, "spread": [0.5, 0.12, 0.5], "offset": [0.0, 0.08, 0.0], "speed": 0.025, "chance": 0.5 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 1.6,
+      "rate": 420,
+      "particle_lifetime": 0.9,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 4,
+      "component": { "type": "circle", "radius": 1.0, "segments": 192 },
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.5, 1.0, 0.5] },
+        { "t": 0.58, "scale": [12.0, 1.0, 12.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [17.0, 1.0, 17.0] }
+      ],
+      "color_over_life": [
+        { "t": 0.0, "color": "#DDFFFFFF" },
+        { "t": 0.26, "color": "#CCFFB55A" },
+        { "t": 0.65, "color": "#88E54512" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.1 },
+        { "t": 0.5, "size": 0.48 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ORIAS_WARNING_HEAT_WAVE",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.8, 0.06, 0.8], "offset": [0.0, 0.03, 0.0], "speed": 0.055, "chance": 0.6 },
+        { "type": "cloud", "count": 1, "spread": [0.7, 0.05, 0.7], "offset": [0.0, 0.02, 0.0], "speed": 0.04, "chance": 0.42 }
+      ]
+    }
+  ]
+}
