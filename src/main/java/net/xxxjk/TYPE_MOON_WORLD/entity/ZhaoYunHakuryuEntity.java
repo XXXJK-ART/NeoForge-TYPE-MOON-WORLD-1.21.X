@@ -326,6 +326,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             return InteractionResult.sidedSuccess(level().isClientSide);
          }
       }
+      return super.mobInteract(player, hand);
+   }
 
    private void followRiderIntent(ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
       LivingEntity target = rider.getTarget();

@@ -131,13 +131,7 @@ public final class ServantCardCasterGilgameshSkills {
    }
 
    private static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      String oldCooldowns = vars.servant_card_skill_cooldowns;
-      String oldEnds = vars.servant_card_skill_cooldown_ends;
-      ServantCardTransformManager.setSkillCooldownUntil(player, vars, 8, GilgameshDivineShield.cooldownUntil(player));
-      if (!java.util.Objects.equals(oldCooldowns, vars.servant_card_skill_cooldowns)
-         || !java.util.Objects.equals(oldEnds, vars.servant_card_skill_cooldown_ends)) {
-         vars.syncPlayerVariables(player);
-      }
+      ServantCardGilgameshSkills.syncDivineShieldCooldown(player, vars, 8);
    }
 
    public static boolean performSlateBasic(ServerPlayer player) {

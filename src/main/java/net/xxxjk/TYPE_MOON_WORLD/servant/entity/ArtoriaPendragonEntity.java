@@ -14,6 +14,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 
 public class ArtoriaPendragonEntity extends ServantEntity {
    public static final String SERVANT_KEY = "artoria_pendragon";
@@ -33,11 +34,8 @@ public class ArtoriaPendragonEntity extends ServantEntity {
    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       CompoundTag data = this.getPersistentData();
-      if (stack.is(ModItems.AVALON.get()) && player.isShiftKeyDown()) {
-         return InteractionResult.PASS;
-      }
 
-      if (stack.is(ModItems.AVALON.get()) && !ArtoriaPendragonCombatHelper.hasAvalon(this)) {
+      if (stack.is(ModItems.AVALON.get()) && player.isShiftKeyDown() && !ArtoriaPendragonCombatHelper.hasAvalon(this)) {
          if (!this.level().isClientSide()) {
             data.putBoolean(ArtoriaPendragonCombatHelper.TAG_HAS_AVALON, true);
             ArtoriaPendragonCombatHelper.syncExcaliburVisibility(this);
@@ -46,6 +44,14 @@ public class ArtoriaPendragonEntity extends ServantEntity {
             }
             player.displayClientMessage(Component.translatable("entity.typemoonworld.artoria_pendragon.avalon_given"), true);
             ArtoriaPendragonCombatHelper.spawnAvalonFx(this);
+         }
+         return InteractionResult.sidedSuccess(this.level().isClientSide());
+      }
+
+      if (stack.is(ModItems.AVALON.get()) && !player.isShiftKeyDown()) {
+         if (!this.level().isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            AvalonItem.activateFor(serverPlayer, stack, this);
+            player.displayClientMessage(Component.translatable("item.typemoonworld.avalon.active"), true);
          }
          return InteractionResult.sidedSuccess(this.level().isClientSide());
       }

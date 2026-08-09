@@ -37,6 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -153,19 +155,33 @@ public final class ArtoriaPendragonCombatHelper {
       if (entity instanceof ArtoriaPendragonEntity && entity.getPersistentData().getBoolean(TAG_HAS_AVALON)) {
          return true;
       }
-      return entity instanceof Player player && hasAvalonInInventory(player);
+      return entity instanceof Player player && hasActiveAvalonInInventory(player);
    }
 
-   private static boolean hasAvalonInInventory(Player player) {
+   private static boolean hasActiveAvalonInInventory(Player player) {
       for (ItemStack stack : player.getInventory().items) {
-         if (stack.is(ModItems.AVALON.get())) {
+         if (isActiveAvalonFor(player, stack)) {
             return true;
          }
       }
       for (ItemStack stack : player.getInventory().offhand) {
-         if (stack.is(ModItems.AVALON.get())) {
+         if (isActiveAvalonFor(player, stack)) {
             return true;
          }
+      }
+      return false;
+   }
+
+   private static boolean isActiveAvalonFor(Player player, ItemStack stack) {
+      if (!stack.is(ModItems.AVALON.get())) {
+         return false;
+      }
+      if (AvalonItem.isAvalonActivated(stack)) {
+         return true;
+      }
+      if (player instanceof ServerPlayer serverPlayer) {
+         TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id);
       }
       return false;
    }
@@ -262,12 +278,11 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    public static boolean tryNegateCertainHitOrDeath(LivingEntity target, String reason) {
+      if (tryProtectWithAvalon(target)) {
+         return true;
+      }
       if (!(target instanceof ArtoriaPendragonEntity artoria)) {
          return false;
-      }
-      if (hasAvalon(artoria)) {
-         spawnInstinctFx(artoria, true);
-         return true;
       }
       if (artoria.getPersistentData().getBoolean("ArtoriaInstinctAActive") && artoria.getRandom().nextFloat() < 0.95F) {
          spawnInstinctFx(artoria, false);
@@ -294,8 +309,25 @@ public final class ArtoriaPendragonCombatHelper {
       if (amount <= 0.0F || !hasAvalon(target)) {
          return amount;
       }
-      spawnAvalonFx(target);
+      tryProtectWithAvalon(target);
       return 0.0F;
+   }
+
+   public static boolean tryProtectWithAvalon(LivingEntity target) {
+      if (target == null || !hasAvalon(target)) {
+         return false;
+      }
+      CompoundTag data = target.getPersistentData();
+      data.remove("CausalSevered");
+      data.remove("MasterLossForcedDeath");
+      data.remove("MasterLossDecayDamage");
+      target.clearFire();
+      target.invulnerableTime = Math.max(target.invulnerableTime, 20);
+      target.setHealth(target.getMaxHealth());
+      target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 80, 4, false, false, true));
+      target.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, true));
+      spawnAvalonFx(target);
+      return true;
    }
 
    public static boolean tryNegateMedeaSmallMagic(ArtoriaPendragonEntity entity, DamageSource source, float amount) {

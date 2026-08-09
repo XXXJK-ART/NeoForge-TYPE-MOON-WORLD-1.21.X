@@ -566,6 +566,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+         return;
+      }
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(source, lethalDamage);

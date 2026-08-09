@@ -301,6 +301,7 @@ public final class GilgameshDuelState {
    }
 
    private static void forceDeath(LivingEntity entity) {
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(entity)) return;
       entity.setInvulnerable(false); entity.invulnerableTime = 0; entity.setHealth(0.0F); entity.die(entity.damageSources().genericKill());
    }
 

@@ -100,14 +100,22 @@ public final class ServantCardGilgameshSkills {
       tickChainPursuit(player, now);
    }
 
-   private static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   public static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      syncDivineShieldCooldown(player, vars, divineShieldSlot(vars.servant_card_id));
+   }
+
+   public static void syncDivineShieldCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
       String oldCooldowns = vars.servant_card_skill_cooldowns;
       String oldEnds = vars.servant_card_skill_cooldown_ends;
-      ServantCardTransformManager.setSkillCooldownUntil(player, vars, 5, GilgameshDivineShield.cooldownUntil(player));
+      ServantCardTransformManager.setSkillCooldownUntil(player, vars, slot, GilgameshDivineShield.cooldownUntil(player));
       if (!java.util.Objects.equals(oldCooldowns, vars.servant_card_skill_cooldowns)
          || !java.util.Objects.equals(oldEnds, vars.servant_card_skill_cooldown_ends)) {
          vars.syncPlayerVariables(player);
       }
+   }
+
+   private static int divineShieldSlot(String servantId) {
+      return "gilgamesh_caster".equals(servantId) ? 8 : 5;
    }
 
    public static boolean isVaultAction(String id) {
@@ -246,6 +254,14 @@ public final class ServantCardGilgameshSkills {
          return GilgameshDivineShield.deactivate(player);
       }
       return GilgameshDivineShield.activate(player);
+   }
+
+   public static boolean performDivineShield(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      boolean result = performDivineShield(player);
+      if (result) {
+         syncDivineShieldCooldown(player, vars);
+      }
+      return result;
    }
 
    public static void performClairvoyance(ServerPlayer player) {

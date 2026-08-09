@@ -353,6 +353,9 @@ public final class MasterStateManager {
             yield false;
          }
          case 2 -> {
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(servant)) {
+               yield true;
+            }
             servant.getPersistentData().putBoolean("CausalSevered", true);
             servant.getPersistentData().putInt("GodHandLives", 0);
             servant.getPersistentData().remove("GodHandActive");

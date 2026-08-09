@@ -513,6 +513,9 @@ public final class MasterServantLinkService {
    }
 
    private static void forceMasterlessDeath(ServerPlayer servant) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(servant)) {
+         return;
+      }
       var data = servant.getPersistentData();
       data.putBoolean("MasterLossForcedDeath", true);
       data.putBoolean("CausalSevered", true);

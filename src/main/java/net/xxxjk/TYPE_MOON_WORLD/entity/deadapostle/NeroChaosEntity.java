@@ -525,6 +525,12 @@ public class NeroChaosEntity extends DeadApostleEntity {
          prey.hurt(damageSources().mobAttack(this), damage);
          prey.setDeltaMovement(Vec3.ZERO);
          if (finishing && prey.isAlive()) {
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(prey)) {
+               data.remove(TAG_DEVOUR_UNTIL);
+               data.remove(TAG_DEVOUR_TARGET);
+               data.putLong(TAG_DEVOUR_COOLDOWN, now + 20L);
+               return true;
+            }
             prey.setInvulnerable(false);
             prey.invulnerableTime = 0;
             prey.setHealth(0.0F);

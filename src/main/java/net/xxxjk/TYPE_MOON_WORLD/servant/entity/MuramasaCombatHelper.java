@@ -798,6 +798,9 @@ public final class MuramasaCombatHelper {
       if (entity == null || !entity.isAlive()) {
          return;
       }
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(entity)) {
+         return;
+      }
       level.sendParticles(ParticleTypes.EXPLOSION, entity.getX(), entity.getY() + 1.0, entity.getZ(),
          4, 0.6, 0.8, 0.6, 0.0);
       level.sendParticles(ParticleTypes.LAVA, entity.getX(), entity.getY() + 0.8, entity.getZ(),

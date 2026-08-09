@@ -401,6 +401,9 @@ public final class MedeaCombatHelper {
       }
 
       if (target.getPersistentData().getBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON)) {
+         if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+            return;
+         }
          target.invulnerableTime = 0;
          target.hurt(attacker != null ? attacker.damageSources().magic() : target.damageSources().magic(), Float.MAX_VALUE);
          if (target.isAlive()) {

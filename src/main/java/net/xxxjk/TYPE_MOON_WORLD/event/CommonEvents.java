@@ -470,6 +470,11 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
+         if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
          if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
             event.setCanceled(false);
             event.setAmount(Float.MAX_VALUE);
@@ -1331,6 +1336,10 @@ public class CommonEvents {
    @SubscribeEvent(priority = EventPriority.LOWEST)
    public static void onLivingDeath(LivingDeathEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+            event.setCanceled(true);
+            return;
+         }
          if (event.getEntity() instanceof Player player) {
             OriginBulletHelper.clearPlayerSeal(player);
          }

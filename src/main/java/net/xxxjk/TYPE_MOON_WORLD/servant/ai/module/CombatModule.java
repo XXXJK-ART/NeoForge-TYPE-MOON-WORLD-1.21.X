@@ -1820,6 +1820,9 @@ public final class CombatModule implements ServantAiModule {
 
       // 即死判定（HP<10%，30%概率）
       if (hpRatio < 0.10 && random.nextInt(100) < 30) {
+         if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+            return;
+         }
          target.setHealth(0);
          target.die(entity.damageSources().mobAttack(entity));
       }
@@ -2293,6 +2296,9 @@ public final class CombatModule implements ServantAiModule {
             && !(resolvedTarget instanceof EmiyaArcherEntity)
             && !(resolvedTarget instanceof EnkiduEntity)
             && entity.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(resolvedTarget);
+         if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(resolvedTarget)) {
+            return;
+         }
          if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
             applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
             if (resolvedTarget.isAlive() && deathThorn) {
@@ -2458,6 +2464,7 @@ public final class CombatModule implements ServantAiModule {
 
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
       if (EntityUtils.isImmunePlayerTarget(target)) return;
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) return;
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), lethalDamage);

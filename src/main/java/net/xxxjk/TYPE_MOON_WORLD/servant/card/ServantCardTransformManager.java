@@ -526,7 +526,7 @@ public final class ServantCardTransformManager {
       }
       if ("gilgamesh_divine_shield".equals(action.effectId())) {
          if (GilgameshDivineShield.isActive(player)) {
-            if (ServantCardGilgameshSkills.performDivineShield(player)) {
+            if (ServantCardGilgameshSkills.performDivineShield(player, vars)) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
             }
             return true;
@@ -989,8 +989,20 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean hasJumpRecoverySupport(ServerPlayer player) {
+      if (player.onGround()) {
+         return true;
+      }
+      if (player.getVehicle() != null && player.getVehicle().onGround()) {
+         return true;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if ("oda_nobunaga".equals(vars.servant_card_id)
+         && !vars.servant_card_flying
+         && ServantCardFlightController.hasGroundWithin(player, 2)) {
+         return true;
+      }
       return ServantCardUshiwakamaruRules.canRecoverJump(
-         ServantCardUshiwakamaruSkills.isEightBoatActive(player), player.onGround());
+         ServantCardUshiwakamaruSkills.isEightBoatActive(player), false);
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1366,7 +1378,7 @@ public final class ServantCardTransformManager {
          case "gilgamesh_grand_vault" -> ServantCardGilgameshSkills.performVault(player, true);
          case "gilgamesh_ring_vault" -> ServantCardGilgameshSkills.performRingVault(player);
          case "gilgamesh_elixir" -> ServantCardGilgameshSkills.performElixir(player);
-         case "gilgamesh_divine_shield" -> { if (!ServantCardGilgameshSkills.performDivineShield(player)) return false; }
+         case "gilgamesh_divine_shield" -> { if (!ServantCardGilgameshSkills.performDivineShield(player, vars)) return false; }
          case "gilgamesh_clairvoyance" -> ServantCardGilgameshSkills.performClairvoyance(player);
          case "gilgamesh_charisma" -> ServantCardGilgameshSkills.performCharisma(player);
          case "gilgamesh_laugh_vault" -> ServantCardGilgameshSkills.performLaughVault(player);

@@ -86,6 +86,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -1410,6 +1411,10 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
 
    private void forceKill(LivingEntity target) {
       this.triggerSwarmAnger(target);
+      if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+         this.playSound((SoundEvent)SoundEvents.TRIDENT_THUNDER.value(), 1.0F, 2.0F);
+         return;
+      }
       if (target instanceof Player player && player.isCreative()) {
          player.getAbilities().invulnerable = false;
          player.hurt(this.damageSources().genericKill(), Float.MAX_VALUE);

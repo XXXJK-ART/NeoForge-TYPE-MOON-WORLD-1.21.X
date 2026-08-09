@@ -41,6 +41,9 @@ public final class MuramasaDissolutionService {
       if (entity instanceof Player player && player.isCreative()) {
          return false;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper.tryProtectWithAvalon(entity)) {
+         return true;
+      }
       if (entity.isAlive()) {
          entity.invulnerableTime = 0;
          entity.hurt(entity.damageSources().genericKill(), Float.MAX_VALUE);

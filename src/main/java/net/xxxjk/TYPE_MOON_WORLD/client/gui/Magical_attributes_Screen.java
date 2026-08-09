@@ -177,23 +177,23 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("black_key_fire_engraving", "key.typemoonworld.magic.black_key_fire_engraving.short", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
-      this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "basic", -6697729);
+      this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "imaginary", -6697729);
       this.addMagic("airflow_blade", "key.typemoonworld.magic.airflow_blade.short", "elemental", -6684775);
-      this.addMagic("andrasias", "key.typemoonworld.magic.andrasias.short", "elemental", -7119279);
-      this.addMagic("andrephius", "key.typemoonworld.magic.andrephius.short", "special", -171);
-      this.addMagic("antores", "key.typemoonworld.magic.antores.short", "special", -7798785);
-      this.addMagic("demon_god_gaze", "key.typemoonworld.magic.demon_god_gaze.short", "special", -7798785);
+      this.addMagic("andrasias", "key.typemoonworld.magic.andrasias.short", "solomon", -7119279);
+      this.addMagic("andrephius", "key.typemoonworld.magic.andrephius.short", "solomon", -171);
+      this.addMagic("antores", "key.typemoonworld.magic.antores.short", "solomon", -7798785);
+      this.addMagic("demon_god_gaze", "key.typemoonworld.magic.demon_god_gaze.short", "solomon", -7798785);
       this.addMagic("detection", "key.typemoonworld.magic.detection.short", "basic", -3381556);
-      this.addMagic("imaginary_displacement", "key.typemoonworld.magic.imaginary_displacement.short", "special", -10066432);
+      this.addMagic("imaginary_displacement", "key.typemoonworld.magic.imaginary_displacement.short", "imaginary", -10066432);
       this.addMagic("entity_displacement", "key.typemoonworld.magic.entity_displacement.short", "special", -10066432);
-      this.addMagic("imaginary_dive", "key.typemoonworld.magic.imaginary_dive.short", "special", -10066432);
-      this.addMagic("imaginary_space", "key.typemoonworld.magic.imaginary_space.short", "special", -10066432);
-      this.addMagic("kimaris", "key.typemoonworld.magic.kimaris.short", "elemental", -10040065);
-      this.addMagic("nega_summon", "key.typemoonworld.magic.nega_summon.short", "special", -7798785);
-      this.addMagic("orias", "key.typemoonworld.magic.orias.short", "elemental", -3386880);
-      this.addMagic("storage", "key.typemoonworld.magic.storage.short", "basic", -6697729);
-      this.addMagic("storm", "key.typemoonworld.magic.storm.short", "elemental", -6684775);
-      this.addMagic("zagan", "key.typemoonworld.magic.zagan.short", "elemental", -10040065);
+      this.addMagic("imaginary_dive", "key.typemoonworld.magic.imaginary_dive.short", "imaginary", -10066432);
+      this.addMagic("imaginary_space", "key.typemoonworld.magic.imaginary_space.short", "imaginary", -10066432);
+      this.addMagic("kimaris", "key.typemoonworld.magic.kimaris.short", "solomon", -10040065);
+      this.addMagic("nega_summon", "key.typemoonworld.magic.nega_summon.short", "solomon", -7798785);
+      this.addMagic("orias", "key.typemoonworld.magic.orias.short", "solomon", -3386880);
+      this.addMagic("storage", "key.typemoonworld.magic.storage.short", "imaginary", -6697729);
+      this.addMagic("storm", "key.typemoonworld.magic.storm.short", "solomon", -6684775);
+      this.addMagic("zagan", "key.typemoonworld.magic.zagan.short", "solomon", -10040065);
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
@@ -327,6 +327,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.martial";
       } else if ("talent".equals(category)) {
          return "gui.typemoonworld.category.talent";
+      } else if ("imaginary".equals(category)) {
+         return "gui.typemoonworld.category.imaginary";
+      } else if ("solomon".equals(category)) {
+         return "gui.typemoonworld.category.solomon";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -342,9 +346,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.ubw",
          "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
-         "gui.typemoonworld.category.nordic"
-         ,"gui.typemoonworld.category.martial",
-         "gui.typemoonworld.category.talent"
+         "gui.typemoonworld.category.nordic",
+         "gui.typemoonworld.category.martial",
+         "gui.typemoonworld.category.talent",
+         "gui.typemoonworld.category.imaginary",
+         "gui.typemoonworld.category.solomon"
       };
       int maxCategoryWidth = 0;
 
@@ -412,15 +418,25 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "special";
       } else if ("special".equals(current)) {
          return "other";
+      } else if ("other".equals(current)) {
+         return "nordic";
+      } else if ("nordic".equals(current)) {
+         return "martial";
+      } else if ("martial".equals(current)) {
+         return "talent";
+      } else if ("talent".equals(current)) {
+         return "imaginary";
+      } else if ("imaginary".equals(current)) {
+         return "solomon";
       } else {
-         return "other".equals(current) ? "nordic" : "nordic".equals(current) ? "martial" : "martial".equals(current) ? "talent" : "all";
+         return "all";
       }
    }
 
    private String getNextCategory(String current) {
       String next = this.nextCategoryRaw(current);
 
-      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 10; safety++) {
+      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 16; safety++) {
          next = this.nextCategoryRaw(next);
       }
 

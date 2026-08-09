@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ConceptSwordEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
@@ -362,6 +363,9 @@ public final class PaleRiderCombatHelper {
          if (judgeDeath && PaleRiderInfectionService.isInfected(enemy)) {
             int infectionLevel = PaleRiderInfectionService.getLevel(enemy);
             if (rider.getRandom().nextFloat() < InfectionRules.conceptDeathChance(infectionLevel)) {
+               if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(enemy)) {
+                  continue;
+               }
                enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider), Math.max(1000.0F, enemy.getMaxHealth() * 4.0F));
                if (enemy.isAlive()) enemy.setHealth(0.0F);
             } else {

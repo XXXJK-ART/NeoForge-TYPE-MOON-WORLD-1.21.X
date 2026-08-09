@@ -17,7 +17,15 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_NORDIC = "nordic";
    public static final String CATEGORY_MARTIAL = "martial";
    public static final String CATEGORY_TALENT = "talent";
+   public static final String CATEGORY_IMAGINARY = "imaginary";
+   public static final String CATEGORY_SOLOMON = "solomon";
    private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite", "black_key_fire_engraving", "stigma");
+   private static final Set<String> IMAGINARY_MAGICS = Set.of(
+      "absorption", "storage", "imaginary_displacement", "imaginary_dive", "imaginary_space"
+   );
+   private static final Set<String> SOLOMON_MAGICS = Set.of(
+      "andrasias", "andrephius", "antores", "demon_god_gaze", "kimaris", "nega_summon", "orias", "storm", "zagan"
+   );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
       "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
    );
@@ -37,6 +45,14 @@ public final class MagicDisplayMetadata {
       return TalentService.isTalent(magicId);
    }
 
+   public static boolean isImaginaryMagic(String magicId) {
+      return magicId != null && IMAGINARY_MAGICS.contains(magicId);
+   }
+
+   public static boolean isSolomonMagic(String magicId) {
+      return magicId != null && SOLOMON_MAGICS.contains(magicId);
+   }
+
    public static boolean canEnterMagicCrest(String magicId) {
       return magicId != null && !isTalent(magicId) && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
    }
@@ -50,6 +66,10 @@ public final class MagicDisplayMetadata {
          return CATEGORY_OTHER;
       } else if (isTalent(magicId)) {
          return CATEGORY_TALENT;
+      } else if (isImaginaryMagic(magicId)) {
+         return CATEGORY_IMAGINARY;
+      } else if (isSolomonMagic(magicId)) {
+         return CATEGORY_SOLOMON;
       } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
          || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
          return CATEGORY_JEWEL;

@@ -24,6 +24,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent.Unload;
 import net.neoforged.neoforge.event.tick.LevelTickEvent.Post;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
@@ -170,6 +171,9 @@ public class MuramasaSlashHandler {
 
          for (Entity e : level.getEntities(null, box)) {
             if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID) && !EntityUtils.isImmunePlayerTarget(e)) {
+                  if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+                     continue;
+                  }
                   float damage = slash.tsumukari
                      ? tsumukariDamage(slash.charge)
                      : slash.fixedGeometry ? 1500.0F : muramasaDamage(slash.charge);
