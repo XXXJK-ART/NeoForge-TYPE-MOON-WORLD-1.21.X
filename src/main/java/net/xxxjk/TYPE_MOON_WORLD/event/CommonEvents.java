@@ -113,6 +113,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -1451,6 +1452,15 @@ public class CommonEvents {
             }
          }
          // 英灵死亡后清理 pendingServantId，防止下一个刷怪蛋继承错误ID
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onHundredFacesCardDeathTransfer(LivingDeathEvent event) {
+      if (!event.getEntity().level().isClientSide
+         && event.getEntity() instanceof ServerPlayer player
+         && ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)) {
+         event.setCanceled(true);
       }
    }
 

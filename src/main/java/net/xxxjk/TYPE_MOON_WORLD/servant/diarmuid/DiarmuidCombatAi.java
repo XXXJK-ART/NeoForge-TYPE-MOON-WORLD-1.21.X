@@ -25,9 +25,8 @@ public final class DiarmuidCombatAi {
    private static final double RED_ROSE_RANGE = 3.7;
    private static final double YELLOW_ROSE_RANGE = 3.2;
    private static final double IDEAL_RANGE = 3.0;
-   private static final double TOO_CLOSE_RANGE = 1.55;
-   private static final int ATTACK_INTERVAL = 14;
-   private static final int REPOSITION_INTERVAL = 18;
+   private static final double TOO_CLOSE_RANGE = 1.25;
+   private static final int REPOSITION_INTERVAL = 28;
    private static final int STRATEGY_INTERVAL = 360;
 
    private DiarmuidCombatAi() {
@@ -58,20 +57,19 @@ public final class DiarmuidCombatAi {
       maybeUseKnightStrategy(entity, now);
       boolean red = chooseRedRose(entity, target);
       data.putInt(PREFERRED_SPEAR_TAG, red ? SPEAR_RED : SPEAR_YELLOW);
+      if (now % 12L == 0L) {
+         DiarmuidCombatHelper.spawnCombatAura(entity, red);
+      }
       double desiredRange = red ? RED_ROSE_RANGE : YELLOW_ROSE_RANGE;
       double distance = entity.distanceTo(target);
       if (distance > desiredRange) {
          approach(entity, target, red);
       } else if (distance < TOO_CLOSE_RANGE) {
          sideStep(entity, target, now, true);
-      } else if (now - data.getLong(LAST_REPOSITION_TICK) >= REPOSITION_INTERVAL && entity.getRandom().nextFloat() < 0.22F) {
+      } else if (now - data.getLong(LAST_REPOSITION_TICK) >= REPOSITION_INTERVAL && entity.getRandom().nextFloat() < 0.12F) {
          sideStep(entity, target, now, false);
       } else {
-         entity.getNavigation().moveTo(target, distance > IDEAL_RANGE ? 1.08 : 0.92);
-      }
-      if (distance <= desiredRange && now - data.getLong(LAST_ATTACK_TICK) >= ATTACK_INTERVAL) {
-         data.putLong(LAST_ATTACK_TICK, now);
-         entity.doHurtTarget(target);
+         entity.getNavigation().moveTo(target, distance > IDEAL_RANGE ? 1.18 : 0.9);
       }
       return true;
    }
@@ -104,6 +102,7 @@ public final class DiarmuidCombatAi {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 10.0));
       entity.addEffect(new MobEffectInstance(MobEffects.DIG_SPEED, 15 * 20, 0, false, true, true));
       entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 15 * 20, 0, false, true, true));
+      DiarmuidCombatHelper.spawnStrategyVfx(entity);
    }
 
    private static void approach(DiarmuidUaDuibhneEntity entity, LivingEntity target, boolean red) {
@@ -111,6 +110,7 @@ public final class DiarmuidCombatAi {
          entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 15.0));
          entity.addEffect(new MobEffectInstance(MobEffects.JUMP, 10 * 20, 1, false, true, true));
          entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 10 * 20, 1, false, true, true));
+         DiarmuidCombatHelper.spawnJumpBurstVfx(entity);
       }
       entity.getNavigation().moveTo(target, red ? 1.18 : 1.28);
    }
@@ -125,6 +125,7 @@ public final class DiarmuidCombatAi {
       if (away.lengthSqr() < 1.0E-4) away = entity.getLookAngle().multiply(-1.0, 0.0, -1.0);
       Vec3 side = new Vec3(-away.z, 0.0, away.x).normalize().scale(entity.getRandom().nextBoolean() ? 2.5 : -2.5);
       Vec3 pos = entity.position().add(away.normalize().scale(6.0)).add(side);
+      DiarmuidCombatHelper.spawnRepositionVfx(entity, true);
       entity.getNavigation().moveTo(pos.x, pos.y, pos.z, 1.28);
    }
 
@@ -139,6 +140,7 @@ public final class DiarmuidCombatAi {
       Vec3 side = new Vec3(-toward.z, 0.0, toward.x).normalize().scale(entity.getRandom().nextBoolean() ? 3.0 : -3.0);
       Vec3 back = toward.normalize().scale(urgent ? -1.4 : 0.8);
       Vec3 pos = entity.position().add(side).add(back);
+      DiarmuidCombatHelper.spawnRepositionVfx(entity, urgent);
       entity.getNavigation().moveTo(pos.x, pos.y, pos.z, urgent ? 1.35 : 1.18);
    }
 

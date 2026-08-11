@@ -38,6 +38,7 @@ public final class ServantCardVoiceHelper {
          case "arash" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
          case "senko_muramasa" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
+         case "diarmuid_ua_duibhne" -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -78,6 +79,9 @@ public final class ServantCardVoiceHelper {
          case "muramasa_forge", "muramasa_workshop", "muramasa_trial_slash", "muramasa_karma_eye",
             "muramasa_flame", "muramasa_projection_volley", "muramasa_temper", "muramasa_karma_slash",
             "muramasa_sword_field" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
+         case "diarmuid_twin_spear_combo", "diarmuid_red_rose_focus", "diarmuid_yellow_rose_focus",
+            "diarmuid_knight_strategy", "diarmuid_mana_burst_jump", "diarmuid_flower_step", "diarmuid_disengage"
+            -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
          default -> null;
       };
       play(player, sound, 40);

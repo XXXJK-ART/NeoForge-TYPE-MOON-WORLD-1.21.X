@@ -149,6 +149,7 @@ public final class ServantCardTransformManager {
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
       if ("pale_rider".equals(servantId)) ServantCardPaleRiderSkills.initialize(player, vars);
       if ("hundred_faces_hassan".equals(servantId)) ServantCardHundredFacesHassanSkills.initialize(player, vars);
+      if ("diarmuid_ua_duibhne".equals(servantId)) ServantCardDiarmuidSkills.initialize(player);
       if ("shadow_hassan".equals(servantId)) ServantCardShadowHassanSkills.initialize(player);
       if ("fanatic_assassin".equals(servantId)) ServantCardFanaticAssassinSkills.initialize(player);
       applyAttributes(player, definition.parameters(), servantId);
@@ -176,6 +177,7 @@ public final class ServantCardTransformManager {
       restoreArmor(player, vars);
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
       if ("hundred_faces_hassan".equals(vars.servant_card_id)) ServantCardHundredFacesHassanSkills.clear(player);
+      if ("diarmuid_ua_duibhne".equals(vars.servant_card_id)) ServantCardDiarmuidSkills.clear(player);
       if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
@@ -294,6 +296,7 @@ public final class ServantCardTransformManager {
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
          case "hundred_faces_hassan" -> ServantCardHundredFacesHassanSkills.tick(player, vars);
+         case "diarmuid_ua_duibhne" -> ServantCardDiarmuidSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
@@ -326,6 +329,7 @@ public final class ServantCardTransformManager {
       ServantCardLiShuwenSkills.clear(player);
       ServantCardPaleRiderSkills.clear(player);
       ServantCardHundredFacesHassanSkills.clear(player);
+      ServantCardDiarmuidSkills.clear(player);
       ServantCardShadowHassanSkills.clear(player);
       ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
@@ -907,6 +911,13 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
          return;
       }
+      if ("diarmuid_ua_duibhne".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
+         player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
+         return;
+      }
       if (servantCardHasHeadArmor(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
       } else {
@@ -1447,6 +1458,14 @@ public final class ServantCardTransformManager {
          case "hundred_faces_single_command" -> { if (!ServantCardHundredFacesHassanSkills.openSingleCommand(player)) return false; }
          case "hundred_faces_switch" -> { if (!ServantCardHundredFacesHassanSkills.openSwitch(player)) return false; }
          case "hundred_faces_concealment" -> { if (!ServantCardHundredFacesHassanSkills.performPresenceConcealment(player)) return false; }
+         case "diarmuid_twin_spear_combo" -> ServantCardDiarmuidSkills.performTwinSpearCombo(player);
+         case "diarmuid_red_rose_focus" -> ServantCardDiarmuidSkills.performRedRoseFocus(player);
+         case "diarmuid_yellow_rose_focus" -> ServantCardDiarmuidSkills.performYellowRoseFocus(player);
+         case "diarmuid_knight_strategy" -> ServantCardDiarmuidSkills.performKnightStrategy(player);
+         case "diarmuid_mana_burst_jump" -> ServantCardDiarmuidSkills.performManaBurstJump(player);
+         case "diarmuid_flower_step" -> ServantCardDiarmuidSkills.performFlowerStep(player);
+         case "diarmuid_disengage" -> ServantCardDiarmuidSkills.performDisengage(player);
+         case "diarmuid_dual_wield" -> ServantCardDiarmuidSkills.performDualWieldToggle(player);
          case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.toggleConcealment(player)) return false; }
          case "shadow_hassan_lantern" -> { if (!ServantCardShadowHassanSkills.performShadowLantern(player, vars)) return false; }
          case "shadow_hassan_wandering" -> { if (!ServantCardShadowHassanSkills.performShadowWandering(player)) return false; }

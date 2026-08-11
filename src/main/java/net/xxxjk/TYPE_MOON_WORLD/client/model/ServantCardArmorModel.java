@@ -113,6 +113,9 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (entityData == null) {
          return;
       }
+      if ("diarmuid_ua_duibhne".equals(animatable.servantId())) {
+         applyDiarmuidArmorFit();
+      }
       GeoBone head = this.getAnimationProcessor().getBone("armorHead");
       if (head != null) {
          float yawRad = Mth.clamp(entityData.netHeadYaw(), -40.0F, 40.0F) * (float)(Math.PI / 180.0);
@@ -131,6 +134,24 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       counterRotateHair("hair", pitchRad, 1.25F);
       counterRotateHair("hair1", pitchRad, 1.35F);
       counterRotateHair("hair2", pitchRad, 1.35F);
+   }
+
+   private void applyDiarmuidArmorFit() {
+      setScale("armorRightArm", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftArm", 1.5F, 1.5F, 1.5F);
+      setScale("armorRightLeg", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftLeg", 1.5F, 1.5F, 1.5F);
+      setScale("armorRightBoot", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftBoot", 1.5F, 1.5F, 1.5F);
+   }
+
+   private void setScale(String boneName, float x, float y, float z) {
+      GeoBone bone = this.getAnimationProcessor().getBone(boneName);
+      if (bone != null) {
+         bone.setScaleX(x);
+         bone.setScaleY(y);
+         bone.setScaleZ(z);
+      }
    }
 
    private void counterRotateHair(String boneName, float pitchRad, float strength) {

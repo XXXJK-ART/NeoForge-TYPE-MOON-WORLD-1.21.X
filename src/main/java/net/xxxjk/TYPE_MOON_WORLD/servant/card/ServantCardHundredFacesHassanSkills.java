@@ -49,6 +49,7 @@ public final class ServantCardHundredFacesHassanSkills {
    private static final String GLOBAL_ATTACK_ENABLED_TAG = "HundredFacesCardGlobalAttackEnabled";
    private static final String GLOBAL_CONCEALMENT_TAG = "HundredFacesCardGlobalConcealment";
    private static final String LAST_STATE_COUNT_TAG = "HundredFacesCardLastStateCount";
+   private static final String BODY_TRANSFER_ACTIVE_TAG = "HundredFacesCardBodyTransferActive";
    private static final ResourceLocation SPLIT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_health");
    private static final ResourceLocation SPLIT_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_attack");
    private static final ResourceLocation SPLIT_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_armor");
@@ -277,44 +278,51 @@ public final class ServantCardHundredFacesHassanSkills {
 
    public static boolean tryTransferBodyOnLethalDamage(ServerPlayer player) {
       if (!isActiveCard(player) || player.getServer() == null) return false;
-      HundredFacesHassanPersonaEntity vessel = null;
-      for (ServerLevel level : player.getServer().getAllLevels()) {
-         for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), true)) {
-            if (vessel == null
-               || (persona.level() == player.level() && vessel.level() != player.level())
-               || persona.getHealth() > vessel.getHealth()) {
-               vessel = persona;
+      CompoundTag data = player.getPersistentData();
+      if (data.getBoolean(BODY_TRANSFER_ACTIVE_TAG)) return false;
+      data.putBoolean(BODY_TRANSFER_ACTIVE_TAG, true);
+      try {
+         HundredFacesHassanPersonaEntity vessel = null;
+         for (ServerLevel level : player.getServer().getAllLevels()) {
+            for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), true)) {
+               if (vessel == null
+                  || (persona.level() == player.level() && vessel.level() != player.level())
+                  || persona.getHealth() > vessel.getHealth()) {
+                  vessel = persona;
+               }
             }
          }
+         if (vessel == null || !(vessel.level() instanceof ServerLevel targetLevel)) return false;
+
+         ServerLevel oldLevel = player.serverLevel();
+         Vec3 old = player.position();
+         Vec3 targetPos = vessel.position();
+         float yaw = vessel.getYRot();
+         float pitch = vessel.getXRot();
+         vessel.discard();
+
+         player.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, pitch);
+         player.setHealth(Math.max(1.0F, Math.min(player.getMaxHealth(), player.getMaxHealth() * 0.35F)));
+         player.clearFire();
+         player.invulnerableTime = 40;
+         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
+         ServantCardConcealmentHelper.apply(player, 50);
+
+         targetLevel.sendParticles(ParticleTypes.SOUL, targetPos.x, targetPos.y + 0.6, targetPos.z,
+            24, 0.45, 0.7, 0.45, 0.04);
+         targetLevel.sendParticles(ParticleTypes.POOF, targetPos.x, targetPos.y + 0.5, targetPos.z,
+            18, 0.45, 0.45, 0.45, 0.04);
+         targetLevel.playSound(null, BlockPos.containing(targetPos), SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.8F, 1.3F);
+         oldLevel.sendParticles(ParticleTypes.SQUID_INK, old.x, old.y + 0.8, old.z,
+            24, 0.45, 0.55, 0.45, 0.03);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.body_transfer"), true);
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         applyBodySplitAttributes(player, vars);
+         sendState(player, true);
+         return true;
+      } finally {
+         data.remove(BODY_TRANSFER_ACTIVE_TAG);
       }
-      if (vessel == null || !(vessel.level() instanceof ServerLevel targetLevel)) return false;
-
-      ServerLevel oldLevel = player.serverLevel();
-      Vec3 old = player.position();
-      Vec3 targetPos = vessel.position();
-      float yaw = vessel.getYRot();
-      float pitch = vessel.getXRot();
-      vessel.discard();
-
-      player.teleportTo(targetLevel, targetPos.x, targetPos.y, targetPos.z, yaw, pitch);
-      player.setHealth(Math.max(1.0F, Math.min(player.getMaxHealth(), player.getMaxHealth() * 0.35F)));
-      player.clearFire();
-      player.invulnerableTime = 40;
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
-      ServantCardConcealmentHelper.apply(player, 50);
-
-      targetLevel.sendParticles(ParticleTypes.SOUL, targetPos.x, targetPos.y + 0.6, targetPos.z,
-         24, 0.45, 0.7, 0.45, 0.04);
-      targetLevel.sendParticles(ParticleTypes.POOF, targetPos.x, targetPos.y + 0.5, targetPos.z,
-         18, 0.45, 0.45, 0.45, 0.04);
-      targetLevel.playSound(null, BlockPos.containing(targetPos), SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.8F, 1.3F);
-      oldLevel.sendParticles(ParticleTypes.SQUID_INK, old.x, old.y + 0.8, old.z,
-         24, 0.45, 0.55, 0.45, 0.03);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.body_transfer"), true);
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      applyBodySplitAttributes(player, vars);
-      sendState(player, true);
-      return true;
    }
 
    public static boolean performPresenceConcealment(ServerPlayer player) {

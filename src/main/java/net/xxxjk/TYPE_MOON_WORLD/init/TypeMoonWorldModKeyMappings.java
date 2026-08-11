@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.EntityHitResult;
@@ -234,6 +235,13 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
          }
+         if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+            player.swing(InteractionHand.MAIN_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+         }
          if (event.isUseItem() && player.isCrouching() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -247,6 +255,14 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          if (!event.isAttack()) {
+            return;
+         }
+         if (isClientDiarmuidDualWieldActive(player, vars)
+            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            player.swing(InteractionHand.OFF_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
             return;
          }
          if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
@@ -862,7 +878,16 @@ public class TypeMoonWorldModKeyMappings {
             || "cu_chulainn".equals(servantId)
             || "oda_nobunaga".equals(servantId)
             || "enkidu".equals(servantId)
-            || "gilgamesh".equals(servantId);
+            || "gilgamesh".equals(servantId)
+            || "diarmuid_ua_duibhne".equals(servantId);
+      }
+
+      private static boolean isClientDiarmuidDualWieldActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars.servant_card_transformed
+            && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
+            && vars.servant_card_action_mode == 1
+            && player.getMainHandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem
+            && player.getOffhandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

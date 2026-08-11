@@ -24,6 +24,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class EntityUtils {
    private static final double RIGHT_HAND_CAST_FORWARD = 0.78;
@@ -36,6 +37,10 @@ public class EntityUtils {
 
    public static boolean isImmunePlayerTarget(Entity entity) {
       return entity instanceof Player player && (player.isCreative() || player.isSpectator());
+   }
+
+   public static boolean isUntargetableServantTransition(Entity entity) {
+      return entity instanceof ServantEntity servant && servant.isSpiritualTransitionLocked();
    }
 
    public static boolean isPetrified(Entity entity) {
@@ -126,7 +131,7 @@ public class EntityUtils {
    public static boolean isValidCombatTarget(LivingEntity caster, LivingEntity target) {
       if (caster == null || target == null || !target.isAlive() || target == caster) {
          return false;
-      } else if (isImmunePlayerTarget(target)) {
+      } else if (isImmunePlayerTarget(target) || isUntargetableServantTransition(target)) {
          return false;
       } else if (!caster.isAlliedTo(target) && !target.isAlliedTo(caster)) {
          if (caster instanceof Player casterPlayer) {

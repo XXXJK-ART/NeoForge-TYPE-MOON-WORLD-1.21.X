@@ -179,6 +179,7 @@ class HundredFacesHassanResourcesTest {
       String client = readJava("net/xxxjk/TYPE_MOON_WORLD/client/ClientPacketHandler.java");
       String hud = readJava("net/xxxjk/TYPE_MOON_WORLD/client/screens/ServantCardHud.java");
       String events = readJava("net/xxxjk/TYPE_MOON_WORLD/event/ModPlayerEventHandler.java");
+      String commonEvents = readJava("net/xxxjk/TYPE_MOON_WORLD/event/CommonEvents.java");
       String loadout = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardLoadoutManager.java");
       for (String action : List.of("hundred_faces_summon", "hundred_faces_summon_menu", "hundred_faces_command",
          "hundred_faces_single_command", "hundred_faces_switch", "hundred_faces_concealment")) {
@@ -199,6 +200,8 @@ class HundredFacesHassanResourcesTest {
       assertTrue(skills.contains("PERSONAL_CONCEALMENT_TAG"));
       assertTrue(skills.contains("totalSplitCount"));
       assertTrue(skills.contains("applyBodySplitAttributes"));
+      assertTrue(skills.contains("BODY_TRANSFER_ACTIVE_TAG"));
+      assertTrue(skills.contains("tryTransferBodyOnLethalDamage"));
       assertTrue(persona.contains("initialize(ServerPlayer owner"));
       assertTrue(persona.contains("getOwnerPlayer"));
       assertTrue(persona.contains("notifyPersonaDeath"));
@@ -212,6 +215,9 @@ class HundredFacesHassanResourcesTest {
       assertTrue(client.contains("openHundredFacesScreen"));
       assertTrue(hud.contains("drawHundredFacesStatus"));
       assertTrue(events.contains("handleHundredFacesPersonaCommand"));
+      assertTrue(commonEvents.contains("onHundredFacesCardDeathTransfer"));
+      assertTrue(commonEvents.contains("ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)"));
+      assertTrue(commonEvents.contains("event.setCanceled(true)"));
       assertTrue(loadout.contains("\"hundred_faces_hassan\" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get())")
          || loadout.contains("\"cursed_arm_hassan\", \"hundred_faces_hassan\" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get())"));
    }

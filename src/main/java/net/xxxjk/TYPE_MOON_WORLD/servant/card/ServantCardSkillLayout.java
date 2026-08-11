@@ -236,6 +236,17 @@ public final class ServantCardSkillLayout {
             case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
             default -> null;
          };
+         case "diarmuid_ua_duibhne" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Twin Spear Combo", "diarmuid_twin_spear_combo", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("Gae Dearg Focus", "diarmuid_red_rose_focus", 12.0, 120);
+            case 1 -> new ServantCardSkillAction("Gae Buidhe Focus", "diarmuid_yellow_rose_focus", 12.0, 120);
+            case 2 -> new ServantCardSkillAction("Knight Strategy", "diarmuid_knight_strategy", 18.0, 300);
+            case 3 -> new ServantCardSkillAction("Mana Burst Jump", "diarmuid_mana_burst_jump", 18.0, 260);
+            case 4 -> new ServantCardSkillAction("Flower Step", "diarmuid_flower_step", 10.0, 100);
+            case 5 -> new ServantCardSkillAction("Disengage", "diarmuid_disengage", 14.0, 280);
+            case 6 -> new ServantCardSkillAction("Dual Spear Stance", "diarmuid_dual_wield", 0.0, 20);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

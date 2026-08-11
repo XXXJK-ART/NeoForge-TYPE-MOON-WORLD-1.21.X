@@ -1,7 +1,7 @@
 {
   "id": "diarmuid_ua_duibhne",
   "display_name": "Diarmuid Ua Duibhne",
-  "display_name_zh": "Diarmuid Ua Duibhne",
+  "display_name_zh": "迪尔姆德·奥迪那",
   "class_type": "lancer",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "lancer", "male", "lawful", "neutral", "earth", "fianna_knights", "knight"],

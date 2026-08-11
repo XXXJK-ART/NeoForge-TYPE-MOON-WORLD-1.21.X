@@ -12,6 +12,7 @@ import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.Item.TooltipContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DiarmuidSpearRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDiarmuidSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -60,6 +61,8 @@ public class DiarmuidSpearItem extends SwordItem implements GeoItem, NoblePhanta
          } else {
             DiarmuidCombatHelper.applyYellowRoseHit(diarmuid, target);
          }
+      } else if (attacker instanceof net.minecraft.server.level.ServerPlayer player && ServantCardDiarmuidSkills.isActiveCard(player)) {
+         ServantCardDiarmuidSkills.applySpearItemHit(player, target, this.spearType);
       }
       return super.hurtEnemy(stack, target, attacker);
    }

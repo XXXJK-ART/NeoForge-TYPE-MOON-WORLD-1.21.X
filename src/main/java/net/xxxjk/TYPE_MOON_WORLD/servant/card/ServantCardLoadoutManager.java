@@ -80,6 +80,10 @@ public final class ServantCardLoadoutManager {
          case "nightingale" -> main = stack(ModItems.NIGHTINGALE_GUN.get());
          case "zhao_yun_rider" -> main = stack(ModItems.YAJIAO_QIANG.get());
          case "senko_muramasa" -> main = MuramasaCombatHelper.projectedStack(ModItems.MURAMASA.get());
+         case "diarmuid_ua_duibhne" -> {
+            main = stack(ModItems.GAE_DEARG.get());
+            off = stack(ModItems.GAE_BUIDHE.get());
+         }
          default -> {
          }
       }

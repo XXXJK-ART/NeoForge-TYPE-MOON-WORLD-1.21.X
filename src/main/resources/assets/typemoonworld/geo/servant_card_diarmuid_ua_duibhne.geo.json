@@ -246,7 +246,7 @@
 				{
 					"name": "armorLeftArm",
 					"parent": "bipedLeftArm",
-					"pivot": [5, 15.67578, 0]
+					"pivot": [5, 22, 0]
 				},
 				{
 					"name": "jian2",

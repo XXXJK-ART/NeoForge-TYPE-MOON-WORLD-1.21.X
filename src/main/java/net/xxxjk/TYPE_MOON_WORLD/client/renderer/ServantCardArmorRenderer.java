@@ -72,12 +72,6 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
    }
 
-   @Override
-   public void renderCubesOfBone(PoseStack poseStack, GeoBone bone, VertexConsumer buffer,
-                                 int packedLight, int packedOverlay, int colour) {
-      super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, colour);
-   }
-
    private void applyArmorSlotVisibility() {
       if (this.currentSlot != null) {
          applyBoneVisibilityBySlot(this.currentSlot);

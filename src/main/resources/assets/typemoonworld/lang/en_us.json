@@ -2378,8 +2378,18 @@
   "item.typemoonworld.gae_dearg.desc": "The red spear breaks magical defenses on hit.",
   "item.typemoonworld.gae_buidhe": "Gae Buidhe",
   "item.typemoonworld.gae_buidhe.desc": "The yellow spear leaves a curse wound that cannot heal normally.",
-  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_head": "Diarmuid Servant Card Hair",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne": "Diarmuid Ua Duibhne (Lancer)",
   "item.typemoonworld.servant_card_diarmuid_ua_duibhne_chest": "Diarmuid Servant Card Armor",
   "item.typemoonworld.servant_card_diarmuid_ua_duibhne_legs": "Diarmuid Servant Card Leg Armor",
-  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_feet": "Diarmuid Servant Card Boots"
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_feet": "Diarmuid Servant Card Boots",
+  "skill.typemoonworld.servant_card.diarmuid_twin_spear_combo": "Twin Spear Combo",
+  "skill.typemoonworld.servant_card.diarmuid_red_rose_focus": "Gae Dearg Focus",
+  "skill.typemoonworld.servant_card.diarmuid_yellow_rose_focus": "Gae Buidhe Focus",
+  "skill.typemoonworld.servant_card.diarmuid_knight_strategy": "Knight Strategy",
+  "skill.typemoonworld.servant_card.diarmuid_mana_burst_jump": "Mana Burst Jump",
+  "skill.typemoonworld.servant_card.diarmuid_flower_step": "Flower Step",
+  "skill.typemoonworld.servant_card.diarmuid_disengage": "Disengage",
+  "skill.typemoonworld.servant_card.diarmuid_dual_wield": "Dual Spear Stance",
+  "message.typemoonworld.diarmuid.dual_wield.on": "Dual Spear Stance: On",
+  "message.typemoonworld.diarmuid.dual_wield.off": "Dual Spear Stance: Off"
 }

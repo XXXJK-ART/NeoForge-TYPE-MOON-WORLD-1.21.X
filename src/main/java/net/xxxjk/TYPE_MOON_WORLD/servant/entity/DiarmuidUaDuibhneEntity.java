@@ -10,8 +10,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -25,8 +23,6 @@ import org.jetbrains.annotations.Nullable;
 public class DiarmuidUaDuibhneEntity extends ServantEntity {
    public static final String SERVANT_KEY = "diarmuid_ua_duibhne";
    public static final String TAG_RETREAT_UNTIL = "DiarmuidRetreatUntil";
-   private static final double BASE_MOVEMENT_SPEED = 0.26;
-   private static final double BURST_MOVEMENT_SPEED = 0.34;
 
    public DiarmuidUaDuibhneEntity(EntityType<? extends DiarmuidUaDuibhneEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
@@ -47,8 +43,6 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       if (!this.level().isClientSide) {
          DiarmuidCombatHelper.ensureDurability(this);
          if (this.tickCount % 40 == 0) this.ensureDiarmuidLoadout();
-         boolean retreating = this.level().getGameTime() < this.getPersistentData().getLong(TAG_RETREAT_UNTIL);
-         setBase(Attributes.MOVEMENT_SPEED, retreating ? BURST_MOVEMENT_SPEED : BASE_MOVEMENT_SPEED);
       }
    }
 
@@ -58,9 +52,8 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
          super.customServerAiStep();
          return;
       }
-      if (!DiarmuidCombatAi.tick(this, level)) {
-         super.customServerAiStep();
-      }
+      super.customServerAiStep();
+      DiarmuidCombatAi.tick(this, level);
    }
 
    @Override
@@ -119,7 +112,7 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
    private void ensureDiarmuidLoadout() {
       this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.GAE_DEARG.get()));
       this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.GAE_BUIDHE.get()));
-      this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD.get()));
+      this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
       this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST.get()));
       this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS.get()));
       this.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET.get()));
@@ -127,10 +120,5 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       this.setDropChance(EquipmentSlot.CHEST, 0.0F);
       this.setDropChance(EquipmentSlot.LEGS, 0.0F);
       this.setDropChance(EquipmentSlot.FEET, 0.0F);
-   }
-
-   private void setBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
-      AttributeInstance instance = this.getAttribute(attribute);
-      if (instance != null && Math.abs(instance.getBaseValue() - value) > 1.0E-5) instance.setBaseValue(value);
    }
 }

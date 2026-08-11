@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCasterGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDiarmuidSkills;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,6 +46,12 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
                ServantCardGilgameshSkills.performSingleVault(player);
             } else if (vars.servant_card_transformed && "gilgamesh_caster".equals(vars.servant_card_id) && message.secondary) {
                ServantCardCasterGilgameshSkills.performSlateBasic(player);
+            } else if (vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id) && ServantCardDiarmuidSkills.isDualWieldActive(player)) {
+               if (message.secondary) {
+                  ServantCardDiarmuidSkills.performMainhandSpearThrust(player);
+               } else {
+                  ServantCardDiarmuidSkills.performOffhandSpearThrust(player);
+               }
             } else {
                ServantCardOdaNobunagaSkills.handleBasicAttackPacket(player, message.secondary);
             }

@@ -24,6 +24,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
@@ -324,11 +325,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    public void tick() {
-      if (!this.level().isClientSide && EntityUtils.isImmunePlayerTarget(this.getTarget())) {
+      if (!this.level().isClientSide
+         && (EntityUtils.isImmunePlayerTarget(this.getTarget()) || EntityUtils.isUntargetableServantTransition(this.getTarget()))) {
          super.setTarget(null);
       }
       if (this.isSpiritualTransitionActive()) {
          this.applySpiritualLock();
+         if (!this.level().isClientSide) {
+            this.clearIncomingTargetsDuringSpiritualTransition();
+         }
       }
       super.tick();
       if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
@@ -358,7 +363,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          super.setTarget(null);
          return;
       }
-      super.setTarget(EntityUtils.isImmunePlayerTarget(target) ? null : target);
+      super.setTarget(EntityUtils.isImmunePlayerTarget(target) || EntityUtils.isUntargetableServantTransition(target)
+         ? null
+         : target);
    }
 
    @Override
@@ -1309,6 +1316,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.attackSwingTicks = 0;
       if (this.actionCtrl != null) {
          this.actionCtrl.setAnimation(null);
+      }
+   }
+
+   private void clearIncomingTargetsDuringSpiritualTransition() {
+      if (!(this.level() instanceof ServerLevel serverLevel)) {
+         return;
+      }
+
+      for (Mob mob : serverLevel.getEntitiesOfClass(Mob.class, this.getBoundingBox().inflate(48.0), candidate -> candidate.getTarget() == this)) {
+         mob.setTarget(null);
       }
    }
 

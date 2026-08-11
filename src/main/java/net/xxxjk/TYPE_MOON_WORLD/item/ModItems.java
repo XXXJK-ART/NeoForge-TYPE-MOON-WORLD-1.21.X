@@ -347,6 +347,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE = registerServantCard("nightingale");
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER = registerServantCard("zhao_yun_rider");
     public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA = registerServantCard("senko_muramasa");
+    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE = registerServantCard("diarmuid_ua_duibhne");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -396,7 +397,6 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_CHEST = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD = registerServantArmor("hundred_faces_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST = registerServantArmor("hundred_faces_hassan", net.minecraft.world.entity.EquipmentSlot.CHEST);
-    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.FEET);
@@ -850,7 +850,7 @@ public class ModItems {
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_dearg_range"),
-                                            2.1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> GAE_BUIDHE = ITEMS.register("gae_buidhe",
@@ -870,7 +870,7 @@ public class ModItems {
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_range"),
-                                            1.8, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> RULE_BREAKER = ITEMS.register("rule_breaker",
@@ -1281,8 +1281,7 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             case "hundred_faces_hassan" -> head ? SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST.get() : Items.AIR;
-            case "diarmuid_ua_duibhne" -> head ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD.get()
-                : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST.get()
+            case "diarmuid_ua_duibhne" -> slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST.get()
                 : legs ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
