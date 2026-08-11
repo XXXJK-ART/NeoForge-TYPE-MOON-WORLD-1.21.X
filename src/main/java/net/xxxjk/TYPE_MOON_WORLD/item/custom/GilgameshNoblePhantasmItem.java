@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -17,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item.TooltipContext;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -51,6 +54,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmItem, GeoItem {
    private static final int BAB_ILU_LONG_PRESS_TICKS = 20;
    private static final int EA_TREE_TICKS = 72;
+   private static final String BAB_ILU_EA_SUMMONED_TAG = "GilgameshBabIluEaSummoned";
    private static final String[] VAULT_WEAPONS = {"durandal", "gram", "harpe", "vajra", "fangtian_huaji"};
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final String modelId;
@@ -141,6 +145,10 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
             if (castBabIlu(player)) player.getCooldowns().addCooldown(this, gateStats.cooldown());
             else refundMana(player, gateStats.mana());
          } else {
+            if (!tryMarkBabIluEaSummoned(stack)) {
+               player.displayClientMessage(Component.literal("Ea has already been summoned by this Bab-ilu."), true);
+               return;
+            }
             Vec3 direction = player.getLookAngle().normalize();
             player.getCooldowns().addCooldown(this, 400);
             VFXServerEffects.spawn(serverLevel, "gilgamesh_ea_tree", player.position().add(0, player.getBbHeight() * 0.65, 0), 192.0);
@@ -160,6 +168,21 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
          return;
       }
       return;
+   }
+
+   public static boolean hasBabIluSummonedEa(ItemStack stack) {
+      CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+      return data != null && data.copyTag().getBoolean(BAB_ILU_EA_SUMMONED_TAG);
+   }
+
+   private static boolean tryMarkBabIluEaSummoned(ItemStack stack) {
+      if (hasBabIluSummonedEa(stack)) {
+         return false;
+      }
+      CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+      tag.putBoolean(BAB_ILU_EA_SUMMONED_TAG, true);
+      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      return true;
    }
 
    private boolean castBabIlu(ServerPlayer player) {

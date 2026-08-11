@@ -38,7 +38,7 @@ public final class MagicLearningStrategy {
       Map.entry("baptism_rite", new Rule(65, true, true, true, true, false, false)),
       Map.entry("black_key_fire_engraving", new Rule(60, true, true, true, true, false, false)),
       Map.entry("stigma", new Rule(60, true, true, true, true, false, false))
-      ,Map.entry("mana_burst", new Rule(65, false, false, false, false, false, false))
+      ,Map.entry("mana_burst", new Rule(65, false, true, false, false, false, false))
       ,Map.entry("reinforcement_self", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_other", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_item", new Rule(25, true, true, true, true, false, false))

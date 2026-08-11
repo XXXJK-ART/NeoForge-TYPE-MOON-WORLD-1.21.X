@@ -50,6 +50,13 @@ public final class NpcMagicExecutionService {
       if ("magic_analysis".equals(magicId)) {
          return NpcMagicCastBridge.castMagicAnalysis(caster, target, vars, effectiveProficiency);
       }
+      if ("mana_burst".equals(magicId)) {
+         boolean success = NpcMagicCastBridge.castManaBurst(caster, target, vars, payload, effectiveProficiency);
+         if (success) {
+            postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
+         }
+         return success;
+      }
       // Addon executors are checked before the legacy compatibility table. This keeps
       // the NPC and player paths on the same callback implementation.
       if (MagicDefinitionRegistry.contains(magicId)) {
@@ -118,6 +125,7 @@ public final class NpcMagicExecutionService {
       if ("magic_analysis".equals(magicId)) return 10;
       if ("airflow_blade".equals(magicId)) return 14;
       if ("detection".equals(magicId)) return 10;
+      if ("mana_burst".equals(magicId)) return 16;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcGlobalCooldown());
       return switch (magicId) {
@@ -145,6 +153,10 @@ public final class NpcMagicExecutionService {
       if ("magic_analysis".equals(magicId)) return 260;
       if ("airflow_blade".equals(magicId)) return 32;
       if ("detection".equals(magicId)) return 180;
+      if ("mana_burst".equals(magicId)) {
+         int mode = payload != null && payload.contains("mana_burst_mode") ? Math.max(0, Math.min(2, payload.getInt("mana_burst_mode"))) : 1;
+         return mode == 2 ? 60 : 220;
+      }
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcCooldown());
       return switch (magicId) {

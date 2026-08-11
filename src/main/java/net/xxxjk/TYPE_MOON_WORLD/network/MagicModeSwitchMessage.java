@@ -48,6 +48,8 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 8: Set Healing Target - value is target index (0 self / 1 other; <0 toggles)
                 // 9: Set Elemental Mode - value is 0 attack / 1 utility; <0 toggles
                 // 10: Set Time Alter Mode - value is 0 accel / 1 stagnate; <0 toggles
+                // 11: Set Mana Burst Mode - value is 0 weapon / 1 body / 2 direct
+                // 12: Set Mana Burst Level - value is 1..5
                 
                 if (message.actionType == 2) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -246,6 +248,27 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.time_alter.mode_changed", modeComp), true);
                     PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
+                } else if (message.actionType == 11) {
+                    if (!"mana_burst".equals(currentMagic) || isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+                    int mode = Math.max(0, Math.min(2, message.value));
+                    updateManaBurstPreset(player, vars, "mana_burst_mode", mode);
+                    Component modeComp = Component.translatable(switch (mode) {
+                        case 0 -> "gui.typemoonworld.mode.mana_burst.weapon";
+                        case 2 -> "gui.typemoonworld.mode.mana_burst.direct";
+                        default -> "gui.typemoonworld.mode.mana_burst.body";
+                    });
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.mode_selected", modeComp), true);
+                    return;
+                } else if (message.actionType == 12) {
+                    if (!"mana_burst".equals(currentMagic) || isRuntimePresetLocked(player, vars, currentMagic)) {
+                        return;
+                    }
+                    int level = Math.max(1, Math.min(5, message.value));
+                    updateManaBurstPreset(player, vars, "mana_burst_level", level);
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.level_selected", level), true);
+                    return;
                 }
 
                 if (!currentMagic.isEmpty()) {
@@ -428,5 +451,19 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
             return true;
         }
         return false;
+    }
+
+    private static void updateManaBurstPreset(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String key, int value) {
+        var entry = vars.getCurrentRuntimeWheelEntry();
+        if (entry == null || entry.isEmpty() || !"mana_burst".equals(entry.magicId)) {
+            return;
+        }
+        var updated = entry.copy();
+        var payload = updated.presetPayload == null ? new net.minecraft.nbt.CompoundTag() : updated.presetPayload.copy();
+        payload.putInt(key, value);
+        updated.presetPayload = PlayerMagicSelectionService.normalizePresetPayload("mana_burst", payload);
+        vars.setWheelSlotEntry(updated.wheelIndex, updated.slotIndex, updated);
+        vars.rebuildSelectedMagicsFromActiveWheel();
+        PlayerMagicSelectionService.syncCurrentSelection(player, vars);
     }
 }

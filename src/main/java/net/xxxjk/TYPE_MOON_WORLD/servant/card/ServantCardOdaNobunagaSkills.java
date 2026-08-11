@@ -233,7 +233,7 @@ public final class ServantCardOdaNobunagaSkills {
          return;
       }
       VFXServerEffects.spawn(level, "servant_oda_maou", player, 160.0);
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0, 3.0, 8.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0, 3.0, 8.0), e -> isOdaCardTarget(player, e))) {
          OdaNobunagaCombatHelper.applyDivineDefenseBreak(player, living);
          living.setRemainingFireTicks(120);
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, hasTrait(living, ServantTraitTag.DIVINE) ? 2 : 0, false, true, true));
@@ -282,7 +282,7 @@ public final class ServantCardOdaNobunagaSkills {
          int delay = wave * 7;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             if (player.isAlive() && player.level() instanceof ServerLevel level) {
-               LivingEntity target = findLookTarget(player, 28.0, 1.8);
+               LivingEntity target = findOdaCardLookTarget(player, 28.0, 1.8);
                Vec3 look = target == null
                   ? player.getLookAngle()
                   : target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(player.getEyePosition()).normalize();
@@ -297,7 +297,7 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    public static boolean performOdaEncirclingMatchlocks(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 30.0, 1.8);
+      LivingEntity target = findOdaCardLookTarget(player, 30.0, 1.8);
       if (target == null || !(player.level() instanceof ServerLevel level)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
@@ -342,7 +342,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity target = findLookTarget(player, 30.0, 1.8);
+      LivingEntity target = findOdaCardLookTarget(player, 30.0, 1.8);
       Vec3 center = target == null ? player.getEyePosition().add(player.getLookAngle().scale(14.0)) : target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       for (int i = 0; i < 6; i++) {
          double angle = i * Math.PI / 3.0;
@@ -350,7 +350,7 @@ public final class ServantCardOdaNobunagaSkills {
          OdaMatchlockGunEntity gun = OdaMatchlockGunEntity.oneShotTracking(level, player, target, pos, i * 5);
          level.addFreshEntity(gun);
       }
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(5.0, 2.5, 5.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(5.0, 2.5, 5.0), e -> isOdaCardTarget(player, e))) {
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true));
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 80, 0, false, true, true));
       }
@@ -362,7 +362,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      LivingEntity target = findLookTarget(player, 28.0, 1.8);
+      LivingEntity target = findOdaCardLookTarget(player, 28.0, 1.8);
       Vec3 center = target == null ? player.position().add(PlayerNoblePhantasmHelper.horizontalLook(player).scale(8.0)) : target.position();
       for (int wave = 0; wave < 5; wave++) {
          int delay = wave * 20;
@@ -374,7 +374,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (!player.isAlive() || !(player.level() instanceof ServerLevel level)) {
          return;
       }
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(7.0, 2.5, 7.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(7.0, 2.5, 7.0), e -> isOdaCardTarget(player, e))) {
          OdaNobunagaCombatHelper.applyDivineDefenseBreak(player, living);
          living.setRemainingFireTicks(80);
          living.invulnerableTime = 0;
@@ -398,7 +398,7 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    public static void performOdaAntiMystery(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 26.0, 1.8);
+      LivingEntity target = findOdaCardLookTarget(player, 26.0, 1.8);
       if (target == null || !(player.level() instanceof ServerLevel level)) {
          return;
       }
@@ -416,7 +416,7 @@ public final class ServantCardOdaNobunagaSkills {
          return;
       }
       double radius = 7.0;
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.5, radius), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.5, radius), e -> isOdaCardTarget(player, e))) {
          OdaNobunagaCombatHelper.applyDivineDefenseBreak(player, living);
          living.setRemainingFireTicks(100);
          living.invulnerableTime = 0;
@@ -428,7 +428,7 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    public static void performOdaHasebeRepel(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 7.0, 1.8);
+      LivingEntity target = findOdaCardLookTarget(player, 7.0, 1.8);
       if (target == null || !(player.level() instanceof ServerLevel level)) {
          return;
       }
@@ -500,7 +500,7 @@ public final class ServantCardOdaNobunagaSkills {
       data.remove(THREE_THOUSAND_START);
       data.remove(THREE_THOUSAND_FOLLOW);
       data.remove(THREE_THOUSAND_RELEASED);
-      LivingEntity target = findLookTarget(player, 34.0, 2.0);
+      LivingEntity target = findOdaCardLookTarget(player, 34.0, 2.0);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.72, 0.0);
       for (int i = 0; i < 36; i++) {
          int index = i;
@@ -531,7 +531,7 @@ public final class ServantCardOdaNobunagaSkills {
       RedSkeletonHajunEntity skeleton = new RedSkeletonHajunEntity(level, player, 260);
       skeleton.setPos(player.getX(), player.getY(), player.getZ());
       level.addFreshEntity(skeleton);
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(14.0, 5.0, 14.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(14.0, 5.0, 14.0), e -> isOdaCardTarget(player, e))) {
          OdaNobunagaCombatHelper.applyDivineDefenseBreak(player, living);
          living.addEffect(new MobEffectInstance(MobEffects.WITHER, 140, 1, false, true, true));
          living.invulnerableTime = 0;
@@ -833,7 +833,7 @@ public final class ServantCardOdaNobunagaSkills {
 
    private static List<LivingEntity> collectOdaHajunTargets(ServerPlayer player, ServerLevel source) {
       List<LivingEntity> targets = new ArrayList<>();
-      LivingEntity lookTarget = findLookTarget(player, HAJUN_CARD_RADIUS, 2.4);
+      LivingEntity lookTarget = findOdaCardLookTarget(player, HAJUN_CARD_RADIUS, 2.4);
       if (isOdaHajunTarget(player, source, lookTarget)) {
          targets.add(lookTarget);
       }
@@ -851,6 +851,7 @@ public final class ServantCardOdaNobunagaSkills {
          && !player.isAlliedTo(living)
          && !living.isAlliedTo(player)
          && !EntityUtils.isImmunePlayerTarget(living)
+         && !ServantMasterTargeting.isContractMaster(player, living)
          && living.distanceToSqr(player) <= HAJUN_CARD_RADIUS * HAJUN_CARD_RADIUS;
    }
 
@@ -885,7 +886,7 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static void applyOdaHajunPulse(ServerPlayer player, ServerLevel level, boolean initial) {
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(HAJUN_CARD_RADIUS), e -> e.isAlive() && e != player && !player.isAlliedTo(e) && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(HAJUN_CARD_RADIUS), e -> isOdaCardTarget(player, e) && !player.isAlliedTo(e))) {
          OdaNobunagaCombatHelper.applyDivineDefenseBreak(player, living);
          living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), initial ? 160 : 80));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 45, hasTrait(living, ServantTraitTag.DIVINE) ? 2 : 0, false, true, true));
@@ -1213,6 +1214,35 @@ public final class ServantCardOdaNobunagaSkills {
       level.addFreshEntity(bullet);
    }
 
+   private static LivingEntity findOdaCardLookTarget(ServerPlayer player, double range, double inflate) {
+      Vec3 eye = player.getEyePosition();
+      Vec3 look = player.getLookAngle().normalize();
+      AABB box = player.getBoundingBox().expandTowards(look.scale(range)).inflate(inflate);
+      LivingEntity best = null;
+      double bestScore = 0.78;
+      for (LivingEntity living : player.level().getEntitiesOfClass(LivingEntity.class, box, e -> isOdaCardTarget(player, e))) {
+         Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(eye);
+         double distance = to.length();
+         if (distance <= 0.01 || distance > range) {
+            continue;
+         }
+         double score = look.dot(to.normalize());
+         if (score > bestScore) {
+            bestScore = score;
+            best = living;
+         }
+      }
+      return best;
+   }
+
+   private static boolean isOdaCardTarget(ServerPlayer player, LivingEntity target) {
+      return target != null
+         && target.isAlive()
+         && target != player
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !ServantMasterTargeting.isContractMaster(player, target);
+   }
+
    private static void muzzleFx(ServerLevel level, ServerPlayer player, Vec3 look, int intensity) {
       Vec3 pos = player.getEyePosition().add(look.normalize().scale(0.9));
       level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 8 + intensity * 4, 0.12 * intensity, 0.08 * intensity, 0.12 * intensity, 0.04);
@@ -1231,7 +1261,7 @@ public final class ServantCardOdaNobunagaSkills {
       player.hurtMarked = true;
       player.fallDistance = 0.0F;
       AABB path = new AABB(start, end).inflate(1.15, 1.0, 1.15);
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, path, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
+      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, path, e -> isOdaCardTarget(player, e))) {
          living.invulnerableTime = 0;
          living.hurt(player.damageSources().playerAttack(player), hasTrait(living, ServantTraitTag.DIVINE) ? damage + 6.0F : damage);
          living.invulnerableTime = 0;

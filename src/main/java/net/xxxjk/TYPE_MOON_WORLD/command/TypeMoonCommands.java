@@ -63,6 +63,7 @@ public class TypeMoonCommands {
    private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
    private static final String BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID = "black_key_fire_engraving";
    private static final String STIGMA_MAGIC_ID = "stigma";
+   private static final String MANA_BURST_MAGIC_ID = "mana_burst";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
    private static final int SAMPLE_COORD_RANGE = 2000000;
    private static final double ACCEPT_MEAN_MIN = 9.0;
@@ -94,6 +95,7 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
+      MANA_BURST_MAGIC_ID,
       "bajiquan",
       "ganryu",
       KendoCombatService.HOKUSHIN_ID,
@@ -130,6 +132,7 @@ public class TypeMoonCommands {
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
+      MANA_BURST_MAGIC_ID,
       BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
       STIGMA_MAGIC_ID,
       "absorption",
@@ -723,6 +726,7 @@ public class TypeMoonCommands {
          vars.proficiency_time_alter = 0.0;
          vars.proficiency_spiritual_healing = 0.0;
          vars.proficiency_baptism_rite = 0.0;
+         MagicProficiencyService.set(vars, MANA_BURST_MAGIC_ID, 0.0);
          vars.bajiquan_learned = false;
          vars.bajiquan_proficiency = 0.0;
          vars.bajiquan_tiger_unlocked = false;
@@ -846,6 +850,7 @@ public class TypeMoonCommands {
          vars.proficiency_time_alter = 100.0;
          vars.proficiency_spiritual_healing = 100.0;
          vars.proficiency_baptism_rite = 100.0;
+         MagicProficiencyService.set(vars, MANA_BURST_MAGIC_ID, 100.0);
          vars.bajiquan_learned = true;
          vars.bajiquan_proficiency = 100.0;
          vars.bajiquan_tiger_unlocked = true;
@@ -883,6 +888,10 @@ public class TypeMoonCommands {
 
          if (!vars.learned_magics.contains("reinforcement")) {
             vars.learned_magics.add("reinforcement");
+         }
+
+         if (!vars.learned_magics.contains(MANA_BURST_MAGIC_ID)) {
+            vars.learned_magics.add(MANA_BURST_MAGIC_ID);
          }
 
          vars.has_unlimited_blade_works = true;
@@ -1287,6 +1296,9 @@ public class TypeMoonCommands {
                break;
             case "baptism_rite":
                vars.proficiency_baptism_rite = value;
+               break;
+            case MANA_BURST_MAGIC_ID:
+               MagicProficiencyService.set(vars, MANA_BURST_MAGIC_ID, value);
                break;
             case "bajiquan":
                vars.bajiquan_proficiency = value;

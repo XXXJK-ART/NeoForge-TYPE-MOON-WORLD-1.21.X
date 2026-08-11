@@ -28,6 +28,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -93,8 +94,10 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       if (entity.getId() == this.entityData.get(SOURCE_GUN_ID)) {
          return false;
       }
-      if (this.getOwner() instanceof LivingEntity owner && entity instanceof LivingEntity living && owner.isAlliedTo(living)) {
-         return false;
+      if (this.getOwner() instanceof LivingEntity owner && entity instanceof LivingEntity living) {
+         if (owner.isAlliedTo(living) || ServantMasterTargeting.isContractMaster(owner, living)) {
+            return false;
+         }
       }
       return super.canHitEntity(entity);
    }

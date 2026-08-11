@@ -165,6 +165,13 @@ public final class PlayerMagicSelectionService {
          if (normalized.contains("time_alter_multiplier")) {
             normalized.putInt("time_alter_multiplier", Math.max(1, normalized.getInt("time_alter_multiplier")));
          }
+      } else if ("mana_burst".equals(magicId)) {
+         if (normalized.contains("mana_burst_mode")) {
+            normalized.putInt("mana_burst_mode", clamp(normalized.getInt("mana_burst_mode"), 0, 2));
+         }
+         if (normalized.contains("mana_burst_level")) {
+            normalized.putInt("mana_burst_level", clamp(normalized.getInt("mana_burst_level"), 1, 5));
+         }
       } else if (isElementalMagic(magicId) && normalized.contains("element_mode")) {
          normalized.putInt("element_mode", clamp(normalized.getInt("element_mode"), 0, 1));
       }
@@ -179,6 +186,7 @@ public final class PlayerMagicSelectionService {
          || "projection".equals(magicId)
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
+         || "mana_burst".equals(magicId)
          || isElementalMagic(magicId);
    }
 
@@ -198,6 +206,9 @@ public final class PlayerMagicSelectionService {
       } else if ("time_alter".equals(magicId)) {
          payload.putInt("time_alter_mode", clamp(vars.time_alter_mode, 0, 1));
          payload.putInt("time_alter_multiplier", Math.max(1, vars.time_alter_multiplier));
+      } else if ("mana_burst".equals(magicId)) {
+         payload.putInt("mana_burst_mode", 1);
+         payload.putInt("mana_burst_level", 1);
       } else if (isElementalMagic(magicId)) {
          payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {

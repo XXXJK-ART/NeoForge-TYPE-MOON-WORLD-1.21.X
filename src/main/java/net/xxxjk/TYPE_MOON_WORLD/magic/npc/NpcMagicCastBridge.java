@@ -75,6 +75,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWindElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
@@ -176,6 +177,10 @@ public final class NpcMagicCastBridge {
    private static final float[] RAPID_PITCH = new float[]{0.0F, -0.8F, 0.8F};
    private static final double[] RAPID_SIDE = new double[]{0.0, -0.12, 0.12};
    private static final double[] RAPID_UP = new double[]{0.0, 0.06, -0.06};
+   private static final double[] MANA_BURST_UPKEEP = new double[]{15.0, 25.0, 35.0, 45.0, 55.0};
+   private static final double[] MANA_BURST_DIRECT_COST = new double[]{150.0, 250.0, 350.0, 450.0, 550.0};
+   private static final float[] MANA_BURST_DIRECT_DAMAGE = new float[]{40.0F, 80.0F, 120.0F, 160.0F, 200.0F};
+   private static final double[] MANA_BURST_DIRECT_RANGE = new double[]{20.0, 28.0, 36.0, 44.0, 52.0};
    private static final double RETREAT_HEALTH_RATIO = 0.28;
    private static final double RETREAT_DISTANCE = 12.0;
    private static final double RANGED_KEEP_MIN_DISTANCE = 7.0;
@@ -204,6 +209,7 @@ public final class NpcMagicCastBridge {
       "binding_magic",
       "airflow_blade",
       "detection",
+      "mana_burst",
       "fire_magic",
       "water_magic",
       "wind_magic",
@@ -944,7 +950,7 @@ public final class NpcMagicCastBridge {
       String[] advanced = new String[]{
          "gandr_machine_gun", "jewel_machine_gun", "jewel_random_shoot",
          "healing_magic", "gravity_magic", "binding_magic", "suggestion_magic",
-         "reinforcement"
+         "mana_burst", "reinforcement"
       };
       for (String id : advanced) {
          if (shuffled.remove(id)) {
@@ -974,7 +980,7 @@ public final class NpcMagicCastBridge {
          case "gandr_machine_gun", "jewel_machine_gun", "healing_magic",
             "gravity_magic", "binding_magic", "suggestion_magic",
             "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river",
-            "topaz_reinforcement", "cyan_wind" -> true;
+            "topaz_reinforcement", "cyan_wind", "mana_burst" -> true;
          default -> false;
       };
    }
@@ -1153,6 +1159,7 @@ public final class NpcMagicCastBridge {
             break;
          case "airflow_blade":
          case "detection":
+         case "mana_burst":
             MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), p));
             break;
          case "jewel_machine_gun":
@@ -1436,8 +1443,15 @@ public final class NpcMagicCastBridge {
                   case "reinforcement":
                   case "healing_magic":
                   case "topaz_reinforcement":
+                  case "mana_burst":
                      hasBuff = true;
                      hasMeleeBurst = true;
+                     if ("mana_burst".equals(var8)
+                        && entry.presetPayload != null
+                        && entry.presetPayload.contains("mana_burst_mode")
+                        && Mth.clamp(entry.presetPayload.getInt("mana_burst_mode"), 0, 2) == 2) {
+                        hasRanged = true;
+                     }
                      break;
                   case "gravity_magic":
                   case "binding_magic":
@@ -1863,10 +1877,12 @@ public final class NpcMagicCastBridge {
    private static void applyPostCastCooldown(
       MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId, CompoundTag payload, long gameTime, int minCastLock
    ) {
-      int gcd = NpcMagicExecutionService.getGlobalCooldownAfterCast(magicId, payload);
+      double chantMultiplier = AdvancedPassiveService.chantMultiplier(vars);
+      int gcd = Math.max(1, (int)Math.round(NpcMagicExecutionService.getGlobalCooldownAfterCast(magicId, payload) * chantMultiplier));
       vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
       npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
-      setMagicCooldown(npc, magicId, gameTime + NpcMagicExecutionService.getPerMagicCooldown(magicId, payload));
+      long perMagicCooldown = Math.max(1L, Math.round(NpcMagicExecutionService.getPerMagicCooldown(magicId, payload) * chantMultiplier));
+      setMagicCooldown(npc, magicId, gameTime + perMagicCooldown);
       setCastLockUntil(npc, gameTime + Math.max(minCastLock, gcd / 2));
       recordResourceMagicUse(npc, magicId, gameTime);
       recordMagicCast(npc, magicId);
@@ -3653,7 +3669,7 @@ public final class NpcMagicCastBridge {
       double weight = 1.0;
       switch (style) {
          case CLOSE_PRESSURE:
-            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
+            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId) || "mana_burst".equals(magicId)) {
                weight += 2.8;
             }
 
@@ -3675,7 +3691,7 @@ public final class NpcMagicCastBridge {
                weight += 3.0;
             }
 
-            if ("jewel_random_shoot".equals(magicId) || "magic_bullet".equals(magicId) || "fire_magic".equals(magicId)) {
+            if ("jewel_random_shoot".equals(magicId) || "magic_bullet".equals(magicId) || "fire_magic".equals(magicId) || isManaBurstDirect(payload, magicId)) {
                weight++;
             }
 
@@ -3701,7 +3717,7 @@ public final class NpcMagicCastBridge {
                weight++;
             }
 
-            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
+            if ("reinforcement".equals(magicId) || "topaz_reinforcement".equals(magicId) || "mana_burst".equals(magicId)) {
                weight += 0.8;
             }
             break;
@@ -3729,6 +3745,7 @@ public final class NpcMagicCastBridge {
       if (distance < 5.0) {
          if ("reinforcement".equals(magicId)
             || "healing_magic".equals(magicId)
+            || "mana_burst".equals(magicId)
             || "gravity_magic".equals(magicId)
             || "binding_magic".equals(magicId)
             || "water_magic".equals(magicId)
@@ -3745,7 +3762,7 @@ public final class NpcMagicCastBridge {
             weight *= 0.65;
          }
       } else if (distance > 14.0) {
-         if ("reinforcement".equals(magicId) || "healing_magic".equals(magicId) || "topaz_reinforcement".equals(magicId)) {
+         if ("reinforcement".equals(magicId) || "healing_magic".equals(magicId) || "topaz_reinforcement".equals(magicId) || !isManaBurstDirect(payload, magicId) && "mana_burst".equals(magicId)) {
             weight *= 0.45;
          }
 
@@ -3753,6 +3770,7 @@ public final class NpcMagicCastBridge {
             || "jewel_machine_gun".equals(magicId)
             || "gander".equals(magicId)
             || "magic_bullet".equals(magicId)
+            || isManaBurstDirect(payload, magicId)
             || "fire_magic".equals(magicId)
             || "water_magic".equals(magicId)
             || "wind_magic".equals(magicId)
@@ -3792,6 +3810,15 @@ public final class NpcMagicCastBridge {
 
       if ("healing_magic".equals(magicId)) {
          weight += manaRatio >= 0.25 ? 0.6 : -0.8;
+      } else if ("mana_burst".equals(magicId)) {
+         int mode = manaBurstMode(payload);
+         if (mode == 2) {
+            weight += distance >= 5.0 && distance <= 18.0 ? 1.5 : -0.45;
+            if (manaRatio < 0.55) weight *= 0.35;
+         } else {
+            weight += distance <= 6.0 ? 1.7 : 0.35;
+            if (manaRatio < 0.35) weight *= 0.55;
+         }
       } else if ("spiritual_healing".equals(magicId)) {
          weight += isSpiritLikeTarget(target) ? 1.8 : 0.35;
       } else if ("magic_analysis".equals(magicId)) {
@@ -3897,6 +3924,7 @@ public final class NpcMagicCastBridge {
             : getGandrRapidWaveCount(proficiency) * 3.0 * 20.0;
          case "gravity_magic" -> 20.0;
          case "reinforcement" -> 20.0 * Mth.clamp(payload.getInt("reinforcement_level"), 1, 5);
+         case "mana_burst" -> estimateManaBurstCost(payload, proficiency);
          case "jewel_random_shoot" -> 30.0;
          case "healing_magic" -> 12.0 + proficiency * 0.08;
          case "spiritual_healing" -> 15.0;
@@ -3921,6 +3949,12 @@ public final class NpcMagicCastBridge {
          case "cyan_wind" -> 80.0;
          default -> 40.0;
       };
+   }
+
+   private static double estimateManaBurstCost(CompoundTag payload, double proficiency) {
+      int mode = manaBurstMode(payload);
+      int level = manaBurstLevel(payload, proficiency);
+      return mode == 2 ? MANA_BURST_DIRECT_COST[level - 1] : MANA_BURST_UPKEEP[level - 1];
    }
 
    private static boolean castMagic(
@@ -4448,6 +4482,110 @@ public final class NpcMagicCastBridge {
       return true;
    }
 
+   static boolean castManaBurst(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
+   ) {
+      if (caster == null || vars == null) {
+         return false;
+      }
+      int mode = manaBurstMode(payload);
+      int level = manaBurstLevel(payload, proficiency);
+      if (mode == 2) {
+         return castManaBurstDirect(caster, target, vars, level);
+      }
+      return castManaBurstBuff(caster, target, vars, mode, level, proficiency);
+   }
+
+   private static boolean castManaBurstBuff(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, int mode, int level, double proficiency
+   ) {
+      int duration = 180 + (int)Math.round(Mth.clamp(proficiency, 0.0, 100.0) * 2.4);
+      MobEffectInstance existingStrength = caster.getEffect(MobEffects.DAMAGE_BOOST);
+      if (existingStrength != null && existingStrength.getAmplifier() >= Math.max(0, level - 2) && existingStrength.getDuration() >= duration / 2) {
+         return false;
+      }
+      if (!consumeMana(vars, MANA_BURST_UPKEEP[level - 1])) {
+         return false;
+      }
+      markCastingPose(caster, 12);
+      if (target != null && target.isAlive()) {
+         caster.lookAt(target, 40.0F, 40.0F);
+      }
+      caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, duration, Math.max(0, level - 2), false, true, true));
+      if (mode == 1) {
+         caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, duration, Math.max(0, Math.min(3, level - 1)), false, true, true));
+         caster.addEffect(new MobEffectInstance(MobEffects.JUMP, duration, Math.max(0, Math.min(3, level - 1)), false, true, true));
+         caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, Math.max(80, duration / 2), 0, false, true, true));
+      }
+      if (caster.level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.END_ROD, caster.getX(), caster.getY() + 1.0, caster.getZ(), 28, 0.55, 0.9, 0.55, 0.08);
+         serverLevel.sendParticles(ParticleTypes.WITCH, caster.getX(), caster.getY() + 1.0, caster.getZ(), 18, 0.45, 0.75, 0.45, 0.04);
+      }
+      caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.75F, 1.2F + level * 0.05F);
+      return true;
+   }
+
+   private static boolean castManaBurstDirect(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, int level
+   ) {
+      if (target == null || !target.isAlive()) {
+         return false;
+      }
+      double range = MANA_BURST_DIRECT_RANGE[level - 1];
+      if (caster.distanceToSqr(target) > range * range || !caster.hasLineOfSight(target)) {
+         repositionForClearShot(caster, target, Math.min(14.0, Math.max(8.0, range * 0.35)), 1.1);
+         return false;
+      }
+      if (!consumeMana(vars, MANA_BURST_DIRECT_COST[level - 1])) {
+         return false;
+      }
+      markCastingPose(caster, 14);
+      Vec3 eye = caster.getEyePosition();
+      Vec3 look = getAimDirection(caster, target, 3.8, 0.0).normalize();
+      faceCasterToDirection(caster, look);
+      Vec3 end = eye.add(look.scale(range));
+      if (caster.level() instanceof ServerLevel serverLevel) {
+         Set<Integer> hit = new HashSet<>();
+         for (LivingEntity victim : serverLevel.getEntitiesOfClass(
+            LivingEntity.class,
+            new AABB(eye, end).inflate(1.35),
+            e -> e.isAlive() && e != caster && !EntityUtils.isImmunePlayerTarget(e))) {
+            Vec3 center = victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0);
+            Vec3 rel = center.subtract(eye);
+            double along = rel.dot(look);
+            if (along < 0.0 || along > range || !hit.add(victim.getId())) {
+               continue;
+            }
+            double side = rel.subtract(look.scale(along)).length();
+            if (side <= 1.15) {
+               victim.invulnerableTime = 0;
+               victim.hurt(caster.damageSources().magic(), MANA_BURST_DIRECT_DAMAGE[level - 1]);
+               victim.invulnerableTime = 0;
+            }
+         }
+         for (double d = 1.0; d <= range; d += 1.5) {
+            Vec3 p = eye.add(look.scale(d));
+            serverLevel.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 4, 0.15, 0.15, 0.15, 0.02);
+         }
+      }
+      caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.9F, 1.55F);
+      return true;
+   }
+
+   private static int manaBurstMode(CompoundTag payload) {
+      return payload != null && payload.contains("mana_burst_mode") ? Mth.clamp(payload.getInt("mana_burst_mode"), 0, 2) : 1;
+   }
+
+   private static int manaBurstLevel(CompoundTag payload, double proficiency) {
+      int requested = payload != null && payload.contains("mana_burst_level") ? Mth.clamp(payload.getInt("mana_burst_level"), 1, 5) : 1;
+      int unlocked = Mth.clamp(1 + (int)Math.floor(Mth.clamp(proficiency, 0.0, 100.0) / 20.0), 1, 5);
+      return Math.min(requested, unlocked);
+   }
+
+   private static boolean isManaBurstDirect(CompoundTag payload, String magicId) {
+      return "mana_burst".equals(magicId) && manaBurstMode(payload) == 2;
+   }
+
    static boolean castRubyFlameSword(
       MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
    ) {
@@ -4780,6 +4918,7 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean consumeMana(TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      amount *= AdvancedPassiveService.manaMultiplier(vars);
       if (vars.player_mana < amount) {
          return false;
       } else {
@@ -4859,7 +4998,7 @@ public final class NpcMagicCastBridge {
             case "healing_magic" -> vars.proficiency_healing_magic;
             case "magic_analysis" -> MagicProficiencyService.get(vars, magicId);
             case "magic_bullet" -> vars.proficiency_magic_bullet;
-            case "airflow_blade", "detection" -> MagicProficiencyService.get(vars, magicId);
+            case "airflow_blade", "detection", "mana_burst" -> MagicProficiencyService.get(vars, magicId);
             case "suggestion_magic" -> vars.proficiency_suggestion_magic;
             case "binding_magic" -> vars.proficiency_binding_magic;
             case "fire_magic" -> vars.proficiency_fire_magic;
