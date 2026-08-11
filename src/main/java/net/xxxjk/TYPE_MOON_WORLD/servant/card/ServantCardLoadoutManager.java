@@ -65,7 +65,7 @@ public final class ServantCardLoadoutManager {
             off = stack(ModItems.HECATES_STAFF.get());
          }
          case "medusa" -> main = stack(ModItems.NAMELESS_CHAIN_DAGGER.get());
-         case "cursed_arm_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
+         case "cursed_arm_hassan", "hundred_faces_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
          case "emiya_archer" -> {
          }
          case "gilgamesh" -> {

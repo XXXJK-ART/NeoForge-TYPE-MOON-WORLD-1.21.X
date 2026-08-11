@@ -91,6 +91,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanDeathShadowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
@@ -605,6 +607,14 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<FanaticAssassinJinnEntity>> FANATIC_ASSASSIN_JINN = ENTITY_TYPES.register(
       "fanatic_assassin_jinn", () -> Builder.of(FanaticAssassinJinnEntity::new, MobCategory.CREATURE)
          .sized(1.1F, 1.5F).clientTrackingRange(64).updateInterval(1).build("fanatic_assassin_jinn")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HundredFacesHassanEntity>> HUNDRED_FACES_HASSAN = ENTITY_TYPES.register(
+      "hundred_faces_hassan", () -> Builder.of(HundredFacesHassanEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("hundred_faces_hassan")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HundredFacesHassanPersonaEntity>> HUNDRED_FACES_HASSAN_PERSONA = ENTITY_TYPES.register(
+      "hundred_faces_hassan_persona", () -> Builder.of(HundredFacesHassanPersonaEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(2).build("hundred_faces_hassan_persona")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RatSwarmEntity>> RAT_SWARM = ENTITY_TYPES.register(
       "rat_swarm", () -> Builder.of(RatSwarmEntity::new, MobCategory.CREATURE).sized(1.6F, 0.65F).clientTrackingRange(48).updateInterval(2).build("rat_swarm")

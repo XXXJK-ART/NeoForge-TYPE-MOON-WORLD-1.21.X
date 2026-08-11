@@ -478,6 +478,11 @@ public class TypeMoonCommands {
             .then(
                Commands.literal("talent")
                   .then(
+                     Commands.literal("grant_all")
+                        .executes(TypeMoonCommands::grantAllTalents)
+                        .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::grantAllTalents))
+                  )
+                  .then(
                      Commands.literal("grant")
                         .then(
                            Commands.argument("talent_id", StringArgumentType.word())
@@ -501,6 +506,11 @@ public class TypeMoonCommands {
             )
             .then(
                Commands.literal("passive")
+                  .then(
+                     Commands.literal("grant_all")
+                        .executes(TypeMoonCommands::grantAllPassives)
+                        .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::grantAllPassives))
+                  )
                   .then(
                      Commands.literal("grant")
                         .then(
@@ -555,6 +565,17 @@ public class TypeMoonCommands {
       return 1;
    }
 
+   private static int grantAllTalents(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      var vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      for (String id : TalentService.IDS) {
+         vars.talent_proficiencies.put(id, 100.0);
+      }
+      vars.syncPlayerVariables(target);
+      ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.talent.granted_all", target.getDisplayName(), TalentService.IDS.size()), true);
+      return TalentService.IDS.size();
+   }
+
    private static int revokeTalent(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
       String id = StringArgumentType.getString(ctx, "talent_id");
       if (!TalentService.isTalent(id)) {
@@ -585,6 +606,18 @@ public class TypeMoonCommands {
       vars.syncPlayerVariables(target);
       ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.passive.granted", target.getDisplayName(), id, rank.name()), true);
       return 1;
+   }
+
+   private static int grantAllPassives(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      var vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      for (String id : PassiveService.IDS) {
+         vars.passive_ranks.put(id, PassiveRank.A);
+      }
+      PassiveService.reconcileAttributes(target, vars);
+      vars.syncPlayerVariables(target);
+      ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.passive.granted_all", target.getDisplayName(), PassiveService.IDS.size()), true);
+      return PassiveService.IDS.size();
    }
 
    private static int revokePassive(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
@@ -673,8 +706,8 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon talent grant|revoke <id> [target]"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon passive grant|revoke|list <id> [rank] [target]"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon talent grant|grant_all|revoke <id> [target]"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon passive grant|grant_all|revoke|list <id> [rank] [target]"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu|hokushin|tennen"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger|tsubame <true|false>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-20>"), false);

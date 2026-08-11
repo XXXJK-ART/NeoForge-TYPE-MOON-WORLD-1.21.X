@@ -67,6 +67,7 @@ public final class PlayerNoblePhantasmHelper {
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
    private static final String GOLDEN_EXCALIBUR_CHARGE_TAG = "TypeMoonGoldenExcaliburCharge";
+   private static final String GOLDEN_EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonGoldenExcaliburLastChargeVfx";
    private static final String GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonGoldenExcaliburMinChargePaid";
    private static final String ARTORIA_WIND_REVEAL_UNTIL_TAG = "ServantCardArtoriaWindRevealUntil";
    private static final String ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG = "ServantCardArtoriaExcaliburWindLockUntil";
@@ -426,6 +427,7 @@ public final class PlayerNoblePhantasmHelper {
 
    public static void startGoldenExcaliburCharge(ServerPlayer player) {
       player.getPersistentData().putInt(GOLDEN_EXCALIBUR_CHARGE_TAG, 0);
+      player.getPersistentData().remove(GOLDEN_EXCALIBUR_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG);
    }
 
@@ -442,8 +444,15 @@ public final class PlayerNoblePhantasmHelper {
             player.releaseUsingItem();
          } else {
             player.getPersistentData().putBoolean(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
-            if (level instanceof ServerLevel serverLevel && serverLevel.getGameTime() % 10L == 0L) {
-               serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 12, 0.45, 0.5, 0.45, 0.05);
+            if (level instanceof ServerLevel serverLevel) {
+               long now = serverLevel.getGameTime();
+               serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.45, 0.5, 0.45, 0.05);
+               serverLevel.sendParticles(ParticleTypes.ENCHANTED_HIT, player.getX(), player.getY() + 0.9, player.getZ(), 8, 0.35, 0.45, 0.35, 0.04);
+               if (now - player.getPersistentData().getLong(GOLDEN_EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 20L) {
+                  player.getPersistentData().putLong(GOLDEN_EXCALIBUR_LAST_CHARGE_VFX_TAG, now);
+                  VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 128.0);
+                  serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_AMBIENT, SoundSource.PLAYERS, 0.35F, 1.45F);
+               }
             }
          }
       }
@@ -451,10 +460,12 @@ public final class PlayerNoblePhantasmHelper {
 
    public static void releaseGoldenExcalibur(ServerPlayer player) {
       int charged = player.getPersistentData().getInt(GOLDEN_EXCALIBUR_CHARGE_TAG);
+      boolean paid = player.getPersistentData().getBoolean(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG);
       player.getPersistentData().remove(GOLDEN_EXCALIBUR_CHARGE_TAG);
+      player.getPersistentData().remove(GOLDEN_EXCALIBUR_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(GOLDEN_EXCALIBUR_MIN_CHARGE_PAID_TAG);
       if (!(player.level() instanceof ServerLevel level)) return;
-      if (charged < GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS) {
+      if (charged < GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS || !paid) {
          level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
          return;
       }
@@ -462,8 +473,12 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, GOLDEN_EXCALIBUR_RELEASE_TICKS, 0, powerScale, true);
       level.addFreshEntity(beam);
-      addExcaliburCooldown(player, scaledCooldown(GOLDEN_EXCALIBUR_PLAYER_COOLDOWN, powerScale));
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
+      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 2, 0.05, 0.05, 0.05, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 70, 0.55, 0.55, 0.55, 0.18);
+      addGoldenExcaliburCooldown(player, scaledCooldown(GOLDEN_EXCALIBUR_PLAYER_COOLDOWN, powerScale));
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.9F + powerScale, 1.35F);
+      level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.35F + powerScale * 0.45F, 1.85F);
    }
 
    public static void startGallatinCharge(ServerPlayer player) {
@@ -674,6 +689,15 @@ public final class PlayerNoblePhantasmHelper {
          player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
       }
       if (player.getOffhandItem().is(ModItems.EXCALIBUR.get())) {
+         player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
+      }
+   }
+
+   private static void addGoldenExcaliburCooldown(ServerPlayer player, int cooldownTicks) {
+      if (player.getMainHandItem().is(ModItems.EXCALIBUR2.get())) {
+         player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), cooldownTicks);
+      }
+      if (player.getOffhandItem().is(ModItems.EXCALIBUR2.get())) {
          player.getCooldowns().addCooldown(player.getOffhandItem().getItem(), cooldownTicks);
       }
    }

@@ -208,11 +208,23 @@ public final class SummoningRitualService {
       if (entity == null) return false;
       entity.moveTo(circle.getX() + 0.5, circle.getY() + 0.1, circle.getZ() + 0.5, master.getYRot(), 0.0F);
       entity.finalizeSpawn(level, level.getCurrentDifficultyAt(circle), MobSpawnType.MOB_SUMMONED, null);
+      entity.ensureDefaultNpcLoadout(false);
       if (!level.addFreshEntity(entity)) return false;
       if (!MasterStateManager.bindEntityServant(master, entity)) {
          entity.discard();
          return false;
       }
+      entity.ensureDefaultNpcLoadout(true);
+      TYPE_MOON_WORLD.queueServerWork(1, () -> {
+         if (entity.isAlive() && entity.level() == level) {
+            entity.ensureDefaultNpcLoadout(true);
+         }
+      });
+      TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (entity.isAlive() && entity.level() == level) {
+            entity.ensureDefaultNpcLoadout(true);
+         }
+      });
       return true;
    }
 

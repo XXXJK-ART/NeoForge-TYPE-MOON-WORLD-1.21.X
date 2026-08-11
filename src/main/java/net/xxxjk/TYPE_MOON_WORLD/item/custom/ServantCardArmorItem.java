@@ -70,6 +70,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
             "enkidu",
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
+         case "hundred_faces_hassan" -> true;
          default -> false;
       };
    }
@@ -121,6 +122,8 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = casterGilgameshArmorAnimation(state);
       } else if ("senko_muramasa".equals(this.servantId)) {
          animation = "animation";
+      } else if ("hundred_faces_hassan".equals(this.servantId)) {
+         animation = "1";
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)

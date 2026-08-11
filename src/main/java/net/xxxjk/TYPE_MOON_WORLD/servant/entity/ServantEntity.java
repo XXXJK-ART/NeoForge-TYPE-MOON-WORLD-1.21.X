@@ -766,6 +766,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.equipNpcServantCardArmor(forceClientSync);
    }
 
+   public void ensureDefaultNpcLoadout(boolean forceClientSync) {
+      this.equipDefaultWeapon();
+      this.equipNpcServantCardArmor(forceClientSync);
+   }
+
    private void equipNpcServantCardArmor(boolean forceClientSync) {
       String id = this.getServantId();
       if (!usesHumanoidServantSkin(id)) {
@@ -798,9 +803,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    private static boolean usesHumanoidServantSkin(String servantId) {
       return switch (servantId == null ? "" : servantId) {
-         case "arash", "artoria_pendragon", "cu_chulainn", "gilgamesh_caster", "emiya_archer",
+         case "arash", "artoria_pendragon", "cu_chulainn", "cursed_arm_hassan", "gilgamesh_caster", "emiya_archer",
             "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
-            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa",
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa", "shadow_hassan",
+            "hundred_faces_hassan",
+            "heracles",
             "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
       };
@@ -810,6 +817,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return switch (servantId == null ? "" : servantId) {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
+            "hundred_faces_hassan",
             "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
       };

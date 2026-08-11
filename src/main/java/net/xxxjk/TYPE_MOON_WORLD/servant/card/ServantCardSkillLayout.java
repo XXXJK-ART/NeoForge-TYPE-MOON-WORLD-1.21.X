@@ -223,6 +223,19 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
             default -> null;
          };
+         case "hundred_faces_hassan" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
+               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
+            case 1 -> new ServantCardSkillAction(crouching ? "Persona Direct Command" : "Persona Command",
+               crouching ? "hundred_faces_single_command" : "hundred_faces_command", 0.0, 20);
+            case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
+            case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 100);
+            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 220);
+            case 5 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
+            case 6 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
+            case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

@@ -1,0 +1,8 @@
+{
+  "id": "presence_concealment_a_plus_hundred_faces",
+  "display_name": "Presence Concealment A+",
+  "display_name_zh": "\u6c14\u606f\u906e\u65ad A+",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
+  "effects": [{"effect_type": "stealth_passive", "params": {"movement_bonus": 0.15}}],
+  "ai": {"facts": [{"type": "concealment", "strength": 1.0}]}
+}

@@ -1,0 +1,8 @@
+{
+  "id": "encyclopedia_a_plus",
+  "display_name": "Encyclopedia A+",
+  "display_name_zh": "\u7cbe\u901a\u767e\u79d1 A+",
+  "type": "passive", "mp_cost": 0, "cooldown_ticks": 600, "duration_ticks": 0,
+  "effects": [{"effect_type": "persona_mode_adaptation", "params": {"modes": 6}}],
+  "ai": {"facts": [{"type": "tactical_adaptation", "strength": 0.8}]}
+}

@@ -1,0 +1,59 @@
+{
+  "id": "hundred_faces_hassan",
+  "display_name": "Hassan of the Hundred Faces (Assassin)",
+  "display_name_zh": "\u767e\u8c8c\u54c8\u6851\uff08Assassin\uff09",
+  "class_type": "assassin",
+  "faction": "human",
+  "traits": [
+    "servant", "humanoid", "assassin", "lawful", "evil", "human",
+    "hassan_order", "old_man_of_the_mountain", "hundred_faces"
+  ],
+  "parameters": {
+    "endurance": "D", "endurance_plus": false,
+    "strength": "C", "strength_plus": false,
+    "agility": "A", "agility_plus": false,
+    "magic": "C", "magic_plus": false,
+    "luck": "E", "luck_plus": false
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/hundred_faces_hassan.png",
+    "animation": "",
+    "animations": {
+      "idle": "animation.hundred_faces_hassan.standing",
+      "walk": "animation.hundred_faces_hassan.walk",
+      "melee": "animation.hundred_faces_hassan.melee",
+      "dirk_throw": "animation.hundred_faces_hassan.melee",
+      "assassin_stab": "animation.hundred_faces_hassan.melee",
+      "shadow_step": "animation.hundred_faces_hassan.zabaniya",
+      "knife_feint": "animation.hundred_faces_hassan.melee",
+      "shadow_lunge": "animation.hundred_faces_hassan.melee",
+      "zabaniya": "animation.hundred_faces_hassan.zabaniya"
+    }
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "default_weapon": "typemoonworld:dirk_small_knife",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "melee",
+      "dirk_throw",
+      "assassin_stab",
+      "shadow_step",
+      "knife_feint",
+      "shadow_lunge",
+      "zabaniya",
+      "persona_swarm",
+      "battle_retreat",
+      "poison_stab"
+    ]
+  },
+  "skills": ["presence_concealment_a_plus_hundred_faces", "encyclopedia_a_plus", "battle_retreat_b"],
+  "noble_phantasm": "zabaniya_hundred_faces",
+  "personality": {
+    "obedience": "compliant", "principle": "lawful", "morality": "evil",
+    "social": "hermit", "combat": "cautious", "starting_favor": 95.0
+  },
+  "ai_config": "hundred_faces_hassan_ai",
+  "spawn_egg": {"primary": 1381658, "secondary": 14209736}
+}

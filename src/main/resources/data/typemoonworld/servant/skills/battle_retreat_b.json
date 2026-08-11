@@ -1,0 +1,8 @@
+{
+  "id": "battle_retreat_b",
+  "display_name": "Battle Retreat B",
+  "display_name_zh": "\u6218\u6597\u64a4\u9000 B",
+  "type": "active", "mp_cost": 10, "cooldown_ticks": 400, "duration_ticks": 200,
+  "effects": [{"effect_type": "retreat_cleanse_speed", "params": {"speed_bonus": 0.4}}],
+  "ai": {"facts": [{"type": "defensive_retreat", "strength": 0.9}]}
+}

@@ -55,6 +55,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
                         output.accept(ModItems.SERVANT_CARD_PALE_RIDER);
+                        output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN);
                         output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN);
                         output.accept(ModItems.SERVANT_CARD_ARASH);
@@ -105,6 +106,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_USHIWAKAMARU_RIDER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_HEAD);
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
@@ -466,6 +470,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.NIGHTINGALE_SPAWN_EGG);
                         output.accept(ModItems.SHADOW_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
+                        output.accept(ModItems.HUNDRED_FACES_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.ARASH_SPAWN_EGG);
                     }).build());
 

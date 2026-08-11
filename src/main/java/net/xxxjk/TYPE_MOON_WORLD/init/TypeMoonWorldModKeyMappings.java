@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacement
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HakuryuRideMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
@@ -163,6 +165,22 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.isUseItem()) {
+            if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount
+               && !isHakuryuMountedUseReserved(player, vars)) {
+               PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+            if (minecraft.hitResult instanceof EntityHitResult entityHit
+               && entityHit.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount) {
+               PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+         }
          if (isClientGanryuActive(player, vars)) {
             boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
             if (event.isAttack() && !blockTarget) {
@@ -862,7 +880,7 @@ public class TypeMoonWorldModKeyMappings {
          }
 
          float forward = (minecraft.options.keyUp.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyDown.isDown() ? -1.0F : 0.0F);
-         float strafe = (minecraft.options.keyLeft.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyRight.isDown() ? -1.0F : 0.0F);
+         float strafe = (minecraft.options.keyLeft.isDown() ? -1.0F : 0.0F) + (minecraft.options.keyRight.isDown() ? 1.0F : 0.0F);
          boolean jump = minecraft.options.keyJump.isDown();
          boolean sneak = minecraft.options.keyShift.isDown();
          if (forward != 0.0F || strafe != 0.0F || jump || sneak) {
@@ -916,6 +934,13 @@ public class TypeMoonWorldModKeyMappings {
          return player != null && vars != null && vars.bajiquan_learned && vars.is_magic_circuit_open && !vars.servant_card_transformed
             && player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty()
             && BajiquanCombatService.MAGIC_ID.equals(net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.getCurrentMagicId(vars));
+      }
+
+      private static boolean isHakuryuMountedUseReserved(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars != null
+            && vars.servant_card_transformed
+            && "zhao_yun_rider".equals(vars.servant_card_id)
+            && player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.YAJIAO_QIANG.get());
       }
 
       private static boolean isClientGanryuActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {

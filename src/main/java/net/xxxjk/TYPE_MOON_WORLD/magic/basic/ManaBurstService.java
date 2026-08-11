@@ -249,8 +249,8 @@ public final class ManaBurstService {
          forward = new Vec3(forward.x, 0.0, forward.z);
       }
       forward = forward.normalize();
-      Vec3 left = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 desired = forward.scale(forwardInput).add(left.scale(strafeInput));
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 desired = forward.scale(forwardInput).add(right.scale(strafeInput));
       if (desired.lengthSqr() > 1.0E-4) {
          desired = desired.normalize();
          double accel = JET_ACCEL[level - 1] * (player.onGround() ? 1.35 : 1.0);

@@ -1,0 +1,16 @@
+{
+  "id": "zabaniya_hundred_faces",
+  "display_name": "Zabaniya: Delusional Illusion",
+  "display_name_zh": "\u5984\u60f3\u5e7b\u8c61",
+  "rank": "B+",
+  "type": "anti_self",
+  "mp_cost": 10.0,
+  "cooldown_ticks": 0,
+  "windup_ticks": 8,
+  "duration_ticks": 12,
+  "effects": [
+    {"effect_type": "summon_persona_swarm", "params": {"max_personas": 80, "mp_per_persona": 10, "max_batch": 10}}
+  ],
+  "description": "Splits independent personas into real servant bodies. Attack damage and movement speed do not decay with count.",
+  "description_zh": "\u5c06\u72ec\u7acb\u4eba\u683c\u5206\u88c2\u4e3a\u771f\u5b9e\u4ece\u8005\u4e2a\u4f53\u3002\u5206\u8eab\u653b\u51fb\u529b\u4e0e\u79fb\u52a8\u901f\u5ea6\u4e0d\u968f\u6570\u91cf\u8870\u51cf\u3002"
+}

@@ -295,6 +295,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), ShadowHassanDeathShadowRenderer::new);
       event.registerEntityRenderer(ModEntities.FANATIC_ASSASSIN.get(), context -> new HumanoidServantRenderer<>(context, "fanatic_assassin"));
       event.registerEntityRenderer(ModEntities.FANATIC_ASSASSIN_JINN.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.HUNDRED_FACES_HASSAN.get(), context -> new HumanoidServantRenderer<>(context, "hundred_faces_hassan"));
+      event.registerEntityRenderer(ModEntities.HUNDRED_FACES_HASSAN_PERSONA.get(), context -> new HumanoidServantRenderer<>(context, "hundred_faces_hassan"));
       event.registerEntityRenderer(ModEntities.RAT_SWARM.get(), RatSwarmRenderer::new);
       event.registerEntityRenderer(ModEntities.PALE_RIDER_CROW.get(), PaleRiderCrowRenderer::new);
       event.registerEntityRenderer(ModEntities.SOUL_ECHO.get(), SoulEchoRenderer::new);

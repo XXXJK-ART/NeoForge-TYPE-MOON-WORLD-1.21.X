@@ -187,6 +187,40 @@ public final class TypeMoonWorldGameTests {
       helper.succeed();
    }
 
+   @GameTest(template = "ancient_temple", timeoutTicks = 60)
+   public static void zhaoYunCardHakuryuAcceptsLinkedMasterSecondSeat(GameTestHelper helper) {
+      var master = helper.makeMockServerPlayerInLevel();
+      var servant = helper.makeMockServerPlayerInLevel();
+      var outsider = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(servant, "zhao_yun_rider"),
+         "Zhao Yun servant-card transform failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.activate(master),
+         "master activation failed");
+      master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_active = true;
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.bind(master, servant),
+         "master contract failed");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills.summonSkillHakuryu(servant),
+         "Zhao Yun skill Hakuryu was not summoned");
+      helper.assertTrue(servant.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity,
+         "Zhao Yun card owner did not mount Hakuryu");
+      var mount = (net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity)servant.getVehicle();
+
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunHakuryuRideService.tryToggle(master, mount),
+         "linked master could not board Hakuryu's second seat");
+      helper.assertTrue(mount.getPassengers().size() == 2
+            && mount.getPassengers().get(0) == servant
+            && mount.getPassengers().get(1) == master,
+         "Hakuryu passenger order was not card owner then linked master");
+      helper.assertTrue(!mount.canPlayerMount(outsider)
+            && !net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunHakuryuRideService.tryToggle(outsider, mount),
+         "outsider was allowed onto Hakuryu");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunHakuryuRideService.tryToggle(master, mount),
+         "linked master could not dismount Hakuryu");
+      helper.assertTrue(master.getVehicle() == null && servant.getVehicle() == mount,
+         "linked master dismount changed the owner seat");
+      helper.succeed();
+   }
+
    @GameTest(template = "ancient_temple", timeoutTicks = 40)
    public static void terminatedPlayerContractDoesNotStartMasterLoss(GameTestHelper helper) {
       var master = helper.makeMockServerPlayerInLevel();

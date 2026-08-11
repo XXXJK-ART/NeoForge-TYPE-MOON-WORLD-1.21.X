@@ -44,10 +44,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
@@ -400,6 +402,10 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof FanaticAssassinEntity fanatic) {
          FanaticAssassinCombatHelper.tick(fanatic, context);
+         return;
+      }
+      if (entity instanceof HundredFacesHassanEntity hundredFaces) {
+         HundredFacesHassanCombatHelper.tick(hundredFaces, context);
          return;
       }
       if (entity instanceof ShadowHassanEntity shadowHassan) {

@@ -31,7 +31,9 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -142,12 +144,28 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleHundredFacesPersonaCommand(event.getEntity(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (handleAvalonArtoriaCardActivation(event.getEntity(), event.getHand(), event.getTarget())) {
             event.setCanceled(true);
             event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
             return;
          }
       }
+   }
+
+   private static boolean handleHundredFacesPersonaCommand(Player player, Entity target) {
+      if (!(player instanceof ServerPlayer serverPlayer)
+         || !serverPlayer.isCrouching()
+         || !(target instanceof HundredFacesHassanPersonaEntity persona)
+         || !ServantCardHundredFacesHassanSkills.isActiveCard(serverPlayer)
+         || !ServantCardHundredFacesHassanSkills.isOwnedBy(persona, serverPlayer)) {
+         return false;
+      }
+      return ServantCardHundredFacesHassanSkills.openSingleCommand(serverPlayer, persona);
    }
 
    @SubscribeEvent

@@ -148,6 +148,7 @@ public final class ServantCardTransformManager {
       equipArmor(player, servantId);
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
       if ("pale_rider".equals(servantId)) ServantCardPaleRiderSkills.initialize(player, vars);
+      if ("hundred_faces_hassan".equals(servantId)) ServantCardHundredFacesHassanSkills.initialize(player, vars);
       if ("shadow_hassan".equals(servantId)) ServantCardShadowHassanSkills.initialize(player);
       if ("fanatic_assassin".equals(servantId)) ServantCardFanaticAssassinSkills.initialize(player);
       applyAttributes(player, definition.parameters(), servantId);
@@ -174,6 +175,7 @@ public final class ServantCardTransformManager {
       if ("ushiwakamaru_rider".equals(vars.servant_card_id)) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
+      if ("hundred_faces_hassan".equals(vars.servant_card_id)) ServantCardHundredFacesHassanSkills.clear(player);
       if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
@@ -291,6 +293,7 @@ public final class ServantCardTransformManager {
          case "fanatic_assassin" -> ServantCardFanaticAssassinSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
+         case "hundred_faces_hassan" -> ServantCardHundredFacesHassanSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
@@ -322,6 +325,7 @@ public final class ServantCardTransformManager {
       ServantCardMedusaSkills.clear(player);
       ServantCardLiShuwenSkills.clear(player);
       ServantCardPaleRiderSkills.clear(player);
+      ServantCardHundredFacesHassanSkills.clear(player);
       ServantCardShadowHassanSkills.clear(player);
       ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
@@ -1436,6 +1440,12 @@ public final class ServantCardTransformManager {
          case "pale_rider_death_pulse" -> { if (!ServantCardPaleRiderSkills.deathPulse(player)) return false; }
          case "pale_rider_underworld" -> { if (!ServantCardPaleRiderSkills.toggleUnderworld(player)) return false; }
          case "pale_rider_calamity" -> { if (!ServantCardPaleRiderSkills.toggleCalamity(player)) return false; }
+         case "hundred_faces_summon" -> { if (!ServantCardHundredFacesHassanSkills.summonOrOpenMenu(player, false)) return false; }
+         case "hundred_faces_summon_menu" -> { if (!ServantCardHundredFacesHassanSkills.summonOrOpenMenu(player, true)) return false; }
+         case "hundred_faces_command" -> { if (!ServantCardHundredFacesHassanSkills.openGlobalCommand(player)) return false; }
+         case "hundred_faces_single_command" -> { if (!ServantCardHundredFacesHassanSkills.openSingleCommand(player)) return false; }
+         case "hundred_faces_switch" -> { if (!ServantCardHundredFacesHassanSkills.openSwitch(player)) return false; }
+         case "hundred_faces_concealment" -> { if (!ServantCardHundredFacesHassanSkills.performPresenceConcealment(player)) return false; }
          case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.toggleConcealment(player)) return false; }
          case "shadow_hassan_lantern" -> { if (!ServantCardShadowHassanSkills.performShadowLantern(player, vars)) return false; }
          case "shadow_hassan_wandering" -> { if (!ServantCardShadowHassanSkills.performShadowWandering(player)) return false; }

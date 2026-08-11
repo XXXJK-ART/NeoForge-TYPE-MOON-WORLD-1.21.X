@@ -209,9 +209,11 @@ public class CommonEvents {
          }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
+            servant.ensureDefaultNpcLoadout(false);
             servant.ensureDefaultNpcServantCardArmor(false);
             TYPE_MOON_WORLD.queueServerWork(1, () -> {
                if (servant.isAlive() && servant.level() == serverLevel) {
+                  servant.ensureDefaultNpcLoadout(true);
                   servant.ensureDefaultNpcServantCardArmor(true);
                }
             });

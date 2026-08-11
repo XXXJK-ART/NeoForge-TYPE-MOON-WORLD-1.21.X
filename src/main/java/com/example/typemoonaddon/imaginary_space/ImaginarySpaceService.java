@@ -133,6 +133,7 @@ public final class ImaginarySpaceService {
     private static final double SWIM_VERTICAL_DAMPING = 0.80D;
     private static final double SWIM_VERTICAL_ACCELERATION = 0.06D;
     private static final double SWIM_MAX_VERTICAL_SPEED = 0.30D;
+    private static final double GENERATION_CENTER_REFRESH_DISTANCE_SQR = 8.0D * 8.0D;
     /** Movement bonus while the player holds the sprint key to enter swim mode. */
     private static final double SWIM_SPEED_MULTIPLIER = 0.65D;
     private static final ResourceLocation SWIM_SPEED_MODIFIER_ID =
@@ -385,6 +386,8 @@ public final class ImaginarySpaceService {
             ChunkPos currentChunk = owner.chunkPosition();
             if (!currentChunk.equals(state.windowCenterChunk)) {
                 updateChunkWindow(owner, data, state, currentChunk);
+            } else if (shouldRefreshGenerationCenter(owner, state)) {
+                updateChunkWindow(owner, data, state, currentChunk, true);
             }
             if (state.advanceRefreshTicker(CONTENT_REFRESH_INTERVAL_TICKS)) {
                 rebuildScene(owner, data, state);
@@ -1278,6 +1281,16 @@ public final class ImaginarySpaceService {
             InstanceState state,
             ChunkPos newCenter
     ) {
+        updateChunkWindow(player, data, state, newCenter, false);
+    }
+
+    private static void updateChunkWindow(
+            ServerPlayer player,
+            ImaginarySpaceData data,
+            InstanceState state,
+            ChunkPos newCenter,
+            boolean refillExistingWindow
+    ) {
         Set<ChunkPos> oldWindow = new HashSet<>(state.generatedChunks);
         Set<ChunkPos> newWindow = windowAround(newCenter);
         Set<ChunkPos> leaving = new HashSet<>(oldWindow);
@@ -1287,6 +1300,11 @@ public final class ImaginarySpaceService {
 
         state.windowCenterChunk = newCenter;
         state.generationCenter = player.position();
+        if (refillExistingWindow && leaving.isEmpty()) {
+            clearGeneratedContentInChunks(player.serverLevel(), state, newWindow);
+            state.queue.removeIf(task -> newWindow.contains(task.chunk));
+            state.reservedBlockPositions.removeIf(pos -> newWindow.contains(new ChunkPos(pos)));
+        }
         if (!leaving.isEmpty()) {
             clearGeneratedContentInChunks(player.serverLevel(), state, leaving);
             for (ChunkPos chunk : leaving) {
@@ -1306,15 +1324,23 @@ public final class ImaginarySpaceService {
             addInstanceTicket(player.serverLevel(), state, chunk);
         }
 
-        if (!entering.isEmpty() && data.depth() < MAX_DEPTH) {
+        if ((!entering.isEmpty() || refillExistingWindow) && data.depth() < MAX_DEPTH) {
             state.random = newRandom();
             state.depth = data.depth();
-            queueContentForChunks(state, state.generation, entering,
+            Set<ChunkPos> refillChunks = refillExistingWindow ? Set.copyOf(state.generatedChunks) : entering;
+            queueContentForChunks(state, state.generation, refillChunks,
                     scaledCount(ImaginarySpaceConfig.MAX_BLOCKS.get(), BASE_BLOCK_COUNT, state.depth),
                     scaledCount(ImaginarySpaceConfig.MAX_ITEMS.get(), BASE_ITEM_COUNT, state.depth),
                     scaledMobCount(ImaginarySpaceConfig.MAX_MOBS.get(), state.depth));
             data.markContentsGenerated();
         }
+    }
+
+    private static boolean shouldRefreshGenerationCenter(ServerPlayer player, InstanceState state) {
+        return player != null
+                && state != null
+                && isFinite(state.generationCenter)
+                && player.position().distanceToSqr(state.generationCenter) >= GENERATION_CENTER_REFRESH_DISTANCE_SQR;
     }
 
     private static Set<ChunkPos> windowAround(ChunkPos center) {
