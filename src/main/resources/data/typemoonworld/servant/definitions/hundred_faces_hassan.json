@@ -32,7 +32,7 @@
     }
   },
   "specialization": {
-    "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
+    "dimensions": {"width": 0.27, "height": 0.8, "eye_height": 0.72},
     "default_weapon": "typemoonworld:dirk_small_knife",
     "immune_to_stone_axe_debuff": false,
     "combat_actions": [

@@ -10,9 +10,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -83,7 +83,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData);
       this.ensureDefaultNpcLoadout(false);
       this.ensureDirkLoadout();
-      this.setPresenceConcealed(true);
+      this.setPresenceConcealed(false);
       return result;
    }
 
@@ -94,11 +94,12 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       long now = level.getGameTime();
       boolean exposed = now < this.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
       boolean retreating = now < this.getPersistentData().getLong(TAG_RETREAT_UNTIL);
-      boolean shouldConceal = !exposed && (this.getTarget() == null || this.distanceToSqr(this.getTarget()) > 9.0);
+      boolean shouldConceal = retreating || (!exposed && this.getTarget() != null && this.distanceToSqr(this.getTarget()) > 9.0);
       this.setPresenceConcealed(shouldConceal);
       this.applyMovementSpeed(retreating ? HundredFacesHassanRules.MAIN_RETREAT_MOVEMENT_SPEED
          : shouldConceal ? HundredFacesHassanRules.MAIN_CONCEALED_MOVEMENT_SPEED
          : HundredFacesHassanRules.MAIN_MOVEMENT_SPEED);
+      this.applySplitAttributes(false);
       if (this.tickCount % 40 == 0) this.ensureDirkLoadout();
       if (retreating && this.tickCount % 10 == 0) HundredFacesHassanCombatHelper.cleanseHarmfulEffects(this);
       if (this.tickCount % 40 == 0) HundredFacesHassanCombatHelper.rescaleOwnedPersonas(this);
@@ -147,6 +148,41 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       this.triggerNamedActionAnimation("shadow_step");
    }
 
+   public int getTotalSplitCount() {
+      return Math.max(0, Math.min(HundredFacesHassanRules.MAX_PERSONAS,
+         this.getPersistentData().getInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT)));
+   }
+
+   public int addTotalSplitCount(int amount) {
+      int total = Math.max(0, Math.min(HundredFacesHassanRules.MAX_PERSONAS, this.getTotalSplitCount() + Math.max(0, amount)));
+      this.getPersistentData().putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, total);
+      this.applySplitAttributes(false);
+      return total;
+   }
+
+   public void applySplitAttributes(boolean resetHealth) {
+      int splitCount = this.getTotalSplitCount();
+      setBase(Attributes.MAX_HEALTH, HundredFacesHassanRules.mainHealthForSplitCount(splitCount));
+      setBase(Attributes.ATTACK_DAMAGE, HundredFacesHassanRules.mainAttackDamageForSplitCount(splitCount));
+      setBase(Attributes.ARMOR, HundredFacesHassanRules.mainArmorForSplitCount(splitCount));
+      setBase(Attributes.KNOCKBACK_RESISTANCE, splitCount >= HundredFacesHassanRules.MAX_PERSONAS
+         ? HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE : 1.0);
+      if (this.getCurrentMp() > this.getMaxMp()) this.setCurrentMp(this.getMaxMp());
+      if (resetHealth || this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
+   }
+
+   public float getVisualScale() {
+      return HundredFacesHassanRules.visualScaleForHeight(HundredFacesHassanRules.MAIN_VISUAL_HEIGHT);
+   }
+
+   @Override
+   protected EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
+      return EntityDimensions.fixed(
+         HundredFacesHassanRules.widthForHeight(HundredFacesHassanRules.MAIN_VISUAL_HEIGHT),
+         HundredFacesHassanRules.collisionHeightForVisualHeight(HundredFacesHassanRules.MAIN_VISUAL_HEIGHT)
+      );
+   }
+
    private void ensureDirkLoadout() {
       ItemStack held = this.getMainHandItem();
       if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
@@ -161,15 +197,10 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    private void setPresenceConcealed(boolean concealed) {
       boolean changed = this.entityData.get(PRESENCE_CONCEALED) != concealed;
       if (changed) this.entityData.set(PRESENCE_CONCEALED, concealed);
-      this.setInvisible(concealed);
+      this.setInvisible(false);
       this.setSilent(concealed);
       this.setCustomNameVisible(!concealed);
-      if (concealed) {
-         MobEffectInstance current = this.getEffect(MobEffects.INVISIBILITY);
-         if (current == null || current.getDuration() <= 10) {
-            this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0, false, false, false));
-         }
-      } else if (this.hasEffect(MobEffects.INVISIBILITY)) {
+      if (this.hasEffect(MobEffects.INVISIBILITY)) {
          this.removeEffect(MobEffects.INVISIBILITY);
       }
    }
@@ -179,6 +210,16 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       if (attribute != null && Math.abs(attribute.getBaseValue() - speed) > 1.0E-5) {
          attribute.setBaseValue(speed);
       }
+   }
+
+   private void setBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
+      AttributeInstance instance = this.getAttribute(attribute);
+      if (instance != null && Math.abs(instance.getBaseValue() - value) > 1.0E-5) instance.setBaseValue(value);
+   }
+
+   @Override
+   public double getMaxMp() {
+      return HundredFacesHassanRules.mainManaForSplitCount(this.getTotalSplitCount());
    }
 
    @Override
@@ -203,19 +244,25 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    @Override
    public boolean hurt(DamageSource source, float amount) {
       boolean hurt = super.hurt(source, amount);
-      if (hurt) this.revealForCombat();
+      if (hurt) {
+         this.revealForCombat();
+         HundredFacesHassanCombatHelper.tryReactiveDodge(this, source);
+      }
       return hurt;
    }
 
    @Override
    public void die(DamageSource cause) {
+      if (HundredFacesHassanCombatHelper.tryTransferBodyOnLethalDamage(this, cause)) {
+         return;
+      }
       HundredFacesHassanCombatHelper.discardOwnedPersonas(this);
       super.die(cause);
    }
 
    @Override
    public boolean isInvisibleTo(net.minecraft.world.entity.player.Player player) {
-      return this.isPresenceConcealed() || super.isInvisibleTo(player);
+      return super.isInvisibleTo(player);
    }
 
    @Override
@@ -240,6 +287,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       tag.putInt("HundredFacesPersonaMode", this.entityData.get(PERSONA_MODE));
       tag.putLong(TAG_EXPOSED_UNTIL, this.getPersistentData().getLong(TAG_EXPOSED_UNTIL));
       tag.putLong(TAG_RETREAT_UNTIL, this.getPersistentData().getLong(TAG_RETREAT_UNTIL));
+      tag.putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, this.getTotalSplitCount());
    }
 
    @Override
@@ -248,8 +296,12 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       this.entityData.set(PERSONA_MODE, tag.getInt("HundredFacesPersonaMode"));
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, tag.getLong(TAG_EXPOSED_UNTIL));
       this.getPersistentData().putLong(TAG_RETREAT_UNTIL, tag.getLong(TAG_RETREAT_UNTIL));
+      this.getPersistentData().putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT,
+         tag.getInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT));
       this.setPresenceConcealed(tag.contains("HundredFacesConcealed") && tag.getBoolean("HundredFacesConcealed"));
       this.ensureDefaultNpcLoadout(false);
       this.ensureDirkLoadout();
+      this.applySplitAttributes(false);
+      this.refreshDimensions();
    }
 }

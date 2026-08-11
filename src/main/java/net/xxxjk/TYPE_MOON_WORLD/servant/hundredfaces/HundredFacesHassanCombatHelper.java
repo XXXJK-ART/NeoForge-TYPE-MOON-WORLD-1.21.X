@@ -10,9 +10,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -41,6 +44,9 @@ public final class HundredFacesHassanCombatHelper {
    private static final String LAST_STAB_COMBO_TICK = "HundredFacesLastStabComboTick";
    private static final String LAST_KNIFE_FEINT_TICK = "HundredFacesLastKnifeFeintTick";
    private static final String LAST_SHADOW_LUNGE_TICK = "HundredFacesLastShadowLungeTick";
+   private static final String LAST_REACTIVE_DODGE_TICK = "HundredFacesLastReactiveDodgeTick";
+   private static final String FOOTWORK_SIDE = "HundredFacesFootworkSide";
+   private static final String FOOTWORK_SIDE_UNTIL = "HundredFacesFootworkSideUntil";
    private static final String LAST_PERSONA_DIRK_TICK = "HundredFacesPersonaLastDirkTick";
    private static final String LAST_PERSONA_SHADOW_STEP_TICK = "HundredFacesPersonaLastShadowStepTick";
    private static final String LAST_PERSONA_SHADOW_LUNGE_TICK = "HundredFacesPersonaLastShadowLungeTick";
@@ -88,7 +94,9 @@ public final class HundredFacesHassanCombatHelper {
       if (tryKnifeFeint(entity, target, distance, now)) return;
       if (tryThrowDirk(entity, target, distance, now)) return;
       if (tryKnifeCombo(entity, target, distance, now)) return;
+      boolean footwork = applyAssassinFootwork(entity, target, distance, now);
       if (distance > 2.25) {
+         if (footwork && distance <= 5.8) return;
          boolean moving = ServantNavigationHelper.moveToTargetThrottled(entity, target, 1.12, now,
             ServantNavigationHelper.SHORT_REPATH_INTERVAL, 0.8, "HundredFacesChase");
          if (!moving) tryRepositionNearTarget(entity, target, distance, now);
@@ -97,6 +105,29 @@ public final class HundredFacesHassanCombatHelper {
          entity.triggerAssassinStabAnimation();
          entity.doHurtTarget(target);
       }
+   }
+
+   public static void tryReactiveDodge(HundredFacesHassanEntity entity, DamageSource source) {
+      if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive() || entity.isPerformingAction()) return;
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (now - data.getLong(LAST_REACTIVE_DODGE_TICK) < 28L) return;
+      Vec3 direction = dodgeDirection(entity, source);
+      if (direction.lengthSqr() < 1.0E-4) return;
+      Vec3 sidestep = direction.normalize().scale(1.15 + entity.getRandom().nextDouble() * 0.45);
+      if (!level.noCollision(entity, entity.getBoundingBox().move(sidestep.x, 0.12, sidestep.z))) {
+         sidestep = sidestep.scale(-1.0);
+         if (!level.noCollision(entity, entity.getBoundingBox().move(sidestep.x, 0.12, sidestep.z))) return;
+      }
+      data.putLong(LAST_REACTIVE_DODGE_TICK, now);
+      entity.triggerShadowStepAnimation();
+      entity.setDeltaMovement(entity.getDeltaMovement().x + sidestep.x * 0.38,
+         Math.max(entity.getDeltaMovement().y, 0.12),
+         entity.getDeltaMovement().z + sidestep.z * 0.38);
+      entity.hasImpulse = true;
+      entity.invulnerableTime = Math.max(entity.invulnerableTime, 8);
+      ServantNavigationHelper.rememberMovementWriter(entity, now, "HundredFacesReactiveDodge");
+      spawnShadowStepFx(entity);
    }
 
    public static boolean tryPersonaCombatSkill(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {
@@ -109,7 +140,8 @@ public final class HundredFacesHassanCombatHelper {
    public static int summonPersonas(HundredFacesHassanEntity owner, ServerLevel level, @Nullable LivingEntity target,
                                     HundredFacesHassanEntity.PersonaMode mode, int requested) {
       int live = countOwnedPersonas(owner);
-      int count = HundredFacesHassanRules.affordableSummonCount(owner.getCurrentMp(), live, requested);
+      int alreadySplit = owner.getTotalSplitCount();
+      int count = HundredFacesHassanRules.affordableSummonCount(owner.getCurrentMp(), alreadySplit, requested);
       if (count <= 0) return 0;
       owner.revealForCombat();
       owner.triggerNamedActionAnimation("zabaniya");
@@ -127,7 +159,7 @@ public final class HundredFacesHassanCombatHelper {
          Vec3 pos = safeSpawnPosition(owner, offset);
          float yaw = (float)Math.toDegrees(Math.atan2(-forward.x, forward.z));
          persona.moveTo(pos.x, pos.y, pos.z, yaw, 0.0F);
-         persona.initialize(owner, target, mode, live + spawned + 1);
+         persona.initialize(owner, target, mode, alreadySplit + spawned + 1);
          level.addFreshEntity(persona);
          spawned++;
          level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y + 0.9, pos.z, 12, 0.35, 0.55, 0.35, 0.02);
@@ -135,6 +167,7 @@ public final class HundredFacesHassanCombatHelper {
       if (spawned > 0) {
          level.sendParticles(ParticleTypes.SMOKE, owner.getX(), owner.getY() + 1.0, owner.getZ(),
             24, 0.8, 0.8, 0.8, 0.03);
+         owner.addTotalSplitCount(spawned);
          rescaleOwnedPersonas(owner);
       }
       return spawned;
@@ -148,9 +181,11 @@ public final class HundredFacesHassanCombatHelper {
    public static void rescaleOwnedPersonas(HundredFacesHassanEntity owner) {
       if (!(owner.level() instanceof ServerLevel level)) return;
       List<HundredFacesHassanPersonaEntity> personas = ownedPersonas(level, owner, true);
-      int live = Math.max(1, personas.size());
+      int splitCount = Math.max(1, owner.getTotalSplitCount());
+      owner.applySplitAttributes(false);
       for (HundredFacesHassanPersonaEntity persona : personas) {
-         persona.applyPersonaAttributes(live, false);
+         persona.syncOwnerCombatAttributes(owner);
+         persona.applyPersonaAttributes(splitCount, false);
       }
    }
 
@@ -159,6 +194,97 @@ public final class HundredFacesHassanCombatHelper {
       for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, owner, false)) {
          persona.discard();
       }
+   }
+
+   public static boolean tryTransferBodyOnLethalDamage(HundredFacesHassanEntity owner, DamageSource source) {
+      if (!(owner.level() instanceof ServerLevel level) || owner.getPersistentData().getBoolean("HundredFacesBodyTransferActive")) {
+         return false;
+      }
+      HundredFacesHassanPersonaEntity vessel = selectTransferVessel(level, owner);
+      if (vessel == null) return false;
+
+      owner.getPersistentData().putBoolean("HundredFacesBodyTransferActive", true);
+      CompoundTag snapshot = owner.saveWithoutId(new CompoundTag());
+      snapshot.remove("UUID");
+      HundredFacesHassanEntity replacement = ModEntities.HUNDRED_FACES_HASSAN.get().create(level);
+      if (replacement == null) {
+         owner.getPersistentData().remove("HundredFacesBodyTransferActive");
+         return false;
+      }
+
+      Vec3 vesselPos = vessel.position();
+      float vesselYaw = vessel.getYRot();
+      float vesselPitch = vessel.getXRot();
+      float recoveryHealth = Math.max(1.0F,
+         Math.min((float)owner.getMaxHealth(), Math.max(vessel.getHealth(), (float)(owner.getMaxHealth() * 0.35F))));
+      LivingEntity target = owner.getTarget();
+
+      replacement.load(snapshot);
+      replacement.moveTo(vesselPos.x, vesselPos.y, vesselPos.z, vesselYaw, vesselPitch);
+      replacement.setYBodyRot(vessel.yBodyRot);
+      replacement.setYHeadRot(vessel.getYHeadRot());
+      replacement.setDeltaMovement(Vec3.ZERO);
+      replacement.clearFire();
+      replacement.setTarget(target != null && target.isAlive() ? target : vessel.getTarget());
+      replacement.setPersonaMode(vessel.getPersonaMode());
+      replacement.getPersistentData().merge(owner.getPersistentData().copy());
+      replacement.getPersistentData().remove("HundredFacesBodyTransferActive");
+      replacement.getPersistentData().putLong("HundredFacesTransferredAt", level.getGameTime());
+      replacement.setCurrentMp(owner.getCurrentMp());
+      replacement.applySplitAttributes(false);
+      replacement.setHealth(recoveryHealth);
+      replacement.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
+      replacement.setPersistenceRequired();
+      replacement.refreshDimensions();
+
+      vessel.discard();
+      owner.remove(RemovalReason.DISCARDED);
+      if (!level.addFreshEntity(replacement)) {
+         owner.getPersistentData().remove("HundredFacesBodyTransferActive");
+         return false;
+      }
+
+      reassignOwnedPersonas(level, owner.getUUID(), replacement.getUUID());
+      rescaleOwnedPersonas(replacement);
+      retargetEnemies(level, owner, replacement);
+      playBodyTransferEffects(level, owner.position(), vesselPos);
+      return true;
+   }
+
+   @Nullable
+   private static HundredFacesHassanPersonaEntity selectTransferVessel(ServerLevel level, HundredFacesHassanEntity owner) {
+      return ownedPersonas(level, owner, true).stream()
+         .max(Comparator.comparingDouble(HundredFacesHassanPersonaEntity::getHealth)
+            .thenComparingDouble(persona -> -persona.distanceToSqr(owner)))
+         .orElse(null);
+   }
+
+   private static void reassignOwnedPersonas(ServerLevel level, java.util.UUID oldOwner, java.util.UUID newOwner) {
+      for (Entity entity : level.getEntities().getAll()) {
+         if (entity instanceof HundredFacesHassanPersonaEntity persona && oldOwner.equals(persona.getOwnerUuid())) {
+            persona.setOwnerUuid(newOwner);
+         }
+      }
+   }
+
+   private static void retargetEnemies(ServerLevel level, HundredFacesHassanEntity oldOwner, HundredFacesHassanEntity replacement) {
+      for (Mob mob : level.getEntitiesOfClass(Mob.class, replacement.getBoundingBox().inflate(96.0))) {
+         if (mob.getTarget() == oldOwner) mob.setTarget(replacement);
+         if (mob.getLastHurtByMob() == oldOwner) mob.setLastHurtByMob(replacement);
+      }
+   }
+
+   private static void playBodyTransferEffects(ServerLevel level, Vec3 oldPos, Vec3 newPos) {
+      level.sendParticles(ParticleTypes.SQUID_INK, oldPos.x, oldPos.y + 0.8, oldPos.z,
+         30, 0.45, 0.55, 0.45, 0.03);
+      level.sendParticles(ParticleTypes.SMOKE, oldPos.x, oldPos.y + 0.6, oldPos.z,
+         24, 0.55, 0.45, 0.55, 0.035);
+      level.sendParticles(ParticleTypes.SOUL, newPos.x, newPos.y + 0.6, newPos.z,
+         24, 0.45, 0.7, 0.45, 0.04);
+      level.sendParticles(ParticleTypes.POOF, newPos.x, newPos.y + 0.5, newPos.z,
+         18, 0.45, 0.45, 0.45, 0.04);
+      level.playSound(null, BlockPos.containing(newPos), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 0.8F, 1.3F);
+      level.playSound(null, BlockPos.containing(oldPos), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 0.75F, 1.45F);
    }
 
    private static List<HundredFacesHassanPersonaEntity> ownedPersonas(ServerLevel level, HundredFacesHassanEntity owner,
@@ -195,7 +321,7 @@ public final class HundredFacesHassanCombatHelper {
       entity.setCurrentMp(entity.getCurrentMp() - HundredFacesHassanRules.MP_DIRK_THROW);
       entity.revealForCombat();
       entity.triggerDirkThrowAnimation();
-      spawnDirkProjectile(entity, target, HundredFacesHassanRules.MAIN_DIRK_DAMAGE, 1.9F);
+      spawnDirkProjectile(entity, target, (float)entity.getAttributeValue(Attributes.ATTACK_DAMAGE), 1.9F);
       return true;
    }
 
@@ -307,7 +433,7 @@ public final class HundredFacesHassanCombatHelper {
       if (!personaCooldownReady(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.PERSONA_DIRK_COOLDOWN_TICKS)) return false;
       entity.revealForCombat();
       entity.triggerDirkThrowAnimation();
-      spawnDirkProjectile(entity, target, HundredFacesHassanRules.PERSONA_DIRK_DAMAGE, 1.75F);
+      spawnDirkProjectile(entity, target, (float)entity.getAttributeValue(Attributes.ATTACK_DAMAGE), 1.75F);
       return true;
    }
 
@@ -315,7 +441,7 @@ public final class HundredFacesHassanCombatHelper {
       if (distance < 2.2 || distance > 5.8 || !entity.getSensing().hasLineOfSight(target)) return false;
       if (!personaCooldownReady(entity, LAST_PERSONA_SHADOW_LUNGE_TICK, now, HundredFacesHassanRules.PERSONA_SHADOW_LUNGE_COOLDOWN_TICKS)) return false;
       entity.revealForCombat();
-      doShadowLunge(entity, target, 1.25, 0.78F);
+      doShadowLunge(entity, target, 1.45, 1.0F);
       return true;
    }
 
@@ -325,9 +451,63 @@ public final class HundredFacesHassanCombatHelper {
       if (!teleportBehind(entity, target, 1.2)) return false;
       entity.revealForCombat();
       entity.triggerShadowStepAnimation();
-      dealScaledKnifeDamage(entity, target, 1.05F);
+      dealScaledKnifeDamage(entity, target, entity.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.ASSASSINATION ? 1.45F : 1.25F);
       spawnBackstabFx(entity, target);
       return true;
+   }
+
+   private static boolean applyAssassinFootwork(HundredFacesHassanEntity entity, LivingEntity target, double distance, long now) {
+      if (target == null || !target.isAlive() || entity.isPerformingAction() || distance > 7.0) return false;
+      if (!ServantNavigationHelper.movementAvailable(entity, now, "HundredFacesFootwork")) return false;
+      CompoundTag data = entity.getPersistentData();
+      if (!data.contains(FOOTWORK_SIDE) || now >= data.getLong(FOOTWORK_SIDE_UNTIL)) {
+         int side = data.contains(FOOTWORK_SIDE) ? -data.getInt(FOOTWORK_SIDE)
+            : (entity.getRandom().nextBoolean() ? 1 : -1);
+         data.putInt(FOOTWORK_SIDE, side == 0 ? 1 : side);
+         data.putLong(FOOTWORK_SIDE_UNTIL, now + 14L + entity.getRandom().nextInt(18));
+      }
+
+      entity.getNavigation().stop();
+      entity.getLookControl().setLookAt(target, 70.0F, 60.0F);
+      entity.faceToward(target.position());
+      int side = data.getInt(FOOTWORK_SIDE);
+      float forward = distance < 1.8 ? -0.34F : distance > 4.8 ? 0.34F : 0.08F;
+      float lateral = side * (distance < 2.8 ? 0.78F : 0.62F);
+      entity.getMoveControl().strafe(forward, lateral);
+
+      Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (toward.lengthSqr() > 1.0E-4) {
+         Vec3 direction = toward.normalize();
+         Vec3 right = new Vec3(-direction.z, 0.0, direction.x).scale(side);
+         Vec3 desired = direction.scale(distance > 4.8 ? 0.12 : distance < 1.8 ? -0.10 : 0.02)
+            .add(right.scale(0.18 + Math.min(0.10, entity.getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.25)));
+         if (entity.level().noCollision(entity, entity.getBoundingBox().move(desired.x, 0.0, desired.z))) {
+            Vec3 motion = entity.getDeltaMovement();
+            entity.setDeltaMovement(motion.x * 0.72 + desired.x, motion.y, motion.z * 0.72 + desired.z);
+            entity.hasImpulse = true;
+         }
+      }
+      ServantNavigationHelper.rememberMovementWriter(entity, now, "HundredFacesFootwork");
+      return true;
+   }
+
+   private static Vec3 dodgeDirection(HundredFacesHassanEntity entity, DamageSource source) {
+      Vec3 threat = source.getSourcePosition();
+      if (threat == null && source.getEntity() != null) threat = source.getEntity().position();
+      Vec3 away = threat == null ? Vec3.ZERO : entity.position().subtract(threat).multiply(1.0, 0.0, 1.0);
+      LivingEntity target = entity.getTarget();
+      if (target != null && target.isAlive()) {
+         Vec3 towardTarget = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+         if (towardTarget.lengthSqr() > 1.0E-4) {
+            Vec3 side = new Vec3(-towardTarget.z, 0.0, towardTarget.x)
+               .scale(entity.getRandom().nextBoolean() ? 1.0 : -1.0);
+            if (away.lengthSqr() > 1.0E-4 && side.dot(away) < 0.0) side = side.scale(-1.0);
+            return side.add(away.lengthSqr() > 1.0E-4 ? away.normalize().scale(0.45) : Vec3.ZERO);
+         }
+      }
+      if (away.lengthSqr() > 1.0E-4) return away;
+      double angle = entity.getRandom().nextDouble() * Math.PI * 2.0;
+      return new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
    }
 
    private static boolean shouldRetreat(HundredFacesHassanEntity entity, LivingEntity target,
@@ -348,7 +528,9 @@ public final class HundredFacesHassanCombatHelper {
    }
 
    private static void maybeSummonScouts(HundredFacesHassanEntity entity, ServerLevel level, long now) {
-      if (now - entity.getPersistentData().getLong(LAST_SWARM) < 200L || countOwnedPersonas(entity) >= 5) return;
+      if (now - entity.getPersistentData().getLong(LAST_SWARM) < 200L
+         || countOwnedPersonas(entity) >= 5
+         || entity.getTotalSplitCount() >= HundredFacesHassanRules.MAX_PERSONAS) return;
       summonPersonas(entity, level, null, HundredFacesHassanEntity.PersonaMode.SCOUT, 3);
    }
 

@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
@@ -39,7 +41,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
                       MultiBufferSource buffers, int packedLight) {
       if (ServantCardConcealmentClient.isPerfectlyConcealed(entity)) return;
       this.renderPartialTick = partialTick;
-      float scale = visualScale(entity.getServantId());
+      float scale = visualScale(entity);
       if (scale == 1.0F) {
          super.render(entity, yaw, partialTick, poseStack, buffers, packedLight);
          return;
@@ -67,6 +69,12 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
    @Override
    protected float getFlipDegrees(T livingEntity) {
       return livingEntity.isSpiritualDissolving() ? 0.0F : super.getFlipDegrees(livingEntity);
+   }
+
+   private static float visualScale(ServantEntity entity) {
+      if (entity instanceof HundredFacesHassanPersonaEntity persona) return persona.getVisualScale();
+      if (entity instanceof HundredFacesHassanEntity hassan) return hassan.getVisualScale();
+      return visualScale(entity.getServantId());
    }
 
    private static float visualScale(String servantId) {

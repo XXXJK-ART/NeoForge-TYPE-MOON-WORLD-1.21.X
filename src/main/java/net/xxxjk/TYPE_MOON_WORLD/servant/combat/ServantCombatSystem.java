@@ -21,7 +21,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -38,9 +37,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -96,7 +98,7 @@ public final class ServantCombatSystem {
 
       long now = entity.level().getGameTime();
       ServantDefinition definition = entity.getDefinition();
-      ServantParams params = definition != null ? definition.parameters() : null;
+      ServantParams params = effectiveParams(entity, definition);
       CompoundTag data = entity.getPersistentData();
       initializeResources(entity, data, params);
       tickResourceRegen(entity, data, params, now);
@@ -194,7 +196,7 @@ public final class ServantCombatSystem {
       }
 
       ServantDefinition definition = servant.getDefinition();
-      ServantParams params = definition != null ? definition.parameters() : null;
+      ServantParams params = effectiveParams(servant, definition);
       if (now < data.getLong(TAG_STUN_UNTIL) && data.getBoolean(TAG_PREFIX + "GuardBroken")) {
          event.setAmount((float)(event.getAmount() * (1.0 + ServantCombatFormulas.guardBreakDamageBonus(params))));
       }
@@ -303,7 +305,7 @@ public final class ServantCombatSystem {
       if (entity == null) return 0.0;
       CompoundTag data = entity.getPersistentData();
       if (!data.contains(TAG_STAMINA)) {
-         initializeResources(entity, data, entity.getDefinition() == null ? null : entity.getDefinition().parameters());
+         initializeResources(entity, data, effectiveParams(entity, entity.getDefinition()));
       }
       return Math.max(0.0, data.getDouble(TAG_STAMINA));
    }
@@ -437,8 +439,12 @@ public final class ServantCombatSystem {
       if (speed == null) {
          return;
       }
+      if (entity instanceof HundredFacesHassanEntity || entity instanceof HundredFacesHassanPersonaEntity) {
+         speed.removeModifier(SPEED_ID);
+         return;
+      }
       double targetSpeed = data.getLong(TAG_LAST_COMBAT_TICK) > 0 && now - data.getLong(TAG_LAST_COMBAT_TICK) < OUT_OF_COMBAT_RESET_TICKS
-         ? ServantCombatFormulas.combatMovementSpeed(definition != null ? definition.parameters() : null)
+         ? ServantCombatFormulas.combatMovementSpeed(effectiveParams(entity, definition))
          : ServantCombatFormulas.OUT_OF_COMBAT_SPEED;
       double base = speed.getBaseValue();
       updateAttributeModifier(speed, SPEED_ID, targetSpeed - base, AttributeModifier.Operation.ADD_VALUE);
@@ -448,8 +454,8 @@ public final class ServantCombatSystem {
       if (!(entity instanceof GilgameshEntity)) {
          data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
       }
-      data.putDouble(TAG_STAMINA, ServantCombatFormulas.staminaMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null));
-      data.putDouble(TAG_POISE, adjustedPoiseMax(entity.getDefinition() != null ? entity.getDefinition().parameters() : null, entity));
+      data.putDouble(TAG_STAMINA, ServantCombatFormulas.staminaMax(effectiveParams(entity, entity.getDefinition())));
+      data.putDouble(TAG_POISE, adjustedPoiseMax(effectiveParams(entity, entity.getDefinition()), entity));
       data.remove(TAG_LAST_COMBAT_TICK);
       data.remove(TAG_STUN_UNTIL);
       data.remove(TAG_INVULN_UNTIL);
@@ -464,13 +470,17 @@ public final class ServantCombatSystem {
       data.remove(TAG_LAST_KNOCKBACK_TICK);
       AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed != null) {
+         if (entity instanceof HundredFacesHassanEntity || entity instanceof HundredFacesHassanPersonaEntity) {
+            speed.removeModifier(SPEED_ID);
+            return;
+         }
          double base = speed.getBaseValue();
          updateAttributeModifier(speed, SPEED_ID, ServantCombatFormulas.OUT_OF_COMBAT_SPEED - base, AttributeModifier.Operation.ADD_VALUE);
       }
    }
 
    private static void performLauncher(ServantEntity attacker, LivingEntity target, float damageScale) {
-      ServantParams params = attacker.getDefinition().parameters();
+      ServantParams params = effectiveParams(attacker, attacker.getDefinition());
       attacker.getNavigation().stop();
       triggerLauncherAnimation(attacker);
       float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.8F * damageScale);
@@ -555,7 +565,7 @@ public final class ServantCombatSystem {
          return false;
       }
       long now = defender.level().getGameTime();
-      ServantParams params = defender.getDefinition() != null ? defender.getDefinition().parameters() : null;
+      ServantParams params = effectiveParams(defender, defender.getDefinition());
       if (tryAutoDodge(defender, attacker.damageSources().mobAttack(attacker), params, now)
          || tryAutoBlock(defender, attacker.damageSources().mobAttack(attacker), 1.0F, params, now) != null) {
          applyStun(attacker, 10);
@@ -652,7 +662,7 @@ public final class ServantCombatSystem {
       }
       ServantDefinition definition = responder.getDefinition();
       ServantSpecialization specialization = definition != null ? definition.specialization() : ServantSpecialization.empty();
-      ServantParams params = definition != null ? definition.parameters() : null;
+      ServantParams params = effectiveParams(responder, definition);
       if (skillsSuppressed(responder) || cannotAct(responder)) {
          return;
       }
@@ -696,7 +706,7 @@ public final class ServantCombatSystem {
       }
       float total = data.getFloat(TAG_DAMAGE_THIS_SECOND) + amount;
       data.putFloat(TAG_DAMAGE_THIS_SECOND, total);
-      ServantParams params = servant.getDefinition() != null ? servant.getDefinition().parameters() : null;
+      ServantParams params = effectiveParams(servant, servant.getDefinition());
       if (total > ServantCombatFormulas.damageSuppressionThreshold(params)) {
          data.putLong(TAG_SUPPRESSED_UNTIL, second * 20L + 20L);
       }
@@ -714,7 +724,7 @@ public final class ServantCombatSystem {
       double poise = Math.max(0.0, data.getDouble(TAG_POISE) - amount);
       data.putDouble(TAG_POISE, poise);
       if (poise <= 0.0) {
-         ServantParams params = servant.getDefinition() != null ? servant.getDefinition().parameters() : null;
+         ServantParams params = effectiveParams(servant, servant.getDefinition());
          data.putBoolean(TAG_PREFIX + "GuardBroken", true);
          data.putLong(TAG_STUN_UNTIL, now + ServantCombatFormulas.guardBreakTicks(params));
          data.putDouble(TAG_POISE, adjustedPoiseMax(params, servant) * 0.5);
@@ -950,7 +960,7 @@ public final class ServantCombatSystem {
    }
 
    private static double terrainBreakScale(ServantEntity entity) {
-      ServantParams params = entity.getDefinition() != null ? entity.getDefinition().parameters() : null;
+      ServantParams params = effectiveParams(entity, entity.getDefinition());
       if (params == null) {
          return 1.0;
       }
@@ -1015,6 +1025,17 @@ public final class ServantCombatSystem {
       return definition != null && definition.classType() == ServantClassType.BERSERKER;
    }
 
+   private static ServantParams effectiveParams(ServantEntity entity, ServantDefinition definition) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) {
+         return HundredFacesHassanRules.PERSONA_E_RANK_PARAMS;
+      }
+      if (entity instanceof HundredFacesHassanEntity hundredFaces) {
+         ServantParams params = definition != null ? definition.parameters() : HundredFacesHassanRules.MAIN_FULL_PARAMS;
+         return HundredFacesHassanRules.mainCombatParamsForSplitCount(hundredFaces.getTotalSplitCount(), params);
+      }
+      return definition != null ? definition.parameters() : null;
+   }
+
    private static double adjustedPoiseMax(ServantParams params, ServantEntity entity) {
       double poiseMax = ServantCombatFormulas.poiseMax(params);
       return entity != null && LiShuwenCombatHelper.hasChineseMartialArts(entity) ? poiseMax * 2.0 : poiseMax;
@@ -1022,6 +1043,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
+      if (entity instanceof HundredFacesHassanPersonaEntity) {
+         return poiseRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
+      }
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedPoiseRecovery(poiseRegen);
       }
@@ -1033,6 +1057,9 @@ public final class ServantCombatSystem {
 
    private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
       double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
+      if (entity instanceof HundredFacesHassanPersonaEntity) {
+         return staminaRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
+      }
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
       }

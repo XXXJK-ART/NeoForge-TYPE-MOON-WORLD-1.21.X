@@ -81,18 +81,43 @@ class HundredFacesHassanResourcesTest {
    }
 
    @Test
+   void entityNamesOmitClassButSpawnEggsKeepClass() throws IOException {
+      JsonObject zh = jsonAsset("assets/typemoonworld/lang/zh_cn.json");
+      JsonObject en = jsonAsset("assets/typemoonworld/lang/en_us.json");
+      assertEquals("百貌哈桑", zh.get("entity.typemoonworld.hundred_faces_hassan").getAsString());
+      assertEquals("狂信子", zh.get("entity.typemoonworld.fanatic_assassin").getAsString());
+      assertEquals("百貌哈桑（Assassin）刷怪蛋", zh.get("item.typemoonworld.hundred_faces_hassan_spawn_egg").getAsString());
+      assertEquals("狂信子（Assassin）刷怪蛋", zh.get("item.typemoonworld.fanatic_assassin_spawn_egg").getAsString());
+      assertEquals("Hassan of the Hundred Faces", en.get("entity.typemoonworld.hundred_faces_hassan").getAsString());
+      assertEquals("Fanatic", en.get("entity.typemoonworld.fanatic_assassin").getAsString());
+      assertEquals("Hassan of the Hundred Faces (Assassin) Spawn Egg", en.get("item.typemoonworld.hundred_faces_hassan_spawn_egg").getAsString());
+      assertEquals("Fanatic (Assassin) Spawn Egg", en.get("item.typemoonworld.fanatic_assassin_spawn_egg").getAsString());
+   }
+
+   @Test
    void personaImplementationPreservesNoMindLinkAndNonDecayingAttackSpeed() throws IOException {
       String rules = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanRules.java");
       String persona = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanPersonaEntity.java");
       String helper = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
-      assertTrue(rules.contains("PERSONA_ATTACK_DAMAGE = 7.0"));
-      assertTrue(rules.contains("PERSONA_MOVEMENT_SPEED = 0.23"));
+      assertTrue(rules.contains("PERSONA_ATTACK_DAMAGE = 5.0"));
+      assertTrue(rules.contains("PERSONA_MOVEMENT_SPEED = 0.36"));
+      assertTrue(rules.contains("PERSONA_MIN_HEALTH = 20.0"));
+      assertTrue(rules.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 0.5"));
+      assertTrue(rules.contains("TAG_TOTAL_SPLIT_COUNT"));
+      assertTrue(rules.contains("mainHealthForSplitCount"));
+      assertTrue(rules.contains("mainAttackDamageForSplitCount"));
       assertTrue(persona.contains("resolveLocalTarget"));
       assertTrue(persona.contains("targetUuid"));
+      assertTrue(persona.contains("personaAttackDamageForCount"));
       assertTrue(rules.contains("MAX_SUMMON_BATCH = 10"));
       assertTrue(helper.contains("affordableSummonCount"));
       assertTrue(helper.contains("countOwnedPersonas"));
       assertTrue(helper.contains("rescaleOwnedPersonas"));
+      assertTrue(helper.contains("getTotalSplitCount"));
+      String combat = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/combat/ServantCombatSystem.java");
+      assertTrue(combat.contains("HundredFacesHassanPersonaEntity"));
+      assertTrue(combat.contains("HundredFacesHassanEntity"));
+      assertTrue(combat.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER"));
    }
 
    @Test
@@ -108,7 +133,10 @@ class HundredFacesHassanResourcesTest {
       }
       assertTrue(helper.contains("DirkProjectileEntity"));
       assertTrue(helper.contains("tryPersonaCombatSkill"));
+      assertTrue(helper.contains("applyAssassinFootwork"));
+      assertTrue(helper.contains("tryReactiveDodge"));
       assertTrue(entity.contains("DIRK_SMALL_KNIFE"));
+      assertTrue(entity.contains("tryReactiveDodge(this, source)"));
       assertTrue(persona.contains("DIRK_SMALL_KNIFE"));
    }
 
@@ -146,6 +174,8 @@ class HundredFacesHassanResourcesTest {
       assertTrue(skills.contains("COMMAND_RECALL"));
       assertTrue(skills.contains("COMMAND_SCATTER"));
       assertTrue(skills.contains("COMMAND_ATTACK_TOGGLE"));
+      assertTrue(skills.contains("totalSplitCount"));
+      assertTrue(skills.contains("applyBodySplitAttributes"));
       assertTrue(persona.contains("initialize(ServerPlayer owner"));
       assertTrue(persona.contains("getOwnerPlayer"));
       assertTrue(persona.contains("notifyPersonaDeath"));
@@ -161,6 +191,10 @@ class HundredFacesHassanResourcesTest {
    }
 
    private static JsonObject json(String path) throws IOException {
+      return JsonParser.parseString(Files.readString(RESOURCES.resolve(path), StandardCharsets.UTF_8)).getAsJsonObject();
+   }
+
+   private static JsonObject jsonAsset(String path) throws IOException {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(path), StandardCharsets.UTF_8)).getAsJsonObject();
    }
 

@@ -1,7 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
 import javax.annotation.Nullable;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.LivingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
@@ -20,7 +23,9 @@ public final class ServantCombatService {
       double zoneABuffMultiplier
    ) {
       ServantDefinition attackerDef = attacker.getDefinition();
-      double attackerAttack = attackerDef != null ? attackerDef.parameters().attackDamage() : 5.0;
+      double attackerAttack = attacker instanceof HundredFacesHassanEntity || attacker instanceof HundredFacesHassanPersonaEntity
+         ? attacker.getAttributeValue(Attributes.ATTACK_DAMAGE)
+         : attackerDef != null ? attackerDef.parameters().attackDamage() : 5.0;
       ServantFaction attackerFaction = attackerDef != null ? attackerDef.faction() : null;
       java.util.List<ServantTraitTag> attackerTraits = attackerDef != null ? attackerDef.traits() : java.util.Collections.emptyList();
 

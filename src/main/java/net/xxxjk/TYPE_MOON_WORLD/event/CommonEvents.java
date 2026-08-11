@@ -102,7 +102,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -604,6 +606,14 @@ public class CommonEvents {
                   return;
                }
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
+                  return;
+               }
+               if (vars.servant_card_transformed
+                  && "hundred_faces_hassan".equals(vars.servant_card_id)
+                  && player.getHealth() - event.getAmount() <= 0.0F
+                  && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
                   return;
                }
                if (vars.servant_card_transformed
@@ -1266,6 +1276,14 @@ public class CommonEvents {
 
       // --- 战斗续行 A：致死时保留 1HP + 5s 无敌，5min CD ---
       // 斩断因果时跳过
+      if (!causalSevered && servant instanceof HundredFacesHassanEntity hundredFaces
+         && servant.getHealth() - event.getAmount() <= 0
+         && HundredFacesHassanCombatHelper.tryTransferBodyOnLethalDamage(hundredFaces, event.getSource())) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return;
+      }
+
       double battleContinuationRatio = servant instanceof EmiyaArcherEntity
          ? EMIYA_BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO
          : BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO;

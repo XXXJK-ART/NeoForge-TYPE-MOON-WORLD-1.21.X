@@ -43,11 +43,11 @@ public class ClippedEntityRenderType extends RenderType {
                : GameRenderer.getRendertypeEntityTranslucentShader()))
             .setTextureState(new TextureStateShard(texture, false, false))
             .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-            .setCullState(RenderStateShard.NO_CULL)
+            .setCullState(RenderStateShard.CULL)
             .setLightmapState(RenderStateShard.LIGHTMAP)
             .setOverlayState(RenderStateShard.OVERLAY)
             .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-            .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+            .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
             .setTexturingState(clippingState)
             .createCompositeState(false)
       );

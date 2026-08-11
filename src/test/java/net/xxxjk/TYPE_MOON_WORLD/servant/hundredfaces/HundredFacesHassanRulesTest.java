@@ -18,22 +18,52 @@ class HundredFacesHassanRulesTest {
    }
 
    @Test
-   void personaAttackAndSpeedDoNotDecayWithCount() {
+   void mainBodyAlsoWeakensByTotalSplitCount() {
+      assertEquals(200.0, HundredFacesHassanRules.mainHealthForSplitCount(0), 1.0E-9);
+      assertEquals(15.0, HundredFacesHassanRules.mainAttackDamageForSplitCount(0), 1.0E-9);
+      assertEquals(6.0, HundredFacesHassanRules.mainArmorForSplitCount(0), 1.0E-9);
+      assertEquals(600.0, HundredFacesHassanRules.mainManaForSplitCount(0), 1.0E-9);
+      assertTrue(HundredFacesHassanRules.mainHealthForSplitCount(40) < HundredFacesHassanRules.mainHealthForSplitCount(10));
+      assertTrue(HundredFacesHassanRules.mainAttackDamageForSplitCount(40) < HundredFacesHassanRules.mainAttackDamageForSplitCount(10));
+      assertEquals(HundredFacesHassanRules.personaHealthForCount(80), HundredFacesHassanRules.mainHealthForSplitCount(80), 1.0E-9);
+      assertEquals(HundredFacesHassanRules.personaAttackDamageForCount(80), HundredFacesHassanRules.mainAttackDamageForSplitCount(80), 1.0E-9);
+      assertEquals(HundredFacesHassanRules.personaArmorForCount(80), HundredFacesHassanRules.mainArmorForSplitCount(80), 1.0E-9);
+      assertEquals(200.0, HundredFacesHassanRules.mainManaForSplitCount(80), 1.0E-9);
+   }
+
+   @Test
+   void personaAttackDecaysButSpeedDoesNotDecayWithCount() {
+      assertEquals(15.0, HundredFacesHassanRules.personaAttackDamageForCount(1), 1.0E-9);
+      assertTrue(HundredFacesHassanRules.personaAttackDamageForCount(10) < HundredFacesHassanRules.personaAttackDamageForCount(1));
+      assertEquals(5.0, HundredFacesHassanRules.personaAttackDamageForCount(80), 1.0E-9);
       for (int liveCount : new int[] {1, 10, 80}) {
-         assertEquals(7.0, HundredFacesHassanRules.PERSONA_ATTACK_DAMAGE);
-         assertEquals(0.23, HundredFacesHassanRules.PERSONA_MOVEMENT_SPEED);
-         assertTrue(HundredFacesHassanRules.personaHealthForCount(liveCount) >= HundredFacesHassanRules.PERSONA_MIN_HEALTH);
-         assertTrue(HundredFacesHassanRules.personaArmorForCount(liveCount) >= HundredFacesHassanRules.PERSONA_MIN_ARMOR);
+         assertEquals(HundredFacesHassanRules.MAIN_MOVEMENT_SPEED, HundredFacesHassanRules.PERSONA_MOVEMENT_SPEED);
       }
    }
 
    @Test
    void personaDurabilityDecaysButStaysThreateningAtFullSwarm() {
       assertEquals(100.0, HundredFacesHassanRules.personaHealthForCount(1), 1.0E-9);
-      assertEquals(4.0, HundredFacesHassanRules.personaArmorForCount(1), 1.0E-9);
-      assertEquals(100.0, HundredFacesHassanRules.personaHealthForCount(10), 1.0E-9);
-      assertTrue(HundredFacesHassanRules.personaArmorForCount(10) < HundredFacesHassanRules.personaArmorForCount(1));
-      assertEquals(100.0, HundredFacesHassanRules.personaHealthForCount(80), 1.0E-9);
+      assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(1), 1.0E-9);
+      assertTrue(HundredFacesHassanRules.personaHealthForCount(10) < HundredFacesHassanRules.personaHealthForCount(1));
+      assertEquals(20.0, HundredFacesHassanRules.personaHealthForCount(80), 1.0E-9);
       assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(80), 1.0E-9);
+   }
+
+   @Test
+   void personaNonSpeedRanksUseELevelBaseline() {
+      assertEquals(5.0F, HundredFacesHassanRules.PERSONA_DIRK_DAMAGE, 1.0E-6F);
+      assertEquals(5.0, HundredFacesHassanRules.PERSONA_ATTACK_DAMAGE, 1.0E-9);
+      assertEquals(200.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.manaPool(), 1.0E-9);
+      assertEquals(2.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.critRatePercent(), 1.0E-9);
+      assertEquals(0.5, HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER, 1.0E-9);
+   }
+
+   @Test
+   void visualHeightIsRelativeToSteveScale() {
+      assertEquals(0.8F, HundredFacesHassanRules.visualScaleForHeight(0.8F), 1.0E-6F);
+      assertEquals(1.0F, HundredFacesHassanRules.visualScaleForHeight(1.0F), 1.0E-6F);
+      assertEquals(1.44F, HundredFacesHassanRules.collisionHeightForVisualHeight(0.8F), 1.0E-6F);
+      assertEquals(1.8F, HundredFacesHassanRules.collisionHeightForVisualHeight(1.0F), 1.0E-6F);
    }
 }
