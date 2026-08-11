@@ -15,4 +15,9 @@ class MagicDisplayMetadataChurchTest {
          assertFalse(MagicDisplayMetadata.canEnterMagicCrest(id));
       }
    }
+
+   @Test
+   void manaBurstCanEnterMagicCrest() {
+      assertTrue(MagicDisplayMetadata.canEnterMagicCrest("mana_burst"));
+   }
 }

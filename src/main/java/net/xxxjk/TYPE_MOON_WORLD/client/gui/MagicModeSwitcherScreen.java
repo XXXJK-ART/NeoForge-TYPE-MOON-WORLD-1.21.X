@@ -43,10 +43,12 @@ public class MagicModeSwitcherScreen extends Screen {
    private boolean isClosing = false;
    private boolean isReinforcement = false;
    private boolean isGravity = false;
+   private boolean isManaBurst = false;
    private int reinforcementStage = 0;
    private int selectedTarget = 0;
    private int selectedBodyPart = 0;
    private int gravityStage = 0;
+   private int manaBurstStage = 0;
 
    public MagicModeSwitcherScreen(int currentMode) {
       super(Component.translatable("gui.typemoonworld.mode_switcher.title"));
@@ -58,6 +60,7 @@ public class MagicModeSwitcherScreen extends Screen {
       this.modeIds.clear();
       this.isReinforcement = false;
       this.isGravity = false;
+      this.isManaBurst = false;
       Player player = Minecraft.getInstance().player;
       if (player != null) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -125,6 +128,18 @@ public class MagicModeSwitcherScreen extends Screen {
                this.addMode(0, Component.translatable("gui.typemoonworld.mode.gravity.normal"));
                this.addMode(1, Component.translatable("gui.typemoonworld.mode.gravity.heavy"));
                this.addMode(2, Component.translatable("gui.typemoonworld.mode.gravity.ultra_heavy"));
+            }
+         } else if ("mana_burst".equals(currentMagic)) {
+            this.isManaBurst = true;
+            if (this.manaBurstStage == 0) {
+               this.addMode(0, Component.translatable("gui.typemoonworld.mode.mana_burst.weapon"));
+               this.addMode(1, Component.translatable("gui.typemoonworld.mode.mana_burst.body"));
+               this.addMode(2, Component.translatable("gui.typemoonworld.mode.mana_burst.direct"));
+            } else {
+               int maxLevel = Math.max(1, Math.min(5, 1 + (int)(vars.magic_proficiencies.getOrDefault("mana_burst", 0.0) / 20.0)));
+               for (int i = 1; i <= maxLevel; i++) {
+                  this.addMode(i, Component.translatable("gui.typemoonworld.mode.level", i));
+               }
             }
          }
       }
@@ -196,7 +211,8 @@ public class MagicModeSwitcherScreen extends Screen {
          if (!isDown
             && !this.isClosing
             && (!this.isReinforcement || this.reinforcementStage != 1 && this.reinforcementStage != 2 && this.reinforcementStage != 3)
-            && (!this.isGravity || this.gravityStage != 1)) {
+            && (!this.isGravity || this.gravityStage != 1)
+            && (!this.isManaBurst || this.manaBurstStage != 1)) {
             this.closeAndSelect();
          }
       }
@@ -270,6 +286,21 @@ public class MagicModeSwitcherScreen extends Screen {
             this.initModes(vars.gravity_magic_mode);
          } else {
             PacketDistributor.sendToServer(new MagicModeSwitchMessage(7, selectedIdx), new CustomPacketPayload[0]);
+            this.isClosing = true;
+            this.onClose();
+         }
+      } else if (this.isManaBurst) {
+         int selectedId = 0;
+         if (this.selectedIndex >= 0 && this.selectedIndex < this.modeIds.size()) {
+            selectedId = this.modeIds.get(this.selectedIndex);
+         }
+         if (this.manaBurstStage == 0) {
+            PacketDistributor.sendToServer(new MagicModeSwitchMessage(11, selectedId), new CustomPacketPayload[0]);
+            this.manaBurstStage = 1;
+            this.initModes(0);
+            this.selectedIndex = 0;
+         } else {
+            PacketDistributor.sendToServer(new MagicModeSwitchMessage(12, selectedId), new CustomPacketPayload[0]);
             this.isClosing = true;
             this.onClose();
          }

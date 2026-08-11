@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ManaBurstInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
@@ -129,6 +130,7 @@ public class TypeMoonWorldModKeyMappings {
       private static float lastServantFlightForward = Float.NaN;
       private static float lastServantFlightStrafe = Float.NaN;
       private static float lastServantFlightVertical = Float.NaN;
+      private static int manaBurstInputSendDelay = 0;
       private static int paleRiderInputSendDelay = 0;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
@@ -354,6 +356,7 @@ public class TypeMoonWorldModKeyMappings {
             localCastingArm = resolveLocalCastingArm(player);
             syncProjectionSelectionFromCurrentCrestPreset(player, vars);
             updateMachineGunFiringPose(vars);
+            syncManaBurstInput(player, vars);
             StructuralProjectionPlacementClient.cancelIfInvalid(vars);
             boolean suppressScreens = ReplayUiSuppressor.shouldSuppressTypeMoonScreens();
             if (vars.master_active) {
@@ -407,6 +410,11 @@ public class TypeMoonWorldModKeyMappings {
                               PacketDistributor.sendToServer(new MagicModeSwitchMessage(10, -1), new CustomPacketPayload[0]);
                            }
                            isModeSwitchDown = true;
+                        } else if ("mana_burst".equals(currentMagic)) {
+                           if (!suppressScreens && Minecraft.getInstance().screen == null) {
+                              Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(0));
+                              isModeSwitchDown = true;
+                           }
                         }
                      } else if (!suppressScreens && Minecraft.getInstance().screen == null) {
                         Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
@@ -837,6 +845,38 @@ public class TypeMoonWorldModKeyMappings {
          }
       }
 
+      private static void syncManaBurstInput(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         Minecraft minecraft = Minecraft.getInstance();
+         if (minecraft.options == null
+            || player == null
+            || vars == null
+            || vars.servant_card_transformed
+            || vars.master_card_active
+            || !canSendManaBurstInput(vars)) {
+            manaBurstInputSendDelay = 0;
+            return;
+         }
+         if (manaBurstInputSendDelay > 0) {
+            manaBurstInputSendDelay--;
+            return;
+         }
+
+         float forward = (minecraft.options.keyUp.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyDown.isDown() ? -1.0F : 0.0F);
+         float strafe = (minecraft.options.keyLeft.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyRight.isDown() ? -1.0F : 0.0F);
+         boolean jump = minecraft.options.keyJump.isDown();
+         boolean sneak = minecraft.options.keyShift.isDown();
+         if (forward != 0.0F || strafe != 0.0F || jump || sneak) {
+            PacketDistributor.sendToServer(new ManaBurstInputMessage(forward, strafe, jump, sneak), new CustomPacketPayload[0]);
+            manaBurstInputSendDelay = 1;
+         } else {
+            manaBurstInputSendDelay = 2;
+         }
+      }
+
+      private static boolean canSendManaBurstInput(TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars.learned_magics.contains("mana_burst") || vars.selected_magics.contains("mana_burst");
+      }
+
       private static int getTapCastPoseTicks(TypeMoonWorldModVariables.PlayerVariables vars) {
          if (!vars.is_magus || !vars.is_magic_circuit_open) {
             return 0;
@@ -957,6 +997,7 @@ public class TypeMoonWorldModKeyMappings {
                   case "gravity_magic" -> buildGravityHint(payload);
                   case "gandr_machine_gun" -> buildGandrMachineGunHint(payload);
                   case "projection" -> buildProjectionHint(payload, vars, player);
+                  case "mana_burst" -> buildManaBurstHint(payload);
                   default -> "";
                };
             }
@@ -1015,6 +1056,17 @@ public class TypeMoonWorldModKeyMappings {
          int mode = payload.contains("gandr_machine_gun_mode") ? payload.getInt("gandr_machine_gun_mode") : 0;
          String modeKey = mode == 1 ? "gui.typemoonworld.overlay.gandr.mode.barrage.short" : "gui.typemoonworld.overlay.gandr.mode.rapid.short";
          return Component.translatable(modeKey).getString();
+      }
+
+      private static String buildManaBurstHint(CompoundTag payload) {
+         int mode = payload.contains("mana_burst_mode") ? Math.max(0, Math.min(2, payload.getInt("mana_burst_mode"))) : 1;
+         int level = payload.contains("mana_burst_level") ? Math.max(1, Math.min(5, payload.getInt("mana_burst_level"))) : 1;
+         String modeKey = switch (mode) {
+            case 0 -> "gui.typemoonworld.mode.mana_burst.weapon";
+            case 2 -> "gui.typemoonworld.mode.mana_burst.direct";
+            default -> "gui.typemoonworld.mode.mana_burst.body";
+         };
+         return Component.translatable(modeKey).getString() + " L" + level;
       }
 
       private static String buildProjectionHint(CompoundTag payload, TypeMoonWorldModVariables.PlayerVariables vars, Player player) {

@@ -87,6 +87,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.GemGravitySelfCastMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ImplantMagicCrestMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Lose_health_regain_mana_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicCircuitSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ManaBurstInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicModeSwitchMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
@@ -255,6 +256,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(OpenProjectionGuiMessage.TYPE, OpenProjectionGuiMessage.STREAM_CODEC, OpenProjectionGuiMessage::handleData);
       registrar.playToServer(MysticEyesToggleMessage.TYPE, MysticEyesToggleMessage.STREAM_CODEC, MysticEyesToggleMessage::handleData);
       registrar.playToServer(PageChangeMessage.TYPE, PageChangeMessage.STREAM_CODEC, PageChangeMessage::handleData);
+      registrar.playToServer(ManaBurstInputMessage.TYPE, ManaBurstInputMessage.STREAM_CODEC, ManaBurstInputMessage::handleData);
       registrar.playToServer(MagicModeSwitchMessage.TYPE, MagicModeSwitchMessage.STREAM_CODEC, MagicModeSwitchMessage::handleData);
       registrar.playToServer(SwitchMagicMessage.TYPE, SwitchMagicMessage.STREAM_CODEC, SwitchMagicMessage::handleData);
       registrar.playToServer(SwitchMagicIndexMessage.TYPE, SwitchMagicIndexMessage.STREAM_CODEC, SwitchMagicIndexMessage::handleData);

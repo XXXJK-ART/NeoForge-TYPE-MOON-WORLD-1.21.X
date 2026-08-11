@@ -195,6 +195,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_BOOK_MAGIC_ANALYSIS);
                         output.accept(ModItems.MAGIC_PAGE_MAGIC_ANALYSIS);
                         output.accept(ModItems.MAGIC_BOOK_REINFORCEMENT);
+                        output.accept(ModItems.MAGIC_BOOK_MANA_BURST);
                         output.accept(ModItems.MAGIC_PAGE_REINFORCEMENT);
                         output.accept(ModItems.MAGIC_BOOK_HEALING);
                         output.accept(ModItems.MAGIC_PAGE_HEALING);

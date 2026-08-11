@@ -248,7 +248,7 @@ public final class MasterCardProfile {
             learn(vars, "healing_magic");
             vars.proficiency_healing_magic = Math.max(vars.proficiency_healing_magic, 50.0);
          }, player -> {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 20; i++) {
                ItemStack blackKeys = new ItemStack(ModItems.BLACK_KEY.get(), 3);
                BlackKeyItem.setExpanded(blackKeys, true);
                give(player, blackKeys);

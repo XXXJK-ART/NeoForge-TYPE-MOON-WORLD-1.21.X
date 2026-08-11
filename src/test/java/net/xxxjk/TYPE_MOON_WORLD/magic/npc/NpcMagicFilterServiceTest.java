@@ -10,4 +10,11 @@ class NpcMagicFilterServiceTest {
       assertTrue(NpcMagicFilterService.candidateMagicPool().contains("entity_displacement"));
       assertTrue(NpcMagicFilterService.isMagicAllowedForNpc("entity_displacement"));
    }
+
+   @Test
+   void manaBurstIsAvailableToMysticMagicians() {
+      assertTrue(NpcMagicFilterService.candidateMagicPool().contains("mana_burst"));
+      assertTrue(NpcMagicFilterService.isMagicAllowedForNpc("mana_burst"));
+      assertTrue(NpcMagicFilterService.isPresetValidForNpc("mana_burst", NpcMagicFilterService.buildRandomPresetForMagic("mana_burst", null, null), null));
+   }
 }

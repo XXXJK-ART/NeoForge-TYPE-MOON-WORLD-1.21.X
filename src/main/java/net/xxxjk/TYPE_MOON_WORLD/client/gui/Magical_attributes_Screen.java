@@ -166,6 +166,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("sword_barrel_full_open", "key.typemoonworld.magic.sword_barrel_full_open.short", "unlimited_blade_works", -3125939);
       this.addMagic("ubw_sword_control", "key.typemoonworld.magic.ubw_sword_control.short", "unlimited_blade_works", -3125939);
       this.addMagic("reinforcement", "key.typemoonworld.magic.reinforcement.short", "basic,reinforcement", -12602534);
+      this.addMagic("mana_burst", "magic.typemoonworld.mana_burst.name", "basic", -11557889);
       this.addMagic("healing_magic", "magic.typemoonworld.healing_magic.name", "basic", -3342388);
       this.addMagic("spiritual_healing", "magic.typemoonworld.spiritual_healing.name", "basic", -274950);
       this.addMagic("magic_bullet", "magic.typemoonworld.magic_bullet.name", "basic", -3381556);
@@ -1848,6 +1849,15 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             ? Component.translatable("gui.typemoonworld.overlay.healing.target.other.short").getString()
             : Component.translatable("gui.typemoonworld.overlay.healing.target.self.short").getString();
          return base + " " + targetName;
+      } else if ("mana_burst".equals(entry.id)) {
+         int mode = payload.contains("mana_burst_mode") ? Mth.clamp(payload.getInt("mana_burst_mode"), 0, 2) : 1;
+         int level = payload.contains("mana_burst_level") ? Mth.clamp(payload.getInt("mana_burst_level"), 1, 5) : 1;
+         String modeName = switch (mode) {
+            case 0 -> Component.translatable("gui.typemoonworld.mode.mana_burst.weapon").getString();
+            case 2 -> Component.translatable("gui.typemoonworld.mode.mana_burst.direct").getString();
+            default -> Component.translatable("gui.typemoonworld.mode.mana_burst.body").getString();
+         };
+         return base + " " + modeName + " " + Component.translatable("gui.typemoonworld.mode.level", level).getString();
       } else if (PlayerMagicSelectionService.isElementalMagic(entry.id)) {
          int mode = payload.contains("element_mode") ? payload.getInt("element_mode") : 0;
          String modeName = mode == 1
@@ -1880,6 +1890,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          || "projection".equals(magicId)
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
+         || "mana_burst".equals(magicId)
          || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
@@ -1909,6 +1920,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "gandr_machine_gun" -> "gandr_mode";
          case "healing_magic" -> "healing_target";
          case "time_alter" -> "time_alter_mode";
+         case "mana_burst" -> "mana_burst_mode";
          case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> "element_mode";
          case "projection" -> "projection_source";
          default -> null;
@@ -2044,6 +2056,27 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          other.putInt("healing_target", 1);
          options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.other"), other));
          return options;
+      } else if ("mana_burst".equals(magicId) && "mana_burst_mode".equals(stageId)) {
+         CompoundTag weapon = new CompoundTag();
+         weapon.putInt("mana_burst_mode", 0);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.mana_burst.weapon"), weapon, "mana_burst_level", false));
+         CompoundTag body = new CompoundTag();
+         body.putInt("mana_burst_mode", 1);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.mana_burst.body"), body, "mana_burst_level", false));
+         CompoundTag direct = new CompoundTag();
+         direct.putInt("mana_burst_mode", 2);
+         options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.mana_burst.direct"), direct, "mana_burst_level", false));
+         return options;
+      } else if ("mana_burst".equals(magicId) && "mana_burst_level".equals(stageId)) {
+         int maxLevel = "crest".equals(entry.sourceType)
+            ? 5
+            : Math.max(1, Math.min(5, 1 + (int)(MagicProficiencyService.get(vars, "mana_burst") / 20.0)));
+         for (int level = 1; level <= maxLevel; level++) {
+            CompoundTag patch = new CompoundTag();
+            patch.putInt("mana_burst_level", level);
+            options.add(new Magical_attributes_Screen.PresetOption(Component.translatable("gui.typemoonworld.mode.level", level), patch));
+         }
+         return options;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId) && "element_mode".equals(stageId)) {
          CompoundTag attack = new CompoundTag();
          attack.putInt("element_mode", 0);
@@ -2140,6 +2173,11 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          CompoundTag payload = new CompoundTag();
          payload.putInt("time_alter_mode", Mth.clamp(vars.time_alter_mode, 0, 1));
          payload.putInt("time_alter_multiplier", Math.max(1, vars.time_alter_multiplier));
+         return payload;
+      } else if ("mana_burst".equals(magicId)) {
+         CompoundTag payload = new CompoundTag();
+         payload.putInt("mana_burst_mode", 1);
+         payload.putInt("mana_burst_level", Math.max(1, Math.min(5, 1 + (int)(MagicProficiencyService.get(vars, "mana_burst") / 20.0))));
          return payload;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
          CompoundTag payload = new CompoundTag();

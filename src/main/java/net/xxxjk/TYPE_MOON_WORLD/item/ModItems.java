@@ -601,6 +601,9 @@ public class ModItems {
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, // learnAll=false (default), no req
                     (String)null, "reinforcement"));
 
+    public static final DeferredItem<Item> MAGIC_BOOK_MANA_BURST = ITEMS.register("magic_book_mana_burst",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "mana_burst"));
+
     public static final DeferredItem<Item> MAGIC_PAGE_REINFORCEMENT = ITEMS.register("magic_page_reinforcement",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, // no req
                     (String)null, "reinforcement", "reinforcement_self", "reinforcement_other", "reinforcement_item"));

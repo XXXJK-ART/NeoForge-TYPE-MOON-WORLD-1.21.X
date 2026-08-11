@@ -41,6 +41,7 @@ public final class NpcMagicFilterService {
       "airflow_blade",
       "detection",
       "entity_displacement",
+      "mana_burst",
       "fire_magic",
       "water_magic",
       "wind_magic",
@@ -108,6 +109,10 @@ public final class NpcMagicFilterService {
                return payload;
             case "spiritual_healing":
                return payload;
+            case "mana_burst":
+               payload.putInt("mana_burst_mode", random.nextInt(3) == 0 ? 2 : 1);
+               payload.putInt("mana_burst_level", 1 + random.nextInt(5));
+               return payload;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":
@@ -161,6 +166,11 @@ public final class NpcMagicFilterService {
                return outh;
             case "spiritual_healing":
                return source;
+            case "mana_burst":
+               CompoundTag outmb = new CompoundTag();
+               outmb.putInt("mana_burst_mode", Mth.clamp(source.contains("mana_burst_mode") ? source.getInt("mana_burst_mode") : (random.nextInt(3) == 0 ? 2 : 1), 0, 2));
+               outmb.putInt("mana_burst_level", Mth.clamp(source.contains("mana_burst_level") ? source.getInt("mana_burst_level") : 1 + random.nextInt(5), 1, 5));
+               return outmb;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":
@@ -193,6 +203,10 @@ public final class NpcMagicFilterService {
                return healingTarget == 0;
             case "spiritual_healing":
                return true;
+            case "mana_burst":
+               int manaBurstMode = source.contains("mana_burst_mode") ? source.getInt("mana_burst_mode") : 1;
+               int manaBurstLevel = source.contains("mana_burst_level") ? source.getInt("mana_burst_level") : 1;
+               return manaBurstMode >= 0 && manaBurstMode <= 2 && manaBurstLevel >= 1 && manaBurstLevel <= 5;
             case "fire_magic":
             case "water_magic":
             case "wind_magic":

@@ -27,7 +27,7 @@ public final class MagicDisplayMetadata {
       "andrasias", "andrephius", "antores", "demon_god_gaze", "kimaris", "nega_summon", "orias", "storm", "zagan"
    );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
-      "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu", "mana_burst"
+      "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
    );
 
    private MagicDisplayMetadata() {

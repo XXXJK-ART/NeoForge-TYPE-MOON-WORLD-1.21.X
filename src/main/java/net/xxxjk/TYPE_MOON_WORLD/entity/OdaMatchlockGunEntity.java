@@ -21,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -377,7 +378,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    private boolean canTarget(LivingEntity owner, LivingEntity target) {
       return target != null && target.isAlive() && target != owner && !EntityUtils.isImmunePlayerTarget(target)
-         && (owner == null || !owner.isAlliedTo(target));
+         && (owner == null || (!owner.isAlliedTo(target) && !ServantMasterTargeting.isContractMaster(owner, target)));
    }
 
    private boolean hasRoughLineOfSight(LivingEntity target) {

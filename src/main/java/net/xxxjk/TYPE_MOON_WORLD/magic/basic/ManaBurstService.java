@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.basic;
 
 import java.util.HashSet;
 import java.util.Set;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -10,6 +11,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -28,6 +31,12 @@ public final class ManaBurstService {
    private static final String MODE_TAG = "TypeMoonManaBurstMode";
    private static final String LEVEL_TAG = "TypeMoonManaBurstLevel";
    private static final String NEXT_PAY_TAG = "TypeMoonManaBurstNextPay";
+   private static final String INPUT_FORWARD_TAG = "TypeMoonManaBurstInputForward";
+   private static final String INPUT_STRAFE_TAG = "TypeMoonManaBurstInputStrafe";
+   private static final String INPUT_JUMP_TAG = "TypeMoonManaBurstInputJump";
+   private static final String INPUT_SNEAK_TAG = "TypeMoonManaBurstInputSneak";
+   private static final String INPUT_TICK_TAG = "TypeMoonManaBurstInputTick";
+   private static final String JET_TICKS_TAG = "TypeMoonManaBurstJetTicks";
    private static final ResourceLocation DAMAGE_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_burst_damage");
    private static final ResourceLocation ATTACK_SPEED_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_burst_attack_speed");
    private static final ResourceLocation MOVE_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_burst_move");
@@ -41,6 +50,8 @@ public final class ManaBurstService {
    private static final double[] DIRECT_COST = {150, 250, 350, 450, 550};
    private static final float[] DIRECT_DAMAGE = {40, 80, 120, 160, 200};
    private static final double[] DIRECT_RANGE = {20, 28, 36, 44, 52};
+   private static final double[] JET_ACCEL = {0.03, 0.045, 0.06, 0.075, 0.09};
+   private static final double[] JET_CAP = {0.38, 0.45, 0.53, 0.60, 0.68};
 
    private ManaBurstService() {
    }
@@ -79,7 +90,9 @@ public final class ManaBurstService {
       data.putInt(MODE_TAG, mode);
       data.putInt(LEVEL_TAG, level);
       data.putLong(NEXT_PAY_TAG, player.level().getGameTime() + 20L);
+      data.putInt(JET_TICKS_TAG, maxJetTicks(level));
       applyAttributes(player, mode, level);
+      spawnToggleFx(player, mode, level);
       MagicProficiencyService.add(vars, MAGIC_ID, 0.25);
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.on", level), true);
@@ -106,13 +119,13 @@ public final class ManaBurstService {
                target.invulnerableTime = 0;
                target.hurt(player.damageSources().magic(), DIRECT_DAMAGE[level - 1]);
                target.invulnerableTime = 0;
+               spawnDirectImpactFx(serverLevel, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), level);
             }
          }
-         for (double d = 1.0; d <= range; d += 1.5) {
-            Vec3 p = eye.add(look.scale(d));
-            serverLevel.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 4, 0.15, 0.15, 0.15, 0.02);
-         }
-         serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.0F, 1.45F);
+         spawnDirectBeamFx(serverLevel, eye, look, range, level);
+         destroyDirectBeamBlocks(serverLevel, player, eye, look, range, level);
+         serverLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.15F, 1.45F);
+         serverLevel.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.95F, 0.85F + level * 0.05F);
       }
       player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), 40);
       MagicProficiencyService.add(vars, MAGIC_ID, 0.35);
@@ -140,15 +153,24 @@ public final class ManaBurstService {
          }
          data.putLong(NEXT_PAY_TAG, now + 20L);
       }
-      if (mode == 2 && !player.onGround()) {
-         Vec3 motion = player.getDeltaMovement();
-         if (player.isShiftKeyDown()) {
-            player.setDeltaMovement(motion.x, motion.y - 0.08, motion.z);
-         } else if (motion.y < -0.08) {
-            player.setDeltaMovement(motion.x, motion.y * 0.72, motion.z);
-         }
-         player.hurtMarked = true;
+      if (now % 10L == 0L) {
+         spawnSustainFx(player, mode, level);
       }
+      if (mode == 2) {
+         applyBodyJetMovement(player, data, level, now);
+      }
+   }
+
+   public static void setInput(ServerPlayer player, float forward, float strafe, boolean jump, boolean sneak) {
+      if (player == null) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      data.putFloat(INPUT_FORWARD_TAG, clampInput(forward));
+      data.putFloat(INPUT_STRAFE_TAG, clampInput(strafe));
+      data.putBoolean(INPUT_JUMP_TAG, jump);
+      data.putBoolean(INPUT_SNEAK_TAG, sneak);
+      data.putLong(INPUT_TICK_TAG, player.level().getGameTime());
    }
 
    public static void clear(ServerPlayer player) {
@@ -156,6 +178,12 @@ public final class ManaBurstService {
       player.getPersistentData().remove(MODE_TAG);
       player.getPersistentData().remove(LEVEL_TAG);
       player.getPersistentData().remove(NEXT_PAY_TAG);
+      player.getPersistentData().remove(INPUT_FORWARD_TAG);
+      player.getPersistentData().remove(INPUT_STRAFE_TAG);
+      player.getPersistentData().remove(INPUT_JUMP_TAG);
+      player.getPersistentData().remove(INPUT_SNEAK_TAG);
+      player.getPersistentData().remove(INPUT_TICK_TAG);
+      player.getPersistentData().remove(JET_TICKS_TAG);
       remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DAMAGE_ID);
       remove(player.getAttribute(Attributes.ATTACK_SPEED), ATTACK_SPEED_ID);
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), MOVE_ID);
@@ -189,5 +217,176 @@ public final class ManaBurstService {
 
    private static void remove(AttributeInstance attribute, ResourceLocation id) {
       if (attribute != null && attribute.getModifier(id) != null) attribute.removeModifier(id);
+   }
+
+   private static float clampInput(float input) {
+      if (!Float.isFinite(input)) {
+         return 0.0F;
+      }
+      return Math.max(-1.0F, Math.min(1.0F, input));
+   }
+
+   private static int maxJetTicks(int level) {
+      return 6 + Math.max(1, Math.min(5, level)) * 2;
+   }
+
+   private static void applyBodyJetMovement(ServerPlayer player, CompoundTag data, int level, long now) {
+      if (player.onGround()) {
+         data.putInt(JET_TICKS_TAG, maxJetTicks(level));
+      }
+      boolean freshInput = now - data.getLong(INPUT_TICK_TAG) <= 6L;
+      float forwardInput = freshInput ? data.getFloat(INPUT_FORWARD_TAG) : 0.0F;
+      float strafeInput = freshInput ? data.getFloat(INPUT_STRAFE_TAG) : 0.0F;
+      boolean jump = freshInput && data.getBoolean(INPUT_JUMP_TAG);
+      boolean sneak = freshInput && data.getBoolean(INPUT_SNEAK_TAG);
+      Vec3 motion = player.getDeltaMovement();
+      Vec3 next = motion;
+
+      Vec3 forward = player.getLookAngle();
+      forward = new Vec3(forward.x, 0.0, forward.z);
+      if (forward.lengthSqr() < 1.0E-6) {
+         forward = Vec3.directionFromRotation(0.0F, player.getYRot());
+         forward = new Vec3(forward.x, 0.0, forward.z);
+      }
+      forward = forward.normalize();
+      Vec3 left = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 desired = forward.scale(forwardInput).add(left.scale(strafeInput));
+      if (desired.lengthSqr() > 1.0E-4) {
+         desired = desired.normalize();
+         double accel = JET_ACCEL[level - 1] * (player.onGround() ? 1.35 : 1.0);
+         next = next.add(desired.scale(accel));
+         next = clampHorizontal(next, JET_CAP[level - 1]);
+      }
+
+      if (sneak) {
+         next = new Vec3(next.x, next.y - (0.08 + level * 0.018), next.z);
+      } else if (jump) {
+         int jetTicks = Math.max(0, data.getInt(JET_TICKS_TAG));
+         if (jetTicks > 0) {
+            double lift = 0.024 + level * 0.006;
+            double maxUp = 0.04 + (level - 1) * 0.01;
+            next = new Vec3(next.x, Math.min(maxUp, Math.max(next.y * 0.55, next.y + lift)), next.z);
+            data.putInt(JET_TICKS_TAG, jetTicks - 1);
+         } else if (next.y < -0.18) {
+            next = new Vec3(next.x, next.y * 0.72, next.z);
+         }
+      }
+
+      if (!next.equals(motion)) {
+         player.setDeltaMovement(next);
+         player.hurtMarked = true;
+      }
+      if ((desired.lengthSqr() > 1.0E-4 || jump || sneak) && player.level() instanceof ServerLevel serverLevel && now % 2L == 0L) {
+         spawnJetFx(serverLevel, player, desired, jump, sneak, level);
+      }
+   }
+
+   private static Vec3 clampHorizontal(Vec3 motion, double cap) {
+      double horizontal = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+      if (horizontal <= cap || horizontal <= 1.0E-6) {
+         return motion;
+      }
+      double scale = cap / horizontal;
+      return new Vec3(motion.x * scale, motion.y, motion.z * scale);
+   }
+
+   private static void spawnToggleFx(ServerPlayer player, int mode, int level) {
+      if (player.level() instanceof ServerLevel serverLevel) {
+         double y = player.getY() + player.getBbHeight() * 0.55;
+         serverLevel.sendParticles(ParticleTypes.FLASH, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 34 + level * 8, 0.55, 0.65, 0.55, 0.12);
+         serverLevel.sendParticles(mode == 1 ? ParticleTypes.CRIT : ParticleTypes.FLAME, player.getX(), y, player.getZ(), 18 + level * 5, 0.45, 0.55, 0.45, 0.08);
+      }
+      player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.85F, 1.0F + level * 0.08F);
+   }
+
+   private static void spawnSustainFx(ServerPlayer player, int mode, int level) {
+      if (player.level() instanceof ServerLevel serverLevel) {
+         double y = player.getY() + 0.25 + player.getBbHeight() * 0.42;
+         serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 3 + level, 0.28, 0.38, 0.28, 0.02);
+         if (mode == 1) {
+            serverLevel.sendParticles(ParticleTypes.ENCHANTED_HIT, player.getX(), y, player.getZ(), 2 + level, 0.25, 0.25, 0.25, 0.02);
+         } else {
+            serverLevel.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.15, player.getZ(), 2 + level, 0.22, 0.08, 0.22, 0.018);
+         }
+      }
+   }
+
+   private static void spawnJetFx(ServerLevel level, ServerPlayer player, Vec3 desired, boolean jump, boolean sneak, int levelRank) {
+      Vec3 base = player.position().add(0.0, 0.18, 0.0);
+      Vec3 backblast = desired.lengthSqr() > 1.0E-4 ? desired.scale(-0.45) : player.getLookAngle().multiply(-0.25, 0.0, -0.25);
+      if (jump) {
+         backblast = backblast.add(0.0, -0.28, 0.0);
+      } else if (sneak) {
+         backblast = backblast.add(0.0, 0.22, 0.0);
+      }
+      Vec3 p = base.add(backblast);
+      level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 5 + levelRank * 2, 0.12, 0.10, 0.12, 0.045);
+      level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 3 + levelRank, 0.12, 0.08, 0.12, 0.035);
+      level.sendParticles(ParticleTypes.END_ROD, p.x, p.y + 0.05, p.z, 2 + levelRank, 0.08, 0.08, 0.08, 0.035);
+   }
+
+   private static void spawnDirectBeamFx(ServerLevel level, Vec3 eye, Vec3 look, double range, int levelRank) {
+      level.sendParticles(ParticleTypes.FLASH, eye.x + look.x * 0.8, eye.y + look.y * 0.8, eye.z + look.z * 0.8, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.EXPLOSION, eye.x + look.x * 1.1, eye.y + look.y * 1.1, eye.z + look.z * 1.1, 2, 0.12, 0.12, 0.12, 0.0);
+      for (double d = 0.8; d <= range; d += 0.75) {
+         Vec3 p = eye.add(look.scale(d));
+         double spread = 0.08 + levelRank * 0.025;
+         level.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 5 + levelRank, spread, spread, spread, 0.035);
+         if (((int)(d * 10.0)) % 15 == 0) {
+            level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 3 + levelRank, spread * 1.4, spread * 1.4, spread * 1.4, 0.035);
+            level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 2 + levelRank / 2, spread * 1.8, spread * 1.2, spread * 1.8, 0.018);
+         }
+      }
+      Vec3 end = eye.add(look.scale(range));
+      spawnDirectImpactFx(level, end, levelRank);
+   }
+
+   private static void spawnDirectImpactFx(ServerLevel level, Vec3 pos, int levelRank) {
+      level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 2 + levelRank / 2, 0.25, 0.25, 0.25, 0.0);
+      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y, pos.z, 14 + levelRank * 5, 0.45, 0.35, 0.45, 0.05);
+      level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 18 + levelRank * 6, 0.32, 0.32, 0.32, 0.12);
+   }
+
+   private static void destroyDirectBeamBlocks(ServerLevel level, ServerPlayer player, Vec3 eye, Vec3 look, double range, int levelRank) {
+      int maxBreak = 10 + levelRank * 8;
+      double radius = 0.45 + levelRank * 0.12;
+      float maxHardness = 0.9F + levelRank * 0.65F;
+      Set<BlockPos> seen = new HashSet<>();
+      int broken = 0;
+      int r = (int)Math.ceil(radius);
+      for (double d = 1.0; d <= range && broken < maxBreak; d += 0.65) {
+         Vec3 center = eye.add(look.scale(d));
+         BlockPos base = BlockPos.containing(center);
+         for (BlockPos pos : BlockPos.betweenClosed(base.offset(-r, -r, -r), base.offset(r, r, r))) {
+            if (broken >= maxBreak) {
+               return;
+            }
+            BlockPos immutable = pos.immutable();
+            if (seen.add(immutable) && center.distanceToSqr(Vec3.atCenterOf(immutable)) <= radius * radius && destroyDirectBlock(level, player, immutable, maxHardness)) {
+               broken++;
+            }
+         }
+      }
+   }
+
+   private static boolean destroyDirectBlock(ServerLevel level, ServerPlayer player, BlockPos pos, float maxHardness) {
+      BlockState state = level.getBlockState(pos);
+      float hardness = state.getDestroySpeed(level, pos);
+      if (state.isAir()
+         || state.is(Blocks.BEDROCK)
+         || state.hasBlockEntity()
+         || hardness < 0.0F
+         || hardness > maxHardness
+         || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
+         return false;
+      }
+      boolean destroyed = level.destroyBlock(pos, false, player);
+      if (destroyed) {
+         level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.16, 0.16, 0.16, 0.03);
+         level.sendParticles(ParticleTypes.FLAME, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.12, 0.12, 0.12, 0.035);
+      }
+      return destroyed;
    }
 }
