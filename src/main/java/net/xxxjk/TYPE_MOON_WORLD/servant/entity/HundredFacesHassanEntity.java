@@ -233,6 +233,9 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      if (target instanceof LivingEntity living && HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, living)) {
+         return false;
+      }
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof LivingEntity living && this.getPersonaMode() == PersonaMode.POISON) {
@@ -258,6 +261,11 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       }
       HundredFacesHassanCombatHelper.discardOwnedPersonas(this);
       super.die(cause);
+   }
+
+   @Override
+   public boolean isAlliedTo(Entity other) {
+      return super.isAlliedTo(other) || HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, other);
    }
 
    @Override

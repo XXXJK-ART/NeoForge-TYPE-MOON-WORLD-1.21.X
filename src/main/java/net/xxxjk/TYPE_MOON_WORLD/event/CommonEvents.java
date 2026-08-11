@@ -485,6 +485,11 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
+         if (HundredFacesHassanCombatHelper.isFriendlyFire(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
          if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
             event.setCanceled(true);
             event.setAmount(0.0F);

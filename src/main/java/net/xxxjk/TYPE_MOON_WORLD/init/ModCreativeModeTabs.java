@@ -108,7 +108,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD);
                         output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST);
-                        output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);

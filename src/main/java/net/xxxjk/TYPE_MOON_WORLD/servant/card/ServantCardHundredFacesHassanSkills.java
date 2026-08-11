@@ -41,7 +41,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
 public final class ServantCardHundredFacesHassanSkills {
    public static final String COMMAND_TAG = "HundredFacesCardCommand";
    public static final String ATTACK_ENABLED_TAG = "HundredFacesCardAttackEnabled";
+   public static final String FORCE_CONCEALMENT_TAG = "HundredFacesCardForceConcealment";
+   public static final String PERSONAL_COMMAND_TAG = "HundredFacesCardPersonalCommand";
+   public static final String PERSONAL_ATTACK_TAG = "HundredFacesCardPersonalAttack";
+   public static final String PERSONAL_CONCEALMENT_TAG = "HundredFacesCardPersonalConcealment";
    private static final String GLOBAL_ATTACK_ENABLED_TAG = "HundredFacesCardGlobalAttackEnabled";
+   private static final String GLOBAL_CONCEALMENT_TAG = "HundredFacesCardGlobalConcealment";
    private static final String LAST_STATE_COUNT_TAG = "HundredFacesCardLastStateCount";
    private static final ResourceLocation SPLIT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_health");
    private static final ResourceLocation SPLIT_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_attack");
@@ -54,6 +59,7 @@ public final class ServantCardHundredFacesHassanSkills {
    public static final int COMMAND_RECALL = 10;
    public static final int COMMAND_SCATTER = 11;
    public static final int COMMAND_ATTACK_TOGGLE = 12;
+   public static final int COMMAND_CONCEALMENT_TOGGLE = 13;
    private static final Map<ServerPlayer, HundredFacesStateMessage> LAST_SENT_STATES = new WeakHashMap<>();
 
    private ServantCardHundredFacesHassanSkills() {
@@ -62,6 +68,7 @@ public final class ServantCardHundredFacesHassanSkills {
    public static void initialize(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(GLOBAL_ATTACK_ENABLED_TAG, true);
+      data.putBoolean(GLOBAL_CONCEALMENT_TAG, false);
       data.putInt(LAST_STATE_COUNT_TAG, 0);
       data.putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, 0);
       LAST_SENT_STATES.remove(player);
@@ -80,6 +87,7 @@ public final class ServantCardHundredFacesHassanSkills {
       }
       CompoundTag data = player.getPersistentData();
       data.remove(GLOBAL_ATTACK_ENABLED_TAG);
+      data.remove(GLOBAL_CONCEALMENT_TAG);
       data.remove(LAST_STATE_COUNT_TAG);
       data.remove(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT);
       removeBodySplitAttributes(player);
@@ -173,24 +181,41 @@ public final class ServantCardHundredFacesHassanSkills {
       if (command == COMMAND_ATTACK_TOGGLE) {
          boolean enabled = !globalAttackEnabled(player);
          player.getPersistentData().putBoolean(GLOBAL_ATTACK_ENABLED_TAG, enabled);
-         for (HundredFacesHassanPersonaEntity persona : personas) setPersonaAttackEnabled(persona, enabled);
+         for (HundredFacesHassanPersonaEntity persona : personas) {
+            if (!hasPersonalAttackOverride(persona)) setPersonaAttackEnabled(persona, enabled, false);
+         }
          player.displayClientMessage(Component.translatable(enabled
             ? "message.typemoonworld.hundred_faces.attack_on"
             : "message.typemoonworld.hundred_faces.attack_off"), true);
+      } else if (command == COMMAND_CONCEALMENT_TOGGLE) {
+         boolean enabled = !globalConcealmentEnabled(player);
+         player.getPersistentData().putBoolean(GLOBAL_CONCEALMENT_TAG, enabled);
+         for (HundredFacesHassanPersonaEntity persona : personas) {
+            if (!hasPersonalConcealmentOverride(persona)) setPersonaForceConcealment(persona, enabled, false);
+         }
+         player.displayClientMessage(Component.translatable(enabled
+            ? "message.typemoonworld.hundred_faces.concealment_on"
+            : "message.typemoonworld.hundred_faces.concealment_off"), true);
       } else if (command == COMMAND_RECALL) {
          for (HundredFacesHassanPersonaEntity persona : personas) {
-            setPersonaCommand(persona, COMMAND_FOLLOW);
+            if (hasPersonalCommandOverride(persona)) continue;
+            setPersonaCommand(persona, COMMAND_FOLLOW, false);
             if (persona.distanceToSqr(player) > 48.0 * 48.0) teleportPersonaNearOwner(persona, player);
          }
       } else if (command == COMMAND_SCATTER) {
          for (HundredFacesHassanPersonaEntity persona : personas) {
-            setPersonaCommand(persona, COMMAND_FREE);
+            if (hasPersonalCommandOverride(persona)) continue;
+            setPersonaCommand(persona, COMMAND_FREE, false);
             Vec3 delta = persona.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
             if (delta.lengthSqr() < 1.0E-4) {
                delta = new Vec3(persona.getRandom().nextDouble() - 0.5, 0.0, persona.getRandom().nextDouble() - 0.5);
             }
             Vec3 destination = persona.position().add(delta.normalize().scale(8.0 + persona.getRandom().nextDouble() * 8.0));
             persona.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.05);
+         }
+      } else if (command == COMMAND_FREE) {
+         for (HundredFacesHassanPersonaEntity persona : personas) {
+            if (!hasPersonalCommandOverride(persona)) setPersonaCommand(persona, COMMAND_FREE, false);
          }
       }
       sendState(player, true);
@@ -200,8 +225,9 @@ public final class ServantCardHundredFacesHassanSkills {
       if (!isActiveCard(player) || !(player.level() instanceof ServerLevel level)) return;
       Entity entity = level.getEntity(entityId);
       if (!(entity instanceof HundredFacesHassanPersonaEntity persona) || !player.getUUID().equals(persona.getOwnerUuid())) return;
-      if (command == COMMAND_ATTACK_TOGGLE) setPersonaAttackEnabled(persona, !personaAttackEnabled(persona));
-      else setPersonaCommand(persona, sanitizeMovementCommand(command));
+      if (command == COMMAND_ATTACK_TOGGLE) setPersonaAttackEnabled(persona, !personaAttackEnabled(persona), true);
+      else if (command == COMMAND_CONCEALMENT_TOGGLE) setPersonaForceConcealment(persona, !personaForceConcealment(persona), true);
+      else setPersonaCommand(persona, sanitizeMovementCommand(command), true);
       sendState(player, true);
    }
 
@@ -215,6 +241,10 @@ public final class ServantCardHundredFacesHassanSkills {
       HundredFacesHassanEntity.PersonaMode mode = target.getPersonaMode();
       int command = personaCommand(target);
       boolean attack = personaAttackEnabled(target);
+      boolean forceConcealment = personaForceConcealment(target);
+      boolean personalCommand = hasPersonalCommandOverride(target);
+      boolean personalAttack = hasPersonalAttackOverride(target);
+      boolean personalConcealment = hasPersonalConcealmentOverride(target);
       Vec3 targetPos = target.position();
       float targetYaw = target.getYRot();
       float targetPitch = target.getXRot();
@@ -224,8 +254,9 @@ public final class ServantCardHundredFacesHassanSkills {
       if (replacement != null) {
          replacement.moveTo(old.x, old.y, old.z, oldYaw, oldPitch);
          replacement.initialize(player, null, mode, Math.max(1, totalSplitCount(player)));
-         setPersonaCommand(replacement, command);
-         setPersonaAttackEnabled(replacement, attack);
+         setPersonaCommand(replacement, command, personalCommand);
+         setPersonaAttackEnabled(replacement, attack, personalAttack);
+         setPersonaForceConcealment(replacement, forceConcealment, personalConcealment);
          level.addFreshEntity(replacement);
       }
       level.sendParticles(ParticleTypes.SQUID_INK, old.x, old.y + 0.9, old.z, 18, 0.35, 0.5, 0.35, 0.02);
@@ -301,6 +332,10 @@ public final class ServantCardHundredFacesHassanSkills {
       return !data.contains(ATTACK_ENABLED_TAG) || data.getBoolean(ATTACK_ENABLED_TAG);
    }
 
+   public static boolean personaForceConcealment(HundredFacesHassanPersonaEntity persona) {
+      return persona.getPersistentData().getBoolean(FORCE_CONCEALMENT_TAG);
+   }
+
    public static boolean isActiveCard(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "hundred_faces_hassan".equals(vars.servant_card_id);
@@ -363,8 +398,9 @@ public final class ServantCardHundredFacesHassanSkills {
          float yaw = (float)Math.toDegrees(Math.atan2(-forward.x, forward.z));
          persona.moveTo(pos.x, pos.y, pos.z, yaw, 0.0F);
          persona.initialize(player, inheritedTarget, HundredFacesHassanEntity.PersonaMode.SCOUT, alreadySplit + spawned + 1);
-         setPersonaCommand(persona, COMMAND_FOLLOW);
-         setPersonaAttackEnabled(persona, globalAttackEnabled(player));
+         setPersonaCommand(persona, COMMAND_FOLLOW, false);
+         setPersonaAttackEnabled(persona, globalAttackEnabled(player), false);
+         setPersonaForceConcealment(persona, globalConcealmentEnabled(player), false);
          if (level.addFreshEntity(persona)) {
             spawned++;
             level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y + 0.9, pos.z, 10, 0.35, 0.55, 0.35, 0.02);
@@ -460,22 +496,45 @@ public final class ServantCardHundredFacesHassanSkills {
          personaCommand(persona), personaAttackEnabled(persona));
    }
 
-   private static void setPersonaCommand(HundredFacesHassanPersonaEntity persona, int command) {
+   private static void setPersonaCommand(HundredFacesHassanPersonaEntity persona, int command, boolean personal) {
       persona.getPersistentData().putInt(COMMAND_TAG, sanitizeMovementCommand(command));
+      persona.getPersistentData().putBoolean(PERSONAL_COMMAND_TAG, personal);
       if (command == COMMAND_HOLD) {
          persona.getNavigation().stop();
          persona.setTarget(null);
       }
    }
 
-   private static void setPersonaAttackEnabled(HundredFacesHassanPersonaEntity persona, boolean enabled) {
+   private static void setPersonaAttackEnabled(HundredFacesHassanPersonaEntity persona, boolean enabled, boolean personal) {
       persona.getPersistentData().putBoolean(ATTACK_ENABLED_TAG, enabled);
+      persona.getPersistentData().putBoolean(PERSONAL_ATTACK_TAG, personal);
       if (!enabled) persona.setTarget(null);
+   }
+
+   private static void setPersonaForceConcealment(HundredFacesHassanPersonaEntity persona, boolean enabled, boolean personal) {
+      persona.getPersistentData().putBoolean(FORCE_CONCEALMENT_TAG, enabled);
+      persona.getPersistentData().putBoolean(PERSONAL_CONCEALMENT_TAG, personal);
+   }
+
+   private static boolean hasPersonalCommandOverride(HundredFacesHassanPersonaEntity persona) {
+      return persona.getPersistentData().getBoolean(PERSONAL_COMMAND_TAG);
+   }
+
+   private static boolean hasPersonalAttackOverride(HundredFacesHassanPersonaEntity persona) {
+      return persona.getPersistentData().getBoolean(PERSONAL_ATTACK_TAG);
+   }
+
+   private static boolean hasPersonalConcealmentOverride(HundredFacesHassanPersonaEntity persona) {
+      return persona.getPersistentData().getBoolean(PERSONAL_CONCEALMENT_TAG);
    }
 
    private static boolean globalAttackEnabled(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       return !data.contains(GLOBAL_ATTACK_ENABLED_TAG) || data.getBoolean(GLOBAL_ATTACK_ENABLED_TAG);
+   }
+
+   private static boolean globalConcealmentEnabled(ServerPlayer player) {
+      return player.getPersistentData().getBoolean(GLOBAL_CONCEALMENT_TAG);
    }
 
    private static int sanitizeMovementCommand(int command) {

@@ -72,16 +72,18 @@ public final class HundredFacesScreen extends Screen {
          int[] commands = {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_RECALL,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_SCATTER,
-            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FREE,
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE,
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE
          };
-         String[] keys = {"recall", "scatter", "attack_toggle"};
+         String[] keys = {"recall", "scatter", "free", "attack_toggle", "force_concealment"};
          for (int i = 0; i < commands.length; i++) {
             int command = commands[i];
             int x = startX + i % columns * (buttonWidth + gap);
             int y = startY + i / columns * (buttonHeight + gap);
             this.addRenderableWidget(new NeonButton(x, y, buttonWidth, buttonHeight,
                Component.translatable("screen.typemoonworld.hundred_faces.command." + keys[i]),
-               button -> this.selectCommand(0, -1, command), i == 2 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
+               button -> this.selectCommand(0, -1, command), i >= 3 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
          }
          return;
       }
@@ -91,10 +93,11 @@ public final class HundredFacesScreen extends Screen {
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_HOLD,
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FREE,
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FOLLOW,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE
       };
-      String[] keys = {"hold", "free", "follow", "attack_toggle"};
-      int[] colors = {GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_VALID, ACCENT, 0xFFD0B05C};
+      String[] keys = {"hold", "free", "follow", "attack_toggle", "force_concealment"};
+      int[] colors = {GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_VALID, ACCENT, 0xFFD0B05C, GuiUtils.ARCANE_GOLD};
       for (int i = 0; i < commands.length; i++) {
          int command = commands[i];
          int x = startX + i % columns * (buttonWidth + gap);
@@ -286,7 +289,7 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private int choiceCount() {
-      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_GLOBAL_COMMAND ? 3 : 4;
+      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_GLOBAL_COMMAND ? 5 : 5;
    }
 
    private void selectSummon(int requested) {

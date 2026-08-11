@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -55,13 +56,11 @@ class HundredFacesHassanResourcesTest {
          "assets/typemoonworld/textures/item/card_faces_3d/servant/hundred_faces_hassan_card.png",
          "assets/typemoonworld/models/item/servant_card_hundred_faces_hassan_head.json",
          "assets/typemoonworld/models/item/servant_card_hundred_faces_hassan_chest.json",
-         "assets/typemoonworld/models/item/servant_card_hundred_faces_hassan_legs.json",
          "assets/typemoonworld/geo/servant_card_hundred_faces_hassan.geo.json",
          "assets/typemoonworld/animations/servant_card_hundred_faces_hassan.animation.json",
          "assets/typemoonworld/textures/models/armor/servant_card_hundred_faces_hassan.png",
          "assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_head.png",
-         "assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_chest.png",
-         "assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_legs.png"
+         "assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_chest.png"
       )) assertTrue(Files.isRegularFile(RESOURCES.resolve(path)), path);
 
       String entities = readJava("net/xxxjk/TYPE_MOON_WORLD/init/ModEntities.java");
@@ -74,7 +73,7 @@ class HundredFacesHassanResourcesTest {
       assertTrue(items.contains("SERVANT_CARD_HUNDRED_FACES_HASSAN"));
       assertTrue(items.contains("SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD"));
       assertTrue(items.contains("SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST"));
-      assertTrue(items.contains("SERVANT_CARD_HUNDRED_FACES_HASSAN_LEGS"));
+      assertFalse(items.contains("SERVANT_CARD_HUNDRED_FACES_HASSAN_LEGS"));
       assertTrue(factory.contains("HUNDRED_FACES_HASSAN.get().create"));
       assertTrue(renderer.contains("HumanoidServantRenderer<>(context, \"hundred_faces_hassan\")"));
       assertTrue(readJava("net/xxxjk/TYPE_MOON_WORLD/init/ModCreativeModeTabs.java").contains("SERVANT_CARD_HUNDRED_FACES_HASSAN"));
@@ -114,10 +113,28 @@ class HundredFacesHassanResourcesTest {
       assertTrue(helper.contains("countOwnedPersonas"));
       assertTrue(helper.contains("rescaleOwnedPersonas"));
       assertTrue(helper.contains("getTotalSplitCount"));
+      assertTrue(helper.contains("isFriendlyFire"));
+      assertTrue(helper.contains("areSameHundredFacesSide"));
       String combat = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/combat/ServantCombatSystem.java");
       assertTrue(combat.contains("HundredFacesHassanPersonaEntity"));
       assertTrue(combat.contains("HundredFacesHassanEntity"));
       assertTrue(combat.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER"));
+   }
+
+   @Test
+   void hundredFacesBodyAndPersonasCannotFriendlyFire() throws IOException {
+      String helper = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
+      String body = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanEntity.java");
+      String persona = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanPersonaEntity.java");
+      String events = readJava("net/xxxjk/TYPE_MOON_WORLD/event/CommonEvents.java");
+      String dirk = readJava("net/xxxjk/TYPE_MOON_WORLD/entity/DirkProjectileEntity.java");
+      assertTrue(helper.contains("resolveLivingAttacker"));
+      assertTrue(helper.contains("Projectile"));
+      assertTrue(body.contains("areSameHundredFacesSide(this, living)"));
+      assertTrue(body.contains("public boolean isAlliedTo(Entity other)"));
+      assertTrue(persona.contains("areSameHundredFacesSide(this, living)"));
+      assertTrue(events.contains("HundredFacesHassanCombatHelper.isFriendlyFire"));
+      assertTrue(dirk.contains("HundredFacesHassanCombatHelper.areSameHundredFacesSide"));
    }
 
    @Test
@@ -150,7 +167,6 @@ class HundredFacesHassanResourcesTest {
       assertNotNull(ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/models/armor/servant_card_hundred_faces_hassan.png").toFile()));
       assertNotNull(ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_head.png").toFile()));
       assertNotNull(ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_chest.png").toFile()));
-      assertNotNull(ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/item/servant_card_armor/hundred_faces_hassan_legs.png").toFile()));
    }
 
    @Test
@@ -167,18 +183,28 @@ class HundredFacesHassanResourcesTest {
       for (String action : List.of("hundred_faces_summon", "hundred_faces_summon_menu", "hundred_faces_command",
          "hundred_faces_single_command", "hundred_faces_switch", "hundred_faces_concealment")) {
          assertTrue(layout.contains(action), action);
-         assertTrue(transform.contains(action), action);
+      assertTrue(transform.contains(action), action);
       }
+      assertTrue(transform.contains("\"hundred_faces_hassan\".equals(servantId)"));
+      assertTrue(transform.contains("&& !\"hundred_faces_hassan\".equals(servantId)"));
       assertTrue(skills.contains("MAX_SUMMON_BATCH"));
       assertTrue(skills.contains("MP_PER_PERSONA"));
       assertTrue(skills.contains("COMMAND_RECALL"));
       assertTrue(skills.contains("COMMAND_SCATTER"));
+      assertTrue(skills.contains("COMMAND_FREE"));
       assertTrue(skills.contains("COMMAND_ATTACK_TOGGLE"));
+      assertTrue(skills.contains("COMMAND_CONCEALMENT_TOGGLE"));
+      assertTrue(skills.contains("PERSONAL_COMMAND_TAG"));
+      assertTrue(skills.contains("PERSONAL_ATTACK_TAG"));
+      assertTrue(skills.contains("PERSONAL_CONCEALMENT_TAG"));
       assertTrue(skills.contains("totalSplitCount"));
       assertTrue(skills.contains("applyBodySplitAttributes"));
       assertTrue(persona.contains("initialize(ServerPlayer owner"));
       assertTrue(persona.contains("getOwnerPlayer"));
       assertTrue(persona.contains("notifyPersonaDeath"));
+      assertTrue(persona.contains("forceConcealment()"));
+      assertTrue(persona.contains("ServantMasterTargeting.isContractMaster(this, candidate)"));
+      assertFalse(persona.contains("COMMAND_FREE && this.distanceToSqr(playerOwner)"));
       for (String message : List.of("HundredFacesOpenScreenMessage", "HundredFacesSummonMessage",
          "HundredFacesCommandMessage", "HundredFacesSwitchMessage", "HundredFacesStateMessage")) {
          assertTrue(network.contains(message), message);

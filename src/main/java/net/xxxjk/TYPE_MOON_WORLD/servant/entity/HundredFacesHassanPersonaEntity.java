@@ -156,7 +156,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       long now = level.getGameTime();
       boolean exposed = now < this.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
       boolean hasTarget = this.getTarget() != null && this.getTarget().isAlive();
-      this.setPresenceConcealed(!exposed && hasTarget && this.distanceToSqr(this.getTarget()) > 4.0);
+      this.setPresenceConcealed(this.forceConcealment() || (!exposed && hasTarget && this.distanceToSqr(this.getTarget()) > 4.0));
       if (this.tickCount % 40 == 0) this.ensureDirkLoadout();
    }
 
@@ -180,10 +180,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
                this.getNavigation().stop();
             } else if (command == ServantCardHundredFacesHassanSkills.COMMAND_FOLLOW && this.distanceToSqr(playerOwner) > 36.0) {
                this.getNavigation().moveTo(playerOwner, 1.12);
-            } else if (command == ServantCardHundredFacesHassanSkills.COMMAND_FREE && this.distanceToSqr(playerOwner) > 400.0) {
-               this.getNavigation().moveTo(playerOwner, 1.02);
             }
-         } else if (owner != null && this.distanceToSqr(owner) > 144.0) {
+         } else if (owner != null && command != ServantCardHundredFacesHassanSkills.COMMAND_FREE && this.distanceToSqr(owner) > 144.0) {
             this.getNavigation().moveTo(owner, 1.08);
          }
          return;
@@ -206,6 +204,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    @Nullable
    private LivingEntity resolveLocalTarget(ServerLevel level, LivingEntity owner, boolean activeAttack) {
       LivingEntity current = this.getTarget();
+      if (current != null && !isValidTarget(owner, current)) this.setTarget(null);
       if (activeAttack && isValidTarget(owner, current)) return current;
       if (!activeAttack && current != null && this.getLastHurtByMob() == current && isValidTarget(owner, current)) return current;
       if (this.targetUuid != null) {
@@ -226,7 +225,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
          || candidate instanceof HundredFacesHassanPersonaEntity
          || EntityUtils.isImmunePlayerTarget(candidate)
          || owner.isAlliedTo(candidate) || candidate.isAlliedTo(owner)
-         || ServantMasterTargeting.isContractMaster(owner, candidate)) return false;
+         || ServantMasterTargeting.isContractMaster(owner, candidate)
+         || ServantMasterTargeting.isContractMaster(this, candidate)) return false;
       return EntityUtils.isValidCombatTarget(owner, candidate);
    }
 
@@ -264,6 +264,10 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
 
    public void revealForCombat() {
       if (this.level().isClientSide()) return;
+      if (this.forceConcealment()) {
+         this.setPresenceConcealed(true);
+         return;
+      }
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, this.level().getGameTime() + HundredFacesHassanRules.CONCEALMENT_EXPOSURE_TICKS);
       this.setPresenceConcealed(false);
    }
@@ -351,12 +355,16 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    private void setPresenceConcealed(boolean concealed) {
       boolean changed = this.entityData.get(PRESENCE_CONCEALED) != concealed;
       if (changed) this.entityData.set(PRESENCE_CONCEALED, concealed);
-      this.setInvisible(false);
+      this.setInvisible(concealed && this.forceConcealment());
       this.setSilent(concealed);
       this.setCustomNameVisible(!concealed);
       if (this.hasEffect(MobEffects.INVISIBILITY)) {
          this.removeEffect(MobEffects.INVISIBILITY);
       }
+   }
+
+   private boolean forceConcealment() {
+      return ServantCardHundredFacesHassanSkills.personaForceConcealment(this);
    }
 
    private void setBase(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
@@ -366,6 +374,9 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      if (target instanceof LivingEntity living && HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, living)) {
+         return false;
+      }
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof LivingEntity living && this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.POISON) {
@@ -393,6 +404,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    @Override
    public boolean isAlliedTo(Entity other) {
       if (super.isAlliedTo(other)) return true;
+      if (HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, other)) return true;
       if (this.ownerUuid != null && this.ownerUuid.equals(other.getUUID())) return true;
       if (other instanceof HundredFacesHassanPersonaEntity persona
          && this.ownerUuid != null && this.ownerUuid.equals(persona.ownerUuid)) return true;

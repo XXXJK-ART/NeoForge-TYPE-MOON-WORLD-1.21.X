@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,6 +22,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
@@ -128,6 +130,40 @@ public final class HundredFacesHassanCombatHelper {
       entity.invulnerableTime = Math.max(entity.invulnerableTime, 8);
       ServantNavigationHelper.rememberMovementWriter(entity, now, "HundredFacesReactiveDodge");
       spawnShadowStepFx(entity);
+   }
+
+   public static boolean isFriendlyFire(LivingEntity victim, DamageSource source) {
+      if (victim == null || source == null) return false;
+      LivingEntity attacker = resolveLivingAttacker(source);
+      return attacker != null && areSameHundredFacesSide(victim, attacker);
+   }
+
+   public static boolean areSameHundredFacesSide(@Nullable Entity first, @Nullable Entity second) {
+      if (first == null || second == null || first == second) return false;
+      UUID firstOwner = hundredFacesOwnerKey(first);
+      UUID secondOwner = hundredFacesOwnerKey(second);
+      return firstOwner != null && firstOwner.equals(secondOwner) && (isHundredFacesUnit(first) || isHundredFacesUnit(second));
+   }
+
+   @Nullable
+   private static LivingEntity resolveLivingAttacker(DamageSource source) {
+      Entity attacker = source.getEntity();
+      if (attacker instanceof LivingEntity living) return living;
+      Entity direct = source.getDirectEntity();
+      if (direct instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) return owner;
+      return direct instanceof LivingEntity living ? living : null;
+   }
+
+   @Nullable
+   private static UUID hundredFacesOwnerKey(Entity entity) {
+      if (entity instanceof HundredFacesHassanPersonaEntity persona) return persona.getOwnerUuid();
+      if (entity instanceof HundredFacesHassanEntity) return entity.getUUID();
+      if (entity instanceof Player) return entity.getUUID();
+      return null;
+   }
+
+   private static boolean isHundredFacesUnit(Entity entity) {
+      return entity instanceof HundredFacesHassanEntity || entity instanceof HundredFacesHassanPersonaEntity;
    }
 
    public static boolean tryPersonaCombatSkill(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {

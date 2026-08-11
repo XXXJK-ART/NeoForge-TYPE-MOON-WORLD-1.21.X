@@ -931,7 +931,8 @@ public final class ServantCardTransformManager {
          || "paracelsus".equals(servantId)
          || "ushiwakamaru_rider".equals(servantId)
          || "zhao_yun_rider".equals(servantId)
-         || "gilgamesh_caster".equals(servantId);
+         || "gilgamesh_caster".equals(servantId)
+         || "hundred_faces_hassan".equals(servantId);
 
    }
 
@@ -945,7 +946,7 @@ public final class ServantCardTransformManager {
 
    private static boolean servantCardHasLegArmor(String servantId) {
       return !"medea".equals(servantId) && !"cursed_arm_hassan".equals(servantId)
-         && !"fanatic_assassin".equals(servantId);
+         && !"fanatic_assassin".equals(servantId) && !"hundred_faces_hassan".equals(servantId);
    }
 
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
