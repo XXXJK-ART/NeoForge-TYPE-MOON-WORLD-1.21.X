@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticEyesItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ExcaliburGoldenItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.EmiyaProjectionItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshHarmlessGaeBulgItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.HecatesStaffItem;
@@ -395,6 +396,10 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_FANATIC_ASSASSIN_CHEST = registerServantArmor("fanatic_assassin", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD = registerServantArmor("hundred_faces_hassan", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST = registerServantArmor("hundred_faces_hassan", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET = registerServantArmor("diarmuid_ua_duibhne", net.minecraft.world.entity.EquipmentSlot.FEET);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -828,6 +833,46 @@ public class ModItems {
                                             2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> GAE_DEARG = ITEMS.register("gae_dearg",
+            () -> new DiarmuidSpearItem(DiarmuidSpearItem.SpearType.GAE_DEARG,
+                    new Item.Properties().durability(100).rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_dearg_damage"),
+                                            11.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_dearg_speed"),
+                                            1.1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_dearg_range"),
+                                            2.1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> GAE_BUIDHE = ITEMS.register("gae_buidhe",
+            () -> new DiarmuidSpearItem(DiarmuidSpearItem.SpearType.GAE_BUIDHE,
+                    new Item.Properties().durability(100).rarity(Rarity.EPIC).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_damage"),
+                                            9.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_speed"),
+                                            1.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_range"),
+                                            1.8, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
     public static final DeferredItem<Item> RULE_BREAKER = ITEMS.register("rule_breaker",
             () -> new RuleBreakerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -1130,6 +1175,8 @@ public class ModItems {
 
     public static final DeferredItem<Item> CU_CHULAINN_SPAWN_EGG = ITEMS.register("cu_chulainn_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CU_CHULAINN, 0x2B60C7, 0xC8D1DD));
+    public static final DeferredItem<Item> DIARMUID_UA_DUIBHNE_SPAWN_EGG = ITEMS.register("diarmuid_ua_duibhne_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.DIARMUID_UA_DUIBHNE, 0x254B3D, 0xF0D57A));
     public static final DeferredItem<Item> MEDEA_SPAWN_EGG = ITEMS.register("medea_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MEDEA, 0x705F96, 0xDDD7E9));
     public static final DeferredItem<Item> MEDUSA_SPAWN_EGG = ITEMS.register("medusa_spawn_egg",
@@ -1234,6 +1281,10 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_FANATIC_ASSASSIN_CHEST.get() : Items.AIR;
             case "hundred_faces_hassan" -> head ? SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST.get() : Items.AIR;
+            case "diarmuid_ua_duibhne" -> head ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST.get()
+                : legs ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();

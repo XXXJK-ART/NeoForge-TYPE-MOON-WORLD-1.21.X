@@ -216,6 +216,23 @@ class HundredFacesHassanResourcesTest {
          || loadout.contains("\"cursed_arm_hassan\", \"hundred_faces_hassan\" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get())"));
    }
 
+   @Test
+   void voiceRulesKeepPersonasQuietOutsideActualAttacks() throws IOException {
+      JsonObject sounds = jsonAsset("assets/typemoonworld/sounds.json");
+      for (String key : List.of("hundred_faces_hassan_voice_attack", "hundred_faces_hassan_voice_fail",
+         "hundred_faces_hassan_voice_victory", "hundred_faces_hassan_voice_np")) {
+         assertTrue(sounds.has(key), key);
+      }
+      String voice = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/ServantVoiceHelper.java");
+      String persona = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanPersonaEntity.java");
+      String card = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardHundredFacesHassanSkills.java");
+      String npc = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
+      assertTrue(voice.contains("servant instanceof HundredFacesHassanPersonaEntity) return"));
+      assertTrue(persona.contains("ServantVoiceHelper.tryPlayAttack(this)"));
+      assertTrue(card.contains("if (count >= 20)"));
+      assertTrue(npc.contains("if (spawned >= 20)"));
+   }
+
    private static JsonObject json(String path) throws IOException {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(path), StandardCharsets.UTF_8)).getAsJsonObject();
    }

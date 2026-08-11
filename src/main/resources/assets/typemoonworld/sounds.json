@@ -1382,5 +1382,51 @@
         "stream": true
       }
     ]
+  },
+  "hundred_faces_hassan_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/hundred_faces_hassan/attack1", "stream": true},
+      {"name": "typemoonworld:voice/hundred_faces_hassan/attack2", "stream": true}
+    ]
+  },
+  "hundred_faces_hassan_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/hundred_faces_hassan/fail1", "stream": true},
+      {"name": "typemoonworld:voice/hundred_faces_hassan/fail2", "stream": true}
+    ]
+  },
+  "hundred_faces_hassan_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:voice/hundred_faces_hassan/np", "stream": true}
+    ]
+  },
+  "hundred_faces_hassan_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/hundred_faces_hassan/victory1", "stream": true},
+      {"name": "typemoonworld:voice/hundred_faces_hassan/victory2", "stream": true}
+    ]
+  },
+  "diarmuid_ua_duibhne_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/attack1", "stream": true},
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/attack2", "stream": true}
+    ]
+  },
+  "diarmuid_ua_duibhne_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/fail1", "stream": true},
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/fail2", "stream": true}
+    ]
+  },
+  "diarmuid_ua_duibhne_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/np", "stream": true}
+    ]
+  },
+  "diarmuid_ua_duibhne_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/victory1", "stream": true},
+      {"name": "typemoonworld:voice/diarmuid_ua_duibhne/victory2", "stream": true}
+    ]
   }
 }

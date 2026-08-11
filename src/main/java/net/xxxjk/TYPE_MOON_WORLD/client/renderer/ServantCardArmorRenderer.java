@@ -104,6 +104,9 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
          }
          setBoneVisible(this.rightLeg, true);
          setBoneVisible(this.leftLeg, true);
+      } else if (currentSlot == EquipmentSlot.FEET) {
+         setBoneVisible(this.rightBoot, true);
+         setBoneVisible(this.leftBoot, true);
       }
    }
 

@@ -108,6 +108,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_FANATIC_ASSASSIN_CHEST);
                         output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_HEAD);
                         output.accept(ModItems.SERVANT_CARD_HUNDRED_FACES_HASSAN_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
@@ -282,6 +286,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.EXCALIBUR2);
                         output.accept(ModItems.BIZEN_NAGAMITSU);
                         output.accept(ModItems.GAE_BULG);
+                        output.accept(ModItems.GAE_DEARG);
+                        output.accept(ModItems.GAE_BUIDHE);
                         output.accept(ModItems.YAJIAO_QIANG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
@@ -449,6 +455,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
                         output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
+                        output.accept(ModItems.DIARMUID_UA_DUIBHNE_SPAWN_EGG);
                         output.accept(ModItems.MEDEA_SPAWN_EGG);
                         output.accept(ModItems.MEDUSA_SPAWN_EGG);
                         output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);

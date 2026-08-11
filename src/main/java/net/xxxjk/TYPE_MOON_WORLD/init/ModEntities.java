@@ -66,6 +66,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwControlledSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
@@ -494,6 +495,10 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<CuChulainnEntity>> CU_CHULAINN = ENTITY_TYPES.register(
       "cu_chulainn", () -> Builder.of(CuChulainnEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cu_chulainn")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<DiarmuidUaDuibhneEntity>> DIARMUID_UA_DUIBHNE = ENTITY_TYPES.register(
+      "diarmuid_ua_duibhne", () -> Builder.of(DiarmuidUaDuibhneEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.84F).clientTrackingRange(64).updateInterval(1).build("diarmuid_ua_duibhne")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaEntity>> MEDEA = ENTITY_TYPES.register(
       "medea", () -> Builder.of(MedeaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medea")

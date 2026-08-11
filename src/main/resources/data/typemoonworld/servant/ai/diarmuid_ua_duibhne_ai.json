@@ -1,0 +1,41 @@
+{
+  "id": "diarmuid_ua_duibhne_ai",
+  "movement": {
+    "follow_distance": 6,
+    "wander_radius": 24,
+    "likes_high_places": false
+  },
+  "combat": {
+    "preferred_attack_distance": 4,
+    "retreat_health_ratio": 0.3,
+    "melee_preference": 0.95,
+    "berserk_health_ratio": 0.0,
+    "berserk_damage_multiplier": 1.0
+  },
+  "tactical": {
+    "style": "skirmisher",
+    "minimum_range": 2,
+    "preferred_range": 4,
+    "maximum_range": 14,
+    "reposition_distance": 8,
+    "pursuit_aggression": 0.85,
+    "intercept_bias": 3,
+    "vertical_mobility": 0.8,
+    "recovery_tendency": 0.75,
+    "collateral_caution": 0.9,
+    "maximum_terrain_impact": "small"
+  },
+  "social": {
+    "talk_interval": 180,
+    "greeting_probability": 0.12
+  },
+  "command": {
+    "base_obedience_rate": 0.9,
+    "favor_multiplier": 0.004
+  },
+  "environment": {
+    "liked_biomes": [],
+    "disliked_biomes": [],
+    "preferred_weather": "any"
+  }
+}

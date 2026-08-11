@@ -278,6 +278,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
 
    public void triggerAssassinStabAnimation() {
       this.triggerNamedActionAnimation("assassin_stab");
+      ServantVoiceHelper.tryPlayAttack(this);
    }
 
    public void triggerShadowStepAnimation() {

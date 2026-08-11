@@ -806,7 +806,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          case "arash", "artoria_pendragon", "cu_chulainn", "cursed_arm_hassan", "gilgamesh_caster", "emiya_archer",
             "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa", "shadow_hassan",
-            "hundred_faces_hassan",
+            "hundred_faces_hassan", "diarmuid_ua_duibhne",
             "heracles",
             "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
@@ -817,7 +817,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return switch (servantId == null ? "" : servantId) {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "hundred_faces_hassan",
+            "hundred_faces_hassan", "diarmuid_ua_duibhne",
             "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
       };

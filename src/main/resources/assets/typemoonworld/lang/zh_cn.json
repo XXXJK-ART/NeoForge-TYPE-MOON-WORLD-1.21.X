@@ -2398,5 +2398,15 @@
   "command.typemoonworld.passive.revoked": "已撤销 %1$s 的被动 %2$s。",
   "command.typemoonworld.passive.not_owned": "%1$s 没有被动 %2$s。",
   "command.typemoonworld.passive.list.header": "%s 的被动：",
-  "command.typemoonworld.passive.list.empty": "无"
+  "command.typemoonworld.passive.list.empty": "无",
+  "entity.typemoonworld.diarmuid_ua_duibhne": "迪尔姆德",
+  "item.typemoonworld.diarmuid_ua_duibhne_spawn_egg": "迪尔姆德（Lancer）刷怪蛋",
+  "item.typemoonworld.gae_dearg": "破魔的红蔷薇",
+  "item.typemoonworld.gae_dearg.desc": "命中后破除魔力构成的防御。",
+  "item.typemoonworld.gae_buidhe": "必灭的黄蔷薇",
+  "item.typemoonworld.gae_buidhe.desc": "命中后留下无法普通治愈的诅咒伤口。",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_head": "迪尔姆德从者卡头部",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_chest": "迪尔姆德从者卡胸甲",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_legs": "迪尔姆德从者卡护腿",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_feet": "迪尔姆德从者卡靴子"
 }

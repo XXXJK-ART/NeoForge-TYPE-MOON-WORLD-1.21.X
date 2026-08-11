@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -133,7 +134,18 @@ public class TypeMoonWorldModKeyMappings {
       private static float lastServantFlightStrafe = Float.NaN;
       private static float lastServantFlightVertical = Float.NaN;
       private static int manaBurstInputSendDelay = 0;
+      private static int manaBurstInputKeepaliveChecks = 0;
+      private static float lastManaBurstForward = Float.NaN;
+      private static float lastManaBurstStrafe = Float.NaN;
+      private static boolean lastManaBurstJump = false;
+      private static boolean lastManaBurstSneak = false;
       private static int paleRiderInputSendDelay = 0;
+      private static int paleRiderInputKeepaliveChecks = 0;
+      private static float lastPaleRiderForward = Float.NaN;
+      private static float lastPaleRiderStrafe = Float.NaN;
+      private static float lastPaleRiderVertical = Float.NaN;
+      private static float lastPaleRiderYaw = Float.NaN;
+      private static float lastPaleRiderPitch = Float.NaN;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
       private static boolean machineGunCastKeyDown = false;
@@ -710,11 +722,24 @@ public class TypeMoonWorldModKeyMappings {
             if (paleRiderInputSendDelay > 0) {
                paleRiderInputSendDelay--;
             } else {
-               PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical, yaw, pitch), new CustomPacketPayload[0]);
+               boolean changed = forward != lastPaleRiderForward || strafe != lastPaleRiderStrafe || vertical != lastPaleRiderVertical
+                  || Float.isNaN(lastPaleRiderYaw) || Math.abs(Mth.degreesDifference(lastPaleRiderYaw, yaw)) >= 2.0F
+                  || Float.isNaN(lastPaleRiderPitch) || Math.abs(pitch - lastPaleRiderPitch) >= 2.0F;
+               boolean moving = forward != 0.0F || strafe != 0.0F || vertical != 0.0F;
+               int keepaliveChecks = moving ? 2 : 10;
+               if (changed || ++paleRiderInputKeepaliveChecks >= keepaliveChecks) {
+                  PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical, yaw, pitch), new CustomPacketPayload[0]);
+                  lastPaleRiderForward = forward;
+                  lastPaleRiderStrafe = strafe;
+                  lastPaleRiderVertical = vertical;
+                  lastPaleRiderYaw = yaw;
+                  lastPaleRiderPitch = pitch;
+                  paleRiderInputKeepaliveChecks = 0;
+               }
                paleRiderInputSendDelay = 2;
             }
          } else {
-            paleRiderInputSendDelay = 0;
+            clearPaleRiderInputState();
          }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {
@@ -778,6 +803,7 @@ public class TypeMoonWorldModKeyMappings {
 
       public static void clearClientInputState() {
          clearServantCardInputState();
+         clearManaBurstInputState();
          bajiquanJumpDown = false;
          bajiquanCrouchDown = false;
          ganryuJumpDown = false;
@@ -796,10 +822,20 @@ public class TypeMoonWorldModKeyMappings {
          lastServantFlightForward = Float.NaN;
          lastServantFlightStrafe = Float.NaN;
          lastServantFlightVertical = Float.NaN;
-         paleRiderInputSendDelay = 0;
+         clearPaleRiderInputState();
          for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
             servantCardHoldDown[slot] = false;
          }
+      }
+
+      private static void clearPaleRiderInputState() {
+         paleRiderInputSendDelay = 0;
+         paleRiderInputKeepaliveChecks = 0;
+         lastPaleRiderForward = Float.NaN;
+         lastPaleRiderStrafe = Float.NaN;
+         lastPaleRiderVertical = Float.NaN;
+         lastPaleRiderYaw = Float.NaN;
+         lastPaleRiderPitch = Float.NaN;
       }
 
       private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
@@ -871,7 +907,7 @@ public class TypeMoonWorldModKeyMappings {
             || vars.servant_card_transformed
             || vars.master_card_active
             || !canSendManaBurstInput(vars)) {
-            manaBurstInputSendDelay = 0;
+            clearManaBurstInputState();
             return;
          }
          if (manaBurstInputSendDelay > 0) {
@@ -884,11 +920,30 @@ public class TypeMoonWorldModKeyMappings {
          boolean jump = minecraft.options.keyJump.isDown();
          boolean sneak = minecraft.options.keyShift.isDown();
          if (forward != 0.0F || strafe != 0.0F || jump || sneak) {
-            PacketDistributor.sendToServer(new ManaBurstInputMessage(forward, strafe, jump, sneak), new CustomPacketPayload[0]);
+            boolean changed = forward != lastManaBurstForward || strafe != lastManaBurstStrafe
+               || jump != lastManaBurstJump || sneak != lastManaBurstSneak;
+            if (changed || ++manaBurstInputKeepaliveChecks >= 3) {
+               PacketDistributor.sendToServer(new ManaBurstInputMessage(forward, strafe, jump, sneak), new CustomPacketPayload[0]);
+               lastManaBurstForward = forward;
+               lastManaBurstStrafe = strafe;
+               lastManaBurstJump = jump;
+               lastManaBurstSneak = sneak;
+               manaBurstInputKeepaliveChecks = 0;
+            }
             manaBurstInputSendDelay = 1;
          } else {
+            clearManaBurstInputState();
             manaBurstInputSendDelay = 2;
          }
+      }
+
+      private static void clearManaBurstInputState() {
+         manaBurstInputSendDelay = 0;
+         manaBurstInputKeepaliveChecks = 0;
+         lastManaBurstForward = Float.NaN;
+         lastManaBurstStrafe = Float.NaN;
+         lastManaBurstJump = false;
+         lastManaBurstSneak = false;
       }
 
       private static boolean canSendManaBurstInput(TypeMoonWorldModVariables.PlayerVariables vars) {

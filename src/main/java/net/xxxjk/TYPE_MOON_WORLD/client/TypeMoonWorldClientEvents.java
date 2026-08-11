@@ -270,6 +270,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), context -> new HumanoidServantRenderer<>(context, "sasaki_kojiro"));
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), context -> new HumanoidServantRenderer<>(context, "cu_chulainn"));
+      event.registerEntityRenderer(ModEntities.DIARMUID_UA_DUIBHNE.get(), context -> new HumanoidServantRenderer<>(context, "diarmuid_ua_duibhne"));
       event.registerEntityRenderer(ModEntities.MEDEA.get(), context -> new HumanoidServantRenderer<>(context, "medea"));
       event.registerEntityRenderer(ModEntities.MEDUSA.get(), context -> new HumanoidServantRenderer<>(context, "medusa"));
       event.registerEntityRenderer(ModEntities.CURSED_ARM_HASSAN.get(), CursedArmHassanRenderer::new);

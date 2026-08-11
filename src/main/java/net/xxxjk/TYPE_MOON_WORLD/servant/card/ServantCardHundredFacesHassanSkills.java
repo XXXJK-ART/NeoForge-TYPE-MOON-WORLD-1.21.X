@@ -31,6 +31,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -132,6 +133,10 @@ public final class ServantCardHundredFacesHassanSkills {
          return false;
       }
       LivingEntity inheritedTarget = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0, 2.0);
+      if (count >= 20) {
+         level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.HUNDRED_FACES_HASSAN_VOICE_NP.get(),
+            SoundSource.PLAYERS, 1.15F, 0.98F + (player.getRandom().nextFloat() - 0.5F) * 0.06F);
+      }
       for (int start = 0; start < count; start += HundredFacesHassanRules.MAX_SUMMON_BATCH) {
          int batch = Math.min(HundredFacesHassanRules.MAX_SUMMON_BATCH, count - start);
          int offset = start;

@@ -2371,5 +2371,15 @@
   "command.typemoonworld.passive.revoked": "Revoked passive %2$s from %1$s.",
   "command.typemoonworld.passive.not_owned": "%1$s does not have passive %2$s.",
   "command.typemoonworld.passive.list.header": "%s's passives:",
-  "command.typemoonworld.passive.list.empty": "None"
+  "command.typemoonworld.passive.list.empty": "None",
+  "entity.typemoonworld.diarmuid_ua_duibhne": "Diarmuid Ua Duibhne",
+  "item.typemoonworld.diarmuid_ua_duibhne_spawn_egg": "Diarmuid Ua Duibhne (Lancer) Spawn Egg",
+  "item.typemoonworld.gae_dearg": "Gae Dearg",
+  "item.typemoonworld.gae_dearg.desc": "The red spear breaks magical defenses on hit.",
+  "item.typemoonworld.gae_buidhe": "Gae Buidhe",
+  "item.typemoonworld.gae_buidhe.desc": "The yellow spear leaves a curse wound that cannot heal normally.",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_head": "Diarmuid Servant Card Hair",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_chest": "Diarmuid Servant Card Armor",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_legs": "Diarmuid Servant Card Leg Armor",
+  "item.typemoonworld.servant_card_diarmuid_ua_duibhne_feet": "Diarmuid Servant Card Boots"
 }

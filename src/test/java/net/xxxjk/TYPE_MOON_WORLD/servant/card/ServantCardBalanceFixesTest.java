@@ -95,6 +95,26 @@ class ServantCardBalanceFixesTest {
    }
 
    @Test
+   void odaMountFlightAvoidsPerTickSyncAndParticleSpam() throws IOException {
+      String gun = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/entity/OdaMatchlockGunEntity.java"));
+      String card = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardOdaNobunagaSkills.java"));
+
+      assertTrue(gun.contains("MOUNT_INPUT_SYNC_EPSILON"));
+      assertTrue(gun.contains("AIM_SYNC_EPSILON_DEGREES"));
+      assertTrue(gun.contains("MOUNT_TRAIL_PARTICLE_INTERVAL = 12"));
+      assertTrue(gun.contains("FOOT_SUPPORT_TRAIL_PARTICLE_INTERVAL = 12"));
+      assertTrue(gun.contains("MOUNT_TRAIL_MIN_SPEED_SQR"));
+      assertTrue(gun.contains("setSynchedFloatIfChanged(MOVE_FORWARD"));
+      assertTrue(gun.contains("setSynchedAngleIfChanged(AIM_YAW"));
+      assertTrue(gun.contains("velocity.lengthSqr() >= MOUNT_TRAIL_MIN_SPEED_SQR"));
+      assertTrue(gun.contains("owner.getDeltaMovement().lengthSqr() >= 0.0004"));
+      assertTrue(gun.contains("private static final RawAnimation IDLE_ANIMATION"));
+      assertTrue(card.contains("discardFloatingMatchlocks(level, player)"));
+      assertTrue(card.contains("gun -> gun.isFloatingFor(player.getUUID())"));
+      assertTrue(card.contains("gun.discardSilently()"));
+   }
+
+   @Test
    void gilgameshBabIluMarksEaSummonOnTheItemStack() throws IOException {
       String source = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/item/custom/GilgameshNoblePhantasmItem.java"));
 

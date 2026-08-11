@@ -93,7 +93,7 @@ public class TypeMoonWorldModVariables {
                MasterStateManager.release(player);
             }
             PassiveService.reconcileAttributes(player, vars);
-            vars.syncPlayerVariables(event.getEntity());
+            vars.forceSyncPlayerVariables(event.getEntity());
          }
       }
 
@@ -102,14 +102,14 @@ public class TypeMoonWorldModVariables {
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             PassiveService.reconcileAttributes(player, vars);
-            vars.syncPlayerVariables(event.getEntity());
+            vars.forceSyncPlayerVariables(event.getEntity());
          }
       }
 
       @SubscribeEvent
       public static void onPlayerChangedDimensionSyncPlayerVariables(PlayerChangedDimensionEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).syncPlayerVariables(event.getEntity());
+            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).forceSyncPlayerVariables(event.getEntity());
          }
       }
 
@@ -957,6 +957,10 @@ public class TypeMoonWorldModVariables {
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
       private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
+      private transient boolean fullSyncSnapshotSent = false;
+      private transient int fullSyncSnapshotHash = 0;
+      private transient boolean manaSyncSnapshotSent = false;
+      private transient int manaSyncSnapshotHash = 0;
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -2789,9 +2793,18 @@ public class TypeMoonWorldModVariables {
          }
 
          this.ensureMagicSystemInitialized();
+         this.resetSyncSnapshots();
       }
 
       public void syncPlayerVariables(Entity entity) {
+         this.syncPlayerVariables(entity, false);
+      }
+
+      public void forceSyncPlayerVariables(Entity entity) {
+         this.syncPlayerVariables(entity, true);
+      }
+
+      private void syncPlayerVariables(Entity entity, boolean force) {
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
          MagicCircuitColorHelper.ensureColor(this);
@@ -2903,7 +2916,16 @@ public class TypeMoonWorldModVariables {
          this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
          this.gandr_machine_gun_mode = Math.max(0, Math.min(1, this.gandr_machine_gun_mode));
          if (entity instanceof ServerPlayer serverPlayer) {
-            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(this.serializeNBT(serverPlayer.registryAccess())));
+            CompoundTag snapshot = this.serializeNBT(serverPlayer.registryAccess());
+            int hash = snapshot.hashCode();
+            if (force || !this.fullSyncSnapshotSent || this.fullSyncSnapshotHash != hash) {
+               sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(snapshot));
+               this.fullSyncSnapshotSent = true;
+               this.fullSyncSnapshotHash = hash;
+               TypeMoonWorldModVariables.ManaSyncMessage manaSnapshot = new TypeMoonWorldModVariables.ManaSyncMessage(this);
+               this.manaSyncSnapshotSent = true;
+               this.manaSyncSnapshotHash = manaSnapshot.hashCode();
+            }
          }
       }
 
@@ -2921,8 +2943,21 @@ public class TypeMoonWorldModVariables {
 
       public void syncMana(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ManaSyncMessage(this));
+            TypeMoonWorldModVariables.ManaSyncMessage payload = new TypeMoonWorldModVariables.ManaSyncMessage(this);
+            int hash = payload.hashCode();
+            if (!this.manaSyncSnapshotSent || this.manaSyncSnapshotHash != hash) {
+               sendIfSupported(serverPlayer, payload);
+               this.manaSyncSnapshotSent = true;
+               this.manaSyncSnapshotHash = hash;
+            }
          }
+      }
+
+      private void resetSyncSnapshots() {
+         this.fullSyncSnapshotSent = false;
+         this.fullSyncSnapshotHash = 0;
+         this.manaSyncSnapshotSent = false;
+         this.manaSyncSnapshotHash = 0;
       }
 
       public void syncServantCardRuntime(Entity entity) {

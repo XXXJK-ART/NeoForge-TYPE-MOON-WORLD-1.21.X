@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -201,6 +202,9 @@ public final class HundredFacesHassanCombatHelper {
          level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y + 0.9, pos.z, 12, 0.35, 0.55, 0.35, 0.02);
       }
       if (spawned > 0) {
+         if (spawned >= 20) {
+            ServantVoiceHelper.tryPlayHundredFacesNp(owner);
+         }
          level.sendParticles(ParticleTypes.SMOKE, owner.getX(), owner.getY() + 1.0, owner.getZ(),
             24, 0.8, 0.8, 0.8, 0.03);
          owner.addTotalSplitCount(spawned);

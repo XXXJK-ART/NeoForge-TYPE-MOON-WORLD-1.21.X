@@ -619,6 +619,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (mount != null) {
          mount.discard();
       }
+      discardFloatingMatchlocks(level, player);
       mount = OdaMatchlockGunEntity.flightMount(level, player);
       mount.setPos(player.getX(), player.getY() + 0.08, player.getZ());
       level.addFreshEntity(mount);
@@ -1282,6 +1283,16 @@ public final class ServantCardOdaNobunagaSkills {
          .stream()
          .findFirst()
          .orElse(null);
+   }
+
+   private static void discardFloatingMatchlocks(ServerLevel level, ServerPlayer player) {
+      for (OdaMatchlockGunEntity gun : level.getEntitiesOfClass(
+         OdaMatchlockGunEntity.class,
+         player.getBoundingBox().inflate(64.0),
+         gun -> gun.isFloatingFor(player.getUUID())
+      )) {
+         gun.discardSilently();
+      }
    }
 
 }

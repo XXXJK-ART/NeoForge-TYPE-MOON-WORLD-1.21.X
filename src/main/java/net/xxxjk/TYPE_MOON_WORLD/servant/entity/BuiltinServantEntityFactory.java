@@ -34,6 +34,10 @@ public final class BuiltinServantEntityFactory {
          return ModEntities.HUNDRED_FACES_HASSAN.get().create(level);
       }
       if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
+         && DiarmuidUaDuibhneEntity.SERVANT_KEY.equals(servantId.getPath())) {
+         return ModEntities.DIARMUID_UA_DUIBHNE.get().create(level);
+      }
+      if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
          && ArashEntity.SERVANT_KEY.equals(servantId.getPath())) {
          return ModEntities.ARASH.get().create(level);
       }

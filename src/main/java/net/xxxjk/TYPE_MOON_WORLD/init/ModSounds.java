@@ -48,6 +48,14 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_MARROW = register("fanatic_assassin_voice_marrow");
    public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_HAIR = register("fanatic_assassin_voice_hair");
    public static final DeferredHolder<SoundEvent, SoundEvent> FANATIC_ASSASSIN_VOICE_COMPUTER_TEMPERATURE = register("fanatic_assassin_voice_computer_temperature");
+   public static final DeferredHolder<SoundEvent, SoundEvent> HUNDRED_FACES_HASSAN_VOICE_ATTACK = register("hundred_faces_hassan_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> HUNDRED_FACES_HASSAN_VOICE_FAIL = register("hundred_faces_hassan_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> HUNDRED_FACES_HASSAN_VOICE_VICTORY = register("hundred_faces_hassan_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> HUNDRED_FACES_HASSAN_VOICE_NP = register("hundred_faces_hassan_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_ATTACK = register("diarmuid_ua_duibhne_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_FAIL = register("diarmuid_ua_duibhne_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_VICTORY = register("diarmuid_ua_duibhne_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_NP = register("diarmuid_ua_duibhne_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_ATTACK = register("emiya_archer_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_FAIL = register("emiya_archer_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_VICTORY = register("emiya_archer_voice_victory");
