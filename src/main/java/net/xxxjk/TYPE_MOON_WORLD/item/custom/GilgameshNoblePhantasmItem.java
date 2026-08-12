@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -65,6 +66,11 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    }
 
    public String modelId() { return this.modelId; }
+
+   @Override
+   public boolean isFoil(ItemStack stack) {
+      return LancelotCombatHelper.isKnightOfOwner(stack) || super.isFoil(stack);
+   }
 
    @Override
    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {

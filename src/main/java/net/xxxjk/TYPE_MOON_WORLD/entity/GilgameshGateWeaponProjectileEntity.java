@@ -35,6 +35,10 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** Server-authoritative Gate of Babylon projectile. The client only needs the tracked position. */
 public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEntity {
+   public static final int SOURCE_STYLE_GILGAMESH = 0;
+   public static final int SOURCE_STYLE_EMIYA = 1;
+   public static final int SOURCE_STYLE_ENKIDU = 2;
+   public static final int SOURCE_STYLE_LANCELOT = 3;
    private static final EntityDataAccessor<String> WEAPON_ID = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.STRING);
    private static final EntityDataAccessor<Integer> SOURCE_STYLE = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<String> DUEL_TOKEN = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.STRING);
@@ -68,6 +72,9 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    }
 
    public String getWeaponId() { return this.entityData.get(WEAPON_ID); }
+   public float getDamage() { return this.damage; }
+   public boolean isEmpowered() { return this.entityData.get(EMPOWERED); }
+   public boolean isKnightOfOwnerCounter() { return this.getSourceStyle() == SOURCE_STYLE_LANCELOT; }
    /** Resolves the living owner for AI threat classification on the server. */
    public LivingEntity getOwnerEntity() {
       return this.level() instanceof net.minecraft.server.level.ServerLevel level ? getOwner(level) : null;
@@ -119,14 +126,14 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                ? Math.floorMod(this.getId(), effectStride) == 0
                : (duelToken.hashCode() & 3) == 0;
             if (showDuelFx) {
-               if (this.getSourceStyle() == 2) {
+               if (this.getSourceStyle() == SOURCE_STYLE_ENKIDU) {
                   VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", this.position(), 160.0);
-               } else if (this.getSourceStyle() == 1) {
+               } else if (this.getSourceStyle() == SOURCE_STYLE_EMIYA) {
                   // Emiya's counter projectiles are projections, not golden
                   // Gate of Babylon portals.
                   VFXServerEffects.spawnOriented(level, "servant_emiya_projection",
                      this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
-               } else {
+               } else if (this.getSourceStyle() == SOURCE_STYLE_GILGAMESH) {
                   VFXServerEffects.spawnOriented(level, "gilgamesh_gate",
                      this.position().subtract(this.getDeltaMovement().normalize().scale(0.45)), this.getDeltaMovement(), 160.0);
                }
@@ -285,6 +292,11 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    }
 
    private void spawnTrail(net.minecraft.server.level.ServerLevel level) {
+      if (this.isKnightOfOwnerCounter()) {
+         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY(), this.getZ(), 5, 0.14, 0.14, 0.14, 0.025);
+         level.sendParticles(ParticleTypes.REVERSE_PORTAL, this.getX(), this.getY(), this.getZ(), 2, 0.08, 0.08, 0.08, 0.01);
+         return;
+      }
       if ("vajra".equals(this.getWeaponId())) {
          level.sendParticles(VAJRA_PURPLE, this.getX(), this.getY(), this.getZ(), this.entityData.get(EMPOWERED) ? 18 : 5, 0.22, 0.22, 0.22, 0.03);
          level.sendParticles(ParticleTypes.ELECTRIC_SPARK, this.getX(), this.getY(), this.getZ(), this.entityData.get(EMPOWERED) ? 14 : 3, 0.28, 0.28, 0.28, 0.12);

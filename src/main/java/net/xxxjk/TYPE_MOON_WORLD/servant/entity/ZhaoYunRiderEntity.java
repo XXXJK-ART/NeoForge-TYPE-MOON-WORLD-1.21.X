@@ -89,10 +89,10 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       Entity vehicle = getVehicle();
       super.stopRiding();
       if (vehicle instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
-         // Hakuryu is summoned for Zhao Yun's current ride. Once he gets off,
-         // remove that mount instead of leaving a stray persistent horse.
-         onHakuryuDismounted(mount);
-         mount.discard();
+         // Passenger links can briefly drop during chunk/tracking updates.
+         // Let Hakuryu restore the bound Zhao Yun before treating it as a real
+         // dismount and deleting the persistent mount.
+         mount.requestRiderRelinkGrace();
       }
    }
 

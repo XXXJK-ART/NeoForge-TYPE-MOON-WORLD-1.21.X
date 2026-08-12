@@ -249,9 +249,12 @@ public final class ServantCardEmiyaSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
          return false;
       }
-      ItemStack weapon = target.getMainHandItem().getItem() instanceof NoblePhantasmItem
-         ? target.getMainHandItem() : target.getOffhandItem();
-      ItemStack traced = weapon.copy();
+      ItemStack original = copyableHeldItem(target);
+      if (original.isEmpty()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
+         return false;
+      }
+      ItemStack traced = original.copy();
       traced.setCount(1);
       PlayerNoblePhantasmHelper.markUbwProjection(traced);
       PlayerNoblePhantasmHelper.markServantCardCopiedNoblePhantasm(traced);
@@ -309,8 +312,24 @@ public final class ServantCardEmiyaSkills {
       if (target == null) {
          return null;
       }
-      return target.getMainHandItem().getItem() instanceof NoblePhantasmItem
-         || target.getOffhandItem().getItem() instanceof NoblePhantasmItem ? target : null;
+      return copyableHeldItem(target).isEmpty() ? null : target;
+   }
+
+   private static ItemStack copyableHeldItem(LivingEntity target) {
+      ItemStack mainHand = target.getMainHandItem();
+      if (isTypeMoonWorldItem(mainHand)) {
+         return mainHand;
+      }
+      ItemStack offHand = target.getOffhandItem();
+      return isTypeMoonWorldItem(offHand) ? offHand : ItemStack.EMPTY;
+   }
+
+   private static boolean isTypeMoonWorldItem(ItemStack stack) {
+      if (stack == null || stack.isEmpty()) {
+         return false;
+      }
+      ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+      return key != null && TYPE_MOON_WORLD.MOD_ID.equals(key.getNamespace());
    }
 
    private static LinkedHashSet<String> copiedNoblePhantasmIds(TypeMoonWorldModVariables.PlayerVariables vars) {

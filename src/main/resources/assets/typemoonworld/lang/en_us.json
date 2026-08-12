@@ -2394,6 +2394,7 @@
   "message.typemoonworld.diarmuid.dual_wield.off": "Dual Spear Stance: Off",
   "entity.typemoonworld.lancelot_berserker": "Lancelot",
   "item.typemoonworld.lancelot_berserker_spawn_egg": "Lancelot (Berserker) Spawn Egg",
+  "item.typemoonworld.servant_card_lancelot_berserker": "Lancelot (Berserker)",
   "item.typemoonworld.aroundight": "Aroundight",
   "item.typemoonworld.aroundight.desc": "The indestructible lake sword used in Lancelot's decisive mode.",
   "item.typemoonworld.lancelot_iron_rod": "Lancelot Iron Rod",
@@ -2401,5 +2402,13 @@
   "item.typemoonworld.servant_card_lancelot_berserker_head": "Lancelot Berserker Helm",
   "item.typemoonworld.servant_card_lancelot_berserker_chest": "Lancelot Berserker Armor",
   "item.typemoonworld.servant_card_lancelot_berserker_legs": "Lancelot Berserker Leg Armor",
-  "item.typemoonworld.servant_card_lancelot_berserker_feet": "Lancelot Berserker Boots"
+  "skill.typemoonworld.servant_card.lancelot_maul_combo": "Mad Enhancement Combo",
+  "skill.typemoonworld.servant_card.lancelot_feral_rush": "Feral Rush",
+  "skill.typemoonworld.servant_card.lancelot_ground_slam": "Ground Slam",
+  "skill.typemoonworld.servant_card.lancelot_hunt_step": "Hunt Step",
+  "skill.typemoonworld.servant_card.lancelot_mana_reversal": "Mana Reversal",
+  "skill.typemoonworld.servant_card.lancelot_berserk_roar": "Mad Roar",
+  "skill.typemoonworld.servant_card.lancelot_knight_of_owner": "Knight of Owner",
+  "skill.typemoonworld.servant_card.lancelot_aroundight": "Aroundight",
+  "message.typemoonworld.lancelot.aroundight_seals_owner": "Knight of Owner is sealed while Aroundight is released"
 }

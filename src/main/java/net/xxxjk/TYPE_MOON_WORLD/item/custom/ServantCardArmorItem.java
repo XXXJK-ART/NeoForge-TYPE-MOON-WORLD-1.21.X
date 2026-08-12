@@ -126,6 +126,8 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          animation = "1";
       } else if ("diarmuid_ua_duibhne".equals(this.servantId)) {
          animation = "1";
+      } else if ("lancelot_berserker".equals(this.servantId)) {
+         animation = "animation";
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)

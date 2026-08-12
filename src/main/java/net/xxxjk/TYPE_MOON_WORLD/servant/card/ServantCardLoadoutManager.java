@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardLoadoutManager {
@@ -84,6 +85,7 @@ public final class ServantCardLoadoutManager {
             main = stack(ModItems.GAE_DEARG.get());
             off = stack(ModItems.GAE_BUIDHE.get());
          }
+         case "lancelot_berserker" -> main = LancelotCombatHelper.knightOfOwnerStack(stack(ModItems.LANCELOT_IRON_ROD.get()), player);
          default -> {
          }
       }

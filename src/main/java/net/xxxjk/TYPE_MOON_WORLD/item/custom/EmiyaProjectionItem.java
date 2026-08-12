@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.EmiyaProjectionItemRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardParacelsusSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -45,6 +46,11 @@ public class EmiyaProjectionItem extends SwordItem implements GeoItem, NoblePhan
 
    public String projectionId() {
       return this.projectionId;
+   }
+
+   @Override
+   public boolean isFoil(ItemStack stack) {
+      return LancelotCombatHelper.isKnightOfOwner(stack) || super.isFoil(stack);
    }
 
    @Override

@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
@@ -69,6 +70,11 @@ public final class ServantCardDefenseHandler {
       if ("arash".equals(vars.servant_card_id)) {
          staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
          poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
+      if ("lancelot_berserker".equals(vars.servant_card_id)) {
+         double recoveryMultiplier = LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
+         staminaRegen *= recoveryMultiplier;
+         poiseRegen *= recoveryMultiplier;
       }
       data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
          data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
@@ -213,6 +219,7 @@ public final class ServantCardDefenseHandler {
       }
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(event.getSource())
          && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
@@ -223,7 +230,9 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
+      Float reduced = divineDefenseBroken || specialNoblePhantasmDamage
+         || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
+         ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
          if (reduced <= 0.0F) {
             event.setCanceled(true);
@@ -430,6 +439,9 @@ public final class ServantCardDefenseHandler {
       int cooldown = ServantCombatFormulas.dodgeCooldownTicks(params);
       if ("emiya_archer".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id)) {
          cooldown = Math.max(4, cooldown / 2);
+      }
+      if ("lancelot_berserker".equals(vars.servant_card_id)) {
+         cooldown = Math.max(1, (int)Math.ceil(cooldown / LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier()));
       }
       CompoundTag data = player.getPersistentData();
       if (now < data.getLong(TAG_LAST_DODGE_TICK) + cooldown) {

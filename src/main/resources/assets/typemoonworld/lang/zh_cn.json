@@ -2421,6 +2421,7 @@
   "message.typemoonworld.diarmuid.dual_wield.off": "双枪架势：关闭",
   "entity.typemoonworld.lancelot_berserker": "兰斯洛特",
   "item.typemoonworld.lancelot_berserker_spawn_egg": "兰斯洛特（Berserker）刷怪蛋",
+  "item.typemoonworld.servant_card_lancelot_berserker": "兰斯洛特（Berserker）",
   "item.typemoonworld.aroundight": "无毁的湖光",
   "item.typemoonworld.aroundight.desc": "兰斯洛特决战模式使用的湖光魔剑，不会损坏。",
   "item.typemoonworld.lancelot_iron_rod": "兰斯洛特铁棍",
@@ -2428,5 +2429,13 @@
   "item.typemoonworld.servant_card_lancelot_berserker_head": "兰斯洛特从者卡头盔",
   "item.typemoonworld.servant_card_lancelot_berserker_chest": "兰斯洛特从者卡胸甲",
   "item.typemoonworld.servant_card_lancelot_berserker_legs": "兰斯洛特从者卡护腿",
-  "item.typemoonworld.servant_card_lancelot_berserker_feet": "兰斯洛特从者卡靴子"
+  "skill.typemoonworld.servant_card.lancelot_maul_combo": "狂乱连打",
+  "skill.typemoonworld.servant_card.lancelot_feral_rush": "猛冲",
+  "skill.typemoonworld.servant_card.lancelot_ground_slam": "砸地",
+  "skill.typemoonworld.servant_card.lancelot_hunt_step": "追猎步",
+  "skill.typemoonworld.servant_card.lancelot_mana_reversal": "魔力逆流",
+  "skill.typemoonworld.servant_card.lancelot_berserk_roar": "狂化咆哮",
+  "skill.typemoonworld.servant_card.lancelot_knight_of_owner": "骑士不死于徒手",
+  "skill.typemoonworld.servant_card.lancelot_aroundight": "无毁的湖光 阿隆戴特",
+  "message.typemoonworld.lancelot.aroundight_seals_owner": "无毁的湖光解放中，骑士不死于徒手被封印"
 }

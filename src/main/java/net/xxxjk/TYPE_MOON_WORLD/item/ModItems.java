@@ -387,6 +387,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER = registerServantCard("zhao_yun_rider");
     public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA = registerServantCard("senko_muramasa");
     public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE = registerServantCard("diarmuid_ua_duibhne");
+    public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER = registerServantCard("lancelot_berserker");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -442,7 +443,6 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_HEAD = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_CHEST = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_LEGS = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.LEGS);
-    public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_FEET = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.FEET);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -1331,8 +1331,7 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_DIARMUID_UA_DUIBHNE_FEET.get() : Items.AIR;
             case "lancelot_berserker" -> head ? SERVANT_CARD_LANCELOT_BERSERKER_HEAD.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()
-                : legs ? SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get()
-                : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_LANCELOT_BERSERKER_FEET.get() : Items.AIR;
+                : legs ? SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();

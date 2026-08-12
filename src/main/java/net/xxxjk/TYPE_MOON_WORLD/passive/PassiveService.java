@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
 
 public final class PassiveService {
@@ -82,6 +83,7 @@ public final class PassiveService {
          || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
          || source.is(FanaticDamageTypes.GUARANTEED_HITS)
          || source.is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)
+         || LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
          || ProjectileThreatClassifier.classify(source).contains(FactBypass.SURE_HIT)
          || UshiwakamaruCombatHelper.isGuaranteedHit(source, player.level().getGameTime())) return false;
       boolean projectile = source.getDirectEntity() instanceof Projectile;

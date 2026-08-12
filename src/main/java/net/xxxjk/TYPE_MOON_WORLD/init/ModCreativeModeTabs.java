@@ -63,6 +63,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER);
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA);
                         output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE);
+                        output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);
@@ -115,7 +116,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_HEAD);
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS);
-                        output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_FEET);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);

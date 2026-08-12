@@ -19,7 +19,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -74,7 +73,6 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private boolean impactQueued;
    private boolean clashing;
    private boolean autoReleaseAtFull;
-   private boolean boundaryBroken;
    private boolean beamVisualStarted;
    private boolean duelFinale;
    private int stageTicks;
@@ -217,9 +215,6 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       setStage(Stage.BEAM);
       updateDirectionFromOwner(owner);
       this.lastDamageDirection = this.direction;
-      // EA is an anti-world attack: collapse UBW/Hajun before the first beam
-      // frame, then move this invisible controller with its caster.
-      if (collapseContainingBoundary(level, owner)) return;
    }
 
    private void tickBeam(ServerLevel level, LivingEntity owner) {
@@ -401,34 +396,6 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          SoundSource.HOSTILE, 9.0F, 0.4F);
    }
 
-   private boolean collapseContainingBoundary(ServerLevel source, LivingEntity owner) {
-      if (boundaryBroken || (!net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager.isUbwDimension(source)
-         && !net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions.isHajunDimension(source.dimension().location()))) {
-         return false;
-      }
-      boundaryBroken = true;
-      LivingEntity returned = EaWorldBoundaryBreaker.breakFor(owner, source);
-      if (returned == null || !(returned.level() instanceof ServerLevel destination) || destination == source) {
-         return false;
-      }
-      destination.setWeatherParameters(0, EA_THUNDER_TICKS, true, true);
-      Entity moved = changeDimension(new DimensionTransition(destination,
-         returned.position().add(0.0, returned.getBbHeight() * 0.65, 0.0), Vec3.ZERO,
-         returned.getYRot(), returned.getXRot(), DimensionTransition.DO_NOTHING));
-      if (moved instanceof GilgameshEaBeamEntity controller) {
-         controller.ownerUuid = returned.getUUID();
-         controller.entityData.set(OWNER_ID, returned.getId());
-         controller.direction = this.direction;
-         controller.windOriginY = this.windOriginY;
-         controller.beamStarted = true;
-         controller.boundaryBroken = true;
-         controller.beamVisualStarted = false;
-         controller.updateEnd();
-         return true;
-      }
-      return false;
-   }
-
    private void updateDirectionFromOwner(LivingEntity owner) {
       this.direction = normalized(owner.getLookAngle());
       this.updateEnd();
@@ -539,7 +506,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       direction = new Vec3(tag.getDouble("DirX"), tag.getDouble("DirY"), tag.getDouble("DirZ")); windOriginY = tag.getDouble("WindOriginY");
       stageTicks = tag.getInt("StageTicks"); releaseRequested = tag.getBoolean("Release"); windOnly = tag.getBoolean("WindOnly");
       beamStarted = tag.getBoolean("BeamStarted"); impactQueued = tag.getBoolean("ImpactQueued"); autoReleaseAtFull = tag.getBoolean("AutoRelease");
-      boundaryBroken = tag.getBoolean("BoundaryBroken"); beamVisualStarted = tag.getBoolean("BeamVisualStarted");
+      beamVisualStarted = tag.getBoolean("BeamVisualStarted");
       duelFinale = tag.getBoolean("DuelFinale");
       clashDamageScale = Math.max(0.0F, Math.min(1.0F,
          tag.contains("ClashDamageScale") ? tag.getFloat("ClashDamageScale") : 1.0F));
@@ -552,7 +519,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       tag.putDouble("DirX", direction.x); tag.putDouble("DirY", direction.y); tag.putDouble("DirZ", direction.z); tag.putDouble("WindOriginY", windOriginY);
       tag.putInt("StageTicks", stageTicks); tag.putBoolean("Release", releaseRequested); tag.putBoolean("WindOnly", windOnly);
       tag.putBoolean("BeamStarted", beamStarted); tag.putBoolean("ImpactQueued", impactQueued); tag.putBoolean("AutoRelease", autoReleaseAtFull);
-      tag.putBoolean("BoundaryBroken", boundaryBroken); tag.putBoolean("BeamVisualStarted", beamVisualStarted);
+      tag.putBoolean("BeamVisualStarted", beamVisualStarted);
       tag.putBoolean("DuelFinale", duelFinale);
       tag.putFloat("ClashDamageScale", clashDamageScale);
    }

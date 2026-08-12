@@ -18,6 +18,7 @@ import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GaeBulgRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -33,6 +34,11 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
 
    public GaeBulgItem(Properties properties) {
       super(Tiers.NETHERITE, properties);
+   }
+
+   @Override
+   public boolean isFoil(ItemStack stack) {
+      return LancelotCombatHelper.isKnightOfOwner(stack) || super.isFoil(stack);
    }
 
    public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {

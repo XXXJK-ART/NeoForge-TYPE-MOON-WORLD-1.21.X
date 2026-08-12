@@ -39,6 +39,7 @@ public final class ServantCardVoiceHelper {
          case "nightingale" -> ModSounds.NIGHTINGALE_VOICE_ATTACK.get();
          case "senko_muramasa" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          case "diarmuid_ua_duibhne" -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
+         case "lancelot_berserker" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -82,6 +83,10 @@ public final class ServantCardVoiceHelper {
          case "diarmuid_twin_spear_combo", "diarmuid_red_rose_focus", "diarmuid_yellow_rose_focus",
             "diarmuid_knight_strategy", "diarmuid_mana_burst_jump", "diarmuid_flower_step", "diarmuid_disengage"
             -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
+         case "lancelot_aroundight" -> ModSounds.LANCELOT_BERSERKER_VOICE_NP.get();
+         case "lancelot_berserk_roar" -> ModSounds.LANCELOT_BERSERKER_VOICE_ROAR.get();
+         case "lancelot_maul_combo", "lancelot_feral_rush", "lancelot_ground_slam", "lancelot_hunt_step",
+            "lancelot_mana_reversal", "lancelot_knight_of_owner" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
          default -> null;
       };
       play(player, sound, 40);

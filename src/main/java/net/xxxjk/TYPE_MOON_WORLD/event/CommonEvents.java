@@ -91,6 +91,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
@@ -115,6 +116,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -487,6 +489,13 @@ public class CommonEvents {
             return;
          }
          if (HundredFacesHassanCombatHelper.isFriendlyFire(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
+         if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+            && !NoblePhantasmDamageClassifier.isNoblePhantasmDamage(event.getSource(), event.getOriginalAmount())
+            && ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return;

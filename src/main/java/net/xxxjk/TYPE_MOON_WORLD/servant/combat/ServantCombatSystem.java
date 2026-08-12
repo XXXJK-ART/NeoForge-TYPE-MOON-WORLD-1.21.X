@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -206,6 +207,7 @@ public final class ServantCombatSystem {
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
          boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
          if (!PaleRiderDamageTypes.isInfection(source) && !ushiwakamaruMelee && !unavoidable
+            && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
             && tryAutoDodge(servant, source, params, now)) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount((float)Math.min(event.getAmount(), event.getAmount() * 0.5F));
@@ -215,7 +217,8 @@ public final class ServantCombatSystem {
             return;
          }
 
-         Float reduced = tryAutoBlock(servant, source, event.getAmount(), params, now);
+         Float reduced = LancelotCombatHelper.rollsEternalArmsGuardBypass(source)
+            ? null : tryAutoBlock(servant, source, event.getAmount(), params, now);
          if (reduced != null) {
             if (reduced <= 0.0F) {
                event.setCanceled(true);
@@ -566,8 +569,9 @@ public final class ServantCombatSystem {
       }
       long now = defender.level().getGameTime();
       ServantParams params = effectiveParams(defender, defender.getDefinition());
-      if (tryAutoDodge(defender, attacker.damageSources().mobAttack(attacker), params, now)
-         || tryAutoBlock(defender, attacker.damageSources().mobAttack(attacker), 1.0F, params, now) != null) {
+      DamageSource source = attacker.damageSources().mobAttack(attacker);
+      if (!LancelotCombatHelper.rollsEternalArmsDodgeBypass(source) && tryAutoDodge(defender, source, params, now)
+         || !LancelotCombatHelper.rollsEternalArmsGuardBypass(source) && tryAutoBlock(defender, source, 1.0F, params, now) != null) {
          applyStun(attacker, 10);
          spawnGuardFx(attacker, ParticleTypes.CRIT, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 0.8F);
          return true;
@@ -583,6 +587,9 @@ public final class ServantCombatSystem {
       int dodgeCooldown = emiya ? Math.max(6, ServantCombatFormulas.dodgeCooldownTicks(params) / 2) : ServantCombatFormulas.dodgeCooldownTicks(params);
       if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {
          dodgeCooldown = Math.max(1, dodgeCooldown / 2);
+      }
+      if (LancelotCombatHelper.hasEternalArmsMastership(servant)) {
+         dodgeCooldown = Math.max(1, (int)Math.ceil(dodgeCooldown / LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier()));
       }
       if (!canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + dodgeCooldown) {
          return false;
@@ -681,10 +688,14 @@ public final class ServantCombatSystem {
          spawnGuardFx(responder, ParticleTypes.CRIT, SoundEvents.TRIDENT_THROW.value(), 1.4F);
          return;
       }
-      if (ServantCombatFormulas.agilityStep(params) >= 3 && tryAutoDodge(responder, caster.damageSources().mobAttack(caster), params, now)) {
+      DamageSource responseSource = caster.damageSources().mobAttack(caster);
+      if (ServantCombatFormulas.agilityStep(params) >= 3
+         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(responseSource)
+         && tryAutoDodge(responder, responseSource, params, now)) {
          return;
       }
-      if (tryAutoBlock(responder, caster.damageSources().mobAttack(caster), 20.0F, params, now) != null) {
+      if (!LancelotCombatHelper.rollsEternalArmsGuardBypass(responseSource)
+         && tryAutoBlock(responder, responseSource, 20.0F, params, now) != null) {
          return;
       }
       if (isBerserker(definition) || responder.getPersistentData().getBoolean("BattleContinuationActive")) {
@@ -1052,6 +1063,9 @@ public final class ServantCombatSystem {
       if (entity instanceof GilgameshEntity) {
          return poiseRegen * 2.0;
       }
+      if (LancelotCombatHelper.hasEternalArmsMastership(entity)) {
+         poiseRegen *= LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
+      }
       return entity != null && LiShuwenCombatHelper.hasChineseMartialArts(entity) ? poiseRegen * 2.0 : poiseRegen;
    }
 
@@ -1062,6 +1076,9 @@ public final class ServantCombatSystem {
       }
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
+      }
+      if (LancelotCombatHelper.hasEternalArmsMastership(entity)) {
+         staminaRegen *= LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
       }
       return entity instanceof GilgameshEntity ? staminaRegen * 1.75 : staminaRegen;
    }

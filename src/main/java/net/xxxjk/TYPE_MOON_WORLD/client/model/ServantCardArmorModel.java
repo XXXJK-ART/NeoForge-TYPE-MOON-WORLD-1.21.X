@@ -63,6 +63,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (isHeadSlot(animatable) && "medusa".equals(servantId)) {
          return MEDUSA_ANIMATION;
       }
+      if (isHeadSlot(animatable) && "lancelot_berserker".equals(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "animations/servant_card_" + servantId + ".animation.json");
+      }
       if (isHeadSlot(animatable)) {
          return EMPTY_ANIMATION;
       }

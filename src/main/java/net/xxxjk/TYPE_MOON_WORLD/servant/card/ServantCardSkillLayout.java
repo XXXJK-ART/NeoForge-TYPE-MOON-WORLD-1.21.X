@@ -247,6 +247,17 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Dual Spear Stance", "diarmuid_dual_wield", 0.0, 20);
             default -> null;
          };
+         case "lancelot_berserker" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Mad Enhancement Combo", "lancelot_maul_combo", 8.0, 80);
+            case 1 -> new ServantCardSkillAction("Feral Rush", "lancelot_feral_rush", 12.0, 140);
+            case 2 -> new ServantCardSkillAction("Ground Slam", "lancelot_ground_slam", 16.0, 200);
+            case 3 -> new ServantCardSkillAction("Hunt Step", "lancelot_hunt_step", 8.0, 100);
+            case 4 -> new ServantCardSkillAction("Mana Reversal", "lancelot_mana_reversal", 15.0, 360);
+            case 5 -> new ServantCardSkillAction("Mad Roar", "lancelot_berserk_roar", 14.0, 320);
+            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 2.0, 40);
+            case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 3600);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

@@ -103,7 +103,7 @@ public class LancelotBerserkerEntity extends ServantEntity {
       this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_HEAD.get()));
       this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()));
       this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get()));
-      this.setItemSlot(EquipmentSlot.FEET, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_FEET.get()));
+      this.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
       this.setDropChance(EquipmentSlot.HEAD, 0.0F);
       this.setDropChance(EquipmentSlot.CHEST, 0.0F);
       this.setDropChance(EquipmentSlot.LEGS, 0.0F);

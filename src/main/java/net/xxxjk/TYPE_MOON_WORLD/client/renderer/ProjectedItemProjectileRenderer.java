@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.EmiyaProjectionItem;
@@ -38,6 +39,19 @@ public class ProjectedItemProjectileRenderer<T extends ThrowableItemProjectile> 
          poseStack.translate(-0.59, -0.59, 0.0);
          poseStack.scale(1.55F, 1.55F, 1.55F);
          this.vanillaItemRenderer.renderStatic(stack, ItemDisplayContext.GROUND, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
+         poseStack.popPose();
+         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+         return;
+      }
+      if (entity instanceof EmiyaThrownWeaponEntity thrown && thrown.isPiercingImpact()) {
+         poseStack.mulPose(Axis.YP.rotationDegrees(ryaw));
+         poseStack.mulPose(Axis.XP.rotationDegrees(-rpitch));
+         poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+         if (thrown.isLancelotIronRodProjectile()) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
+         }
+         poseStack.scale(1.15F, 1.15F, 1.15F);
+         this.vanillaItemRenderer.renderStatic(stack, ItemDisplayContext.NONE, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
          poseStack.popPose();
          super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
          return;

@@ -18,9 +18,11 @@ import org.jetbrains.annotations.Nullable;
 public final class LancelotBerserkerCombatAi {
    private static final String LAST_SCAN_TICK = "LancelotAiLastScanTick";
    private static final String LAST_DASH_TICK = "LancelotAiLastDashTick";
+   private static final String LAST_MAUL_TICK = "LancelotAiLastMaulTick";
    private static final String LAST_ROAR_TICK = "LancelotAiLastRoarTick";
    private static final double SCAN_RANGE = 34.0;
    private static final double MELEE_RANGE = 3.2;
+   private static final float PHASE_TWO_HEALTH_RATIO = 0.60F;
 
    private LancelotBerserkerCombatAi() {
    }
@@ -48,10 +50,15 @@ public final class LancelotBerserkerCombatAi {
       maybeRoar(entity, level, now, phaseTwo);
 
       double distance = entity.distanceTo(target);
-      if (!LancelotCombatHelper.isAroundightMode(entity) && distance >= 8.0 && distance <= 22.0
-         && entity.getRandom().nextFloat() < (phaseTwo ? 0.15F : 0.08F)
-         && LancelotCombatHelper.throwHeldWeapon(entity, level, target)) {
+      if (shouldGroundSlam(entity, target, distance)
+         && LancelotCombatHelper.tryGroundSlam(entity, level, phaseTwo)) {
          return true;
+      }
+      if (distance <= (phaseTwo ? 4.8 : 4.2) && tryMaul(entity, target, now, phaseTwo)) {
+         return true;
+      }
+      if (shouldThrowWeapon(entity, target, distance, phaseTwo)) {
+         LancelotCombatHelper.throwHeldWeapon(entity, level, target);
       }
       if (distance > MELEE_RANGE) {
          rush(entity, target, now, phaseTwo);
@@ -63,9 +70,56 @@ public final class LancelotBerserkerCombatAi {
       return true;
    }
 
+   private static boolean tryMaul(LancelotBerserkerEntity entity, LivingEntity target, long now, boolean phaseTwo) {
+      CompoundTag data = entity.getPersistentData();
+      entity.getNavigation().moveTo(target, phaseTwo ? 1.72 : 1.55);
+      Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
+      if (toward.lengthSqr() > 1.0E-4) {
+         Vec3 rush = toward.normalize().scale(phaseTwo ? 0.36 : 0.26);
+         entity.setDeltaMovement(entity.getDeltaMovement().add(rush.x, 0.02, rush.z));
+         entity.hurtMarked = true;
+      }
+      long interval = phaseTwo ? 6L : 8L;
+      if (now - data.getLong(LAST_MAUL_TICK) < interval) {
+         return false;
+      }
+      data.putLong(LAST_MAUL_TICK, now);
+      entity.triggerBasicAttackAnimation();
+      entity.doHurtTarget(target);
+      if (toward.lengthSqr() > 1.0E-4) {
+         Vec3 shove = toward.normalize();
+         target.push(shove.x * (phaseTwo ? 0.45 : 0.32), 0.08, shove.z * (phaseTwo ? 0.45 : 0.32));
+      }
+      return true;
+   }
+
+   private static boolean shouldGroundSlam(LancelotBerserkerEntity entity, LivingEntity target, double distance) {
+      double horizontalSqr = entity.position().multiply(1.0, 0.0, 1.0).distanceToSqr(target.position().multiply(1.0, 0.0, 1.0));
+      double vertical = entity.getY() - target.getY();
+      return distance <= 5.2 && (horizontalSqr <= 3.2 * 3.2 || vertical >= 1.25);
+   }
+
+   private static boolean shouldThrowWeapon(LancelotBerserkerEntity entity, LivingEntity target, double distance, boolean phaseTwo) {
+      if (LancelotCombatHelper.isAroundightMode(entity)) {
+         return false;
+      }
+      double verticalGap = Math.abs(target.getY() - entity.getY());
+      boolean awkwardReach = verticalGap >= 2.2 && distance >= 4.8;
+      boolean chaseToss = distance >= 7.0 && distance <= 18.0;
+      boolean veryFar = distance > 18.0 && distance <= 30.0;
+      if (!awkwardReach && !chaseToss && !veryFar) {
+         return false;
+      }
+      float chance = phaseTwo ? 0.055F : 0.018F;
+      if (veryFar || awkwardReach) {
+         chance += phaseTwo ? 0.025F : 0.012F;
+      }
+      return entity.getRandom().nextFloat() < chance;
+   }
+
    static boolean isPhaseTwo(LancelotBerserkerEntity entity, LivingEntity target) {
       float ratio = entity.getHealth() / Math.max(1.0F, entity.getMaxHealth());
-      return ratio <= 0.50F || ServantIdentityHelper.hasTrait(target, ServantTraitTag.DRAGON)
+      return ratio <= PHASE_TWO_HEALTH_RATIO || ServantIdentityHelper.hasTrait(target, ServantTraitTag.DRAGON)
          || target.getMaxHealth() >= entity.getMaxHealth() * 0.85F;
    }
 
@@ -73,20 +127,20 @@ public final class LancelotBerserkerCombatAi {
       if (LancelotCombatHelper.isAroundightMode(entity)) return false;
       if (entity.getCurrentMp() < LancelotCombatHelper.AROUNDIGHT_DRAW_MP_COST) return false;
       return ServantIdentityHelper.hasTrait(target, ServantTraitTag.DRAGON)
-         || entity.getHealth() <= entity.getMaxHealth() * 0.45F
+         || entity.getHealth() <= entity.getMaxHealth() * PHASE_TWO_HEALTH_RATIO
          || target.getMaxHealth() >= 180.0F;
    }
 
    private static void rush(LancelotBerserkerEntity entity, LivingEntity target, long now, boolean phaseTwo) {
-      entity.getNavigation().moveTo(target, phaseTwo ? 1.55 : 1.35);
-      if (now - entity.getPersistentData().getLong(LAST_DASH_TICK) < (phaseTwo ? 35L : 55L)) {
+      entity.getNavigation().moveTo(target, phaseTwo ? 1.82 : 1.62);
+      if (now - entity.getPersistentData().getLong(LAST_DASH_TICK) < (phaseTwo ? 24L : 34L)) {
          return;
       }
       entity.getPersistentData().putLong(LAST_DASH_TICK, now);
       Vec3 dir = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       if (dir.lengthSqr() < 1.0E-4) return;
       dir = dir.normalize();
-      entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(phaseTwo ? 0.95 : 0.65)).add(0.0, 0.08, 0.0));
+      entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(phaseTwo ? 1.18 : 0.88)).add(0.0, 0.08, 0.0));
       entity.hurtMarked = true;
    }
 
@@ -128,7 +182,9 @@ public final class LancelotBerserkerCombatAi {
    }
 
    private static double threatBias(LivingEntity candidate) {
-      double bias = Math.min(80.0, candidate.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0 + candidate.getMaxHealth() * 0.05);
+      double attackDamage = candidate.getAttribute(Attributes.ATTACK_DAMAGE) != null
+         ? candidate.getAttributeValue(Attributes.ATTACK_DAMAGE) : 0.0;
+      double bias = Math.min(80.0, attackDamage * 3.0 + candidate.getMaxHealth() * 0.05);
       if (ServantIdentityHelper.hasTrait(candidate, ServantTraitTag.DRAGON)) bias += 40.0;
       return bias;
    }

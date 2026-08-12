@@ -5,12 +5,14 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack.Pose;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.GilgameshGateWeaponModel;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 public class GilgameshGateWeaponRenderer extends GeoEntityRenderer<GilgameshGateWeaponProjectileEntity> {
@@ -24,7 +26,9 @@ public class GilgameshGateWeaponRenderer extends GeoEntityRenderer<GilgameshGate
       if (motion.lengthSqr() < 1.0E-6) motion = new Vec3(0.0, 0.0, 1.0);
       motion = motion.normalize();
       float progress = smooth(e.getSummonProgress(partial));
-      renderPortal(e, partial, motion, progress, pose, buffers);
+      if (!e.isKnightOfOwnerCounter()) {
+         renderPortal(e, partial, motion, progress, pose, buffers);
+      }
 
       pose.pushPose();
       pose.translate(motion.x * progress * 0.72, motion.y * progress * 0.72, motion.z * progress * 0.72);
@@ -32,7 +36,17 @@ public class GilgameshGateWeaponRenderer extends GeoEntityRenderer<GilgameshGate
       float scale = weaponScale(e.getWeaponId()) * (0.08F + progress * 0.92F);
       pose.scale(scale, scale, scale);
       super.render(e, yaw, partial, pose, buffers, light);
+      if (e.isKnightOfOwnerCounter()) {
+         renderKnightOfOwnerGlint(e, partial, pose, buffers, light);
+      }
       pose.popPose();
+   }
+
+   private void renderKnightOfOwnerGlint(GilgameshGateWeaponProjectileEntity entity, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
+      BakedGeoModel model = this.getGeoModel().getBakedModel(this.getGeoModel().getModelResource(entity));
+      RenderType renderType = ReinforcementRenderType.knightOfOwnerEntityGlint3d();
+      VertexConsumer consumer = buffers.getBuffer(renderType);
+      this.reRender(model, pose, buffers, entity, renderType, consumer, partial, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, -1);
    }
 
    private static void renderPortal(GilgameshGateWeaponProjectileEntity entity, float partial, Vec3 direction, float progress,

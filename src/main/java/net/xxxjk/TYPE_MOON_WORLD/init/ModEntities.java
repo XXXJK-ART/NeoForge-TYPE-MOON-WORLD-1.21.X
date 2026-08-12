@@ -576,7 +576,7 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunHakuryuEntity>> ZHAO_YUN_HAKURYU = ENTITY_TYPES.register(
       "zhao_yun_hakuryu", () -> Builder.of(ZhaoYunHakuryuEntity::new, MobCategory.CREATURE)
-         .sized(2.2F, 2.4F).clientTrackingRange(64).build("zhao_yun_hakuryu")
+         .sized(2.2F, 2.4F).clientTrackingRange(96).updateInterval(1).build("zhao_yun_hakuryu")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")

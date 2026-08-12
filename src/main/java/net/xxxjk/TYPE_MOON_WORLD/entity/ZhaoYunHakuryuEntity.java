@@ -1,8 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -48,6 +50,11 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private static final double HAKURYU_BASE_SPEED = 0.65;
    private static final double HAKURYU_CARD_SPEED_SCALE = 0.55;
    private static final double HAKURYU_NPC_SPEED_SCALE = 0.45;
+   private static final double RIDER_SEAT_FORWARD = 0.18;
+   private static final double RIDER_SEAT_HEIGHT = 0.82;
+   private static final double MASTER_SEAT_FORWARD = 0.72;
+   private static final double MASTER_SEAT_HEIGHT = 0.68;
+   private static final int RIDER_RELINK_GRACE_TICKS = 20;
    /** Matches Zhao Yun's Rider-card big-jump vertical impulse (A agility). */
    private static final double ZHAO_YUN_BIG_JUMP_VERTICAL = 1.14;
    public static final String TAG_RIDER = "ZhaoYunRider";
@@ -70,6 +77,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private int airborneTicks;
    private double airborneMaxY;
    private long lastLandingImpactTick = Long.MIN_VALUE;
+   private int riderRelinkGraceTicks;
 
    public ZhaoYunHakuryuEntity(EntityType<? extends ZhaoYunHakuryuEntity> type, Level level) {
       super(type, level);
@@ -186,6 +194,11 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          // A servant mount must never become an orphan. This also covers a
          // dead Zhao Yun still present in the passenger list and an unloaded
          // rider UUID that can no longer be resolved on the server.
+         if (riderUuid != null && riderRelinkGraceTicks++ < RIDER_RELINK_GRACE_TICKS) {
+            preserveGravityWhileStopping();
+            setMovingState(false);
+            return;
+         }
          if (rider != null) rider.onHakuryuDeath(this);
          ejectPassengers();
          setNpActive(false);
@@ -194,10 +207,21 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          setMovingState(false);
          return;
       }
+      riderRelinkGraceTicks = 0;
       riderUuid = rider.getUUID();
       LivingEntity master = rider.getEntityMaster();
       if (master != null) masterUuid = master.getUUID();
       if (rider.getVehicle() != this) {
+         if (tryRelinkRider(level, rider)) {
+            preserveGravityWhileStopping();
+            setMovingState(false);
+            return;
+         }
+         if (riderRelinkGraceTicks++ < RIDER_RELINK_GRACE_TICKS) {
+            preserveGravityWhileStopping();
+            setMovingState(false);
+            return;
+         }
          setNpActive(false);
          rider.onHakuryuDismounted(this);
          discard();
@@ -206,6 +230,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          fallDistance = 0.0F;
          return;
       }
+      riderRelinkGraceTicks = 0;
       double riderSpeed = rider.getAttributeValue(Attributes.MOVEMENT_SPEED);
       if (rider.getPersistentData().getBoolean("RidingAPlusActive")) {
          riderSpeed *= 1.0 + rider.getPersistentData().getDouble("RidingAPlusSpeedBonus");
@@ -380,6 +405,42 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       setDeltaMovement(0.0, current.y, 0.0);
    }
 
+   public void requestRiderRelinkGrace() {
+      riderRelinkGraceTicks = 0;
+   }
+
+   private boolean tryRelinkRider(ServerLevel level, ZhaoYunRiderEntity rider) {
+      if (rider.isPassenger() || rider.level() != level || !rider.isAlive()) {
+         return false;
+      }
+      List<Entity> previousPassengers = List.copyOf(getPassengers());
+      for (Entity passenger : previousPassengers) {
+         if (passenger != rider) passenger.stopRiding();
+      }
+      if (rider.distanceToSqr(this) > 16.0) {
+         rider.teleportTo(getX(), getY() + RIDER_SEAT_HEIGHT, getZ());
+      }
+      if (!rider.startRiding(this, true)) {
+         return false;
+      }
+      for (Entity passenger : previousPassengers) {
+         if (passenger instanceof Player player && player.isAlive() && canPlayerMount(player)) {
+            player.startRiding(this, true);
+         }
+      }
+      syncPassengerPacket(level);
+      return true;
+   }
+
+   private void syncPassengerPacket(ServerLevel level) {
+      ClientboundSetPassengersPacket packet = new ClientboundSetPassengersPacket(this);
+      for (ServerPlayer observer : level.players()) {
+         if (observer.distanceToSqr(this) <= 128.0 * 128.0) {
+            observer.connection.send(packet);
+         }
+      }
+   }
+
    /** Binds the persistent mount to its Zhao Yun owner before either rider mounts. */
    public void bindRider(ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
       riderUuid = rider.getUUID();
@@ -439,8 +500,12 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    }
 
    public boolean shouldRedirectPassengerDamage(Entity passenger) {
-      return getPassengers().contains(passenger)
-         && (passenger instanceof ZhaoYunRiderEntity || passenger instanceof ServerPlayer);
+      if (!getPassengers().contains(passenger)) return false;
+      UUID passengerUuid = passenger.getUUID();
+      return passenger instanceof ZhaoYunRiderEntity
+         || riderUuid != null && riderUuid.equals(passengerUuid)
+         || skillOwnerUuid != null && skillOwnerUuid.equals(passengerUuid)
+         || masterUuid != null && masterUuid.equals(passengerUuid);
    }
 
    @Override protected boolean canAddPassenger(Entity passenger) {
@@ -559,13 +624,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    }
 
    @Override protected void positionRider(Entity passenger, MoveFunction callback) {
-      int index = getPassengers().indexOf(passenger);
-      double localZ = index == 0 ? 0.18 : -0.28;
+      boolean masterSeat = isMasterPassenger(passenger);
+      double localZ = masterSeat ? MASTER_SEAT_FORWARD : RIDER_SEAT_FORWARD;
       float yaw = getYRot() * ((float)Math.PI / 180.0F);
       // Entity yaw 0 faces +Z, so rotate the local seat offset around the mount.
       double offsetX = -Math.sin(yaw) * localZ;
       double offsetZ = Math.cos(yaw) * localZ;
-      double seatY = 0.82 + index * 0.35;
+      double seatY = masterSeat ? MASTER_SEAT_HEIGHT : RIDER_SEAT_HEIGHT;
       callback.accept(passenger, getX() + offsetX, getY() + seatY, getZ() + offsetZ);
       if (passenger instanceof Player player && isControllingPlayer(player)) {
          player.setYRot(getYRot());
@@ -579,6 +644,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          rider.setYHeadRot(forwardYaw);
          rider.setXRot(0.0F);
       }
+   }
+
+   private boolean isMasterPassenger(Entity passenger) {
+      return masterUuid != null && masterUuid.equals(passenger.getUUID());
    }
 
    @Override public boolean hurt(DamageSource source, float amount) {
@@ -670,9 +739,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    }
 
    @Override protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
-      int index = getPassengers().indexOf(passenger);
-      double seatY = 0.82 + index * 0.35;
-      return new Vec3(0.0, seatY, -0.15 + index * 0.35);
+      boolean masterSeat = isMasterPassenger(passenger);
+      return new Vec3(0.0,
+         masterSeat ? MASTER_SEAT_HEIGHT : RIDER_SEAT_HEIGHT,
+         masterSeat ? MASTER_SEAT_FORWARD : RIDER_SEAT_FORWARD);
    }
 
    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {

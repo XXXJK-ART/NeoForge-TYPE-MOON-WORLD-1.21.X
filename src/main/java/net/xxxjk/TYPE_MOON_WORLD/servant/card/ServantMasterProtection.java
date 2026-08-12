@@ -1,10 +1,14 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 /** Prevents incidental heavy-servant damage to that servant's contracted master. */
@@ -23,11 +27,25 @@ public final class ServantMasterProtection {
       return MasterServantLinkService.getLinkedMaster(servantPlayer, vars) == master;
    }
 
+   /** Covers routine melee, collision, stomp and projectile damage owned by a protected heavy servant. */
+   public static boolean isProtectedMasterDamage(DamageSource source, LivingEntity target) {
+      if (source == null || !(target instanceof ServerPlayer)) return false;
+      if (isProtectedAttacker(source.getEntity(), target) || isProtectedAttacker(source.getDirectEntity(), target)) {
+         return true;
+      }
+      Entity direct = source.getDirectEntity();
+      return direct instanceof Projectile projectile && isProtectedAttacker(projectile.getOwner(), target);
+   }
+
+   private static boolean isProtectedAttacker(Entity candidate, LivingEntity target) {
+      return candidate instanceof LivingEntity living && isProtectedMaster(living, target);
+   }
+
    private static boolean isHeavyServant(ServantEntity servant) {
-      return servant instanceof HeraclesEntity || servant instanceof GawainEntity;
+      return servant instanceof HeraclesEntity || servant instanceof GawainEntity || servant instanceof LancelotBerserkerEntity;
    }
 
    private static boolean isHeavyServantId(String servantId) {
-      return "heracles".equals(servantId) || "gawain".equals(servantId);
+      return "heracles".equals(servantId) || "gawain".equals(servantId) || "lancelot_berserker".equals(servantId);
    }
 }
