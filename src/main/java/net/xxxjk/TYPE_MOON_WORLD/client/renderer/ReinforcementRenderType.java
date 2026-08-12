@@ -341,7 +341,7 @@ public class ReinforcementRenderType extends RenderType {
          .setWriteMaskState(COLOR_WRITE)
          .setCullState(NO_CULL)
          .setDepthTestState(EQUAL_DEPTH_TEST)
-         .setTransparencyState(ADDITIVE_TRANSPARENCY)
+         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
          .setTexturingState(texturing);
       if (itemTarget || entityShader) {
          builder.setOutputState(ITEM_ENTITY_TARGET);

@@ -36,6 +36,22 @@ public final class ServantSprintCollisionHelper {
       int maxBroken,
       float hardnessCap
    ) {
+      return tryPlayerSprintCollision(player, level, data, cooldownTag, fiery, damage, knockback, verticalKnockback, maxBroken, hardnessCap, null);
+   }
+
+   public static boolean tryPlayerSprintCollision(
+      ServerPlayer player,
+      ServerLevel level,
+      CompoundTag data,
+      String cooldownTag,
+      boolean fiery,
+      float damage,
+      double knockback,
+      double verticalKnockback,
+      int maxBroken,
+      float hardnessCap,
+      Vec3 direction
+   ) {
       long now = level.getGameTime();
       if (player.isSprinting()) {
          data.putLong(PLAYER_LAST_SPRINT_TAG, now);
@@ -48,10 +64,11 @@ public final class ServantSprintCollisionHelper {
          return false;
       }
 
-      Vec3 dir = playerLookDirection(player);
+      Vec3 dir = direction == null ? playerLookDirection(player) : direction.multiply(1.0, 0.0, 1.0);
       if (dir.lengthSqr() < 1.0E-4) {
          return false;
       }
+      dir = dir.normalize();
 
       int hit = hitForwardTargets(level, player, dir, fiery, damage, knockback, verticalKnockback, 1.85, 1.55);
       int broken = breakForwardCube(level, player, dir, maxBroken, hardnessCap);

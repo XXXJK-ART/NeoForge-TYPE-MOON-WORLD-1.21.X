@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLancelotBerserkerSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 
@@ -84,6 +85,11 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
@@ -109,6 +115,11 @@ public class ModPlayerEventHandler {
          }
          if (handleZhaoYunSpearRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
+            return;
+         }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
             return;
          }
          if (event.getEntity() instanceof ServerPlayer player) {
@@ -140,6 +151,11 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
             return;
@@ -166,6 +182,11 @@ public class ModPlayerEventHandler {
          return false;
       }
       return ServantCardHundredFacesHassanSkills.openSingleCommand(serverPlayer, persona);
+   }
+
+   private static boolean handleLancelotKnightOfOwnerThrow(Player player, InteractionHand hand) {
+      return player instanceof ServerPlayer serverPlayer
+         && ServantCardLancelotBerserkerSkills.tryThrowKnightOfOwnerItem(serverPlayer, hand);
    }
 
    @SubscribeEvent

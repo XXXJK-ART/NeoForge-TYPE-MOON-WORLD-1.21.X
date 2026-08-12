@@ -106,6 +106,7 @@ class LancelotBerserkerResourcesTest {
       assertTrue(gateRenderer.contains("knightOfOwnerEntityGlint3d"));
       assertTrue(glint.contains("knight_of_owner_glint.png"));
       assertTrue(glint.contains("setupStaticGlintTexturing"));
+      assertTrue(glint.contains("TRANSLUCENT_TRANSPARENCY"));
       assertTrue(mixin.contains("shouldUseKnightOfOwnerGlint"));
       assertTrue(layout.contains("case \"lancelot_berserker\""));
       assertTrue(layout.contains("case 8 -> new ServantCardSkillAction(\"Knight of Owner\""));
@@ -113,6 +114,10 @@ class LancelotBerserkerResourcesTest {
       assertTrue(transform.contains("ServantCardLancelotBerserkerSkills.initialize(player, vars)"));
       assertTrue(transform.contains("ServantCardLancelotBerserkerSkills.performAroundight(player, vars)"));
       assertTrue(cardSkills.contains("maybeInterceptProjectile"));
+      assertTrue(cardSkills.contains("tickLancelotSprintCollisionBreak(player)"));
+      assertTrue(cardSkills.contains("10.0F"));
+      assertTrue(cardSkills.contains("tryFeralRushCollision"));
+      assertTrue(cardSkills.contains("new int[]{1, 2, 3, 4}"));
       assertTrue(cardSkills.contains("AbstractArrow"));
       assertTrue(cardSkills.contains("ThrownTrident"));
       assertTrue(cardSkills.contains("LancelotCombatHelper.applyWeaponHit"));

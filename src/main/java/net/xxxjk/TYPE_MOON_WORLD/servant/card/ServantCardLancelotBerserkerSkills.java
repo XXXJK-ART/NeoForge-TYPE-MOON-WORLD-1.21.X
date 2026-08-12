@@ -24,6 +24,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
@@ -72,7 +73,6 @@ public final class ServantCardLancelotBerserkerSkills {
 
    public static void initialize(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       clear(player, vars);
-      equipKnightRod(player);
       vars.servant_card_action_mode = 0;
       vars.syncPlayerVariables(player);
    }
@@ -87,11 +87,11 @@ public final class ServantCardLancelotBerserkerSkills {
          player.setDeltaMovement(player.getDeltaMovement().scale(0.35));
          return;
       }
+      tickLancelotSprintCollisionBreak(player);
       tickAroundight(player, vars, now);
       tickFairyBlessing(player);
       tickManaReversal(player, now);
       if (!LancelotCombatHelper.isAroundightMode(player)) {
-         ensureKnightOfOwnerLoadout(player);
          maybeInterceptProjectile(player, now);
       }
       if (player.level() instanceof ServerLevel level) {
@@ -121,8 +121,25 @@ public final class ServantCardLancelotBerserkerSkills {
       }
    }
 
+   private static void tickLancelotSprintCollisionBreak(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      ServantSprintCollisionHelper.tryPlayerSprintCollision(
+         player,
+         level,
+         player.getPersistentData(),
+         LAST_SPRINT_COLLISION_TAG,
+         false,
+         10.0F,
+         1.25,
+         0.26,
+         32,
+         45.0F
+      );
+   }
+
    public static void performMaulCombo(ServerPlayer player) {
-      ensureKnightOfOwnerLoadout(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 0.55, 0.04, dir.z * 0.55));
       player.hurtMarked = true;
@@ -134,7 +151,6 @@ public final class ServantCardLancelotBerserkerSkills {
    }
 
    public static void performFeralRush(ServerPlayer player) {
-      ensureKnightOfOwnerLoadout(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setSprinting(true);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 1.85, 0.12, dir.z * 1.85));
@@ -142,7 +158,14 @@ public final class ServantCardLancelotBerserkerSkills {
       player.fallDistance = 0.0F;
       strikeArc(player, 4.8, 28.0F, 0.35, 2, 1.2);
       if (player.level() instanceof ServerLevel level) {
-         ServantSprintCollisionHelper.tryPlayerSprintCollision(player, level, player.getPersistentData(), LAST_SPRINT_COLLISION_TAG, false, 26.0F, 1.35, 0.28, 32, 45.0F);
+         tryFeralRushCollision(player, level, dir);
+         for (int delay : new int[]{1, 2, 3, 4}) {
+            TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+               if (player.isAlive() && isActiveCard(player) && player.level() instanceof ServerLevel delayedLevel) {
+                  tryFeralRushCollision(player, delayedLevel, dir);
+               }
+            });
+         }
          level.sendParticles(DARK_DUST, player.getX(), player.getY() + 0.55, player.getZ(), 34, 0.4, 0.35, 0.4, 0.11);
          level.playSound(null, player.blockPosition(), SoundEvents.RAVAGER_ATTACK, SoundSource.PLAYERS, 0.85F, 0.72F);
       }
@@ -150,7 +173,6 @@ public final class ServantCardLancelotBerserkerSkills {
 
    public static void performGroundSlam(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
-      ensureKnightOfOwnerLoadout(player);
       double radius = LancelotCombatHelper.isAroundightMode(player) ? 5.6 : 4.6;
       damageRadius(player, radius, LancelotCombatHelper.isAroundightMode(player) ? 38.0F : 30.0F, 1.25, 0.44);
       TerrainImpactService.impact(level, player, player.position().add(0.0, 0.18, 0.0),
@@ -161,7 +183,6 @@ public final class ServantCardLancelotBerserkerSkills {
    }
 
    public static void performHuntStep(ServerPlayer player) {
-      ensureKnightOfOwnerLoadout(player);
       LivingEntity target = nearestTarget(player, 10.0);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       if (target != null) {
@@ -221,6 +242,47 @@ public final class ServantCardLancelotBerserkerSkills {
       return true;
    }
 
+   public static boolean tryThrowKnightOfOwnerItem(ServerPlayer player, InteractionHand hand) {
+      if (hand == null || !isActiveCard(player) || !LancelotCombatHelper.canUseKnightOfOwner(player)) return false;
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      ItemStack held = player.getItemInHand(hand);
+      if (held.isEmpty() || !LancelotCombatHelper.isKnightOfOwner(held)) return false;
+
+      ItemStack thrown = held.copy();
+      thrown.setCount(1);
+      LancelotCombatHelper.knightOfOwnerStack(thrown, player);
+      Vec3 start = player.getEyePosition().add(player.getLookAngle().scale(0.55));
+      Vec3 dir = aimedThrowDirection(player, start);
+
+      EmiyaThrownWeaponEntity projectile = new EmiyaThrownWeaponEntity(level, player, thrown);
+      projectile.setPos(start);
+      projectile.setFixedDamage((float)Math.max(18.0, player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.45));
+      projectile.setNoGravity(true);
+      projectile.setPiercingImpact(true);
+      projectile.shoot(dir.x, dir.y + 0.03, dir.z, 2.45F, 0.0F);
+      projectile.alignPoseToMotion();
+      level.addFreshEntity(projectile);
+
+      held.shrink(1);
+      player.setItemInHand(hand, held.isEmpty() ? ItemStack.EMPTY : held);
+      player.swing(hand, true);
+      level.sendParticles(DARK_DUST, player.getX(), player.getY() + 0.95, player.getZ(), 24, 0.45, 0.55, 0.45, 0.07);
+      level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.9F, 0.72F);
+      return true;
+   }
+
+   private static Vec3 aimedThrowDirection(ServerPlayer player, Vec3 start) {
+      HitResult hit = EntityUtils.getRayTraceTarget(player, 64.0);
+      if (hit != null && hit.getType() != HitResult.Type.MISS) {
+         Vec3 aimed = hit.getLocation().subtract(start);
+         if (aimed.lengthSqr() > 1.0E-4) {
+            return aimed;
+         }
+      }
+      Vec3 look = player.getLookAngle();
+      return look.lengthSqr() > 1.0E-4 ? look : new Vec3(0.0, 0.0, 1.0);
+   }
+
    public static boolean performAroundight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       if (LancelotCombatHelper.isAroundightMode(player)) {
@@ -250,8 +312,11 @@ public final class ServantCardLancelotBerserkerSkills {
          removeAroundightModifiers(player);
          return;
       }
+      if (!isHoldingAroundight(player)) {
+         stopAroundight(player, false);
+         return;
+      }
       applyAroundightModifiers(player);
-      ensureAroundight(player);
       CompoundTag data = player.getPersistentData();
       if (now < data.getLong(LAST_DRAIN_TICK_TAG)) return;
       data.putLong(LAST_DRAIN_TICK_TAG, now + LancelotCombatHelper.AROUNDIGHT_DRAIN_INTERVAL);
@@ -269,7 +334,9 @@ public final class ServantCardLancelotBerserkerSkills {
       data.remove(LancelotCombatHelper.AROUNDIGHT_MODE_TAG);
       data.remove(LAST_DRAIN_TICK_TAG);
       removeAroundightModifiers(player);
-      equipKnightRod(player);
+      if (isHoldingAroundight(player)) {
+         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+      }
       if (unable) {
          data.putLong(LancelotCombatHelper.UNABLE_UNTIL_TAG, player.level().getGameTime() + LancelotCombatHelper.UNABLE_DURATION_TICKS);
          if (player.level() instanceof ServerLevel level) {
@@ -425,27 +492,31 @@ public final class ServantCardLancelotBerserkerSkills {
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID);
    }
 
-   private static void ensureKnightOfOwnerLoadout(ServerPlayer player) {
+   private static boolean isHoldingAroundight(ServerPlayer player) {
       ItemStack main = player.getMainHandItem();
-      if (main.isEmpty()) {
-         equipKnightRod(player);
-      }
-   }
-
-   private static void ensureAroundight(ServerPlayer player) {
-      ItemStack main = player.getMainHandItem();
-      if (!(main.getItem() instanceof LancelotWeaponItem weapon) || weapon.weaponType() != LancelotWeaponItem.WeaponType.AROUNDIGHT) {
-         ItemStack sword = LancelotCombatHelper.knightOfOwnerStack(new ItemStack(ModItems.AROUNDIGHT.get()), player);
-         ServantCardTransformManager.markGeneratedItem(sword, true, false);
-         player.setItemInHand(InteractionHand.MAIN_HAND, sword);
-      }
-      player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+      return main.getItem() instanceof LancelotWeaponItem weapon && weapon.weaponType() == LancelotWeaponItem.WeaponType.AROUNDIGHT;
    }
 
    private static void equipKnightRod(ServerPlayer player) {
       ItemStack rod = LancelotCombatHelper.knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), player);
       ServantCardTransformManager.markGeneratedItem(rod, true, false);
       player.setItemInHand(InteractionHand.MAIN_HAND, rod);
+   }
+
+   private static void tryFeralRushCollision(ServerPlayer player, ServerLevel level, Vec3 dir) {
+      ServantSprintCollisionHelper.tryPlayerSprintCollision(
+         player,
+         level,
+         player.getPersistentData(),
+         LAST_SPRINT_COLLISION_TAG,
+         false,
+         26.0F,
+         1.35,
+         0.28,
+         32,
+         45.0F,
+         dir
+      );
    }
 
    private static void applyAroundightModifiers(ServerPlayer player) {
