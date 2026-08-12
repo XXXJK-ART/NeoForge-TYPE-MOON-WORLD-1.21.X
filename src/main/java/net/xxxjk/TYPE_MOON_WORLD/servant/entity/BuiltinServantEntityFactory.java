@@ -38,6 +38,10 @@ public final class BuiltinServantEntityFactory {
          return ModEntities.DIARMUID_UA_DUIBHNE.get().create(level);
       }
       if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
+         && LancelotBerserkerEntity.SERVANT_KEY.equals(servantId.getPath())) {
+         return ModEntities.LANCELOT_BERSERKER.get().create(level);
+      }
+      if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
          && ArashEntity.SERVANT_KEY.equals(servantId.getPath())) {
          return ModEntities.ARASH.get().create(level);
       }

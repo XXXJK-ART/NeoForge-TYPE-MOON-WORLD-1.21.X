@@ -56,6 +56,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_FAIL = register("diarmuid_ua_duibhne_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_VICTORY = register("diarmuid_ua_duibhne_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> DIARMUID_UA_DUIBHNE_VOICE_NP = register("diarmuid_ua_duibhne_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LANCELOT_BERSERKER_VOICE_ATTACK = register("lancelot_berserker_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LANCELOT_BERSERKER_VOICE_ROAR = register("lancelot_berserker_voice_roar");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LANCELOT_BERSERKER_VOICE_FAIL = register("lancelot_berserker_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LANCELOT_BERSERKER_VOICE_VICTORY = register("lancelot_berserker_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> LANCELOT_BERSERKER_VOICE_NP = register("lancelot_berserker_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_ATTACK = register("emiya_archer_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_FAIL = register("emiya_archer_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_VICTORY = register("emiya_archer_voice_victory");

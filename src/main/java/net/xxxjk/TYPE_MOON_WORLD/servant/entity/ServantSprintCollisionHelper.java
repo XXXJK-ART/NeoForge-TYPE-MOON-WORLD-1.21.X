@@ -70,7 +70,8 @@ public final class ServantSprintCollisionHelper {
       }
       boolean gawain = entity instanceof GawainEntity;
       boolean heracles = entity instanceof HeraclesEntity;
-      if (!gawain && !heracles) {
+      boolean lancelot = entity instanceof LancelotBerserkerEntity;
+      if (!gawain && !heracles && !lancelot) {
          return;
       }
       // NPC terrain damage represents a body collision with an obstacle, not heavy footsteps.
@@ -91,8 +92,9 @@ public final class ServantSprintCollisionHelper {
       }
 
       boolean fiery = entity instanceof GawainEntity gawainEntity && (GawainCombatHelper.hasSunBlessing(gawainEntity) || isUnderSun(level, gawainEntity.blockPosition()));
-      int hit = hitForwardTargets(level, entity, dir, fiery, heracles ? 10.0F : 8.0F, heracles ? 1.25 : 1.0, heracles ? 0.26 : 0.2, 1.85, 1.55);
-      int broken = breakForwardCube(level, entity, dir, heracles ? 32 : 27, heracles ? 45.0F : 42.0F);
+      int hit = hitForwardTargets(level, entity, dir, fiery, heracles || lancelot ? 10.0F : 8.0F, heracles || lancelot ? 1.25 : 1.0,
+         heracles || lancelot ? 0.26 : 0.2, 1.85, 1.55);
+      int broken = breakForwardCube(level, entity, dir, heracles ? 32 : lancelot ? 30 : 27, heracles ? 45.0F : lancelot ? 44.0F : 42.0F);
       if (hit <= 0 && broken <= 0) {
          return;
       }

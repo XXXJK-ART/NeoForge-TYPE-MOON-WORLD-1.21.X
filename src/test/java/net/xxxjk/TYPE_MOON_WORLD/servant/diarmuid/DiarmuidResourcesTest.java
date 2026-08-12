@@ -205,7 +205,7 @@ class DiarmuidResourcesTest {
 
    @Test
    void dualSpearRulesAreDocumentedInRuntimeHelper() throws Exception {
-      assertEquals(100, DiarmuidCombatHelper.SPEAR_MAX_DURABILITY);
+      assertEquals(200, DiarmuidCombatHelper.SPEAR_MAX_DURABILITY);
       assertEquals(5, DiarmuidCombatHelper.MAX_YELLOW_ROSE_STACKS);
       assertEquals(100, DiarmuidCombatHelper.YELLOW_ROSE_DAMAGE_INTERVAL_TICKS);
       assertEquals(0.10, DiarmuidCombatHelper.MAX_HEALTH_REDUCTION_PER_STACK, 1.0E-9);
@@ -218,6 +218,8 @@ class DiarmuidResourcesTest {
       assertTrue(helper.contains("clearCursesFromOwner"));
       assertTrue(helper.contains("CURSE_NEXT_DAMAGE_TICK_TAG"));
       assertTrue(helper.contains("now + YELLOW_ROSE_DAMAGE_INTERVAL_TICKS"));
+      assertTrue(helper.contains("createSpearStack"));
+      assertTrue(helper.contains("syncSpearItemToOwner"));
       assertTrue(helper.contains("RED_ROSE_DUST"));
       assertTrue(helper.contains("YELLOW_ROSE_DUST"));
       assertTrue(helper.contains("spawnRedRoseHitVfx"));
@@ -229,6 +231,9 @@ class DiarmuidResourcesTest {
          || items.contains("\"gae_dearg_range\"),\n                                            2.0"));
       assertTrue(items.contains("\"gae_buidhe_range\"),\r\n                                            2.0")
          || items.contains("\"gae_buidhe_range\"),\n                                            2.0"));
+      assertTrue(items.contains("new Item.Properties().durability(200)"));
+      assertTrue(readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardDiarmuidSkills.java").contains("stack.hurtAndBreak(1, player"));
+      assertTrue(readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/DiarmuidUaDuibhneEntity.java").contains("currentMain"));
    }
 
    private static JsonObject json(String relative) throws Exception {

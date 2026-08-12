@@ -1,0 +1,20 @@
+{
+  "id": "knight_of_owner",
+  "display_name": "Knight of Owner",
+  "display_name_zh": "骑士不死于徒手",
+  "rank": "A++",
+  "type": "anti_personnel",
+  "target_type": "held_weapon",
+  "mp_cost": 2,
+  "cooldown_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "ownerize_weapon",
+      "params": {
+        "damage_bonus": 0.5,
+        "max_controlled": 30,
+        "glint": "knight_of_owner"
+      }
+    }
+  ]
+}

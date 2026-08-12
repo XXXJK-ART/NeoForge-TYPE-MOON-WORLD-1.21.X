@@ -94,6 +94,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
@@ -499,6 +500,10 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<DiarmuidUaDuibhneEntity>> DIARMUID_UA_DUIBHNE = ENTITY_TYPES.register(
       "diarmuid_ua_duibhne", () -> Builder.of(DiarmuidUaDuibhneEntity::new, MobCategory.CREATURE)
          .sized(0.6F, 1.84F).clientTrackingRange(64).updateInterval(1).build("diarmuid_ua_duibhne")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LancelotBerserkerEntity>> LANCELOT_BERSERKER = ENTITY_TYPES.register(
+      "lancelot_berserker", () -> Builder.of(LancelotBerserkerEntity::new, MobCategory.CREATURE)
+         .sized(0.72F, 1.91F).clientTrackingRange(64).updateInterval(1).build("lancelot_berserker")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaEntity>> MEDEA = ENTITY_TYPES.register(
       "medea", () -> Builder.of(MedeaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medea")

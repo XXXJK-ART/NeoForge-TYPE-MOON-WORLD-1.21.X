@@ -2230,6 +2230,13 @@ public final class EnkiduCombatHelper {
       Vec3 impact = stage == 1
          ? new Vec3(data.getDouble(TAG_ENUMA_GROUND_X), data.getDouble(TAG_ENUMA_GROUND_Y), data.getDouble(TAG_ENUMA_GROUND_Z))
          : targetPoint;
+      Vec3 duelStop = null;
+      Vec3 duelClash = null;
+      if (duelFinale && target instanceof GilgameshEntity gilgamesh) {
+         duelStop = GilgameshDuelState.enkiduRushStopPosition(entity, gilgamesh);
+         duelClash = GilgameshDuelState.duelClashPoint(entity, gilgamesh);
+         impact = duelStop.add(0.0, entity.getBbHeight() * 0.55, 0.0);
+      }
       Vec3 toImpact = impact.subtract(entity.position());
       if (duelFinale) {
          if (toImpact.length() > 1.8) {
@@ -2238,10 +2245,12 @@ public final class EnkiduCombatHelper {
             emitEnumaDrillFx(level, entity, impact, now, true);
             return;
          }
-         entity.setPos(targetPoint.x, targetPoint.y, targetPoint.z);
+         Vec3 stop = duelStop == null ? entity.position() : duelStop;
+         Vec3 clash = duelClash == null ? targetPoint : duelClash;
+         entity.setPos(stop.x, stop.y, stop.z);
          entity.setDeltaMovement(Vec3.ZERO);
          if (target instanceof GilgameshEntity gilgamesh) {
-            GilgameshDuelState.completeDuelRush(entity, level, gilgamesh, targetPoint);
+            GilgameshDuelState.completeDuelRush(entity, level, gilgamesh, clash);
          } else {
             cancelGilgameshDuelFinale(entity);
          }

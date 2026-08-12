@@ -76,6 +76,9 @@ public abstract class ItemRendererMixin {
    private static RenderType replaceGlintTranslucent(RenderType prev) {
       if (!shouldUseMagicGlint()) {
          return prev;
+      } else if (shouldUseKnightOfOwnerGlint()) {
+         return isBlockItemTarget() ? ReinforcementRenderType.knightOfOwnerGlintTranslucentBlock()
+            : isTarget3D() ? ReinforcementRenderType.knightOfOwnerGlintTranslucent3d() : ReinforcementRenderType.knightOfOwnerGlintTranslucent();
       } else if (isBlockItemTarget()) {
          return ReinforcementRenderType.glintTranslucentBlock();
       } else {
@@ -93,6 +96,9 @@ public abstract class ItemRendererMixin {
    private static RenderType replaceGlint(RenderType prev) {
       if (!shouldUseMagicGlint()) {
          return prev;
+      } else if (shouldUseKnightOfOwnerGlint()) {
+         return isBlockItemTarget() ? ReinforcementRenderType.knightOfOwnerGlintBlock()
+            : isTarget3D() ? ReinforcementRenderType.knightOfOwnerGlint3d() : ReinforcementRenderType.knightOfOwnerGlint();
       } else if (isBlockItemTarget()) {
          return ReinforcementRenderType.glintBlock();
       } else {
@@ -110,6 +116,9 @@ public abstract class ItemRendererMixin {
    private static RenderType replaceEntityGlint(RenderType prev) {
       if (!shouldUseMagicGlint()) {
          return prev;
+      } else if (shouldUseKnightOfOwnerGlint()) {
+         return isBlockItemTarget() ? ReinforcementRenderType.knightOfOwnerEntityGlintBlock()
+            : isTarget3D() ? ReinforcementRenderType.knightOfOwnerEntityGlint3d() : ReinforcementRenderType.knightOfOwnerEntityGlint();
       } else if (isBlockItemTarget()) {
          return ReinforcementRenderType.entityGlintBlock();
       } else {
@@ -127,6 +136,9 @@ public abstract class ItemRendererMixin {
    private static RenderType replaceGlintDirect(RenderType prev) {
       if (!shouldUseMagicGlint()) {
          return prev;
+      } else if (shouldUseKnightOfOwnerGlint()) {
+         return isBlockItemTarget() ? ReinforcementRenderType.knightOfOwnerGlintDirectBlock()
+            : isTarget3D() ? ReinforcementRenderType.knightOfOwnerGlintDirect3d() : ReinforcementRenderType.knightOfOwnerGlintDirect();
       } else if (isBlockItemTarget()) {
          return ReinforcementRenderType.glintDirectBlock();
       } else {
@@ -144,6 +156,9 @@ public abstract class ItemRendererMixin {
    private static RenderType replaceEntityGlintDirect(RenderType prev) {
       if (!shouldUseMagicGlint()) {
          return prev;
+      } else if (shouldUseKnightOfOwnerGlint()) {
+         return isBlockItemTarget() ? ReinforcementRenderType.knightOfOwnerEntityGlintDirectBlock()
+            : isTarget3D() ? ReinforcementRenderType.knightOfOwnerEntityGlintDirect3d() : ReinforcementRenderType.knightOfOwnerEntityGlintDirect();
       } else if (isBlockItemTarget()) {
          return ReinforcementRenderType.entityGlintDirectBlock();
       } else {
@@ -153,6 +168,15 @@ public abstract class ItemRendererMixin {
 
    private static boolean shouldUseMagicGlint() {
       return hasMagicTextureTag(TARGET_STACK.get());
+   }
+
+   private static boolean shouldUseKnightOfOwnerGlint() {
+      ItemStack stack = TARGET_STACK.get();
+      if (stack == null || stack.isEmpty()) {
+         return false;
+      }
+      CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+      return customData != null && customData.copyTag().getBoolean("KnightOfOwner");
    }
 
    private static boolean isTarget3D() {
@@ -171,7 +195,9 @@ public abstract class ItemRendererMixin {
             return false;
          } else {
             CompoundTag tag = customData.copyTag();
-            if (tag.contains("Reinforced") && tag.getBoolean("Reinforced")) {
+            if (tag.contains("KnightOfOwner") && tag.getBoolean("KnightOfOwner")) {
+               return true;
+            } else if (tag.contains("Reinforced") && tag.getBoolean("Reinforced")) {
                return true;
             } else {
                return !tag.contains("ReinforcedLevel") && !tag.contains("ReinforcedEnchantment") && !tag.contains("ReinforcementTemporary")

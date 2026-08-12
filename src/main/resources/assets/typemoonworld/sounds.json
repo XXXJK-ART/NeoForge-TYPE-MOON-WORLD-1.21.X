@@ -1428,5 +1428,31 @@
       {"name": "typemoonworld:voice/diarmuid_ua_duibhne/victory1", "stream": true},
       {"name": "typemoonworld:voice/diarmuid_ua_duibhne/victory2", "stream": true}
     ]
+  },
+  "lancelot_berserker_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/lancelot_berserker/attack1", "stream": true},
+      {"name": "typemoonworld:voice/lancelot_berserker/attack2", "stream": true}
+    ]
+  },
+  "lancelot_berserker_voice_roar": {
+    "sounds": [
+      {"name": "typemoonworld:voice/lancelot_berserker/roar", "stream": true}
+    ]
+  },
+  "lancelot_berserker_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/lancelot_berserker/fail", "stream": true}
+    ]
+  },
+  "lancelot_berserker_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:voice/lancelot_berserker/np", "stream": true}
+    ]
+  },
+  "lancelot_berserker_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/lancelot_berserker/victory", "stream": true}
+    ]
   }
 }

@@ -112,9 +112,9 @@ public final class ServantCardDiarmuidSkills {
       player.hurtMarked = true;
       DiarmuidSpearItem.SpearType first = consumeFocus(player, DiarmuidSpearItem.SpearType.GAE_DEARG);
       DiarmuidSpearItem.SpearType second = first == DiarmuidSpearItem.SpearType.GAE_DEARG ? DiarmuidSpearItem.SpearType.GAE_BUIDHE : DiarmuidSpearItem.SpearType.GAE_DEARG;
-      strikeForward(player, first, 4.8, 20.0F, 0.38, 2);
+      strikeForward(player, first, 4.8, 20.0F, 0.38, 2, InteractionHand.MAIN_HAND);
       TYPE_MOON_WORLD.queueServerWork(5, () -> {
-         if (player.isAlive()) strikeForward(player, second, 4.4, 17.0F, 0.42, 2);
+         if (player.isAlive()) strikeForward(player, second, 4.4, 17.0F, 0.42, 2, InteractionHand.OFF_HAND);
       });
       swingAndVfx(player, dir, true, InteractionHand.MAIN_HAND);
    }
@@ -175,7 +175,7 @@ public final class ServantCardDiarmuidSkills {
          Vec3 side = new Vec3(-dir.z, 0.0, dir.x).scale(player.getRandom().nextBoolean() ? 3.6 : -3.6);
          ServantCardSkillUtils.trySafeHorizontalTeleport(player, player.position().add(side).add(0.0, 0.1, 0.0));
       }
-      strikeForward(player, consumeFocus(player, DiarmuidSpearItem.SpearType.GAE_DEARG), 4.2, 18.0F, 0.30, 3);
+      strikeForward(player, consumeFocus(player, DiarmuidSpearItem.SpearType.GAE_DEARG), 4.2, 18.0F, 0.30, 3, InteractionHand.MAIN_HAND);
       swingAndVfx(player, dir, false, InteractionHand.MAIN_HAND);
    }
 
@@ -197,7 +197,7 @@ public final class ServantCardDiarmuidSkills {
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 0.35, 0.03, dir.z * 0.35));
       player.hurtMarked = true;
-      strikeForward(player, spearTypeInHand(player, InteractionHand.OFF_HAND, DiarmuidSpearItem.SpearType.GAE_BUIDHE), 4.6, 17.0F, 0.55, 1);
+      strikeForward(player, spearTypeInHand(player, InteractionHand.OFF_HAND, DiarmuidSpearItem.SpearType.GAE_BUIDHE), 4.6, 17.0F, 0.55, 1, InteractionHand.OFF_HAND);
       swingAndVfx(player, dir, false, InteractionHand.OFF_HAND);
       ServantCardVoiceHelper.tryPlayAttack(player);
    }
@@ -208,7 +208,7 @@ public final class ServantCardDiarmuidSkills {
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 0.40, 0.03, dir.z * 0.40));
       player.hurtMarked = true;
-      strikeForward(player, spearTypeInHand(player, InteractionHand.MAIN_HAND, DiarmuidSpearItem.SpearType.GAE_DEARG), 4.8, 18.0F, 0.52, 1);
+      strikeForward(player, spearTypeInHand(player, InteractionHand.MAIN_HAND, DiarmuidSpearItem.SpearType.GAE_DEARG), 4.8, 18.0F, 0.52, 1, InteractionHand.MAIN_HAND);
       swingAndVfx(player, dir, false, InteractionHand.MAIN_HAND);
       ServantCardVoiceHelper.tryPlayAttack(player);
    }
@@ -227,8 +227,12 @@ public final class ServantCardDiarmuidSkills {
       }
    }
 
-   private static void strikeForward(ServerPlayer player, DiarmuidSpearItem.SpearType spearType, double range, float damage, double minDot, int maxHits) {
+   private static void strikeForward(ServerPlayer player, DiarmuidSpearItem.SpearType spearType, double range, float damage, double minDot, int maxHits, InteractionHand hand) {
       if (!(player.level() instanceof ServerLevel level)) return;
+      if (spearType == DiarmuidSpearItem.SpearType.GAE_DEARG
+         ? !DiarmuidCombatHelper.isRedActive(player) : !DiarmuidCombatHelper.isYellowActive(player)) {
+         return;
+      }
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.52, 0.0);
       Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
       AABB box = player.getBoundingBox().inflate(range, 2.5, range);
@@ -247,6 +251,7 @@ public final class ServantCardDiarmuidSkills {
             target.invulnerableTime = 0;
             if (hurt || !target.isAlive() || target.hurtTime > 0) {
                applySpearItemHit(player, target, spearType);
+               damageSpearItem(player, hand);
                target.push(forward.x * 0.45, 0.08, forward.z * 0.45);
                target.hurtMarked = true;
                hits[0]++;
@@ -270,12 +275,23 @@ public final class ServantCardDiarmuidSkills {
    }
 
    private static void equipSpears(ServerPlayer player, DiarmuidSpearItem.SpearType mainType) {
-      ItemStack main = new ItemStack(mainType == DiarmuidSpearItem.SpearType.GAE_DEARG ? ModItems.GAE_DEARG.get() : ModItems.GAE_BUIDHE.get());
-      ItemStack off = new ItemStack(mainType == DiarmuidSpearItem.SpearType.GAE_DEARG ? ModItems.GAE_BUIDHE.get() : ModItems.GAE_DEARG.get());
+      DiarmuidSpearItem.SpearType offType = mainType == DiarmuidSpearItem.SpearType.GAE_DEARG
+         ? DiarmuidSpearItem.SpearType.GAE_BUIDHE : DiarmuidSpearItem.SpearType.GAE_DEARG;
+      ItemStack main = DiarmuidCombatHelper.createSpearStack(mainType, mainType == DiarmuidSpearItem.SpearType.GAE_DEARG
+         ? DiarmuidCombatHelper.redDurability(player) : DiarmuidCombatHelper.yellowDurability(player));
+      ItemStack off = DiarmuidCombatHelper.createSpearStack(offType, offType == DiarmuidSpearItem.SpearType.GAE_DEARG
+         ? DiarmuidCombatHelper.redDurability(player) : DiarmuidCombatHelper.yellowDurability(player));
       ServantCardTransformManager.markGeneratedItem(main, true, false);
       ServantCardTransformManager.markGeneratedItem(off, true, false);
       player.setItemInHand(InteractionHand.MAIN_HAND, main);
       player.setItemInHand(InteractionHand.OFF_HAND, off);
+   }
+
+   private static void damageSpearItem(ServerPlayer player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (stack.getItem() instanceof DiarmuidSpearItem) {
+         stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+      }
    }
 
    private static DiarmuidSpearItem.SpearType spearTypeInHand(ServerPlayer player, InteractionHand hand, DiarmuidSpearItem.SpearType fallback) {

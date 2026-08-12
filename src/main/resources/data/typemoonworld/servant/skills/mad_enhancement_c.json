@@ -1,0 +1,20 @@
+{
+  "id": "mad_enhancement_c",
+  "display_name": "Mad Enhancement C",
+  "display_name_zh": "狂化 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "strength_rank_bonus": 1,
+        "endurance_rank_bonus": 1,
+        "agility_rank_bonus": 1,
+        "communication_penalty": 0.75
+      }
+    }
+  ]
+}

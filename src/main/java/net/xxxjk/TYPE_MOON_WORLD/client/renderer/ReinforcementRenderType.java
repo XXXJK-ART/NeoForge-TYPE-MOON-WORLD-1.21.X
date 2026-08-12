@@ -11,6 +11,7 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.RenderStateShard.ShaderStateShard;
 import net.minecraft.client.renderer.RenderStateShard.TextureStateShard;
 import net.minecraft.client.renderer.RenderStateShard.TexturingStateShard;
 import net.minecraft.client.renderer.RenderType.CompositeState;
@@ -21,6 +22,9 @@ import org.joml.Matrix4f;
 public class ReinforcementRenderType extends RenderType {
    private static final ResourceLocation REINFORCEMENT_ITEM_GLINT = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "textures/misc/enchanted_item_glint_typemoon.png"
+   );
+   private static final ResourceLocation KNIGHT_OF_OWNER_ITEM_GLINT = ResourceLocation.fromNamespaceAndPath(
+      "typemoonworld", "textures/misc/knight_of_owner_glint.png"
    );
    private static final ResourceLocation SKIN_TEXTURE = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/models/armor/magic_circuit_skin.png");
    private static final ResourceLocation SKIN_TEXTURE_DANGER = ResourceLocation.fromNamespaceAndPath(
@@ -37,6 +41,15 @@ public class ReinforcementRenderType extends RenderType {
    );
    private static final TexturingStateShard REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK = new TexturingStateShard(
       "reinforcement_item_glint_texturing_block", () -> setupReinforcementGlintTexturing(10.0F, -45.0F, 520000L, 180000L), RenderSystem::resetTextureMatrix
+   );
+   private static final TexturingStateShard KNIGHT_OF_OWNER_STATIC_TEXTURING = new TexturingStateShard(
+      "knight_of_owner_static_texturing", () -> setupStaticGlintTexturing(1.0F, -45.0F), RenderSystem::resetTextureMatrix
+   );
+   private static final TexturingStateShard KNIGHT_OF_OWNER_STATIC_TEXTURING_3D = new TexturingStateShard(
+      "knight_of_owner_static_texturing_3d", () -> setupStaticGlintTexturing(0.8F, -45.0F), RenderSystem::resetTextureMatrix
+   );
+   private static final TexturingStateShard KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK = new TexturingStateShard(
+      "knight_of_owner_static_texturing_block", () -> setupStaticGlintTexturing(10.0F, -45.0F), RenderSystem::resetTextureMatrix
    );
    private static final RenderType REINFORCEMENT_GLINT_TRANSLUCENT = create(
       "reinforcement_glint_translucent",
@@ -305,6 +318,36 @@ public class ReinforcementRenderType extends RenderType {
          .setTexturingState(REINFORCEMENT_ITEM_GLINT_TEXTURING_BLOCK)
          .createCompositeState(false)
    );
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_TRANSLUCENT = knightOfOwner("knight_of_owner_glint_translucent", RENDERTYPE_GLINT_TRANSLUCENT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING, true, false);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT = knightOfOwner("knight_of_owner_glint", RENDERTYPE_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT = knightOfOwner("knight_of_owner_entity_glint", RENDERTYPE_ENTITY_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING, true, true);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT = knightOfOwner("knight_of_owner_entity_glint_direct", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING, false, true);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_DIRECT = knightOfOwner("knight_of_owner_glint_direct", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_TRANSLUCENT_3D = knightOfOwner("knight_of_owner_glint_translucent_3d", RENDERTYPE_GLINT_TRANSLUCENT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_3D, true, false);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_3D = knightOfOwner("knight_of_owner_glint_3d", RENDERTYPE_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_3D, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT_3D = knightOfOwner("knight_of_owner_entity_glint_3d", RENDERTYPE_ENTITY_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_3D, true, true);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_DIRECT_3D = knightOfOwner("knight_of_owner_glint_direct_3d", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_3D, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT_3D = knightOfOwner("knight_of_owner_entity_glint_direct_3d", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_3D, false, true);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_TRANSLUCENT_BLOCK = knightOfOwner("knight_of_owner_glint_translucent_block", RENDERTYPE_GLINT_TRANSLUCENT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK, true, false);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_BLOCK = knightOfOwner("knight_of_owner_glint_block", RENDERTYPE_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT_BLOCK = knightOfOwner("knight_of_owner_entity_glint_block", RENDERTYPE_ENTITY_GLINT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK, true, true);
+   private static final RenderType KNIGHT_OF_OWNER_GLINT_DIRECT_BLOCK = knightOfOwner("knight_of_owner_glint_direct_block", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK, false, false);
+   private static final RenderType KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT_BLOCK = knightOfOwner("knight_of_owner_entity_glint_direct_block", RENDERTYPE_ENTITY_GLINT_DIRECT_SHADER, KNIGHT_OF_OWNER_STATIC_TEXTURING_BLOCK, false, true);
+
+   private static RenderType knightOfOwner(String name, ShaderStateShard shader, TexturingStateShard texturing, boolean itemTarget, boolean entityShader) {
+      var builder = CompositeState.builder()
+         .setShaderState(shader)
+         .setTextureState(new TextureStateShard(KNIGHT_OF_OWNER_ITEM_GLINT, false, false))
+         .setWriteMaskState(COLOR_WRITE)
+         .setCullState(NO_CULL)
+         .setDepthTestState(EQUAL_DEPTH_TEST)
+         .setTransparencyState(ADDITIVE_TRANSPARENCY)
+         .setTexturingState(texturing);
+      if (itemTarget || entityShader) {
+         builder.setOutputState(ITEM_ENTITY_TARGET);
+      }
+      return create(name, DefaultVertexFormat.POSITION_TEX, Mode.QUADS, 1536, builder.createCompositeState(false));
+   }
 
    private ReinforcementRenderType(
       String name, VertexFormat format, Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState
@@ -372,6 +415,22 @@ public class ReinforcementRenderType extends RenderType {
       return REINFORCEMENT_ENTITY_GLINT_DIRECT_BLOCK;
    }
 
+   public static RenderType knightOfOwnerGlintTranslucent() { return KNIGHT_OF_OWNER_GLINT_TRANSLUCENT; }
+   public static RenderType knightOfOwnerGlint() { return KNIGHT_OF_OWNER_GLINT; }
+   public static RenderType knightOfOwnerEntityGlint() { return KNIGHT_OF_OWNER_ENTITY_GLINT; }
+   public static RenderType knightOfOwnerEntityGlintDirect() { return KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT; }
+   public static RenderType knightOfOwnerGlintDirect() { return KNIGHT_OF_OWNER_GLINT_DIRECT; }
+   public static RenderType knightOfOwnerGlintTranslucent3d() { return KNIGHT_OF_OWNER_GLINT_TRANSLUCENT_3D; }
+   public static RenderType knightOfOwnerGlint3d() { return KNIGHT_OF_OWNER_GLINT_3D; }
+   public static RenderType knightOfOwnerEntityGlint3d() { return KNIGHT_OF_OWNER_ENTITY_GLINT_3D; }
+   public static RenderType knightOfOwnerGlintDirect3d() { return KNIGHT_OF_OWNER_GLINT_DIRECT_3D; }
+   public static RenderType knightOfOwnerEntityGlintDirect3d() { return KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT_3D; }
+   public static RenderType knightOfOwnerGlintTranslucentBlock() { return KNIGHT_OF_OWNER_GLINT_TRANSLUCENT_BLOCK; }
+   public static RenderType knightOfOwnerGlintBlock() { return KNIGHT_OF_OWNER_GLINT_BLOCK; }
+   public static RenderType knightOfOwnerEntityGlintBlock() { return KNIGHT_OF_OWNER_ENTITY_GLINT_BLOCK; }
+   public static RenderType knightOfOwnerGlintDirectBlock() { return KNIGHT_OF_OWNER_GLINT_DIRECT_BLOCK; }
+   public static RenderType knightOfOwnerEntityGlintDirectBlock() { return KNIGHT_OF_OWNER_ENTITY_GLINT_DIRECT_BLOCK; }
+
    public static RenderType getReinforcementFoilType(RenderType baseRenderType, boolean useItemGlint) {
       if (Minecraft.useShaderTransparency() && baseRenderType == Sheets.translucentItemSheet()) {
          return glintTranslucent();
@@ -408,10 +467,13 @@ public class ReinforcementRenderType extends RenderType {
       addIfAbsent(map, entityGlintBlock());
       addIfAbsent(map, glintDirectBlock());
       addIfAbsent(map, entityGlintDirectBlock());
+      for (RenderType renderType : knightOfOwnerGlintTypes()) {
+         addIfAbsent(map, renderType);
+      }
    }
 
    public static RenderType[] glintTypes() {
-      return new RenderType[]{
+      RenderType[] base = new RenderType[]{
          glint(),
          glintTranslucent(),
          entityGlint(),
@@ -427,6 +489,30 @@ public class ReinforcementRenderType extends RenderType {
          entityGlintBlock(),
          glintDirectBlock(),
          entityGlintDirectBlock()
+      };
+      RenderType[] knight = knightOfOwnerGlintTypes();
+      RenderType[] all = java.util.Arrays.copyOf(base, base.length + knight.length);
+      System.arraycopy(knight, 0, all, base.length, knight.length);
+      return all;
+   }
+
+   private static RenderType[] knightOfOwnerGlintTypes() {
+      return new RenderType[]{
+         knightOfOwnerGlint(),
+         knightOfOwnerGlintTranslucent(),
+         knightOfOwnerEntityGlint(),
+         knightOfOwnerGlintDirect(),
+         knightOfOwnerEntityGlintDirect(),
+         knightOfOwnerGlint3d(),
+         knightOfOwnerGlintTranslucent3d(),
+         knightOfOwnerEntityGlint3d(),
+         knightOfOwnerGlintDirect3d(),
+         knightOfOwnerEntityGlintDirect3d(),
+         knightOfOwnerGlintBlock(),
+         knightOfOwnerGlintTranslucentBlock(),
+         knightOfOwnerEntityGlintBlock(),
+         knightOfOwnerGlintDirectBlock(),
+         knightOfOwnerEntityGlintDirectBlock()
       };
    }
 
@@ -450,6 +536,11 @@ public class ReinforcementRenderType extends RenderType {
       float u = (float)(time % uPeriod) / (float)uPeriod;
       float v = (float)(time % vPeriod) / (float)vPeriod;
       Matrix4f matrix = new Matrix4f().translation(-u, v, 0.0F).rotate(Axis.ZP.rotationDegrees(angleDeg)).scale(scale);
+      RenderSystem.setTextureMatrix(matrix);
+   }
+
+   private static void setupStaticGlintTexturing(float scale, float angleDeg) {
+      Matrix4f matrix = new Matrix4f().rotate(Axis.ZP.rotationDegrees(angleDeg)).scale(scale);
       RenderSystem.setTextureMatrix(matrix);
    }
 

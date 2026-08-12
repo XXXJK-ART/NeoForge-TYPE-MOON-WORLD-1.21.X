@@ -41,13 +41,14 @@ class ServantActionResourcesTest {
          }
          assertTrue(explicitSharedActions >= 8, "too few explicitly shared actions");
       }
-      assertEquals(23, servants.size());
+      assertEquals(24, servants.size());
       assertTrue(servants.contains("arash"));
       assertTrue(servants.contains("artoria_pendragon"));
       assertTrue(servants.contains("gilgamesh"));
       assertTrue(servants.contains("nightingale"));
       assertTrue(servants.contains("hundred_faces_hassan"));
       assertTrue(servants.contains("diarmuid_ua_duibhne"));
+      assertTrue(servants.contains("lancelot_berserker"));
       assertTrue(servants.contains("zhao_yun_rider"));
       try (var paths = Files.list(ACTIONS)) {
          long maneuverProfiles = paths.filter(file -> file.toString().endsWith(".json")).filter(file -> {

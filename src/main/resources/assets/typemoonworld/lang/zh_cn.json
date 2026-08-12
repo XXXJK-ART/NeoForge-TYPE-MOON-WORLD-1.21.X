@@ -2418,5 +2418,15 @@
   "skill.typemoonworld.servant_card.diarmuid_disengage": "撤退重整",
   "skill.typemoonworld.servant_card.diarmuid_dual_wield": "双枪架势",
   "message.typemoonworld.diarmuid.dual_wield.on": "双枪架势：开启",
-  "message.typemoonworld.diarmuid.dual_wield.off": "双枪架势：关闭"
+  "message.typemoonworld.diarmuid.dual_wield.off": "双枪架势：关闭",
+  "entity.typemoonworld.lancelot_berserker": "兰斯洛特",
+  "item.typemoonworld.lancelot_berserker_spawn_egg": "兰斯洛特（Berserker）刷怪蛋",
+  "item.typemoonworld.aroundight": "无毁的湖光",
+  "item.typemoonworld.aroundight.desc": "兰斯洛特决战模式使用的湖光魔剑，不会损坏。",
+  "item.typemoonworld.lancelot_iron_rod": "兰斯洛特铁棍",
+  "item.typemoonworld.lancelot_iron_rod.desc": "被骑士不死于徒手宝具化的普通铁棍。",
+  "item.typemoonworld.servant_card_lancelot_berserker_head": "兰斯洛特从者卡头盔",
+  "item.typemoonworld.servant_card_lancelot_berserker_chest": "兰斯洛特从者卡胸甲",
+  "item.typemoonworld.servant_card_lancelot_berserker_legs": "兰斯洛特从者卡护腿",
+  "item.typemoonworld.servant_card_lancelot_berserker_feet": "兰斯洛特从者卡靴子"
 }

@@ -2391,5 +2391,15 @@
   "skill.typemoonworld.servant_card.diarmuid_disengage": "Disengage",
   "skill.typemoonworld.servant_card.diarmuid_dual_wield": "Dual Spear Stance",
   "message.typemoonworld.diarmuid.dual_wield.on": "Dual Spear Stance: On",
-  "message.typemoonworld.diarmuid.dual_wield.off": "Dual Spear Stance: Off"
+  "message.typemoonworld.diarmuid.dual_wield.off": "Dual Spear Stance: Off",
+  "entity.typemoonworld.lancelot_berserker": "Lancelot",
+  "item.typemoonworld.lancelot_berserker_spawn_egg": "Lancelot (Berserker) Spawn Egg",
+  "item.typemoonworld.aroundight": "Aroundight",
+  "item.typemoonworld.aroundight.desc": "The indestructible lake sword used in Lancelot's decisive mode.",
+  "item.typemoonworld.lancelot_iron_rod": "Lancelot Iron Rod",
+  "item.typemoonworld.lancelot_iron_rod.desc": "A plain iron rod transformed by Knight of Owner.",
+  "item.typemoonworld.servant_card_lancelot_berserker_head": "Lancelot Berserker Helm",
+  "item.typemoonworld.servant_card_lancelot_berserker_chest": "Lancelot Berserker Armor",
+  "item.typemoonworld.servant_card_lancelot_berserker_legs": "Lancelot Berserker Leg Armor",
+  "item.typemoonworld.servant_card_lancelot_berserker_feet": "Lancelot Berserker Boots"
 }

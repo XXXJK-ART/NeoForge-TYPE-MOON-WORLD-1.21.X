@@ -74,6 +74,11 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get());
+      } else if (isLancelotBerserker(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.18F, 0.74F, ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get());
       } else if (isEmiya(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -138,11 +143,11 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayRoar(ServantEntity servant) {
-      if (!isHeracles(servant)) {
-         return;
+      if (isHeracles(servant)) {
+         playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.25F, 0.72F, ModSounds.LANCELOT_BERSERKER_VOICE_ROAR.get());
       }
-
-      playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
    }
 
    public static void tryPlayTsurigameshi(ServantEntity servant) {
@@ -191,6 +196,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_VICTORY.get());
       } else if (isDiarmuid(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_VICTORY.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.2F, 0.72F, ModSounds.LANCELOT_BERSERKER_VOICE_VICTORY.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       } else if (isArash(servant)) {
@@ -246,6 +253,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_FAIL.get());
       } else if (isDiarmuid(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_FAIL.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.18F, 0.68F, ModSounds.LANCELOT_BERSERKER_VOICE_FAIL.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       } else if (isArash(servant)) {
@@ -642,6 +651,10 @@ public final class ServantVoiceHelper {
 
    private static boolean isDiarmuid(ServantEntity servant) {
       return servant != null && DiarmuidUaDuibhneEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isLancelotBerserker(ServantEntity servant) {
+      return servant != null && LancelotBerserkerEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isEmiya(ServantEntity servant) {

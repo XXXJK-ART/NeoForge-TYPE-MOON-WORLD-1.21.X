@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidCombatAi;
 import net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidCombatHelper;
@@ -64,11 +65,19 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       boolean useRed = DiarmuidCombatAi.consumePreferredRedRose(this, living);
       ItemStack originalMain = this.getMainHandItem();
       ItemStack originalOff = this.getOffhandItem();
-      this.setItemInHand(InteractionHand.MAIN_HAND, useRed ? new ItemStack(ModItems.GAE_DEARG.get()) : new ItemStack(ModItems.GAE_BUIDHE.get()));
-      this.setItemInHand(InteractionHand.OFF_HAND, useRed ? new ItemStack(ModItems.GAE_BUIDHE.get()) : new ItemStack(ModItems.GAE_DEARG.get()));
+      boolean mainAlreadyPreferred = isSpear(originalMain, useRed ? DiarmuidSpearItem.SpearType.GAE_DEARG : DiarmuidSpearItem.SpearType.GAE_BUIDHE);
+      if (!mainAlreadyPreferred) {
+         this.setItemInHand(InteractionHand.MAIN_HAND, originalOff);
+         this.setItemInHand(InteractionHand.OFF_HAND, originalMain);
+      }
       boolean hit = super.doHurtTarget(target);
-      this.setItemInHand(InteractionHand.MAIN_HAND, originalMain);
-      this.setItemInHand(InteractionHand.OFF_HAND, originalOff);
+      DiarmuidCombatHelper.syncSpearItemToOwner(this, useRed ? DiarmuidSpearItem.SpearType.GAE_DEARG : DiarmuidSpearItem.SpearType.GAE_BUIDHE);
+      if (!mainAlreadyPreferred) {
+         ItemStack currentMain = this.getMainHandItem();
+         ItemStack currentOff = this.getOffhandItem();
+         this.setItemInHand(InteractionHand.MAIN_HAND, currentOff);
+         this.setItemInHand(InteractionHand.OFF_HAND, currentMain);
+      }
       if (hit) {
          ServantVoiceHelper.tryPlayAttack(this);
       }
@@ -110,8 +119,18 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
    }
 
    private void ensureDiarmuidLoadout() {
-      this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.GAE_DEARG.get()));
-      this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.GAE_BUIDHE.get()));
+      if (!isSpear(this.getMainHandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
+         && !isSpear(this.getMainHandItem(), DiarmuidSpearItem.SpearType.GAE_BUIDHE)) {
+         this.setItemInHand(InteractionHand.MAIN_HAND, DiarmuidCombatHelper.createSpearStack(
+            DiarmuidSpearItem.SpearType.GAE_DEARG, DiarmuidCombatHelper.redDurability(this)));
+      }
+      if (!isSpear(this.getOffhandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
+         && !isSpear(this.getOffhandItem(), DiarmuidSpearItem.SpearType.GAE_BUIDHE)) {
+         this.setItemInHand(InteractionHand.OFF_HAND, DiarmuidCombatHelper.createSpearStack(
+            DiarmuidSpearItem.SpearType.GAE_BUIDHE, DiarmuidCombatHelper.yellowDurability(this)));
+      }
+      DiarmuidCombatHelper.syncSpearItemToOwner(this, DiarmuidSpearItem.SpearType.GAE_DEARG);
+      DiarmuidCombatHelper.syncSpearItemToOwner(this, DiarmuidSpearItem.SpearType.GAE_BUIDHE);
       this.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
       this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_CHEST.get()));
       this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE_LEGS.get()));
@@ -120,5 +139,9 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       this.setDropChance(EquipmentSlot.CHEST, 0.0F);
       this.setDropChance(EquipmentSlot.LEGS, 0.0F);
       this.setDropChance(EquipmentSlot.FEET, 0.0F);
+   }
+
+   private static boolean isSpear(ItemStack stack, DiarmuidSpearItem.SpearType type) {
+      return stack.getItem() instanceof DiarmuidSpearItem spear && spear.spearType() == type;
    }
 }

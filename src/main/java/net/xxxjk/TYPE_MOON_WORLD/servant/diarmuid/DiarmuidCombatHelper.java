@@ -19,9 +19,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDiarmuidSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity;
@@ -29,7 +32,7 @@ import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 
 public final class DiarmuidCombatHelper {
-   public static final int SPEAR_MAX_DURABILITY = 100;
+   public static final int SPEAR_MAX_DURABILITY = 200;
    public static final int MAX_YELLOW_ROSE_STACKS = 5;
    public static final int YELLOW_ROSE_DAMAGE_INTERVAL_TICKS = 5 * 20;
    public static final double MAX_HEALTH_REDUCTION_PER_STACK = 0.10;
@@ -72,6 +75,20 @@ public final class DiarmuidCombatHelper {
       CompoundTag data = owner.getPersistentData();
       if (!data.contains(RED_SPEAR_DURABILITY_TAG)) data.putInt(RED_SPEAR_DURABILITY_TAG, SPEAR_MAX_DURABILITY);
       if (!data.contains(YELLOW_SPEAR_DURABILITY_TAG)) data.putInt(YELLOW_SPEAR_DURABILITY_TAG, SPEAR_MAX_DURABILITY);
+   }
+
+   public static ItemStack createSpearStack(DiarmuidSpearItem.SpearType type, int remaining) {
+      ItemStack stack = new ItemStack(type == DiarmuidSpearItem.SpearType.GAE_DEARG ? ModItems.GAE_DEARG.get() : ModItems.GAE_BUIDHE.get());
+      stack.setDamageValue(Math.max(0, SPEAR_MAX_DURABILITY - Math.min(SPEAR_MAX_DURABILITY, Math.max(0, remaining))));
+      return stack;
+   }
+
+   public static void syncSpearItemToOwner(LivingEntity owner, DiarmuidSpearItem.SpearType type) {
+      if (owner == null) return;
+      ItemStack stack = findSpear(owner, type);
+      if (stack.isEmpty()) return;
+      stack.setDamageValue(Math.max(0, SPEAR_MAX_DURABILITY - (type == DiarmuidSpearItem.SpearType.GAE_DEARG
+         ? redDurability(owner) : yellowDurability(owner))));
    }
 
    public static boolean isRedActive(LivingEntity owner) {
@@ -213,6 +230,14 @@ public final class DiarmuidCombatHelper {
       if (next <= 0 && YELLOW_SPEAR_DURABILITY_TAG.equals(key)) {
          clearCursesFromOwner(owner);
       }
+   }
+
+   private static ItemStack findSpear(LivingEntity owner, DiarmuidSpearItem.SpearType type) {
+      ItemStack main = owner.getItemInHand(InteractionHand.MAIN_HAND);
+      if (main.getItem() instanceof DiarmuidSpearItem spear && spear.spearType() == type) return main;
+      ItemStack off = owner.getItemInHand(InteractionHand.OFF_HAND);
+      if (off.getItem() instanceof DiarmuidSpearItem spear && spear.spearType() == type) return off;
+      return ItemStack.EMPTY;
    }
 
    private static void breakMagicDefense(LivingEntity owner, LivingEntity target) {
