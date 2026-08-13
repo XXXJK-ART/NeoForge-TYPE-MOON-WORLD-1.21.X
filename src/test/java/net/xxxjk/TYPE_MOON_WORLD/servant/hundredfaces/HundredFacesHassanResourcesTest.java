@@ -100,8 +100,8 @@ class HundredFacesHassanResourcesTest {
       String helper = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
       assertTrue(rules.contains("PERSONA_ATTACK_DAMAGE = 5.0"));
       assertTrue(rules.contains("PERSONA_MOVEMENT_SPEED = 0.36"));
-      assertTrue(rules.contains("PERSONA_MIN_HEALTH = 20.0"));
-      assertTrue(rules.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 0.5"));
+      assertTrue(rules.contains("PERSONA_MIN_HEALTH = 50.0"));
+      assertTrue(rules.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 1.0"));
       assertTrue(rules.contains("TAG_TOTAL_SPLIT_COUNT"));
       assertTrue(rules.contains("mainHealthForSplitCount"));
       assertTrue(rules.contains("mainAttackDamageForSplitCount"));
@@ -186,6 +186,11 @@ class HundredFacesHassanResourcesTest {
          assertTrue(layout.contains(action), action);
       assertTrue(transform.contains(action), action);
       }
+      assertTrue(layout.contains("\"hundred_faces_switch\", 0.0, 0"));
+      assertTrue(layout.contains("\"hundred_faces_concealment\", 16.0, 110"));
+      assertTrue(skills.contains("COMMAND_CLEAR_PERSONAL = 14"));
+      assertTrue(skills.contains("GLOBAL_COMMAND_TAG"));
+      assertTrue(skills.contains("ServantCardConcealmentHelper.apply(player, 240)"));
       assertTrue(transform.contains("\"hundred_faces_hassan\".equals(servantId)"));
       assertTrue(transform.contains("&& !\"hundred_faces_hassan\".equals(servantId)"));
       assertTrue(skills.contains("MAX_SUMMON_BATCH"));

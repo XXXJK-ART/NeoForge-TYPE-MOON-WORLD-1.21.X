@@ -1934,6 +1934,13 @@
   "screen.typemoonworld.hundred_faces.summon.ten": "10 个",
   "screen.typemoonworld.hundred_faces.summon.twenty": "20 个",
   "screen.typemoonworld.hundred_faces.summon.max": "最大",
+  "screen.typemoonworld.hundred_faces.command_scope.one": "命令 1 人",
+  "screen.typemoonworld.hundred_faces.command_scope.ten": "命令 10 人",
+  "screen.typemoonworld.hundred_faces.command_scope.twenty": "命令 20 人",
+  "screen.typemoonworld.hundred_faces.command_scope.thirty": "命令 30 人",
+  "screen.typemoonworld.hundred_faces.command_scope.all": "命令全部",
+  "screen.typemoonworld.hundred_faces.command_scope.selected": "目标：%s",
+  "screen.typemoonworld.hundred_faces.back": "返回",
   "screen.typemoonworld.hundred_faces.command.recall": "召回",
   "screen.typemoonworld.hundred_faces.command.scatter": "分散",
   "screen.typemoonworld.hundred_faces.command.attack_toggle": "主动攻击",
@@ -1941,6 +1948,7 @@
   "screen.typemoonworld.hundred_faces.command.hold": "留在原地",
   "screen.typemoonworld.hundred_faces.command.free": "自由行动",
   "screen.typemoonworld.hundred_faces.command.follow": "跟随",
+  "screen.typemoonworld.hundred_faces.command.clear_personal": "解除个人指令",
   "screen.typemoonworld.hundred_faces.coordinates": "坐标 %s / %s / %s",
   "screen.typemoonworld.hundred_faces.stats": "HP %s / %s  护甲 %s",
   "screen.typemoonworld.hundred_faces.mode": "模式：%s",
@@ -2437,5 +2445,10 @@
   "skill.typemoonworld.servant_card.lancelot_berserk_roar": "狂化咆哮",
   "skill.typemoonworld.servant_card.lancelot_knight_of_owner": "骑士不死于徒手",
   "skill.typemoonworld.servant_card.lancelot_aroundight": "无毁的湖光 阿隆戴特",
-  "message.typemoonworld.lancelot.aroundight_seals_owner": "无毁的湖光解放中，骑士不死于徒手被封印"
+  "message.typemoonworld.lancelot.aroundight_seals_owner": "无毁的湖光解放中，骑士不死于徒手被封印",
+  "message.typemoonworld.lancelot.owner_limit": "骑士不死于徒手的同化物已达到 30 个上限",
+  "message.typemoonworld.lancelot.no_weapon": "目标手中没有可夺取的物品",
+  "message.typemoonworld.lancelot.steal_failed": "夺取失败",
+  "message.typemoonworld.lancelot.steal_success": "已夺取并同化 %s 的武器",
+  "message.typemoonworld.hundred_faces.personal_cleared": "已解除所有分身的个人指令"
 }

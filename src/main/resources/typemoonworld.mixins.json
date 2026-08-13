@@ -12,6 +12,7 @@
   ],
   "client": [
     "ItemRendererMixin",
+    "client.GeoItemRendererMixin",
     "client.HumanoidArmorLayerMixin",
     "client.ItemInHandRendererMixin",
     "client.EntityRenderDispatcherMixin",

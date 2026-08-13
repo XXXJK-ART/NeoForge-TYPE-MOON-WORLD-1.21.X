@@ -64,6 +64,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
@@ -1808,7 +1809,7 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static boolean isDivineOrSupremeWeapon(ItemStack stack) {
-      return stack.is(ModItems.EXCALIBUR.get()) || stack.is(ModItems.EXCALIBUR_GALLATIN.get()) || stack.is(ModItems.TSUMUKARI_MURAMASA.get());
+      return MagicStructuralAnalysis.isProjectionBanned(stack);
    }
 
    private static void performBorrowedExcalibur(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {

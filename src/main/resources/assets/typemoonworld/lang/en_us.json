@@ -1907,6 +1907,13 @@
   "screen.typemoonworld.hundred_faces.summon.ten": "10",
   "screen.typemoonworld.hundred_faces.summon.twenty": "20",
   "screen.typemoonworld.hundred_faces.summon.max": "Max",
+  "screen.typemoonworld.hundred_faces.command_scope.one": "Order 1",
+  "screen.typemoonworld.hundred_faces.command_scope.ten": "Order 10",
+  "screen.typemoonworld.hundred_faces.command_scope.twenty": "Order 20",
+  "screen.typemoonworld.hundred_faces.command_scope.thirty": "Order 30",
+  "screen.typemoonworld.hundred_faces.command_scope.all": "Order All",
+  "screen.typemoonworld.hundred_faces.command_scope.selected": "Scope: %s",
+  "screen.typemoonworld.hundred_faces.back": "Back",
   "screen.typemoonworld.hundred_faces.command.recall": "Recall",
   "screen.typemoonworld.hundred_faces.command.scatter": "Scatter",
   "screen.typemoonworld.hundred_faces.command.attack_toggle": "Attack Toggle",
@@ -1914,6 +1921,7 @@
   "screen.typemoonworld.hundred_faces.command.hold": "Hold",
   "screen.typemoonworld.hundred_faces.command.free": "Free",
   "screen.typemoonworld.hundred_faces.command.follow": "Follow",
+  "screen.typemoonworld.hundred_faces.command.clear_personal": "Clear Personal Orders",
   "screen.typemoonworld.hundred_faces.coordinates": "XYZ %s / %s / %s",
   "screen.typemoonworld.hundred_faces.stats": "HP %s / %s  DEF %s",
   "screen.typemoonworld.hundred_faces.mode": "Mode: %s",
@@ -2410,5 +2418,10 @@
   "skill.typemoonworld.servant_card.lancelot_berserk_roar": "Mad Roar",
   "skill.typemoonworld.servant_card.lancelot_knight_of_owner": "Knight of Owner",
   "skill.typemoonworld.servant_card.lancelot_aroundight": "Aroundight",
-  "message.typemoonworld.lancelot.aroundight_seals_owner": "Knight of Owner is sealed while Aroundight is released"
+  "message.typemoonworld.lancelot.aroundight_seals_owner": "Knight of Owner is sealed while Aroundight is released",
+  "message.typemoonworld.lancelot.owner_limit": "Knight of Owner has reached its 30-item limit",
+  "message.typemoonworld.lancelot.no_weapon": "The target has no item that can be seized",
+  "message.typemoonworld.lancelot.steal_failed": "Weapon seizure failed",
+  "message.typemoonworld.lancelot.steal_success": "Seized and assimilated %s's weapon",
+  "message.typemoonworld.hundred_faces.personal_cleared": "Cleared all personal persona orders"
 }

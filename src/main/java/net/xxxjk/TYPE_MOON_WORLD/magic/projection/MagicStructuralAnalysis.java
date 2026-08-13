@@ -126,7 +126,10 @@ public class MagicStructuralAnalysis {
       return stack != null && !stack.isEmpty() && (stack.getItem() instanceof AvalonItem
          || stack.is(ModItems.EXCALIBUR.get())
          || stack.is(ModItems.EXCALIBUR_GALLATIN.get())
-         || stack.is(ModItems.GILGAMESH_EA.get()));
+         || stack.is(ModItems.GILGAMESH_EA.get())
+         || stack.is(ModItems.GILGAMESH_BAB_ILU.get())
+         || stack.is(ModItems.GILGAMESH_VAJRA.get())
+         || stack.is(ModItems.TSUMUKARI_MURAMASA.get()));
    }
 
    /**

@@ -46,7 +46,7 @@ class HundredFacesHassanRulesTest {
       assertEquals(100.0, HundredFacesHassanRules.personaHealthForCount(1), 1.0E-9);
       assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(1), 1.0E-9);
       assertTrue(HundredFacesHassanRules.personaHealthForCount(10) < HundredFacesHassanRules.personaHealthForCount(1));
-      assertEquals(20.0, HundredFacesHassanRules.personaHealthForCount(80), 1.0E-9);
+      assertEquals(50.0, HundredFacesHassanRules.personaHealthForCount(80), 1.0E-9);
       assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(80), 1.0E-9);
    }
 
@@ -56,7 +56,7 @@ class HundredFacesHassanRulesTest {
       assertEquals(5.0, HundredFacesHassanRules.PERSONA_ATTACK_DAMAGE, 1.0E-9);
       assertEquals(200.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.manaPool(), 1.0E-9);
       assertEquals(2.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.critRatePercent(), 1.0E-9);
-      assertEquals(0.5, HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER, 1.0E-9);
+      assertEquals(1.0, HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER, 1.0E-9);
    }
 
    @Test

@@ -111,6 +111,8 @@ class LancelotBerserkerResourcesTest {
       assertTrue(layout.contains("case \"lancelot_berserker\""));
       assertTrue(layout.contains("case 8 -> new ServantCardSkillAction(\"Knight of Owner\""));
       assertTrue(layout.contains("case 9 -> new ServantCardSkillAction(\"Aroundight\""));
+      assertTrue(layout.contains("\"lancelot_knight_of_owner\", 10.0, 40"));
+      assertTrue(layout.contains("\"lancelot_aroundight\", 50.0, 1200"));
       assertTrue(transform.contains("ServantCardLancelotBerserkerSkills.initialize(player, vars)"));
       assertTrue(transform.contains("ServantCardLancelotBerserkerSkills.performAroundight(player, vars)"));
       assertTrue(cardSkills.contains("maybeInterceptProjectile"));
@@ -121,6 +123,10 @@ class LancelotBerserkerResourcesTest {
       assertTrue(cardSkills.contains("AbstractArrow"));
       assertTrue(cardSkills.contains("ThrownTrident"));
       assertTrue(cardSkills.contains("LancelotCombatHelper.applyWeaponHit"));
+      assertTrue(cardSkills.contains("onAroundightToss(ItemTossEvent event)"));
+      assertTrue(cardSkills.contains("remainingKnightOfOwnerCapacity(player)"));
+      assertTrue(cardSkills.contains("KNIGHT_OF_OWNER_MP_COST"));
+      assertTrue(!cardSkills.contains("if (!isHoldingAroundight(player)) {"));
       assertTrue(masterProtection.contains("isProtectedMasterDamage"));
       assertTrue(masterProtection.contains("projectile.getOwner()"));
       assertTrue(commonEvents.contains("ServantMasterProtection.isProtectedMasterDamage"));
@@ -131,7 +137,8 @@ class LancelotBerserkerResourcesTest {
 
    @Test
    void knightOfOwnerAndAroundightRulesAreDocumentedInRuntimeHelper() {
-      assertEquals(2.0, LancelotCombatHelper.KNIGHT_OF_OWNER_MP_COST, 1.0E-9);
+      assertEquals(10.0, LancelotCombatHelper.KNIGHT_OF_OWNER_MP_COST, 1.0E-9);
+      assertEquals(30, LancelotCombatHelper.KNIGHT_OF_OWNER_ITEM_LIMIT);
       assertEquals(50.0, LancelotCombatHelper.AROUNDIGHT_DRAW_MP_COST, 1.0E-9);
       assertEquals(5.0, LancelotCombatHelper.AROUNDIGHT_DRAIN_MP, 1.0E-9);
       assertEquals(20, LancelotCombatHelper.AROUNDIGHT_DRAIN_INTERVAL);

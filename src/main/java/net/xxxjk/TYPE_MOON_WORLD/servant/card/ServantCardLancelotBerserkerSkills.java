@@ -24,8 +24,12 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
@@ -43,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.joml.Vector3f;
 
+@EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class ServantCardLancelotBerserkerSkills {
    private static final String LAST_INTERCEPT_TAG = "ServantCardLancelotLastProjectileIntercept";
    private static final String LAST_SPRINT_COLLISION_TAG = "ServantCardLancelotLastSprintCollisionBreak";
@@ -229,9 +234,26 @@ public final class ServantCardLancelotBerserkerSkills {
       }
       ItemStack main = player.getMainHandItem();
       if (main.isEmpty()) {
+         LivingEntity target = lookedAtStealTarget(player);
+         if (target != null) {
+            return tryStealAndOwnerize(player, target);
+         }
+         if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.owner_limit"), true);
+            return false;
+         }
          equipKnightRod(player);
       } else if (LancelotCombatHelper.canOwnerize(main)) {
-         player.setItemInHand(InteractionHand.MAIN_HAND, LancelotCombatHelper.knightOfOwnerStack(main, player));
+         if (LancelotCombatHelper.isKnightOfOwnerOwnedBy(main, player)) return false;
+         int count = LancelotCombatHelper.ownerizableCount(player, main);
+         if (count <= 0) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.owner_limit"), true);
+            return false;
+         }
+         ItemStack ownerized = main.copyWithCount(count);
+         ItemStack remainder = main.copyWithCount(main.getCount() - count);
+         player.setItemInHand(InteractionHand.MAIN_HAND, LancelotCombatHelper.knightOfOwnerStack(ownerized, player));
+         returnRemainder(player, remainder);
       } else {
          return false;
       }
@@ -240,6 +262,52 @@ public final class ServantCardLancelotBerserkerSkills {
          level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.65F, 0.55F);
       }
       return true;
+   }
+
+   private static LivingEntity lookedAtStealTarget(ServerPlayer player) {
+      HitResult hit = EntityUtils.getRayTraceTarget(player, 2.0);
+      if (!(hit instanceof EntityHitResult entityHit) || !(entityHit.getEntity() instanceof LivingEntity living)
+         || !validTarget(player, living)) return null;
+      return living;
+   }
+
+   private static boolean tryStealAndOwnerize(ServerPlayer player, LivingEntity target) {
+      if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.owner_limit"), true);
+         return false;
+      }
+      boolean mainAvailable = LancelotCombatHelper.canOwnerize(target.getMainHandItem());
+      boolean offAvailable = LancelotCombatHelper.canOwnerize(target.getOffhandItem());
+      if (!mainAvailable && !offAvailable) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.no_weapon"), true);
+         return false;
+      }
+      InteractionHand stolenHand = mainAvailable && offAvailable
+         ? (player.getRandom().nextBoolean() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND)
+         : (mainAvailable ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND);
+      ItemStack held = target.getItemInHand(stolenHand);
+      float stealChance = LancelotCombatHelper.knightOfOwnerStealChance(held);
+      if (stealChance <= 0.0F) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.no_weapon"), true);
+         return false;
+      }
+      if (player.getRandom().nextFloat() >= stealChance) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.steal_failed"), true);
+         return true;
+      }
+      int count = Math.min(held.getCount(), LancelotCombatHelper.remainingKnightOfOwnerCapacity(player));
+      if (count <= 0) return false;
+      ItemStack stolen = held.split(count);
+      target.setItemInHand(stolenHand, held.isEmpty() ? ItemStack.EMPTY : held);
+      player.setItemInHand(InteractionHand.MAIN_HAND, LancelotCombatHelper.knightOfOwnerStack(stolen, player));
+      player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.steal_success", target.getDisplayName()), true);
+      return true;
+   }
+
+   private static void returnRemainder(ServerPlayer player, ItemStack remainder) {
+      if (remainder.isEmpty()) return;
+      if (!player.getInventory().add(remainder)) player.drop(remainder, false);
+      player.getInventory().setChanged();
    }
 
    public static boolean tryThrowKnightOfOwnerItem(ServerPlayer player, InteractionHand hand) {
@@ -312,10 +380,6 @@ public final class ServantCardLancelotBerserkerSkills {
          removeAroundightModifiers(player);
          return;
       }
-      if (!isHoldingAroundight(player)) {
-         stopAroundight(player, false);
-         return;
-      }
       applyAroundightModifiers(player);
       CompoundTag data = player.getPersistentData();
       if (now < data.getLong(LAST_DRAIN_TICK_TAG)) return;
@@ -334,8 +398,10 @@ public final class ServantCardLancelotBerserkerSkills {
       data.remove(LancelotCombatHelper.AROUNDIGHT_MODE_TAG);
       data.remove(LAST_DRAIN_TICK_TAG);
       removeAroundightModifiers(player);
-      if (isHoldingAroundight(player)) {
-         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+      if (isHoldingAroundight(player)) player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+      if (player.getOffhandItem().getItem() instanceof LancelotWeaponItem weapon
+         && weapon.weaponType() == LancelotWeaponItem.WeaponType.AROUNDIGHT) {
+         player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
       }
       if (unable) {
          data.putLong(LancelotCombatHelper.UNABLE_UNTIL_TAG, player.level().getGameTime() + LancelotCombatHelper.UNABLE_DURATION_TICKS);
@@ -346,6 +412,16 @@ public final class ServantCardLancelotBerserkerSkills {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.servant_card_action_mode = 0;
       vars.syncPlayerVariables(player);
+   }
+
+   @SubscribeEvent
+   public static void onAroundightToss(ItemTossEvent event) {
+      if (!(event.getPlayer() instanceof ServerPlayer player) || !isAroundightActive(player)) return;
+      ItemStack tossed = event.getEntity().getItem();
+      if (!(tossed.getItem() instanceof LancelotWeaponItem weapon)
+         || weapon.weaponType() != LancelotWeaponItem.WeaponType.AROUNDIGHT) return;
+      event.getEntity().discard();
+      stopAroundight(player, false);
    }
 
    private static void strikeArc(ServerPlayer player, double range, float damage, double minDot, int maxHits, double knockback) {
@@ -399,7 +475,10 @@ public final class ServantCardLancelotBerserkerSkills {
       GilgameshGateWeaponProjectileEntity gateProjectile = projectile instanceof GilgameshGateWeaponProjectileEntity gate ? gate : null;
       ItemStack stack = stackForProjectile(projectile, player);
       projectile.discard();
-      if (target != null) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (target != null && LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) > 0
+         && LancelotCombatHelper.canOwnerize(stack)
+         && ServantCardManaService.consumeSilently(player, vars, LancelotCombatHelper.KNIGHT_OF_OWNER_MP_COST)) {
          Vec3 start = player.getEyePosition().add(player.getLookAngle().scale(0.5));
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
          Vec3 dir = aim.subtract(start);

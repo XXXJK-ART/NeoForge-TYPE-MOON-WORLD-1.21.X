@@ -23,11 +23,14 @@ public final class HundredFacesScreen extends Screen {
    private static final int MAP_PANEL_HEIGHT = 214;
    private static final int MAP_PADDING = 12;
    private static final int MARKER_SIZE = 14;
+   private static final int[] GLOBAL_COMMAND_LIMITS = {1, 10, 20, 30, -1};
+   private static final String[] GLOBAL_COMMAND_LIMIT_KEYS = {"one", "ten", "twenty", "thirty", "all"};
 
    private final int kind;
    private final List<HundredFacesOpenScreenMessage.Target> targets;
    private HundredFacesOpenScreenMessage.Target hoveredTarget;
    private int selectedTargetIndex;
+   private int selectedGlobalLimit;
    private List<Marker> cachedMarkers = List.of();
    private int cachedMapX = Integer.MIN_VALUE;
    private int cachedMapY = Integer.MIN_VALUE;
@@ -42,6 +45,7 @@ public final class HundredFacesScreen extends Screen {
       this.kind = kind;
       this.targets = targets == null ? List.of() : List.copyOf(targets);
       this.selectedTargetIndex = this.targets.isEmpty() ? -1 : 0;
+      this.selectedGlobalLimit = 0;
    }
 
    @Override
@@ -52,7 +56,7 @@ public final class HundredFacesScreen extends Screen {
       int buttonHeight = 22;
       int gap = 8;
       int startX = (this.width - (buttonWidth * columns + gap)) / 2;
-      int startY = this.height / 2 - (this.choiceCount() > 4 ? 38 : 24);
+      int startY = this.height / 2 - (this.choiceCount() > 6 ? 52 : this.choiceCount() > 4 ? 38 : 24);
 
       if (this.kind == KIND_SUMMON) {
          int[] requests = {1, 5, 10, 20, 80};
@@ -68,23 +72,43 @@ public final class HundredFacesScreen extends Screen {
          return;
       }
 
+      if (this.kind == KIND_GLOBAL_COMMAND && this.selectedGlobalLimit == 0) {
+         for (int i = 0; i < GLOBAL_COMMAND_LIMITS.length; i++) {
+            int limit = GLOBAL_COMMAND_LIMITS[i];
+            int x = startX + i % columns * (buttonWidth + gap);
+            int y = startY + i / columns * (buttonHeight + gap);
+            this.addRenderableWidget(new NeonButton(x, y, buttonWidth, buttonHeight,
+               Component.translatable("screen.typemoonworld.hundred_faces.command_scope." + GLOBAL_COMMAND_LIMIT_KEYS[i]),
+               button -> this.selectGlobalLimit(limit), i % 2 == 0 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
+         }
+         return;
+      }
+
       if (this.kind == KIND_GLOBAL_COMMAND) {
          int[] commands = {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_RECALL,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_SCATTER,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FREE,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE,
-            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE,
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CLEAR_PERSONAL
          };
-         String[] keys = {"recall", "scatter", "free", "attack_toggle", "force_concealment"};
+         String[] keys = {"recall", "scatter", "free", "attack_toggle", "force_concealment", "clear_personal"};
          for (int i = 0; i < commands.length; i++) {
             int command = commands[i];
             int x = startX + i % columns * (buttonWidth + gap);
             int y = startY + i / columns * (buttonHeight + gap);
             this.addRenderableWidget(new NeonButton(x, y, buttonWidth, buttonHeight,
                Component.translatable("screen.typemoonworld.hundred_faces.command." + keys[i]),
-               button -> this.selectCommand(0, -1, command), i >= 3 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
+               button -> this.selectCommand(0, this.selectedGlobalLimit, command), i >= 3 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
          }
+         int backY = startY + (commands.length + 1) / columns * (buttonHeight + gap);
+         this.addRenderableWidget(new NeonButton(startX, backY, buttonWidth, buttonHeight,
+            Component.translatable("screen.typemoonworld.hundred_faces.back"),
+            button -> {
+               this.selectedGlobalLimit = 0;
+               this.rebuildWidgets();
+            }, GuiUtils.ARCANE_TEXT_MUTED).setArcaneStyle(true));
          return;
       }
 
@@ -134,11 +158,16 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private void renderChoicePanel(GuiGraphics gui) {
-      int panelHeight = this.choiceCount() > 4 ? 138 : 110;
+      int panelHeight = this.choiceCount() > 6 ? 166 : this.choiceCount() > 4 ? 138 : 110;
       int panelX = (this.width - PANEL_WIDTH) / 2;
       int panelY = (this.height - panelHeight) / 2 - 8;
       GuiUtils.renderArcaneWindow(gui, panelX, panelY, PANEL_WIDTH, panelHeight, ACCENT);
       gui.drawCenteredString(this.font, this.title, this.width / 2, panelY + 9, GuiUtils.ARCANE_TEXT);
+      if (this.kind == KIND_GLOBAL_COMMAND && this.selectedGlobalLimit != 0) {
+         Component scope = Component.translatable("screen.typemoonworld.hundred_faces.command_scope.selected",
+            this.globalLimitName(this.selectedGlobalLimit));
+         gui.drawCenteredString(this.font, scope, this.width / 2, panelY + 25, GuiUtils.ARCANE_TEXT_MUTED);
+      }
       if (this.kind == KIND_SINGLE_COMMAND && this.targets.isEmpty()) {
          gui.drawCenteredString(this.font, Component.translatable("screen.typemoonworld.hundred_faces.no_targets"),
             this.width / 2, panelY + 36, GuiUtils.ARCANE_TEXT_MUTED);
@@ -266,6 +295,11 @@ public final class HundredFacesScreen extends Screen {
 
    @Override
    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+      if (this.kind == KIND_GLOBAL_COMMAND && this.selectedGlobalLimit != 0 && keyCode == 256) {
+         this.selectedGlobalLimit = 0;
+         this.rebuildWidgets();
+         return true;
+      }
       if (this.kind == KIND_SWITCH && !this.targets.isEmpty()) {
          if (keyCode == 262 || keyCode == 264) {
             this.selectedTargetIndex = (this.selectedTargetIndex + 1) % this.targets.size();
@@ -289,7 +323,7 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private int choiceCount() {
-      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_GLOBAL_COMMAND ? 5 : 5;
+      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_GLOBAL_COMMAND ? this.selectedGlobalLimit == 0 ? 5 : 7 : 5;
    }
 
    private void selectSummon(int requested) {
@@ -297,9 +331,19 @@ public final class HundredFacesScreen extends Screen {
       this.onClose();
    }
 
+   private void selectGlobalLimit(int limit) {
+      this.selectedGlobalLimit = limit;
+      this.rebuildWidgets();
+   }
+
    private void selectCommand(int scope, int entityId, int command) {
       PacketDistributor.sendToServer(new HundredFacesCommandMessage(scope, entityId, command), new CustomPacketPayload[0]);
       this.onClose();
+   }
+
+   private Component globalLimitName(int limit) {
+      if (limit < 0) return Component.translatable("screen.typemoonworld.hundred_faces.command_scope.all");
+      return Component.literal(Integer.toString(limit));
    }
 
    private void selectSwitch(int id) {

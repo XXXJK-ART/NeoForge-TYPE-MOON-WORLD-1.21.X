@@ -56,6 +56,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -326,6 +327,9 @@ public final class ServantCardEmiyaSkills {
 
    private static boolean isTypeMoonWorldItem(ItemStack stack) {
       if (stack == null || stack.isEmpty()) {
+         return false;
+      }
+      if (MagicStructuralAnalysis.isProjectionBanned(stack)) {
          return false;
       }
       ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());

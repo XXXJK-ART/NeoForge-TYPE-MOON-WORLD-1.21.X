@@ -37,6 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LancelotWeaponItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -61,7 +63,8 @@ public final class LancelotCombatHelper {
    public static final String LAST_THROW_TAG = "LancelotLastThrow";
    public static final String LAST_GROUND_SLAM_TAG = "LancelotLastGroundSlam";
    public static final String AROUNDIGHT_HEALTH_SYNCED_TAG = "LancelotAroundightHealthSynced";
-   public static final double KNIGHT_OF_OWNER_MP_COST = 2.0;
+   public static final double KNIGHT_OF_OWNER_MP_COST = 10.0;
+   public static final int KNIGHT_OF_OWNER_ITEM_LIMIT = 30;
    public static final double ETERNAL_ARMS_MASTERSHIP_RECOVERY_MULTIPLIER = 2.0;
    public static final double ETERNAL_ARMS_MASTERSHIP_MAX_RECOVERY_MULTIPLIER = 2.0;
    public static final double ETERNAL_ARMS_MASTERSHIP_WEAPON_DAMAGE_MULTIPLIER = 1.5;
@@ -227,8 +230,50 @@ public final class LancelotCombatHelper {
       return data != null && data.copyTag().getBoolean(KNIGHT_OF_OWNER_TAG);
    }
 
+   public static boolean isKnightOfOwnerOwnedBy(ItemStack stack, LivingEntity owner) {
+      if (!isKnightOfOwner(stack) || owner == null || isAroundightStack(stack)) return false;
+      CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+      CompoundTag tag = data == null ? new CompoundTag() : data.copyTag();
+      return tag.hasUUID(KNIGHT_OF_OWNER_OWNER_TAG)
+         && owner.getUUID().equals(tag.getUUID(KNIGHT_OF_OWNER_OWNER_TAG));
+   }
+
+   public static int countHeldKnightOfOwnerItems(ServerPlayer player) {
+      if (player == null) return 0;
+      int count = 0;
+      for (ItemStack stack : player.getInventory().items) {
+         if (isKnightOfOwnerOwnedBy(stack, player)) count += stack.getCount();
+      }
+      for (ItemStack stack : player.getInventory().offhand) {
+         if (isKnightOfOwnerOwnedBy(stack, player)) count += stack.getCount();
+      }
+      return Math.min(KNIGHT_OF_OWNER_ITEM_LIMIT, count);
+   }
+
+   public static int remainingKnightOfOwnerCapacity(ServerPlayer player) {
+      return Math.max(0, KNIGHT_OF_OWNER_ITEM_LIMIT - countHeldKnightOfOwnerItems(player));
+   }
+
+   public static int ownerizableCount(ServerPlayer player, ItemStack stack) {
+      if (player == null || !canOwnerize(stack) || isAroundightStack(stack)) return 0;
+      return Math.min(stack.getCount(), remainingKnightOfOwnerCapacity(player));
+   }
+
+   private static boolean isAroundightStack(ItemStack stack) {
+      return stack != null && !stack.isEmpty() && stack.getItem() instanceof LancelotWeaponItem weapon
+         && weapon.weaponType() == LancelotWeaponItem.WeaponType.AROUNDIGHT;
+   }
+
    public static boolean canOwnerize(ItemStack stack) {
-      return stack != null && !stack.isEmpty() && stack.getItem() != Items.AIR;
+      return stack != null && !stack.isEmpty() && stack.getItem() != Items.AIR
+         && !MagicStructuralAnalysis.isProjectionBanned(stack);
+   }
+
+   public static float knightOfOwnerStealChance(ItemStack stack) {
+      if (!canOwnerize(stack)) {
+         return 0.0F;
+      }
+      return stack.getItem() instanceof NoblePhantasmItem ? 0.10F : 0.30F;
    }
 
    public static void applyWeaponHit(LivingEntity owner, LivingEntity target, ItemStack stack) {
@@ -375,7 +420,8 @@ public final class LancelotCombatHelper {
       GilgameshGateWeaponProjectileEntity gateProjectile = projectile instanceof GilgameshGateWeaponProjectileEntity gate ? gate : null;
       ItemStack stack = stackForProjectile(projectile, entity);
       projectile.discard();
-      if (target != null) {
+      if (target != null && canOwnerize(stack) && entity.getCurrentMp() >= KNIGHT_OF_OWNER_MP_COST) {
+         entity.setCurrentMp(entity.getCurrentMp() - KNIGHT_OF_OWNER_MP_COST);
          Vec3 start = entity.getEyePosition().add(entity.getLookAngle().scale(0.5));
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
          Vec3 dir = aim.subtract(start);

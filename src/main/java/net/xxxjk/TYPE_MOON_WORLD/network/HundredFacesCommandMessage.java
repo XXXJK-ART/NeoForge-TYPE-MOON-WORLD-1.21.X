@@ -26,7 +26,7 @@ public record HundredFacesCommandMessage(int scope, int entityId, int command) i
       if (ctx.flow() != PacketFlow.SERVERBOUND) return;
       ctx.enqueueWork(() -> {
          if (ctx.player() instanceof ServerPlayer player && ServerPacketRateLimiter.allow(player, "hundred_faces_command", 8)) {
-            if (msg.scope == 0) ServantCardHundredFacesHassanSkills.setGlobalCommand(player, msg.command);
+            if (msg.scope == 0) ServantCardHundredFacesHassanSkills.setGlobalCommand(player, msg.command, msg.entityId);
             else ServantCardHundredFacesHassanSkills.setPersonaCommand(player, msg.entityId, msg.command);
          }
       });

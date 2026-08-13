@@ -40,11 +40,11 @@ public final class HundredFacesHassanRules {
    public static final double PERSONA_ATTACK_DAMAGE = 5.0;
    public static final double PERSONA_MOVEMENT_SPEED = 0.36;
    public static final double PERSONA_BASE_HEALTH = 100.0;
-   public static final double PERSONA_MIN_HEALTH = 20.0;
+   public static final double PERSONA_MIN_HEALTH = 50.0;
    public static final double PERSONA_BASE_ARMOR = 3.0;
    public static final double PERSONA_MIN_ARMOR = 3.0;
    public static final double PERSONA_KNOCKBACK_RESISTANCE = 0.2;
-   public static final double PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 0.5;
+   public static final double PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 1.0;
 
    public static final ServantParams MAIN_FULL_PARAMS = ServantParams.of(
       "D", false, "C", false, "A", false, "C", false, "E", false

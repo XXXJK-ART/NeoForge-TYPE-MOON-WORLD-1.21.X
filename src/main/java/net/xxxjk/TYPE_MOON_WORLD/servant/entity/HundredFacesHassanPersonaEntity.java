@@ -29,6 +29,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
@@ -205,6 +206,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    private LivingEntity resolveLocalTarget(ServerLevel level, LivingEntity owner, boolean activeAttack) {
       LivingEntity current = this.getTarget();
       if (current != null && !isValidTarget(owner, current)) this.setTarget(null);
+      LivingEntity ownerTarget = activeAttack ? resolveOwnerTarget(owner) : null;
+      if (isValidTarget(owner, ownerTarget)) return ownerTarget;
       if (activeAttack && isValidTarget(owner, current)) return current;
       if (!activeAttack && current != null && this.getLastHurtByMob() == current && isValidTarget(owner, current)) return current;
       if (this.targetUuid != null) {
@@ -218,6 +221,22 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       return level.getEntitiesOfClass(LivingEntity.class, area, candidate -> isValidTarget(owner, candidate)).stream()
          .min(Comparator.comparingDouble(this::distanceToSqr))
          .orElse(null);
+   }
+
+   @Nullable
+   private LivingEntity resolveOwnerTarget(LivingEntity owner) {
+      if (owner instanceof HundredFacesHassanEntity hassan) {
+         return hassan.getTarget();
+      }
+      if (owner instanceof ServerPlayer player) {
+         LivingEntity lookedAt = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0, 2.0);
+         if (lookedAt != null) return lookedAt;
+         LivingEntity attacked = player.getLastHurtMob();
+         if (attacked != null && attacked.isAlive()) return attacked;
+         LivingEntity attacker = player.getLastHurtByMob();
+         if (attacker != null && attacker.isAlive()) return attacker;
+      }
+      return null;
    }
 
    private boolean isValidTarget(LivingEntity owner, @Nullable LivingEntity candidate) {

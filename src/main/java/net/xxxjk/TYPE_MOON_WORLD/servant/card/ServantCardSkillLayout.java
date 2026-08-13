@@ -229,8 +229,8 @@ public final class ServantCardSkillLayout {
             case 1 -> new ServantCardSkillAction(crouching ? "Persona Direct Command" : "Persona Command",
                crouching ? "hundred_faces_single_command" : "hundred_faces_command", 0.0, 20);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
-            case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 100);
-            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 220);
+            case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 0);
+            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 110);
             case 5 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
             case 6 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
             case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
@@ -254,8 +254,8 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Hunt Step", "lancelot_hunt_step", 8.0, 100);
             case 4 -> new ServantCardSkillAction("Mana Reversal", "lancelot_mana_reversal", 15.0, 360);
             case 5 -> new ServantCardSkillAction("Mad Roar", "lancelot_berserk_roar", 14.0, 320);
-            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 2.0, 40);
-            case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 3600);
+            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
+            case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 1200);
             default -> null;
          };
          case "ushiwakamaru_rider" -> switch (slot) {
