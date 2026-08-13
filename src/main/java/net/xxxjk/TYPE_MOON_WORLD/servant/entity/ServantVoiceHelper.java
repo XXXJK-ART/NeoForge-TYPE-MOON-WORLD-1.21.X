@@ -133,6 +133,9 @@ public final class ServantVoiceHelper {
       } else if (isMuramasa(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get());
+      } else if (isIskandar(servant)) {
+         if (servant.getRandom().nextFloat() > 0.42F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.ISKANDAR_VOICE_ATTACK.get());
       }
    }
 
@@ -220,6 +223,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_VICTORY.get());
       } else if (isMuramasa(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_VICTORY.get());
+      } else if (isIskandar(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.2F, 0.92F, ModSounds.ISKANDAR_VOICE_VICTORY.get());
       }
    }
 
@@ -277,6 +282,14 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_FAIL.get());
       } else if (isMuramasa(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_FAIL.get());
+      } else if (isIskandar(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.12F, 0.88F, ModSounds.ISKANDAR_VOICE_FAIL.get());
+      }
+   }
+
+   public static void tryPlayIskandarIonioi(IskandarEntity servant) {
+      if (isIskandar(servant)) {
+         playVoiceForced(servant, "iskandar_ionioi", 1.35F, 0.92F, ModSounds.ISKANDAR_VOICE_IONIOI.get());
       }
    }
 
@@ -695,5 +708,9 @@ public final class ServantVoiceHelper {
 
    private static boolean isMuramasa(ServantEntity servant) {
       return servant != null && SenkoMuramasaEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isIskandar(ServantEntity servant) {
+      return servant != null && IskandarEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 }

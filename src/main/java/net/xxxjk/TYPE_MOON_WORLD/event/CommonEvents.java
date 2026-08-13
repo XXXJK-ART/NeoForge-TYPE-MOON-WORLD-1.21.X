@@ -77,6 +77,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.IskandarMountEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -515,6 +516,7 @@ public class CommonEvents {
             return;
          }
          if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryRedirectIskandarMountDamage(event)) return;
          if (tryIgnoreZhaoYunChangbanpoFriendlyFire(event)) return;
          if (tryRedirectZhaoYunRescueDamage(event)) return;
          applyZhaoYunRescueDefense(event);
@@ -1462,6 +1464,35 @@ public class CommonEvents {
          }
          // 英灵死亡后清理 pendingServantId，防止下一个刷怪蛋继承错误ID
       }
+   }
+
+   private static boolean tryRedirectIskandarMountDamage(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      Entity attacker = event.getSource().getEntity();
+      Entity direct = event.getSource().getDirectEntity();
+      if (event.getEntity() instanceof IskandarMountEntity mount && mount.isAlive()) {
+         if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+         return false;
+      }
+      LivingEntity passenger = event.getEntity();
+      if (!(passenger.getVehicle() instanceof IskandarMountEntity mount)
+         || !mount.isAlive() || !mount.shouldRedirectPassengerDamage(passenger)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      float redirected = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      mount.hurt(event.getSource(), redirected);
+      return true;
    }
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)

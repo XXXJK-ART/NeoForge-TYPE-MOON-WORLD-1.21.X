@@ -1,0 +1,23 @@
+{
+  "id": "ionioi_hetairoi",
+  "display_name": "Ionioi Hetairoi",
+  "display_name_zh": "\u738b\u4e4b\u519b\u52bf",
+  "type": "anti_army",
+  "rank": "EX",
+  "mp_cost": 120,
+  "cooldown_ticks": 1800,
+  "windup_ticks": 40,
+  "effects": [
+    {
+      "effect_type": "reality_marble_summon_army",
+      "params": {
+        "total_soldiers": 10000,
+        "active_cap": 200,
+        "collapse_after_deaths": 8000,
+        "end_after_deaths": 10000,
+        "free_upkeep_ticks": 600,
+        "upkeep_mp_per_second": 5
+      }
+    }
+  ]
+}

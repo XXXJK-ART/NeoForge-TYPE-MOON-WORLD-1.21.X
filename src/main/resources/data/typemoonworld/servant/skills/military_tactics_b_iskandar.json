@@ -1,0 +1,23 @@
+{
+  "id": "military_tactics_b_iskandar",
+  "display_name": "Military Tactics B",
+  "display_name_zh": "\u519b\u7565 B",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 400,
+  "duration_ticks": 300,
+  "effects": [
+    {
+      "effect_type": "anti_army_noble_phantasm_bonus",
+      "params": {
+        "outgoing_damage_bonus": 0.3,
+        "incoming_damage_reduction": 0.3
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "anti_army_tactics", "strength": 0.7, "requires": ["combat"]}
+    ]
+  }
+}

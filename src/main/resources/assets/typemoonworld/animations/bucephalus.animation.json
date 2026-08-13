@@ -1,0 +1,47 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"standing": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"left wing base": {
+					"rotation": {
+						"vector": [1.7494, -27.4618, 81.949]
+					},
+					"position": {
+						"vector": [0, 3, 0]
+					},
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				},
+				"left wingtips": {
+					"rotation": {
+						"vector": [0, -80, 0]
+					}
+				},
+				"right wing base": {
+					"rotation": {
+						"vector": [1.7494, 27.4618, -81.949]
+					},
+					"position": {
+						"vector": [0, 3, 0]
+					}
+				},
+				"right wingtips": {
+					"rotation": {
+						"vector": [0, 80, 0]
+					}
+				},
+				"bone": {
+					"position": {
+						"vector": [0, 2, 0]
+					},
+					"scale": {
+						"vector": [1.1, 1.1, 1.1]
+					}
+				}
+			}
+		}
+	}
+}

@@ -2423,5 +2423,16 @@
   "message.typemoonworld.lancelot.no_weapon": "The target has no item that can be seized",
   "message.typemoonworld.lancelot.steal_failed": "Weapon seizure failed",
   "message.typemoonworld.lancelot.steal_success": "Seized and assimilated %s's weapon",
-  "message.typemoonworld.hundred_faces.personal_cleared": "Cleared all personal persona orders"
+  "message.typemoonworld.hundred_faces.personal_cleared": "Cleared all personal persona orders",
+  "entity.typemoonworld.iskandar": "Iskandar",
+  "entity.typemoonworld.bucephalus": "Bucephalus",
+  "entity.typemoonworld.gordius_wheel": "Gordius Wheel",
+  "entity.typemoonworld.macedonian_soldier": "Macedonian Soldier",
+  "item.typemoonworld.iskandar_spawn_egg": "Iskandar (Rider) Spawn Egg",
+  "item.typemoonworld.macedonian_soldier_spawn_egg": "Macedonian Soldier Spawn Egg",
+  "item.typemoonworld.macedonian_spear": "Macedonian Spear",
+  "item.typemoonworld.macedonian_round_shield": "Macedonian Round Shield",
+  "skill.typemoonworld.iskandar.leadership_a": "Leadership A",
+  "skill.typemoonworld.iskandar.military_tactics_b": "Military Tactics B",
+  "skill.typemoonworld.iskandar.ionioi_hetairoi": "Ionioi Hetairoi"
 }

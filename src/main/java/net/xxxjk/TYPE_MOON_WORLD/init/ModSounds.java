@@ -132,6 +132,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> PARACELSUS_VOICE_NP_SHORT = register("paracelsus_voice_np_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> GILGAMESH_VOICE_EA_SHORT = register("gilgamesh_voice_ea_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_IONIOI_SHORT = register("iskandar_voice_ionioi_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_ATTACK = register("iskandar_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_FAIL = register("iskandar_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_VICTORY = register("iskandar_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ISKANDAR_VOICE_IONIOI = register("iskandar_voice_ionioi");
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_VOICE_NP_SHORT = register("okita_voice_np_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> EMIYA_ARCHER_VOICE_UBW_SHORT = register("emiya_archer_voice_ubw_short");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_HAJUN_SHORT = register("oda_nobunaga_voice_hajun_short");

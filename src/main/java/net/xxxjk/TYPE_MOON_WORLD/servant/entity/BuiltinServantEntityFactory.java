@@ -22,6 +22,10 @@ public final class BuiltinServantEntityFactory {
          return ModEntities.ZHAO_YUN_RIDER.get().create(level);
       }
       if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
+         && IskandarEntity.SERVANT_KEY.equals(servantId.getPath())) {
+         return ModEntities.ISKANDAR.get().create(level);
+      }
+      if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
          && ShadowHassanEntity.SERVANT_KEY.equals(servantId.getPath())) {
          return ModEntities.SHADOW_HASSAN.get().create(level);
       }

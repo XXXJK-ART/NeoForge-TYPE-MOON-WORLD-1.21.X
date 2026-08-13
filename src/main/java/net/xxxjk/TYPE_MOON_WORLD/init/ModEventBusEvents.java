@@ -15,6 +15,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
@@ -94,7 +97,10 @@ public class ModEventBusEvents {
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.USHIWAKAMARU_RIDER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ZHAO_YUN_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ISKANDAR.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuEntity.createAttributes().build());
+      event.put(ModEntities.BUCEPHALUS.get(), BucephalusEntity.createAttributes().build());
+      event.put(ModEntities.GORDIUS_WHEEL.get(), GordiusWheelEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH.get(), GilgameshEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH_CASTER.get(), CasterGilgameshEntity.createAttributes().build());
@@ -116,6 +122,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
+      event.put(ModEntities.MACEDONIAN_SOLDIER.get(), MacedonianSoldierEntity.createAttributes().build());
    }
 
    @SubscribeEvent

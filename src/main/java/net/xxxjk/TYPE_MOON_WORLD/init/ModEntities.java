@@ -20,6 +20,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
@@ -82,6 +85,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
@@ -520,6 +524,10 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
       "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSoldierEntity>> MACEDONIAN_SOLDIER = ENTITY_TYPES.register(
+      "macedonian_soldier", () -> Builder.of(MacedonianSoldierEntity::new, MobCategory.CREATURE)
+         .sized(0.65F, 1.9F).clientTrackingRange(64).updateInterval(2).build("macedonian_soldier")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<GaeBulgProjectileEntity>> GAE_BULG_PROJECTILE = ENTITY_TYPES.register(
       "gae_bulg_projectile",
       () -> Builder.<GaeBulgProjectileEntity>of(
@@ -574,9 +582,21 @@ public class ModEntities {
       "zhao_yun_rider", () -> Builder.of(ZhaoYunRiderEntity::new, MobCategory.CREATURE)
          .sized(0.7F, 1.9F).clientTrackingRange(64).build("zhao_yun_rider")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<IskandarEntity>> ISKANDAR = ENTITY_TYPES.register(
+      "iskandar", () -> Builder.of(IskandarEntity::new, MobCategory.CREATURE)
+         .sized(0.86F, 2.12F).clientTrackingRange(96).updateInterval(1).build("iskandar")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunHakuryuEntity>> ZHAO_YUN_HAKURYU = ENTITY_TYPES.register(
       "zhao_yun_hakuryu", () -> Builder.of(ZhaoYunHakuryuEntity::new, MobCategory.CREATURE)
          .sized(2.2F, 2.4F).clientTrackingRange(96).updateInterval(1).build("zhao_yun_hakuryu")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<BucephalusEntity>> BUCEPHALUS = ENTITY_TYPES.register(
+      "bucephalus", () -> Builder.of(BucephalusEntity::new, MobCategory.CREATURE)
+         .sized(1.45F, 1.75F).clientTrackingRange(96).updateInterval(1).build("bucephalus")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GordiusWheelEntity>> GORDIUS_WHEEL = ENTITY_TYPES.register(
+      "gordius_wheel", () -> Builder.of(GordiusWheelEntity::new, MobCategory.CREATURE)
+         .sized(4.4F, 2.4F).clientTrackingRange(128).updateInterval(1).build("gordius_wheel")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")

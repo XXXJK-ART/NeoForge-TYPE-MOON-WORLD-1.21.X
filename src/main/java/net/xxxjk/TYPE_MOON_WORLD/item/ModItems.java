@@ -58,6 +58,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 
 public class ModItems {
@@ -1109,6 +1111,27 @@ public class ModItems {
                                             2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> MACEDONIAN_SPEAR = ITEMS.register("macedonian_spear",
+            () -> new MacedonianSpearItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1)
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "macedonian_spear_damage"),
+                                            6.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "macedonian_spear_speed"),
+                                            -2.4, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "macedonian_spear_range"),
+                                            1.75, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
+    public static final DeferredItem<Item> MACEDONIAN_ROUND_SHIELD = ITEMS.register("macedonian_round_shield",
+            () -> new MacedonianRoundShieldItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1)));
 
     public static final DeferredItem<Item> SPIDER_CUTTER = ITEMS.register("spider_cutter",
             () -> new SpiderCutterItem(new Item.Properties().durability(SpiderCutterItem.DURABILITY).fireResistant().rarity(Rarity.RARE)
@@ -1240,6 +1263,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.USHIWAKAMARU_RIDER, 0x4A1E38, 0xE9C9D5));
     public static final DeferredItem<Item> ZHAO_YUN_RIDER_SPAWN_EGG = ITEMS.register("zhao_yun_rider_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ZHAO_YUN_RIDER, 0xDDEEFF, 0x33AA66));
+    public static final DeferredItem<Item> ISKANDAR_SPAWN_EGG = ITEMS.register("iskandar_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ISKANDAR, 0x8B3E1F, 0xD7B46A));
     public static final DeferredItem<Item> ENKIDU_SPAWN_EGG = ITEMS.register("enkidu_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ENKIDU, 0xF4FFF7, 0x7FE7B2));
     public static final DeferredItem<Item> GILGAMESH_SPAWN_EGG = ITEMS.register("gilgamesh_spawn_egg",
@@ -1266,6 +1291,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.HUNDRED_FACES_HASSAN, 0x15151A, 0xD8D2C8));
     public static final DeferredItem<Item> ARASH_SPAWN_EGG = ITEMS.register("arash_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARASH, 0x2F6F65, 0xC66B32));
+    public static final DeferredItem<Item> MACEDONIAN_SOLDIER_SPAWN_EGG = ITEMS.register("macedonian_soldier_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MACEDONIAN_SOLDIER, 0xB98D50, 0x5A3424));
 
     public static Item getNormalizedCarvedGem(GemType type) {
         return switch (type) {

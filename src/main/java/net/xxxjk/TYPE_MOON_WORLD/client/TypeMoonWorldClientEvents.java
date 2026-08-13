@@ -45,6 +45,9 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MerlinRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaBeamEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ElementalMagicProjectileRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MagicBulletProjectileRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BucephalusRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GordiusWheelRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MacedonianSoldierRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedeaMagicBoltRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MedusaPegasusRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.MysticMagicianRenderer;
@@ -284,7 +287,10 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), context -> new HumanoidServantRenderer<>(context, "oda_nobunaga"));
       event.registerEntityRenderer(ModEntities.USHIWAKAMARU_RIDER.get(), context -> new HumanoidServantRenderer<>(context, "ushiwakamaru_rider"));
       event.registerEntityRenderer(ModEntities.ZHAO_YUN_RIDER.get(), context -> new HumanoidServantRenderer<>(context, "zhao_yun_rider"));
+      event.registerEntityRenderer(ModEntities.ISKANDAR.get(), context -> new HumanoidServantRenderer<>(context, "iskandar"));
       event.registerEntityRenderer(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuRenderer::new);
+      event.registerEntityRenderer(ModEntities.BUCEPHALUS.get(), BucephalusRenderer::new);
+      event.registerEntityRenderer(ModEntities.GORDIUS_WHEEL.get(), GordiusWheelRenderer::new);
       event.registerEntityRenderer(ModEntities.ENKIDU.get(), context -> new HumanoidServantRenderer<>(context, "enkidu"));
       event.registerEntityRenderer(ModEntities.GILGAMESH.get(), context -> new HumanoidServantRenderer<>(context, "gilgamesh"));
       event.registerEntityRenderer(ModEntities.GILGAMESH_CASTER.get(), context -> new HumanoidServantRenderer<>(context, "caster_gilgamesh"));
@@ -315,6 +321,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.CHAINS_OF_HEAVEN_BINDING.get(), ChainsOfHeavenBindingRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
+      event.registerEntityRenderer(ModEntities.MACEDONIAN_SOLDIER.get(), MacedonianSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_CONTROLLED_SWORD.get(), UbwControlledSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_INTERCEPTOR_SWORD.get(), UBWInterceptorSwordRenderer::new);

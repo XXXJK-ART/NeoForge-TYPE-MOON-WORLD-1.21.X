@@ -1454,5 +1454,33 @@
     "sounds": [
       {"name": "typemoonworld:voice/lancelot_berserker/victory", "stream": true}
     ]
+  },
+  "iskandar_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/iskandar/attack1", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/attack2", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/attack3", "stream": true}
+    ]
+  },
+  "iskandar_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/iskandar/fail1", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/fail2", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/fail3", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/fail4", "stream": true}
+    ]
+  },
+  "iskandar_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/iskandar/victory1", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/victory2", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/victory3", "stream": true},
+      {"name": "typemoonworld:voice/iskandar/victory4", "stream": true}
+    ]
+  },
+  "iskandar_voice_ionioi": {
+    "sounds": [
+      {"name": "typemoonworld:voice/iskandar/np", "stream": true}
+    ]
   }
 }

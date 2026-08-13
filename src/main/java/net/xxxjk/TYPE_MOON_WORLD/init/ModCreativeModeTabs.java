@@ -295,6 +295,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.AROUNDIGHT);
                         output.accept(ModItems.LANCELOT_IRON_ROD);
                         output.accept(ModItems.YAJIAO_QIANG);
+                        output.accept(ModItems.MACEDONIAN_SPEAR);
+                        output.accept(ModItems.MACEDONIAN_ROUND_SHIELD);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
                         output.accept(ModItems.RUBY_STAFF);
@@ -472,6 +474,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
                         output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
                         output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.ISKANDAR_SPAWN_EGG);
                         output.accept(ModItems.ENKIDU_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_SPAWN_EGG);
                         output.accept(ModItems.GILGAMESH_CASTER_SPAWN_EGG);
@@ -485,6 +488,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
                         output.accept(ModItems.HUNDRED_FACES_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.ARASH_SPAWN_EGG);
+                        output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

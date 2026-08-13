@@ -41,6 +41,7 @@ public final class VFXRenderManager {
    private static final ResourceLocation RING_TEXTURE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/particle/ring_shockwave.png");
    private static final Map<ResourceLocation, RenderType> CUSTOM_TRANSLUCENT_TEXTURES = new HashMap<>();
    private static final Map<ResourceLocation, RenderType> CUSTOM_ADDITIVE_TEXTURES = new HashMap<>();
+   private static final List<RenderType> USED_CUSTOM_RENDER_TYPES = new ArrayList<>();
    private static final List<VFXEmitter> EMITTERS = new ArrayList<>();
    private static final List<VFXBeam> BEAMS = new ArrayList<>();
    private static final List<VFXRingShockwave> RINGS = new ArrayList<>();
@@ -212,7 +213,7 @@ public final class VFXRenderManager {
       RenderType additive = RenderType.entityTranslucentEmissive(PARTICLE_TEXTURE);
       RenderType beamType = RenderType.entityTranslucentEmissive(BEAM_TEXTURE);
       RenderType ringType = RenderType.entityTranslucentEmissive(RING_TEXTURE);
-      VertexConsumer trailConsumer = source.getBuffer(additive);
+      USED_CUSTOM_RENDER_TYPES.clear();
       Vector3f cameraLeft = new Vector3f(-1.0F, 0.0F, 0.0F).rotate(event.getCamera().rotation());
       Vector3f cameraUp = new Vector3f(0.0F, 1.0F, 0.0F).rotate(event.getCamera().rotation());
       for (VFXEmitter emitter : EMITTERS) {
@@ -222,7 +223,7 @@ public final class VFXRenderManager {
             VertexConsumer consumer = source.getBuffer(particleType);
             drawBillboard(poseStack, consumer, particle, cameraLeft, cameraUp);
             if (emitter.isTrailEnabled()) {
-               drawTrail(poseStack, trailConsumer, particle.previousPosition, particle.position,
+               drawTrail(poseStack, source.getBuffer(additive), particle.previousPosition, particle.position,
                   particle.color, particle.size, cameraLeft);
             }
          }
@@ -239,6 +240,10 @@ public final class VFXRenderManager {
       source.endBatch(additive);
       source.endBatch(beamType);
       source.endBatch(ringType);
+      for (RenderType customType : USED_CUSTOM_RENDER_TYPES) {
+         source.endBatch(customType);
+      }
+      USED_CUSTOM_RENDER_TYPES.clear();
       poseStack.popPose();
    }
 
@@ -274,9 +279,16 @@ public final class VFXRenderManager {
          return additive ? additiveDefault : translucent;
       }
       if (additive) {
-         return CUSTOM_ADDITIVE_TEXTURES.computeIfAbsent(texture, key -> RenderType.entityTranslucentEmissive(key));
+         return rememberCustomRenderType(CUSTOM_ADDITIVE_TEXTURES.computeIfAbsent(texture, key -> RenderType.entityTranslucentEmissive(key)));
       }
-      return CUSTOM_TRANSLUCENT_TEXTURES.computeIfAbsent(texture, key -> NeoForgeRenderTypes.getUnlitTranslucent(key, false));
+      return rememberCustomRenderType(CUSTOM_TRANSLUCENT_TEXTURES.computeIfAbsent(texture, key -> NeoForgeRenderTypes.getUnlitTranslucent(key, false)));
+   }
+
+   private static RenderType rememberCustomRenderType(RenderType renderType) {
+      if (!USED_CUSTOM_RENDER_TYPES.contains(renderType)) {
+         USED_CUSTOM_RENDER_TYPES.add(renderType);
+      }
+      return renderType;
    }
 
    private static void billboardVertex(

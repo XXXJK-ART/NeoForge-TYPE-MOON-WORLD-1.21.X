@@ -2450,5 +2450,16 @@
   "message.typemoonworld.lancelot.no_weapon": "目标手中没有可夺取的物品",
   "message.typemoonworld.lancelot.steal_failed": "夺取失败",
   "message.typemoonworld.lancelot.steal_success": "已夺取并同化 %s 的武器",
-  "message.typemoonworld.hundred_faces.personal_cleared": "已解除所有分身的个人指令"
+  "message.typemoonworld.hundred_faces.personal_cleared": "已解除所有分身的个人指令",
+  "entity.typemoonworld.iskandar": "伊斯坎达尔",
+  "entity.typemoonworld.bucephalus": "布塞法洛斯",
+  "entity.typemoonworld.gordius_wheel": "神威车轮",
+  "entity.typemoonworld.macedonian_soldier": "马其顿士兵",
+  "item.typemoonworld.iskandar_spawn_egg": "伊斯坎达尔（Rider）刷怪蛋",
+  "item.typemoonworld.macedonian_soldier_spawn_egg": "马其顿士兵刷怪蛋",
+  "item.typemoonworld.macedonian_spear": "马其顿长枪",
+  "item.typemoonworld.macedonian_round_shield": "马其顿圆盾",
+  "skill.typemoonworld.iskandar.leadership_a": "领导力 A",
+  "skill.typemoonworld.iskandar.military_tactics_b": "军略 B",
+  "skill.typemoonworld.iskandar.ionioi_hetairoi": "王之军势"
 }
