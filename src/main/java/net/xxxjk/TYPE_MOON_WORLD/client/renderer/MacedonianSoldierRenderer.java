@@ -1,58 +1,42 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.EntityRendererProvider.Context;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.xxxjk.TYPE_MOON_WORLD.client.model.MacedonianSoldierModel;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
+import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
-import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 
-public final class MacedonianSoldierRenderer extends GeoEntityRenderer<MacedonianSoldierEntity> {
-   public MacedonianSoldierRenderer(Context context) {
-      super(context, new MacedonianSoldierModel());
-      this.addRenderLayer(new PetrifiedGeoLayer<>(this));
-      this.addRenderLayer(new BlockAndItemGeoLayer<MacedonianSoldierEntity>(this) {
-         @Override
-         protected ItemStack getStackForBone(GeoBone bone, MacedonianSoldierEntity animatable) {
-            return switch (bone.getName()) {
-               case "RightArm" -> animatable.getMainHandItem();
-               case "LeftArm" -> animatable.getOffhandDisplayItem();
-               default -> ItemStack.EMPTY;
-            };
-         }
+public final class MacedonianSoldierRenderer extends HumanoidMobRenderer<MacedonianSoldierEntity, PlayerModel<MacedonianSoldierEntity>> {
+   private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+      "typemoonworld", "textures/entity/macedonian_soldier.png");
 
-         @Override
-         protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, MacedonianSoldierEntity animatable) {
-            return "LeftArm".equals(bone.getName()) ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
-         }
+   public MacedonianSoldierRenderer(EntityRendererProvider.Context context) {
+      super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+      this.addLayer(new ItemInHandLayer<>(this, context.getItemInHandRenderer()));
+      this.addLayer(new PetrifiedLivingLayer<>(this));
+   }
 
-         @Override
-         protected void renderStackForBone(
-            PoseStack poseStack,
-            GeoBone bone,
-            ItemStack stack,
-            MacedonianSoldierEntity animatable,
-            MultiBufferSource bufferSource,
-            float partialTick,
-            int packedLight,
-            int packedOverlay
-         ) {
-            if ("LeftArm".equals(bone.getName())) {
-               poseStack.translate(0.0, -0.42, 0.10);
-               poseStack.mulPose(Axis.XP.rotationDegrees(-84.0F));
-               poseStack.mulPose(Axis.ZP.rotationDegrees(10.0F));
-            } else {
-               poseStack.translate(0.0, -0.78, 0.03);
-               poseStack.mulPose(Axis.XP.rotationDegrees(-96.0F));
-               poseStack.mulPose(Axis.ZP.rotationDegrees(-12.0F));
-            }
-            super.renderStackForBone(poseStack, bone, stack, animatable, bufferSource, partialTick, packedLight, packedOverlay);
-         }
-      });
+   @Override
+   public void render(MacedonianSoldierEntity entity, float yaw, float partialTick, PoseStack poseStack,
+                      MultiBufferSource buffer, int packedLight) {
+      float scale = entity.getVisualScale();
+      this.model.rightArmPose = HumanoidModel.ArmPose.ITEM;
+      this.model.leftArmPose = HumanoidModel.ArmPose.ITEM;
+      poseStack.pushPose();
+      poseStack.scale(scale, scale, scale);
+      super.render(entity, yaw, partialTick, poseStack, buffer, packedLight);
+      poseStack.popPose();
+      this.model.rightArmPose = HumanoidModel.ArmPose.EMPTY;
+      this.model.leftArmPose = HumanoidModel.ArmPose.EMPTY;
+   }
+
+   @Override
+   public ResourceLocation getTextureLocation(MacedonianSoldierEntity entity) {
+      return TEXTURE;
    }
 }

@@ -20,6 +20,7 @@ import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent.Item;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
+import net.xxxjk.TYPE_MOON_WORLD.client.world.IonioiHetairoiDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
@@ -403,5 +404,6 @@ public class TypeMoonWorldClientEvents {
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works"), new UBWDimensionEffects());
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "unlimited_blade_works_emiya"), new UBWDimensionEffects());
       event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun"), new HajunDimensionEffects());
+      event.register(ResourceLocation.fromNamespaceAndPath("typemoonworld", "ionioi_hetairoi"), new IonioiHetairoiDimensionEffects());
    }
 }

@@ -34,17 +34,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
-import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity {
+public class MacedonianSoldierEntity extends PathfinderMob {
    private static final EntityDataAccessor<Integer> RANK = SynchedEntityData.defineId(MacedonianSoldierEntity.class, EntityDataSerializers.INT);
-   private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+   private static final EntityDataAccessor<Float> VISUAL_SCALE = SynchedEntityData.defineId(MacedonianSoldierEntity.class, EntityDataSerializers.FLOAT);
    @Nullable private UUID iskandarUuid;
    private int poolIndex = -1;
    private long actionStartTick;
@@ -69,6 +62,7 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(RANK, StatRank.E.ordinal());
+      builder.define(VISUAL_SCALE, 0.95F);
    }
 
    @Override
@@ -87,6 +81,7 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
       this.poolIndex = poolIndex;
       this.actionStartTick = iskandar.level().getGameTime() + IskandarEntity.IONIOI_FORMATION_DELAY_TICKS;
       this.setSoldierRank(rank);
+      this.setVisualScale(0.9F + this.getRandom().nextFloat() * 0.1F);
       this.equipPhalanxGear();
       this.getPersistentData().putBoolean("IonioiHetairoiSoldier", true);
       this.getPersistentData().putUUID("IonioiHetairoiOwner", iskandar.getUUID());
@@ -119,6 +114,14 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
       this.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(ModItems.MACEDONIAN_ROUND_SHIELD.get()));
       this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
       this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+   }
+
+   public float getVisualScale() {
+      return this.entityData.get(VISUAL_SCALE);
+   }
+
+   private void setVisualScale(float scale) {
+      this.entityData.set(VISUAL_SCALE, net.minecraft.util.Mth.clamp(scale, 0.9F, 1.0F));
    }
 
    @Override
@@ -167,7 +170,6 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
       boolean success = super.doHurtTarget(target);
       if (success) {
          this.swing(InteractionHand.MAIN_HAND);
-         this.triggerAnim("action_controller", "melee_attack");
       }
       return success;
    }
@@ -244,6 +246,7 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
       tag.putInt("IonioiHetairoiPoolIndex", this.poolIndex);
       tag.putString("IonioiHetairoiRank", this.getSoldierRank().name());
       tag.putLong("IonioiHetairoiActionStartTick", this.actionStartTick);
+      tag.putFloat("MacedonianSoldierVisualScale", this.getVisualScale());
    }
 
    @Override
@@ -258,24 +261,12 @@ public class MacedonianSoldierEntity extends PathfinderMob implements GeoEntity 
          this.actionStartTick = level.getGameTime() + IskandarEntity.IONIOI_FORMATION_DELAY_TICKS;
       }
       this.setSoldierRank(StatRank.fromKey(tag.getString("IonioiHetairoiRank")));
+      if (tag.contains("MacedonianSoldierVisualScale")) {
+         this.setVisualScale(tag.getFloat("MacedonianSoldierVisualScale"));
+      } else {
+         this.setVisualScale(0.9F + this.getRandom().nextFloat() * 0.1F);
+      }
       this.equipPhalanxGear();
    }
 
-   public ItemStack getOffhandDisplayItem() {
-      return this.getOffhandItem();
-   }
-
-   @Override
-   public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add(new AnimationController<>(this, "controller", 0, event -> event.setAndContinue(RawAnimation.begin().thenLoop(
-         event.isMoving() ? "animation.dragonfang.walk" : "animation.dragonfang.idle"))));
-      AnimationController<MacedonianSoldierEntity> action = new AnimationController<>(this, "action_controller", 0, event -> PlayState.STOP);
-      action.triggerableAnim("melee_attack", RawAnimation.begin().thenPlay("animation.dragonfang.melee_attack"));
-      controllers.add(action);
-   }
-
-   @Override
-   public AnimatableInstanceCache getAnimatableInstanceCache() {
-      return this.cache;
-   }
 }

@@ -23,6 +23,12 @@ public class ModDimensions {
    public static final ResourceKey<DimensionType> HAJUN_TYPE = ResourceKey.create(
       Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "dairokuten_maou_hajun")
    );
+   public static final ResourceKey<Level> IONIOI_HETAIROI_KEY = ResourceKey.create(
+      Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("typemoonworld", "ionioi_hetairoi")
+   );
+   public static final ResourceKey<DimensionType> IONIOI_HETAIROI_TYPE = ResourceKey.create(
+      Registries.DIMENSION_TYPE, ResourceLocation.fromNamespaceAndPath("typemoonworld", "ionioi_hetairoi")
+   );
 
    public static void register() {
       TYPE_MOON_WORLD.LOGGER.debug("Registering ModDimensions for {}", "typemoonworld");
@@ -42,5 +48,9 @@ public class ModDimensions {
 
    public static boolean isHajunDimension(ResourceLocation location) {
       return HAJUN_KEY.location().equals(location);
+   }
+
+   public static boolean isIonioiHetairoiDimension(ResourceLocation location) {
+      return IONIOI_HETAIROI_KEY.location().equals(location);
    }
 }

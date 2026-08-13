@@ -13,9 +13,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class GordiusWheelEntity extends IskandarMountEntity {
-   private double frontX;
-   private double frontY;
-   private double frontZ;
+   private static final double MODEL_RIDER_POINT_Z = 2.12;
+   private static final double MODEL_PASSENGER_POINT_Z = 1.32;
+   private static final double MODEL_RIDER_POINT_Y = 1.38;
+   private static final double MODEL_PASSENGER_POINT_Y = 1.24;
+   private double rearX;
+   private double rearY;
+   private double rearZ;
 
    public GordiusWheelEntity(EntityType<? extends GordiusWheelEntity> type, Level level) {
       super(type, level);
@@ -31,7 +35,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       this.setNoGravity(true);
       super.tick();
       if (this.level() instanceof ServerLevel level) {
-         tickWheelPhysics();
+         tickRearBodyPhysics();
          tickLightningAura(level);
       }
    }
@@ -57,13 +61,6 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       this.setDeltaMovement(Vec3.ZERO);
    }
 
-   @Override
-   protected void followOwnerWhenEmpty(net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity iskandar) {
-      if (this.distanceToSqr(iskandar) > 18.0 * 18.0) {
-         moveTowardAir(iskandar.position().add(0.0, 1.6, 0.0).subtract(this.position()), getFollowSpeed());
-      }
-   }
-
    private void moveTowardAir(Vec3 direction, double speed) {
       if (direction.lengthSqr() < 1.0E-4) {
          return;
@@ -77,18 +74,18 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       this.setDeltaMovement(Vec3.ZERO);
    }
 
-   private void tickWheelPhysics() {
+   private void tickRearBodyPhysics() {
       Vec3 forward = this.getLookAngle().multiply(1.0, 0.0, 1.0);
       if (forward.lengthSqr() < 1.0E-4) {
          forward = new Vec3(0.0, 0.0, 1.0);
       }
       forward = forward.normalize();
-      Vec3 desired = this.position().add(forward.scale(2.7));
+      Vec3 desired = this.position().subtract(forward.scale(2.7));
       double lateralLag = this.onGround() ? 0.18 : 0.10;
       double verticalLag = this.onGround() ? 0.28 : 1.0;
-      this.frontX += (desired.x - this.frontX) * lateralLag;
-      this.frontY += (desired.y - this.frontY) * verticalLag;
-      this.frontZ += (desired.z - this.frontZ) * lateralLag;
+      this.rearX += (desired.x - this.rearX) * lateralLag;
+      this.rearY += (desired.y - this.rearY) * verticalLag;
+      this.rearZ += (desired.z - this.rearZ) * lateralLag;
    }
 
    private void tickLightningAura(ServerLevel level) {
@@ -112,24 +109,46 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       level.playSound(null, this.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 1.0F, 1.35F);
    }
 
-   public Vec3 getFrontAnchor(float partialTick) {
-      return new Vec3(this.frontX, this.frontY, this.frontZ);
+   public Vec3 getRearBodyAnchor(float partialTick) {
+      return new Vec3(this.rearX, this.rearY, this.rearZ);
+   }
+
+   public void snapRearBodyToCurrentPosition() {
+      Vec3 forward = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      Vec3 rear = this.position().subtract(forward.normalize().scale(2.7));
+      this.rearX = rear.x;
+      this.rearY = rear.y;
+      this.rearZ = rear.z;
+   }
+
+   @Override
+   protected double getSeatForwardOffset(boolean passengerSeat) {
+      // Matches the exported "骑乘点" deck marker on the chariot model.
+      return passengerSeat ? MODEL_PASSENGER_POINT_Z : MODEL_RIDER_POINT_Z;
+   }
+
+   @Override
+   protected double getSeatHeight(boolean passengerSeat) {
+      return passengerSeat ? MODEL_PASSENGER_POINT_Y : MODEL_RIDER_POINT_Y;
    }
 
    @Override
    public void addAdditionalSaveData(CompoundTag tag) {
       super.addAdditionalSaveData(tag);
-      tag.putDouble("GordiusFrontX", this.frontX);
-      tag.putDouble("GordiusFrontY", this.frontY);
-      tag.putDouble("GordiusFrontZ", this.frontZ);
+      tag.putDouble("GordiusRearX", this.rearX);
+      tag.putDouble("GordiusRearY", this.rearY);
+      tag.putDouble("GordiusRearZ", this.rearZ);
    }
 
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
-      this.frontX = tag.contains("GordiusFrontX") ? tag.getDouble("GordiusFrontX") : this.getX();
-      this.frontY = tag.contains("GordiusFrontY") ? tag.getDouble("GordiusFrontY") : this.getY();
-      this.frontZ = tag.contains("GordiusFrontZ") ? tag.getDouble("GordiusFrontZ") : this.getZ();
+      this.rearX = tag.contains("GordiusRearX") ? tag.getDouble("GordiusRearX") : tag.contains("GordiusFrontX") ? tag.getDouble("GordiusFrontX") : this.getX();
+      this.rearY = tag.contains("GordiusRearY") ? tag.getDouble("GordiusRearY") : tag.contains("GordiusFrontY") ? tag.getDouble("GordiusFrontY") : this.getY();
+      this.rearZ = tag.contains("GordiusRearZ") ? tag.getDouble("GordiusRearZ") : tag.contains("GordiusFrontZ") ? tag.getDouble("GordiusFrontZ") : this.getZ();
    }
 
    @Override

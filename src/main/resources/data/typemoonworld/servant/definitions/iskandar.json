@@ -13,14 +13,14 @@
     "luck": "A", "luck_plus": true
   },
   "model": {
-    "geometry": "",
+    "geometry": "typemoonworld:geo/iskandar.geo.json",
     "texture": "typemoonworld:textures/entity/iskandar.png",
-    "animation": ""
+    "animation": "typemoonworld:animations/iskandar.animation.json"
   },
   "specialization": {
     "dimensions": {"width": 0.86, "height": 2.12, "eye_height": 1.95},
     "hand_item_offset": {"x": 0.12, "y": -0.9, "z": -0.2},
-    "default_weapon": "minecraft:iron_sword",
+    "default_weapon": "typemoonworld:iskandar_shortsword",
     "immune_to_stone_axe_debuff": true,
     "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "charge", "mounted_chariot_charge", "leadership_a", "military_tactics_b", "ionioi_hetairoi"]
   },

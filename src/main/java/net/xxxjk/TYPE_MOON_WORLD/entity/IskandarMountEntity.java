@@ -97,11 +97,12 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          this.discard();
          return;
       }
-      if (iskandar.getVehicle() == this) {
-         followIskandarCombatIntent(iskandar);
-      } else {
-         followOwnerWhenEmpty(iskandar);
+      if (iskandar.getVehicle() != this) {
+         this.ejectPassengers();
+         this.discard();
+         return;
       }
+      followIskandarCombatIntent(iskandar);
       this.entityData.set(MOVING, this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
       this.fallDistance = 0.0F;
    }
@@ -118,12 +119,6 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          return;
       }
       this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
-   }
-
-   protected void followOwnerWhenEmpty(IskandarEntity iskandar) {
-      if (this.distanceToSqr(iskandar) > 16.0 * 16.0) {
-         this.getNavigation().moveTo(iskandar, getFollowSpeed());
-      }
    }
 
    protected void moveToward(Vec3 direction, double speed) {
@@ -210,8 +205,8 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    @Override
    protected void positionRider(Entity passenger, MoveFunction callback) {
       boolean passengerSeat = this.masterUuid != null && this.masterUuid.equals(passenger.getUUID());
-      double localZ = passengerSeat ? PASSENGER_SEAT_FORWARD : RIDER_SEAT_FORWARD;
-      double seatY = passengerSeat ? PASSENGER_SEAT_HEIGHT : RIDER_SEAT_HEIGHT;
+      double localZ = getSeatForwardOffset(passengerSeat);
+      double seatY = getSeatHeight(passengerSeat);
       float yaw = this.getYRot() * ((float)Math.PI / 180.0F);
       double x = -Math.sin(yaw) * localZ;
       double z = Math.cos(yaw) * localZ;
@@ -316,7 +311,15 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    @Override
    protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
       boolean passengerSeat = this.masterUuid != null && this.masterUuid.equals(passenger.getUUID());
-      return new Vec3(0.0, passengerSeat ? PASSENGER_SEAT_HEIGHT : RIDER_SEAT_HEIGHT, passengerSeat ? PASSENGER_SEAT_FORWARD : RIDER_SEAT_FORWARD);
+      return new Vec3(0.0, getSeatHeight(passengerSeat), getSeatForwardOffset(passengerSeat));
+   }
+
+   protected double getSeatForwardOffset(boolean passengerSeat) {
+      return passengerSeat ? PASSENGER_SEAT_FORWARD : RIDER_SEAT_FORWARD;
+   }
+
+   protected double getSeatHeight(boolean passengerSeat) {
+      return passengerSeat ? PASSENGER_SEAT_HEIGHT : RIDER_SEAT_HEIGHT;
    }
 
    @Nullable

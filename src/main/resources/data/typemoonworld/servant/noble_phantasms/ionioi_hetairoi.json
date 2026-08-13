@@ -13,6 +13,7 @@
       "params": {
         "total_soldiers": 10000,
         "active_cap": 200,
+        "reality_marble_priority": 49,
         "collapse_after_deaths": 8000,
         "end_after_deaths": 10000,
         "free_upkeep_ticks": 600,

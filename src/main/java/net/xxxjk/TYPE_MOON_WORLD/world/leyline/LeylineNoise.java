@@ -5,6 +5,7 @@ public final class LeylineNoise {
    private static final String DIM_END = "minecraft:the_end";
    private static final String DIM_UBW = "typemoonworld:unlimited_blade_works";
    private static final String DIM_EMIYA_UBW = "typemoonworld:unlimited_blade_works_emiya";
+   private static final String DIM_IONIOI_HETAIROI = "typemoonworld:ionioi_hetairoi";
    private static final long DIMENSION_SALT = -7046029254386353131L;
    private static final long MICRO_NOISE_SALT = -3335678366873096957L;
    private static final long RIVER_WARP_X_SALT = -6752110988234923001L;
@@ -96,7 +97,7 @@ public final class LeylineNoise {
    }
 
    public static boolean isUbwDimension(String dimensionId) {
-      return DIM_UBW.equals(dimensionId) || DIM_EMIYA_UBW.equals(dimensionId);
+      return DIM_UBW.equals(dimensionId) || DIM_EMIYA_UBW.equals(dimensionId) || DIM_IONIOI_HETAIROI.equals(dimensionId);
    }
 
    private static boolean isNetherDimension(String dimensionId) {

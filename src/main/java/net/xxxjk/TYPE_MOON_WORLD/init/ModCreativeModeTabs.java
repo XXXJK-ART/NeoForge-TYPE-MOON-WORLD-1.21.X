@@ -123,6 +123,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_HEAD);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ISKANDAR_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_ISKANDAR_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_ISKANDAR_FEET);
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_CHEST);
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA_LEGS);
                     }).build());
@@ -297,6 +300,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.YAJIAO_QIANG);
                         output.accept(ModItems.MACEDONIAN_SPEAR);
                         output.accept(ModItems.MACEDONIAN_ROUND_SHIELD);
+                        output.accept(ModItems.ISKANDAR_SHORTSWORD);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
                         output.accept(ModItems.RUBY_STAFF);

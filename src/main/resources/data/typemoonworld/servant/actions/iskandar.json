@@ -3,7 +3,7 @@
   "actions": [
     {
       "id": "typemoonworld:iskandar/mounted_chariot_charge",
-      "tags": ["melee", "area", "gap_closer", "anti_army", "terrain_break"],
+      "tags": ["melee", "area", "gap_closer", "terrain_break"],
       "minimum_range": 0,
       "maximum_range": 32,
       "mana_cost": 0,
@@ -14,7 +14,7 @@
     },
     {
       "id": "typemoonworld:iskandar/ionioi_hetairoi",
-      "tags": ["noble_phantasm", "anti_army", "summon", "domain"],
+      "tags": ["noble_phantasm", "area", "summon", "control"],
       "minimum_range": 0,
       "maximum_range": 48,
       "mana_cost": 120,

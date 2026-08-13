@@ -452,6 +452,9 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_HEAD = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_CHEST = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_LEGS = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR_CHEST = registerServantArmor("iskandar", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR_LEGS = registerServantArmor("iskandar", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR_FEET = registerServantArmor("iskandar", net.minecraft.world.entity.EquipmentSlot.FEET);
     public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_CHEST = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA_LEGS = registerServantArmor("senko_muramasa", net.minecraft.world.entity.EquipmentSlot.LEGS);
 
@@ -1112,7 +1115,7 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> MACEDONIAN_SPEAR = ITEMS.register("macedonian_spear",
-            () -> new MacedonianSpearItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1)
+            () -> new MacedonianSpearItem(new Item.Properties().stacksTo(1)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
@@ -1127,11 +1130,26 @@ public class ModItems {
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "macedonian_spear_range"),
-                                            1.75, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                            3.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> MACEDONIAN_ROUND_SHIELD = ITEMS.register("macedonian_round_shield",
-            () -> new MacedonianRoundShieldItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1)));
+            () -> new MacedonianRoundShieldItem(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<Item> ISKANDAR_SHORTSWORD = ITEMS.register("iskandar_shortsword",
+            () -> new Item(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
+                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "iskandar_shortsword_damage"),
+                                            8.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "iskandar_shortsword_speed"),
+                                            -2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                            .build())));
 
     public static final DeferredItem<Item> SPIDER_CUTTER = ITEMS.register("spider_cutter",
             () -> new SpiderCutterItem(new Item.Properties().durability(SpiderCutterItem.DURABILITY).fireResistant().rarity(Rarity.RARE)
@@ -1362,6 +1380,9 @@ public class ModItems {
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
             case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
             case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
+            case "iskandar" -> slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_ISKANDAR_CHEST.get()
+                : legs ? SERVANT_CARD_ISKANDAR_LEGS.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_ISKANDAR_FEET.get() : Items.AIR;
             case "senko_muramasa" -> (legs ? SERVANT_CARD_SENKO_MURAMASA_LEGS : SERVANT_CARD_SENKO_MURAMASA_CHEST).get();
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };

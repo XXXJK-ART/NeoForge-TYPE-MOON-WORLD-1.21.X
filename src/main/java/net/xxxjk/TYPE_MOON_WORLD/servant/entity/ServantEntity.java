@@ -788,6 +788,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
       equipNpcServantCardArmorSlot(EquipmentSlot.CHEST, forceClientSync);
       equipNpcServantCardArmorSlot(EquipmentSlot.LEGS, forceClientSync);
+      if (hasHumanoidServantCardBoots(id)) {
+         equipNpcServantCardArmorSlot(EquipmentSlot.FEET, forceClientSync);
+      }
    }
 
    private void equipNpcServantCardArmorSlot(EquipmentSlot slot, boolean forceClientSync) {
@@ -815,7 +818,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa", "shadow_hassan",
             "hundred_faces_hassan", "diarmuid_ua_duibhne",
             "heracles",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "iskandar" -> true;
          default -> false;
       };
    }
@@ -826,6 +829,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
             "hundred_faces_hassan", "diarmuid_ua_duibhne",
             "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+         default -> false;
+      };
+   }
+
+   private static boolean hasHumanoidServantCardBoots(String servantId) {
+      return switch (servantId == null ? "" : servantId) {
+         case "diarmuid_ua_duibhne", "iskandar" -> true;
          default -> false;
       };
    }
