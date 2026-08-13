@@ -77,6 +77,7 @@ public final class LancelotCombatHelper {
    public static final int UNABLE_DURATION_TICKS = 45;
    public static final int PROJECTILE_INTERCEPT_COOLDOWN = 2;
    public static final int THROW_COOLDOWN = 76;
+   public static final double KNIGHT_OF_OWNER_THROW_MAX_DISTANCE = 200.0;
    private static final ResourceLocation AROUNDIGHT_DAMAGE_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "lancelot_aroundight_damage");
    private static final ResourceLocation AROUNDIGHT_HEALTH_ID =
@@ -338,6 +339,7 @@ public final class LancelotCombatHelper {
       if (dir.lengthSqr() < 1.0E-4) return false;
       EmiyaThrownWeaponEntity projectile = new EmiyaThrownWeaponEntity(level, entity, thrown);
       projectile.setPos(start);
+      projectile.setMaxFlightDistance(KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
       projectile.setFixedDamage((float)Math.max(18.0, entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5));
       projectile.setNoGravity(true);
       projectile.setPiercingImpact(true);
@@ -430,6 +432,7 @@ public final class LancelotCombatHelper {
          } else {
             EmiyaThrownWeaponEntity counter = new EmiyaThrownWeaponEntity(level, entity, stack);
             counter.setPos(start);
+            counter.setMaxFlightDistance(KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
             counter.setFixedDamage(28.0F);
             counter.setNoGravity(true);
             counter.setPiercingImpact(true);

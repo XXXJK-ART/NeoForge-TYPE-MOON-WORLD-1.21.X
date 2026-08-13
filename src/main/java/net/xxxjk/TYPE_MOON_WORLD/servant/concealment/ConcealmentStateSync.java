@@ -8,9 +8,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class ConcealmentStateSync {
@@ -32,10 +32,8 @@ public final class ConcealmentStateSync {
    @SubscribeEvent
    public static void onStartTracking(PlayerEvent.StartTracking event) {
       if (!(event.getEntity() instanceof ServerPlayer tracker) || !(event.getTarget() instanceof LivingEntity target)) return;
-      if (NetworkRegistry.hasChannel(tracker.connection, ConcealmentStateMessage.TYPE.id())) {
-         PacketDistributor.sendToPlayer(tracker,
-            new ConcealmentStateMessage(target.getUUID(), ServantConcealment.isFullyConcealed(target)));
-      }
+      ModNetwork.sendToPlayer(tracker,
+         new ConcealmentStateMessage(target.getUUID(), ServantConcealment.isFullyConcealed(target)));
    }
 
    @SubscribeEvent

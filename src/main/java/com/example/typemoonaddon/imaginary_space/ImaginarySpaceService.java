@@ -63,7 +63,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.example.typemoonaddon.network.AddonNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -2263,7 +2263,7 @@ public final class ImaginarySpaceService {
     }
 
     private static void syncData(ServerPlayer player, ImaginarySpaceData data) {
-        PacketDistributor.sendToPlayer(player, new ImaginarySpaceStatePayload(data));
+        AddonNetwork.sendToPlayer(player, new ImaginarySpaceStatePayload(data));
     }
 
     private static RandomSource newRandom() {

@@ -35,7 +35,6 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone;
@@ -43,9 +42,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimen
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -56,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -75,10 +73,7 @@ public class TypeMoonWorldModVariables {
    );
 
    private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (player != null && !(player instanceof FakePlayer) && payload != null
-         && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-         PacketDistributor.sendToPlayer(player, payload);
-      }
+      ModNetwork.sendToPlayer(player, payload);
    }
 
    @EventBusSubscriber
@@ -2805,6 +2800,7 @@ public class TypeMoonWorldModVariables {
       }
 
       private void syncPlayerVariables(Entity entity, boolean force) {
+         long syncStarted = entity instanceof ServerPlayer ? System.nanoTime() : 0L;
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
          MagicCircuitColorHelper.ensureColor(this);
@@ -2918,7 +2914,8 @@ public class TypeMoonWorldModVariables {
          if (entity instanceof ServerPlayer serverPlayer) {
             CompoundTag snapshot = this.serializeNBT(serverPlayer.registryAccess());
             int hash = snapshot.hashCode();
-            if (force || !this.fullSyncSnapshotSent || this.fullSyncSnapshotHash != hash) {
+            boolean snapshotChanged = force || !this.fullSyncSnapshotSent || this.fullSyncSnapshotHash != hash;
+            if (snapshotChanged) {
                sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(snapshot));
                this.fullSyncSnapshotSent = true;
                this.fullSyncSnapshotHash = hash;
@@ -2926,6 +2923,7 @@ public class TypeMoonWorldModVariables {
                this.manaSyncSnapshotSent = true;
                this.manaSyncSnapshotHash = manaSnapshot.hashCode();
             }
+            PerformanceMonitor.recordPlayerFullSync(System.nanoTime() - syncStarted, snapshotChanged);
          }
       }
 

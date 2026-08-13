@@ -24,8 +24,8 @@ import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TimeAlterVisualStateMessage;
 import org.joml.Vector3f;
 
@@ -90,20 +90,17 @@ public final class TimeAlterEventHandler {
       if (!(event.getEntity() instanceof ServerPlayer tracker) || !(event.getTarget() instanceof ServerPlayer target) || !isActive(target)) {
          return;
       }
-      if (NetworkRegistry.hasChannel(tracker.connection, TimeAlterVisualStateMessage.TYPE.id())) {
-         long remaining = target.getPersistentData().getLong(TAG_ACTIVE_UNTIL) - target.level().getGameTime();
-         PacketDistributor.sendToPlayer(
-            tracker,
-            new TimeAlterVisualStateMessage(
-               target.getUUID(),
-               true,
-               target.getPersistentData().getInt(TAG_MODE),
-               (int)Math.min(Integer.MAX_VALUE, remaining),
-               getEffectiveActionRate(target)
-            ),
-            new CustomPacketPayload[0]
-         );
-      }
+      long remaining = target.getPersistentData().getLong(TAG_ACTIVE_UNTIL) - target.level().getGameTime();
+      ModNetwork.sendToPlayer(
+         tracker,
+         new TimeAlterVisualStateMessage(
+            target.getUUID(),
+            true,
+            target.getPersistentData().getInt(TAG_MODE),
+            (int)Math.min(Integer.MAX_VALUE, remaining),
+            getEffectiveActionRate(target)
+         )
+      );
    }
 
    @SubscribeEvent

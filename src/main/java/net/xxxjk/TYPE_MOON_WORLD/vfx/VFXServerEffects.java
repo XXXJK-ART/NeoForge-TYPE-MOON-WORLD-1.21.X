@@ -7,10 +7,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 
 public final class VFXServerEffects {
@@ -89,9 +88,8 @@ public final class VFXServerEffects {
                                                    CustomPacketPayload payload) {
       double radiusSqr = radius * radius;
       for (ServerPlayer player : level.players()) {
-         if (player.distanceToSqr(origin) <= radiusSqr
-            && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-            PacketDistributor.sendToPlayer(player, payload);
+         if (player.distanceToSqr(origin) <= radiusSqr) {
+            ModNetwork.sendToPlayer(player, payload);
          }
       }
    }

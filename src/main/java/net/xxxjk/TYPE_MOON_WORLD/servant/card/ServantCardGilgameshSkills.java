@@ -23,11 +23,10 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem;
@@ -135,7 +134,7 @@ public final class ServantCardGilgameshSkills {
          player.getPersistentData().putBoolean(KEY, true);
       }
       player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_ready"), true);
-      PacketDistributor.sendToPlayer(player, new OpenGilgameshVaultScreenMessage(player.getPersistentData().getInt(MASK)), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenGilgameshVaultScreenMessage(player.getPersistentData().getInt(MASK)));
       return true;
    }
 
@@ -276,7 +275,7 @@ public final class ServantCardGilgameshSkills {
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
          ids.add(living.getId());
       }
-      PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));
    }
 
    public static void performCharisma(ServerPlayer player) {

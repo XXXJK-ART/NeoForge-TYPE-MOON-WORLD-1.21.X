@@ -5,8 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.typemoonworld.api.MagicDefinitionData;
@@ -30,13 +28,13 @@ public final class DefinitionSnapshotService {
    }
 
    public static void send(ServerPlayer player) {
-      if (player == null || !NetworkRegistry.hasChannel(player.connection, DefinitionSnapshotMessage.TYPE.id())) return;
+      if (!ModNetwork.supports(player, DefinitionSnapshotMessage.TYPE)) return;
       try {
          if (cachedSnapshot == null) {
             cachedSnapshot = build();
             revision++;
          }
-         PacketDistributor.sendToPlayer(player, new DefinitionSnapshotMessage(revision, cachedSnapshot));
+         ModNetwork.sendToPlayer(player, new DefinitionSnapshotMessage(revision, cachedSnapshot));
       } catch (UnsupportedOperationException exception) {
          // The negotiated channel can disappear while a player disconnects or changes protocol state.
          TYPE_MOON_WORLD.LOGGER.debug("Skipped definition snapshot for unsupported connection {}", player.getGameProfile().getName());

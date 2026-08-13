@@ -17,9 +17,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.typemoonworld.api.event.TerrainImpactBlockEvent;
 
@@ -187,8 +186,8 @@ public final class TerrainImpactService {
       TerrainDebrisMessage payload = new TerrainDebrisMessage(center, level.random.nextLong(), debris);
       double rangeSqr = 96.0 * 96.0;
       for (ServerPlayer player : level.players()) {
-         if (player.distanceToSqr(center) <= rangeSqr && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-            PacketDistributor.sendToPlayer(player, payload);
+         if (player.distanceToSqr(center) <= rangeSqr) {
+            ModNetwork.sendToPlayer(player, payload);
          }
       }
    }

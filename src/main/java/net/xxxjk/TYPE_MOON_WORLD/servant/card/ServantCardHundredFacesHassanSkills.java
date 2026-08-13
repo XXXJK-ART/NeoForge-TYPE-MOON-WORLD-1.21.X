@@ -27,13 +27,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
@@ -411,9 +410,7 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    public static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-         PacketDistributor.sendToPlayer(player, payload);
-      }
+      ModNetwork.sendToPlayer(player, payload);
    }
 
    private static void spawnBatch(ServerPlayer player, LivingEntity inheritedTarget, int count) {

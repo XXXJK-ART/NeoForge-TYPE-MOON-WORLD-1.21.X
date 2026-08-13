@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
@@ -41,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class TypeMoonCommands {
    private static final String MAGIC_ANALYSIS_MAGIC_ID = "magic_analysis";
@@ -168,6 +170,14 @@ public class TypeMoonCommands {
       dispatcher.register(
          Commands.literal("fate_card_release")
             .executes(TypeMoonCommands::releaseFateCard)
+      );
+      dispatcher.register(
+         Commands.literal("typemoon").requires(source -> source.hasPermission(2))
+            .then(
+               Commands.literal("performance")
+                  .then(Commands.literal("status").executes(TypeMoonCommands::showPerformanceStatus))
+                  .then(Commands.literal("reset").executes(TypeMoonCommands::resetPerformanceStats))
+            )
       );
       dispatcher.register(
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal(
@@ -1254,6 +1264,28 @@ public class TypeMoonCommands {
          double denominator = Math.sqrt(Math.max(0.0, left * right));
          return denominator <= 1.0E-9 ? 0.0 : numerator / denominator;
       }
+   }
+
+   private static int showPerformanceStatus(CommandContext<CommandSourceStack> ctx) {
+      PerformanceMonitor.Snapshot stats = PerformanceMonitor.snapshot();
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "TYPE-MOON performance: pressure=%s, EWMA=%.2f ms, window avg/p95/max=%.2f/%.2f/%.2f ms (%d ticks)",
+         PerformanceMonitor.pressure(), stats.ewmaMillis(), stats.averageMillis(), stats.p95Millis(),
+         stats.maxMillis(), stats.windowSamples())), false);
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "Pressure ticks: normal=%d, pressured=%d, critical=%d; terrain queue=%d",
+         stats.normalTicks(), stats.pressuredTicks(), stats.criticalTicks(), DeferredTerrainDestruction.totalQueuedJobs())), false);
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "Player full sync: attempts=%d, changed=%d, total=%.2f ms, average=%.3f ms",
+         stats.playerFullSyncAttempts(), stats.playerFullSyncChanges(), stats.playerFullSyncMillis(),
+         stats.playerFullSyncAttempts() == 0 ? 0.0 : stats.playerFullSyncMillis() / stats.playerFullSyncAttempts())), false);
+      return 1;
+   }
+
+   private static int resetPerformanceStats(CommandContext<CommandSourceStack> ctx) {
+      PerformanceMonitor.reset();
+      ctx.getSource().sendSuccess(() -> Component.literal("TYPE-MOON performance counters reset."), true);
+      return 1;
    }
 
    private static int setProficiency(CommandContext<CommandSourceStack> ctx, String type, double value) {

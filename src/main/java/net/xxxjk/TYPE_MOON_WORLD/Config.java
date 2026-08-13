@@ -67,6 +67,15 @@ public class Config {
       .defineInRange("maxCinematicChainImpacts", 4, 1, 6);
    public static final BooleanValue ARBITRATED_COMBAT_AI_ENABLED = BUILDER.comment("Enable intent arbitration for migrated combat NPCs")
       .define("arbitratedCombatAiEnabled", true);
+   public static final BooleanValue ADAPTIVE_PERFORMANCE = BUILDER.comment(
+      "Allow deferrable terrain and visual work to yield time under server load")
+      .define("adaptivePerformance", true);
+   public static final IntValue SERVER_PRESSURE_MSPT = BUILDER.comment(
+      "EWMA server tick time at which adaptive background work is reduced")
+      .defineInRange("serverPressureMspt", 40, 20, 1000);
+   public static final IntValue SERVER_CRITICAL_MSPT = BUILDER.comment(
+      "EWMA server tick time at which adaptive background work is heavily reduced")
+      .defineInRange("serverCriticalMspt", 50, 25, 2000);
    private static final ConfigValue<List<? extends String>> LEGACY_AI_ENTITY_STRINGS = BUILDER.comment(
       "Entity type ids that must remain on LEGACY AI, for example typemoonworld:artoria_pendragon")
       .defineList("legacyAiEntityTypes", List.of(), Config::validateResourceLocation);
@@ -95,6 +104,9 @@ public class Config {
    public static boolean protectCombatFooting = true;
    public static int maxCinematicChainImpacts = 4;
    public static boolean arbitratedCombatAiEnabled = true;
+   public static boolean adaptivePerformance = true;
+   public static int serverPressureMspt = 40;
+   public static int serverCriticalMspt = 50;
    public static Set<ResourceLocation> legacyAiEntityTypes = Set.of();
 
    private static boolean validateItemName(Object obj) {
@@ -133,6 +145,9 @@ public class Config {
       protectCombatFooting = PROTECT_COMBAT_FOOTING.get();
       maxCinematicChainImpacts = MAX_CINEMATIC_CHAIN_IMPACTS.get();
       arbitratedCombatAiEnabled = ARBITRATED_COMBAT_AI_ENABLED.get();
+      adaptivePerformance = ADAPTIVE_PERFORMANCE.get();
+      serverPressureMspt = SERVER_PRESSURE_MSPT.get();
+      serverCriticalMspt = Math.max(serverPressureMspt, SERVER_CRITICAL_MSPT.get());
       legacyAiEntityTypes = LEGACY_AI_ENTITY_STRINGS.get().stream().map(ResourceLocation::parse).collect(Collectors.toUnmodifiableSet());
       items = ((List<? extends String>)ITEM_STRINGS.get())
          .stream()

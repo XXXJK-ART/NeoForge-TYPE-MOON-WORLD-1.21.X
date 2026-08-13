@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
 import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.network.AddonNetwork;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -244,6 +245,10 @@ public class TYPE_MOON_WORLD {
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
+      // Integrated addon payloads must share this registrar. A second registrar
+      // creates a separate protocol channel and leaves mock/server connections
+      // unable to send the payload despite successful class loading.
+      AddonNetwork.registerPayloads(registrar);
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);

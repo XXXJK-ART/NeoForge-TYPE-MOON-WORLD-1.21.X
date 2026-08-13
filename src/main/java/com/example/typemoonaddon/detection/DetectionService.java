@@ -2,6 +2,7 @@ package com.example.typemoonaddon.detection;
 
 import com.example.typemoonaddon.kimaris.KimarisService;
 import com.example.typemoonaddon.magic.DetectionMagic;
+import com.example.typemoonaddon.network.AddonNetwork;
 import com.example.typemoonaddon.network.DetectionEyeStatePayload;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload.TargetMarker;
@@ -21,7 +22,6 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -264,7 +264,7 @@ public final class DetectionService {
             }
             markers.add(new TargetMarker(entry.getKey(), entry.getValue()));
         }
-        PacketDistributor.sendToPlayer(player, new DetectionTargetSyncPayload(active, markers));
+        AddonNetwork.sendToPlayer(player, new DetectionTargetSyncPayload(active, markers));
     }
 
     private static void broadcastEyeState(ServerPlayer caster, boolean active) {
@@ -280,13 +280,13 @@ public final class DetectionService {
         double radiusSqr = EYE_OBSERVER_RADIUS * EYE_OBSERVER_RADIUS;
         for (ServerPlayer observer : level.players()) {
             if (observer.distanceToSqr(caster) <= radiusSqr) {
-                PacketDistributor.sendToPlayer(observer, payload);
+                AddonNetwork.sendToPlayer(observer, payload);
             }
         }
     }
 
     private static void sendEyeStateTo(ServerPlayer observer, ServerPlayer caster, boolean active) {
-        PacketDistributor.sendToPlayer(observer, new DetectionEyeStatePayload(
+        AddonNetwork.sendToPlayer(observer, new DetectionEyeStatePayload(
                 caster.getId(), active, active ? EYE_STATE_TTL_TICKS : 0));
     }
 

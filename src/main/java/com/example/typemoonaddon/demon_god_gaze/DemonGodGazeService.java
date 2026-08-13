@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.example.typemoonaddon.network.AddonNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -316,9 +316,8 @@ public final class DemonGodGazeService {
             Vec3 center,
             DemonGodGazeVisualPayload payload
     ) {
-        PacketDistributor.sendToPlayersNear(
+        AddonNetwork.sendNear(
                 level,
-                null,
                 center.x,
                 center.y,
                 center.z,

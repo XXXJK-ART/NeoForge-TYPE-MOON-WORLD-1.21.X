@@ -48,6 +48,11 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    private double curveSideZ;
    private double curveSideOffset;
    private double curveLength;
+   private double maxDistanceSqr;
+   private double maxDistanceOriginX;
+   private double maxDistanceOriginY;
+   private double maxDistanceOriginZ;
+   private boolean maxDistanceInitialized;
    private boolean arcInitialized;
    private int lastBreakthroughTick;
 
@@ -91,6 +96,19 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       return this.getItem().is(ModItems.LANCELOT_IRON_ROD.get());
    }
 
+   public void setMaxFlightDistance(double blocks) {
+      if (blocks <= 0.0) {
+         this.maxDistanceSqr = 0.0;
+         this.maxDistanceInitialized = false;
+         return;
+      }
+      this.maxDistanceSqr = blocks * blocks;
+      this.maxDistanceOriginX = this.getX();
+      this.maxDistanceOriginY = this.getY();
+      this.maxDistanceOriginZ = this.getZ();
+      this.maxDistanceInitialized = true;
+   }
+
    public void setArcingFlight(Vec3 direction, double sideOffset, double curveLength) {
       Vec3 horizontal = new Vec3(direction.x, 0.0, direction.z);
       if (horizontal.lengthSqr() < 1.0E-4) {
@@ -121,6 +139,10 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    public void tick() {
       Vec3 previousPosition = this.position();
       super.tick();
+      if (!this.level().isClientSide() && exceededMaxFlightDistance()) {
+         this.discard();
+         return;
+      }
       updateArcFlight();
       updatePoseFromMotion();
       if (!this.level().isClientSide() && !this.isRemoved()) {
@@ -284,6 +306,23 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
          currentPosition, direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), length, 2, 2);
    }
 
+   private boolean exceededMaxFlightDistance() {
+      if (this.maxDistanceSqr <= 0.0) {
+         return false;
+      }
+      if (!this.maxDistanceInitialized) {
+         this.maxDistanceOriginX = this.getX();
+         this.maxDistanceOriginY = this.getY();
+         this.maxDistanceOriginZ = this.getZ();
+         this.maxDistanceInitialized = true;
+         return false;
+      }
+      double dx = this.getX() - this.maxDistanceOriginX;
+      double dy = this.getY() - this.maxDistanceOriginY;
+      double dz = this.getZ() - this.maxDistanceOriginZ;
+      return dx * dx + dy * dy + dz * dz > this.maxDistanceSqr;
+   }
+
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       this.entityData.set(FIXED_DAMAGE, tag.getFloat("FixedDamage"));
@@ -297,6 +336,11 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       this.curveSideZ = tag.getDouble("CurveSideZ");
       this.curveSideOffset = tag.getDouble("CurveSideOffset");
       this.curveLength = tag.getDouble("CurveLength");
+      this.maxDistanceSqr = tag.getDouble("MaxFlightDistanceSqr");
+      this.maxDistanceOriginX = tag.getDouble("MaxFlightOriginX");
+      this.maxDistanceOriginY = tag.getDouble("MaxFlightOriginY");
+      this.maxDistanceOriginZ = tag.getDouble("MaxFlightOriginZ");
+      this.maxDistanceInitialized = tag.getBoolean("MaxFlightDistanceInitialized");
       this.arcInitialized = tag.getBoolean("CurveInitialized");
    }
 
@@ -313,6 +357,11 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       tag.putDouble("CurveSideZ", this.curveSideZ);
       tag.putDouble("CurveSideOffset", this.curveSideOffset);
       tag.putDouble("CurveLength", this.curveLength);
+      tag.putDouble("MaxFlightDistanceSqr", this.maxDistanceSqr);
+      tag.putDouble("MaxFlightOriginX", this.maxDistanceOriginX);
+      tag.putDouble("MaxFlightOriginY", this.maxDistanceOriginY);
+      tag.putDouble("MaxFlightOriginZ", this.maxDistanceOriginZ);
+      tag.putBoolean("MaxFlightDistanceInitialized", this.maxDistanceInitialized);
       tag.putBoolean("CurveInitialized", this.arcInitialized);
    }
 }

@@ -1,19 +1,41 @@
 package com.example.typemoonaddon.network;
 
-import com.example.typemoonaddon.TypeMoonAddon;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.util.FakePlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@EventBusSubscriber(modid = TypeMoonAddon.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class AddonNetwork {
     private AddonNetwork() {
     }
 
-    @SubscribeEvent
-    public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+    public static void sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
+        if (player == null || player instanceof FakePlayer || payload == null
+                || !player.connection.hasChannel(payload.type())) {
+            return;
+        }
+        PacketDistributor.sendToPlayer(player, payload);
+    }
+
+    public static void sendNear(ServerLevel level, double x, double y, double z,
+                                double radius, CustomPacketPayload payload) {
+        if (level == null || payload == null || radius <= 0.0D) {
+            return;
+        }
+        double radiusSqr = radius * radius;
+        for (ServerPlayer player : level.players()) {
+            double dx = player.getX() - x;
+            double dy = player.getY() - y;
+            double dz = player.getZ() - z;
+            if (dx * dx + dy * dy + dz * dz <= radiusSqr) {
+                sendToPlayer(player, payload);
+            }
+        }
+    }
+
+    public static void registerPayloads(PayloadRegistrar registrar) {
         registrar.playToServer(
                 StorageCastInputPayload.TYPE,
                 StorageCastInputPayload.STREAM_CODEC,

@@ -21,6 +21,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -52,6 +53,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    private UUID homingTargetUuid;
    private boolean requireHomingTarget;
    private float damage = 18.0F;
+   private double lancelotOriginX;
+   private double lancelotOriginY;
+   private double lancelotOriginZ;
+   private boolean lancelotOriginInitialized;
    private final Set<Integer> hit = new HashSet<>();
 
    public GilgameshGateWeaponProjectileEntity(EntityType<?> type, Level level) {
@@ -109,6 +114,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       Vec3 old = this.position();
       Vec3 next = old.add(this.getDeltaMovement());
       if (!(this.level() instanceof net.minecraft.server.level.ServerLevel level)) return;
+         if (this.isKnightOfOwnerCounter() && exceededLancelotMaxFlightDistance()) {
+            this.discard();
+            return;
+         }
          LivingEntity owner = getOwner(level);
          int delay = this.entityData.get(LAUNCH_DELAY);
          int lifetime = (this.entityData.get(DUEL_TOKEN).isBlank() ? 40 : 22) + delay;
@@ -217,6 +226,21 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       return e instanceof LivingEntity living ? living : null;
    }
 
+   private boolean exceededLancelotMaxFlightDistance() {
+      if (!this.lancelotOriginInitialized) {
+         this.lancelotOriginX = this.getX();
+         this.lancelotOriginY = this.getY();
+         this.lancelotOriginZ = this.getZ();
+         this.lancelotOriginInitialized = true;
+         return false;
+      }
+      double dx = this.getX() - this.lancelotOriginX;
+      double dy = this.getY() - this.lancelotOriginY;
+      double dz = this.getZ() - this.lancelotOriginZ;
+      double max = LancelotCombatHelper.KNIGHT_OF_OWNER_THROW_MAX_DISTANCE;
+      return dx * dx + dy * dy + dz * dz > max * max;
+   }
+
    private void updateHomingTarget(net.minecraft.server.level.ServerLevel level) {
       Entity entity = this.entityData.get(HOMING_TARGET_ID) == 0 ? null : level.getEntity(this.entityData.get(HOMING_TARGET_ID));
       LivingEntity target = entity instanceof LivingEntity living ? living : null;
@@ -274,6 +298,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       this.entityData.set(EFFECT_STRIDE, Math.max(1, tag.getInt("EffectStride")));
       if (tag.hasUUID("HomingTarget")) this.homingTargetUuid = tag.getUUID("HomingTarget");
       this.damage = tag.contains("Damage") ? tag.getFloat("Damage") : 18.0F;
+      this.lancelotOriginX = tag.getDouble("LancelotMaxFlightOriginX");
+      this.lancelotOriginY = tag.getDouble("LancelotMaxFlightOriginY");
+      this.lancelotOriginZ = tag.getDouble("LancelotMaxFlightOriginZ");
+      this.lancelotOriginInitialized = tag.getBoolean("LancelotMaxFlightOriginInitialized");
       this.requireHomingTarget = tag.hasUUID("HomingTarget");
    }
 
@@ -289,6 +317,10 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       tag.putInt("EffectStride", this.entityData.get(EFFECT_STRIDE));
       if (this.homingTargetUuid != null) tag.putUUID("HomingTarget", this.homingTargetUuid);
       tag.putFloat("Damage", this.damage);
+      tag.putDouble("LancelotMaxFlightOriginX", this.lancelotOriginX);
+      tag.putDouble("LancelotMaxFlightOriginY", this.lancelotOriginY);
+      tag.putDouble("LancelotMaxFlightOriginZ", this.lancelotOriginZ);
+      tag.putBoolean("LancelotMaxFlightOriginInitialized", this.lancelotOriginInitialized);
    }
 
    private void spawnTrail(net.minecraft.server.level.ServerLevel level) {

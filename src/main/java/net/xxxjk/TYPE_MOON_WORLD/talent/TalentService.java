@@ -6,9 +6,9 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.ClairvoyanceStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class TalentService {
    public static final String MONSTROUS_STRENGTH = "monstrous_strength";
@@ -82,7 +82,7 @@ public final class TalentService {
          return true;
       }
       if (CLAIRVOYANCE.equals(id)) {
-         PacketDistributor.sendToPlayer(player, new ClairvoyanceStateMessage(true, maxZoom(proficiency(vars, id))));
+         ModNetwork.sendToPlayer(player, new ClairvoyanceStateMessage(true, maxZoom(proficiency(vars, id))));
          return true;
       }
       return false;
@@ -159,7 +159,7 @@ public final class TalentService {
    }
 
    public static void resetClairvoyance(ServerPlayer player) {
-      if (player != null) PacketDistributor.sendToPlayer(player, new ClairvoyanceStateMessage(false, 2));
+      ModNetwork.sendToPlayer(player, new ClairvoyanceStateMessage(false, 2));
    }
 
    public static void clearActiveState(ServerPlayer player) {

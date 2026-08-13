@@ -15,7 +15,7 @@ import net.minecraft.world.level.ClipContext.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.example.typemoonaddon.network.AddonNetwork;
 import com.example.typemoonaddon.network.EntityDisplacementTargetPayload;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -168,7 +168,7 @@ public final class EntityDisplacementService {
     }
 
     private static void send(ServerPlayer player, Target target) {
-        PacketDistributor.sendToPlayer(player, new EntityDisplacementTargetPayload(
+        AddonNetwork.sendToPlayer(player, new EntityDisplacementTargetPayload(
                 target.entityId, target.width, target.height, target.depth));
     }
 

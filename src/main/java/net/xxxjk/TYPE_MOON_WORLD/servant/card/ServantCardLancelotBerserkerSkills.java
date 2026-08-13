@@ -324,6 +324,7 @@ public final class ServantCardLancelotBerserkerSkills {
 
       EmiyaThrownWeaponEntity projectile = new EmiyaThrownWeaponEntity(level, player, thrown);
       projectile.setPos(start);
+      projectile.setMaxFlightDistance(LancelotCombatHelper.KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
       projectile.setFixedDamage((float)Math.max(18.0, player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.45));
       projectile.setNoGravity(true);
       projectile.setPiercingImpact(true);
@@ -487,6 +488,7 @@ public final class ServantCardLancelotBerserkerSkills {
          } else {
             EmiyaThrownWeaponEntity counter = new EmiyaThrownWeaponEntity(level, player, stack);
             counter.setPos(start);
+            counter.setMaxFlightDistance(LancelotCombatHelper.KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
             counter.setFixedDamage(28.0F);
             counter.setNoGravity(true);
             counter.setPiercingImpact(true);

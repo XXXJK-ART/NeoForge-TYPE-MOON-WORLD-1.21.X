@@ -22,6 +22,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 
 /** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
@@ -163,6 +164,12 @@ public final class DeferredTerrainDestruction {
       return Math.max(8, Config.maxQueuedTerrainJobs);
    }
 
+   public static int totalQueuedJobs() {
+      int total = 0;
+      for (ArrayDeque<Job> queue : JOBS.values()) total += queue.size();
+      return total;
+   }
+
    static boolean overlappingImpactSupersedes(Vec3 center, double radius, float hardness, long queuedAt,
                                                Vec3 otherCenter, double otherRadius, float otherHardness,
                                                long otherQueuedAt) {
@@ -177,7 +184,9 @@ public final class DeferredTerrainDestruction {
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
       long started = System.nanoTime(); int checked = 0;
       int maxChecks = Math.max(1000, Config.terrainChecksPerTick);
-      long softBudgetNanos = Math.max(1_000_000L, Config.terrainBudgetMicros * 1000L);
+      long normalBudgetNanos = Math.max(1_000_000L, Config.terrainBudgetMicros * 1000L);
+      long softBudgetNanos = Math.max(500_000L,
+         (long) (normalBudgetNanos * PerformanceMonitor.backgroundBudgetScale()));
       int idleJobs = 0;
       while (!queue.isEmpty() && checked < maxChecks && System.nanoTime() - started < softBudgetNanos) {
          Job job = queue.pollFirst(); int slice = 0;

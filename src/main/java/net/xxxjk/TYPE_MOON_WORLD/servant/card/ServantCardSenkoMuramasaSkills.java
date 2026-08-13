@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.BattlefieldAreaService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
@@ -32,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMuramasaForgeScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -94,7 +94,7 @@ public final class ServantCardSenkoMuramasaSkills {
 
    public static boolean openForgeSelection(ServerPlayer player) {
       if (!isMuramasa(player)) return false;
-      PacketDistributor.sendToPlayer(player, new OpenMuramasaForgeScreenMessage(), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenMuramasaForgeScreenMessage());
       return true;
    }
 

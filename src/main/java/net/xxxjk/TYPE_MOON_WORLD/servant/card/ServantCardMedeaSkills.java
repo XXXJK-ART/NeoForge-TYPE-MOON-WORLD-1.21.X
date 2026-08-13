@@ -32,7 +32,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
@@ -52,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMedeaCraftScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaWorkshopHelper;
@@ -181,15 +181,14 @@ public final class ServantCardMedeaSkills {
    public static boolean performMedeaCraftItem(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       ensureMedeaStocks(player, vars);
-      PacketDistributor.sendToPlayer(
+      ModNetwork.sendToPlayer(
          player,
          new OpenMedeaCraftScreenMessage(
             getDragonfangStock(player),
             getManaCharmStock(player),
             getHealCharmStock(player),
             countLeylineMaps(player)
-         ),
-         new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
+         )
       );
       return true;
    }

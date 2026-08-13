@@ -159,6 +159,14 @@ public class VFXEmitter {
    }
 
    public boolean tick(float deltaTime) {
+      return tick(deltaTime, Integer.MAX_VALUE, Integer.MAX_VALUE);
+   }
+
+   /**
+    * Advances the emitter while bounding allocations for newly-created visual particles.
+    * Existing particles still age normally when either budget is exhausted.
+    */
+   public boolean tick(float deltaTime, int particleBudget, int vanillaParticleBudget) {
       if (this.ended) {
          return false;
       }
@@ -177,7 +185,7 @@ public class VFXEmitter {
          }
       }
       if (this.age >= this.startTime && this.age <= this.endTime && this.visibilityCondition.test(progress, this.age, this.effectDuration, this.random)) {
-         emit(deltaTime, progress);
+         emit(deltaTime, progress, Math.max(0, particleBudget), Math.max(0, vanillaParticleBudget));
          trigger(this.onTick);
       }
       if (this.age > this.endTime && this.particles.isEmpty()) {
@@ -197,6 +205,13 @@ public class VFXEmitter {
 
    public Vector3f origin() {
       return new Vector3f(this.origin);
+   }
+
+   public double originDistanceToSqr(double x, double y, double z) {
+      double dx = this.origin.x - x;
+      double dy = this.origin.y - y;
+      double dz = this.origin.z - z;
+      return dx * dx + dy * dy + dz * dz;
    }
 
    public float progress() {
@@ -237,9 +252,14 @@ public class VFXEmitter {
       }
    }
 
-   private void emit(float deltaTime, float progress) {
+   private void emit(float deltaTime, float progress, int particleBudget, int vanillaParticleBudget) {
       this.vanillaParticleSpawns.clear();
       clearSamples();
+      if (particleBudget <= 0) {
+         // Do not accumulate a visual burst while an off-screen or overloaded emitter is suppressed.
+         this.emissionAccumulator = 0.0F;
+         return;
+      }
       for (IVFXComponent component : this.components) {
          component.update(deltaTime, progress, this.samplePoints);
       }
@@ -247,8 +267,10 @@ public class VFXEmitter {
          return;
       }
       this.emissionAccumulator += this.rate * deltaTime;
-      int count = (int)this.emissionAccumulator;
-      this.emissionAccumulator -= count;
+      int requestedCount = (int)this.emissionAccumulator;
+      this.emissionAccumulator -= requestedCount;
+      int count = Math.min(requestedCount, particleBudget);
+      int vanillaLimit = Math.min(this.maxVanillaParticleSpawnsPerTick, vanillaParticleBudget);
       Vector3f translation = interpolatePosition(progress).rotate(this.bindingRotation);
       Quaternionf rotation = new Quaternionf(this.bindingRotation).mul(interpolateRotation(progress));
       Vector3f scale = interpolateScale(progress);
@@ -276,18 +298,14 @@ public class VFXEmitter {
          particle.totalLife = Math.max(0.001F, this.particleLifetime * lifetimeScale);
          particle.additive = this.blendMode == VFXBlendMode.ADDITIVE;
          this.particles.add(particle);
-         if (!this.vanillaParticles.isEmpty() && this.vanillaParticleSpawns.size() < this.maxVanillaParticleSpawnsPerTick) {
+         if (!this.vanillaParticles.isEmpty() && this.vanillaParticleSpawns.size() < vanillaLimit) {
             for (VFXVanillaParticleDefinition vanillaParticle : this.vanillaParticles) {
-               if (this.vanillaParticleSpawns.size() >= this.maxVanillaParticleSpawnsPerTick) {
+               if (this.vanillaParticleSpawns.size() >= vanillaLimit) {
                   break;
                }
-               int before = this.vanillaParticleSpawns.size();
                vanillaParticle.emit(this.random, particle.position, this.vanillaParticleSpawns);
-               if (this.vanillaParticleSpawns.size() > this.maxVanillaParticleSpawnsPerTick) {
-                  this.vanillaParticleSpawns.subList(this.maxVanillaParticleSpawnsPerTick, this.vanillaParticleSpawns.size()).clear();
-               }
-               if (before == this.vanillaParticleSpawns.size() && this.maxVanillaParticleSpawnsPerTick == 0) {
-                  break;
+               if (this.vanillaParticleSpawns.size() > vanillaLimit) {
+                  this.vanillaParticleSpawns.subList(vanillaLimit, this.vanillaParticleSpawns.size()).clear();
                }
             }
          }

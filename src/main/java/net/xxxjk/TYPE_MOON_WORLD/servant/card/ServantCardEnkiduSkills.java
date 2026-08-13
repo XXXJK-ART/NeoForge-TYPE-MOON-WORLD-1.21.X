@@ -14,7 +14,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,11 +40,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
@@ -137,7 +136,7 @@ public final class ServantCardEnkiduSkills {
    }
 
    public static void performEnkiduTransfiguration(ServerPlayer player) {
-      PacketDistributor.sendToPlayer(player, new OpenEnkiduTransfigurationScreenMessage(), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenEnkiduTransfigurationScreenMessage());
    }
 
    public static void setTransfigurationPoints(ServerPlayer player, int[] requested) {
@@ -379,7 +378,7 @@ public final class ServantCardEnkiduSkills {
             living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
             ids.add(living.getId());
          }
-         PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);
+         ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));
          VFXServerEffects.spawnReplayable(level, "servant_enkidu_presence_detection", player, 0.65F);
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 1.0, player.getZ(), 32, 1.2, 0.55, 1.2, 0.04);
       }

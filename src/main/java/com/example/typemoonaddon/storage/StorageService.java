@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.storage;
 
 import com.example.typemoonaddon.magic.StorageMagic;
+import com.example.typemoonaddon.network.AddonNetwork;
 import com.example.typemoonaddon.network.StorageDataSyncPayload;
 import com.example.typemoonaddon.kimaris.KimarisService;
 import java.util.HashMap;
@@ -14,7 +15,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
@@ -265,7 +265,7 @@ public final class StorageService {
     }
 
     private static void syncData(ServerPlayer player, StorageData data) {
-        PacketDistributor.sendToPlayer(player, new StorageDataSyncPayload(data));
+        AddonNetwork.sendToPlayer(player, new StorageDataSyncPayload(data));
     }
 
     private static double finiteNonNegative(double value) {
