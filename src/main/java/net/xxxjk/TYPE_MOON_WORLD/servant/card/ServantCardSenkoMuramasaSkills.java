@@ -143,6 +143,33 @@ public final class ServantCardSenkoMuramasaSkills {
       return true;
    }
 
+   public static boolean tryBypassDefenseAttack(ServerPlayer player, LivingEntity target) {
+      if (!isMuramasa(player) || target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      long now = player.level().getGameTime();
+      CompoundTag data = player.getPersistentData();
+      boolean bypass = now < data.getLong(KARMA_UNTIL)
+         || now < data.getLong(TRIAL_UNTIL) && player.getRandom().nextFloat() < 0.30F;
+      if (!bypass) {
+         return false;
+      }
+      double damage = MuramasaCombatHelper.precisionStrikeDamage(
+         player,
+         target,
+         now < data.getLong(TRIAL_UNTIL),
+         isProjectedMuramasaItem(player.getMainHandItem()),
+         now < data.getLong(KARMA_UNTIL)
+      );
+      MuramasaCombatHelper.applyNoDefenseDamage(player, target, (float)damage);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+            2, 0.2, 0.2, 0.2, 0.0);
+      }
+      return true;
+   }
+
    public static boolean performFlame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 100.0);
       vars.syncMana(player);
@@ -338,11 +365,6 @@ public final class ServantCardSenkoMuramasaSkills {
 
    private static void applyTrueDamage(ServerPlayer player, LivingEntity target, float amount) {
       if (!target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) return;
-      float before = target.getHealth();
-      target.invulnerableTime = 0;
-      target.hurt(player.damageSources().magic(), amount);
-      target.invulnerableTime = 0;
-      float expected = Math.max(0.0F, before - amount);
-      if (target.isAlive() && target.getHealth() > expected) target.setHealth(expected);
+      MuramasaCombatHelper.applyNoDefenseDamage(player, target, amount);
    }
 }

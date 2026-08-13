@@ -113,6 +113,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_NEXT_INTERCEPT = "EmiyaUbwNextIntercept";
    public static final String UBW_NEXT_TERRAIN = "EmiyaUbwNextTerrain";
    public static final String UBW_NEXT_BLADE_LIFT = "EmiyaUbwNextBladeLift";
+   public static final String UBW_NEXT_CRIMSON_HOUND = "EmiyaUbwNextCrimsonHound";
    public static final String UBW_CENTER_X = "EmiyaUbwCenterX";
    public static final String UBW_CENTER_Y = "EmiyaUbwCenterY";
    public static final String UBW_CENTER_Z = "EmiyaUbwCenterZ";
@@ -187,8 +188,9 @@ public final class EmiyaArcherCombatHelper {
    private static final int UBW_CHANT_SURFACE_SPREAD_DELAY = 3 * 20;
    private static final int UBW_CHANT_SURFACE_RADIUS = 14;
    private static final int UBW_RELOCK_TICKS = 3;
+   private static final int UBW_CRIMSON_HOUND_INTERVAL = 10 * 20;
    private static final int UBW_TERRAIN_RADIUS = 16;
-   private static final double UBW_PULL_RADIUS = 25.0;
+   private static final double UBW_PULL_RADIUS = 32.0;
    private static final Map<UUID, Map<BlockPos, BlockBackup>> EMIYA_UBW_BLOCKS = new HashMap<>();
    private static final Map<UUID, Map<BlockPos, BlockBackup>> EMIYA_UBW_CHANT_BLOCKS = new HashMap<>();
 
@@ -787,6 +789,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().putLong(UBW_NEXT_INTERCEPT, now + 8L);
       entity.getPersistentData().putLong(UBW_NEXT_TERRAIN, now + 1L);
       entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
+      entity.getPersistentData().putLong(UBW_NEXT_CRIMSON_HOUND, now + UBW_CRIMSON_HOUND_INTERVAL);
       entity.getPersistentData().putInt(UBW_CENTER_X, center.getX());
       entity.getPersistentData().putInt(UBW_CENTER_Y, center.getY());
       entity.getPersistentData().putInt(UBW_CENTER_Z, center.getZ());
@@ -802,6 +805,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(UBW_NEXT_INTERCEPT);
       entity.getPersistentData().remove(UBW_NEXT_TERRAIN);
       entity.getPersistentData().remove(UBW_NEXT_BLADE_LIFT);
+      entity.getPersistentData().remove(UBW_NEXT_CRIMSON_HOUND);
       entity.getPersistentData().remove(UBW_CENTER_X);
       entity.getPersistentData().remove(UBW_CENTER_Y);
       entity.getPersistentData().remove(UBW_CENTER_Z);
@@ -1075,6 +1079,11 @@ public final class EmiyaArcherCombatHelper {
          entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
       }
 
+      if (now >= entity.getPersistentData().getLong(UBW_NEXT_CRIMSON_HOUND)) {
+         launchUbwCrimsonHounds(entity, level);
+         entity.getPersistentData().putLong(UBW_NEXT_CRIMSON_HOUND, now + UBW_CRIMSON_HOUND_INTERVAL);
+      }
+
       if (now >= entity.getPersistentData().getLong(UBW_NEXT_INTERCEPT)) {
          interceptHostileProjectiles(entity, level);
          entity.getPersistentData().putLong(UBW_NEXT_INTERCEPT, now + 8L);
@@ -1106,6 +1115,57 @@ public final class EmiyaArcherCombatHelper {
          && target != entity
          && !target.isAlliedTo(entity)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   private static void launchUbwCrimsonHounds(EmiyaArcherEntity entity, ServerLevel level) {
+      List<LivingEntity> targets = activeUbwEnemies(entity, level);
+      if (targets.isEmpty()) {
+         return;
+      }
+      for (LivingEntity target : targets) {
+         spawnUbwCrimsonHound(entity, level, target);
+      }
+      level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.9F, 0.65F);
+   }
+
+   private static List<LivingEntity> activeUbwEnemies(EmiyaArcherEntity entity, ServerLevel level) {
+      List<LivingEntity> targets = new ArrayList<>();
+      UUID ownerId = entity.getUUID();
+      for (Entity candidate : level.getEntities().getAll()) {
+         if (candidate instanceof LivingEntity living
+            && living.isAlive()
+            && living != entity
+            && isPulledBy(ownerId, living)
+            && !living.isAlliedTo(entity)
+            && !EntityUtils.isImmunePlayerTarget(living)) {
+            targets.add(living);
+         }
+      }
+      LivingEntity currentTarget = entity.getTarget();
+      if (currentTarget != null
+         && currentTarget.isAlive()
+         && currentTarget.level() == level
+         && currentTarget != entity
+         && !currentTarget.isAlliedTo(entity)
+         && !EntityUtils.isImmunePlayerTarget(currentTarget)
+         && !targets.contains(currentTarget)) {
+         targets.add(currentTarget);
+      }
+      return targets;
+   }
+
+   private static void spawnUbwCrimsonHound(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {
+      double angle = entity.getRandom().nextDouble() * Math.PI * 2.0;
+      double radius = 7.0 + entity.getRandom().nextDouble() * 9.0;
+      Vec3 spawn = target.position().add(Math.cos(angle) * radius, 5.0 + entity.getRandom().nextDouble() * 6.0, Math.sin(angle) * radius);
+      CrimsonHoundProjectileEntity projectile = new CrimsonHoundProjectileEntity(level, entity);
+      projectile.setNoGravity(true);
+      projectile.setPos(spawn.x, spawn.y, spawn.z);
+      projectile.setTrackedTarget(target);
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(spawn).normalize();
+      projectile.setDeltaMovement(aim.scale(2.8));
+      level.addFreshEntity(projectile);
+      level.sendParticles(ParticleTypes.FLAME, spawn.x, spawn.y, spawn.z, 10, 0.18, 0.18, 0.18, 0.04);
    }
 
    private static void returnFromUbw(EmiyaArcherEntity entity, ServerLevel level) {
@@ -1986,7 +2046,7 @@ public final class EmiyaArcherCombatHelper {
             sl.addFreshEntity(slash);
             if (target.isAlive()) {
                target.invulnerableTime = 0;
-               target.hurt(entity.damageSources().mobAttack(entity), 42.0F);
+               target.hurt(entity.damageSources().mobAttack(entity), 84.0F);
                target.invulnerableTime = 0;
             }
             sl.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 8, 0.45, 0.45, 0.45, 0.35);

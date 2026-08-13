@@ -57,6 +57,7 @@ public final class IskandarEntity extends ServantEntity {
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_NO_AI = "IskandarIonioiOffscreenPrevNoAi";
    static final String TAG_BUCEPHALUS_SUMMON_COOLDOWN = "IskandarBucephalusSummonCooldown";
    static final String TAG_GORDIUS_WHEEL_SUMMONED_ONCE = "IskandarGordiusWheelSummonedOnce";
+   private static final String TAG_BUCEPHALUS_READY_AFTER_WHEEL = "IskandarBucephalusReadyAfterWheel";
    private static final String TAG_IONIOI_RETURN_DIM = "IskandarIonioiReturnDim";
    private static final String TAG_IONIOI_RETURN_X = "IskandarIonioiReturnX";
    private static final String TAG_IONIOI_RETURN_Y = "IskandarIonioiReturnY";
@@ -79,6 +80,8 @@ public final class IskandarEntity extends ServantEntity {
    public static final int IONIOI_FORMATION_DELAY_TICKS = 2 * 20;
    private static final int IONIOI_FREE_UPKEEP = 30 * 20;
    private static final int IONIOI_ACTIVE_CAP = 200;
+   private static final double IONIOI_PULL_RADIUS = 64.0;
+   private static final double IONIOI_TARGET_OFFSET_CLAMP = 48.0;
    static final double IONIOI_MP_COST = 120.0;
    private static final double IONIOI_UPKEEP_MP_PER_SECOND = 5.0;
    @Nullable private UUID bucephalusUuid;
@@ -143,6 +146,7 @@ public final class IskandarEntity extends ServantEntity {
       horse.bindIskandar(this, this.getEntityMaster());
       level.addFreshEntity(horse);
       this.bucephalusUuid = horse.getUUID();
+      this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
       this.startRiding(horse, true);
    }
 
@@ -150,7 +154,8 @@ public final class IskandarEntity extends ServantEntity {
       if (!canSummonGordiusWheel(level) || this.getVehicle() instanceof GordiusWheelEntity) {
          return;
       }
-      discardBucephalus(level);
+      discardBucephalus(level, false);
+      this.getPersistentData().putBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL, true);
       GordiusWheelEntity wheel = ModEntities.GORDIUS_WHEEL.get().create(level);
       if (wheel == null) {
          return;
@@ -159,7 +164,7 @@ public final class IskandarEntity extends ServantEntity {
       if (forward.lengthSqr() < 1.0E-4) {
          forward = new Vec3(0.0, 0.0, 1.0);
       }
-      Vec3 pos = this.position().add(forward.normalize().scale(2.2)).add(0.0, 1.2, 0.0);
+      Vec3 pos = this.position().add(forward.normalize().scale(2.2));
       wheel.moveTo(pos.x, pos.y, pos.z, this.getYRot(), 0.0F);
       wheel.bindIskandar(this, this.getEntityMaster());
       wheel.snapRearBodyToCurrentPosition();
@@ -172,7 +177,8 @@ public final class IskandarEntity extends ServantEntity {
    private boolean canSummonBucephalus(ServerLevel level) {
       return this.isAlive()
          && (!this.isIonioiHetairoiActive() || ModDimensions.isIonioiHetairoiDimension(level.dimension().location()))
-         && level.getGameTime() >= this.getPersistentData().getLong(TAG_BUCEPHALUS_SUMMON_COOLDOWN);
+         && (this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL)
+            || level.getGameTime() >= this.getPersistentData().getLong(TAG_BUCEPHALUS_SUMMON_COOLDOWN));
    }
 
    boolean canSummonGordiusWheel(ServerLevel level) {
@@ -312,7 +318,7 @@ public final class IskandarEntity extends ServantEntity {
 
       List<LivingEntity> pulled = collectIonioiTargets(level, primary);
       LivingEntity master = this.getEntityMaster();
-      if (master != null && master.isAlive() && master.level() == level && this.distanceToSqr(master) <= 30.0 * 30.0 && !pulled.contains(master)) {
+      if (master != null && master.isAlive() && master.level() == level && this.distanceToSqr(master) <= IONIOI_PULL_RADIUS * IONIOI_PULL_RADIUS && !pulled.contains(master)) {
          pulled.add(master);
       }
       if (!pulled.isEmpty() && pulled.stream().noneMatch(ServerPlayer.class::isInstance)) {
@@ -605,7 +611,7 @@ public final class IskandarEntity extends ServantEntity {
       if (isIonioiPullTarget(primary, source)) {
          targets.add(primary);
       }
-      for (LivingEntity living : source.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(32.0),
+      for (LivingEntity living : source.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(IONIOI_PULL_RADIUS),
          living -> living != primary && isIonioiPullTarget(living, source))) {
          targets.add(living);
       }
@@ -638,8 +644,8 @@ public final class IskandarEntity extends ServantEntity {
       if (living == null || !living.isAlive() || living == this || living.level() != source) {
          return null;
       }
-      double relX = Mth.clamp(living.getX() - this.getX(), -24.0, 24.0);
-      double relZ = Mth.clamp(living.getZ() - this.getZ(), -24.0, 24.0);
+      double relX = Mth.clamp(living.getX() - this.getX(), -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
+      double relZ = Mth.clamp(living.getZ() - this.getZ(), -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
       double targetX = entry.x + relX;
       double targetZ = entry.z + relZ;
       double targetY = findSafeSpawnY(ionioiLevel, Mth.floor(targetX), Mth.floor(targetZ));
@@ -713,13 +719,20 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    void discardBucephalus(ServerLevel level) {
+      discardBucephalus(level, true);
+   }
+
+   private void discardBucephalus(ServerLevel level, boolean markLost) {
       BucephalusEntity horse = getBucephalus(level);
       if (horse != null) {
          horse.ejectPassengers();
          horse.discard();
       }
       this.bucephalusUuid = null;
-      markBucephalusLost(level);
+      if (markLost) {
+         this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
+         markBucephalusLost(level);
+      }
    }
 
    void discardGordiusWheel(ServerLevel level) {
@@ -864,6 +877,7 @@ public final class IskandarEntity extends ServantEntity {
          return horse;
       }
       this.bucephalusUuid = null;
+      this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
       markBucephalusLost(level);
       return null;
    }

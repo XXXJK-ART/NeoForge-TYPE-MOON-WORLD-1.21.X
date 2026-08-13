@@ -3,7 +3,7 @@
   "display_name": "Mind's Eye A",
   "display_name_zh": "心眼 A",
   "type": "active",
-  "mp_cost": 10,
+  "mp_cost": 3,
   "cooldown_ticks": 60,
   "duration_ticks": 60,
   "effects": [

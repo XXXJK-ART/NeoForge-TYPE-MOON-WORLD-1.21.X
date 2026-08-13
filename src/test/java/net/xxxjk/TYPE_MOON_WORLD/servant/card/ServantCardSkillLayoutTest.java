@@ -17,6 +17,25 @@ class ServantCardSkillLayoutTest {
    }
 
    @Test
+   void liShuwenAndSasakiCardCostsUseRoundedQuarterCostRule() {
+      ServantCardSkillAction liCharge = ServantCardSkillLayout.actionFor("li_shuwen", 1, false);
+      assertNotNull(liCharge);
+      assertEquals(7.0, ServantCardSkillCostRules.effectiveMpCost("li_shuwen", true, liCharge));
+
+      ServantCardSkillAction liCounter = ServantCardSkillLayout.actionFor("li_shuwen", 2, false);
+      assertNotNull(liCounter);
+      assertEquals(7.0, ServantCardSkillCostRules.effectiveMpCost("li_shuwen", true, liCounter));
+
+      ServantCardSkillAction sasakiStep = ServantCardSkillLayout.actionFor("sasaki_kojiro", -1, false);
+      assertNotNull(sasakiStep);
+      assertEquals(3.0, ServantCardSkillCostRules.effectiveMpCost("sasaki_kojiro", true, sasakiStep));
+
+      ServantCardSkillAction liFaJin = ServantCardSkillLayout.actionFor("li_shuwen", 8, false);
+      assertNotNull(liFaJin);
+      assertEquals(6.0, ServantCardSkillCostRules.effectiveMpCost("li_shuwen", true, liFaJin));
+   }
+
+   @Test
    void workshopReturnsAreExpensiveAndHaveLongerCooldowns() {
       ServantCardSkillAction medea = ServantCardSkillLayout.actionFor("medea", 7, false);
       ServantCardSkillAction paracelsus = ServantCardSkillLayout.actionFor("paracelsus", 3, false);

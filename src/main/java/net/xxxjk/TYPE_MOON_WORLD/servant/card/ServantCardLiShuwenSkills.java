@@ -10,10 +10,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -23,7 +25,9 @@ public final class ServantCardLiShuwenSkills {
    private static final String CONCEALMENT_UNTIL_TAG = "ServantCardConcealmentUntil";
    private static final int CIRCLE_REALM_DURATION = 1400;
    private static final int WU_ER_DA_HIT_COOLDOWN = 1200;
-   private static final double WU_ER_DA_HIT_COST = 15.0;
+   private static final double WU_ER_DA_LOCK_RANGE = 7.0;
+   private static final double WU_ER_DA_LOCK_MIN_DOT = 0.35;
+   static final double WU_ER_DA_HIT_COST = 4.0;
 
    private ServantCardLiShuwenSkills() {
    }
@@ -117,7 +121,7 @@ public final class ServantCardLiShuwenSkills {
    }
 
    public static boolean performLiWuErDa(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      LivingEntity target = findLookTarget(player, 5.2, 1.9);
+      LivingEntity target = findWuErDaTarget(player);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
@@ -144,14 +148,46 @@ public final class ServantCardLiShuwenSkills {
          } else {
             dir = new Vec3(dir.x, 0.0, dir.z).normalize();
          }
-         target.invulnerableTime = 0;
-         target.hurt(player.damageSources().playerAttack(player), 96.0F);
-         target.invulnerableTime = 0;
+         if (player.level() instanceof ServerLevel level) {
+            LiShuwenCombatHelper.resolveWuErDa(player, target, level, player.getRandom().nextFloat());
+         }
          target.push(dir.x * 2.8, 0.35, dir.z * 2.8);
          target.hurtMarked = true;
          spawnLiHitFx(player, target);
       });
       return true;
+   }
+
+   private static LivingEntity findWuErDaTarget(ServerPlayer player) {
+      LivingEntity precise = findLookTarget(player, WU_ER_DA_LOCK_RANGE, 2.4);
+      if (precise != null) {
+         return precise;
+      }
+      Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
+      Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
+      AABB area = player.getBoundingBox().inflate(WU_ER_DA_LOCK_RANGE, 2.4, WU_ER_DA_LOCK_RANGE);
+      LivingEntity best = null;
+      double bestScore = Double.NEGATIVE_INFINITY;
+      for (LivingEntity candidate : player.level().getEntitiesOfClass(LivingEntity.class, area,
+         entity -> entity.isAlive() && entity != player && !EntityUtils.isImmunePlayerTarget(entity))) {
+         Vec3 targetCenter = candidate.position().add(0.0, candidate.getBbHeight() * 0.5, 0.0);
+         Vec3 offset = targetCenter.subtract(origin);
+         Vec3 flat = new Vec3(offset.x, 0.0, offset.z);
+         double distance = flat.length();
+         if (distance <= 0.01 || distance > WU_ER_DA_LOCK_RANGE || !player.hasLineOfSight(candidate)) {
+            continue;
+         }
+         double dot = flat.normalize().dot(forward);
+         if (dot < WU_ER_DA_LOCK_MIN_DOT) {
+            continue;
+         }
+         double score = dot * 2.0 - distance / WU_ER_DA_LOCK_RANGE;
+         if (score > bestScore) {
+            bestScore = score;
+            best = candidate;
+         }
+      }
+      return best;
    }
 
    public static void performLiFierceTiger(ServerPlayer player) {

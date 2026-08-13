@@ -102,6 +102,7 @@ class IskandarResourcesTest {
       assertTrue(items.contains("MACEDONIAN_SPEAR"));
       assertTrue(items.contains("MACEDONIAN_ROUND_SHIELD"));
       assertTrue(items.contains("ISKANDAR_SHORTSWORD"));
+      assertTrue(items.contains("new IskandarShortswordItem"));
       assertTrue(items.contains("SERVANT_CARD_ISKANDAR_CHEST"));
       assertTrue(items.contains("SERVANT_CARD_ISKANDAR_LEGS"));
       assertTrue(items.contains("SERVANT_CARD_ISKANDAR_FEET"));
@@ -130,14 +131,24 @@ class IskandarResourcesTest {
          "assets/typemoonworld/textures/models/armor/servant_card_iskandar.png",
          "assets/typemoonworld/geo/servant_card_iskandar.geo.json",
          "assets/typemoonworld/geo/iskandar.geo.json",
+         "assets/typemoonworld/geo/iskandar_shortsword.geo.json",
          "assets/typemoonworld/animations/servant_card_iskandar.animation.json",
          "assets/typemoonworld/animations/iskandar.animation.json",
+         "assets/typemoonworld/animations/iskandar_shortsword.animation.json",
          "assets/typemoonworld/models/item/iskandar_shortsword.json",
          "assets/typemoonworld/models/item/servant_card_iskandar_chest.json",
          "assets/typemoonworld/models/item/servant_card_iskandar_legs.json",
          "assets/typemoonworld/models/item/servant_card_iskandar_feet.json")) {
          assertTrue(Files.exists(RESOURCES.resolve(file)), file);
       }
+      String swordModel = Files.readString(RESOURCES.resolve("assets/typemoonworld/models/item/iskandar_shortsword.json"));
+      String swordGeoModel = Files.readString(JAVA.resolve("client/model/IskandarShortswordModel.java"));
+      String swordRenderer = Files.readString(JAVA.resolve("client/renderer/IskandarShortswordRenderer.java"));
+      assertTrue(swordModel.contains("\"parent\": \"builtin/entity\""));
+      assertFalse(swordModel.contains("minecraft:item/generated"));
+      assertTrue(swordGeoModel.contains("geo/iskandar_shortsword.geo.json"));
+      assertTrue(swordGeoModel.contains("textures/item/iskandar_shortsword.png"));
+      assertTrue(swordRenderer.contains("extends GeoItemRenderer<IskandarShortswordItem>"));
    }
 
    @Test
@@ -161,12 +172,28 @@ class IskandarResourcesTest {
    @Test
    void gordiusWheelUsesDelayedRearBodyAnchor() throws Exception {
       String wheel = Files.readString(JAVA.resolve("entity/GordiusWheelEntity.java"));
+      String mount = Files.readString(JAVA.resolve("entity/IskandarMountEntity.java"));
+      String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
       assertTrue(wheel.contains("tickRearBodyPhysics"));
       assertTrue(wheel.contains("position().subtract(forward.scale(2.7))"));
       assertTrue(wheel.contains("getRearBodyAnchor"));
       assertTrue(wheel.contains("snapRearBodyToCurrentPosition"));
-      assertTrue(wheel.contains("MODEL_RIDER_POINT_Z"));
+      assertTrue(wheel.contains("CHARIOT_RIDER_POINT_X"));
+      assertTrue(wheel.contains("CHARIOT_RIDER_POINT_Z"));
+      assertTrue(wheel.contains("17.5 / MODEL_UNIT"));
+      assertTrue(wheel.contains("11.00391 / MODEL_UNIT"));
       assertTrue(wheel.contains("骑乘点"));
+      assertTrue(wheel.contains("snapToNearbyGround"));
+      assertTrue(wheel.contains("isNoGravity()"));
+      assertTrue(wheel.contains("return false;"));
+      assertFalse(wheel.contains("this.setNoGravity(true)"));
+      assertTrue(wheel.contains("tickThunderStrike"));
+      assertTrue(wheel.contains("THUNDER_STRIKE_RADIUS = 18.0"));
+      assertTrue(wheel.contains("EntityType.LIGHTNING_BOLT.create(level)"));
+      assertTrue(wheel.contains("lightning.setVisualOnly(true)"));
+      assertTrue(mount.contains("getSeatSideOffset(passengerSeat)"));
+      assertTrue(mount.contains("Math.cos(yaw) * localX - Math.sin(yaw) * localZ"));
+      assertFalse(iskandar.contains(".add(0.0, 1.2, 0.0)"));
       assertTrue(wheel.contains("GordiusRearX"));
       assertTrue(wheel.contains("GordiusFrontX"));
    }
@@ -182,9 +209,12 @@ class IskandarResourcesTest {
       assertTrue(iskandar.contains("discardBucephalus"));
       assertTrue(iskandar.contains("discardGordiusWheel"));
       assertTrue(iskandar.contains("TAG_GORDIUS_WHEEL_SUMMONED_ONCE"));
+      assertTrue(iskandar.contains("TAG_BUCEPHALUS_READY_AFTER_WHEEL"));
       assertTrue(iskandar.contains("TAG_BUCEPHALUS_SUMMON_COOLDOWN"));
       assertTrue(iskandar.contains("canSummonGordiusWheel"));
       assertTrue(iskandar.contains("markBucephalusLost"));
+      assertTrue(iskandar.contains("discardBucephalus(level, false)"));
+      assertTrue(iskandar.contains("getPersistentData().putBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL, true)"));
       assertTrue(iskandar.contains("IskandarCombatHelper.tick"));
       assertTrue(ai.contains("HIGH_HP_PHASE"));
       assertTrue(ai.contains("MID_HP_PHASE"));
@@ -195,9 +225,20 @@ class IskandarResourcesTest {
       assertTrue(ai.contains("keepRidingBucephalus"));
       assertTrue(ai.contains("keepRidingGordiusWheel"));
       assertTrue(ai.contains("!entity.hasSummonedGordiusWheelOnce()"));
+      assertTrue(ai.contains("if (entity.hasSummonedGordiusWheelOnce())"));
       assertFalse(mount.contains("followOwnerWhenEmpty"));
       assertTrue(mount.contains("iskandar.getVehicle() != this"));
       assertTrue(mount.contains("this.discard()"));
+   }
+
+   @Test
+   void ionioiHetairoiPullsTargetsImmediatelyWithWiderRange() throws Exception {
+      String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+      assertTrue(iskandar.contains("IONIOI_PULL_RADIUS = 64.0"));
+      assertTrue(iskandar.contains("IONIOI_TARGET_OFFSET_CLAMP = 48.0"));
+      assertTrue(iskandar.contains("List<LivingEntity> pulled = collectIonioiTargets(level, primary);"));
+      assertTrue(iskandar.contains("LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, entry);"));
+      assertTrue(iskandar.contains("this.getBoundingBox().inflate(IONIOI_PULL_RADIUS)"));
    }
 
    @Test
@@ -225,6 +266,8 @@ class IskandarResourcesTest {
       assertFalse(Files.exists(RESOURCES.resolve("assets/typemoonworld/animations/macedonian_soldier.animation.json")));
       assertTrue(soldier.contains("EquipmentSlot.MAINHAND, new ItemStack(ModItems.MACEDONIAN_SPEAR.get())"));
       assertTrue(soldier.contains("EquipmentSlot.OFFHAND, new ItemStack(ModItems.MACEDONIAN_ROUND_SHIELD.get())"));
+      assertTrue(soldier.contains("finalizeSpawn"));
+      assertTrue(soldier.contains("this.equipPhalanxGear();"));
       assertTrue(soldier.contains("VISUAL_SCALE"));
       assertTrue(soldier.contains("0.9F + this.getRandom().nextFloat() * 0.1F"));
       assertTrue(soldier.contains("MacedonianSoldierVisualScale"));

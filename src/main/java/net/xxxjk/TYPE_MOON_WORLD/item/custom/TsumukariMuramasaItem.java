@@ -302,7 +302,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
          level.playSound(null, player.getX(), player.getY(), player.getZ(),
             ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get(), SoundSource.VOICE, 1.0F, 1.0F);
          spawnReleaseAirwaves(serverLevel, player, percent, color);
-         MuramasaSlashHandler.initiateTsumukari(serverLevel, player, percent, 300, 10, 100);
+         MuramasaSlashHandler.initiateTsumukari(serverLevel, player, percent, 300, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SLASH_WIDTH, 100);
          serverLevel.addFreshEntity(new TsumukariWaveProjectileEntity(serverLevel, player, percent, color));
       }
       level.playSound(null, player.getX(), player.getY(), player.getZ(),

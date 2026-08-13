@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -12,7 +13,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -26,6 +29,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -74,6 +78,16 @@ public class MacedonianSoldierEntity extends PathfinderMob {
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
       this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
+   }
+
+   @Override
+   public SpawnGroupData finalizeSpawn(
+      ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData
+   ) {
+      SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData);
+      this.equipPhalanxGear();
+      this.setVisualScale(0.9F + this.getRandom().nextFloat() * 0.1F);
+      return data;
    }
 
    public void initializeForIonioiHetairoi(IskandarEntity iskandar, StatRank rank, int poolIndex) {

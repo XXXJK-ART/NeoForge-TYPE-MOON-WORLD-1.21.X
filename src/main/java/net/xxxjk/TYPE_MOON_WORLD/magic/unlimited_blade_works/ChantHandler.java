@@ -82,6 +82,7 @@ import org.jetbrains.annotations.Nullable;
 public class ChantHandler {
    private static final int BASE_CHANT_INTERVAL = 40;
    private static final int UBW_ACTIVATION_WAIT_MAX_ATTEMPTS = 10;
+   private static final String UBW_PROJECTILE_INTERCEPTED_TAG = "TypeMoonUbwProjectileIntercepted";
    private static final Map<UUID, Vec3> UBW_LOCATIONS = new ConcurrentHashMap<>();
    private static final Map<UUID, Vec3> PENDING_UBW_LOCATIONS = new ConcurrentHashMap<>();
    private static final Map<UUID, Integer> PENDING_UBW_ACTIVATION_ATTEMPTS = new ConcurrentHashMap<>();
@@ -225,7 +226,10 @@ public class ChantHandler {
    }
 
    private static void spawnUbwProjectileInterceptor(ServerLevel serverLevel, Projectile projectile) {
-      if (projectile instanceof UBWInterceptorSwordEntity) {
+      if (!projectile.isAlive()
+         || projectile.getPersistentData().getBoolean(UBW_PROJECTILE_INTERCEPTED_TAG)
+         || projectile instanceof UBWProjectileEntity
+         || projectile instanceof UBWInterceptorSwordEntity) {
          return;
       }
 
@@ -234,14 +238,39 @@ public class ChantHandler {
          return;
       }
 
-      Entity shooter = projectile.getOwner();
-      if (shooter != null && ownerId.equals(shooter.getUUID())) {
+      if (!shouldUbwInterceptProjectile(serverLevel, projectile, ownerId)) {
          return;
       }
 
+      projectile.getPersistentData().putBoolean(UBW_PROJECTILE_INTERCEPTED_TAG, true);
       Vec3 spawnPos = findInterceptorSpawnPos(projectile);
       UBWInterceptorSwordEntity interceptor = new UBWInterceptorSwordEntity(serverLevel, projectile, ownerId, spawnPos);
       serverLevel.addFreshEntity(interceptor);
+      serverLevel.sendParticles(ParticleTypes.CRIT, projectile.getX(), projectile.getY(), projectile.getZ(), 10, 0.12, 0.12, 0.12, 0.06);
+      serverLevel.playSound(null, projectile.blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.25F, 1.8F);
+      projectile.discard();
+   }
+
+   private static void interceptHostileProjectilesInUbw(ServerLevel serverLevel) {
+      for (Entity entity : serverLevel.getEntities().getAll()) {
+         if (entity instanceof Projectile projectile) {
+            spawnUbwProjectileInterceptor(serverLevel, projectile);
+         }
+      }
+   }
+
+   private static boolean shouldUbwInterceptProjectile(ServerLevel serverLevel, Projectile projectile, UUID ownerId) {
+      Entity shooter = projectile.getOwner();
+      Entity ubwOwner = serverLevel.getEntity(ownerId);
+      if (shooter != null) {
+         if (ownerId.equals(shooter.getUUID())) {
+            return false;
+         }
+         if (ubwOwner != null && (ubwOwner.isAlliedTo(shooter) || shooter.isAlliedTo(ubwOwner))) {
+            return false;
+         }
+      }
+      return true;
    }
 
    @Nullable
@@ -1360,8 +1389,9 @@ public class ChantHandler {
       Level level = event.getLevel();
       if (!level.isClientSide) {
          if (UBWInstanceManager.isUbwDimension(level)) {
-            if (level.getGameTime() % 20L == 0L) {
-               if (level instanceof ServerLevel serverLevel) {
+            if (level instanceof ServerLevel serverLevel) {
+               interceptHostileProjectilesInUbw(serverLevel);
+               if (level.getGameTime() % 20L == 0L) {
                   for (Entry<UUID, List<UUID>> entry : ACTIVE_UBW_ENTITIES.entrySet()) {
                      for (UUID entityUUID : entry.getValue()) {
                         Entity entity = serverLevel.getEntity(entityUUID);
@@ -1423,11 +1453,11 @@ public class ChantHandler {
                            targetLevel, new Vec3(retX, retY, retZ), Vec3.ZERO, orphan.getYRot(), orphan.getXRot(), DimensionTransition.DO_NOTHING
                         )
                      );
+                     }
                   }
                }
             }
          }
-      }
    }
 
    @SubscribeEvent

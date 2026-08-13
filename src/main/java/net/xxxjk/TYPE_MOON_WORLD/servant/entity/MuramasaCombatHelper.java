@@ -234,20 +234,13 @@ public final class MuramasaCombatHelper {
       // choosing between vanilla damage and the defense-bypassing strike.
       // Clear them here so Karma Eye's explicit multipliers are not doubled.
       prepareAttack(entity);
-      double damage = Math.max(1.0, entity.getAttributeValue(Attributes.ATTACK_DAMAGE) + 8.0);
-      if (now < entity.getPersistentData().getLong(TRIAL_UNTIL)) {
-         damage *= 1.30;
-      }
-      if (isSword(entity.getMainHandItem())) {
-         damage *= 1.20;
-      }
-      if (now < entity.getPersistentData().getLong(KARMA_UNTIL)) {
-         damage *= 1.50;
-      }
-      if (isRulerOrKing(target)) {
-         damage *= 1.30;
-      }
-      damage *= 1.50; // Karma Eye guarantees a critical, maximum-damage hit.
+      double damage = precisionStrikeDamage(
+         entity,
+         target,
+         now < entity.getPersistentData().getLong(TRIAL_UNTIL),
+         isSword(entity.getMainHandItem()),
+         now < entity.getPersistentData().getLong(KARMA_UNTIL)
+      );
       applyNoDefenseDamage(entity, target, (float)damage);
       entity.getPersistentData().putLong(LAST_CONTACT, now);
       entity.getPersistentData().putLong(LAST_ATTACK, now);
@@ -768,7 +761,7 @@ public final class MuramasaCombatHelper {
       }
       entity.triggerSlashAnimation();
       if (level.getServer() != null) {
-         MuramasaSlashHandler.initiateTsumukari(level, entity, percent, 300, 10, 100);
+         MuramasaSlashHandler.initiateTsumukari(level, entity, percent, 300, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SLASH_WIDTH, 100);
          TsumukariWaveProjectileEntity wave = new TsumukariWaveProjectileEntity(
             level, entity, percent, MagicCircuitColorHelper.ensureColor(entity)
          );
@@ -1126,12 +1119,12 @@ public final class MuramasaCombatHelper {
       return value ^ (value >>> 31);
    }
 
-   private static void applyNoDefenseDamage(SenkoMuramasaEntity entity, LivingEntity target, float amount) {
-      if (amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+   public static void applyNoDefenseDamage(LivingEntity attacker, LivingEntity target, float amount) {
+      if (attacker == null || target == null || amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
       float before = target.getHealth();
-      var source = entity.damageSources().magic();
+      var source = attacker.damageSources().magic();
       target.invulnerableTime = 0;
       target.hurt(source, amount);
       target.invulnerableTime = 0;
@@ -1145,6 +1138,30 @@ public final class MuramasaCombatHelper {
             target.die(source);
          }
       }
+   }
+
+   private static void applyNoDefenseDamage(SenkoMuramasaEntity entity, LivingEntity target, float amount) {
+      applyNoDefenseDamage((LivingEntity)entity, target, amount);
+   }
+
+   public static double precisionStrikeDamage(LivingEntity attacker, LivingEntity target, boolean trialActive, boolean swordEquipped, boolean karmaActive) {
+      if (attacker == null || target == null) {
+         return 0.0;
+      }
+      double damage = Math.max(1.0, attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) + 8.0);
+      if (trialActive) {
+         damage *= 1.30;
+      }
+      if (swordEquipped) {
+         damage *= 1.20;
+      }
+      if (karmaActive) {
+         damage *= 1.50;
+      }
+      if (isRulerOrKing(target)) {
+         damage *= 1.30;
+      }
+      return damage * 1.50; // Karma Eye / precision strike guarantees a critical, maximum-damage hit.
    }
 
    private static boolean hasDivinity(SenkoMuramasaEntity entity) {

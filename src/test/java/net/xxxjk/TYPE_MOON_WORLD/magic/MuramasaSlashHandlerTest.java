@@ -21,6 +21,7 @@ class MuramasaSlashHandlerTest {
       assertTrue(!MuramasaSlashHandler.isTsumukariSpecialCharge(9));
       assertTrue(MuramasaSlashHandler.isTsumukariSpecialCharge(10));
       assertEquals(60, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT);
+      assertEquals(20, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SLASH_WIDTH);
       assertTrue(!MuramasaSlashHandler.isTsumukariDamageCharge(59));
       assertTrue(MuramasaSlashHandler.isTsumukariDamageCharge(60));
       assertEquals(590.0F, MuramasaSlashHandler.tsumukariDamage(59));

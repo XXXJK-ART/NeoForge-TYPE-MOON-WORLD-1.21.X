@@ -959,7 +959,7 @@ public final class PlayerNoblePhantasmHelper {
          }
          if (victim != null) {
             victim.invulnerableTime = 0;
-            victim.hurt(player.damageSources().mobAttack(player), 72.0F);
+            victim.hurt(player.damageSources().mobAttack(player), 144.0F);
             victim.invulnerableTime = 0;
             Vec3 away = victim.position().subtract(player.position());
             if (away.lengthSqr() < 1.0E-4) {

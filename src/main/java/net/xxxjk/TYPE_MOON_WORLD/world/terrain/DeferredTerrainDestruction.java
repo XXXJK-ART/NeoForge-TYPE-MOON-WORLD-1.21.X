@@ -399,6 +399,7 @@ public final class DeferredTerrainDestruction {
       private AdvancingCylinder(CylinderJob job) { this.job = job; }
       public void advanceTo(double distance) { job.advanceTo(distance); }
       public void seal() { job.seal(); }
+      public void sealAt(double distance) { job.sealAt(distance); }
       public boolean isComplete() { return job.done; }
    }
 
@@ -410,6 +411,7 @@ public final class DeferredTerrainDestruction {
       final int radius, radiusSqr, scarRadius;
       int along, phase, sideOffset, verticalOffset, scarDepth;
       double targetDistance;
+      double sealedDistance;
       boolean sealed;
 
       CylinderJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, int scarRadius,
@@ -425,11 +427,17 @@ public final class DeferredTerrainDestruction {
          this.scarRadius = Math.max(this.radius, scarRadius);
          this.sideOffset = -this.radius;
          this.verticalOffset = -this.radius;
+         this.sealedDistance = this.length;
          this.completion = completion;
       }
 
       void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
       void seal() { sealed = true; targetDistance = length; }
+      void sealAt(double distance) {
+         sealed = true;
+         sealedDistance = Math.max(0.0, Math.min(length, distance));
+         targetDistance = Math.max(targetDistance, sealedDistance);
+      }
       @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
 
       @Override void advance() {
@@ -494,7 +502,7 @@ public final class DeferredTerrainDestruction {
          phase = CORE_PHASE;
          sideOffset = -radius;
          verticalOffset = -radius;
-         if (along > Math.ceil(length) && sealed) done = true;
+         if (along > Math.ceil(sealedDistance) && sealed) done = true;
       }
    }
 
@@ -503,6 +511,7 @@ public final class DeferredTerrainDestruction {
       private AdvancingSkyRift(SkyRiftJob job) { this.job = job; }
       public void advanceTo(double distance) { job.advanceTo(distance); }
       public void seal() { job.seal(); }
+      public void sealAt(double distance) { job.sealAt(distance); }
       public boolean isComplete() { return job.done; }
    }
 
@@ -512,6 +521,7 @@ public final class DeferredTerrainDestruction {
       final int radius, radiusSqr, minY;
       int along, sideOffset, currentY;
       double targetDistance;
+      double sealedDistance;
       boolean sealed, columnReady;
 
       SkyRiftJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, Runnable completion) {
@@ -525,11 +535,17 @@ public final class DeferredTerrainDestruction {
          this.radiusSqr = this.radius * this.radius;
          this.minY = Mth.clamp(Mth.floor(origin.y), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
          this.sideOffset = -this.radius;
+         this.sealedDistance = this.length;
          this.completion = completion;
       }
 
       void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
       void seal() { sealed = true; targetDistance = length; }
+      void sealAt(double distance) {
+         sealed = true;
+         sealedDistance = Math.max(0.0, Math.min(length, distance));
+         targetDistance = Math.max(targetDistance, sealedDistance);
+      }
       @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
 
       @Override void advance() {
@@ -568,7 +584,7 @@ public final class DeferredTerrainDestruction {
          columnReady = false;
          if (++sideOffset > radius) {
             sideOffset = -radius;
-            if (++along > Math.ceil(length) && sealed) done = true;
+            if (++along > Math.ceil(sealedDistance) && sealed) done = true;
          }
       }
    }

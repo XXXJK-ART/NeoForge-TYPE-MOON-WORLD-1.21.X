@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -118,6 +119,7 @@ public class ServantCardHud {
       drawFlightStatus(gui, minecraft, vars, x, y + 58);
       drawPaleRiderStatus(gui, minecraft, vars, x, y + 58);
       drawHundredFacesStatus(gui, minecraft, vars, x, y + 58);
+      drawHeraclesGodHandLives(gui, minecraft, vars, x, y + 58);
       drawMasterPosition(gui, minecraft, vars, x, y + 68);
       drawMasterLossStatus(gui, minecraft, vars, x, y + 78);
       drawCooldownGrid(gui, minecraft, vars, 5, 98);
@@ -234,6 +236,14 @@ public class ServantCardHud {
             ? Component.translatable("hud.typemoonworld.servant_card.on")
             : Component.translatable("hud.typemoonworld.servant_card.off"));
       drawScaledString(gui, minecraft, text, x, y, 0xFFD5D0C0, 0.54F);
+   }
+
+   private static void drawHeraclesGodHandLives(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!"heracles".equals(vars.servant_card_id)) return;
+      int lives = Mth.clamp(vars.servant_card_heracles_god_hand_lives, 0, 12);
+      Component text = Component.translatable("hud.typemoonworld.servant_card.heracles_god_hand_lives", lives);
+      int color = lives <= 1 ? 0xFFFF5252 : lives <= 4 ? 0xFFFFD54F : 0xFFFFE0E0;
+      drawScaledString(gui, minecraft, text, x, y, color, 0.58F);
    }
 
    private static boolean isSurvivalLike(Minecraft minecraft) {

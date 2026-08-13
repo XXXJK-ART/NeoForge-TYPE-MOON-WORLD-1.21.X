@@ -118,6 +118,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int SPEAR_VAULT_COOLDOWN = 75;
    private static final int AFTERIMAGE_SLASH_COOLDOWN = 65;
    private static final int IAIJUTSU_STEP_COOLDOWN = 80;
+   private static final double SASAKI_TSURIGAMESHI_MP_COST = 8.0;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
@@ -877,9 +878,9 @@ public final class CombatModule implements ServantAiModule {
       // ——— 燕返（Assassin专属）：目标HP<40%，100固定真伤 + 概率斩杀 ———
       if (canTsurigameshi && distance < 4.0 && !SasakiKojiroCombatHelper.isBladeBroken(entity)) {
          int lastTsurigameshi = data.getInt("LastTsurigameshiTick");
-         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= 30) {
+         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= SASAKI_TSURIGAMESHI_MP_COST) {
             data.putInt("LastTsurigameshiTick", tick);
-            entity.setCurrentMp(entity.getCurrentMp() - 30);
+            entity.setCurrentMp(entity.getCurrentMp() - SASAKI_TSURIGAMESHI_MP_COST);
             entity.triggerTsurigameshiAnimation();
             performTsurigameshi(entity, target);
             return;

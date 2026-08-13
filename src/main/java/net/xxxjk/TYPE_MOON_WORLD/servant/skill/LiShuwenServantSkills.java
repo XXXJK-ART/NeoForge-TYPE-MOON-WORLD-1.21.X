@@ -16,6 +16,9 @@ public final class LiShuwenServantSkills {
    public static final String SKILL_PURSUIT = "li_shuwen_pursuit";
    public static final String SKILL_CHARGE = "li_shuwen_charge";
    public static final String SKILL_INTERRUPT = "li_shuwen_interrupt";
+   public static final double PURSUIT_MP_COST = 1.0;
+   public static final double CHARGE_MP_COST = 2.0;
+   public static final double INTERRUPT_MP_COST = 1.0;
 
    private LiShuwenServantSkills() {
    }
@@ -77,14 +80,14 @@ public final class LiShuwenServantSkills {
       if (entity == null || target == null || !target.isAlive() || context.distance() > 8.0 || !context.hasLineOfSight()) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      if (entity.getCurrentMp() < 4.0) {
+      if (entity.getCurrentMp() < PURSUIT_MP_COST) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 4.0);
+      entity.setCurrentMp(entity.getCurrentMp() - PURSUIT_MP_COST);
       entity.faceToward(target.position());
       entity.triggerPursuitAnimation();
       LiShuwenCombatHelper.performPursuitGapClose(entity, target, 1.30, 0.18, 0.95F);
-      return ServantExecutionResult.SUCCESS.withMpCost(4.0);
+      return ServantExecutionResult.SUCCESS.withMpCost(PURSUIT_MP_COST);
    }
 
    private static ServantExecutionResult performCharge(ServantCombatActionContext context) {
@@ -95,14 +98,14 @@ public final class LiShuwenServantSkills {
       if (entity == null || target == null || !target.isAlive() || context.distance() < 3.0 || context.distance() > 12.0 || !context.hasLineOfSight()) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      if (entity.getCurrentMp() < 6.0) {
+      if (entity.getCurrentMp() < CHARGE_MP_COST) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 6.0);
+      entity.setCurrentMp(entity.getCurrentMp() - CHARGE_MP_COST);
       entity.faceToward(target.position());
       entity.triggerChargeAnimation();
       LiShuwenCombatHelper.performPursuitGapClose(entity, target, 1.65, 0.22, 1.10F);
-      return ServantExecutionResult.SUCCESS.withMpCost(6.0);
+      return ServantExecutionResult.SUCCESS.withMpCost(CHARGE_MP_COST);
    }
 
    private static ServantExecutionResult performInterrupt(ServantCombatActionContext context) {
@@ -113,14 +116,14 @@ public final class LiShuwenServantSkills {
       if (entity == null || target == null || !target.isAlive() || context.distance() > 5.0 || !context.hasLineOfSight()) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      if (entity.getCurrentMp() < 5.0) {
+      if (entity.getCurrentMp() < INTERRUPT_MP_COST) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 5.0);
+      entity.setCurrentMp(entity.getCurrentMp() - INTERRUPT_MP_COST);
       entity.faceToward(target.position());
       entity.triggerInterruptAnimation();
       LiShuwenCombatHelper.performPursuitGapClose(entity, target, 0.95, 0.12, 1.25F);
-      return ServantExecutionResult.SUCCESS.withMpCost(5.0);
+      return ServantExecutionResult.SUCCESS.withMpCost(INTERRUPT_MP_COST);
    }
 
    private static ServantExecutionResult mark(LivingEntity entity, String tag) {

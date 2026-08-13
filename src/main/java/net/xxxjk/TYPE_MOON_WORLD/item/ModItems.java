@@ -60,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianSpearItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.IskandarShortswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 
 public class ModItems {
@@ -1137,7 +1138,7 @@ public class ModItems {
             () -> new MacedonianRoundShieldItem(new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<Item> ISKANDAR_SHORTSWORD = ITEMS.register("iskandar_shortsword",
-            () -> new Item(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
+            () -> new IskandarShortswordItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(

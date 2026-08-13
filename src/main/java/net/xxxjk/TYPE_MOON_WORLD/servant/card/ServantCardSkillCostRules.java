@@ -10,9 +10,20 @@ public final class ServantCardSkillCostRules {
       if ("emiya_archer".equals(vars.servant_card_id) && "emiya_cycle".equals(action.effectId())) {
          return ServantCardEmiyaSkills.nextEmiyaCycleMode(vars) == 1 ? 100.0 : 120.0;
       }
-      if ("medusa_mystic_eyes".equals(action.effectId()) && vars.servant_card_transformed) {
+      return effectiveMpCost(vars.servant_card_id, vars.servant_card_transformed, action);
+   }
+
+   static double effectiveMpCost(String servantId, boolean transformed, ServantCardSkillAction action) {
+      if ("medusa_mystic_eyes".equals(action.effectId()) && transformed) {
          return 0.0;
       }
+      if (isReducedQuarterCostServant(servantId)) {
+         return Math.round(action.mpCost() * 0.25);
+      }
       return action.mpCost();
+   }
+
+   private static boolean isReducedQuarterCostServant(String servantId) {
+      return "li_shuwen".equals(servantId) || "sasaki_kojiro".equals(servantId);
    }
 }

@@ -118,6 +118,7 @@ public final class OdaNobunagaCombatHelper {
    private static final int HAJUN_CHANT_TICKS = 5 * 20;
    private static final int HAJUN_DURATION = 15 * 20;
    private static final double HAJUN_RADIUS = 25.0;
+   private static final double HAJUN_PULL_RADIUS = 32.0;
    private static final int HAJUN_TERRAIN_RADIUS = 25;
    private static final int HAJUN_CHANT_SURFACE_SPREAD_DELAY = 10;
    private static final int HAJUN_CHANT_SURFACE_RADIUS = 16;
@@ -999,7 +1000,7 @@ public final class OdaNobunagaCombatHelper {
       if (isHajunPullTarget(owner, primary, source)) {
          targets.add(primary);
       }
-      for (LivingEntity living : source.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(HAJUN_RADIUS), living -> living != primary && isHajunPullTarget(owner, living, source))) {
+      for (LivingEntity living : source.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(HAJUN_PULL_RADIUS), living -> living != primary && isHajunPullTarget(owner, living, source))) {
          targets.add(living);
       }
       return targets;
@@ -1010,7 +1011,7 @@ public final class OdaNobunagaCombatHelper {
          return false;
       }
       Vec3 rel = living.position().subtract(owner.position());
-      return rel.y >= -2.0 && rel.lengthSqr() <= HAJUN_RADIUS * HAJUN_RADIUS;
+      return rel.y >= -2.0 && rel.lengthSqr() <= HAJUN_PULL_RADIUS * HAJUN_PULL_RADIUS;
    }
 
    private static LivingEntity moveHajunTargets(OdaNobunagaEntity owner, ServerLevel source, ServerLevel hajunLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 entry) {

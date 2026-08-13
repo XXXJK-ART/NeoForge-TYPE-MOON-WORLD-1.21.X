@@ -46,4 +46,14 @@ class ZhaoYunHakuryuMountRulesTest {
       assertTrue(entitiesSource.contains(".sized(2.2F, 2.4F).clientTrackingRange(96).updateInterval(1).build(\"zhao_yun_hakuryu\")"));
       assertTrue(rendererSource.contains("entity.getPassengers().size() > 0"));
    }
+
+   @Test
+   void changbanpoTerrainBreaksForwardWithoutDiggingBelowHakuryu() throws IOException {
+      String riderSource = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/ZhaoYunRiderEntity.java"));
+
+      assertTrue(riderSource.contains("check.offset(-2, 0, -2), check.offset(2, 4, 2)"));
+      assertTrue(riderSource.contains("never dig downward"));
+      assertTrue(riderSource.contains("if (pos.getY() < base.getY()) continue;"));
+   }
 }

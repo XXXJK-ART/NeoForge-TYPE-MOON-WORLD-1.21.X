@@ -35,6 +35,7 @@ public class MuramasaSlashHandler {
    private static final float MURAMASA_MAX_DAMAGE = 100.0F;
    static final int TSUMUKARI_SPECIAL_CHARGE_PERCENT = 10;
    static final int TSUMUKARI_DAMAGE_SPECIAL_CHARGE_PERCENT = 60;
+   public static final int TSUMUKARI_DAMAGE_SLASH_WIDTH = 20;
    private static final List<MuramasaSlashHandler.SlashInstance> ACTIVE_SLASHES = new ArrayList<>();
 
    public static void initiate(ServerLevel level, ServerPlayer player, int charge, int maxDist, int maxWidth, int maxHeight) {

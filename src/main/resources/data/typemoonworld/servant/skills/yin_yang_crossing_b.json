@@ -3,7 +3,7 @@
   "display_name": "Yin-Yang Crossing B",
   "display_name_zh": "阴阳交错 B",
   "type": "active",
-  "mp_cost": 10,
+  "mp_cost": 3,
   "cooldown_ticks": 120,
   "duration_ticks": 200,
   "effects": [

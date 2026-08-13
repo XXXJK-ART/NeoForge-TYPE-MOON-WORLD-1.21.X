@@ -27,7 +27,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.world.chunk.TicketController;
@@ -67,6 +69,7 @@ public final class ArashStellaControllerEntity extends Entity {
    private int preloadIndex;
    private Vec3 origin = Vec3.ZERO;
    private Vec3 direction = new Vec3(0.0, 0.0, 1.0);
+   private double worldBorderLength = Double.NaN;
    private UUID casterId;
    private boolean playerCaster;
    private boolean playerReleaseRequested;
@@ -107,8 +110,8 @@ public final class ArashStellaControllerEntity extends Entity {
       if (flat.lengthSqr() < 1.0E-6) return false;
       flat = flat.normalize();
       Vec3 origin = arash.getEyePosition().add(flat.scale(0.9));
-      Vec3 end = origin.add(flat.scale(ArashCombatRules.STELLA_LENGTH));
-      if (!insideWorldBorder(level, origin, end, flat) || hasFriendlyInBlastPath(level, arash, origin, end)) return false;
+      Vec3 end = worldBorderEndpoint(level, origin, flat, ArashCombatRules.STELLA_LENGTH);
+      if (hasFriendlyInBlastPath(level, arash, origin, end)) return false;
 
       ArashStellaControllerEntity controller = ModEntities.ARASH_STELLA_CONTROLLER.get().create(level);
       if (controller == null) return false;
@@ -134,8 +137,8 @@ public final class ArashStellaControllerEntity extends Entity {
       if (flat.lengthSqr() < 1.0E-6) return false;
       flat = flat.normalize();
       Vec3 origin = player.getEyePosition().add(flat.scale(0.9));
-      Vec3 end = origin.add(flat.scale(ArashCombatRules.STELLA_LENGTH));
-      if (!insideWorldBorder(level, origin, end, flat) || hasFriendlyInBlastPath(level, player, origin, end)) return false;
+      Vec3 end = worldBorderEndpoint(level, origin, flat, ArashCombatRules.STELLA_LENGTH);
+      if (hasFriendlyInBlastPath(level, player, origin, end)) return false;
 
       ArashStellaControllerEntity controller = ModEntities.ARASH_STELLA_CONTROLLER.get().create(level);
       if (controller == null) return false;
@@ -153,13 +156,15 @@ public final class ArashStellaControllerEntity extends Entity {
       this.origin = origin;
       this.direction = direction.normalize();
       this.setPos(origin.x, origin.y, origin.z);
+      refreshWorldBorderLimit((ServerLevel) caster.level());
       this.teamName = caster.getTeam() == null ? "" : caster.getTeam().getName();
-      AABB search = pathBounds(origin, origin.add(direction.scale(ArashCombatRules.STELLA_LENGTH)), ArashCombatRules.STELLA_END_RADIUS);
+      ArashCombatRules.StellaProfile profile = stellaProfile();
+      AABB search = pathBounds(origin, origin.add(direction.scale(profile.length())), profile.endRadius());
       for (LivingEntity living : caster.level().getEntitiesOfClass(LivingEntity.class, search,
          living -> living == caster || caster.isAlliedTo(living) || living.isAlliedTo(caster))) {
          allies.add(living.getUUID());
       }
-      chunks.addAll(computeChunks(origin, direction, ArashCombatRules.fullStellaProfile()));
+      chunks.addAll(computeChunks(origin, direction, profile));
    }
 
    @Override
@@ -249,6 +254,7 @@ public final class ArashStellaControllerEntity extends Entity {
    private void configurePlayerCharge(int chargeTicks) {
       playerChargeTicks = Math.max(ArashCombatRules.PLAYER_STELLA_MIN_CHARGE_TICKS,
          Math.min(ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS, chargeTicks));
+      if (this.level() instanceof ServerLevel level) refreshWorldBorderLimit(level);
       List<Long> required = computeChunks(origin, direction, stellaProfile());
       chunks.clear();
       chunks.addAll(required);
@@ -256,11 +262,31 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private ArashCombatRules.StellaProfile stellaProfile() {
+      ArashCombatRules.StellaProfile base = unlimitedStellaProfile();
+      if (!Double.isFinite(worldBorderLength) || worldBorderLength >= base.length() - 1.0E-6) return base;
+      double length = Math.max(0.0, worldBorderLength);
+      double scale = base.length() <= 1.0E-6 ? 0.0 : length / base.length();
+      return new ArashCombatRules.StellaProfile(length,
+         Math.max(1, (int)Math.round(base.flightTicks() * scale)),
+         base.explosionTicks(), base.terrainRadius(), base.scarRadius(), base.outerRadius(),
+         base.coreRadius(), base.endRadius(), base.coreDamage(), base.outerDamage());
+   }
+
+   private ArashCombatRules.StellaProfile unlimitedStellaProfile() {
       return playerCaster ? ArashCombatRules.playerStellaProfile(playerChargeTicks)
          : ArashCombatRules.fullStellaProfile();
    }
 
+   private void refreshWorldBorderLimit(ServerLevel level) {
+      if (level == null) return;
+      double requestedLength = unlimitedStellaProfile().length();
+      double availableLength = distanceToWorldBorder(level, origin, direction, requestedLength);
+      worldBorderLength = Double.isFinite(worldBorderLength)
+         ? Math.min(worldBorderLength, availableLength) : availableLength;
+   }
+
    private void release(ServerLevel level, LivingEntity caster) {
+      refreshWorldBorderLimit(level);
       ArashCombatRules.StellaProfile profile = stellaProfile();
       released = true;
       stage = STAGE_FLIGHT;
@@ -302,6 +328,7 @@ public final class ArashStellaControllerEntity extends Entity {
    public boolean isInFlight() { return stage == STAGE_FLIGHT; }
 
    private void tickFlight(ServerLevel level) {
+      refreshWorldBorderLimit(level);
       ArashCombatRules.StellaProfile profile = stellaProfile();
       double currentDistance = profile.distanceAtTick(stageTicks);
       updateChunkTickets(level, currentDistance, profile);
@@ -324,9 +351,9 @@ public final class ArashStellaControllerEntity extends Entity {
       spawnMeteorTrail(level, current);
       if (stageTicks >= profile.flightTicks()) {
          cylinder.advanceTo(profile.length());
-         cylinder.seal();
+         cylinder.sealAt(profile.length());
          skyRift.advanceTo(profile.length());
-         skyRift.seal();
+         skyRift.sealAt(profile.length());
          stage = STAGE_EXPLOSION;
          stageTicks = 0;
          this.setPos(point.x, point.y, point.z);
@@ -340,10 +367,11 @@ public final class ArashStellaControllerEntity extends Entity {
       if (forcedChunks.isEmpty()) updateChunkTickets(level, profile.length(), profile);
       if (!finalDamageDone) {
          finalDamageDone = true;
+         double endDamageRadius = ArashCombatRules.stellaEndDamageRadius(profile);
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
-            new AABB(center, center).inflate(profile.endRadius()), this::canDamage)) {
+            new AABB(center, center).inflate(endDamageRadius), this::canDamage)) {
             if (target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).distanceToSqr(center)
-               <= profile.endRadius() * profile.endRadius()) {
+               <= endDamageRadius * endDamageRadius) {
                hurtStellaTarget(level, target, profile.coreDamage());
             }
          }
@@ -371,12 +399,17 @@ public final class ArashStellaControllerEntity extends Entity {
       Vec3 start = origin.add(direction.scale(Math.max(0.0, previous - 1.0)));
       Vec3 end = origin.add(direction.scale(Math.min(profile.length(), current + 1.0)));
       double damageRadius = profile.outerRadius() + ArashCombatRules.STELLA_DAMAGE_RADIUS_PADDING;
-      AABB area = pathBounds(start, end, damageRadius);
+      double skyRiftRadius = Math.max(damageRadius, profile.terrainRadius());
+      AABB baseArea = pathBounds(start, end, skyRiftRadius);
+      AABB area = new AABB(baseArea.minX, baseArea.minY, baseArea.minZ,
+         baseArea.maxX, level.getMaxBuildHeight(), baseArea.maxZ);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, this::canDamage)) {
          if (lineHits.contains(target.getUUID())) continue;
-         double distance = distanceToSegment(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), start, end);
+         Vec3 targetCenter = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+         double distance = distanceToSegment(targetCenter, start, end);
          float damage = distance <= profile.coreRadius() ? profile.coreDamage()
-            : distance <= damageRadius ? profile.outerDamage() : 0.0F;
+            : distance <= damageRadius || skyRiftHits(level, target, targetCenter, start, end, profile.terrainRadius())
+               ? profile.outerDamage() : 0.0F;
          if (damage > 0.0F) {
             lineHits.add(target.getUUID());
             hurtStellaTarget(level, target, damage);
@@ -687,16 +720,34 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    private static boolean insideWorldBorder(ServerLevel level, Vec3 start, Vec3 end, Vec3 direction) {
-      Vec3 side = new Vec3(-direction.z, 0.0, direction.x);
-      for (double sideOffset : new double[]{-ArashCombatRules.STELLA_SCAR_RADIUS, ArashCombatRules.STELLA_SCAR_RADIUS}) {
-         Vec3 point = start.add(side.scale(sideOffset));
-         if (!level.getWorldBorder().isWithinBounds(BlockPos.containing(point))) return false;
-      }
-      for (double sideOffset : new double[]{-50.0, 50.0}) {
-         Vec3 point = end.add(side.scale(sideOffset));
-         if (!level.getWorldBorder().isWithinBounds(BlockPos.containing(point))) return false;
-      }
-      return true;
+      if (level == null || start == null || end == null || direction == null) return false;
+      double distance = start.distanceTo(end);
+      return distanceToWorldBorder(level, start, direction, distance) >= distance - 1.0E-6;
+   }
+
+   private static Vec3 worldBorderEndpoint(ServerLevel level, Vec3 start, Vec3 direction, double requestedLength) {
+      double length = distanceToWorldBorder(level, start, direction, requestedLength);
+      return start.add(direction.normalize().scale(length));
+   }
+
+   private static double distanceToWorldBorder(ServerLevel level, Vec3 start, Vec3 direction, double requestedLength) {
+      if (level == null || start == null || direction == null || requestedLength <= 0.0) return 0.0;
+      WorldBorder border = level.getWorldBorder();
+      double safeMinX = border.getMinX() + 0.5;
+      double safeMaxX = border.getMaxX() - 0.5;
+      double safeMinZ = border.getMinZ() + 0.5;
+      double safeMaxZ = border.getMaxZ() - 0.5;
+      if (start.x < safeMinX || start.x > safeMaxX || start.z < safeMinZ || start.z > safeMaxZ) return 0.0;
+
+      Vec3 flat = new Vec3(direction.x, 0.0, direction.z);
+      if (flat.lengthSqr() < 1.0E-8) return requestedLength;
+      flat = flat.normalize();
+      double distance = requestedLength;
+      if (flat.x > 1.0E-8) distance = Math.min(distance, (safeMaxX - start.x) / flat.x);
+      else if (flat.x < -1.0E-8) distance = Math.min(distance, (safeMinX - start.x) / flat.x);
+      if (flat.z > 1.0E-8) distance = Math.min(distance, (safeMaxZ - start.z) / flat.z);
+      else if (flat.z < -1.0E-8) distance = Math.min(distance, (safeMinZ - start.z) / flat.z);
+      return Math.max(0.0, Math.min(requestedLength, distance));
    }
 
    private static boolean hasFriendlyInBlastPath(ServerLevel level, LivingEntity caster, Vec3 start, Vec3 end) {
@@ -743,6 +794,21 @@ public final class ArashStellaControllerEntity extends Entity {
       return point.distanceTo(start.add(segment.scale(t)));
    }
 
+   private static boolean skyRiftHits(ServerLevel level, LivingEntity target, Vec3 targetCenter,
+                                      Vec3 start, Vec3 end, double radius) {
+      double riftBottom = Math.min(start.y, end.y);
+      if (target.getBoundingBox().maxY < riftBottom) return false;
+      if (horizontalDistanceToSegment(targetCenter, start, end) > radius) return false;
+      int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE,
+         (int)Math.floor(targetCenter.x), (int)Math.floor(targetCenter.z));
+      return target.getBoundingBox().minY <= Math.max(Math.max(start.y, end.y), surfaceY);
+   }
+
+   private static double horizontalDistanceToSegment(Vec3 point, Vec3 start, Vec3 end) {
+      return distanceToSegment(new Vec3(point.x, 0.0, point.z),
+         new Vec3(start.x, 0.0, start.z), new Vec3(end.x, 0.0, end.z));
+   }
+
    @Override protected void defineSynchedData(SynchedEntityData.Builder builder) { }
 
    @Override
@@ -752,6 +818,7 @@ public final class ArashStellaControllerEntity extends Entity {
       tag.putInt("PreloadIndex", preloadIndex);
       tag.putDouble("OriginX", origin.x); tag.putDouble("OriginY", origin.y); tag.putDouble("OriginZ", origin.z);
       tag.putDouble("DirectionX", direction.x); tag.putDouble("DirectionY", direction.y); tag.putDouble("DirectionZ", direction.z);
+      if (Double.isFinite(worldBorderLength)) tag.putDouble("WorldBorderLength", worldBorderLength);
       if (casterId != null) tag.putUUID("Caster", casterId);
       tag.putString("Team", teamName);
       tag.putLongArray("Chunks", chunks);
@@ -777,6 +844,7 @@ public final class ArashStellaControllerEntity extends Entity {
       Vec3 horizontalDirection = new Vec3(loadedDirection.x, 0.0, loadedDirection.z);
       direction = finite(horizontalDirection) && horizontalDirection.lengthSqr() > 1.0E-6
          ? horizontalDirection.normalize() : new Vec3(0.0, 0.0, 1.0);
+      worldBorderLength = tag.contains("WorldBorderLength") ? tag.getDouble("WorldBorderLength") : Double.NaN;
       if (tag.hasUUID("Caster")) casterId = tag.getUUID("Caster");
       teamName = tag.getString("Team");
       chunks.clear(); for (long packed : tag.getLongArray("Chunks")) chunks.add(packed);

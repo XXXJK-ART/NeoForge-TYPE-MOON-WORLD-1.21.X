@@ -233,6 +233,11 @@ public class ModPlayerEventHandler {
          if (vars.servant_card_transformed && "li_shuwen".equals(vars.servant_card_id)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills.revealCircleRealm(player);
          }
+         if (vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id)
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSenkoMuramasaSkills.tryBypassDefenseAttack(player, target)) {
+            event.setCanceled(true);
+            return;
+         }
          if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
          }

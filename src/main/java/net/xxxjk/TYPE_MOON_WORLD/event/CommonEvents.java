@@ -2217,7 +2217,7 @@ public class CommonEvents {
                      LivingEntity.class, box, ex -> ex.isAlive() && ex != player && !EntityUtils.isImmunePlayerTarget(ex)
                   )) {
                      e.invulnerableTime = 0;
-                     e.hurt(player.damageSources().mobAttack(player), damageBase * 2.0F);
+                     e.hurt(player.damageSources().mobAttack(player), damageBase * 4.0F);
                      e.invulnerableTime = 0;
                   }
                }

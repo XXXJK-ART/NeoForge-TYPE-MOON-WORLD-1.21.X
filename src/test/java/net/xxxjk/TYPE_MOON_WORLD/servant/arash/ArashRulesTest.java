@@ -119,10 +119,12 @@ class ArashRulesTest {
       assertEquals(18, ArashCombatRules.STELLA_SCAR_RADIUS);
       assertEquals(1.25, ArashCombatRules.STELLA_CORE_RADIUS);
       assertEquals(5.0, ArashCombatRules.STELLA_OUTER_RADIUS);
-      assertEquals(2.0, ArashCombatRules.STELLA_DAMAGE_RADIUS_PADDING);
+      assertEquals(7.0, ArashCombatRules.STELLA_DAMAGE_RADIUS_PADDING);
       assertEquals(50.0, ArashCombatRules.STELLA_END_RADIUS);
+      assertEquals(1.4, ArashCombatRules.STELLA_END_DAMAGE_RADIUS_SCALE);
       assertEquals(25.0, ArashCombatRules.stellaExplosionRadiusAtTick(50));
       assertEquals(50.0, ArashCombatRules.stellaExplosionRadiusAtTick(100));
+      assertEquals(70.0, ArashCombatRules.stellaEndDamageRadius(ArashCombatRules.fullStellaProfile()));
    }
 
    @Test
@@ -142,11 +144,13 @@ class ArashRulesTest {
       assertEquals(2000.0F, minimum.coreDamage() * 2.0F,
          "a core target hit by both the line and final blast must take 2000 total damage");
       assertEquals(10.0, minimum.endRadius());
+      assertEquals(14.0, ArashCombatRules.stellaEndDamageRadius(minimum));
 
       ArashCombatRules.StellaProfile full = ArashCombatRules.playerStellaProfile(760);
       assertEquals(2500.0, full.length());
       assertEquals(2000.0F, full.coreDamage());
       assertEquals(50.0, full.endRadius());
+      assertEquals(70.0, ArashCombatRules.stellaEndDamageRadius(full));
       assertEquals(ArashCombatRules.fullStellaProfile(), full);
 
       ArashCombatRules.StellaProfile clamped = ArashCombatRules.playerStellaProfile(1000);

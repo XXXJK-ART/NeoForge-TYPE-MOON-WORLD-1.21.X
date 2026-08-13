@@ -29,6 +29,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -40,9 +41,13 @@ public class MagicProjection {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          boolean crestProjectionCast = vars.isCurrentSelectionFromCrest("projection");
          boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestProjectionCast;
+         ItemStack target = vars.projection_selected_item == null ? ItemStack.EMPTY : vars.projection_selected_item;
+         if (isRhoAiasProjectionTarget(target)) {
+            tryProjectRhoAias(player, vars, target, swordAttributeActive, !crestProjectionCast, true);
+            return;
+         }
          InteractionHand handToUse = findAvailableHand(player);
          if (handToUse != null) {
-            ItemStack target = vars.projection_selected_item;
             if (!target.isEmpty() && target.has(DataComponents.CUSTOM_DATA)) {
                CompoundTag custom = ((CustomData)target.get(DataComponents.CUSTOM_DATA)).copyTag();
                ResourceLocation executorId = ResourceLocation.tryParse(custom.getString("tmw_projection_executor"));
@@ -103,6 +108,9 @@ public class MagicProjection {
          || !isAnalyzedItem(vars, analyzedTarget)) {
          return false;
       } else {
+         if (isRhoAiasProjectionTarget(analyzedTarget)) {
+            return tryProjectRhoAias(player, vars, analyzedTarget, swordAttributeActive, false, false);
+         }
          InteractionHand handToUse = findAvailableHand(player);
          if (handToUse == null) {
             return false;
@@ -118,6 +126,57 @@ public class MagicProjection {
             return true;
          }
       }
+   }
+
+   private static boolean tryProjectRhoAias(
+      ServerPlayer player,
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      ItemStack target,
+      boolean swordAttributeActive,
+      boolean addProjectionProficiency,
+      boolean consumeMana
+   ) {
+      if (target.isEmpty()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.projection.no_target"), true);
+         return false;
+      }
+      if (!vars.has_unlimited_blade_works) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.projection.rho_aias_requires_ubw"), true);
+         return false;
+      }
+      if (!isAnalyzedItem(vars, target)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.projection.requires_analysis"), true);
+         return false;
+      }
+      if (MagicStructuralAnalysis.isProjectionBanned(target)) {
+         player.displayClientMessage(
+            Component.translatable(MagicStructuralAnalysis.isBedrock(target)
+               ? "message.typemoonworld.projection.cannot_project_bedrock"
+               : "message.typemoonworld.projection.cannot_project_divine"),
+            true
+         );
+         return false;
+      }
+      if (consumeMana) {
+         double cost = applyProjectionMagicDiscount(player, calculateCost(target, swordAttributeActive, vars.proficiency_projection));
+         if (!ManaHelper.consumeOneTimeMagicCost(player, cost)) {
+            return false;
+         }
+      }
+      if (!RhoAiasProjectionHelper.spawn(player)) {
+         return false;
+      }
+      if (addProjectionProficiency) {
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "projection", 0.2);
+      }
+      vars.syncPlayerVariables(player);
+      grantAdvancement(player, "trace_on");
+      player.displayClientMessage(Component.translatable("message.typemoonworld.trace_on"), true);
+      return true;
+   }
+
+   private static boolean isRhoAiasProjectionTarget(ItemStack stack) {
+      return stack != null && stack.is(ModItems.RHO_AIAS.get());
    }
 
    public static double calculateCost(ItemStack stack, boolean hasSwordAttribute, double proficiency) {

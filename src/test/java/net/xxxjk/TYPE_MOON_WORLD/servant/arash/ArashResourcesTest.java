@@ -164,6 +164,17 @@ class ArashResourcesTest {
       assertTrue(controller.contains("shouldFinishLongStellaVoice"));
       assertTrue(controller.contains("stopLongChantSound"));
       assertTrue(controller.contains("playShortStella"));
+      assertTrue(controller.contains("skyRiftHits"));
+      assertTrue(controller.contains("horizontalDistanceToSegment"));
+      assertTrue(controller.contains("level.getMaxBuildHeight()"));
+      assertTrue(controller.contains("Heightmap.Types.WORLD_SURFACE"));
+      assertTrue(controller.contains("profile.terrainRadius()"));
+      assertTrue(controller.contains("worldBorderEndpoint"));
+      assertTrue(controller.contains("distanceToWorldBorder"));
+      assertTrue(controller.contains("worldBorderLength"));
+      assertTrue(controller.contains("WorldBorderLength"));
+      assertTrue(controller.contains("WorldBorder"));
+      assertTrue(controller.contains("sealAt(profile.length())"));
       String controls = Files.readString(JAVA.resolve("init/TypeMoonWorldModKeyMappings.java"));
       String manager = Files.readString(JAVA.resolve("servant/card/ServantCardTransformManager.java"));
       assertTrue(controls.contains("\"arash\".equals(vars.servant_card_id) && slot == 9"));
@@ -175,6 +186,8 @@ class ArashResourcesTest {
       assertTrue(cardSkills.contains("vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS)"));
       assertTrue(cardSkills.contains("data.remove(REFUND_ARROWS)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
+      assertTrue(terrain.contains("sealAt(double distance)"));
+      assertTrue(terrain.contains("sealedDistance"));
       assertTrue(terrain.contains("queueAdvancingCylinder"));
       assertTrue(terrain.contains("queueAdvancingSkyRift"));
       assertTrue(terrain.contains("currentSide * currentSide + currentY * currentY > radiusSqr"));

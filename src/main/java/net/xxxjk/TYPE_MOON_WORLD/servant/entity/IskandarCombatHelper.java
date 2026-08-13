@@ -31,6 +31,10 @@ public final class IskandarCombatHelper {
 
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive()) {
+         if (entity.hasSummonedGordiusWheelOnce()) {
+            tickFallbackMount(entity, level, phase);
+            return;
+         }
          dismountForWalking(entity);
          return;
       }
@@ -86,17 +90,7 @@ public final class IskandarCombatHelper {
          dismountForWalking(entity);
          return;
       }
-      LivingEntity master = entity.getEntityMaster();
-      boolean longMove = master != null && master.isAlive() && entity.distanceToSqr(master) > 10.0 * 10.0;
-      LivingEntity target = entity.getTarget();
-      boolean needsBackupMount = phase == LOW_HP_PHASE
-         || longMove
-         || target != null && target.isAlive() && entity.distanceToSqr(target) > 10.0 * 10.0;
-      if (needsBackupMount) {
-         keepRidingBucephalus(entity, level);
-      } else {
-         dismountForWalking(entity);
-      }
+      keepRidingBucephalus(entity, level);
    }
 
    private static void dismountForWalking(IskandarEntity entity) {

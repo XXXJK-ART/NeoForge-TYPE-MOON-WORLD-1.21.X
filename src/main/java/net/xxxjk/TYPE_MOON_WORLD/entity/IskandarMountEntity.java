@@ -205,11 +205,12 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    @Override
    protected void positionRider(Entity passenger, MoveFunction callback) {
       boolean passengerSeat = this.masterUuid != null && this.masterUuid.equals(passenger.getUUID());
+      double localX = getSeatSideOffset(passengerSeat);
       double localZ = getSeatForwardOffset(passengerSeat);
       double seatY = getSeatHeight(passengerSeat);
       float yaw = this.getYRot() * ((float)Math.PI / 180.0F);
-      double x = -Math.sin(yaw) * localZ;
-      double z = Math.cos(yaw) * localZ;
+      double x = Math.cos(yaw) * localX - Math.sin(yaw) * localZ;
+      double z = Math.sin(yaw) * localX + Math.cos(yaw) * localZ;
       callback.accept(passenger, this.getX() + x, this.getY() + seatY, this.getZ() + z);
       passenger.setYRot(this.getYRot());
       passenger.setYHeadRot(this.getYRot());
@@ -311,7 +312,11 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    @Override
    protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float partialTick) {
       boolean passengerSeat = this.masterUuid != null && this.masterUuid.equals(passenger.getUUID());
-      return new Vec3(0.0, getSeatHeight(passengerSeat), getSeatForwardOffset(passengerSeat));
+      return new Vec3(getSeatSideOffset(passengerSeat), getSeatHeight(passengerSeat), getSeatForwardOffset(passengerSeat));
+   }
+
+   protected double getSeatSideOffset(boolean passengerSeat) {
+      return 0.0;
    }
 
    protected double getSeatForwardOffset(boolean passengerSeat) {
