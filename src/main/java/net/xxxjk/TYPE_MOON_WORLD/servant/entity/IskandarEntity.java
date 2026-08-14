@@ -55,9 +55,10 @@ public final class IskandarEntity extends ServantEntity {
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_INVISIBLE = "IskandarIonioiOffscreenPrevInvisible";
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_INVULNERABLE = "IskandarIonioiOffscreenPrevInvulnerable";
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_NO_AI = "IskandarIonioiOffscreenPrevNoAi";
-   static final String TAG_BUCEPHALUS_SUMMON_COOLDOWN = "IskandarBucephalusSummonCooldown";
    static final String TAG_GORDIUS_WHEEL_SUMMONED_ONCE = "IskandarGordiusWheelSummonedOnce";
+   static final String TAG_BUCEPHALUS_SUMMONED_ONCE = "IskandarBucephalusSummonedOnce";
    private static final String TAG_BUCEPHALUS_READY_AFTER_WHEEL = "IskandarBucephalusReadyAfterWheel";
+   private static final String TAG_KINGLY_WAR_CRY_COOLDOWN = "IskandarKinglyWarCryCooldown";
    private static final String TAG_IONIOI_RETURN_DIM = "IskandarIonioiReturnDim";
    private static final String TAG_IONIOI_RETURN_X = "IskandarIonioiReturnX";
    private static final String TAG_IONIOI_RETURN_Y = "IskandarIonioiReturnY";
@@ -74,15 +75,15 @@ public final class IskandarEntity extends ServantEntity {
    private static final int LEADERSHIP_DURATION = 20 * 20;
    private static final int MILITARY_TACTICS_COOLDOWN = 20 * 20;
    private static final int MILITARY_TACTICS_DURATION = 15 * 20;
-   static final int MOUNT_SUMMON_COOLDOWN = 30 * 20;
-   static final int WHEEL_CHARGE_COOLDOWN = 15 * 20;
+   static final int WHEEL_CHARGE_COOLDOWN = 8 * 20;
+   static final int HORSE_CHARGE_COOLDOWN = 12 * 20;
    private static final int IONIOI_COOLDOWN = 90 * 20;
    public static final int IONIOI_FORMATION_DELAY_TICKS = 2 * 20;
    private static final int IONIOI_FREE_UPKEEP = 30 * 20;
    private static final int IONIOI_ACTIVE_CAP = 200;
    private static final double IONIOI_PULL_RADIUS = 64.0;
    private static final double IONIOI_TARGET_OFFSET_CLAMP = 48.0;
-   static final double IONIOI_MP_COST = 120.0;
+   static final double IONIOI_MP_COST = 60.0;
    private static final double IONIOI_UPKEEP_MP_PER_SECOND = 5.0;
    @Nullable private UUID bucephalusUuid;
    @Nullable private UUID gordiusWheelUuid;
@@ -104,6 +105,7 @@ public final class IskandarEntity extends ServantEntity {
       updateMountArmor();
       tickLeadership(level);
       tickMilitaryTactics(level);
+      tickKinglyWarCry(level);
       IskandarCombatHelper.tick(this, level);
       tickIonioiHetairoi(level);
    }
@@ -146,6 +148,7 @@ public final class IskandarEntity extends ServantEntity {
       horse.bindIskandar(this, this.getEntityMaster());
       level.addFreshEntity(horse);
       this.bucephalusUuid = horse.getUUID();
+      this.getPersistentData().putBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE, true);
       this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
       this.startRiding(horse, true);
    }
@@ -176,9 +179,9 @@ public final class IskandarEntity extends ServantEntity {
 
    private boolean canSummonBucephalus(ServerLevel level) {
       return this.isAlive()
+         && !this.getPersistentData().getBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE)
          && (!this.isIonioiHetairoiActive() || ModDimensions.isIonioiHetairoiDimension(level.dimension().location()))
-         && (this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL)
-            || level.getGameTime() >= this.getPersistentData().getLong(TAG_BUCEPHALUS_SUMMON_COOLDOWN));
+         && this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
    }
 
    boolean canSummonGordiusWheel(ServerLevel level) {
@@ -249,16 +252,57 @@ public final class IskandarEntity extends ServantEntity {
       }
    }
 
-   void tryGordiusWheelCharge(ServerLevel level) {
+   private void tickKinglyWarCry(ServerLevel level) {
       LivingEntity target = this.getTarget();
-      GordiusWheelEntity wheel = getGordiusWheel(level);
-      if (target == null || !target.isAlive() || wheel == null || this.getVehicle() != wheel) {
+      if (target == null || !target.isAlive()) {
          return;
       }
       long now = level.getGameTime();
-      if (now >= this.getPersistentData().getLong("IskandarWheelChargeCooldown") && this.distanceToSqr(target) <= 32.0 * 32.0) {
-         this.getPersistentData().putLong("IskandarWheelChargeCooldown", now + WHEEL_CHARGE_COOLDOWN);
-         wheel.performCharge(level, this, 36.0F, 2.6);
+      if (now < this.getPersistentData().getLong(TAG_KINGLY_WAR_CRY_COOLDOWN)) {
+         return;
+      }
+      int enemies = level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0),
+         entity -> entity != this && entity.isAlive() && !this.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity)).size();
+      boolean pressured = enemies >= 3 || this.getHealth() <= this.getMaxHealth() * 0.35F;
+      if (!pressured) {
+         return;
+      }
+      this.getPersistentData().putLong(TAG_KINGLY_WAR_CRY_COOLDOWN, now + 20 * 20);
+      level.playSound(null, this.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 1.0F, 0.72F);
+      level.sendParticles(ParticleTypes.CRIT, this.getX(), this.getY() + 1.2, this.getZ(), 28, 1.3, 0.55, 1.3, 0.12);
+      this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0, false, false, true));
+      for (LivingEntity enemy : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0),
+         entity -> entity != this && entity.isAlive() && !this.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
+         Vec3 push = enemy.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() < 1.0E-4) {
+            push = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+         }
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            enemy.push(push.x * 1.4, 0.28, push.z * 1.4);
+            enemy.hurtMarked = true;
+         }
+      }
+   }
+
+   void tryGordiusWheelCharge(ServerLevel level) {
+      LivingEntity target = this.getTarget();
+      IskandarMountEntity mount = this.getVehicle() instanceof IskandarMountEntity value ? value : null;
+      if (target == null || !target.isAlive() || mount == null || !mount.canStartCharge()) {
+         return;
+      }
+      long now = level.getGameTime();
+      double distanceSqr = this.distanceToSqr(target);
+      if (now >= this.getPersistentData().getLong("IskandarWheelChargeCooldown")
+         && distanceSqr >= 6.0 * 6.0
+         && distanceSqr <= 32.0 * 32.0) {
+         if (mount instanceof GordiusWheelEntity) {
+            this.getPersistentData().putLong("IskandarWheelChargeCooldown", now + WHEEL_CHARGE_COOLDOWN);
+            mount.performCharge(level, this, 36.0F, 2.6);
+         } else {
+            this.getPersistentData().putLong("IskandarWheelChargeCooldown", now + HORSE_CHARGE_COOLDOWN);
+            mount.performCharge(level, this, 28.0F, 1.9);
+         }
          this.triggerNamedActionAnimation("charge");
       }
    }
@@ -311,7 +355,7 @@ public final class IskandarEntity extends ServantEntity {
       if (ionioiLevel == null) {
          return this;
       }
-      LivingEntity primary = this.getTarget();
+      LivingEntity primary = resolveIonioiPrimaryTarget(level);
       if (primary == null || !primary.isAlive()) {
          return this;
       }
@@ -587,7 +631,7 @@ public final class IskandarEntity extends ServantEntity {
                returned.ionioiPool = null;
                returned.bucephalusUuid = null;
                returned.gordiusWheelUuid = null;
-               returned.getPersistentData().putLong(TAG_BUCEPHALUS_SUMMON_COOLDOWN, returnLevel.getGameTime() + MOUNT_SUMMON_COOLDOWN);
+               returned.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
             }
          }
       } else {
@@ -618,12 +662,32 @@ public final class IskandarEntity extends ServantEntity {
       return targets;
    }
 
+   @Nullable
+   private LivingEntity resolveIonioiPrimaryTarget(ServerLevel source) {
+      LivingEntity target = this.getTarget();
+      if (isIonioiPullTarget(target, source)) {
+         return target;
+      }
+      LivingEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : source.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(IONIOI_PULL_RADIUS),
+         living -> isIonioiPullTarget(living, source))) {
+         double distance = candidate.distanceToSqr(this);
+         if (distance < bestDistance) {
+            bestDistance = distance;
+            best = candidate;
+         }
+      }
+      return best;
+   }
+
    private boolean isIonioiPullTarget(@Nullable LivingEntity living, ServerLevel source) {
       return living != null
          && living.isAlive()
          && living != this
          && living.level() == source
-         && !EntityUtils.isImmunePlayerTarget(living)
+         && !EntityUtils.isSpectatorPlayer(living)
+         && !EntityUtils.isUntargetableServantTransition(living)
          && (living == this.getTarget() || !this.isAlliedTo(living));
    }
 
@@ -731,7 +795,6 @@ public final class IskandarEntity extends ServantEntity {
       this.bucephalusUuid = null;
       if (markLost) {
          this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
-         markBucephalusLost(level);
       }
    }
 
@@ -878,7 +941,6 @@ public final class IskandarEntity extends ServantEntity {
       }
       this.bucephalusUuid = null;
       this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
-      markBucephalusLost(level);
       return null;
    }
 
@@ -893,10 +955,6 @@ public final class IskandarEntity extends ServantEntity {
       }
       this.gordiusWheelUuid = null;
       return null;
-   }
-
-   private void markBucephalusLost(ServerLevel level) {
-      this.getPersistentData().putLong(TAG_BUCEPHALUS_SUMMON_COOLDOWN, level.getGameTime() + MOUNT_SUMMON_COOLDOWN);
    }
 
    public static boolean isIonioiArea(BlockPos pos) {

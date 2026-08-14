@@ -50,6 +50,7 @@ class IskandarResourcesTest {
       assertEquals(8000, params.get("collapse_after_deaths").getAsInt());
       assertEquals(10000, params.get("end_after_deaths").getAsInt());
       assertEquals(5, params.get("upkeep_mp_per_second").getAsInt());
+      assertEquals(60, army.get("mp_cost").getAsInt());
    }
 
    @Test
@@ -174,28 +175,70 @@ class IskandarResourcesTest {
       String wheel = Files.readString(JAVA.resolve("entity/GordiusWheelEntity.java"));
       String mount = Files.readString(JAVA.resolve("entity/IskandarMountEntity.java"));
       String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+      String model = Files.readString(JAVA.resolve("client/model/GordiusWheelModel.java"));
       assertTrue(wheel.contains("tickRearBodyPhysics"));
-      assertTrue(wheel.contains("position().subtract(forward.scale(2.7))"));
+      assertTrue(wheel.contains("position().subtract(forward.scale(REAR_BODY_DISTANCE))"));
       assertTrue(wheel.contains("getRearBodyAnchor"));
       assertTrue(wheel.contains("snapRearBodyToCurrentPosition"));
-      assertTrue(wheel.contains("CHARIOT_RIDER_POINT_X"));
-      assertTrue(wheel.contains("CHARIOT_RIDER_POINT_Z"));
-      assertTrue(wheel.contains("17.5 / MODEL_UNIT"));
-      assertTrue(wheel.contains("11.00391 / MODEL_UNIT"));
+      assertTrue(wheel.contains("REAR_BODY_DISTANCE = 2.7"));
+      assertTrue(wheel.contains("getRearSeatAnchor"));
+      assertTrue(wheel.contains("positionChariotPassenger"));
+      assertTrue(wheel.contains("getPassengerAttachmentPoint"));
+      assertTrue(wheel.contains("CHARIOT_RIDER_FORWARD = 0.05"));
+      assertTrue(wheel.contains("CHARIOT_RIDER_SIDE = 0.0"));
+      assertTrue(wheel.contains("CHARIOT_PASSENGER_SIDE = 1.0"));
+      assertTrue(wheel.contains("CHARIOT_RIDER_HEIGHT = 0.65"));
       assertTrue(wheel.contains("骑乘点"));
       assertTrue(wheel.contains("snapToNearbyGround"));
       assertTrue(wheel.contains("isNoGravity()"));
-      assertTrue(wheel.contains("return false;"));
-      assertFalse(wheel.contains("this.setNoGravity(true)"));
+      assertTrue(wheel.contains("isFlyingMode()"));
+      assertTrue(wheel.contains("setFlyingMode"));
+      assertTrue(wheel.contains("DIVE_COOLDOWN_TICKS = 9 * 20"));
+      assertTrue(wheel.contains("DIVE_ASCENT_TICKS = 18"));
+      assertTrue(wheel.contains("DIVE_ATTACK_TICKS = 16"));
+      assertTrue(wheel.contains("DIVE_DIRECT_DAMAGE = 60.0F"));
+      assertTrue(wheel.contains("DIVE_IMPACT_DAMAGE = 45.0F"));
       assertTrue(wheel.contains("tickThunderStrike"));
       assertTrue(wheel.contains("THUNDER_STRIKE_RADIUS = 18.0"));
       assertTrue(wheel.contains("EntityType.LIGHTNING_BOLT.create(level)"));
       assertTrue(wheel.contains("lightning.setVisualOnly(true)"));
+      assertTrue(wheel.contains("emitZeusLightningAura"));
+      assertTrue(wheel.contains("emitZeusThunderStrike"));
+      assertTrue(wheel.contains("ParticleTypes.FLASH"));
+      assertTrue(wheel.contains("ParticleTypes.CLOUD"));
+      assertTrue(wheel.contains("SoundEvents.LIGHTNING_BOLT_IMPACT"));
+      assertTrue(wheel.contains("THUNDER_STRIKE_MIN_DELAY = 24"));
+      assertTrue(wheel.contains("THUNDER_STRIKE_RANDOM_DELAY = 36"));
+      assertTrue(wheel.contains("LIGHTNING_AURA_DAMAGE = 4.0F"));
+      assertTrue(wheel.contains("THUNDER_STRIKE_DAMAGE = 18.0F"));
+      assertTrue(wheel.contains("THUNDER_ROAR_COOLDOWN_TICKS = 16 * 20"));
+      assertTrue(wheel.contains("EntityUtils.isImmunePlayerTarget(entity)"));
+      assertTrue(wheel.contains("zeusDamageSource"));
+      assertTrue(wheel.contains("this.damageSources().mobAttack(iskandar)"));
+      assertTrue(wheel.contains("if (i > 0)"));
+      assertTrue(wheel.contains("spawnVisualThunderbolt(level, arcPos)"));
+      assertTrue(wheel.contains("this.isCharging()"));
       assertTrue(mount.contains("getSeatSideOffset(passengerSeat)"));
       assertTrue(mount.contains("Math.cos(yaw) * localX - Math.sin(yaw) * localZ"));
       assertFalse(iskandar.contains(".add(0.0, 1.2, 0.0)"));
       assertTrue(wheel.contains("GordiusRearX"));
       assertTrue(wheel.contains("GordiusFrontX"));
+      assertTrue(wheel.contains("prevRearX"));
+      assertTrue(wheel.contains("getIdealRearBodyAnchor"));
+      assertTrue(model.contains("setCustomAnimations"));
+      assertTrue(model.contains("MODEL_GROUND_LIFT = 8.0F"));
+      assertTrue(model.contains("front.setScaleX(FULL_SCALE)"));
+      assertTrue(model.contains("rearRenderOffset"));
+      assertTrue(model.contains("Left front leg"));
+      assertTrue(model.contains("Left_front_leg2"));
+      assertTrue(model.contains("杞﹁疆"));
+      String animation = Files.readString(RESOURCES.resolve("assets/typemoonworld/animations/gordius_wheel.animation.json"));
+      assertTrue(animation.contains("\"vector\": [2.0, 2.0, 2.0]"));
+      assertTrue(animation.contains("\"move\""));
+      assertTrue(animation.contains("\"charge\""));
+      assertTrue(animation.contains("\"车轮\""));
+      assertTrue(animation.contains("\"牛1\""));
+      assertTrue(animation.contains("\"牛2\""));
    }
 
    @Test
@@ -209,10 +252,13 @@ class IskandarResourcesTest {
       assertTrue(iskandar.contains("discardBucephalus"));
       assertTrue(iskandar.contains("discardGordiusWheel"));
       assertTrue(iskandar.contains("TAG_GORDIUS_WHEEL_SUMMONED_ONCE"));
+      assertTrue(iskandar.contains("TAG_BUCEPHALUS_SUMMONED_ONCE"));
       assertTrue(iskandar.contains("TAG_BUCEPHALUS_READY_AFTER_WHEEL"));
-      assertTrue(iskandar.contains("TAG_BUCEPHALUS_SUMMON_COOLDOWN"));
       assertTrue(iskandar.contains("canSummonGordiusWheel"));
-      assertTrue(iskandar.contains("markBucephalusLost"));
+      assertTrue(iskandar.contains("!this.getPersistentData().getBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE)"));
+      assertTrue(iskandar.contains("this.getPersistentData().putBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE, true)"));
+      assertFalse(iskandar.contains("TAG_BUCEPHALUS_SUMMON_COOLDOWN"));
+      assertFalse(iskandar.contains("markBucephalusLost"));
       assertTrue(iskandar.contains("discardBucephalus(level, false)"));
       assertTrue(iskandar.contains("getPersistentData().putBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL, true)"));
       assertTrue(iskandar.contains("IskandarCombatHelper.tick"));
@@ -229,16 +275,75 @@ class IskandarResourcesTest {
       assertFalse(mount.contains("followOwnerWhenEmpty"));
       assertTrue(mount.contains("iskandar.getVehicle() != this"));
       assertTrue(mount.contains("this.discard()"));
+      assertTrue(mount.contains("moveAroundTarget"));
+      assertTrue(mount.contains("getCombatOrbitRadius"));
+      assertTrue(mount.contains("tickCharge"));
+      assertTrue(mount.contains("chargeHitTargets"));
+      assertTrue(mount.contains("getMovingAnimation"));
+      assertTrue(mount.contains("getChargeAnimation"));
+      assertTrue(mount.contains("this.isCharging()"));
+      assertTrue(mount.contains("entityData.get(MOVING) ? getMovingAnimation() : getLoopAnimation()"));
+      assertTrue(iskandar.contains("this.getVehicle() instanceof IskandarMountEntity"));
+      assertTrue(iskandar.contains("IONIOI_MP_COST = 60.0"));
+      assertTrue(iskandar.contains("WHEEL_CHARGE_COOLDOWN = 8 * 20"));
+      assertTrue(iskandar.contains("HORSE_CHARGE_COOLDOWN = 12 * 20"));
+      assertTrue(iskandar.contains("tickKinglyWarCry"));
+      assertTrue(iskandar.contains("mount.performCharge(level, this, 28.0F, 1.9)"));
+      assertTrue(iskandar.contains("mount.performCharge(level, this, 36.0F, 2.6)"));
+      assertTrue(iskandar.contains("distanceSqr >= 6.0 * 6.0"));
+      String horse = Files.readString(JAVA.resolve("entity/BucephalusEntity.java"));
+      String horseModel = Files.readString(JAVA.resolve("client/model/BucephalusModel.java"));
+      assertTrue(horse.contains("return \"walk\""));
+      assertTrue(horse.contains("return \"gallop\""));
+      assertTrue(horse.contains("createMountAttributes(2000.0, 0.48)"));
+      assertFalse(horse.contains("isFlyingMode"));
+      assertTrue(horseModel.contains("setCustomAnimations"));
+      assertTrue(horseModel.contains("MODEL_GROUND_LIFT = 8.0F"));
+      assertTrue(horseModel.contains("Left front leg"));
+      String horseAnimation = Files.readString(RESOURCES.resolve("assets/typemoonworld/animations/bucephalus.animation.json"));
+      assertTrue(horseAnimation.contains("\"walk\""));
+      assertTrue(horseAnimation.contains("\"gallop\""));
+      assertTrue(horseAnimation.contains("\"Left front leg\""));
+      assertTrue(horseAnimation.contains("\"Right front leg\""));
+      assertTrue(horseAnimation.contains("\"Left hind leg\""));
+      assertTrue(horseAnimation.contains("\"Right hind leg\""));
+   }
+
+   @Test
+   void iskandarStandsOnGordiusWheelInsteadOfUsingHumanoidRidingPose() throws Exception {
+      String renderer = Files.readString(JAVA.resolve("client/renderer/HumanoidServantRenderer.java"));
+      assertTrue(renderer.contains("new ServantPlayerModel<>"));
+      assertTrue(renderer.contains("entity instanceof IskandarEntity && entity.getVehicle() instanceof GordiusWheelEntity"));
+      assertTrue(renderer.contains("this.riding = false"));
    }
 
    @Test
    void ionioiHetairoiPullsTargetsImmediatelyWithWiderRange() throws Exception {
       String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+      String ai = Files.readString(JAVA.resolve("servant/entity/IskandarCombatHelper.java"));
       assertTrue(iskandar.contains("IONIOI_PULL_RADIUS = 64.0"));
       assertTrue(iskandar.contains("IONIOI_TARGET_OFFSET_CLAMP = 48.0"));
       assertTrue(iskandar.contains("List<LivingEntity> pulled = collectIonioiTargets(level, primary);"));
       assertTrue(iskandar.contains("LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, entry);"));
       assertTrue(iskandar.contains("this.getBoundingBox().inflate(IONIOI_PULL_RADIUS)"));
+      assertTrue(iskandar.contains("resolveIonioiPrimaryTarget"));
+      assertTrue(iskandar.contains("!EntityUtils.isSpectatorPlayer(living)"));
+      assertFalse(iskandar.contains("!EntityUtils.isImmunePlayerTarget(living)"));
+      assertTrue(ai.contains("hasNearbyIonioiPullTarget"));
+      assertTrue(ai.contains("candidate instanceof Player"));
+      assertTrue(ai.contains("!EntityUtils.isSpectatorPlayer(candidate)"));
+   }
+
+   @Test
+   void bucephalusCanRecoverCombatMovementAfterMountSwitch() throws Exception {
+      String mount = Files.readString(JAVA.resolve("entity/IskandarMountEntity.java"));
+      String wheel = Files.readString(JAVA.resolve("entity/GordiusWheelEntity.java"));
+      assertTrue(mount.contains("followIskandarCombatIntent(ServerLevel level, IskandarEntity iskandar)"));
+      assertTrue(mount.contains("resolveCombatTarget"));
+      assertTrue(mount.contains("iskandar.getLastHurtByMob()"));
+      assertTrue(mount.contains("mob.getTarget() == iskandar || mob.getTarget() == this"));
+      assertTrue(mount.contains("moveAroundTarget(target)"));
+      assertTrue(wheel.contains("super.followIskandarCombatIntent(level, iskandar)"));
    }
 
    @Test

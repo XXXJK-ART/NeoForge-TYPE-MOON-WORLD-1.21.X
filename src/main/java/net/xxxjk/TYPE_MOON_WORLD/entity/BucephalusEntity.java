@@ -10,11 +10,31 @@ public final class BucephalusEntity extends IskandarMountEntity {
    }
 
    public static AttributeSupplier.Builder createAttributes() {
-      return createMountAttributes(1000.0, 0.48);
+      return createMountAttributes(2000.0, 0.48);
    }
 
    @Override
    protected String getLoopAnimation() {
       return "standing";
+   }
+
+   @Override
+   protected String getMovingAnimation() {
+      return "walk";
+   }
+
+   @Override
+   protected String getChargeAnimation() {
+      return "gallop";
+   }
+
+   @Override
+   protected double getChargeSpeed() {
+      return Math.max(0.74, getCombatSpeed() * 1.32);
+   }
+
+   @Override
+   protected double getChargeKnockback() {
+      return 1.45;
    }
 }

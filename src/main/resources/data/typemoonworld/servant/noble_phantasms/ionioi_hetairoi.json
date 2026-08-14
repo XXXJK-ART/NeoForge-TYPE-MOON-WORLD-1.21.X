@@ -4,7 +4,7 @@
   "display_name_zh": "\u738b\u4e4b\u519b\u52bf",
   "type": "anti_army",
   "rank": "EX",
-  "mp_cost": 120,
+  "mp_cost": 60,
   "cooldown_ticks": 1800,
   "windup_ticks": 40,
   "effects": [

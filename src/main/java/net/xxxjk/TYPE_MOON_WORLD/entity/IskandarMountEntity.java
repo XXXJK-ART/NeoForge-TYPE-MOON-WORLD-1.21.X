@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -27,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -42,9 +46,16 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    protected static final double PASSENGER_SEAT_FORWARD = -0.72;
    protected static final double RIDER_SEAT_HEIGHT = 1.15;
    protected static final double PASSENGER_SEAT_HEIGHT = 1.02;
+   private static final String TAG_ORBIT_TARGET = "IskandarMountOrbitTarget";
+   private static final String TAG_ORBIT_SIGN = "IskandarMountOrbitSign";
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+   private final Set<UUID> chargeHitTargets = new HashSet<>();
    @Nullable protected UUID iskandarUuid;
    @Nullable protected UUID masterUuid;
+   private Vec3 chargeDirection = Vec3.ZERO;
+   private int chargeTicksRemaining;
+   private float chargeDamage;
+   private double chargeWidth;
 
    protected IskandarMountEntity(EntityType<? extends IskandarMountEntity> type, Level level) {
       super(type, level);
@@ -102,15 +113,19 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          this.discard();
          return;
       }
-      followIskandarCombatIntent(iskandar);
-      this.entityData.set(MOVING, this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
+      if (this.isCharging()) {
+         tickCharge(level, iskandar);
+      } else {
+         followIskandarCombatIntent(level, iskandar);
+      }
+      this.entityData.set(MOVING, this.isCharging() || this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
       this.fallDistance = 0.0F;
    }
 
-   protected void followIskandarCombatIntent(IskandarEntity iskandar) {
-      LivingEntity target = iskandar.getTarget();
+   protected void followIskandarCombatIntent(ServerLevel level, IskandarEntity iskandar) {
+      LivingEntity target = resolveCombatTarget(level, iskandar);
       if (target != null && target.isAlive()) {
-         moveToward(target.position().subtract(this.position()), getCombatSpeed());
+         moveAroundTarget(target);
          return;
       }
       LivingEntity master = iskandar.getEntityMaster();
@@ -119,6 +134,73 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          return;
       }
       this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+   }
+
+   @Nullable
+   protected LivingEntity resolveCombatTarget(ServerLevel level, IskandarEntity iskandar) {
+      LivingEntity target = iskandar.getTarget();
+      if (isValidMountCombatTarget(iskandar, target)) {
+         return target;
+      }
+      LivingEntity attacker = iskandar.getLastHurtByMob();
+      if (isValidMountCombatTarget(iskandar, attacker) && iskandar.tickCount - iskandar.getLastHurtByMobTimestamp() <= 200) {
+         return attacker;
+      }
+      LivingEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      AABB area = this.getBoundingBox().inflate(42.0);
+      for (Mob mob : level.getEntitiesOfClass(Mob.class, area,
+         mob -> (mob.getTarget() == iskandar || mob.getTarget() == this) && isValidMountCombatTarget(iskandar, mob))) {
+         double distance = mob.distanceToSqr(this);
+         if (distance < bestDistance) {
+            bestDistance = distance;
+            best = mob;
+         }
+      }
+      return best;
+   }
+
+   protected boolean isValidMountCombatTarget(IskandarEntity iskandar, @Nullable LivingEntity target) {
+      return target != null
+         && target.isAlive()
+         && target != this
+         && target != iskandar
+         && !this.getPassengers().contains(target)
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !EntityUtils.isUntargetableServantTransition(target)
+         && !this.isAlliedTo(target)
+         && !iskandar.isAlliedTo(target);
+   }
+
+   private void moveAroundTarget(LivingEntity target) {
+      CompoundTag data = this.getPersistentData();
+      if (data.getInt(TAG_ORBIT_TARGET) != target.getId()) {
+         data.putInt(TAG_ORBIT_TARGET, target.getId());
+         data.putInt(TAG_ORBIT_SIGN, this.getRandom().nextBoolean() ? 1 : -1);
+      } else if (this.tickCount % 100 == 0) {
+         data.putInt(TAG_ORBIT_SIGN, -data.getInt(TAG_ORBIT_SIGN));
+      }
+
+      Vec3 fromTarget = horizontal(target.position().subtract(this.position()));
+      if (fromTarget.lengthSqr() < 1.0E-4) {
+         fromTarget = horizontal(this.getLookAngle());
+      }
+      double distance = this.distanceTo(target);
+      double desiredRadius = getCombatOrbitRadius();
+      Vec3 tangent = new Vec3(-fromTarget.z, 0.0, fromTarget.x).scale(data.getInt(TAG_ORBIT_SIGN));
+      double radialError = distance - desiredRadius;
+      Vec3 desired = tangent.scale(0.9);
+      if (Math.abs(radialError) > 1.5) {
+         desired = desired.add(fromTarget.scale(Math.signum(radialError) * Math.min(1.0, Math.abs(radialError) * 0.28)));
+      }
+      if (distance < 4.0) {
+         desired = fromTarget.scale(-1.0);
+      }
+      moveToward(desired, getCombatSpeed());
+   }
+
+   protected double getCombatOrbitRadius() {
+      return 8.0;
    }
 
    protected void moveToward(Vec3 direction, double speed) {
@@ -141,6 +223,14 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
 
    protected double getFollowSpeed() {
       return this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.1;
+   }
+
+   public boolean isCharging() {
+      return this.entityData.get(CHARGING);
+   }
+
+   public boolean canStartCharge() {
+      return !this.isCharging() && this.chargeTicksRemaining <= 0;
    }
 
    @Override
@@ -249,22 +339,77 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    }
 
    public void performCharge(ServerLevel level, LivingEntity source, float damage, double width) {
+      if (!canStartCharge()) {
+         return;
+      }
       this.entityData.set(CHARGING, true);
-      Vec3 direction = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+      LivingEntity target = source instanceof Mob mob ? mob.getTarget() : null;
+      Vec3 direction = target != null && target.isAlive()
+         ? target.position().subtract(this.position())
+         : this.getLookAngle();
+      direction = direction.multiply(1.0, 0.0, 1.0);
       if (direction.lengthSqr() < 1.0E-4) {
          direction = new Vec3(0.0, 0.0, 1.0);
       }
-      direction = direction.normalize();
-      this.move(MoverType.SELF, direction.scale(getCombatSpeed() * 2.7));
-      AABB area = this.getBoundingBox().inflate(width, 0.8, width);
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
+      this.chargeDirection = direction.normalize();
+      this.chargeTicksRemaining = getChargeDurationTicks();
+      this.chargeDamage = damage;
+      this.chargeWidth = width;
+      this.chargeHitTargets.clear();
+      this.setYRot((float)(Math.atan2(-this.chargeDirection.x, this.chargeDirection.z) * 180.0 / Math.PI));
+      this.setYBodyRot(this.getYRot());
+      this.setYHeadRot(this.getYRot());
+      level.playSound(null, this.blockPosition(), SoundEvents.HORSE_GALLOP, SoundSource.HOSTILE, 1.1F, 0.78F);
+   }
+
+   private void tickCharge(ServerLevel level, IskandarEntity source) {
+      if (this.chargeTicksRemaining <= 0) {
+         finishCharge();
+         return;
+      }
+      double speed = getChargeSpeed();
+      this.move(MoverType.SELF, this.chargeDirection.scale(speed));
+      AABB hitBox = this.getBoundingBox()
+         .expandTowards(this.chargeDirection.scale(speed + 1.1))
+         .inflate(this.chargeWidth, 0.95, this.chargeWidth);
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && !this.getPassengers().contains(entity) && entity.isAlive() && !this.isAlliedTo(entity))) {
+         if (!this.chargeHitTargets.add(target.getUUID())) {
+            continue;
+         }
          target.invulnerableTime = 0;
-         target.hurt(this.damageSources().mobAttack(source), damage);
-         target.push(direction.x * 1.8, 0.25, direction.z * 1.8);
+         target.hurt(this.damageSources().mobAttack(source), this.chargeDamage);
+         target.push(this.chargeDirection.x * getChargeKnockback(), 0.28, this.chargeDirection.z * getChargeKnockback());
          target.hurtMarked = true;
       }
-      level.playSound(null, this.blockPosition(), SoundEvents.HORSE_GALLOP, SoundSource.HOSTILE, 1.1F, 0.78F);
+      this.chargeTicksRemaining--;
+      if (this.chargeTicksRemaining <= 0) {
+         finishCharge();
+      }
+   }
+
+   private void finishCharge() {
+      this.chargeTicksRemaining = 0;
+      this.chargeDirection = Vec3.ZERO;
+      this.chargeHitTargets.clear();
+      this.entityData.set(CHARGING, false);
+      this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+   }
+
+   protected int getChargeDurationTicks() {
+      return 12;
+   }
+
+   protected double getChargeSpeed() {
+      return Math.max(0.72, getCombatSpeed() * 1.35);
+   }
+
+   protected double getChargeKnockback() {
+      return 1.6;
+   }
+
+   private static Vec3 horizontal(Vec3 vector) {
+      return new Vec3(vector.x, 0.0, vector.z);
    }
 
    @Override
@@ -338,10 +483,23 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
 
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-      controllers.add(new AnimationController<>(this, "controller", 0, event -> event.setAndContinue(RawAnimation.begin().thenLoop(getLoopAnimation()))));
+      controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+         String animation = this.isCharging()
+            ? getChargeAnimation()
+            : this.entityData.get(MOVING) ? getMovingAnimation() : getLoopAnimation();
+         return event.setAndContinue(RawAnimation.begin().thenLoop(animation));
+      }));
    }
 
    protected abstract String getLoopAnimation();
+
+   protected String getMovingAnimation() {
+      return getLoopAnimation();
+   }
+
+   protected String getChargeAnimation() {
+      return getMovingAnimation();
+   }
 
    @Override
    public AnimatableInstanceCache getAnimatableInstanceCache() {

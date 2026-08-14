@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -12,8 +13,10 @@ import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
@@ -29,7 +32,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
 
    protected HumanoidServantRenderer(EntityRendererProvider.Context context,
                                      Function<T, ResourceLocation> textureResolver) {
-      super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+      super(context, new ServantPlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
       this.textureResolver = textureResolver;
       this.addLayer(new HumanoidArmorLayer<>(this,
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
@@ -101,5 +104,20 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          case "arash", "cu_chulainn" -> 0.974F;
          default -> 1.0F;
       };
+   }
+
+   private static final class ServantPlayerModel<T extends ServantEntity> extends PlayerModel<T> {
+      private ServantPlayerModel(ModelPart root, boolean slim) {
+         super(root, slim);
+      }
+
+      @Override
+      public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+         boolean standOnGordiusWheel = entity instanceof IskandarEntity && entity.getVehicle() instanceof GordiusWheelEntity;
+         if (standOnGordiusWheel) {
+            this.riding = false;
+         }
+         super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+      }
    }
 }

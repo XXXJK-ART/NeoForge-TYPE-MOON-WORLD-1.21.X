@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -40,7 +41,6 @@ public final class IskandarCombatHelper {
       }
 
       if (shouldUseIonioi(entity, level)) {
-         dismountForWalking(entity);
          return;
       }
 
@@ -60,7 +60,7 @@ public final class IskandarCombatHelper {
       }
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive()) {
-         return false;
+         return hasNearbyIonioiPullTarget(entity, level);
       }
       int phase = phase(entity);
       int enemies = countNearbyEnemies(entity, level, 24.0);
@@ -70,6 +70,19 @@ public final class IskandarCombatHelper {
          case MID_HP_PHASE -> enemies >= 5 || maxTargetHealth >= 300.0F;
          default -> enemies >= 7 || maxTargetHealth >= 500.0F;
       };
+   }
+
+   private static boolean hasNearbyIonioiPullTarget(IskandarEntity entity, ServerLevel level) {
+      return level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(64.0),
+         candidate -> candidate != entity
+            && candidate.isAlive()
+            && candidate instanceof Player
+            && !EntityUtils.isSpectatorPlayer(candidate)
+            && !EntityUtils.isUntargetableServantTransition(candidate)
+            && !entity.isAlliedTo(candidate))
+         .stream()
+         .findAny()
+         .isPresent();
    }
 
    private static boolean shouldUseGordiusWheel(IskandarEntity entity, ServerLevel level, LivingEntity target) {
