@@ -47,6 +47,28 @@ public class EntityUtils {
       return entity instanceof LivingEntity living && living.hasEffect(ModMobEffects.PETRIFIED);
    }
 
+   public static LivingEntity redirectMountedCombatTarget(LivingEntity attacker, LivingEntity target) {
+      if (attacker == null || target == null || target == attacker || !target.isAlive()) {
+         return target;
+      }
+      if (!(target.getVehicle() instanceof LivingEntity mount) || mount == attacker || !mount.isAlive() || mount.level() != attacker.level()) {
+         return target;
+      }
+      if (isImmunePlayerTarget(mount) || isUntargetableServantTransition(mount)) {
+         return target;
+      }
+      if (attacker.isAlliedTo(mount) || mount.isAlliedTo(attacker)) {
+         return target;
+      }
+      if (attacker instanceof Player attackerPlayer && mount instanceof Player mountPlayer && !attackerPlayer.canHarmPlayer(mountPlayer)) {
+         return target;
+      }
+      if (attacker instanceof Player attackerPlayer && mount instanceof TamableAnimal tamable && tamable.isOwnedBy(attackerPlayer)) {
+         return target;
+      }
+      return mount;
+   }
+
    public static HitResult getRayTraceTarget(ServerPlayer player, double range) {
       float partialTicks = 1.0F;
       HitResult blockHit = player.pick(range, partialTicks, false);

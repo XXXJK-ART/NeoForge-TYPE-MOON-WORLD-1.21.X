@@ -363,9 +363,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          super.setTarget(null);
          return;
       }
-      super.setTarget(EntityUtils.isImmunePlayerTarget(target) || EntityUtils.isUntargetableServantTransition(target)
+      if (EntityUtils.isImmunePlayerTarget(target) || EntityUtils.isUntargetableServantTransition(target)) {
+         super.setTarget(null);
+         return;
+      }
+      LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
+      super.setTarget(EntityUtils.isImmunePlayerTarget(resolvedTarget) || EntityUtils.isUntargetableServantTransition(resolvedTarget)
          ? null
-         : target);
+         : resolvedTarget);
    }
 
    @Override
@@ -628,7 +633,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    /** Explicit basic-attack hook; special attacks should continue to use doHurtTarget directly. */
    public boolean doBasicHurtTarget(LivingEntity target) {
-      return target != null && this.doHurtTarget(target);
+      LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
+      return resolvedTarget != null && this.doHurtTarget(resolvedTarget);
    }
 
    private void tickNaturalHealthRegen() {

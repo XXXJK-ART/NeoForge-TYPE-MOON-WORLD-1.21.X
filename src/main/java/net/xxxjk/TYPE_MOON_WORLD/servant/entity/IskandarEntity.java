@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +27,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -34,6 +36,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.IskandarMountEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.iskandar.IonioiHetairoiRankPool;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
@@ -50,12 +55,14 @@ public final class IskandarEntity extends ServantEntity {
    public static final String TAG_IONIOI_DEATHS = "IskandarIonioiDeaths";
    public static final String TAG_IONIOI_NEXT_INDEX = "IskandarIonioiNextIndex";
    public static final String TAG_IONIOI_SEED = "IskandarIonioiSeed";
+   public static final String TAG_IONIOI_SESSION = "IskandarIonioiSession";
    public static final String TAG_IONIOI_START_TICK = "IskandarIonioiStartTick";
    public static final String TAG_IONIOI_OFFSCREEN_DUEL = "IskandarIonioiOffscreenDuel";
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_INVISIBLE = "IskandarIonioiOffscreenPrevInvisible";
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_INVULNERABLE = "IskandarIonioiOffscreenPrevInvulnerable";
    public static final String TAG_IONIOI_OFFSCREEN_PREVIOUS_NO_AI = "IskandarIonioiOffscreenPrevNoAi";
    static final String TAG_GORDIUS_WHEEL_SUMMONED_ONCE = "IskandarGordiusWheelSummonedOnce";
+   static final String TAG_GORDIUS_WHEEL_DESTROYED = "IskandarGordiusWheelDestroyed";
    static final String TAG_BUCEPHALUS_SUMMONED_ONCE = "IskandarBucephalusSummonedOnce";
    private static final String TAG_BUCEPHALUS_READY_AFTER_WHEEL = "IskandarBucephalusReadyAfterWheel";
    private static final String TAG_KINGLY_WAR_CRY_COOLDOWN = "IskandarKinglyWarCryCooldown";
@@ -68,26 +75,36 @@ public final class IskandarEntity extends ServantEntity {
    private static final String TAG_IONIOI_TARGET_RETURN_X = "IonioiHetairoiReturnX";
    private static final String TAG_IONIOI_TARGET_RETURN_Y = "IonioiHetairoiReturnY";
    private static final String TAG_IONIOI_TARGET_RETURN_Z = "IonioiHetairoiReturnZ";
+   public static final String TAG_IONIOI_TARGET_SESSION = "IonioiHetairoiTargetSession";
    private static final String TAG_IONIOI_TARGET_PRIMARY = "IonioiHetairoiPrimaryTarget";
+   private static final String TAG_IONIOI_TARGET_COUNT = "IskandarIonioiTargetCount";
+   private static final String TAG_IONIOI_TARGET_PREFIX = "IskandarIonioiTarget";
    private static final ResourceLocation LEADERSHIP_ATTACK_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "iskandar_leadership_attack");
    private static final ResourceLocation MOUNT_ARMOR_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "iskandar_mount_armor");
    private static final int LEADERSHIP_COOLDOWN = 25 * 20;
    private static final int LEADERSHIP_DURATION = 20 * 20;
    private static final int MILITARY_TACTICS_COOLDOWN = 20 * 20;
    private static final int MILITARY_TACTICS_DURATION = 15 * 20;
-   static final int WHEEL_CHARGE_COOLDOWN = 8 * 20;
-   static final int HORSE_CHARGE_COOLDOWN = 12 * 20;
+   static final int WHEEL_CHARGE_COOLDOWN = 5 * 20;
+   static final int HORSE_CHARGE_COOLDOWN = 7 * 20;
    private static final int IONIOI_COOLDOWN = 90 * 20;
    public static final int IONIOI_FORMATION_DELAY_TICKS = 2 * 20;
    private static final int IONIOI_FREE_UPKEEP = 30 * 20;
-   private static final int IONIOI_ACTIVE_CAP = 200;
+   private static final int IONIOI_ACTIVE_CAP = 400;
    private static final double IONIOI_PULL_RADIUS = 64.0;
    private static final double IONIOI_TARGET_OFFSET_CLAMP = 48.0;
+   private static final double IONIOI_ARMY_ENTRY_DISTANCE = 20.0;
+   private static final int IONIOI_TARGET_REFRESH_TICKS = 20;
+   private static final int IONIOI_SOLDIER_PRUNE_TICKS = 20;
+   private static final int IONIOI_FORMATION_SIZE = 25;
+   private static final int IONIOI_FORMATION_SIDE = 5;
+   private static final int IONIOI_MAX_REPLENISH_PER_TICK = IONIOI_FORMATION_SIZE;
    static final double IONIOI_MP_COST = 60.0;
    private static final double IONIOI_UPKEEP_MP_PER_SECOND = 5.0;
    @Nullable private UUID bucephalusUuid;
    @Nullable private UUID gordiusWheelUuid;
    private final List<UUID> ionioiSoldiers = new ArrayList<>();
+   private final List<UUID> ionioiTargets = new ArrayList<>();
    @Nullable private IonioiHetairoiRankPool ionioiPool;
 
    public IskandarEntity(EntityType<? extends IskandarEntity> type, Level level) {
@@ -143,8 +160,30 @@ public final class IskandarEntity extends ServantEntity {
       if (forward.lengthSqr() < 1.0E-4) {
          forward = new Vec3(0.0, 0.0, 1.0);
       }
-      Vec3 pos = this.position().add(forward.normalize().scale(1.4));
-      horse.moveTo(pos.x, this.getY(), pos.z, this.getYRot(), 0.0F);
+      Vec3 pos = safeIonioiEntry(level, this.position().add(forward.normalize().scale(1.4)));
+      horse.moveTo(pos.x, pos.y, pos.z, this.getYRot(), 0.0F);
+      horse.bindIskandar(this, this.getEntityMaster());
+      level.addFreshEntity(horse);
+      this.bucephalusUuid = horse.getUUID();
+      this.getPersistentData().putBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE, true);
+      this.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
+      this.startRiding(horse, true);
+   }
+
+   private void summonIonioiBucephalusAndRide(ServerLevel level) {
+      if (this.getVehicle() instanceof BucephalusEntity || getGordiusWheel(level) != null) {
+         return;
+      }
+      BucephalusEntity horse = ModEntities.BUCEPHALUS.get().create(level);
+      if (horse == null) {
+         return;
+      }
+      Vec3 forward = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      Vec3 pos = safeIonioiEntry(level, this.position().subtract(forward.normalize().scale(1.0)));
+      horse.moveTo(pos.x, pos.y, pos.z, this.getYRot(), 0.0F);
       horse.bindIskandar(this, this.getEntityMaster());
       level.addFreshEntity(horse);
       this.bucephalusUuid = horse.getUUID();
@@ -167,7 +206,7 @@ public final class IskandarEntity extends ServantEntity {
       if (forward.lengthSqr() < 1.0E-4) {
          forward = new Vec3(0.0, 0.0, 1.0);
       }
-      Vec3 pos = this.position().add(forward.normalize().scale(2.2));
+      Vec3 pos = safeIonioiEntry(level, this.position().add(forward.normalize().scale(2.2)));
       wheel.moveTo(pos.x, pos.y, pos.z, this.getYRot(), 0.0F);
       wheel.bindIskandar(this, this.getEntityMaster());
       wheel.snapRearBodyToCurrentPosition();
@@ -175,23 +214,48 @@ public final class IskandarEntity extends ServantEntity {
       this.gordiusWheelUuid = wheel.getUUID();
       this.getPersistentData().putBoolean(TAG_GORDIUS_WHEEL_SUMMONED_ONCE, true);
       this.startRiding(wheel, true);
+      notifyGordiusWheelNoblePhantasm(level);
+   }
+
+   private void notifyGordiusWheelNoblePhantasm(ServerLevel level) {
+      LivingEntity target = this.getTarget();
+      ServantCombatSystem.broadcastNoblePhantasmWindup(this, target, 20, false);
+      for (ServantEntity responder : level.getEntitiesOfClass(ServantEntity.class, this.getBoundingBox().inflate(32.0),
+         servant -> servant != this && servant.isAlive() && !servant.isAlliedTo(this))) {
+         ServantCombatSystem.forcePhaseAtLeast(responder, ServantCombatPhase.DECISIVE);
+      }
    }
 
    private boolean canSummonBucephalus(ServerLevel level) {
       return this.isAlive()
          && !this.getPersistentData().getBoolean(TAG_BUCEPHALUS_SUMMONED_ONCE)
+         && isGordiusWheelDestroyed()
          && (!this.isIonioiHetairoiActive() || ModDimensions.isIonioiHetairoiDimension(level.dimension().location()))
          && this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
    }
 
    boolean canSummonGordiusWheel(ServerLevel level) {
       return this.isAlive()
-         && !this.getPersistentData().getBoolean(TAG_GORDIUS_WHEEL_SUMMONED_ONCE)
+         && !isGordiusWheelDestroyed()
+         && getGordiusWheel(level) == null
          && (!this.isIonioiHetairoiActive() || ModDimensions.isIonioiHetairoiDimension(level.dimension().location()));
    }
 
    boolean hasSummonedGordiusWheelOnce() {
       return this.getPersistentData().getBoolean(TAG_GORDIUS_WHEEL_SUMMONED_ONCE);
+   }
+
+   boolean isGordiusWheelDestroyed() {
+      return this.getPersistentData().getBoolean(TAG_GORDIUS_WHEEL_DESTROYED);
+   }
+
+   public void onGordiusWheelDestroyed(GordiusWheelEntity wheel) {
+      if (this.gordiusWheelUuid != null && !this.gordiusWheelUuid.equals(wheel.getUUID())) {
+         return;
+      }
+      this.gordiusWheelUuid = null;
+      this.getPersistentData().putBoolean(TAG_GORDIUS_WHEEL_DESTROYED, true);
+      this.getPersistentData().putBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL, true);
    }
 
    private void tickKnownMounts(ServerLevel level) {
@@ -292,16 +356,16 @@ public final class IskandarEntity extends ServantEntity {
          return;
       }
       long now = level.getGameTime();
-      double distanceSqr = this.distanceToSqr(target);
+      double distanceSqr = mount.distanceToSqr(target);
       if (now >= this.getPersistentData().getLong("IskandarWheelChargeCooldown")
          && distanceSqr >= 6.0 * 6.0
          && distanceSqr <= 32.0 * 32.0) {
          if (mount instanceof GordiusWheelEntity) {
             this.getPersistentData().putLong("IskandarWheelChargeCooldown", now + WHEEL_CHARGE_COOLDOWN);
-            mount.performCharge(level, this, 36.0F, 2.6);
+            mount.performCharge(level, this, 42.0F, 3.0);
          } else {
             this.getPersistentData().putLong("IskandarWheelChargeCooldown", now + HORSE_CHARGE_COOLDOWN);
-            mount.performCharge(level, this, 28.0F, 1.9);
+            mount.performCharge(level, this, 32.0F, 2.1);
          }
          this.triggerNamedActionAnimation("charge");
       }
@@ -310,8 +374,10 @@ public final class IskandarEntity extends ServantEntity {
    private void tickIonioiHetairoi(ServerLevel level) {
       CompoundTag data = this.getPersistentData();
       long now = level.getGameTime();
-      boolean wantsNp = this.shouldUseIonioi(level);
-      if (!this.isIonioiHetairoiActive() && wantsNp && now >= data.getLong("IskandarIonioiCooldown") && this.getCurrentMp() >= IONIOI_MP_COST) {
+      if (!this.isIonioiHetairoiActive()
+         && now >= data.getLong("IskandarIonioiCooldown")
+         && this.getCurrentMp() >= IONIOI_MP_COST
+         && this.shouldUseIonioi(level)) {
          IskandarEntity moved = startIonioiHetairoi(level);
          if (moved != this) {
             return;
@@ -333,6 +399,7 @@ public final class IskandarEntity extends ServantEntity {
          endIonioiHetairoi(level);
          return;
       }
+      refreshIonioiCombatTarget(level);
       pruneDeadSoldiers(level);
       int deaths = data.getInt(TAG_IONIOI_DEATHS);
       if (deaths > 8000 && now % 10L == 0L) {
@@ -350,6 +417,21 @@ public final class IskandarEntity extends ServantEntity {
       return IskandarCombatHelper.shouldUseIonioi(this, level);
    }
 
+   public IskandarEntity startIonioiHetairoiFromServantCard(ServerLevel level, @Nullable LivingEntity primaryTarget) {
+      this.getPersistentData().putBoolean("ServantCardIskandarIonioiProxy", true);
+      this.setInvisible(true);
+      this.setInvulnerable(true);
+      this.setCurrentMp(100000.0);
+      if (primaryTarget != null && primaryTarget.isAlive()) {
+         this.setTarget(primaryTarget);
+      }
+      return startIonioiHetairoi(level);
+   }
+
+   public void endIonioiHetairoiFromServantCard(ServerLevel level) {
+      endIonioiHetairoi(level);
+   }
+
    private IskandarEntity startIonioiHetairoi(ServerLevel level) {
       ServerLevel ionioiLevel = level.getServer().getLevel(ModDimensions.IONIOI_HETAIROI_KEY);
       if (ionioiLevel == null) {
@@ -357,6 +439,11 @@ public final class IskandarEntity extends ServantEntity {
       }
       LivingEntity primary = resolveIonioiPrimaryTarget(level);
       if (primary == null || !primary.isAlive()) {
+         return this;
+      }
+      CompoundTag data = this.getPersistentData();
+      int lifetimeDeaths = Mth.clamp(data.getInt(TAG_IONIOI_DEATHS), 0, IonioiHetairoiRankPool.TOTAL_SIZE);
+      if (lifetimeDeaths >= IonioiHetairoiRankPool.TOTAL_SIZE) {
          return this;
       }
 
@@ -370,54 +457,71 @@ public final class IskandarEntity extends ServantEntity {
          return this;
       }
 
-      CompoundTag data = this.getPersistentData();
       data.putString(TAG_IONIOI_RETURN_DIM, level.dimension().location().toString());
       data.putDouble(TAG_IONIOI_RETURN_X, this.getX());
       data.putDouble(TAG_IONIOI_RETURN_Y, this.getY());
       data.putDouble(TAG_IONIOI_RETURN_Z, this.getZ());
 
-      long seed = this.getRandom().nextLong();
+      long seed = data.contains(TAG_IONIOI_SEED) ? data.getLong(TAG_IONIOI_SEED) : this.getRandom().nextLong();
+      UUID session = UUID.randomUUID();
       this.ionioiPool = IonioiHetairoiRankPool.create(seed);
       this.ionioiSoldiers.clear();
       this.setCurrentMp(this.getCurrentMp() - IONIOI_MP_COST);
       data.putBoolean(TAG_IONIOI_ACTIVE, true);
       data.putLong(TAG_IONIOI_SEED, seed);
+      data.putUUID(TAG_IONIOI_SESSION, session);
       data.putLong(TAG_IONIOI_START_TICK, level.getGameTime());
       data.putLong("IskandarIonioiCooldown", level.getGameTime() + IONIOI_COOLDOWN);
-      data.putInt(TAG_IONIOI_DEATHS, 0);
-      data.putInt(TAG_IONIOI_NEXT_INDEX, 0);
+      data.putInt(TAG_IONIOI_DEATHS, lifetimeDeaths);
+      data.putInt(TAG_IONIOI_NEXT_INDEX, lifetimeDeaths);
       this.triggerNamedActionAnimation("ionioi_hetairoi");
       ServantVoiceHelper.tryPlayIskandarIonioi(this);
       level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 1.2, this.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, this.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.4F, 0.75F);
+      boolean bringBucephalusIntoIonioi = getBucephalus(level) != null
+         || this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
       discardLocalMounts(level);
 
-      Vec3 entry = randomIonioiEntry();
-      entry = new Vec3(entry.x, findSafeSpawnY(ionioiLevel, Mth.floor(entry.x), Mth.floor(entry.z)), entry.z);
-      LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, entry);
-      Entity moved = this.changeDimension(new DimensionTransition(ionioiLevel, entry, Vec3.ZERO, this.getYRot(), this.getXRot(), DimensionTransition.DO_NOTHING));
+      Vec3 enemyEntry = safeIonioiEntry(ionioiLevel, randomIonioiEntry(), primary.getBbWidth(), primary.getBbHeight());
+      Vec3 approach = horizontal(this.position().subtract(primary.position()));
+      if (approach.lengthSqr() < 1.0E-4) {
+         approach = horizontal(this.getLookAngle()).reverse();
+      }
+      if (approach.lengthSqr() < 1.0E-4) {
+         approach = new Vec3(0.0, 0.0, -1.0);
+      }
+      Vec3 armyEntry = safeIonioiEntry(ionioiLevel, enemyEntry.add(approach.normalize().scale(IONIOI_ARMY_ENTRY_DISTANCE)), this.getBbWidth(), this.getBbHeight());
+      this.ionioiTargets.clear();
+      LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, primary.position(), enemyEntry, session);
+      Entity moved = this.changeDimension(new DimensionTransition(ionioiLevel, armyEntry, Vec3.ZERO, this.getYRot(), this.getXRot(), DimensionTransition.DO_NOTHING));
       if (moved instanceof IskandarEntity iskandar) {
+         rescueIonioiEntity(iskandar, armyEntry);
          CompoundTag movedData = iskandar.getPersistentData();
          movedData.putBoolean(TAG_IONIOI_ACTIVE, true);
          movedData.putLong(TAG_IONIOI_SEED, seed);
+         movedData.putUUID(TAG_IONIOI_SESSION, session);
          movedData.putLong(TAG_IONIOI_START_TICK, ionioiLevel.getGameTime());
          movedData.putLong("IskandarIonioiCooldown", ionioiLevel.getGameTime() + IONIOI_COOLDOWN);
-         movedData.putInt(TAG_IONIOI_DEATHS, 0);
-         movedData.putInt(TAG_IONIOI_NEXT_INDEX, 0);
+         movedData.putInt(TAG_IONIOI_DEATHS, lifetimeDeaths);
+         movedData.putInt(TAG_IONIOI_NEXT_INDEX, lifetimeDeaths);
          movedData.putString(TAG_IONIOI_RETURN_DIM, data.getString(TAG_IONIOI_RETURN_DIM));
          movedData.putDouble(TAG_IONIOI_RETURN_X, data.getDouble(TAG_IONIOI_RETURN_X));
          movedData.putDouble(TAG_IONIOI_RETURN_Y, data.getDouble(TAG_IONIOI_RETURN_Y));
          movedData.putDouble(TAG_IONIOI_RETURN_Z, data.getDouble(TAG_IONIOI_RETURN_Z));
          iskandar.ionioiPool = IonioiHetairoiRankPool.create(seed);
          iskandar.ionioiSoldiers.clear();
-         if (movedPrimary != null && movedPrimary.isAlive() && !movedPrimary.isAlliedTo(iskandar)) {
+         scheduleIonioiEntryRescue(iskandar, armyEntry);
+         if (movedPrimary != null && movedPrimary.isAlive() && iskandar.isHostileIonioiTarget(movedPrimary)) {
             iskandar.setTarget(movedPrimary);
          }
          iskandar.bucephalusUuid = null;
          iskandar.gordiusWheelUuid = null;
+         if (bringBucephalusIntoIonioi) {
+            iskandar.summonIonioiBucephalusAndRide(ionioiLevel);
+         }
          iskandar.spawnInitialFormation(ionioiLevel);
-         ionioiLevel.sendParticles(ParticleTypes.FLASH, entry.x, entry.y + 1.2, entry.z, 6, 0.0, 0.0, 0.0, 0.0);
-         ionioiLevel.playSound(null, BlockPos.containing(entry), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.85F);
+         ionioiLevel.sendParticles(ParticleTypes.FLASH, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
+         ionioiLevel.playSound(null, BlockPos.containing(armyEntry), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.85F);
          return iskandar;
       }
       endIonioiHetairoi(ionioiLevel);
@@ -527,9 +631,9 @@ public final class IskandarEntity extends ServantEntity {
 
    private static double duelScore(LivingEntity living) {
       double score = living.getHealth() / Math.max(1.0F, living.getMaxHealth()) * 35.0;
-      score += living.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.4;
-      score += living.getAttributeValue(Attributes.ARMOR) * 0.75;
-      score += living.getAttributeValue(Attributes.MOVEMENT_SPEED) * 55.0;
+      score += attributeValue(living, Attributes.ATTACK_DAMAGE) * 2.4;
+      score += attributeValue(living, Attributes.ARMOR) * 0.75;
+      score += attributeValue(living, Attributes.MOVEMENT_SPEED) * 55.0;
       if (living instanceof ServantEntity servant && servant.getDefinition() != null) {
          ServantParams params = servant.getDefinition().parameters();
          score += effectiveRank(params.strength(), params.strengthPlus()) * 0.45;
@@ -540,27 +644,66 @@ public final class IskandarEntity extends ServantEntity {
       return score;
    }
 
+   private static double attributeValue(LivingEntity living, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute) {
+      AttributeInstance instance = living.getAttribute(attribute);
+      return instance != null ? instance.getValue() : 0.0;
+   }
+
    private static int effectiveRank(StatRank rank, boolean plus) {
       return plus ? rank.plusCoefficient() : rank.coefficient();
    }
 
    private void spawnInitialFormation(ServerLevel level) {
       for (int i = 0; i < IONIOI_ACTIVE_CAP; i++) {
-         int row = i / 20;
-         int col = i % 20;
-         double x = (col - 9.5) * 1.4;
-         double z = 5.0 + row * 1.4;
-         spawnNextSoldier(level, this.position().add(x, 0.0, z));
+         int formation = i / IONIOI_FORMATION_SIZE;
+         int local = i % IONIOI_FORMATION_SIZE;
+         int row = local / IONIOI_FORMATION_SIDE;
+         int col = local % IONIOI_FORMATION_SIDE;
+         double side = 1.35;
+         double groupGap = 2.4;
+         double groupPitch = side * IONIOI_FORMATION_SIDE + groupGap;
+         double groupX = (formation % 8 - 3.5) * groupPitch;
+         double groupZ = (formation / 8 - 0.5) * groupPitch;
+         double x = groupX + (col - 2.0) * side;
+         double z = groupZ + (row - 2.0) * side;
+         spawnNextSoldier(level, safeIonioiEntry(level, this.position().add(x, 0.0, z)));
       }
    }
 
    private void replenishSoldiers(ServerLevel level) {
       CompoundTag data = this.getPersistentData();
+      int missing = IONIOI_ACTIVE_CAP - this.ionioiSoldiers.size();
+      if (missing <= 0
+         || data.getInt(TAG_IONIOI_NEXT_INDEX) >= IonioiHetairoiRankPool.TOTAL_SIZE
+         || data.getInt(TAG_IONIOI_DEATHS) >= IonioiHetairoiRankPool.TOTAL_SIZE) {
+         return;
+      }
+      int spawned = 0;
+      int batchSize = Math.min(IONIOI_MAX_REPLENISH_PER_TICK, missing);
+      Vec3 forward = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      forward = forward.normalize();
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      double side = 1.35;
+      double groupGap = 2.4;
+      double groupPitch = side * IONIOI_FORMATION_SIDE + groupGap;
+      int formation = Math.floorMod(this.ionioiSoldiers.size() / IONIOI_FORMATION_SIZE, IONIOI_ACTIVE_CAP / IONIOI_FORMATION_SIZE);
+      double groupX = (formation % 8 - 3.5) * groupPitch;
+      double groupZ = (formation / 8 - 0.5) * groupPitch;
+      Vec3 waveAnchor = this.position().add(forward.scale(10.0)).add(right.scale(groupX)).add(forward.scale(groupZ));
       while (this.ionioiSoldiers.size() < IONIOI_ACTIVE_CAP
+         && spawned < batchSize
          && data.getInt(TAG_IONIOI_NEXT_INDEX) < IonioiHetairoiRankPool.TOTAL_SIZE
          && data.getInt(TAG_IONIOI_DEATHS) < IonioiHetairoiRankPool.TOTAL_SIZE) {
-         Vec3 pos = this.position().add((this.getRandom().nextDouble() - 0.5) * 18.0, 0.0, 6.0 + this.getRandom().nextDouble() * 16.0);
+         int local = spawned % IONIOI_FORMATION_SIZE;
+         int row = local / IONIOI_FORMATION_SIDE;
+         int col = local % IONIOI_FORMATION_SIDE;
+         Vec3 pos = safeIonioiEntry(level,
+            waveAnchor.add(right.scale((col - 2.0) * side)).add(forward.scale((row - 2.0) * side)));
          spawnNextSoldier(level, pos);
+         spawned++;
       }
    }
 
@@ -576,7 +719,8 @@ public final class IskandarEntity extends ServantEntity {
       if (soldier == null) {
          return;
       }
-      soldier.moveTo(pos.x, this.getY(), pos.z, this.getYRot(), 0.0F);
+      Vec3 safePos = safeIonioiEntry(level, pos, soldier.getBbWidth(), soldier.getBbHeight());
+      soldier.moveTo(safePos.x, safePos.y, safePos.z, this.getYRot(), 0.0F);
       soldier.initializeForIonioiHetairoi(this, rank, index);
       level.addFreshEntity(soldier);
       this.ionioiSoldiers.add(soldier.getUUID());
@@ -584,6 +728,9 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    private void pruneDeadSoldiers(ServerLevel level) {
+      if (level.getGameTime() % IONIOI_SOLDIER_PRUNE_TICKS != 0L) {
+         return;
+      }
       Iterator<UUID> iterator = this.ionioiSoldiers.iterator();
       while (iterator.hasNext()) {
          UUID id = iterator.next();
@@ -608,6 +755,7 @@ public final class IskandarEntity extends ServantEntity {
 
    private void endIonioiHetairoi(ServerLevel level) {
       this.getPersistentData().putBoolean(TAG_IONIOI_ACTIVE, false);
+      MacedonianSoldierEntity.clearFormationCache(this.getUUID());
       returnIonioiTargets(level);
       discardLocalMounts(level);
       for (UUID id : List.copyOf(this.ionioiSoldiers)) {
@@ -662,11 +810,50 @@ public final class IskandarEntity extends ServantEntity {
       return targets;
    }
 
+   private void refreshIonioiCombatTarget(ServerLevel level) {
+      if (!ModDimensions.isIonioiHetairoiDimension(level.dimension().location())
+         || this.tickCount % IONIOI_TARGET_REFRESH_TICKS != 0) {
+         return;
+      }
+      LivingEntity current = this.getTarget();
+      if (isHostileIonioiTarget(current)) {
+         return;
+      }
+      LivingEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (Entity candidate : level.getEntities().getAll()) {
+         if (candidate instanceof LivingEntity living && isHostileIonioiTarget(living)) {
+            double distance = living.distanceToSqr(this);
+            if (distance < bestDistance) {
+               bestDistance = distance;
+               best = living;
+            }
+         }
+      }
+      if (best != null) {
+         this.setTarget(best);
+      }
+   }
+
+   public boolean isHostileIonioiTarget(@Nullable LivingEntity living) {
+      return living != null
+         && living.isAlive()
+         && living != this
+         && isPulledByCurrentIonioi(this.getUUID(), ionioiSession(this.getPersistentData()), living)
+         && !this.isAlliedTo(living)
+         && !EntityUtils.isSpectatorPlayer(living)
+         && !EntityUtils.isUntargetableServantTransition(living);
+   }
+
    @Nullable
    private LivingEntity resolveIonioiPrimaryTarget(ServerLevel source) {
       LivingEntity target = this.getTarget();
       if (isIonioiPullTarget(target, source)) {
          return target;
+      }
+      LivingEntity attacker = this.getLastHurtByMob();
+      if (attacker != null && this.tickCount - this.getLastHurtByMobTimestamp() <= 200 && isIonioiPullTarget(attacker, source)) {
+         return attacker;
       }
       LivingEntity best = null;
       double bestDistance = Double.MAX_VALUE;
@@ -692,10 +879,10 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    @Nullable
-   private LivingEntity moveIonioiTargets(ServerLevel source, ServerLevel ionioiLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 entry) {
+   private LivingEntity moveIonioiTargets(ServerLevel source, ServerLevel ionioiLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 sourceAnchor, Vec3 entry, UUID session) {
       LivingEntity movedPrimary = null;
       for (LivingEntity living : targets) {
-         LivingEntity moved = moveOneIonioiTarget(source, ionioiLevel, living, entry, living == primary);
+         LivingEntity moved = moveOneIonioiTarget(source, ionioiLevel, living, sourceAnchor, entry, living == primary, session);
          if (living == primary && moved != null) {
             movedPrimary = moved;
          }
@@ -704,31 +891,35 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    @Nullable
-   private LivingEntity moveOneIonioiTarget(ServerLevel source, ServerLevel ionioiLevel, LivingEntity living, Vec3 entry, boolean primaryTarget) {
+   private LivingEntity moveOneIonioiTarget(ServerLevel source, ServerLevel ionioiLevel, LivingEntity living, Vec3 sourceAnchor, Vec3 entry, boolean primaryTarget, UUID session) {
       if (living == null || !living.isAlive() || living == this || living.level() != source) {
          return null;
       }
-      double relX = Mth.clamp(living.getX() - this.getX(), -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
-      double relZ = Mth.clamp(living.getZ() - this.getZ(), -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
+      double relX = Mth.clamp(living.getX() - sourceAnchor.x, -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
+      double relZ = Mth.clamp(living.getZ() - sourceAnchor.z, -IONIOI_TARGET_OFFSET_CLAMP, IONIOI_TARGET_OFFSET_CLAMP);
       double targetX = entry.x + relX;
       double targetZ = entry.z + relZ;
-      double targetY = findSafeSpawnY(ionioiLevel, Mth.floor(targetX), Mth.floor(targetZ));
+      Vec3 targetPos = safeIonioiEntry(ionioiLevel, new Vec3(targetX, entry.y, targetZ), living.getBbWidth(), living.getBbHeight());
       double returnX = living.getX();
       double returnY = living.getY();
       double returnZ = living.getZ();
-      markIonioiTarget(living, source, returnX, returnY, returnZ, primaryTarget);
-      Entity moved = living.changeDimension(new DimensionTransition(ionioiLevel, new Vec3(targetX, targetY, targetZ), Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
+      markIonioiTarget(living, source, returnX, returnY, returnZ, primaryTarget, session);
+      Entity moved = living.changeDimension(new DimensionTransition(ionioiLevel, targetPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
       if (moved instanceof LivingEntity movedLiving) {
-         markIonioiTarget(movedLiving, source, returnX, returnY, returnZ, primaryTarget);
+         rescueIonioiEntity(movedLiving, targetPos);
+         scheduleIonioiEntryRescue(movedLiving, targetPos);
+         markIonioiTarget(movedLiving, source, returnX, returnY, returnZ, primaryTarget, session);
+         rememberIonioiTarget(movedLiving.getUUID());
          return movedLiving;
       }
       clearIonioiTarget(living);
       return null;
    }
 
-   private void markIonioiTarget(LivingEntity living, ServerLevel source, double returnX, double returnY, double returnZ, boolean primaryTarget) {
+   private void markIonioiTarget(LivingEntity living, ServerLevel source, double returnX, double returnY, double returnZ, boolean primaryTarget, UUID session) {
       CompoundTag data = living.getPersistentData();
       data.putUUID(TAG_IONIOI_TARGET_OWNER, this.getUUID());
+      data.putUUID(TAG_IONIOI_TARGET_SESSION, session);
       data.putString(TAG_IONIOI_TARGET_RETURN_DIM, source.dimension().location().toString());
       data.putDouble(TAG_IONIOI_TARGET_RETURN_X, returnX);
       data.putDouble(TAG_IONIOI_TARGET_RETURN_Y, returnY);
@@ -741,13 +932,27 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    private void returnIonioiTargets(ServerLevel sourceLevel) {
-      List<LivingEntity> toReturn = new ArrayList<>();
-      for (Entity candidate : sourceLevel.getEntities().getAll()) {
-         if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByIonioi(this.getUUID(), living)) {
-            toReturn.add(living);
+      UUID session = ionioiSession(this.getPersistentData());
+      List<UUID> toReturn = new ArrayList<>();
+      for (UUID id : List.copyOf(this.ionioiTargets)) {
+         Entity candidate = sourceLevel.getEntity(id);
+         if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByCurrentIonioi(this.getUUID(), session, living)) {
+            toReturn.add(id);
          }
       }
-      for (LivingEntity living : toReturn) {
+      for (Entity candidate : sourceLevel.getEntities().getAll()) {
+         if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByCurrentIonioi(this.getUUID(), session, living)) {
+            UUID id = living.getUUID();
+            if (!toReturn.contains(id)) {
+               toReturn.add(id);
+            }
+         }
+      }
+      for (UUID id : toReturn) {
+         Entity candidate = sourceLevel.getEntity(id);
+         if (!(candidate instanceof LivingEntity living)) {
+            continue;
+         }
          CompoundTag data = living.getPersistentData();
          ServerLevel returnLevel = resolveDimensionOrOverworld(sourceLevel, data.getString(TAG_IONIOI_TARGET_RETURN_DIM));
          Vec3 returnPos = new Vec3(data.getDouble(TAG_IONIOI_TARGET_RETURN_X), data.getDouble(TAG_IONIOI_TARGET_RETURN_Y), data.getDouble(TAG_IONIOI_TARGET_RETURN_Z));
@@ -757,21 +962,38 @@ public final class IskandarEntity extends ServantEntity {
             clearIonioiTarget(movedLiving);
          }
       }
+      this.ionioiTargets.clear();
    }
 
-   private static boolean isPulledByIonioi(UUID ownerId, LivingEntity living) {
+   @Nullable
+   private static UUID ionioiSession(CompoundTag data) {
+      return data.hasUUID(TAG_IONIOI_SESSION) ? data.getUUID(TAG_IONIOI_SESSION) : null;
+   }
+
+   private static boolean isPulledByCurrentIonioi(UUID ownerId, @Nullable UUID session, LivingEntity living) {
       CompoundTag data = living.getPersistentData();
-      return data.hasUUID(TAG_IONIOI_TARGET_OWNER) && ownerId.equals(data.getUUID(TAG_IONIOI_TARGET_OWNER));
+      return session != null
+         && data.hasUUID(TAG_IONIOI_TARGET_OWNER)
+         && ownerId.equals(data.getUUID(TAG_IONIOI_TARGET_OWNER))
+         && data.hasUUID(TAG_IONIOI_TARGET_SESSION)
+         && session.equals(data.getUUID(TAG_IONIOI_TARGET_SESSION));
    }
 
    private static void clearIonioiTarget(LivingEntity living) {
       CompoundTag data = living.getPersistentData();
       data.remove(TAG_IONIOI_TARGET_OWNER);
+      data.remove(TAG_IONIOI_TARGET_SESSION);
       data.remove(TAG_IONIOI_TARGET_RETURN_DIM);
       data.remove(TAG_IONIOI_TARGET_RETURN_X);
       data.remove(TAG_IONIOI_TARGET_RETURN_Y);
       data.remove(TAG_IONIOI_TARGET_RETURN_Z);
       data.remove(TAG_IONIOI_TARGET_PRIMARY);
+   }
+
+   private void rememberIonioiTarget(UUID id) {
+      if (id != null && !this.ionioiTargets.contains(id)) {
+         this.ionioiTargets.add(id);
+      }
    }
 
    private void discardLocalMounts(ServerLevel level) {
@@ -810,6 +1032,7 @@ public final class IskandarEntity extends ServantEntity {
    private static void clearIonioiReturnData(IskandarEntity iskandar) {
       CompoundTag data = iskandar.getPersistentData();
       data.putBoolean(TAG_IONIOI_ACTIVE, false);
+      data.remove(TAG_IONIOI_SESSION);
       data.remove(TAG_IONIOI_RETURN_DIM);
       data.remove(TAG_IONIOI_RETURN_X);
       data.remove(TAG_IONIOI_RETURN_Y);
@@ -817,16 +1040,101 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    private Vec3 randomIonioiEntry() {
-      double x = (this.getRandom().nextDouble() - 0.5) * 4096.0;
-      double z = (this.getRandom().nextDouble() - 0.5) * 4096.0;
-      return new Vec3(x, 72.0, z);
+      Vec3 entry = UBWInstanceManager.randomEntryPosition(this.getRandom());
+      return new Vec3(entry.x, 72.0, entry.z);
+   }
+
+   private static Vec3 safeIonioiEntry(ServerLevel level, Vec3 pos) {
+      return safeIonioiEntry(level, pos, 0.9F, 2.0F);
+   }
+
+   private static Vec3 safeIonioiEntry(ServerLevel level, Vec3 pos, float width, float height) {
+      Vec3 best = safeIonioiColumn(level, pos.x, pos.y, pos.z, width, height);
+      if (best != null) {
+         return best;
+      }
+      int surfaceY = findSafeSpawnY(level, Mth.floor(pos.x), Mth.floor(pos.z));
+      best = safeIonioiColumn(level, pos.x, Math.max(pos.y, surfaceY), pos.z, width, height);
+      if (best != null) {
+         return best;
+      }
+      int fallbackY = Mth.clamp(surfaceY + 1, level.getMinBuildHeight() + 2, level.getMaxBuildHeight() - Mth.ceil(height) - 1);
+      return new Vec3(pos.x, fallbackY + 0.05, pos.z);
+   }
+
+   private static void rescueIonioiEntity(Entity entity, Vec3 requested) {
+      if (!(entity.level() instanceof ServerLevel level) || !ModDimensions.isIonioiHetairoiDimension(level.dimension().location())) {
+         return;
+      }
+      Vec3 safe = safeIonioiEntry(level, requested, entity.getBbWidth(), entity.getBbHeight());
+      entity.teleportTo(safe.x, safe.y, safe.z);
+      entity.setDeltaMovement(Vec3.ZERO);
+      entity.fallDistance = 0.0F;
+      entity.hurtMarked = true;
+   }
+
+   private static void scheduleIonioiEntryRescue(Entity entity, Vec3 requested) {
+      UUID id = entity.getUUID();
+      TYPE_MOON_WORLD.queueServerWork(1, () -> rescueIonioiEntityById(entity, id, requested));
+      TYPE_MOON_WORLD.queueServerWork(5, () -> rescueIonioiEntityById(entity, id, requested));
+   }
+
+   private static void rescueIonioiEntityById(Entity captured, UUID id, Vec3 requested) {
+      if (!(captured.level() instanceof ServerLevel level)) {
+         return;
+      }
+      Entity current = level.getEntity(id);
+      if (current != null && current.isAlive()) {
+         rescueIonioiEntity(current, requested);
+      }
+   }
+
+   @Nullable
+   private static Vec3 safeIonioiColumn(ServerLevel level, double x, double y, double z, float width, float height) {
+      if (!level.getWorldBorder().isWithinBounds(BlockPos.containing(x, y, z))) {
+         return null;
+      }
+      int startY = Mth.clamp(Mth.floor(y), level.getMinBuildHeight() + 1, level.getMaxBuildHeight() - Mth.ceil(height) - 1);
+      int maxY = level.getMaxBuildHeight() - Mth.ceil(height) - 1;
+      for (int candidateY = startY; candidateY <= maxY; candidateY++) {
+         Vec3 raised = new Vec3(x, candidateY + 0.05, z);
+         if (isSafeIonioiStand(level, raised, width, height)) {
+            return raised;
+         }
+      }
+      return null;
+   }
+
+   private static boolean isSafeIonioiStand(ServerLevel level, Vec3 pos, float width, float height) {
+      if (!level.getWorldBorder().isWithinBounds(BlockPos.containing(pos))) {
+         return false;
+      }
+      AABB box = new AABB(
+         pos.x - width * 0.5F,
+         pos.y,
+         pos.z - width * 0.5F,
+         pos.x + width * 0.5F,
+         pos.y + height,
+         pos.z + width * 0.5F
+      );
+      return pos.y >= level.getMinBuildHeight() + 1
+         && pos.y + height < level.getMaxBuildHeight() - 1
+         && level.noCollision(box);
+   }
+
+   private static Vec3 horizontal(Vec3 vector) {
+      return new Vec3(vector.x, 0.0, vector.z);
    }
 
    private static int findSafeSpawnY(ServerLevel level, int x, int z) {
       BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos(x, level.getMaxBuildHeight() - 2, z);
       for (int y = level.getMaxBuildHeight() - 2; y >= level.getMinBuildHeight() + 1; y--) {
-         cursor.setY(y);
-         if (!level.getBlockState(cursor).isAir() && level.getBlockState(cursor.above()).isAir() && level.getBlockState(cursor.above(2)).isAir()) {
+         cursor.set(x, y, z);
+         BlockState state = level.getBlockState(cursor);
+         if (!state.isAir()
+            && state.isFaceSturdy(level, cursor, Direction.UP)
+            && level.getBlockState(cursor.above()).isAir()
+            && level.getBlockState(cursor.above(2)).isAir()) {
             return y + 1;
          }
       }
@@ -912,6 +1220,10 @@ public final class IskandarEntity extends ServantEntity {
       for (int i = 0; i < this.ionioiSoldiers.size(); i++) {
          tag.putUUID("IskandarIonioiSoldier" + i, this.ionioiSoldiers.get(i));
       }
+      tag.putInt(TAG_IONIOI_TARGET_COUNT, this.ionioiTargets.size());
+      for (int i = 0; i < this.ionioiTargets.size(); i++) {
+         tag.putUUID(TAG_IONIOI_TARGET_PREFIX + i, this.ionioiTargets.get(i));
+      }
    }
 
    @Override
@@ -925,6 +1237,14 @@ public final class IskandarEntity extends ServantEntity {
          String key = "IskandarIonioiSoldier" + i;
          if (tag.hasUUID(key)) {
             this.ionioiSoldiers.add(tag.getUUID(key));
+         }
+      }
+      this.ionioiTargets.clear();
+      int targetCount = tag.getInt(TAG_IONIOI_TARGET_COUNT);
+      for (int i = 0; i < targetCount; i++) {
+         String key = TAG_IONIOI_TARGET_PREFIX + i;
+         if (tag.hasUUID(key)) {
+            this.ionioiTargets.add(tag.getUUID(key));
          }
       }
       this.ionioiPool = null;

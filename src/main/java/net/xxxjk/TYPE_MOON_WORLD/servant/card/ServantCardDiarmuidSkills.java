@@ -30,6 +30,9 @@ public final class ServantCardDiarmuidSkills {
    private static final String FOCUS_SPEAR_TAG = "ServantCardDiarmuidFocusSpear";
    private static final String FOCUS_UNTIL_TAG = "ServantCardDiarmuidFocusUntil";
    private static final String STRATEGY_UNTIL_TAG = "ServantCardDiarmuidStrategyUntil";
+   private static final String MAINHAND_ATTACK_READY_TAG = "ServantCardDiarmuidMainhandAttackReady";
+   private static final String OFFHAND_ATTACK_READY_TAG = "ServantCardDiarmuidOffhandAttackReady";
+   public static final int DUAL_WIELD_HAND_ATTACK_COOLDOWN_TICKS = 8;
    private static final int ACTION_MODE_DUAL_WIELD = 1;
    private static final int RED = 1;
    private static final int YELLOW = 2;
@@ -193,6 +196,7 @@ public final class ServantCardDiarmuidSkills {
 
    public static void performOffhandSpearThrust(ServerPlayer player) {
       if (!isActiveCard(player)) return;
+      if (!tryStartHandAttack(player, InteractionHand.OFF_HAND)) return;
       ensureTwinSpears(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 0.35, 0.03, dir.z * 0.35));
@@ -204,6 +208,7 @@ public final class ServantCardDiarmuidSkills {
 
    public static void performMainhandSpearThrust(ServerPlayer player) {
       if (!isActiveCard(player)) return;
+      if (!tryStartHandAttack(player, InteractionHand.MAIN_HAND)) return;
       ensureTwinSpears(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 0.40, 0.03, dir.z * 0.40));
@@ -294,6 +299,17 @@ public final class ServantCardDiarmuidSkills {
       }
    }
 
+   private static boolean tryStartHandAttack(ServerPlayer player, InteractionHand hand) {
+      CompoundTag data = player.getPersistentData();
+      String tag = hand == InteractionHand.MAIN_HAND ? MAINHAND_ATTACK_READY_TAG : OFFHAND_ATTACK_READY_TAG;
+      long now = player.level().getGameTime();
+      if (data.getLong(tag) > now) {
+         return false;
+      }
+      data.putLong(tag, now + DUAL_WIELD_HAND_ATTACK_COOLDOWN_TICKS);
+      return true;
+   }
+
    private static DiarmuidSpearItem.SpearType spearTypeInHand(ServerPlayer player, InteractionHand hand, DiarmuidSpearItem.SpearType fallback) {
       ItemStack stack = player.getItemInHand(hand);
       return stack.getItem() instanceof DiarmuidSpearItem spear ? spear.spearType() : fallback;
@@ -331,6 +347,8 @@ public final class ServantCardDiarmuidSkills {
    private static void clearRuntimeTags(ServerPlayer player) {
       player.getPersistentData().remove(FOCUS_SPEAR_TAG);
       player.getPersistentData().remove(FOCUS_UNTIL_TAG);
+      player.getPersistentData().remove(MAINHAND_ATTACK_READY_TAG);
+      player.getPersistentData().remove(OFFHAND_ATTACK_READY_TAG);
    }
 
    private static void focusVfx(ServerPlayer player, boolean red) {

@@ -14,11 +14,13 @@ public class IonioiHetairoiDimensionEffects extends DimensionSpecialEffects {
 
    @Override
    public Vec3 getBrightnessDependentFogColor(Vec3 fogColor, float brightness) {
-      return new Vec3(
-         fogColor.x * (brightness * 0.88F + 0.22F),
-         fogColor.y * (brightness * 0.80F + 0.24F),
-         fogColor.z * (brightness * 0.58F + 0.18F)
+      Vec3 sunHaze = new Vec3(1.0, 0.90, 0.56);
+      Vec3 litFog = new Vec3(
+         fogColor.x * (brightness * 0.96F + 0.34F),
+         fogColor.y * (brightness * 0.92F + 0.34F),
+         fogColor.z * (brightness * 0.62F + 0.24F)
       );
+      return litFog.scale(0.78).add(sunHaze.scale(0.22));
    }
 
    @Override

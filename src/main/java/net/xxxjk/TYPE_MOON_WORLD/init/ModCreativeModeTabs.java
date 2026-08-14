@@ -64,6 +64,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_SENKO_MURAMASA);
                         output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE);
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER);
+                        output.accept(ModItems.SERVANT_CARD_ISKANDAR);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);

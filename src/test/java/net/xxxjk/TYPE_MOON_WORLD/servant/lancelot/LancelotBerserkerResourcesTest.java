@@ -91,6 +91,8 @@ class LancelotBerserkerResourcesTest {
       assertTrue(entity.contains("LancelotBerserkerCombatAi.tick(this, level)"));
       assertTrue(entity.contains("LancelotCombatHelper.tick(this, level)"));
       assertTrue(entity.contains("ServantSprintCollisionHelper.tickNpcSprintCollision(this)"));
+      assertTrue(entity.contains("safeLancelotTick"));
+      assertTrue(entity.contains("Suppressed Lancelot Berserker"));
       assertTrue(ai.contains("isPhaseTwo"));
       assertTrue(ai.contains("tryDrawAroundight"));
       assertTrue(ai.contains("throwHeldWeapon"));
@@ -101,6 +103,10 @@ class LancelotBerserkerResourcesTest {
       assertTrue(helper.contains("ThrownTrident"));
       assertTrue(helper.contains("new EmiyaThrownWeaponEntity"));
       assertTrue(helper.contains("spawnKnightOfOwnerGateCounter"));
+      assertTrue(helper.contains("dir.lengthSqr() > 1.0E-4"));
+      assertTrue(helper.contains("safeKnightOfOwnerStack"));
+      assertTrue(helper.contains("candidate instanceof ThrowableItemProjectile thrown"));
+      assertTrue(helper.contains("thrown.getOwner()"));
       assertTrue(helper.contains("DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true"));
       assertTrue(gateEntity.contains("SOURCE_STYLE_LANCELOT"));
       assertTrue(gateRenderer.contains("knightOfOwnerEntityGlint3d"));

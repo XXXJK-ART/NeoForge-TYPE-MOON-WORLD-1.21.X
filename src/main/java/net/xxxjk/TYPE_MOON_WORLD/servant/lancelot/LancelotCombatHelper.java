@@ -427,18 +427,20 @@ public final class LancelotCombatHelper {
          Vec3 start = entity.getEyePosition().add(entity.getLookAngle().scale(0.5));
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
          Vec3 dir = aim.subtract(start);
-         if (gateProjectile != null) {
-            spawnKnightOfOwnerGateCounter(level, entity, target, start, dir, gateProjectile);
-         } else {
-            EmiyaThrownWeaponEntity counter = new EmiyaThrownWeaponEntity(level, entity, stack);
-            counter.setPos(start);
-            counter.setMaxFlightDistance(KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
-            counter.setFixedDamage(28.0F);
-            counter.setNoGravity(true);
-            counter.setPiercingImpact(true);
-            counter.shoot(dir.x, dir.y + 0.03, dir.z, 2.45F, 0.0F);
-            counter.alignPoseToMotion();
-            level.addFreshEntity(counter);
+         if (dir.lengthSqr() > 1.0E-4) {
+            if (gateProjectile != null) {
+               spawnKnightOfOwnerGateCounter(level, entity, target, start, dir, gateProjectile);
+            } else {
+               EmiyaThrownWeaponEntity counter = new EmiyaThrownWeaponEntity(level, entity, stack);
+               counter.setPos(start);
+               counter.setMaxFlightDistance(KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
+               counter.setFixedDamage(28.0F);
+               counter.setNoGravity(true);
+               counter.setPiercingImpact(true);
+               counter.shoot(dir.x, dir.y + 0.03, dir.z, 2.45F, 0.0F);
+               counter.alignPoseToMotion();
+               level.addFreshEntity(counter);
+            }
          }
       }
       level.sendParticles(ParticleTypes.SMOKE, entity.getX(), entity.getY() + 1.1, entity.getZ(), 22, 0.55, 0.65, 0.55, 0.08);
@@ -456,24 +458,34 @@ public final class LancelotCombatHelper {
          return owner instanceof LivingEntity living && living != entity && !living.isAlliedTo(entity)
             && !ServantMasterProtection.isProtectedMaster(entity, living);
       }
-      return candidate instanceof ThrowableItemProjectile;
+      if (candidate instanceof ThrowableItemProjectile thrown) {
+         Entity owner = thrown.getOwner();
+         return owner instanceof LivingEntity living && living != entity && !living.isAlliedTo(entity)
+            && !ServantMasterProtection.isProtectedMaster(entity, living);
+      }
+      return false;
    }
 
    private static ItemStack stackForProjectile(Entity projectile, LancelotBerserkerEntity owner) {
       if (projectile instanceof ThrownTrident trident) {
-         return knightOfOwnerStack(trident.getPickupItemStackOrigin().copy(), owner);
+         return safeKnightOfOwnerStack(trident.getPickupItemStackOrigin().copy(), owner);
       }
       if (projectile instanceof AbstractArrow arrow) {
-         return knightOfOwnerStack(arrow.getPickupItemStackOrigin().copy(), owner);
+         return safeKnightOfOwnerStack(arrow.getPickupItemStackOrigin().copy(), owner);
       }
       if (projectile instanceof ThrowableItemProjectile thrown) {
          ItemStack stack = thrown.getItem().copy();
-         if (!stack.isEmpty()) return knightOfOwnerStack(stack, owner);
+         if (!stack.isEmpty()) return safeKnightOfOwnerStack(stack, owner);
       }
       if (projectile instanceof GilgameshGateWeaponProjectileEntity gate) {
-         return knightOfOwnerStack(gilgameshWeaponStack(gate.getWeaponId()), owner);
+         return safeKnightOfOwnerStack(gilgameshWeaponStack(gate.getWeaponId()), owner);
       }
-      return knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), owner);
+      return safeKnightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), owner);
+   }
+
+   private static ItemStack safeKnightOfOwnerStack(ItemStack stack, LivingEntity owner) {
+      ItemStack resolved = stack == null || stack.isEmpty() ? new ItemStack(ModItems.LANCELOT_IRON_ROD.get()) : stack;
+      return knightOfOwnerStack(resolved, owner);
    }
 
    public static ItemStack gilgameshWeaponStack(String weaponId) {

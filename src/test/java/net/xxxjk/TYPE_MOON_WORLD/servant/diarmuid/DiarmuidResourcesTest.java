@@ -233,6 +233,15 @@ class DiarmuidResourcesTest {
          || items.contains("\"gae_buidhe_range\"),\n                                            2.0"));
       assertTrue(items.contains("new Item.Properties().durability(200)"));
       assertTrue(readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardDiarmuidSkills.java").contains("stack.hurtAndBreak(1, player"));
+      String cardSkills = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardDiarmuidSkills.java");
+      String basicAttackPacket = readJava("net/xxxjk/TYPE_MOON_WORLD/network/ServantCardBasicAttackMessage.java");
+      assertTrue(cardSkills.contains("MAINHAND_ATTACK_READY_TAG"));
+      assertTrue(cardSkills.contains("OFFHAND_ATTACK_READY_TAG"));
+      assertTrue(cardSkills.contains("DUAL_WIELD_HAND_ATTACK_COOLDOWN_TICKS"));
+      assertTrue(cardSkills.contains("tryStartHandAttack(player, InteractionHand.MAIN_HAND)"));
+      assertTrue(cardSkills.contains("tryStartHandAttack(player, InteractionHand.OFF_HAND)"));
+      assertTrue(basicAttackPacket.contains("servant_card_diarmuid_mainhand_attack"));
+      assertTrue(basicAttackPacket.contains("servant_card_diarmuid_offhand_attack"));
       assertTrue(readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/DiarmuidUaDuibhneEntity.java").contains("currentMain"));
    }
 

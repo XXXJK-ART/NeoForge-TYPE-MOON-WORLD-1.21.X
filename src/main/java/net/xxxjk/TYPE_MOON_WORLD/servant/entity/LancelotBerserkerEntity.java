@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.server.level.ServerLevel;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotBerserkerCombatAi;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class LancelotBerserkerEntity extends ServantEntity {
    public static final String SERVANT_KEY = "lancelot_berserker";
+   private static final String TAG_LAST_AI_EXCEPTION_LOG_TICK = "LancelotLastAiExceptionLogTick";
 
    public LancelotBerserkerEntity(EntityType<? extends LancelotBerserkerEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
@@ -39,9 +41,9 @@ public class LancelotBerserkerEntity extends ServantEntity {
       if (!this.level().isClientSide) {
          this.ensureLancelotLoadout();
          if (this.level() instanceof ServerLevel level) {
-            LancelotCombatHelper.tick(this, level);
+            safeLancelotTick(level, () -> LancelotCombatHelper.tick(this, level), "helper");
+            safeLancelotTick(level, () -> ServantSprintCollisionHelper.tickNpcSprintCollision(this), "sprint_collision");
          }
-         ServantSprintCollisionHelper.tickNpcSprintCollision(this);
       }
    }
 
@@ -52,7 +54,23 @@ public class LancelotBerserkerEntity extends ServantEntity {
          return;
       }
       super.customServerAiStep();
-      LancelotBerserkerCombatAi.tick(this, level);
+      safeLancelotTick(level, () -> LancelotBerserkerCombatAi.tick(this, level), "combat_ai");
+   }
+
+   private void safeLancelotTick(ServerLevel level, Runnable action, String stage) {
+      try {
+         action.run();
+      } catch (RuntimeException exception) {
+         this.getNavigation().stop();
+         this.setTarget(null);
+         this.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+         long now = level.getGameTime();
+         long lastLog = this.getPersistentData().getLong(TAG_LAST_AI_EXCEPTION_LOG_TICK);
+         if (now - lastLog > 100L) {
+            this.getPersistentData().putLong(TAG_LAST_AI_EXCEPTION_LOG_TICK, now);
+            TYPE_MOON_WORLD.LOGGER.error("Suppressed Lancelot Berserker {} tick crash for entity {}", stage, this.getUUID(), exception);
+         }
+      }
    }
 
    @Override

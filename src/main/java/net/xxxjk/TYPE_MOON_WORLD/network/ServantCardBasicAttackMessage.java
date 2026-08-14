@@ -33,9 +33,17 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
    public static void handleData(ServantCardBasicAttackMessage message, IPayloadContext context) {
       if (context.flow() != PacketFlow.SERVERBOUND) return;
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player
-            && ServerPacketRateLimiter.allow(player, "servant_card_basic_attack", 1)) {
+         if (context.player() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            boolean diarmuidDualWield = vars.servant_card_transformed
+               && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
+               && ServantCardDiarmuidSkills.isDualWieldActive(player);
+            String rateLimitKey = diarmuidDualWield
+               ? (message.secondary ? "servant_card_diarmuid_mainhand_attack" : "servant_card_diarmuid_offhand_attack")
+               : "servant_card_basic_attack";
+            if (!ServerPacketRateLimiter.allow(player, rateLimitKey, 1)) {
+               return;
+            }
             if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
                if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) return;
                net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(player);
@@ -46,7 +54,7 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
                ServantCardGilgameshSkills.performSingleVault(player);
             } else if (vars.servant_card_transformed && "gilgamesh_caster".equals(vars.servant_card_id) && message.secondary) {
                ServantCardCasterGilgameshSkills.performSlateBasic(player);
-            } else if (vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id) && ServantCardDiarmuidSkills.isDualWieldActive(player)) {
+            } else if (diarmuidDualWield) {
                if (message.secondary) {
                   ServantCardDiarmuidSkills.performMainhandSpearThrust(player);
                } else {

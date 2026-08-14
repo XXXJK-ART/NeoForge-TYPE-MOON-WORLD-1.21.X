@@ -391,6 +391,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_SENKO_MURAMASA = registerServantCard("senko_muramasa");
     public static final DeferredItem<Item> SERVANT_CARD_DIARMUID_UA_DUIBHNE = registerServantCard("diarmuid_ua_duibhne");
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER = registerServantCard("lancelot_berserker");
+    public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR = registerServantCard("iskandar");
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);

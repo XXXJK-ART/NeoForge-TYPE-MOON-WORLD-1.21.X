@@ -29,6 +29,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardIskandarSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
@@ -52,10 +54,12 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private final Set<UUID> chargeHitTargets = new HashSet<>();
    @Nullable protected UUID iskandarUuid;
    @Nullable protected UUID masterUuid;
+   @Nullable protected UUID cardOwnerUuid;
    private Vec3 chargeDirection = Vec3.ZERO;
    private int chargeTicksRemaining;
    private float chargeDamage;
    private double chargeWidth;
+   private int blockedMoveTicks;
 
    protected IskandarMountEntity(EntityType<? extends IskandarMountEntity> type, Level level) {
       super(type, level);
@@ -86,6 +90,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    public void bindIskandar(IskandarEntity iskandar, @Nullable LivingEntity master) {
       this.iskandarUuid = iskandar.getUUID();
       this.masterUuid = master != null ? master.getUUID() : null;
+      this.cardOwnerUuid = null;
+   }
+
+   public void bindCardOwner(ServerPlayer owner) {
+      this.iskandarUuid = null;
+      this.masterUuid = null;
+      this.cardOwnerUuid = owner.getUUID();
    }
 
    @Override
@@ -95,12 +106,17 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          return;
       }
       for (Entity passenger : List.copyOf(this.getPassengers())) {
-         if (passenger instanceof Player player && player.isShiftKeyDown()) {
+         if (passenger instanceof Player player && player.isShiftKeyDown() && !keepsShiftForCardControl(player)) {
             player.stopRiding();
          }
       }
       if (this.tickCount % 10 == 0) {
          this.ejectUnauthorizedPassengers();
+      }
+      ServerPlayer cardOwner = this.getCardOwner(level);
+      if (cardOwner != null) {
+         tickCardOwnerMount(level, cardOwner);
+         return;
       }
       IskandarEntity iskandar = this.getIskandar(level);
       if (iskandar == null || !iskandar.isAlive()) {
@@ -120,6 +136,65 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       }
       this.entityData.set(MOVING, this.isCharging() || this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
       this.fallDistance = 0.0F;
+   }
+
+   private boolean keepsShiftForCardControl(Player player) {
+      return this instanceof GordiusWheelEntity && isCardOwner(player);
+   }
+
+   private void tickCardOwnerMount(ServerLevel level, ServerPlayer owner) {
+      TypeMoonWorldModVariables.PlayerVariables vars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!owner.isAlive() || !vars.servant_card_transformed || !ServantCardIskandarSkills.SERVANT_ID.equals(vars.servant_card_id)) {
+         this.ejectPassengers();
+         this.discard();
+         return;
+      }
+      if (owner.getVehicle() != this) {
+         if (this instanceof BucephalusEntity) {
+            ServantCardIskandarSkills.storeAndDiscardBucephalus(owner, this, false);
+         } else if (!this.hasPassenger(owner)) {
+            ServantCardIskandarSkills.storeAndDiscardGordiusWheel(owner, this, false);
+         }
+         return;
+      }
+      if (this.isCharging()) {
+         tickCharge(level, owner);
+      } else {
+         followCardOwnerInput(owner);
+      }
+      this.entityData.set(MOVING, this.isCharging() || this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
+      this.fallDistance = 0.0F;
+   }
+
+   protected void followCardOwnerInput(ServerPlayer owner) {
+      float forwardInput = owner.zza;
+      float strafeInput = owner.xxa;
+      Vec3 forward = owner.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = this.getLookAngle().multiply(1.0, 0.0, 1.0);
+      }
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      forward = forward.normalize();
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      // Server-side xxa is the player's left impulse, so invert the lateral vector.
+      Vec3 desired = forward.scale(forwardInput).add(right.scale(-strafeInput));
+      double speed = Math.max(0.0, getCombatSpeed() * 1.1);
+      if (desired.lengthSqr() > 1.0E-4) {
+         desired = desired.normalize();
+         float yaw = (float)(Math.atan2(-desired.x, desired.z) * 180.0 / Math.PI);
+         this.setYRot(yaw);
+         this.setYBodyRot(yaw);
+         this.setYHeadRot(yaw);
+         this.move(MoverType.SELF, desired.scale(speed));
+      }
+      this.setDeltaMovement(0.0, cardOwnerVerticalMotion(owner), 0.0);
+      this.hasImpulse = true;
+   }
+
+   protected double cardOwnerVerticalMotion(ServerPlayer owner) {
+      return this.getDeltaMovement().y;
    }
 
    protected void followIskandarCombatIntent(ServerLevel level, IskandarEntity iskandar) {
@@ -161,12 +236,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    }
 
    protected boolean isValidMountCombatTarget(IskandarEntity iskandar, @Nullable LivingEntity target) {
+      boolean ionioiMarkedTarget = iskandar.isHostileIonioiTarget(target);
       return target != null
          && target.isAlive()
          && target != this
          && target != iskandar
          && !this.getPassengers().contains(target)
-         && !EntityUtils.isImmunePlayerTarget(target)
+         && (!EntityUtils.isImmunePlayerTarget(target) || ionioiMarkedTarget)
          && !EntityUtils.isUntargetableServantTransition(target)
          && !this.isAlliedTo(target)
          && !iskandar.isAlliedTo(target);
@@ -208,6 +284,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       if (flat.lengthSqr() < 1.0E-4) {
          return;
       }
+      Vec3 before = this.position();
       flat = flat.normalize();
       float yaw = (float)(Math.atan2(-flat.x, flat.z) * 180.0 / Math.PI);
       this.setYRot(yaw);
@@ -215,6 +292,31 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       this.setYHeadRot(yaw);
       this.move(MoverType.SELF, flat.scale(speed));
       this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+      recoverBlockedMountedMove(before, flat);
+   }
+
+   protected void recoverBlockedMountedMove(Vec3 before, Vec3 intendedDirection) {
+      double movedSqr = horizontal(this.position().subtract(before)).lengthSqr();
+      if ((movedSqr < 0.0025 && this.horizontalCollision) || this.isInWall()) {
+         this.blockedMoveTicks++;
+      } else {
+         this.blockedMoveTicks = 0;
+         return;
+      }
+      if (this.blockedMoveTicks < 4) {
+         this.setDeltaMovement(this.getDeltaMovement().x, Math.max(0.18, this.getDeltaMovement().y), this.getDeltaMovement().z);
+         return;
+      }
+      for (double up = 0.5; up <= 3.0; up += 0.5) {
+         if (this.level().noCollision(this, this.getBoundingBox().move(0.0, up, 0.0))) {
+            this.setPos(this.getX() + intendedDirection.x * 0.35, this.getY() + up, this.getZ() + intendedDirection.z * 0.35);
+            this.setDeltaMovement(0.0, 0.12, 0.0);
+            this.blockedMoveTicks = 0;
+            return;
+         }
+      }
+      this.setDeltaMovement(intendedDirection.x * 0.18, 0.32, intendedDirection.z * 0.18);
+      this.blockedMoveTicks = 0;
    }
 
    protected double getCombatSpeed() {
@@ -256,16 +358,19 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          return this.getPassengers().isEmpty() && (this.iskandarUuid == null || this.iskandarUuid.equals(iskandar.getUUID()));
       }
       if (passenger instanceof Player player) {
-         return canPlayerMount(player);
+         return canPlayerMount(player) || isCardOwner(player);
       }
       return false;
    }
 
    public boolean canPlayerMount(Player player) {
-      return this.getPassengers().size() < 2 && this.isAuthorizedPlayer(player);
+      return this.getPassengers().size() < 2 && (this.isAuthorizedPlayer(player) || isCardOwner(player));
    }
 
    protected boolean isAuthorizedPlayer(Player player) {
+      if (isCardOwner(player)) {
+         return true;
+      }
       if (!(this.level() instanceof ServerLevel level)) {
          return true;
       }
@@ -312,7 +417,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
 
    public boolean shouldRedirectPassengerDamage(Entity passenger) {
       return this.isAlive() && this.getPassengers().contains(passenger)
-         && (passenger instanceof IskandarEntity || this.masterUuid != null && this.masterUuid.equals(passenger.getUUID()));
+         && (passenger instanceof IskandarEntity
+            || this.masterUuid != null && this.masterUuid.equals(passenger.getUUID())
+            || this.cardOwnerUuid != null && this.cardOwnerUuid.equals(passenger.getUUID()));
    }
 
    public boolean isBoundCompanion(@Nullable Entity entity) {
@@ -324,7 +431,8 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       }
       UUID uuid = entity.getUUID();
       return this.iskandarUuid != null && this.iskandarUuid.equals(uuid)
-         || this.masterUuid != null && this.masterUuid.equals(uuid);
+         || this.masterUuid != null && this.masterUuid.equals(uuid)
+         || this.cardOwnerUuid != null && this.cardOwnerUuid.equals(uuid);
    }
 
    @Override
@@ -362,38 +470,54 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       level.playSound(null, this.blockPosition(), SoundEvents.HORSE_GALLOP, SoundSource.HOSTILE, 1.1F, 0.78F);
    }
 
-   private void tickCharge(ServerLevel level, IskandarEntity source) {
+   private void tickCharge(ServerLevel level, LivingEntity source) {
       if (this.chargeTicksRemaining <= 0) {
-         finishCharge();
+         finishCharge(level, source);
          return;
       }
       double speed = getChargeSpeed();
       this.move(MoverType.SELF, this.chargeDirection.scale(speed));
+      onChargeStep(level, source, this.chargeDirection, speed);
       AABB hitBox = this.getBoundingBox()
          .expandTowards(this.chargeDirection.scale(speed + 1.1))
          .inflate(this.chargeWidth, 0.95, this.chargeWidth);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitBox,
-         entity -> entity != this && !this.getPassengers().contains(entity) && entity.isAlive() && !this.isAlliedTo(entity))) {
+         entity -> entity != this && !this.getPassengers().contains(entity) && entity.isAlive()
+            && !EntityUtils.isImmunePlayerTarget(entity) && !this.isAlliedTo(entity))) {
          if (!this.chargeHitTargets.add(target.getUUID())) {
             continue;
          }
          target.invulnerableTime = 0;
-         target.hurt(this.damageSources().mobAttack(source), this.chargeDamage);
+         DamageSource damageSource = source instanceof ServerPlayer player
+            ? player.damageSources().playerAttack(player)
+            : this.damageSources().mobAttack(source);
+         target.hurt(damageSource, this.chargeDamage);
          target.push(this.chargeDirection.x * getChargeKnockback(), 0.28, this.chargeDirection.z * getChargeKnockback());
          target.hurtMarked = true;
+         onChargeHit(level, source, target);
       }
       this.chargeTicksRemaining--;
       if (this.chargeTicksRemaining <= 0) {
-         finishCharge();
+         finishCharge(level, source);
       }
    }
 
-   private void finishCharge() {
+   private void finishCharge(ServerLevel level, LivingEntity source) {
       this.chargeTicksRemaining = 0;
       this.chargeDirection = Vec3.ZERO;
       this.chargeHitTargets.clear();
       this.entityData.set(CHARGING, false);
       this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+      onChargeFinished(level, source);
+   }
+
+   protected void onChargeStep(ServerLevel level, LivingEntity source, Vec3 direction, double speed) {
+   }
+
+   protected void onChargeHit(ServerLevel level, LivingEntity source, LivingEntity target) {
+   }
+
+   protected void onChargeFinished(ServerLevel level, LivingEntity source) {
    }
 
    protected int getChargeDurationTicks() {
@@ -441,6 +565,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       if (this.masterUuid != null) {
          tag.putUUID("IskandarMountMaster", this.masterUuid);
       }
+      if (this.cardOwnerUuid != null) {
+         tag.putUUID("IskandarCardMountOwner", this.cardOwnerUuid);
+      }
    }
 
    @Override
@@ -451,6 +578,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       }
       if (tag.hasUUID("IskandarMountMaster")) {
          this.masterUuid = tag.getUUID("IskandarMountMaster");
+      }
+      if (tag.hasUUID("IskandarCardMountOwner")) {
+         this.cardOwnerUuid = tag.getUUID("IskandarCardMountOwner");
       }
    }
 
@@ -479,6 +609,15 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       }
       Entity entity = level.getEntity(this.iskandarUuid);
       return entity instanceof IskandarEntity iskandar ? iskandar : null;
+   }
+
+   @Nullable
+   protected ServerPlayer getCardOwner(ServerLevel level) {
+      return this.cardOwnerUuid == null ? null : level.getServer().getPlayerList().getPlayer(this.cardOwnerUuid);
+   }
+
+   public boolean isCardOwner(Entity entity) {
+      return entity != null && this.cardOwnerUuid != null && this.cardOwnerUuid.equals(entity.getUUID());
    }
 
    @Override

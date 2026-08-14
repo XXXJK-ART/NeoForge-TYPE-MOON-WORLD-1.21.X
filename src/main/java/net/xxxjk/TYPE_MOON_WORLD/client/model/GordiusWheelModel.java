@@ -10,7 +10,12 @@ import software.bernie.geckolib.model.GeoModel;
 
 public final class GordiusWheelModel extends GeoModel<GordiusWheelEntity> {
    private static final float MODEL_GROUND_LIFT = 8.0F;
-   private static final float FULL_SCALE = 2.0F;
+   private static final float FRONT_SCALE = 1.5F;
+   private static final float REAR_SCALE = 2.0F;
+   private static final float FRONT_SCALE_GROUND_OFFSET = -4.0F;
+   private static final float REAR_SCALE_GROUND_OFFSET = -8.0F;
+   private static final double REAR_RENDER_MAX_HORIZONTAL_OFFSET = 24.0;
+   private static final double REAR_RENDER_MAX_VERTICAL_OFFSET = 8.0;
 
    @Override
    public ResourceLocation getModelResource(GordiusWheelEntity animatable) {
@@ -35,21 +40,22 @@ public final class GordiusWheelModel extends GeoModel<GordiusWheelEntity> {
          root.setPosY(MODEL_GROUND_LIFT);
       }
 
-      GeoBone front = bone("鍓嶇");
+      GeoBone front = firstBone("前端", "鍓嶇");
       if (front != null) {
-         front.setScaleX(FULL_SCALE);
-         front.setScaleY(FULL_SCALE);
-         front.setScaleZ(FULL_SCALE);
+         front.setScaleX(FRONT_SCALE);
+         front.setScaleY(FRONT_SCALE);
+         front.setScaleZ(FRONT_SCALE);
+         front.setPosY(FRONT_SCALE_GROUND_OFFSET);
       }
 
-      GeoBone rear = bone("鍚庣");
+      GeoBone rear = firstBone("后端", "鍚庣");
       if (rear != null) {
-         rear.setScaleX(FULL_SCALE);
-         rear.setScaleY(FULL_SCALE);
-         rear.setScaleZ(FULL_SCALE);
+         rear.setScaleX(REAR_SCALE);
+         rear.setScaleY(REAR_SCALE);
+         rear.setScaleZ(REAR_SCALE);
          Vec3 offset = rearRenderOffset(entity, state.getPartialTick());
          rear.setPosX((float)offset.x);
-         rear.setPosY((float)offset.y);
+         rear.setPosY(REAR_SCALE_GROUND_OFFSET + (float)offset.y);
          rear.setPosZ((float)offset.z);
       }
 
@@ -65,23 +71,14 @@ public final class GordiusWheelModel extends GeoModel<GordiusWheelEntity> {
       animateLeg("Right_front_leg2", legSwing);
       animateLeg("Left_hind_leg2", legSwing);
 
-      GeoBone wheel = bone("杞﹁疆");
-      if (wheel != null) {
-         wheel.setRotX((entity.tickCount + state.getPartialTick()) * (entity.isCharging() || entity.isDiving() ? 1.25F : 0.72F));
-      }
+      float wheelRot = (entity.tickCount + state.getPartialTick()) * (entity.isCharging() || entity.isDiving() ? 1.25F : 0.72F);
+      animateWheel("车轮", wheelRot);
+      animateWheel("杞﹁疆", wheelRot);
+      animateWheel("wheel", wheelRot);
    }
 
    private Vec3 rearRenderOffset(GordiusWheelEntity entity, float partialTick) {
-      Vec3 actual = entity.getRearBodyAnchor(partialTick);
-      Vec3 ideal = entity.getIdealRearBodyAnchor();
-      Vec3 delta = actual.subtract(ideal);
-      float yaw = -entity.getYRot() * Mth.DEG_TO_RAD;
-      double cos = Math.cos(yaw);
-      double sin = Math.sin(yaw);
-      double localX = delta.x * cos - delta.z * sin;
-      double localZ = delta.x * sin + delta.z * cos;
-      double localY = entity.isFlyingMode() ? 0.0 : delta.y;
-      return new Vec3(localX * 16.0, localY * 16.0, localZ * 16.0);
+      return Vec3.ZERO;
    }
 
    private void animateLeg(String name, float rotX) {
@@ -89,6 +86,23 @@ public final class GordiusWheelModel extends GeoModel<GordiusWheelEntity> {
       if (leg != null) {
          leg.setRotX(rotX);
       }
+   }
+
+   private void animateWheel(String name, float rotX) {
+      GeoBone wheel = bone(name);
+      if (wheel != null) {
+         wheel.setRotX(rotX);
+      }
+   }
+
+   private GeoBone firstBone(String... names) {
+      for (String name : names) {
+         GeoBone candidate = bone(name);
+         if (candidate != null) {
+            return candidate;
+         }
+      }
+      return null;
    }
 
    private GeoBone bone(String name) {

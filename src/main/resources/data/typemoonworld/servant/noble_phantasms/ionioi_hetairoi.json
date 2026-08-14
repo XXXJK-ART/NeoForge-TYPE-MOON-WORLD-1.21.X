@@ -12,7 +12,7 @@
       "effect_type": "reality_marble_summon_army",
       "params": {
         "total_soldiers": 10000,
-        "active_cap": 200,
+        "active_cap": 400,
         "reality_marble_priority": 49,
         "collapse_after_deaths": 8000,
         "end_after_deaths": 10000,

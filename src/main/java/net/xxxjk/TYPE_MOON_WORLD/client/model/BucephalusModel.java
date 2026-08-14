@@ -8,7 +8,7 @@ import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.model.GeoModel;
 
 public final class BucephalusModel extends GeoModel<BucephalusEntity> {
-   private static final float MODEL_GROUND_LIFT = 8.0F;
+   private static final float MODEL_GROUND_LIFT = 0.0F;
 
    @Override
    public ResourceLocation getModelResource(BucephalusEntity animatable) {

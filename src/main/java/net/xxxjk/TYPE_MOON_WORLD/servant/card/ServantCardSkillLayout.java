@@ -258,6 +258,20 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 1200);
             default -> null;
          };
+         case "iskandar" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Royal Sword Assault", "iskandar_royal_sword_assault", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("Bucephalus", "iskandar_bucephalus", 20.0, 40);
+            case 1 -> new ServantCardSkillAction("Royal Sword Assault", "iskandar_royal_sword_assault", 10.0, 80);
+            case 2 -> new ServantCardSkillAction("Conqueror Order", "iskandar_conqueror_order", 14.0, 180);
+            case 3 -> new ServantCardSkillAction("Thunder Call", "iskandar_thunder_call", 18.0, 220);
+            case 4 -> new ServantCardSkillAction("Battlefield Stride", "iskandar_battlefield_stride", 12.0, 120);
+            case 5 -> new ServantCardSkillAction("Vanguard Breakthrough", "iskandar_vanguard_summon", 24.0, 300);
+            case 6 -> new ServantCardSkillAction("Kingly War Cry", "iskandar_kingly_war_cry", 16.0, 260);
+            case 7 -> new ServantCardSkillAction("Charge", "iskandar_charge", 20.0, 40);
+            case 8 -> new ServantCardSkillAction("Gordius Wheel", "iskandar_gordius_wheel", 50.0, 400);
+            case 9 -> new ServantCardSkillAction("Ionioi Hetairoi", "iskandar_ionioi_hetairoi", 60.0, 1800);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

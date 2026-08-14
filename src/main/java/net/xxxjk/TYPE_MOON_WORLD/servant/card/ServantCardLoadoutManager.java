@@ -86,6 +86,7 @@ public final class ServantCardLoadoutManager {
             off = stack(ModItems.GAE_BUIDHE.get());
          }
          case "lancelot_berserker" -> main = LancelotCombatHelper.knightOfOwnerStack(stack(ModItems.LANCELOT_IRON_ROD.get()), player);
+         case "iskandar" -> main = stack(ModItems.ISKANDAR_SHORTSWORD.get());
          default -> {
          }
       }
