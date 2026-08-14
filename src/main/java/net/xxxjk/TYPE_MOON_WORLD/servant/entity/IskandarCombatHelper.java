@@ -57,6 +57,10 @@ public final class IskandarCombatHelper {
       if (ModDimensions.isIonioiHetairoiDimension(level.dimension().location())) {
          return false;
       }
+      if (!entity.isGordiusWheelDestroyed()) {
+         resetIonioiWarmup(entity);
+         return false;
+      }
       boolean ridingBucephalus = entity.getVehicle() instanceof BucephalusEntity;
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive()) {

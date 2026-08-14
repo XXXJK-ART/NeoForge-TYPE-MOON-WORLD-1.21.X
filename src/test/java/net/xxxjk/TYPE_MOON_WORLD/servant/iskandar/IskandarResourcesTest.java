@@ -523,6 +523,7 @@ class IskandarResourcesTest {
       assertFalse(iskandar.contains("!EntityUtils.isImmunePlayerTarget(living)"));
       assertTrue(ai.contains("recentIonioiAggressor"));
       assertTrue(ai.contains("entity.tickCount - entity.getLastHurtByMobTimestamp() > 200"));
+      assertTrue(ai.contains("if (!entity.isGordiusWheelDestroyed())"));
       assertTrue(ai.contains("ridingBucephalus"));
       assertTrue(ai.contains("IONIOI_LOW_PHASE_WARMUP_TICKS = 8 * 20"));
       assertTrue(ai.contains("ionioiWarmupReady"));
