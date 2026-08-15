@@ -98,7 +98,7 @@ public final class IskandarEntity extends ServantEntity {
    private static final int IONIOI_ACTIVE_CAP = 400;
    private static final double IONIOI_PULL_RADIUS = 64.0;
    private static final double IONIOI_TARGET_OFFSET_CLAMP = 48.0;
-   private static final double IONIOI_ARMY_ENTRY_DISTANCE = 20.0;
+   private static final double IONIOI_ARMY_ENTRY_DISTANCE = 50.0;
    private static final int IONIOI_TARGET_REFRESH_TICKS = 20;
    private static final int IONIOI_SOLDIER_PRUNE_TICKS = 20;
    private static final int IONIOI_FORMATION_SIZE = 25;
@@ -423,6 +423,9 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    public IskandarEntity startIonioiHetairoiFromServantCard(ServerLevel level, @Nullable LivingEntity primaryTarget) {
+      if (!this.isAlive()) {
+         return this;
+      }
       this.getPersistentData().putBoolean("ServantCardIskandarIonioiProxy", true);
       this.setInvisible(true);
       this.setInvulnerable(true);
@@ -438,6 +441,9 @@ public final class IskandarEntity extends ServantEntity {
    }
 
    private IskandarEntity startIonioiHetairoi(ServerLevel level) {
+      if (!this.isAlive()) {
+         return this;
+      }
       ServerLevel ionioiLevel = level.getServer().getLevel(ModDimensions.IONIOI_HETAIROI_KEY);
       if (ionioiLevel == null) {
          return this;
@@ -453,7 +459,11 @@ public final class IskandarEntity extends ServantEntity {
       }
 
       List<LivingEntity> pulled = collectIonioiTargets(level, primary);
-      if (!pulled.isEmpty() && pulled.stream().noneMatch(ServerPlayer.class::isInstance)) {
+      boolean forceRealIonioi = primary instanceof GilgameshEntity
+         || pulled.stream().anyMatch(GilgameshEntity.class::isInstance);
+      if (!pulled.isEmpty()
+         && pulled.stream().noneMatch(ServerPlayer.class::isInstance)
+         && !forceRealIonioi) {
          startOffscreenIonioiDuel(level, pulled.get(0), level.getGameTime());
          return this;
       }
@@ -482,7 +492,12 @@ public final class IskandarEntity extends ServantEntity {
       rememberIonioiMount(level);
       discardLocalMounts(level);
 
-      Vec3 enemyEntry = safeIonioiEntry(ionioiLevel, randomIonioiEntry(), primary.getBbWidth(), primary.getBbHeight());
+      Vec3 enemyEntry = safeIonioiEntry(
+         ionioiLevel,
+         randomIonioiEntry(ionioiLevel),
+         primary.getBbWidth(),
+         primary.getBbHeight()
+      );
       Vec3 approach = horizontal(this.position().subtract(primary.position()));
       if (approach.lengthSqr() < 1.0E-4) {
          approach = horizontal(this.getLookAngle()).reverse();
@@ -493,8 +508,15 @@ public final class IskandarEntity extends ServantEntity {
       Vec3 armyEntry = safeIonioiEntry(ionioiLevel, enemyEntry.add(approach.normalize().scale(IONIOI_ARMY_ENTRY_DISTANCE)), this.getBbWidth(), this.getBbHeight());
       this.ionioiTargets.clear();
       LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, primary.position(), enemyEntry, session);
+      if (movedPrimary == null || !movedPrimary.isAlive()
+         || movedPrimary.level() != ionioiLevel) {
+         abortIonioiEntry(level);
+         return this;
+      }
       Entity moved = this.changeDimension(new DimensionTransition(ionioiLevel, armyEntry, Vec3.ZERO, this.getYRot(), this.getXRot(), DimensionTransition.DO_NOTHING));
-      if (moved instanceof IskandarEntity iskandar) {
+      if (moved instanceof IskandarEntity iskandar
+         && moved.level() == ionioiLevel
+         && ModDimensions.isIonioiHetairoiDimension(iskandar.level().dimension().location())) {
          rescueIonioiEntity(iskandar, armyEntry);
          CompoundTag movedData = iskandar.getPersistentData();
          movedData.putBoolean(TAG_IONIOI_ACTIVE, true);
@@ -522,12 +544,12 @@ public final class IskandarEntity extends ServantEntity {
          ionioiLevel.playSound(null, BlockPos.containing(armyEntry), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.85F);
          return iskandar;
       }
-      endIonioiHetairoi(ionioiLevel);
+      abortIonioiEntry(level);
       return this;
    }
 
    private void startOffscreenIonioiDuel(ServerLevel level, LivingEntity target, long now) {
-      if (target == null || !target.isAlive() || target instanceof ServerPlayer) {
+      if (!this.isAlive() || target == null || !target.isAlive() || target instanceof ServerPlayer) {
          return;
       }
       this.setCurrentMp(this.getCurrentMp() - IONIOI_MP_COST);
@@ -790,6 +812,22 @@ public final class IskandarEntity extends ServantEntity {
       return this.getPersistentData().getBoolean(TAG_IONIOI_ACTIVE);
    }
 
+   private void abortIonioiEntry(ServerLevel sourceLevel) {
+      returnIonioiTargets(sourceLevel);
+      for (UUID id : List.copyOf(this.ionioiSoldiers)) {
+         Entity entity = sourceLevel.getEntity(id);
+         if (entity instanceof MacedonianSoldierEntity soldier) {
+            soldier.discard();
+         }
+      }
+      this.ionioiSoldiers.clear();
+      this.ionioiPool = null;
+      clearIonioiReturnData(this);
+      if (this.isAlive() && this.level() == sourceLevel) {
+         restoreIonioiMount(sourceLevel);
+      }
+   }
+
    private IonioiHetairoiRankPool getOrCreateIonioiPool() {
       if (this.ionioiPool == null) {
          this.ionioiPool = IonioiHetairoiRankPool.create(this.getPersistentData().getLong(TAG_IONIOI_SEED));
@@ -881,12 +919,15 @@ public final class IskandarEntity extends ServantEntity {
 
    @Nullable
    private LivingEntity moveIonioiTargets(ServerLevel source, ServerLevel ionioiLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 sourceAnchor, Vec3 entry, UUID session) {
-      LivingEntity movedPrimary = null;
+      LivingEntity movedPrimary = moveOneIonioiTarget(source, ionioiLevel, primary, sourceAnchor, entry, true, session);
+      if (movedPrimary == null) {
+         return null;
+      }
       for (LivingEntity living : targets) {
-         LivingEntity moved = moveOneIonioiTarget(source, ionioiLevel, living, sourceAnchor, entry, living == primary, session);
-         if (living == primary && moved != null) {
-            movedPrimary = moved;
+         if (living == primary) {
+            continue;
          }
+         LivingEntity moved = moveOneIonioiTarget(source, ionioiLevel, living, sourceAnchor, entry, living == primary, session);
       }
       return movedPrimary;
    }
@@ -906,7 +947,7 @@ public final class IskandarEntity extends ServantEntity {
       double returnZ = living.getZ();
       markIonioiTarget(living, source, returnX, returnY, returnZ, primaryTarget, session);
       Entity moved = living.changeDimension(new DimensionTransition(ionioiLevel, targetPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
-      if (moved instanceof LivingEntity movedLiving) {
+      if (moved instanceof LivingEntity movedLiving && moved.level() == ionioiLevel) {
          rescueIonioiEntity(movedLiving, targetPos);
          scheduleIonioiEntryRescue(movedLiving, targetPos);
          markIonioiTarget(movedLiving, source, returnX, returnY, returnZ, primaryTarget, session);
@@ -935,32 +976,36 @@ public final class IskandarEntity extends ServantEntity {
    private void returnIonioiTargets(ServerLevel sourceLevel) {
       UUID session = ionioiSession(this.getPersistentData());
       List<UUID> toReturn = new ArrayList<>();
-      for (UUID id : List.copyOf(this.ionioiTargets)) {
-         Entity candidate = sourceLevel.getEntity(id);
-         if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByCurrentIonioi(this.getUUID(), session, living)) {
-            toReturn.add(id);
-         }
-      }
-      for (Entity candidate : sourceLevel.getEntities().getAll()) {
-         if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByCurrentIonioi(this.getUUID(), session, living)) {
-            UUID id = living.getUUID();
-            if (!toReturn.contains(id)) {
-               toReturn.add(id);
+      for (ServerLevel scanLevel : sourceLevel.getServer().getAllLevels()) {
+         for (Entity candidate : scanLevel.getEntities().getAll()) {
+            if (candidate instanceof LivingEntity living && living.isAlive() && isPulledByCurrentIonioi(this.getUUID(), session, living)) {
+               UUID id = living.getUUID();
+               if (!toReturn.contains(id)) {
+                  toReturn.add(id);
+               }
             }
          }
       }
       for (UUID id : toReturn) {
-         Entity candidate = sourceLevel.getEntity(id);
-         if (!(candidate instanceof LivingEntity living)) {
-            continue;
-         }
-         CompoundTag data = living.getPersistentData();
-         ServerLevel returnLevel = resolveDimensionOrOverworld(sourceLevel, data.getString(TAG_IONIOI_TARGET_RETURN_DIM));
-         Vec3 returnPos = new Vec3(data.getDouble(TAG_IONIOI_TARGET_RETURN_X), data.getDouble(TAG_IONIOI_TARGET_RETURN_Y), data.getDouble(TAG_IONIOI_TARGET_RETURN_Z));
-         clearIonioiTarget(living);
-         Entity moved = living.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
-         if (moved instanceof LivingEntity movedLiving) {
-            clearIonioiTarget(movedLiving);
+         for (ServerLevel scanLevel : sourceLevel.getServer().getAllLevels()) {
+            Entity candidate = scanLevel.getEntity(id);
+            if (!(candidate instanceof LivingEntity living)) {
+               continue;
+            }
+            CompoundTag data = living.getPersistentData();
+            ServerLevel returnLevel = resolveDimensionOrOverworld(scanLevel, data.getString(TAG_IONIOI_TARGET_RETURN_DIM));
+            Vec3 returnPos = new Vec3(data.getDouble(TAG_IONIOI_TARGET_RETURN_X), data.getDouble(TAG_IONIOI_TARGET_RETURN_Y), data.getDouble(TAG_IONIOI_TARGET_RETURN_Z));
+            Entity moved;
+            if (living.level() == returnLevel) {
+               living.teleportTo(returnPos.x, returnPos.y, returnPos.z);
+               moved = living;
+            } else {
+               moved = living.changeDimension(new DimensionTransition(returnLevel, returnPos, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
+            }
+            if (moved instanceof LivingEntity movedLiving && moved.level() == returnLevel) {
+               clearIonioiTarget(movedLiving);
+            }
+            break;
          }
       }
       this.ionioiTargets.clear();
@@ -1101,8 +1146,8 @@ public final class IskandarEntity extends ServantEntity {
       data.remove(TAG_IONIOI_RETURN_Z);
    }
 
-   private Vec3 randomIonioiEntry() {
-      Vec3 entry = UBWInstanceManager.randomEntryPosition(this.getRandom());
+   private Vec3 randomIonioiEntry(ServerLevel ionioiLevel) {
+      Vec3 entry = UBWInstanceManager.randomOpenEntryPosition(ionioiLevel, this.getRandom(), 128.0);
       return new Vec3(entry.x, 72.0, entry.z);
    }
 

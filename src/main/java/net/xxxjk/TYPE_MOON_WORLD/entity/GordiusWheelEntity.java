@@ -897,11 +897,6 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    }
 
    @Override
-   protected double getCombatOrbitRadius() {
-      return 10.0;
-   }
-
-   @Override
    protected double getChargeSpeed() {
       return Math.max(1.05, getCombatSpeed() * 1.75);
    }

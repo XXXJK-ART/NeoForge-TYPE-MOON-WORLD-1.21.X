@@ -15,12 +15,16 @@ public final class IskandarCombatHelper {
    private static final int HIGH_HP_PHASE = 1;
    private static final int MID_HP_PHASE = 2;
    private static final int LOW_HP_PHASE = 3;
-   private static final int IONIOI_LOW_PHASE_WARMUP_TICKS = 8 * 20;
+   private static final int IONIOI_LOW_PHASE_WARMUP_TICKS = 3 * 20;
 
    private IskandarCombatHelper() {
    }
 
    public static void tick(IskandarEntity entity, ServerLevel level) {
+      if (!entity.isAlive()) {
+         resetIonioiWarmup(entity);
+         return;
+      }
       int phase = phase(entity);
       entity.getPersistentData().putInt(TAG_LAST_PHASE, phase);
       if (entity.isIonioiHetairoiActive()) {
@@ -53,6 +57,10 @@ public final class IskandarCombatHelper {
    }
 
    public static boolean shouldUseIonioi(IskandarEntity entity, ServerLevel level) {
+      if (!entity.isAlive()) {
+         resetIonioiWarmup(entity);
+         return false;
+      }
       if (ModDimensions.isIonioiHetairoiDimension(level.dimension().location())) {
          return false;
       }
@@ -69,6 +77,12 @@ public final class IskandarCombatHelper {
       if (target == null || !target.isAlive()) {
          resetIonioiWarmup(entity);
          return false;
+      }
+      // Gilgamesh is the intended rival for this transition: once the wheel is
+      // destroyed, start the real reality-marble entry without tactical delay.
+      if (target instanceof GilgameshEntity) {
+         resetIonioiWarmup(entity);
+         return true;
       }
       int enemies = countNearbyEnemies(entity, level, 24.0);
       float maxTargetHealth = target.getMaxHealth();

@@ -148,6 +148,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_OFFSCREEN_PREVIOUS_INVISIBLE = "EmiyaUbwOffscreenPrevInvisible";
    public static final String UBW_OFFSCREEN_PREVIOUS_INVULNERABLE = "EmiyaUbwOffscreenPrevInvulnerable";
    public static final String UBW_OFFSCREEN_PREVIOUS_NO_AI = "EmiyaUbwOffscreenPrevNoAi";
+   private static final String UBW_BOUNDARY_DIMENSION = "EmiyaUbwBoundaryDimension";
    private static final String LAST_PERSISTENT_STATE_TICK = "EmiyaLastPersistentStateTick";
    public static final int SPIRAL_COOLDOWN = 18 * 20;
    public static final int CRIMSON_COOLDOWN = 16 * 20;
@@ -208,6 +209,7 @@ public final class EmiyaArcherCombatHelper {
 
       long now = level.getGameTime();
       tickPersistentState(entity);
+      if (!entity.isAlive() || entity.level() != level) return;
       if (entity.getPersistentData().getBoolean(UBW_OFFSCREEN_DUEL)) {
          entity.getNavigation().stop();
          if (now % 10L == 0L) {
@@ -449,9 +451,72 @@ public final class EmiyaArcherCombatHelper {
       if (data.contains(LAST_PERSISTENT_STATE_TICK) && data.getLong(LAST_PERSISTENT_STATE_TICK) == now) return;
       data.putLong(LAST_PERSISTENT_STATE_TICK, now);
       if (data.getBoolean(UBW_OFFSCREEN_DUEL)) return;
+      if (tryTriggerUbwOnEnemyBoundary(entity, level, now)) return;
       tickUbw(entity, level, now);
       expireProjection(entity, now);
       tickUbwTargetRelock(entity, level, now);
+   }
+
+   /**
+    * Red Archer immediately answers an enemy reality marble with UBW.
+    * Re-entry is tracked by dimension id so the normal UBW cooldown does not
+    * cause repeated casts while the same field is still active.
+    */
+   private static boolean tryTriggerUbwOnEnemyBoundary(EmiyaArcherEntity entity, ServerLevel level, long now) {
+      CompoundTag data = entity.getPersistentData();
+      ResourceLocation location = level.dimension().location();
+      String boundary = isEnemyBoundary(location) ? location.toString() : "";
+      if (boundary.isEmpty()) {
+         data.remove(UBW_BOUNDARY_DIMENSION);
+         return false;
+      }
+      if (boundary.equals(data.getString(UBW_BOUNDARY_DIMENSION))) return false;
+      if (data.getLong(UBW_ACTIVE_UNTIL) > now || data.getLong(UBW_CHANT_END_TICK) > now) {
+         data.putString(UBW_BOUNDARY_DIMENSION, boundary);
+         return true;
+      }
+
+      LivingEntity target = findEnemyBoundaryTarget(entity, level);
+      if (target == null || entity.getCurrentMp() < 120.0) return false;
+
+      data.putString(UBW_BOUNDARY_DIMENSION, boundary);
+      entity.setTarget(target);
+      activateUbw(entity, level, target, now);
+      return true;
+   }
+
+   private static boolean isEnemyBoundary(ResourceLocation location) {
+      return ModDimensions.isHajunDimension(location) || ModDimensions.isIonioiHetairoiDimension(location);
+   }
+
+   private static LivingEntity findEnemyBoundaryTarget(EmiyaArcherEntity entity, ServerLevel level) {
+      LivingEntity current = entity.getTarget();
+      if (isEnemyBoundaryTarget(entity, current)) return current;
+
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : level.getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(96.0),
+         living -> isEnemyBoundaryTarget(entity, living)
+      )) {
+         double distance = entity.distanceToSqr(candidate);
+         if (distance < nearestDistance) {
+            nearest = candidate;
+            nearestDistance = distance;
+         }
+      }
+      return nearest;
+   }
+
+   private static boolean isEnemyBoundaryTarget(EmiyaArcherEntity entity, LivingEntity candidate) {
+      return candidate != null
+         && candidate != entity
+         && candidate.isAlive()
+         && !candidate.isAlliedTo(entity)
+         && !entity.isAlliedTo(candidate)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting.isContractMaster(entity, candidate)
+         && !EntityUtils.isImmunePlayerTarget(candidate);
    }
 
    public static void markProjectionExpiry(ServantEntity entity, long expiresAt, boolean pair) {

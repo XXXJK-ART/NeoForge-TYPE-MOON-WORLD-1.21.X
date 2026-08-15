@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -36,6 +37,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.dimension.ModDimensions;
 
 /** Gilgamesh-specific ranged AI and passive state. */
 public final class GilgameshCombatHelper {
@@ -70,7 +73,9 @@ public final class GilgameshCombatHelper {
    private static final String EA_SUMMON_END = "GilgameshEaSummonEnd";
    private static final String EA_DRAW_END = "GilgameshEaDrawEnd";
    private static final String EA_SUMMON_TARGET = "GilgameshEaSummonTarget";
+   private static final String EA_SHIELD_FORCED = "GilgameshEaShieldForced";
    private static final String LAST_DIVINE_SHIELD_SCAN = "GilgameshLastDivineShieldScan";
+   private static final String BOUNDARY_EA_DIMENSION = "GilgameshBoundaryEaDimension";
    public static final int EA_SUMMON_TICKS = 72;
    public static final int EA_DRAW_TICKS = 53;
    private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
@@ -159,8 +164,10 @@ public final class GilgameshCombatHelper {
       CompoundTag data = entity.getPersistentData();
       if (data.contains(LAST_PERSISTENT_TICK) && data.getLong(LAST_PERSISTENT_TICK) == now) return;
       data.putLong(LAST_PERSISTENT_TICK, now);
+      maintainEaShield(entity, data);
       GilgameshDivineShield.tick(entity);
       tryActivateDivineShield(entity, level);
+      tryTriggerBoundaryEa(entity, level, now);
       if (!data.getBoolean("GilgameshPassivesInitialized")) {
          data.putBoolean("GilgameshPassivesInitialized", true);
          data.putFloat("MagicResistanceDamageReduction", 0.20F);
@@ -226,6 +233,71 @@ public final class GilgameshCombatHelper {
       Vec3 motion = projectile.getDeltaMovement();
       Vec3 towardGilgamesh = entity.getBoundingBox().getCenter().subtract(projectile.position());
       return motion.lengthSqr() < 1.0E-6 || motion.dot(towardGilgamesh) > 0.0;
+   }
+
+   /**
+    * EA is Gilgamesh's answer to an enemy reality marble. The dimension marker
+    * keeps the reaction to one cast per entry, while allowing a delayed target
+    * lock during multiplayer dimension transfer.
+    */
+   private static void tryTriggerBoundaryEa(GilgameshEntity entity, ServerLevel level, long now) {
+      CompoundTag data = entity.getPersistentData();
+      ResourceLocation location = level.dimension().location();
+      String boundary = isEnemyBoundary(location) ? location.toString() : "";
+      if (boundary.isEmpty()) {
+         data.remove(BOUNDARY_EA_DIMENSION);
+         return;
+      }
+      if (boundary.equals(data.getString(BOUNDARY_EA_DIMENSION))) return;
+
+      if (data.contains(EA_SUMMON_END) || data.contains(EA_DRAW_END) || GilgameshEaBeamEntity.isEaActiveFor(entity)) {
+         data.putString(BOUNDARY_EA_DIMENSION, boundary);
+         return;
+      }
+      if (entity.getCurrentMp() < 200.0) return;
+
+      LivingEntity target = findBoundaryTarget(entity, level);
+      if (target == null) return;
+
+      entity.setTarget(target);
+      data.putString(BOUNDARY_EA_DIMENSION, boundary);
+      if (beginNpcEaSummon(entity, level, target, now)) {
+         data.putLong(LAST_EA, now);
+      }
+   }
+
+   private static boolean isEnemyBoundary(ResourceLocation location) {
+      return ModDimensions.isHajunDimension(location) || ModDimensions.isIonioiHetairoiDimension(location);
+   }
+
+   private static LivingEntity findBoundaryTarget(GilgameshEntity entity, ServerLevel level) {
+      LivingEntity current = entity.getTarget();
+      if (isBoundaryTarget(entity, current)) return current;
+
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : level.getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(96.0),
+         living -> isBoundaryTarget(entity, living)
+      )) {
+         double distance = entity.distanceToSqr(candidate);
+         if (distance < nearestDistance) {
+            nearest = candidate;
+            nearestDistance = distance;
+         }
+      }
+      return nearest;
+   }
+
+   private static boolean isBoundaryTarget(GilgameshEntity entity, LivingEntity candidate) {
+      return candidate != null
+         && candidate != entity
+         && candidate.isAlive()
+         && !candidate.isAlliedTo(entity)
+         && !entity.isAlliedTo(candidate)
+         && !ServantMasterTargeting.isContractMaster(entity, candidate)
+         && !EntityUtils.isImmunePlayerTarget(candidate);
    }
 
    public static boolean isFlying(GilgameshEntity entity) {
@@ -512,6 +584,7 @@ public final class GilgameshCombatHelper {
       level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.HOSTILE, 1.6F, 0.72F);
       data.putLong(EA_SUMMON_END, now + EA_SUMMON_TICKS);
       data.putUUID(EA_SUMMON_TARGET, target.getUUID());
+      forceEaShield(entity);
    }
 
    private static boolean tickEaSummon(GilgameshEntity entity, ServerLevel level, long now, CompoundTag data) {
@@ -557,6 +630,40 @@ public final class GilgameshCombatHelper {
       clearEaEquipment(entity);
    }
 
+   private static void forceEaShield(GilgameshEntity entity) {
+      entity.getPersistentData().putBoolean(EA_SHIELD_FORCED, true);
+      ensureEaShield(entity);
+   }
+
+   private static void maintainEaShield(GilgameshEntity entity, CompoundTag data) {
+      if (!data.getBoolean(EA_SHIELD_FORCED)) {
+         return;
+      }
+      boolean eaActive = data.contains(EA_SUMMON_END)
+         || data.contains(EA_DRAW_END)
+         || GilgameshEaBeamEntity.isEaActiveFor(entity);
+      if (eaActive) {
+         ensureEaShield(entity);
+      } else {
+         releaseEaShield(entity);
+      }
+   }
+
+   private static void ensureEaShield(GilgameshEntity entity) {
+      if (GilgameshDivineShield.isActive(entity)) {
+         return;
+      }
+      // EA's defensive opening ignores a previous shield break cooldown.
+      GilgameshDivineShield.clearCooldown(entity);
+      GilgameshDivineShield.activate(entity);
+   }
+
+   private static void releaseEaShield(GilgameshEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      data.remove(EA_SHIELD_FORCED);
+      GilgameshDivineShield.deactivate(entity);
+   }
+
    public static void clearEaEquipment(GilgameshEntity entity) {
       if (entity.getMainHandItem().is(ModItems.GILGAMESH_BAB_ILU.get()) || entity.getMainHandItem().is(ModItems.GILGAMESH_EA.get())) {
          entity.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
@@ -570,6 +677,7 @@ public final class GilgameshCombatHelper {
    public static void cancelNpcEaSummon(GilgameshEntity entity) {
       if (entity == null) return;
       clearEaSummon(entity, entity.getPersistentData());
+      releaseEaShield(entity);
    }
 
    private static boolean tryCrossSlash(GilgameshEntity entity, ServerLevel level, LivingEntity target, long now, CompoundTag data) {

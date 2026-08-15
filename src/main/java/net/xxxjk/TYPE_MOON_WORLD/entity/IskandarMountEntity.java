@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -49,8 +50,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    protected static final double PASSENGER_SEAT_FORWARD = -0.72;
    protected static final double RIDER_SEAT_HEIGHT = 1.15;
    protected static final double PASSENGER_SEAT_HEIGHT = 1.02;
-   private static final String TAG_ORBIT_TARGET = "IskandarMountOrbitTarget";
-   private static final String TAG_ORBIT_SIGN = "IskandarMountOrbitSign";
+   private static final int COMBAT_DIRECT_TICKS = 48;
+   private static final int COMBAT_ORBIT_TICKS = 32;
+   private static final double COMBAT_ORBIT_MAX_DISTANCE = 24.0;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private final Set<UUID> chargeHitTargets = new HashSet<>();
    @Nullable protected UUID iskandarUuid;
@@ -61,6 +63,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private float chargeDamage;
    private double chargeWidth;
    private int blockedMoveTicks;
+   private int combatMovementTargetId = -1;
+   private int combatMovementStartTick;
+   private int combatOrbitSign = 1;
 
    protected IskandarMountEntity(EntityType<? extends IskandarMountEntity> type, Level level) {
       super(type, level);
@@ -201,7 +206,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    protected void followIskandarCombatIntent(ServerLevel level, IskandarEntity iskandar) {
       LivingEntity target = resolveCombatTarget(level, iskandar);
       if (target != null && target.isAlive()) {
-         moveAroundTarget(target);
+         moveTowardCombatTarget(target);
          return;
       }
       LivingEntity master = iskandar.getEntityMaster();
@@ -250,35 +255,57 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          && !iskandar.isAlliedTo(target);
    }
 
-   private void moveAroundTarget(LivingEntity target) {
-      CompoundTag data = this.getPersistentData();
-      if (data.getInt(TAG_ORBIT_TARGET) != target.getId()) {
-         data.putInt(TAG_ORBIT_TARGET, target.getId());
-         data.putInt(TAG_ORBIT_SIGN, this.getRandom().nextBoolean() ? 1 : -1);
-      } else if (this.tickCount % 100 == 0) {
-         data.putInt(TAG_ORBIT_SIGN, -data.getInt(TAG_ORBIT_SIGN));
+   private void moveTowardCombatTarget(LivingEntity target) {
+      Vec3 toTarget = horizontal(target.position().subtract(this.position()));
+      if (toTarget.lengthSqr() < 1.0E-4) {
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+         return;
       }
 
-      Vec3 fromTarget = horizontal(target.position().subtract(this.position()));
-      if (fromTarget.lengthSqr() < 1.0E-4) {
-         fromTarget = horizontal(this.getLookAngle());
+      if (this.combatMovementTargetId != target.getId()) {
+         this.combatMovementTargetId = target.getId();
+         this.combatMovementStartTick = this.tickCount;
+         this.combatOrbitSign = this.getRandom().nextBoolean() ? 1 : -1;
       }
+
+      double stopDistance = this instanceof GordiusWheelEntity ? 10.0 : 6.0;
       double distance = this.distanceTo(target);
-      double desiredRadius = getCombatOrbitRadius();
-      Vec3 tangent = new Vec3(-fromTarget.z, 0.0, fromTarget.x).scale(data.getInt(TAG_ORBIT_SIGN));
-      double radialError = distance - desiredRadius;
-      Vec3 desired = tangent.scale(0.9);
-      if (Math.abs(radialError) > 1.5) {
-         desired = desired.add(fromTarget.scale(Math.signum(radialError) * Math.min(1.0, Math.abs(radialError) * 0.28)));
+      int cycleTicks = COMBAT_DIRECT_TICKS + COMBAT_ORBIT_TICKS;
+      int phase = Math.floorMod(this.tickCount - this.combatMovementStartTick, cycleTicks);
+      boolean orbitPhase = phase >= COMBAT_DIRECT_TICKS;
+      if (orbitPhase && distance >= stopDistance * 0.85 && distance <= COMBAT_ORBIT_MAX_DISTANCE) {
+         moveAroundTarget(target, stopDistance);
+         return;
       }
-      if (distance < 4.0) {
-         desired = fromTarget.scale(-1.0);
+      if (distance > stopDistance) {
+         moveToward(toTarget, getCombatSpeed());
+         return;
       }
-      moveToward(desired, getCombatSpeed());
+
+      Vec3 facing = toTarget.normalize();
+      float yaw = (float)(Math.atan2(-facing.x, facing.z) * 180.0 / Math.PI);
+      this.setYRot(yaw);
+      this.setYBodyRot(yaw);
+      this.setYHeadRot(yaw);
+      this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
    }
 
-   protected double getCombatOrbitRadius() {
-      return 8.0;
+   private void moveAroundTarget(LivingEntity target, double stopDistance) {
+      Vec3 toTarget = horizontal(target.position().subtract(this.position()));
+      if (toTarget.lengthSqr() < 1.0E-4) {
+         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+         return;
+      }
+
+      double orbitRadius = Math.max(stopDistance + 1.5, this instanceof GordiusWheelEntity ? 12.0 : 8.0);
+      Vec3 radial = toTarget.normalize();
+      Vec3 tangent = new Vec3(-radial.z, 0.0, radial.x).scale(this.combatOrbitSign);
+      double radialError = this.distanceTo(target) - orbitRadius;
+      Vec3 desired = tangent.scale(0.72);
+      if (Math.abs(radialError) > 1.25) {
+         desired = desired.add(radial.scale(Mth.clamp(radialError * 0.22, -0.9, 0.9)));
+      }
+      moveToward(desired, getCombatSpeed() * 0.82);
    }
 
    protected void moveToward(Vec3 direction, double speed) {

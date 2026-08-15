@@ -98,4 +98,18 @@ class InfectionRulesTest {
       assertTrue(service.contains("|| isForbiddenControlTarget(entity)"));
       assertTrue(service.contains("if (isForbiddenControlTarget(target) && isControlled(target))"));
    }
+
+   @Test
+   void IonioiSoldiersCanBeInfectedButCannotBeControlled() throws Exception {
+      String service = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/palerider/PaleRiderInfectionService.java"));
+      String events = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/event/PaleRiderEvents.java"));
+
+      assertTrue(service.contains("public static boolean isUncontrollableServantSoldier(Entity target)"));
+      assertTrue(service.contains("return target instanceof MacedonianSoldierEntity"));
+      assertTrue(service.contains("if (isUncontrollableServantSoldier(target) && controlled)"));
+      assertTrue(service.contains("&& !isUncontrollableServantSoldier(target)"));
+      assertTrue(events.contains("PaleRiderInfectionService.releaseControl(mob)"));
+   }
 }

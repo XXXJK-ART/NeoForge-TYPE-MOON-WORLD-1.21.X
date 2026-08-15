@@ -8,6 +8,7 @@
     "AttributesMixin",
     "LivingEntityInputAccessor",
     "PlayerPegasusDismountMixin",
+    "ServerPlayerCombatMixin",
     "TranslatableContentsMixin"
   ],
   "client": [

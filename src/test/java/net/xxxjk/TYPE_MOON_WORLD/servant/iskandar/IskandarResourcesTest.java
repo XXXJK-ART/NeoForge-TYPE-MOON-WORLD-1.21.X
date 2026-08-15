@@ -422,8 +422,12 @@ class IskandarResourcesTest {
       assertFalse(mount.contains("followOwnerWhenEmpty"));
       assertTrue(mount.contains("iskandar.getVehicle() != this"));
       assertTrue(mount.contains("this.discard()"));
-      assertTrue(mount.contains("moveAroundTarget"));
-      assertTrue(mount.contains("getCombatOrbitRadius"));
+      assertTrue(mount.contains("moveTowardCombatTarget"));
+      assertTrue(mount.contains("double stopDistance = this instanceof GordiusWheelEntity ? 10.0 : 6.0"));
+      assertTrue(mount.contains("COMBAT_DIRECT_TICKS = 48"));
+      assertTrue(mount.contains("COMBAT_ORBIT_TICKS = 32"));
+      assertTrue(mount.contains("boolean orbitPhase = phase >= COMBAT_DIRECT_TICKS"));
+      assertTrue(mount.contains("moveAroundTarget(target, stopDistance)"));
       assertTrue(mount.contains("tickCharge"));
       assertTrue(mount.contains("chargeHitTargets"));
       assertTrue(mount.contains("getMovingAnimation"));
@@ -477,7 +481,7 @@ class IskandarResourcesTest {
       String ai = Files.readString(JAVA.resolve("servant/entity/IskandarCombatHelper.java"));
       assertTrue(iskandar.contains("IONIOI_PULL_RADIUS = 64.0"));
       assertTrue(iskandar.contains("IONIOI_TARGET_OFFSET_CLAMP = 48.0"));
-      assertTrue(iskandar.contains("IONIOI_ARMY_ENTRY_DISTANCE = 20.0"));
+      assertTrue(iskandar.contains("IONIOI_ARMY_ENTRY_DISTANCE = 50.0"));
       assertTrue(iskandar.contains("IONIOI_TARGET_REFRESH_TICKS = 20"));
       assertTrue(iskandar.contains("IONIOI_SOLDIER_PRUNE_TICKS = 20"));
       assertTrue(iskandar.contains("IONIOI_ACTIVE_CAP = 400"));
@@ -488,7 +492,7 @@ class IskandarResourcesTest {
       assertTrue(iskandar.contains("groupX"));
       assertTrue(iskandar.contains("groupZ"));
       assertTrue(iskandar.contains("List<LivingEntity> pulled = collectIonioiTargets(level, primary);"));
-      assertTrue(iskandar.contains("Vec3 enemyEntry = safeIonioiEntry(ionioiLevel, randomIonioiEntry(), primary.getBbWidth(), primary.getBbHeight());"));
+      assertTrue(iskandar.contains("randomIonioiEntry(ionioiLevel)"));
       assertTrue(iskandar.contains("Vec3 armyEntry = safeIonioiEntry"));
       assertTrue(iskandar.contains("LivingEntity movedPrimary = moveIonioiTargets(level, ionioiLevel, pulled, primary, primary.position(), enemyEntry, session);"));
       assertTrue(iskandar.contains("int lifetimeDeaths = Mth.clamp(data.getInt(TAG_IONIOI_DEATHS), 0, IonioiHetairoiRankPool.TOTAL_SIZE);"));
@@ -504,9 +508,12 @@ class IskandarResourcesTest {
       assertFalse(iskandar.contains("prepareIonioiEntry"));
       assertFalse(iskandar.contains("Blocks.SANDSTONE.defaultBlockState()"));
       assertTrue(iskandar.contains("level.noCollision(box)"));
+      assertTrue(iskandar.contains("abortIonioiEntry(level)"));
+      assertTrue(iskandar.contains("movedPrimary == null"));
+      assertTrue(iskandar.contains("for (ServerLevel scanLevel : sourceLevel.getServer().getAllLevels())"));
       assertTrue(iskandar.contains("this.getBoundingBox().inflate(IONIOI_PULL_RADIUS)"));
       assertTrue(iskandar.contains("resolveIonioiPrimaryTarget"));
-      assertTrue(iskandar.contains("UBWInstanceManager.randomEntryPosition(this.getRandom())"));
+      assertTrue(iskandar.contains("UBWInstanceManager.randomOpenEntryPosition(ionioiLevel, this.getRandom(), 128.0)"));
       assertTrue(iskandar.contains("refreshIonioiCombatTarget(level)"));
       assertTrue(iskandar.contains("isHostileIonioiTarget"));
       assertTrue(iskandar.contains("TAG_IONIOI_SESSION"));
@@ -520,6 +527,9 @@ class IskandarResourcesTest {
       assertTrue(iskandar.contains("batchSize = Math.min(IONIOI_MAX_REPLENISH_PER_TICK, missing)"));
       assertTrue(iskandar.contains("level.getGameTime() % IONIOI_SOLDIER_PRUNE_TICKS"));
       assertTrue(iskandar.contains("MacedonianSoldierEntity.clearFormationCache(this.getUUID())"));
+      String ubwManager = Files.readString(JAVA.resolve("magic/unlimited_blade_works/UBWInstanceManager.java"));
+      assertTrue(ubwManager.contains("randomOpenEntryPosition"));
+      assertTrue(ubwManager.contains("minDistanceSqr"));
       assertTrue(iskandar.contains("double distanceSqr = mount.distanceToSqr(target);"));
       assertTrue(iskandar.contains("private static double attributeValue"));
       assertFalse(iskandar.contains("!EntityUtils.isImmunePlayerTarget(living)"));
@@ -527,7 +537,7 @@ class IskandarResourcesTest {
       assertTrue(ai.contains("entity.tickCount - entity.getLastHurtByMobTimestamp() > 200"));
       assertTrue(ai.contains("if (!entity.isGordiusWheelDestroyed())"));
       assertTrue(ai.contains("ridingBucephalus"));
-      assertTrue(ai.contains("IONIOI_LOW_PHASE_WARMUP_TICKS = 8 * 20"));
+      assertTrue(ai.contains("IONIOI_LOW_PHASE_WARMUP_TICKS = 3 * 20"));
       assertTrue(ai.contains("ionioiWarmupReady"));
       assertTrue(ai.contains("resetIonioiWarmup"));
       assertFalse(ai.contains("if (target == null || !target.isAlive()) {\r\n         dismountForWalking(entity);")
@@ -550,7 +560,10 @@ class IskandarResourcesTest {
       assertTrue(mount.contains("resolveCombatTarget"));
       assertTrue(mount.contains("iskandar.getLastHurtByMob()"));
       assertTrue(mount.contains("mob.getTarget() == iskandar || mob.getTarget() == this"));
-      assertTrue(mount.contains("moveAroundTarget(target)"));
+      assertTrue(mount.contains("moveTowardCombatTarget(target)"));
+      assertTrue(mount.contains("combatMovementTargetId"));
+      assertTrue(mount.contains("combatOrbitSign"));
+      assertTrue(mount.contains("private void moveAroundTarget(LivingEntity target, double stopDistance)"));
       assertTrue(mount.contains("isHostileIonioiTarget(target)"));
       assertTrue(mount.contains("recoverBlockedMountedMove"));
       assertTrue(mount.contains("blockedMoveTicks"));
@@ -558,6 +571,17 @@ class IskandarResourcesTest {
       assertTrue(mount.contains("this.isInWall()"));
       assertTrue(wheel.contains("super.followIskandarCombatIntent(level, iskandar)"));
       assertTrue(wheel.contains("recoverBlockedMountedMove(before, unit)"));
+   }
+
+   @Test
+   void multiplayerIonioiEntryRollsBackIncompleteTransfers() throws Exception {
+      String skills = Files.readString(JAVA.resolve("servant/card/ServantCardIskandarSkills.java"));
+      assertTrue(skills.contains("movedPrimary == null || !movedPrimary.isAlive() || movedPrimary.level() != ionioiLevel"));
+      assertTrue(skills.contains("cleanupCardIonioiAfterExit(player.getUUID(), session, ionioiLevel, source)"));
+      assertTrue(skills.contains("activePlayer.level() == ionioiLevel"));
+      assertTrue(skills.contains("!(changed instanceof LivingEntity moved) || moved.level() != ionioiLevel"));
+      assertTrue(skills.contains("clearCardIonioiTarget(returnedEntity)"));
+      assertTrue(skills.contains("randomOpenEntryPosition(ionioiLevel, player.getRandom(), 128.0)"));
    }
 
    @Test
@@ -753,6 +777,30 @@ class IskandarResourcesTest {
       assertTrue(helper.contains("artoria_excalibur_beam\", player, 150.0"));
       assertTrue(vfx.contains("\"duration\": 7.5"));
       assertFalse(vfx.contains("\"end_time\": 30.0"));
+   }
+
+   @Test
+   void iskandarGilgameshDuelUsesRealIonioiAndStartsEaOnEntry() throws Exception {
+      String combat = Files.readString(JAVA.resolve("servant/entity/IskandarCombatHelper.java"));
+      String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+      String gilgamesh = Files.readString(JAVA.resolve("servant/entity/GilgameshCombatHelper.java"));
+
+      assertTrue(combat.contains("target instanceof GilgameshEntity"));
+      assertTrue(iskandar.contains("boolean forceRealIonioi = primary instanceof GilgameshEntity"));
+      assertTrue(iskandar.contains("&& !forceRealIonioi"));
+      assertTrue(gilgamesh.contains("ModDimensions.isIonioiHetairoiDimension"));
+      assertTrue(gilgamesh.contains("beginNpcEaSummon(entity, level, target, now)"));
+   }
+
+   @Test
+   void deadIskandarCannotStartOrPullIntoIonioi() throws Exception {
+      String combat = Files.readString(JAVA.resolve("servant/entity/IskandarCombatHelper.java"));
+      String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+
+      assertTrue(combat.contains("if (!entity.isAlive())"));
+      assertTrue(combat.contains("resetIonioiWarmup(entity)"));
+      assertTrue(iskandar.contains("if (!this.isAlive())"));
+      assertTrue(iskandar.contains("if (!this.isAlive() || target == null"));
    }
 
    private static JsonObject json(String relative) throws Exception {
