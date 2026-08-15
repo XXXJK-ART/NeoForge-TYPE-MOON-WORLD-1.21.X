@@ -119,7 +119,7 @@ class IskandarResourcesTest {
       String client = Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"));
       String factory = Files.readString(JAVA.resolve("servant/entity/BuiltinServantEntityFactory.java"));
 
-      for (String id : List.of("ISKANDAR", "BUCEPHALUS", "GORDIUS_WHEEL", "MACEDONIAN_SOLDIER")) {
+      for (String id : List.of("ISKANDAR", "BUCEPHALUS", "GORDIUS_WHEEL", "MACEDONIAN_SOLDIER", "MACEDONIAN_SPEAR_PROJECTILE")) {
          assertTrue(entities.contains(" " + id + " ="), id);
       }
       assertTrue(items.contains("ISKANDAR_SPAWN_EGG"));
@@ -136,6 +136,7 @@ class IskandarResourcesTest {
       assertTrue(client.contains("ModEntities.BUCEPHALUS.get()"));
       assertTrue(client.contains("ModEntities.GORDIUS_WHEEL.get()"));
       assertTrue(client.contains("ModEntities.MACEDONIAN_SOLDIER.get()"));
+      assertTrue(client.contains("ModEntities.MACEDONIAN_SPEAR_PROJECTILE.get()"));
       assertTrue(factory.contains("IskandarEntity.SERVANT_KEY.equals(servantId.getPath())"));
 
       JsonObject sounds = json("assets/typemoonworld/sounds.json");
@@ -212,8 +213,9 @@ class IskandarResourcesTest {
       assertTrue(skills.contains("TAG_BUCEPHALUS_HP"));
       assertTrue(skills.contains("TAG_GORDIUS_HP"));
       assertTrue(skills.contains("bindCardOwner(player)"));
-      assertTrue(skills.contains("performCharge(level, player, 32.0F, 2.1)"));
-      assertTrue(skills.contains("performCharge(level, player, 42.0F, 3.0)"));
+      assertTrue(skills.contains("performCharge(level, player, 32.0F, 3.2)"));
+      assertTrue(skills.contains("performCharge(level, player, 42.0F, 4.2)"));
+      assertTrue(skills.contains("restoreStoredMountAfterIonioi"));
       assertTrue(skills.contains("spawnCardIonioiFormation"));
       assertTrue(skills.contains("CARD_IONIOI_ACTIVE_CAP = 400"));
       assertTrue(skills.contains("returnCardIonioiTargets"));
@@ -289,8 +291,8 @@ class IskandarResourcesTest {
       assertTrue(wheel.contains("DIVE_COOLDOWN_TICKS = 9 * 20"));
       assertTrue(wheel.contains("DIVE_ASCENT_TICKS = 18"));
       assertTrue(wheel.contains("DIVE_ATTACK_TICKS = 16"));
-      assertTrue(wheel.contains("DIVE_DIRECT_DAMAGE = 60.0F"));
-      assertTrue(wheel.contains("DIVE_IMPACT_DAMAGE = 45.0F"));
+      assertTrue(wheel.contains("DIVE_DIRECT_DAMAGE = 120.0F"));
+      assertTrue(wheel.contains("DIVE_IMPACT_DAMAGE = 90.0F"));
       assertTrue(wheel.contains("tickThunderStrike"));
       assertTrue(wheel.contains("THUNDER_STRIKE_RADIUS = 18.0"));
       assertTrue(wheel.contains("EntityType.LIGHTNING_BOLT.create(level)"));
@@ -302,13 +304,13 @@ class IskandarResourcesTest {
       assertTrue(wheel.contains("SoundEvents.LIGHTNING_BOLT_IMPACT"));
       assertTrue(wheel.contains("THUNDER_STRIKE_MIN_DELAY = 24"));
       assertTrue(wheel.contains("THUNDER_STRIKE_RANDOM_DELAY = 36"));
-      assertTrue(wheel.contains("LIGHTNING_AURA_DAMAGE = 8.0F"));
-      assertTrue(wheel.contains("THUNDER_STRIKE_DAMAGE = 36.0F"));
+      assertTrue(wheel.contains("LIGHTNING_AURA_DAMAGE = 16.0F"));
+      assertTrue(wheel.contains("THUNDER_STRIKE_DAMAGE = 72.0F"));
       assertTrue(wheel.contains("createMountAttributes(4000.0, 0.62)"));
       assertTrue(wheel.contains("damagingStrikeCount = target == null ? 0 : 2"));
       assertTrue(wheel.contains("THUNDER_STRIKE_TERRAIN_PROFILE"));
       assertTrue(wheel.contains("TerrainImpactService.impact(level, this, base.add(0.0, 0.15, 0.0), THUNDER_STRIKE_TERRAIN_PROFILE"));
-      assertTrue(wheel.contains("THUNDER_ROAR_DAMAGE = 10.0F"));
+      assertTrue(wheel.contains("THUNDER_ROAR_DAMAGE = 20.0F"));
       assertTrue(wheel.contains("THUNDER_ROAR_COOLDOWN_TICKS = 16 * 20"));
       assertTrue(wheel.contains("EntityUtils.isImmunePlayerTarget(entity)"));
       assertTrue(wheel.contains("zeusDamageSource"));
@@ -321,7 +323,7 @@ class IskandarResourcesTest {
       assertTrue(wheel.contains("breakGordiusImpactTerrain"));
       assertTrue(wheel.contains("owner.isSprinting()"));
       assertTrue(wheel.contains("canBreakTerrainFor(source) && !isFlyingMode()"));
-      assertTrue(wheel.contains("return !(source instanceof ServerPlayer player) || player.isSprinting();"));
+      assertTrue(wheel.contains("return !(source instanceof ServerPlayer);"));
       assertTrue(wheel.contains("isCloseEnoughForTerrainBreak(level)"));
       assertTrue(wheel.contains("FRONT_TERRAIN_ANCHOR_DISTANCE = 3.4"));
       assertTrue(wheel.contains("getFrontTerrainAnchor"));
@@ -410,7 +412,7 @@ class IskandarResourcesTest {
       assertTrue(ai.contains("LOW_HP_PHASE"));
       assertTrue(ai.contains("shouldUseGordiusWheel"));
       assertTrue(ai.contains("tickFallbackMount"));
-      assertTrue(ai.contains("dismountForWalking"));
+      assertFalse(ai.contains("dismountForWalking"));
       assertTrue(ai.contains("keepRidingBucephalus"));
       assertTrue(ai.contains("keepRidingGordiusWheel"));
       assertTrue(ai.contains("entity.isGordiusWheelDestroyed()"));
@@ -443,8 +445,8 @@ class IskandarResourcesTest {
       assertTrue(horse.contains("return \"gallop\""));
       assertTrue(horse.contains("createMountAttributes(2000.0, 0.48)"));
       assertTrue(horse.contains("protected void followCardOwnerInput(ServerPlayer owner)"));
-      assertTrue(horse.contains("float forwardInput = Math.max(0.0F, owner.zza)"));
-      assertTrue(horse.contains("float yaw = owner.getYRot()"));
+      assertTrue(horse.contains("float forwardInput = owner.zza"));
+      assertTrue(horse.contains("float yaw = Mth.rotLerp(0.32F, this.getYRot(), owner.getYRot())"));
       assertTrue(horse.contains("this.setYRot(yaw)"));
       assertTrue(horse.contains("right.scale(-strafeInput)"));
       assertFalse(horse.contains("typemoonworld$isJumping"));
@@ -528,7 +530,7 @@ class IskandarResourcesTest {
       assertTrue(ai.contains("IONIOI_LOW_PHASE_WARMUP_TICKS = 8 * 20"));
       assertTrue(ai.contains("ionioiWarmupReady"));
       assertTrue(ai.contains("resetIonioiWarmup"));
-      assertTrue(ai.contains("if (target == null || !target.isAlive()) {\r\n         dismountForWalking(entity);")
+      assertFalse(ai.contains("if (target == null || !target.isAlive()) {\r\n         dismountForWalking(entity);")
          || ai.contains("if (target == null || !target.isAlive()) {\n         dismountForWalking(entity);"));
       assertFalse(ai.contains("hasNearbyIonioiPlayerPullTarget"));
       assertTrue(ai.contains("phase == LOW_HP_PHASE"));
@@ -641,8 +643,8 @@ class IskandarResourcesTest {
       assertTrue(soldier.contains("candidate instanceof Mob mob && isFriendly(mob.getTarget())"));
       assertTrue(soldier.contains("isFriendly(candidate.getLastHurtMob())"));
       assertTrue(soldier.contains("candidate instanceof Monster"));
-      assertTrue(soldier.contains("soldier.isAssignedIonioiTarget(owner, candidate) || soldier.isThreateningNpcArmy(owner, candidate)"));
-      assertTrue(soldier.contains("soldier.isAssignedCardIonioiTarget(owner, candidate) || soldier.isThreateningCardArmy(owner, candidate)"));
+      assertTrue(soldier.contains("soldier.isAssignedIonioiTarget(owner, candidate)\n               || soldier.isThreateningNpcArmy(owner, candidate)"));
+      assertTrue(soldier.contains("soldier.isAssignedCardIonioiTarget(owner, candidate)\n               || soldier.isThreateningCardArmy(owner, candidate)"));
       assertTrue(soldier.contains("threatTargets.add(target.getUUID())"));
       assertTrue(soldier.contains("this.targets.addAll(threatTargets)"));
       assertTrue(soldier.contains("moveInFormation(owner, null)"));
@@ -727,6 +729,30 @@ class IskandarResourcesTest {
       assertTrue(renderer.contains("getShortServantDissolveProgress(this.renderPartialTick)"));
       assertTrue(renderer.contains("getFlipDegrees"));
       assertTrue(renderer.contains("return livingEntity.isShortServantDissolving() ? 0.0F"));
+   }
+
+   @Test
+   void iskandarCorrectionsCoverNamesProtectionProjectilesAndExcaliburTiming() throws Exception {
+      String zh = Files.readString(RESOURCES.resolve("assets/typemoonworld/lang/zh_cn.json"));
+      String en = Files.readString(RESOURCES.resolve("assets/typemoonworld/lang/en_us.json"));
+      String entities = Files.readString(JAVA.resolve("init/ModEntities.java"));
+      String soldier = Files.readString(JAVA.resolve("entity/MacedonianSoldierEntity.java"));
+      String protection = Files.readString(JAVA.resolve("servant/card/ServantMasterProtection.java"));
+      String iskandar = Files.readString(JAVA.resolve("servant/entity/IskandarEntity.java"));
+      String helper = Files.readString(JAVA.resolve("item/custom/PlayerNoblePhantasmHelper.java"));
+      String vfx = Files.readString(RESOURCES.resolve("assets/typemoonworld/effects/artoria_excalibur_beam.json"));
+
+      assertTrue(zh.contains("\"item.typemoonworld.iskandar_shortsword\": \"塞浦路特之剑\""));
+      assertTrue(en.contains("\"item.typemoonworld.iskandar_shortsword\": \"Sword of Cyprus\""));
+      assertTrue(entities.contains("macedonian_spear_projectile"));
+      assertTrue(soldier.contains("getSpearThrowDamage"));
+      assertTrue(soldier.contains("baseAttack + weaponAttack + rankBonus"));
+      assertTrue(protection.contains("IskandarEntity"));
+      assertTrue(protection.contains("MacedonianSoldierEntity"));
+      assertTrue(iskandar.contains("ServantMasterProtection.isProtectedMaster(this, living)"));
+      assertTrue(helper.contains("artoria_excalibur_beam\", player, 150.0"));
+      assertTrue(vfx.contains("\"duration\": 7.5"));
+      assertFalse(vfx.contains("\"end_time\": 30.0"));
    }
 
    private static JsonObject json(String relative) throws Exception {

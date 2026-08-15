@@ -8,8 +8,11 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.IskandarMountEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 
 /** Prevents incidental heavy-servant damage to that servant's contracted master. */
 public final class ServantMasterProtection {
@@ -20,6 +23,23 @@ public final class ServantMasterProtection {
       if (!(target instanceof ServerPlayer master) || attacker == null) return false;
       if (attacker instanceof ServantEntity servant) {
          return isHeavyServant(servant) && servant.isBoundTo(master);
+      }
+      if (attacker instanceof IskandarMountEntity mount) {
+         return mount.isBoundToMaster(master);
+      }
+      if (attacker instanceof MacedonianSoldierEntity soldier
+         && soldier.level() instanceof net.minecraft.server.level.ServerLevel level) {
+         if (soldier.getPersistentData().hasUUID("IonioiHetairoiOwner")) {
+            Entity owner = level.getEntity(soldier.getPersistentData().getUUID("IonioiHetairoiOwner"));
+            if (owner instanceof LivingEntity living && isProtectedMaster(living, target)) {
+               return true;
+            }
+         }
+         if (soldier.getPersistentData().hasUUID("ServantCardIskandarOwner")) {
+            ServerPlayer owner = level.getServer().getPlayerList().getPlayer(
+               soldier.getPersistentData().getUUID("ServantCardIskandarOwner"));
+            return owner != null && isProtectedMaster(owner, target);
+         }
       }
       if (!(attacker instanceof ServerPlayer servantPlayer)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = servantPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -42,10 +62,16 @@ public final class ServantMasterProtection {
    }
 
    private static boolean isHeavyServant(ServantEntity servant) {
-      return servant instanceof HeraclesEntity || servant instanceof GawainEntity || servant instanceof LancelotBerserkerEntity;
+      return servant instanceof HeraclesEntity
+         || servant instanceof GawainEntity
+         || servant instanceof LancelotBerserkerEntity
+         || servant instanceof IskandarEntity;
    }
 
    private static boolean isHeavyServantId(String servantId) {
-      return "heracles".equals(servantId) || "gawain".equals(servantId) || "lancelot_berserker".equals(servantId);
+      return "heracles".equals(servantId)
+         || "gawain".equals(servantId)
+         || "lancelot_berserker".equals(servantId)
+         || "iskandar".equals(servantId);
    }
 }

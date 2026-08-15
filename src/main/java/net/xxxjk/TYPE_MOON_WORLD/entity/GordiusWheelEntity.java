@@ -29,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -49,11 +50,11 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    private static final int DIVE_COOLDOWN_TICKS = 9 * 20;
    private static final int DIVE_ASCENT_TICKS = 18;
    private static final int DIVE_ATTACK_TICKS = 16;
-   private static final float LIGHTNING_AURA_DAMAGE = 8.0F;
-   private static final float THUNDER_STRIKE_DAMAGE = 36.0F;
-   private static final float THUNDER_ROAR_DAMAGE = 10.0F;
-   private static final float DIVE_DIRECT_DAMAGE = 60.0F;
-   private static final float DIVE_IMPACT_DAMAGE = 45.0F;
+   private static final float LIGHTNING_AURA_DAMAGE = 16.0F;
+   private static final float THUNDER_STRIKE_DAMAGE = 72.0F;
+   private static final float THUNDER_ROAR_DAMAGE = 20.0F;
+   private static final float DIVE_DIRECT_DAMAGE = 120.0F;
+   private static final float DIVE_IMPACT_DAMAGE = 90.0F;
    private static final double LIGHTNING_AURA_RADIUS = 3.4;
    private static final int THUNDER_ROAR_COOLDOWN_TICKS = 16 * 20;
    private static final TerrainImpactProfile THUNDER_STRIKE_TERRAIN_PROFILE = new TerrainImpactProfile(
@@ -173,6 +174,10 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       if (flying) {
          this.fallDistance = 0.0F;
       }
+   }
+
+   public void restoreFlyingMode(boolean flying) {
+      setFlyingMode(flying);
    }
 
    public boolean isDiving() {
@@ -539,7 +544,20 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          && entity.isAlive()
          && !EntityUtils.isImmunePlayerTarget(entity)
          && !this.getPassengers().contains(entity)
+         && !isProtectedDamageTarget(entity)
          && !this.isAlliedTo(entity);
+   }
+
+   private boolean isProtectedDamageTarget(LivingEntity entity) {
+      if (!(this.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      ServerPlayer owner = getCardOwner(level);
+      if (owner != null) {
+         return ServantMasterProtection.isProtectedMaster(owner, entity);
+      }
+      IskandarEntity iskandar = getIskandar(level);
+      return iskandar != null && ServantMasterProtection.isProtectedMaster(iskandar, entity);
    }
 
    private DamageSource zeusDamageSource(ServerLevel level) {
@@ -629,7 +647,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
             continue;
          }
          enemy.invulnerableTime = 0;
-         enemy.hurt(zeusDamageSource(level), 18.0F);
+         enemy.hurt(zeusDamageSource(level), 36.0F);
          Vec3 push = enemy.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() < 1.0E-4) {
             push = horizontalForward();
@@ -646,7 +664,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    }
 
    private boolean canBreakTerrainFor(LivingEntity source) {
-      return !(source instanceof ServerPlayer player) || player.isSprinting();
+      return !(source instanceof ServerPlayer);
    }
 
    private boolean isCloseEnoughForTerrainBreak(ServerLevel level) {

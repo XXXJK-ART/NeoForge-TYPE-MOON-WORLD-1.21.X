@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.iskandar.IonioiHetairoiRankPool;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
@@ -70,6 +71,10 @@ public final class IskandarEntity extends ServantEntity {
    private static final String TAG_IONIOI_RETURN_X = "IskandarIonioiReturnX";
    private static final String TAG_IONIOI_RETURN_Y = "IskandarIonioiReturnY";
    private static final String TAG_IONIOI_RETURN_Z = "IskandarIonioiReturnZ";
+   private static final String TAG_IONIOI_MOUNT_TYPE = "IskandarIonioiMountType";
+   private static final String TAG_IONIOI_MOUNT_HP = "IskandarIonioiMountHp";
+   private static final String TAG_IONIOI_MOUNT_FLYING = "IskandarIonioiMountFlying";
+   private static final String TAG_IONIOI_MOUNT_MASTER_RIDING = "IskandarIonioiMountMasterRiding";
    private static final String TAG_IONIOI_TARGET_OWNER = "IonioiHetairoiTargetOwner";
    private static final String TAG_IONIOI_TARGET_RETURN_DIM = "IonioiHetairoiReturnDim";
    private static final String TAG_IONIOI_TARGET_RETURN_X = "IonioiHetairoiReturnX";
@@ -448,10 +453,6 @@ public final class IskandarEntity extends ServantEntity {
       }
 
       List<LivingEntity> pulled = collectIonioiTargets(level, primary);
-      LivingEntity master = this.getEntityMaster();
-      if (master != null && master.isAlive() && master.level() == level && this.distanceToSqr(master) <= IONIOI_PULL_RADIUS * IONIOI_PULL_RADIUS && !pulled.contains(master)) {
-         pulled.add(master);
-      }
       if (!pulled.isEmpty() && pulled.stream().noneMatch(ServerPlayer.class::isInstance)) {
          startOffscreenIonioiDuel(level, pulled.get(0), level.getGameTime());
          return this;
@@ -478,8 +479,7 @@ public final class IskandarEntity extends ServantEntity {
       ServantVoiceHelper.tryPlayIskandarIonioi(this);
       level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 1.2, this.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, this.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.4F, 0.75F);
-      boolean bringBucephalusIntoIonioi = getBucephalus(level) != null
-         || this.getPersistentData().getBoolean(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
+      rememberIonioiMount(level);
       discardLocalMounts(level);
 
       Vec3 enemyEntry = safeIonioiEntry(ionioiLevel, randomIonioiEntry(), primary.getBbWidth(), primary.getBbHeight());
@@ -516,9 +516,7 @@ public final class IskandarEntity extends ServantEntity {
          }
          iskandar.bucephalusUuid = null;
          iskandar.gordiusWheelUuid = null;
-         if (bringBucephalusIntoIonioi) {
-            iskandar.summonIonioiBucephalusAndRide(ionioiLevel);
-         }
+         iskandar.restoreIonioiMount(ionioiLevel);
          iskandar.spawnInitialFormation(ionioiLevel);
          ionioiLevel.sendParticles(ParticleTypes.FLASH, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
          ionioiLevel.playSound(null, BlockPos.containing(armyEntry), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.85F);
@@ -757,6 +755,7 @@ public final class IskandarEntity extends ServantEntity {
       this.getPersistentData().putBoolean(TAG_IONIOI_ACTIVE, false);
       MacedonianSoldierEntity.clearFormationCache(this.getUUID());
       returnIonioiTargets(level);
+      rememberIonioiMount(level);
       discardLocalMounts(level);
       for (UUID id : List.copyOf(this.ionioiSoldiers)) {
          Entity entity = level.getEntity(id);
@@ -779,7 +778,7 @@ public final class IskandarEntity extends ServantEntity {
                returned.ionioiPool = null;
                returned.bucephalusUuid = null;
                returned.gordiusWheelUuid = null;
-               returned.getPersistentData().remove(TAG_BUCEPHALUS_READY_AFTER_WHEEL);
+               returned.restoreIonioiMount(returnLevel);
             }
          }
       } else {
@@ -841,6 +840,7 @@ public final class IskandarEntity extends ServantEntity {
          && living != this
          && isPulledByCurrentIonioi(this.getUUID(), ionioiSession(this.getPersistentData()), living)
          && !this.isAlliedTo(living)
+         && !ServantMasterProtection.isProtectedMaster(this, living)
          && !EntityUtils.isSpectatorPlayer(living)
          && !EntityUtils.isUntargetableServantTransition(living);
    }
@@ -875,6 +875,7 @@ public final class IskandarEntity extends ServantEntity {
          && living.level() == source
          && !EntityUtils.isSpectatorPlayer(living)
          && !EntityUtils.isUntargetableServantTransition(living)
+         && !ServantMasterProtection.isProtectedMaster(this, living)
          && (living == this.getTarget() || !this.isAlliedTo(living));
    }
 
@@ -1002,6 +1003,67 @@ public final class IskandarEntity extends ServantEntity {
       }
       discardBucephalus(level);
       discardGordiusWheel(level);
+   }
+
+   private void rememberIonioiMount(ServerLevel level) {
+      CompoundTag data = this.getPersistentData();
+      Entity vehicle = this.getVehicle();
+      LivingEntity master = this.getEntityMaster();
+      if (vehicle instanceof BucephalusEntity horse && horse.isAlive()) {
+         data.putString(TAG_IONIOI_MOUNT_TYPE, "bucephalus");
+         data.putDouble(TAG_IONIOI_MOUNT_HP, horse.getHealth());
+         data.putBoolean(TAG_IONIOI_MOUNT_FLYING, false);
+         data.putBoolean(TAG_IONIOI_MOUNT_MASTER_RIDING, master != null && horse.getPassengers().contains(master));
+      } else if (vehicle instanceof GordiusWheelEntity wheel && wheel.isAlive()) {
+         data.putString(TAG_IONIOI_MOUNT_TYPE, "gordius_wheel");
+         data.putDouble(TAG_IONIOI_MOUNT_HP, wheel.getHealth());
+         data.putBoolean(TAG_IONIOI_MOUNT_FLYING, wheel.isFlyingMode());
+         data.putBoolean(TAG_IONIOI_MOUNT_MASTER_RIDING, master != null && wheel.getPassengers().contains(master));
+      }
+   }
+
+   private void restoreIonioiMount(ServerLevel level) {
+      CompoundTag data = this.getPersistentData();
+      String type = data.getString(TAG_IONIOI_MOUNT_TYPE);
+      if (type.isBlank()) {
+         return;
+      }
+      IskandarMountEntity mount = "gordius_wheel".equals(type)
+         ? ModEntities.GORDIUS_WHEEL.get().create(level)
+         : ModEntities.BUCEPHALUS.get().create(level);
+      if (mount == null) {
+         return;
+      }
+      Vec3 forward = horizontal(this.getLookAngle());
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(0.0, 0.0, 1.0);
+      }
+      Vec3 pos = safeIonioiEntry(level, this.position().subtract(forward.normalize().scale(1.0)));
+      mount.moveTo(pos.x, pos.y, pos.z, this.getYRot(), 0.0F);
+      mount.bindIskandar(this, this.getEntityMaster());
+      mount.setHealth(Mth.clamp((float)data.getDouble(TAG_IONIOI_MOUNT_HP), 1.0F, mount.getMaxHealth()));
+      if (mount instanceof GordiusWheelEntity wheel) {
+         wheel.restoreFlyingMode(data.getBoolean(TAG_IONIOI_MOUNT_FLYING));
+         wheel.snapRearBodyToCurrentPosition();
+      }
+      if (!level.addFreshEntity(mount)) {
+         return;
+      }
+      if (mount instanceof BucephalusEntity) {
+         this.bucephalusUuid = mount.getUUID();
+      } else {
+         this.gordiusWheelUuid = mount.getUUID();
+      }
+      this.startRiding(mount, true);
+      LivingEntity master = this.getEntityMaster();
+      if (data.getBoolean(TAG_IONIOI_MOUNT_MASTER_RIDING)
+         && master != null && master.isAlive() && master.level() == level) {
+         master.startRiding(mount, true);
+      }
+      data.remove(TAG_IONIOI_MOUNT_TYPE);
+      data.remove(TAG_IONIOI_MOUNT_HP);
+      data.remove(TAG_IONIOI_MOUNT_FLYING);
+      data.remove(TAG_IONIOI_MOUNT_MASTER_RIDING);
    }
 
    void discardBucephalus(ServerLevel level) {

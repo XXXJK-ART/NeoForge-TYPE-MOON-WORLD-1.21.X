@@ -323,6 +323,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusRenderer::new);
       event.registerEntityRenderer(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierRenderer::new);
       event.registerEntityRenderer(ModEntities.MACEDONIAN_SOLDIER.get(), MacedonianSoldierRenderer::new);
+      event.registerEntityRenderer(ModEntities.MACEDONIAN_SPEAR_PROJECTILE.get(), ProjectedItemProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.SWORD_BARREL_PROJECTILE.get(), SwordBarrelProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_CONTROLLED_SWORD.get(), UbwControlledSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_INTERCEPTOR_SWORD.get(), UBWInterceptorSwordRenderer::new);

@@ -31,6 +31,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardIskandarSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
@@ -244,6 +245,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          && !this.getPassengers().contains(target)
          && (!EntityUtils.isImmunePlayerTarget(target) || ionioiMarkedTarget)
          && !EntityUtils.isUntargetableServantTransition(target)
+         && !ServantMasterProtection.isProtectedMaster(iskandar, target)
          && !this.isAlliedTo(target)
          && !iskandar.isAlliedTo(target);
    }
@@ -411,7 +413,9 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       passenger.setYHeadRot(this.getYRot());
       if (passenger instanceof LivingEntity living) {
          living.setYBodyRot(this.getYRot());
-         living.setXRot(0.0F);
+         if (!(passenger instanceof Player)) {
+            living.setXRot(0.0F);
+         }
       }
    }
 
@@ -461,7 +465,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       }
       this.chargeDirection = direction.normalize();
       this.chargeTicksRemaining = getChargeDurationTicks();
-      this.chargeDamage = damage;
+      this.chargeDamage = damage * 2.0F;
       this.chargeWidth = width;
       this.chargeHitTargets.clear();
       this.setYRot((float)(Math.atan2(-this.chargeDirection.x, this.chargeDirection.z) * 180.0 / Math.PI));
@@ -483,7 +487,10 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          .inflate(this.chargeWidth, 0.95, this.chargeWidth);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && !this.getPassengers().contains(entity) && entity.isAlive()
-            && !EntityUtils.isImmunePlayerTarget(entity) && !this.isAlliedTo(entity))) {
+            && !EntityUtils.isImmunePlayerTarget(entity)
+            && !this.isAlliedTo(entity)
+            && !ServantMasterProtection.isProtectedMaster(source, entity)
+            && this.hasLineOfSight(entity))) {
          if (!this.chargeHitTargets.add(target.getUUID())) {
             continue;
          }
@@ -618,6 +625,10 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
 
    public boolean isCardOwner(Entity entity) {
       return entity != null && this.cardOwnerUuid != null && this.cardOwnerUuid.equals(entity.getUUID());
+   }
+
+   public boolean isBoundToMaster(LivingEntity target) {
+      return target != null && this.masterUuid != null && this.masterUuid.equals(target.getUUID());
    }
 
    @Override

@@ -34,7 +34,6 @@ public final class IskandarCombatHelper {
 
       LivingEntity target = entity.getTarget();
       if (target == null || !target.isAlive()) {
-         dismountForWalking(entity);
          resetIonioiWarmup(entity);
          return;
       }
@@ -137,16 +136,9 @@ public final class IskandarCombatHelper {
          return;
       }
       if (!entity.isGordiusWheelDestroyed()) {
-         dismountForWalking(entity);
          return;
       }
       keepRidingBucephalus(entity, level);
-   }
-
-   private static void dismountForWalking(IskandarEntity entity) {
-      if (entity.getVehicle() instanceof BucephalusEntity || entity.getVehicle() instanceof GordiusWheelEntity) {
-         entity.stopRiding();
-      }
    }
 
    private static void keepRidingBucephalus(IskandarEntity entity, ServerLevel level) {

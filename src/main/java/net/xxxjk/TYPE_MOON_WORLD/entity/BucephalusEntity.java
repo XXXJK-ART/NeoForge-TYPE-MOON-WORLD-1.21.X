@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -18,14 +19,18 @@ public final class BucephalusEntity extends IskandarMountEntity {
 
    @Override
    protected void followCardOwnerInput(ServerPlayer owner) {
-      float forwardInput = Math.max(0.0F, owner.zza);
+      float forwardInput = owner.zza;
       float strafeInput = owner.xxa;
-      float yaw = owner.getYRot();
+      float yaw = Mth.rotLerp(0.32F, this.getYRot(), owner.getYRot());
       this.setYRot(yaw);
       this.setYBodyRot(yaw);
       this.setYHeadRot(yaw);
 
-      Vec3 forward = new Vec3(-Math.sin(Math.toRadians(yaw)), 0.0, Math.cos(Math.toRadians(yaw)));
+      Vec3 forward = owner.getLookAngle();
+      if (forward.lengthSqr() < 1.0E-4) {
+         forward = new Vec3(-Math.sin(Math.toRadians(yaw)), 0.0, Math.cos(Math.toRadians(yaw)));
+      }
+      forward = forward.normalize();
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
       if (intent.lengthSqr() > 1.0E-4) {

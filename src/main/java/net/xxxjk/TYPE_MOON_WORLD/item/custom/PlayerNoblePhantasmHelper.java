@@ -419,7 +419,7 @@ public final class PlayerNoblePhantasmHelper {
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK, powerScale);
       level.addFreshEntity(beam);
       revealArtoriaWindVeiledExcaliburForNp(player, EXCALIBUR_RELEASE_TICKS + 100);
-      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150.0);
       addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
@@ -473,7 +473,7 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, GOLDEN_EXCALIBUR_RELEASE_TICKS, 0, powerScale, true);
       level.addFreshEntity(beam);
-      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 192.0);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150.0);
       level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 2, 0.05, 0.05, 0.05, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 70, 0.55, 0.55, 0.55, 0.18);
       addGoldenExcaliburCooldown(player, scaledCooldown(GOLDEN_EXCALIBUR_PLAYER_COOLDOWN, powerScale));

@@ -17,6 +17,9 @@ public final class TalentService {
    public static final String STRENGTH_UNTIL_TAG = "TypeMoonMonstrousStrengthUntil";
    public static final String STRENGTH_AMPLIFIER_TAG = "TypeMoonMonstrousStrengthAmplifier";
    public static final String STRENGTH_SUSPENDED_REMAINING_TAG = "TypeMoonMonstrousStrengthSuspendedRemaining";
+   public static final String CLAIRVOYANCE_UNTIL_TAG = "TypeMoonClairvoyanceUntil";
+   private static final long CLAIRVOYANCE_DURATION_TICKS = 10L * 60L * 20L;
+   private static final long CLAIRVOYANCE_REFRESH_THRESHOLD_TICKS = 20L * 20L;
    private static final String EFFECTS_SUSPENDED_TAG = "TypeMoonTalentEffectsSuspended";
 
    private TalentService() {
@@ -82,6 +85,8 @@ public final class TalentService {
          return true;
       }
       if (CLAIRVOYANCE.equals(id)) {
+         player.getPersistentData().putLong(CLAIRVOYANCE_UNTIL_TAG,
+            player.level().getGameTime() + CLAIRVOYANCE_DURATION_TICKS);
          ModNetwork.sendToPlayer(player, new ClairvoyanceStateMessage(true, maxZoom(proficiency(vars, id))));
          return true;
       }
@@ -100,12 +105,17 @@ public final class TalentService {
       }
       long until = player.getPersistentData().getLong(STRENGTH_UNTIL_TAG);
       long now = player.level().getGameTime();
+      if (TalentService.owns(vars, CLAIRVOYANCE)) {
+         long clairvoyanceUntil = player.getPersistentData().getLong(CLAIRVOYANCE_UNTIL_TAG);
+         if (clairvoyanceUntil > 0L && clairvoyanceUntil - now <= CLAIRVOYANCE_REFRESH_THRESHOLD_TICKS) {
+            player.getPersistentData().putLong(CLAIRVOYANCE_UNTIL_TAG, now + CLAIRVOYANCE_DURATION_TICKS);
+            ModNetwork.sendToPlayer(player, new ClairvoyanceStateMessage(true, maxZoom(proficiency(vars, CLAIRVOYANCE))));
+         }
+      }
       if (until <= now) {
          player.getPersistentData().remove(STRENGTH_UNTIL_TAG);
          player.getPersistentData().remove(STRENGTH_AMPLIFIER_TAG);
-         return;
-      }
-      if (!player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH)) {
+      } else if (!player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH)) {
          int amplifier = Mth.clamp(player.getPersistentData().getInt(STRENGTH_AMPLIFIER_TAG), 0, 5);
          player.addEffect(new MobEffectInstance(ModMobEffects.MONSTROUS_STRENGTH, (int)Math.min(Integer.MAX_VALUE, until - now), amplifier, false, true, true));
       }
@@ -159,6 +169,7 @@ public final class TalentService {
    }
 
    public static void resetClairvoyance(ServerPlayer player) {
+      player.getPersistentData().remove(CLAIRVOYANCE_UNTIL_TAG);
       ModNetwork.sendToPlayer(player, new ClairvoyanceStateMessage(false, 2));
    }
 

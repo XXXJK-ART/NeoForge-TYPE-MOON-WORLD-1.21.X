@@ -494,9 +494,7 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
-         if (!event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)
-            && !NoblePhantasmDamageClassifier.isNoblePhantasmDamage(event.getSource(), event.getOriginalAmount())
-            && ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
+         if (ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
             return;

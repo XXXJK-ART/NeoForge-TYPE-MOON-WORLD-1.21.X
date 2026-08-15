@@ -27,11 +27,9 @@ public final class ClairvoyanceClientState {
       maxZoom = Math.max(2, Math.min(12, maximum));
       if (!toggle) {
          reset();
-      } else if (active) {
-         reset();
       } else {
          active = true;
-         zoom = Math.min(2, maxZoom);
+         zoom = Math.max(1, Math.min(active ? zoom : 2, maxZoom));
       }
    }
 

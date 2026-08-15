@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSpearProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
@@ -527,6 +528,17 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSoldierEntity>> MACEDONIAN_SOLDIER = ENTITY_TYPES.register(
       "macedonian_soldier", () -> Builder.of(MacedonianSoldierEntity::new, MobCategory.CREATURE)
          .sized(0.65F, 1.9F).clientTrackingRange(64).updateInterval(2).build("macedonian_soldier")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSpearProjectileEntity>> MACEDONIAN_SPEAR_PROJECTILE = ENTITY_TYPES.register(
+      "macedonian_spear_projectile",
+      () -> Builder.<MacedonianSpearProjectileEntity>of(
+            (entityType, level) -> new MacedonianSpearProjectileEntity(
+               (EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.3F, 0.3F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("macedonian_spear_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GaeBulgProjectileEntity>> GAE_BULG_PROJECTILE = ENTITY_TYPES.register(
       "gae_bulg_projectile",

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.lancelot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -136,7 +137,7 @@ class LancelotBerserkerResourcesTest {
       assertTrue(masterProtection.contains("isProtectedMasterDamage"));
       assertTrue(masterProtection.contains("projectile.getOwner()"));
       assertTrue(commonEvents.contains("ServantMasterProtection.isProtectedMasterDamage"));
-      assertTrue(commonEvents.contains("NoblePhantasmDamageClassifier.isNoblePhantasmDamage"));
+      assertFalse(commonEvents.contains("NoblePhantasmDamageClassifier.isNoblePhantasmDamage"));
       assertNull(ServantCardSkillLayout.actionFor("lancelot_berserker", 6, false));
       assertNull(ServantCardSkillLayout.actionFor("lancelot_berserker", 7, false));
    }

@@ -50,6 +50,8 @@ public final class ServantCardIskandarSkills {
    private static final String TAG_GORDIUS_UUID = "ServantCardIskandarGordiusWheel";
    private static final String TAG_GORDIUS_HP = "ServantCardIskandarGordiusWheelHp";
    private static final String TAG_GORDIUS_DEAD = "ServantCardIskandarGordiusWheelDead";
+   private static final String TAG_IONIOI_MOUNT_TYPE = "ServantCardIskandarIonioiMountType";
+   private static final String TAG_IONIOI_MOUNT_FLYING = "ServantCardIskandarIonioiMountFlying";
    private static final String TAG_IONIOI_ACTIVE = "ServantCardIskandarIonioiActive";
    private static final String TAG_IONIOI_START = "ServantCardIskandarIonioiStart";
    private static final String TAG_IONIOI_RETURN_DIM = "ServantCardIskandarIonioiReturnDim";
@@ -110,6 +112,8 @@ public final class ServantCardIskandarSkills {
       data.remove(TAG_GORDIUS_UUID);
       data.remove(TAG_GORDIUS_HP);
       data.remove(TAG_GORDIUS_DEAD);
+      data.remove(TAG_IONIOI_MOUNT_TYPE);
+      data.remove(TAG_IONIOI_MOUNT_FLYING);
       data.remove(TAG_IONIOI_DEATHS);
       data.remove(TAG_IONIOI_SEED);
       data.remove(TAG_ORDER_TARGET);
@@ -186,7 +190,7 @@ public final class ServantCardIskandarSkills {
       Vec3 center = target == null ? player.getEyePosition().add(player.getLookAngle().normalize().scale(18.0)) : target.position();
       boolean chariot = player.getVehicle() instanceof GordiusWheelEntity;
       double radius = chariot ? 4.4 : 2.8;
-      float damage = chariot ? 38.0F : 24.0F;
+      float damage = chariot ? 76.0F : 48.0F;
       spawnVisualLightning(level, center);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.5, center.z, chariot ? 80 : 46, radius * 0.32, 0.75, radius * 0.32, 0.22);
       level.playSound(null, BlockPos.containing(center), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 1.05F, 0.86F);
@@ -283,11 +287,11 @@ public final class ServantCardIskandarSkills {
       }
       Entity vehicle = player.getVehicle();
       if (vehicle instanceof GordiusWheelEntity wheel && wheel.isCardOwner(player)) {
-         wheel.performCharge(level, player, 42.0F, 3.0);
+         wheel.performCharge(level, player, 42.0F, 4.2);
          return true;
       }
       if (vehicle instanceof BucephalusEntity horse && horse.isCardOwner(player)) {
-         horse.performCharge(level, player, 32.0F, 2.1);
+         horse.performCharge(level, player, 32.0F, 3.2);
          return true;
       }
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
@@ -295,8 +299,8 @@ public final class ServantCardIskandarSkills {
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 1.65, 0.08, dir.z * 1.65));
       player.hurtMarked = true;
       player.fallDistance = 0.0F;
-      ServantCardSkillUtils.hitForwardArc(player, dir, 5.0, 28.0F);
-      for (LivingEntity enemy : nearbyEnemies(player, 5.0)) {
+      ServantCardSkillUtils.hitForwardArc(player, dir, 7.5, 56.0F);
+      for (LivingEntity enemy : nearbyEnemies(player, 7.5)) {
          enemy.push(dir.x * 1.2, 0.28, dir.z * 1.2);
          enemy.hurtMarked = true;
       }
@@ -421,6 +425,7 @@ public final class ServantCardIskandarSkills {
          movedPlayer.getPersistentData().putDouble(TAG_IONIOI_RETURN_Z, returnZ);
          movedPlayer.getPersistentData().putInt(TAG_IONIOI_DEATHS, lifetimeDeaths);
          movedPlayer.getPersistentData().putLong(TAG_IONIOI_SEED, ionioiSeed(data(player), player));
+         restoreStoredMountAfterIonioi(movedPlayer);
          movedPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, false));
          movedPlayer.fallDistance = 0.0F;
          movedPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).syncServantCardRuntime(movedPlayer);
@@ -550,9 +555,11 @@ public final class ServantCardIskandarSkills {
             cleanupCardIonioiAfterExit(ownerId, session, level, returnLevel);
             return;
          }
+         storeMountedBeforeIonioi(player);
          clearIonioiData(data);
          player.teleportTo(returnLevel, returnPos.x, returnPos.y, returnPos.z, player.getYRot(), player.getXRot());
          clearIonioiData(player.getPersistentData());
+         restoreStoredMountAfterIonioi(player);
          player.fallDistance = 0.0F;
          player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 4, false, false, false));
          cleanupCardIonioiAfterExit(ownerId, session, level, returnLevel);
@@ -571,10 +578,52 @@ public final class ServantCardIskandarSkills {
    private static void storeMountedBeforeIonioi(ServerPlayer player) {
       Entity vehicle = player.getVehicle();
       if (vehicle instanceof BucephalusEntity horse && horse.isCardOwner(player)) {
+         data(player).putString(TAG_IONIOI_MOUNT_TYPE, "bucephalus");
+         data(player).putBoolean(TAG_IONIOI_MOUNT_FLYING, false);
          storeAndDiscardBucephalus(player, horse, false);
       } else if (vehicle instanceof GordiusWheelEntity wheel && wheel.isCardOwner(player)) {
+         data(player).putString(TAG_IONIOI_MOUNT_TYPE, "gordius_wheel");
+         data(player).putBoolean(TAG_IONIOI_MOUNT_FLYING, wheel.isFlyingMode());
          storeAndDiscardGordiusWheel(player, wheel, false);
       }
+   }
+
+   private static void restoreStoredMountAfterIonioi(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return;
+      }
+      CompoundTag data = data(player);
+      String type = data.getString(TAG_IONIOI_MOUNT_TYPE);
+      if (type.isBlank()) {
+         return;
+      }
+      IskandarMountEntity mount = "gordius_wheel".equals(type)
+         ? ModEntities.GORDIUS_WHEEL.get().create(level)
+         : ModEntities.BUCEPHALUS.get().create(level);
+      if (mount == null) {
+         return;
+      }
+      Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
+      Vec3 pos = safeEntry(level, player.position().subtract(forward.scale(1.0)), mount.getBbWidth(), mount.getBbHeight());
+      mount.moveTo(pos.x, pos.y, pos.z, player.getYRot(), 0.0F);
+      mount.bindCardOwner(player);
+      double hp = "gordius_wheel".equals(type) ? data.getDouble(TAG_GORDIUS_HP) : data.getDouble(TAG_BUCEPHALUS_HP);
+      mount.setHealth(Mth.clamp((float)hp, 1.0F, mount.getMaxHealth()));
+      if (mount instanceof GordiusWheelEntity wheel) {
+         wheel.restoreFlyingMode(data.getBoolean(TAG_IONIOI_MOUNT_FLYING));
+         wheel.snapRearBodyToCurrentPosition();
+      }
+      if (!level.addFreshEntity(mount)) {
+         return;
+      }
+      if (mount instanceof GordiusWheelEntity) {
+         data.putUUID(TAG_GORDIUS_UUID, mount.getUUID());
+      } else {
+         data.putUUID(TAG_BUCEPHALUS_UUID, mount.getUUID());
+      }
+      player.startRiding(mount, true);
+      data.remove(TAG_IONIOI_MOUNT_TYPE);
+      data.remove(TAG_IONIOI_MOUNT_FLYING);
    }
 
    private static void storeAndDiscardMount(ServerPlayer player, IskandarMountEntity mount, String uuidTag, String hpTag, String deadTag, boolean markDead) {

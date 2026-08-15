@@ -42,6 +42,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardIskandarSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -70,6 +71,9 @@ public class MacedonianSoldierEntity extends PathfinderMob {
    private static final int FORMATION_VOLLEY_INTERVAL_TICKS = 18;
    private static final int FORMATION_VOLLEY_WINDOW_TICKS = 8;
    private static final int PERSONAL_SPEAR_CHECK_STRIDE = 3;
+   private static final int SPEAR_THROW_COOLDOWN_TICKS = 36;
+   private static final int SPEAR_THROW_CHECK_STRIDE = 3;
+   private static final double SPEAR_THROW_MAX_RANGE = 28.0;
    private static final double SPEAR_FORWARD_DOT_MIN = 0.38;
    private static final double SPEAR_LANE_HALF_WIDTH = 1.55;
    private static final int FORMATION_TARGET_SCAN_INTERVAL = 30;
@@ -97,6 +101,7 @@ public class MacedonianSoldierEntity extends PathfinderMob {
    @Nullable private Vec3 lastPathSlot;
    private long nextPathRefreshTick;
    private int directSpearCooldown;
+   private int spearThrowCooldown;
 
    public MacedonianSoldierEntity(EntityType<? extends MacedonianSoldierEntity> type, Level level) {
       super(type, level);
@@ -234,6 +239,9 @@ public class MacedonianSoldierEntity extends PathfinderMob {
       if (this.directSpearCooldown > 0) {
          this.directSpearCooldown--;
       }
+      if (this.spearThrowCooldown > 0) {
+         this.spearThrowCooldown--;
+      }
       if (tickServantCardVanguard()) {
          return;
       }
@@ -273,6 +281,7 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          Vec3 slot = formationSurroundSlot(owner, target);
          moveDirectlyInFormation(slot, FORMATION_ASSAULT_SPEED, true);
          tryDirectSpearAttack(target);
+         tryThrowSpear(target);
       } else {
          if (this.getTarget() != null) {
             this.setTarget(null);
@@ -350,6 +359,7 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          Vec3 slot = formationSurroundSlot(owner, target);
          moveDirectlyInFormation(slot, FORMATION_ASSAULT_SPEED, true);
          tryDirectSpearAttack(target);
+         tryThrowSpear(target);
       } else {
          if (this.getTarget() != null) {
             this.setTarget(null);
@@ -522,7 +532,23 @@ public class MacedonianSoldierEntity extends PathfinderMob {
       if (target == null || !target.isAlive() || target == this || this.isAlliedTo(target)) {
          return false;
       }
-      return !EntityUtils.isImmunePlayerTarget(target) || isMarkedIonioiTarget(target);
+      return (!EntityUtils.isImmunePlayerTarget(target) || isMarkedIonioiTarget(target))
+         && !isProtectedOwnerTarget(target);
+   }
+
+   private boolean isProtectedOwnerTarget(LivingEntity target) {
+      if (this.level() instanceof ServerLevel level) {
+         if (this.iskandarUuid != null) {
+            IskandarEntity owner = this.getIskandar(level);
+            return owner != null && ServantMasterProtection.isProtectedMaster(owner, target);
+         }
+         CompoundTag data = this.getPersistentData();
+         if (data.hasUUID(TAG_CARD_OWNER)) {
+            ServerPlayer owner = level.getServer().getPlayerList().getPlayer(data.getUUID(TAG_CARD_OWNER));
+            return owner != null && ServantMasterProtection.isProtectedMaster(owner, target);
+         }
+      }
+      return false;
    }
 
    @Nullable
@@ -627,6 +653,12 @@ public class MacedonianSoldierEntity extends PathfinderMob {
       return candidate instanceof Monster && candidate.distanceToSqr(owner) <= FORMATION_THREAT_SCAN_RADIUS * FORMATION_THREAT_SCAN_RADIUS;
    }
 
+   private boolean isPriorityIonioiCreature(IskandarEntity owner, LivingEntity candidate) {
+      return ModDimensions.isIonioiHetairoiDimension(this.level().dimension().location())
+         && isValidTarget(candidate)
+         && EntityUtils.isValidCombatTarget(owner, candidate);
+   }
+
    private boolean isThreateningCardArmy(ServerPlayer owner, LivingEntity candidate) {
       if (!isValidTarget(candidate)) {
          return false;
@@ -642,6 +674,12 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          return true;
       }
       return candidate instanceof Monster && candidate.distanceToSqr(owner) <= FORMATION_THREAT_SCAN_RADIUS * FORMATION_THREAT_SCAN_RADIUS;
+   }
+
+   private boolean isPriorityCardIonioiCreature(ServerPlayer owner, LivingEntity candidate) {
+      return ModDimensions.isIonioiHetairoiDimension(this.level().dimension().location())
+         && isValidTarget(candidate)
+         && EntityUtils.isValidCombatTarget(owner, candidate);
    }
 
    private void moveInFormation(IskandarEntity owner, @Nullable LivingEntity target) {
@@ -703,6 +741,46 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          emitSpearThrustFeedback(target);
          this.doHurtTarget(target);
       }
+   }
+
+   private void tryThrowSpear(LivingEntity target) {
+      if (this.spearThrowCooldown > 0
+         || !isValidTarget(target)
+         || !this.getSensing().hasLineOfSight(target)
+         || !shouldCheckSpearThrowThisTick()) {
+         return;
+      }
+      double distance = this.distanceTo(target);
+      if (distance < 5.0 || distance > SPEAR_THROW_MAX_RANGE) {
+         return;
+      }
+      Vec3 origin = this.position().add(0.0, this.getBbHeight() * 0.62, 0.0);
+      Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.48, 0.0);
+      Vec3 direction = targetPoint.subtract(origin);
+      if (direction.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      MacedonianSpearProjectileEntity projectile = new MacedonianSpearProjectileEntity(
+         this.level(), this, this.getSpearThrowDamage());
+      projectile.setPos(origin.x, origin.y, origin.z);
+      projectile.shoot(direction.x, direction.y, direction.z, 1.72F, 0.02F);
+      this.level().addFreshEntity(projectile);
+      this.spearThrowCooldown = SPEAR_THROW_COOLDOWN_TICKS
+         + Math.floorMod(this.poolIndex >= 0 ? this.poolIndex : this.getId(), 9);
+      this.swing(InteractionHand.MAIN_HAND);
+   }
+
+   private boolean shouldCheckSpearThrowThisTick() {
+      int phase = Math.floorMod(this.poolIndex >= 0 ? this.poolIndex : this.getId(), SPEAR_THROW_CHECK_STRIDE);
+      return Math.floorMod(this.tickCount + phase, SPEAR_THROW_CHECK_STRIDE) == 0;
+   }
+
+   public float getSpearThrowDamage() {
+      double baseAttack = this.getAttribute(Attributes.ATTACK_DAMAGE) != null
+         ? this.getAttribute(Attributes.ATTACK_DAMAGE).getBaseValue() : this.getSoldierRank().toAttackDamage();
+      double weaponAttack = 6.0;
+      double rankBonus = this.getSoldierRank().toAttackDamage();
+      return (float)(baseAttack + weaponAttack + rankBonus);
    }
 
    private boolean isFormationVolleyWindow() {
@@ -944,7 +1022,9 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          this.scanTick = now;
          this.targets.clear();
          List<LivingEntity> scanned = level.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(FORMATION_THREAT_SCAN_RADIUS),
-            candidate -> soldier.isAssignedIonioiTarget(owner, candidate) || soldier.isThreateningNpcArmy(owner, candidate));
+            candidate -> soldier.isAssignedIonioiTarget(owner, candidate)
+               || soldier.isThreateningNpcArmy(owner, candidate)
+               || soldier.isPriorityIonioiCreature(owner, candidate));
          scanned.sort((left, right) -> Double.compare(left.distanceToSqr(owner), right.distanceToSqr(owner)));
          List<UUID> threatTargets = new ArrayList<>();
          LivingEntity fallback = null;
@@ -972,7 +1052,9 @@ public class MacedonianSoldierEntity extends PathfinderMob {
          this.scanTick = now;
          this.targets.clear();
          List<LivingEntity> scanned = level.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(FORMATION_THREAT_SCAN_RADIUS),
-            candidate -> soldier.isAssignedCardIonioiTarget(owner, candidate) || soldier.isThreateningCardArmy(owner, candidate));
+            candidate -> soldier.isAssignedCardIonioiTarget(owner, candidate)
+               || soldier.isThreateningCardArmy(owner, candidate)
+               || soldier.isPriorityCardIonioiCreature(owner, candidate));
          scanned.sort((left, right) -> Double.compare(left.distanceToSqr(owner), right.distanceToSqr(owner)));
          List<UUID> threatTargets = new ArrayList<>();
          LivingEntity fallback = null;
