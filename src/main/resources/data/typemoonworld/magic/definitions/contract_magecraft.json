@@ -1,0 +1,19 @@
+{
+  "id": "typemoonworld:contract_magecraft",
+  "name_key": "magic.typemoonworld.contract_magecraft.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "complexity": 55,
+  "chant_segments": 2,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 0.0,
+  "cooldown_ticks": 20,
+  "learnable": true,
+  "wheel_selectable": false,
+  "crest_allowed": false,
+  "npc_allowed": true,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 12,
+  "npc_cooldown": 40
+}

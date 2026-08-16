@@ -74,6 +74,10 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_VICTORY = register("arash_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_STELLA = register("arash_voice_stella");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARASH_VOICE_STELLA_SHORT = register("arash_voice_stella_short");
+   public static final DeferredHolder<SoundEvent, SoundEvent> BAOBHAN_SITH_VOICE_ATTACK = register("baobhan_sith_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> BAOBHAN_SITH_VOICE_FAIL = register("baobhan_sith_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> BAOBHAN_SITH_VOICE_VICTORY = register("baobhan_sith_voice_victory");
+   public static final DeferredHolder<SoundEvent, SoundEvent> BAOBHAN_SITH_VOICE_NP = register("baobhan_sith_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_ATTACK = register("artoria_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_FAIL = register("artoria_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_VICTORY = register("artoria_voice_victory");

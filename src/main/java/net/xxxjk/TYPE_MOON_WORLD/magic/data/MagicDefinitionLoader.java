@@ -3,7 +3,6 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import com.mojang.serialization.JsonOps;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
@@ -25,12 +24,14 @@ public final class MagicDefinitionLoader extends SimpleJsonResourceReloadListene
    protected void apply(Map<ResourceLocation, JsonElement> resources, ResourceManager manager, ProfilerFiller profiler) {
       Map<String, MagicDefinitionData> loaded = new LinkedHashMap<>();
       for (Map.Entry<ResourceLocation, JsonElement> entry : resources.entrySet()) {
-         MagicDefinitionData.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
-            .resultOrPartial(message -> net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error(
-               "Invalid magic definition {}: {}", entry.getKey(), message
-            ))
-            .map(definition -> definition.withId(entry.getKey()))
-            .ifPresent(definition -> loaded.put(definition.id().toString(), definition));
+         try {
+            MagicDefinitionData definition = MagicDefinitionData.fromJson(entry.getValue().getAsJsonObject()).withId(entry.getKey());
+            loaded.put(definition.id().toString(), definition);
+         } catch (Exception exception) {
+            net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error(
+               "Invalid magic definition {}: {}", entry.getKey(), exception.getMessage()
+            );
+         }
       }
       MagicDefinitionRegistry.reload(loaded);
    }

@@ -31,12 +31,13 @@ public final class PassiveService {
    public static final String MIND_EYE_FALSE = "mind_eye_false";
    public static final String INSTINCT = "instinct";
    public static final String HIGH_SPEED_INCANTATION = "high_speed_incantation";
+   public static final String HIGH_SPEED_THINKING = "high_speed_thinking";
    public static final String HIGH_SPEED_DIVINE_WORDS = "high_speed_divine_words";
    public static final String PARTITIONED_THOUGHT = "partitioned_thought";
    public static final String GOLDEN_RULE = "golden_rule";
    public static final Set<String> IDS = Set.of(
       DIVINITY, CLAIRVOYANCE, MIND_EYE_TRUE, MIND_EYE_FALSE, INSTINCT,
-      HIGH_SPEED_INCANTATION, HIGH_SPEED_DIVINE_WORDS, PARTITIONED_THOUGHT, GOLDEN_RULE);
+      HIGH_SPEED_INCANTATION, HIGH_SPEED_THINKING, HIGH_SPEED_DIVINE_WORDS, PARTITIONED_THOUGHT, GOLDEN_RULE);
    private static final ResourceLocation DIVINITY_HEALTH_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_health");
    private static final ResourceLocation DIVINITY_ATTACK_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_attack");
    private static final String CLAIRVOYANCE_NIGHT_VISION_TAG = "TypeMoonPassiveClairvoyanceNightVision";

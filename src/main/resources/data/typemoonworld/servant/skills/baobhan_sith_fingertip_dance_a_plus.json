@@ -1,0 +1,28 @@
+{
+  "id": "baobhan_sith_fingertip_dance_a_plus",
+  "display_name": "Dance of the Fingertips A+",
+  "display_name_zh": "指尖的舞蹈 A+",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 300,
+  "duration_ticks": 20,
+  "effects": [
+    {
+      "effect_type": "melee_combo_medium_collection",
+      "params": {
+        "hits": 3,
+        "damage_per_hit": 20,
+        "medium_chance": 0.5
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "melee_pressure",
+        "strength": 0.6,
+        "requires": ["mobile", "not_silenced"]
+      }
+    ]
+  }
+}

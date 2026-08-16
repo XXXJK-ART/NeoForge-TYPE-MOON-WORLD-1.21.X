@@ -30,7 +30,9 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
@@ -94,6 +96,15 @@ public class TypeMoonCommands {
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
       EARTH_MAGIC_ID,
+      "flame_array",
+      "azure_water_array",
+      "gale_wind_array",
+      "rock_earth_array",
+      "contract_magecraft",
+      "aerial_stasis",
+      "aerial_ascent",
+      "touko_travel",
+      "flight_magic",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -131,6 +142,15 @@ public class TypeMoonCommands {
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
       EARTH_MAGIC_ID,
+      "flame_array",
+      "azure_water_array",
+      "gale_wind_array",
+      "rock_earth_array",
+      "contract_magecraft",
+      "aerial_stasis",
+      "aerial_ascent",
+      "touko_travel",
+      "flight_magic",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -1015,6 +1035,10 @@ public class TypeMoonCommands {
          }
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) {
+            ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Magic learning requirements not met: " + magicId));
+            return 0;
+         }
          if (("jewel_magic_release".equals(magicId) || "jewel_machine_gun".equals(magicId)) && !vars.learned_magics.contains("jewel_magic_shoot")) {
             ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Learn basic jewel magic first: jewel_magic_shoot"));
             return 0;
@@ -1352,6 +1376,17 @@ public class TypeMoonCommands {
                break;
             case "earth_magic":
                vars.proficiency_earth_magic = value;
+               break;
+            case "flame_array":
+            case "azure_water_array":
+            case "gale_wind_array":
+            case "rock_earth_array":
+            case "contract_magecraft":
+            case "aerial_stasis":
+            case "aerial_ascent":
+            case "touko_travel":
+            case "flight_magic":
+               MagicProficiencyService.set(vars, type, value);
                break;
             case "time_alter":
                vars.proficiency_time_alter = value;

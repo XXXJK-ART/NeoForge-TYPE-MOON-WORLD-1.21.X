@@ -1,1 +1,1 @@
-{"type":"minecraft:crafting_shaped","category":"misc","pattern":["BIB","PTP","PPP"],"key":{"B":{"item":"minecraft:book"},"I":{"item":"minecraft:ink_sac"},"P":{"item":"minecraft:oak_planks"},"T":{"item":"minecraft:crafting_table"}},"result":{"id":"typemoonworld:magic_research_table","count":1}}
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["P P","M M","P P"],"key":{"P":{"tag":"minecraft:planks"},"M":{"tag":"typemoonworld:magic_pages"}},"result":{"id":"typemoonworld:magic_research_table","count":1}}

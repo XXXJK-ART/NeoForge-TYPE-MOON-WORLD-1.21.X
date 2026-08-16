@@ -90,6 +90,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SelfGeasScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
@@ -2003,6 +2004,16 @@ public class CommonEvents {
          if (bonus > 0.0F) {
             event.setAmount(event.getAmount() + bonus);
          }
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public static void onSelfGeasContractDamage(LivingIncomingDamageEvent event) {
+      if (event.isCanceled() || event.getAmount() <= 0.0F || event.getEntity().level().isClientSide()) {
+         return;
+      }
+      if (event.getSource().getEntity() instanceof ServerPlayer attacker && event.getEntity() instanceof LivingEntity target) {
+         SelfGeasScrollItem.tryApplyContract(event, attacker, target);
       }
    }
 

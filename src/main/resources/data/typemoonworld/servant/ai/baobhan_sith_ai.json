@@ -1,0 +1,41 @@
+{
+  "id": "baobhan_sith_ai",
+  "movement": {
+    "follow_distance": 8.0,
+    "wander_radius": 12.0,
+    "likes_high_places": true
+  },
+  "combat": {
+    "preferred_attack_distance": 22.0,
+    "retreat_health_ratio": 0.48,
+    "melee_preference": 0.08,
+    "berserk_health_ratio": 0.22,
+    "berserk_damage_multiplier": 1.08
+  },
+  "tactical": {
+    "style": "controller",
+    "minimum_range": 10,
+    "preferred_range": 22,
+    "maximum_range": 42,
+    "reposition_distance": 16,
+    "pursuit_aggression": 0.22,
+    "intercept_bias": 7,
+    "vertical_mobility": 0.7,
+    "recovery_tendency": 0.72,
+    "collateral_caution": 0.92,
+    "maximum_terrain_impact": "chip"
+  },
+  "social": {
+    "talk_interval": 0,
+    "greeting_probability": 0.0
+  },
+  "command": {
+    "base_obedience_rate": 0.4,
+    "favor_multiplier": 0.004
+  },
+  "environment": {
+    "liked_biomes": [],
+    "disliked_biomes": [],
+    "preferred_weather": "night"
+  }
+}

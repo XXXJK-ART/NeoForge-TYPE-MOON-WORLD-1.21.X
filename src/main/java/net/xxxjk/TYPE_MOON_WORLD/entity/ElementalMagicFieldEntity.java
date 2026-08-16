@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -28,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class ElementalMagicFieldEntity extends Entity {
@@ -43,6 +45,9 @@ public class ElementalMagicFieldEntity extends Entity {
    public static final int FORM_EARTH_WALL = 5;
    public static final int FORM_EARTH_PRISON = 6;
    public static final int FORM_EARTH_QUAKE = 7;
+   public static final int FORM_WATER_SLOW_ARRAY = 8;
+   public static final int FORM_WIND_PUSH_ARRAY = 9;
+   public static final int FORM_EARTH_BIND_ARRAY = 10;
    private static final EntityDataAccessor<Integer> ELEMENT = SynchedEntityData.defineId(ElementalMagicFieldEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> FORM = SynchedEntityData.defineId(ElementalMagicFieldEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> RADIUS = SynchedEntityData.defineId(ElementalMagicFieldEntity.class, EntityDataSerializers.FLOAT);
@@ -52,6 +57,7 @@ public class ElementalMagicFieldEntity extends Entity {
    private LivingEntity owner;
    private UUID ownerUUID;
    private final List<ElementalMagicFieldEntity.BlockSnapshot> snapshots = new ArrayList<>();
+   private float manaPerTick = 0.0F;
 
    public ElementalMagicFieldEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -71,6 +77,10 @@ public class ElementalMagicFieldEntity extends Entity {
 
    public void setDamagePerSecond(float damagePerSecond) {
       this.damagePerSecond = Math.max(0.0F, damagePerSecond);
+   }
+
+   public void setManaPerTick(float manaPerTick) {
+      this.manaPerTick = Math.max(0.0F, manaPerTick);
    }
 
    public void setOwner(LivingEntity owner) {
@@ -102,6 +112,7 @@ public class ElementalMagicFieldEntity extends Entity {
       this.entityData.set(WIDTH, tag.getFloat("Width"));
       this.duration = tag.getInt("Duration");
       this.damagePerSecond = tag.getFloat("DamagePerSecond");
+      this.manaPerTick = tag.getFloat("ManaPerTick");
       if (tag.hasUUID("Owner")) {
          this.ownerUUID = tag.getUUID("Owner");
       }
@@ -114,6 +125,7 @@ public class ElementalMagicFieldEntity extends Entity {
       tag.putFloat("Width", this.entityData.get(WIDTH));
       tag.putInt("Duration", this.duration);
       tag.putFloat("DamagePerSecond", this.damagePerSecond);
+      tag.putFloat("ManaPerTick", this.manaPerTick);
       if (this.ownerUUID != null) {
          tag.putUUID("Owner", this.ownerUUID);
       }
@@ -128,6 +140,11 @@ public class ElementalMagicFieldEntity extends Entity {
          if (this.tickCount % 2 == 0) {
             spawnClientParticles();
          }
+         return;
+      }
+      if (!drainMana()) {
+         restoreBlocks();
+         this.discard();
          return;
       }
       if (this.tickCount >= this.duration) {
@@ -184,9 +201,20 @@ public class ElementalMagicFieldEntity extends Entity {
             living.setDeltaMovement(Vec3.ZERO);
             living.hurtMarked = true;
             hurtEverySecond(ownerEntity, living, this.damagePerSecond);
+         } else if (form == FORM_WATER_SLOW_ARRAY) {
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1, false, true, true));
+            hurtEverySecond(ownerEntity, living, this.damagePerSecond);
          } else if (form == FORM_WIND_TORNADO) {
             living.fallDistance = 0.0F;
             living.setDeltaMovement(living.getDeltaMovement().add(0.0, 0.18, 0.0));
+            living.hurtMarked = true;
+            hurtEverySecond(ownerEntity, living, this.damagePerSecond);
+         } else if (form == FORM_WIND_PUSH_ARRAY) {
+            Vec3 away = living.position().subtract(this.position());
+            if (away.lengthSqr() < 0.001) {
+               away = new Vec3(this.random.nextDouble() - 0.5, 0.15, this.random.nextDouble() - 0.5);
+            }
+            living.setDeltaMovement(living.getDeltaMovement().add(away.normalize().scale(0.35)).add(0.0, 0.15, 0.0));
             living.hurtMarked = true;
             hurtEverySecond(ownerEntity, living, this.damagePerSecond);
          } else if (form == FORM_EARTH_PRISON) {
@@ -200,6 +228,11 @@ public class ElementalMagicFieldEntity extends Entity {
                living.setDeltaMovement(living.getDeltaMovement().add(0.0, -0.15, 0.0));
                living.hurtMarked = true;
             }
+         } else if (form == FORM_EARTH_BIND_ARRAY) {
+            living.setDeltaMovement(Vec3.ZERO);
+            living.hurtMarked = true;
+            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2, false, true, true));
+            hurtEverySecond(ownerEntity, living, this.damagePerSecond);
          }
       }
    }
@@ -207,9 +240,12 @@ public class ElementalMagicFieldEntity extends Entity {
    private static boolean affectsLivingEntities(int form) {
       return form == FORM_FIRE_WALL
          || form == FORM_WATER_PRISON
+         || form == FORM_WATER_SLOW_ARRAY
          || form == FORM_WIND_TORNADO
+         || form == FORM_WIND_PUSH_ARRAY
          || form == FORM_EARTH_PRISON
-         || form == FORM_EARTH_QUAKE;
+         || form == FORM_EARTH_QUAKE
+         || form == FORM_EARTH_BIND_ARRAY;
    }
 
    private void hurtEverySecond(LivingEntity ownerEntity, LivingEntity target, float amount) {
@@ -318,6 +354,23 @@ public class ElementalMagicFieldEntity extends Entity {
          double y = this.getY() + this.random.nextDouble() * (form == FORM_WIND_TORNADO ? 5.0 : 2.0);
          this.level().addParticle(particle, x, y, z, 0.0, 0.04, 0.0);
       }
+   }
+
+   private boolean drainMana() {
+      if (this.manaPerTick <= 0.0F) {
+         return true;
+      }
+      LivingEntity ownerEntity = getOwner();
+      if (!(ownerEntity instanceof ServerPlayer player)) {
+         return true;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.player_mana + 1.0E-6 < this.manaPerTick) {
+         return false;
+      }
+      vars.player_mana = Math.max(0.0, vars.player_mana - this.manaPerTick);
+      vars.syncMana(player);
+      return true;
    }
 
    private record BlockSnapshot(BlockPos pos, BlockState state) {

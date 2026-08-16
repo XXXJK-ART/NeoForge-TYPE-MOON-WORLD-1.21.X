@@ -42,7 +42,7 @@ public final class DefinitionSnapshotService {
    }
    public static String build() {
       JsonObject root = new JsonObject();
-      JsonObject magic = new JsonObject(); MagicDefinitionRegistry.all().forEach((id, def) -> MagicDefinitionData.CODEC.encodeStart(JsonOps.INSTANCE, def).result().ifPresent(json -> magic.add(id, json)));
+      JsonObject magic = new JsonObject(); MagicDefinitionRegistry.all().forEach((id, def) -> magic.add(id, def.toJson()));
       root.add("magic", magic);
       JsonObject servants = new JsonObject(); ServantDataRegistry.getAll().keySet().forEach(id -> servants.addProperty(id, true)); root.add("servants", servants);
       root.add("skills", encodeSkills()); root.add("noble_phantasms", encodeNps()); root.add("ai", encodeAi());

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "CCC",
+    "CCC",
+    "CCC"
+  ],
+  "key": {
+    "C": {
+      "item": "typemoonworld:cinnabar"
+    }
+  },
+  "result": {
+    "id": "typemoonworld:cinnabar_block",
+    "count": 1
+  }
+}

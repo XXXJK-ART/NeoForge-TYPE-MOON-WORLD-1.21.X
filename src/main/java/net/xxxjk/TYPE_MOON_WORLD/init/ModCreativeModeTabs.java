@@ -65,6 +65,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_DIARMUID_UA_DUIBHNE);
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER);
                         output.accept(ModItems.SERVANT_CARD_ISKANDAR);
+                        output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_LEGS);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);
@@ -235,6 +238,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
                         output.accept(ModItems.PARTITIONED_THOUGHT_FRAGMENT);
+                        output.accept(ModItems.SELF_GEAS_SCROLL);
                         output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_BOOK_STIGMA);
@@ -304,7 +308,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ISKANDAR_SHORTSWORD);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(ModItems.STAFF);
                         output.accept(ModItems.RUBY_STAFF);
+                        output.accept(ModItems.SAPPHIRE_STAFF);
+                        output.accept(ModItems.EMERALD_STAFF);
+                        output.accept(ModItems.CYAN_STAFF);
+                        output.accept(ModItems.TOPAZ_STAFF);
                         output.accept(ModItems.NAMELESS_CHAIN_DAGGER);
                         output.accept(ModItems.DIRK_SMALL_KNIFE);
                         output.accept(ModItems.GAN_JIANG);
@@ -313,6 +322,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MO_YE_OVEREDGE);
                         output.accept(ModItems.NAMELESS_BOW);
                         output.accept(ModItems.ARASH_BOW);
+                        output.accept(ModItems.BAOBHAN_SITH_HARP);
                         output.accept(ModItems.GILGAMESH_SLATE);
                         output.accept(ModItems.PSEUDO_SPIRAL_SWORD);
                         output.accept(ModItems.CRIMSON_HOUND);
@@ -329,6 +339,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.GEM_CARVING_TABLE);
                         output.accept(ModBlocks.MAGIC_RESEARCH_TABLE);
                         output.accept(ModBlocks.MAGIC_COPYING_TABLE);
+                        output.accept(ModBlocks.ALCHEMY_CAULDRON);
                         output.accept(ModItems.MANA_SURVEY_BASE);
                         output.accept(ModItems.MANA_SURVEY_POINTER);
                         output.accept(ModItems.MANA_SURVEY_COMPASS);
@@ -346,6 +357,21 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RAW_TOPAZ);
                         output.accept(ModItems.RAW_WHITE_GEMSTONE);
                         output.accept(ModItems.RAW_CYAN_GEMSTONE);
+                        output.accept(ModItems.CINNABAR);
+                        output.accept(ModItems.SULFUR);
+                        output.accept(ModItems.MERCURY_BOTTLE);
+                        output.accept(ModItems.MOLTEN_RUBY_BOTTLE);
+                        output.accept(ModItems.MOLTEN_SAPPHIRE_BOTTLE);
+                        output.accept(ModItems.MOLTEN_EMERALD_BOTTLE);
+                        output.accept(ModItems.MOLTEN_TOPAZ_BOTTLE);
+                        output.accept(ModItems.MOLTEN_WHITE_GEMSTONE_BOTTLE);
+                        output.accept(ModItems.MOLTEN_CYAN_GEMSTONE_BOTTLE);
+                        output.accept(ModItems.MOLTEN_BLACK_SHARD_BOTTLE);
+                        output.accept(ModItems.LARGE_RUBY);
+                        output.accept(ModItems.LARGE_SAPPHIRE);
+                        output.accept(ModItems.LARGE_EMERALD);
+                        output.accept(ModItems.LARGE_CYAN_GEMSTONE);
+                        output.accept(ModItems.LARGE_TOPAZ);
 
                         output.accept(ModItems.CARVED_EMERALD_POOR);
                         output.accept(ModItems.CARVED_EMERALD);
@@ -493,6 +519,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
                         output.accept(ModItems.HUNDRED_FACES_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.ARASH_SPAWN_EGG);
+                        output.accept(ModItems.BAOBHAN_SITH_SPAWN_EGG);
                         output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
                     }).build());
 

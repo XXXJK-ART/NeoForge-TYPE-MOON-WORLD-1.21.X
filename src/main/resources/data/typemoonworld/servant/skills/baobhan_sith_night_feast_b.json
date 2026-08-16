@@ -1,0 +1,27 @@
+{
+  "id": "baobhan_sith_night_feast_b",
+  "display_name": "Invitation to the Night Feast B",
+  "display_name_zh": "夜宴的邀约 B",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 400,
+  "duration_ticks": 20,
+  "effects": [
+    {
+      "effect_type": "vampiric_drain",
+      "params": {
+        "base_drain": 80,
+        "extra_drain_per_curse_layer": 20
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "heal",
+        "strength": 0.75,
+        "requires": ["low_health", "not_silenced"]
+      }
+    ]
+  }
+}

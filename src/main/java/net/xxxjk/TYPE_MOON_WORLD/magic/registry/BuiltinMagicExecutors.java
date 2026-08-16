@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.IMagicRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ElementalMagicHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicEarthElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicFireElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
@@ -44,12 +45,16 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementEventHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementOther;
 import net.xxxjk.TYPE_MOON_WORLD.magic.reinforcement.MagicReinforcementSelf;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ArcaneMobilityService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
@@ -107,6 +112,15 @@ public final class BuiltinMagicExecutors {
       registry.register("water_magic", ctx -> toResult(MagicWaterElement.execute(ctx.entity())), "typemoonworld_core");
       registry.register("wind_magic", ctx -> toResult(MagicWindElement.execute(ctx.entity())), "typemoonworld_core");
       registry.register("earth_magic", ctx -> toResult(MagicEarthElement.execute(ctx.entity())), "typemoonworld_core");
+      registry.register("flame_array", ctx -> executeElementalArray(ctx, ElementalMagicFieldEntity.ELEMENT_FIRE, ElementalMagicFieldEntity.FORM_FIRE_WALL), "typemoonworld_core");
+      registry.register("azure_water_array", ctx -> executeElementalArray(ctx, ElementalMagicFieldEntity.ELEMENT_WATER, ElementalMagicFieldEntity.FORM_WATER_SLOW_ARRAY), "typemoonworld_core");
+      registry.register("gale_wind_array", ctx -> executeElementalArray(ctx, ElementalMagicFieldEntity.ELEMENT_WIND, ElementalMagicFieldEntity.FORM_WIND_PUSH_ARRAY), "typemoonworld_core");
+      registry.register("rock_earth_array", ctx -> executeElementalArray(ctx, ElementalMagicFieldEntity.ELEMENT_EARTH, ElementalMagicFieldEntity.FORM_EARTH_BIND_ARRAY), "typemoonworld_core");
+      registry.register("contract_magecraft", BuiltinMagicExecutors::executeKnowledgeOnly, "typemoonworld_core");
+      registry.register("aerial_stasis", ctx -> executeMobility(ctx, "aerial_stasis"), "typemoonworld_core");
+      registry.register("aerial_ascent", ctx -> executeMobility(ctx, "aerial_ascent"), "typemoonworld_core");
+      registry.register("touko_travel", ctx -> executeMobility(ctx, "touko_travel"), "typemoonworld_core");
+      registry.register("flight_magic", ctx -> executeMobility(ctx, "flight_magic"), "typemoonworld_core");
       registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
       registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
@@ -216,6 +230,44 @@ public final class BuiltinMagicExecutors {
             }
          }
       }
+   }
+
+   private static MagicExecutionResult executeElementalArray(MagicExecutionContext context, int element, int form) {
+      if (!(context.entity() instanceof LivingEntity caster) || context.vars() == null) {
+         return MagicExecutionResult.FAILED;
+      }
+      String id = context.magicId();
+      double proficiency = MagicProficiencyService.get(context.vars(), id);
+      double range = 8.0 + Math.min(8.0, proficiency * 0.08);
+      float radius = (float)(3.0 + proficiency * 0.025);
+      float damagePerSecond = (float)(3.0 + proficiency * 0.04);
+      int duration = 140 + (int)Math.round(proficiency * 1.4);
+      ElementalMagicFieldEntity field = ElementalMagicHelper.spawnField(
+         context.vars(), id, caster, ElementalMagicHelper.targetBlock(caster, range),
+         element, form, radius, 3.0F, duration, damagePerSecond
+      );
+      if (field == null) {
+         return MagicExecutionResult.FAILED;
+      }
+      double sustainedCost = Math.max(0.0, MagicDefinitionRegistry.sustainedManaCost(id));
+      field.setManaPerTick((float)(sustainedCost / 20.0));
+      MagicProficiencyService.add(context.vars(), id, 0.18);
+      return MagicExecutionResult.SUCCESS;
+   }
+
+   private static MagicExecutionResult executeMobility(MagicExecutionContext context, String id) {
+      if (!(context.entity() instanceof LivingEntity caster) || context.vars() == null) {
+         return MagicExecutionResult.FAILED;
+      }
+      double proficiency = MagicProficiencyService.get(context.vars(), id);
+      boolean success = switch (id) {
+         case "aerial_stasis" -> ArcaneMobilityService.toggleStasis(caster, context.vars(), proficiency, context.payload());
+         case "aerial_ascent" -> ArcaneMobilityService.toggleAscent(caster, context.vars(), proficiency, context.payload());
+         case "touko_travel" -> ArcaneMobilityService.startToukoTravel(caster, context.vars(), proficiency, context.payload());
+         case "flight_magic" -> ArcaneMobilityService.toggleFlight(caster, context.vars(), proficiency);
+         default -> false;
+      };
+      return success ? MagicExecutionResult.SUCCESS : MagicExecutionResult.FAILED;
    }
 
    private static MagicExecutionResult executeSimple(MagicExecutionContext context, BuiltinMagicExecutors.EntityMagicAction action) {

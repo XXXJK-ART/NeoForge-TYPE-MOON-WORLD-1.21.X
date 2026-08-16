@@ -1,0 +1,21 @@
+{
+  "id": "typemoonworld:aerial_ascent",
+  "name_key": "magic.typemoonworld.aerial_ascent.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "complexity": 18,
+  "chant_segments": 2,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 3.0,
+  "cooldown_ticks": 10,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": true,
+  "npc_allowed": true,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 12,
+  "npc_cooldown": 20,
+  "prerequisite_magic": "typemoonworld:aerial_stasis",
+  "prerequisite_proficiency": 50.0
+}

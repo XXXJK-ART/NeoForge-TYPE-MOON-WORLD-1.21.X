@@ -55,6 +55,54 @@
       }
     ]
   },
+  "baobhan_sith_voice_attack": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/baobhan_sith/attack1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/baobhan_sith/attack2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/baobhan_sith/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "baobhan_sith_voice_fail": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/baobhan_sith/fail1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/baobhan_sith/fail2",
+        "stream": true
+      }
+    ]
+  },
+  "baobhan_sith_voice_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/baobhan_sith/np",
+        "stream": true
+      }
+    ]
+  },
+  "baobhan_sith_voice_victory": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/baobhan_sith/victory1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/baobhan_sith/victory2",
+        "stream": true
+      }
+    ]
+  },
   "artoria_voice_attack": {
     "sounds": [
       {

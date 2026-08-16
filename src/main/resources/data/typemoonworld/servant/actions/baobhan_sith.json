@@ -1,0 +1,68 @@
+{
+  "servant": "baobhan_sith",
+  "actions": [
+    {
+      "id": "baobhan_sith_curse_shot",
+      "tags": ["projectile", "interrupt", "control", "intercept"],
+      "minimum_range": 6,
+      "maximum_range": 40,
+      "mana_cost": 4,
+      "stamina_cost": 2,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "baobhan_sith_fingertip_dance",
+      "tags": ["melee", "interrupt", "control"],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 10,
+      "stamina_cost": 8,
+      "terrain_impact": "chip"
+    },
+    {
+      "id": "baobhan_sith_night_feast",
+      "tags": ["melee", "heal"],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 15,
+      "stamina_cost": 4,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "baobhan_sith_grimalkin",
+      "tags": ["evade", "gap_closer", "pursuit"],
+      "minimum_range": 0,
+      "maximum_range": 28,
+      "mana_cost": 15,
+      "stamina_cost": 0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "baobhan_sith_blessed_successor",
+      "tags": ["area", "control", "interrupt"],
+      "minimum_range": 0,
+      "maximum_range": 20,
+      "mana_cost": 25,
+      "stamina_cost": 0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "baobhan_sith_fairy_vampirism",
+      "tags": ["melee", "heal", "control"],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 10,
+      "stamina_cost": 4,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "fetch_failnaught",
+      "tags": ["noble_phantasm", "projectile", "control"],
+      "minimum_range": 0,
+      "maximum_range": 64,
+      "mana_cost": 50,
+      "stamina_cost": 0,
+      "terrain_impact": "none"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "id": "baobhan_sith",
+  "display_name": "Baobhan Sith",
+  "display_name_zh": "芭万·希",
+  "class_type": "archer",
+  "faction": "fairy",
+  "traits": [
+    "servant",
+    "female",
+    "archer",
+    "fairy",
+    "vampiric",
+    "humanoid",
+    "sapient",
+    "chaotic",
+    "evil",
+    "earth",
+    "seven_knights",
+    "fairy_knight",
+    "curse_weaver"
+  ],
+  "parameters": {
+    "endurance": "C",
+    "endurance_plus": false,
+    "strength": "A",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": false,
+    "magic": "B",
+    "magic_plus": false,
+    "luck": "D",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/baobhan_sith.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.1,
+      "y": -0.82,
+      "z": -0.15
+    },
+    "default_weapon": "typemoonworld:baobhan_sith_harp",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "baobhan_sith_curse_shot",
+      "baobhan_sith_fingertip_dance",
+      "baobhan_sith_night_feast",
+      "baobhan_sith_grimalkin",
+      "baobhan_sith_blessed_successor",
+      "baobhan_sith_fairy_vampirism",
+      "fetch_failnaught"
+    ]
+  },
+  "skills": [
+    "magic_resistance_ex_baobhan_sith",
+    "riding_a_baobhan_sith",
+    "territory_creation_a_baobhan_sith",
+    "baobhan_sith_fingertip_dance_a_plus",
+    "baobhan_sith_night_feast_b",
+    "baobhan_sith_fairy_contract_a",
+    "baobhan_sith_grimalkin_a",
+    "baobhan_sith_blessed_successor_ex",
+    "baobhan_sith_fairy_vampirism_a"
+  ],
+  "noble_phantasm": "fetch_failnaught",
+  "personality": {
+    "obedience": "rebellious",
+    "principle": "chaotic",
+    "morality": "evil",
+    "social": "twisted_warm",
+    "combat": "curse_weaver",
+    "starting_favor": 40.0
+  },
+  "ai_config": "baobhan_sith_ai",
+  "spawn_egg": {
+    "primary": 11141120,
+    "secondary": 4456584
+  }
+}

@@ -1,7 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -19,7 +21,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.BasicItemListing;
 import net.neoforged.neoforge.event.village.VillagerTradesEvent;
 import net.neoforged.neoforge.event.village.WandererTradesEvent;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModVillagers;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 import org.jetbrains.annotations.Nullable;
 
 @EventBusSubscriber(
@@ -61,6 +65,15 @@ public class WanderingTraderTradesHandler {
       new MagicTradeEntry("magic_page_antores", 90),
       new MagicTradeEntry("magic_page_demon_god_gaze", 92),
       new MagicTradeEntry("magic_page_nega_summon", 95)
+      , new MagicTradeEntry("magic_page_flame_array", 45)
+      , new MagicTradeEntry("magic_page_azure_water_array", 45)
+      , new MagicTradeEntry("magic_page_gale_wind_array", 45)
+      , new MagicTradeEntry("magic_page_rock_earth_array", 45)
+      , new MagicTradeEntry("magic_page_contract_magecraft", 35)
+      , new MagicTradeEntry("magic_page_aerial_stasis", 12)
+      , new MagicTradeEntry("magic_page_aerial_ascent", 18)
+      , new MagicTradeEntry("magic_page_touko_travel", 40)
+      , new MagicTradeEntry("magic_page_flight_magic", 85)
    );
    private static final List<MagicTradeEntry> MAGIC_BOOKS = MAGIC_PAGES.stream()
       .map(entry -> new MagicTradeEntry(entry.itemPath().replace("magic_page_", "magic_book_"), entry.complexity()))
@@ -77,6 +90,11 @@ public class WanderingTraderTradesHandler {
 
    @SubscribeEvent
    public static void onVillagerTrades(VillagerTradesEvent event) {
+      if (event.getType() == ModVillagers.MAGICIAN.get()) {
+         addMagicianTrades(event);
+         return;
+      }
+
       if (event.getType() != VillagerProfession.LIBRARIAN) {
          return;
       }
@@ -88,6 +106,22 @@ public class WanderingTraderTradesHandler {
       event.getTrades().get(4).add(new WeightedMagicTradeListing(entriesUpTo(MAGIC_BOOKS, 65), true, 0.006D));
       event.getTrades().get(5).add(new WeightedMagicTradeListing(MAGIC_PAGES, false, 0.07D));
       event.getTrades().get(5).add(new WeightedMagicTradeListing(MAGIC_BOOKS, true, 0.012D));
+   }
+
+   private static void addMagicianTrades(VillagerTradesEvent event) {
+      event.getTrades().get(1).add(new MaterialPurchaseListing(1, 0.75D));
+      event.getTrades().get(1).add(new MagicianMagicPageListing(entriesUpTo(MAGIC_PAGES, 45), 1.0D));
+      event.getTrades().get(2).add(new MaterialPurchaseListing(2, 0.70D));
+      event.getTrades().get(2).add(new MagicianMagicPageListing(entriesBetween(MAGIC_PAGES, 25, 60), 0.95D));
+      event.getTrades().get(2).add(new BasicItemListing(3, new ItemStack(ModItems.SULFUR.get(), 2), 8, 0, COMMON_PRICE_MULTIPLIER));
+      event.getTrades().get(3).add(new MaterialPurchaseListing(3, 0.65D));
+      event.getTrades().get(3).add(new MagicianMagicPageListing(entriesBetween(MAGIC_PAGES, 45, 78), 0.90D));
+      event.getTrades().get(3).add(new BasicItemListing(5, new ItemStack(ModItems.MERCURY_BOTTLE.get()), 6, 0, COMMON_PRICE_MULTIPLIER));
+      event.getTrades().get(4).add(new MaterialPurchaseListing(4, 0.60D));
+      event.getTrades().get(4).add(new MagicianMagicPageListing(entriesBetween(MAGIC_PAGES, 60, 88), 0.85D));
+      event.getTrades().get(5).add(new MaterialPurchaseListing(5, 0.55D));
+      event.getTrades().get(5).add(new MagicianMagicPageListing(MAGIC_PAGES, 0.80D));
+      event.getTrades().get(5).add(new BasicItemListing(12, new ItemStack(ModItems.SELF_GEAS_SCROLL.get()), 2, 0, RARE_PRICE_MULTIPLIER));
    }
 
    private static List<MagicTradeEntry> entriesUpTo(List<MagicTradeEntry> entries, int maxComplexity) {
@@ -152,5 +186,71 @@ public class WanderingTraderTradesHandler {
          }
          return entries.get(entries.size() - 1);
       }
+   }
+
+   private record MagicianMagicPageListing(List<MagicTradeEntry> entries, double chance) implements ItemListing {
+      @Nullable
+      @Override
+      public MerchantOffer getOffer(Entity trader, RandomSource random) {
+         if (this.entries.isEmpty() || random.nextDouble() >= this.chance) {
+            return null;
+         }
+
+         MagicTradeEntry entry = WeightedMagicTradeListing.pickWeighted(this.entries, random);
+         Item item = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", entry.itemPath()));
+         Item material = pickMagicMaterial(random);
+         if (item == Items.AIR || material == Items.AIR) {
+            return null;
+         }
+
+         ItemStack emeralds = new ItemStack(Items.EMERALD, entry.emeraldCost(false));
+         ItemStack materialStack = new ItemStack(material, 16);
+         return new MerchantOffer(
+            cost(emeralds),
+            Optional.of(cost(materialStack)),
+            new ItemStack(item),
+            1,
+            0,
+            COMMON_PRICE_MULTIPLIER
+         );
+      }
+   }
+
+   private record MaterialPurchaseListing(int emeralds, double chance) implements ItemListing {
+      @Nullable
+      @Override
+      public MerchantOffer getOffer(Entity trader, RandomSource random) {
+         if (random.nextDouble() >= this.chance) {
+            return null;
+         }
+
+         Item material = pickMagicMaterial(random);
+         if (material == Items.AIR) {
+            return null;
+         }
+
+         return new MerchantOffer(
+            cost(new ItemStack(material, 16)),
+            new ItemStack(Items.EMERALD, this.emeralds),
+            12,
+            0,
+            COMMON_PRICE_MULTIPLIER
+         );
+      }
+   }
+
+   private static ItemCost cost(ItemStack stack) {
+      return new ItemCost(stack.getItemHolder(), stack.getCount(), DataComponentPredicate.EMPTY, stack);
+   }
+
+   private static Item pickMagicMaterial(RandomSource random) {
+      List<Item> items = new ArrayList<>();
+      for (Holder<Item> holder : BuiltInRegistries.ITEM.getTagOrEmpty(ModTags.Items.MAGIC_MATERIALS)) {
+         Item item = holder.value();
+         if (item != Items.AIR) {
+            items.add(item);
+         }
+      }
+      return items.isEmpty() ? Items.AIR : items.get(random.nextInt(items.size()));
    }
 }

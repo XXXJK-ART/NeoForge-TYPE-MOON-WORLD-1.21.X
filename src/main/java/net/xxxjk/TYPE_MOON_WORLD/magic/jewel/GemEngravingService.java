@@ -28,6 +28,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.advancement.TypeMoonAdvancementHelper;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
@@ -42,6 +43,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ElementalMagicHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
@@ -106,6 +109,16 @@ public final class GemEngravingService {
                   return true;
                } else if (getEngravedMagicId(offhandStack) != null) {
                   player.displayClientMessage(Component.translatable("message.typemoonworld.gem.engrave.already"), true);
+                  return true;
+               } else if (!meetsProficiencyThreshold(vars, selectedMagic, carvedGem.getType())) {
+                  player.displayClientMessage(
+                     Component.translatable(
+                        "message.typemoonworld.gem.engrave.proficiency_required",
+                        getMagicName(selectedMagic),
+                        (int)Math.ceil(requiredProficiencyThreshold(selectedMagic, carvedGem.getType()))
+                     ),
+                     true
+                  );
                   return true;
                } else {
                   GemQuality quality = carvedGem.getQuality();
@@ -441,8 +454,29 @@ public final class GemEngravingService {
          case "water_magic" -> Component.translatable("magic.typemoonworld.water_magic.name");
          case "wind_magic" -> Component.translatable("magic.typemoonworld.wind_magic.name");
          case "earth_magic" -> Component.translatable("magic.typemoonworld.earth_magic.name");
+         case "flame_array" -> Component.translatable("magic.typemoonworld.flame_array.name");
+         case "azure_water_array" -> Component.translatable("magic.typemoonworld.azure_water_array.name");
+         case "gale_wind_array" -> Component.translatable("magic.typemoonworld.gale_wind_array.name");
+         case "rock_earth_array" -> Component.translatable("magic.typemoonworld.rock_earth_array.name");
+         case "aerial_stasis" -> Component.translatable("magic.typemoonworld.aerial_stasis.name");
+         case "aerial_ascent" -> Component.translatable("magic.typemoonworld.aerial_ascent.name");
+         case "flight_magic" -> Component.translatable("magic.typemoonworld.flight_magic.name");
          default -> Component.literal(magicId);
       };
+   }
+
+   public static boolean meetsProficiencyThreshold(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, GemType gemType) {
+      return MagicProficiencyService.get(vars, magicId) >= requiredProficiencyThreshold(magicId, gemType);
+   }
+
+   public static double requiredProficiencyThreshold(String magicId, GemType gemType) {
+      int complexity = MagicDefinitionRegistry.contains(magicId)
+         ? MagicDefinitionRegistry.complexity(magicId)
+         : MagicLearningStrategy.complexity(MagicLearningStrategy.normalizeDisplayId(magicId));
+      if (gemType == GemType.BLACK_SHARD) {
+         complexity = Math.max(0, complexity - 10);
+      }
+      return 25.0 + complexity / 2.0;
    }
 
    public static boolean castHealingSelfFromGem(ServerPlayer player, InteractionHand hand, ItemStack gemStack) {

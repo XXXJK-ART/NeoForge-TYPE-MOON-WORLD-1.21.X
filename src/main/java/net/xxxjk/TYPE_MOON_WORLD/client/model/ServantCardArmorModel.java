@@ -81,7 +81,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
-         case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar" -> true;
+         case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith" -> true;
          default -> false;
       };
    }
@@ -167,7 +167,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
 
    private static boolean usesLongHairCounterRotation(String servantId) {
       return switch (servantId) {
-         case "enkidu", "medusa", "oda_nobunaga", "paracelsus" -> true;
+         case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "baobhan_sith" -> true;
          default -> false;
       };
    }

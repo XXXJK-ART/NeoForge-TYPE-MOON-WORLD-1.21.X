@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.BaobhanSithServantSkills;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
@@ -181,6 +182,9 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, effectDuration, amplifier, false, true, true));
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, effectDuration, amplifier, false, true, true));
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.CONFUSION, Math.max(40, effectDuration / 2), amplifier, false, true, true));
+                     }
+                     if ("baobhan_sith_curse".equals(this.sourceMagicId)) {
+                        BaobhanSithServantSkills.onCurseProjectileHit(this.getOwner(), livingTarget);
                      }
                   }
 

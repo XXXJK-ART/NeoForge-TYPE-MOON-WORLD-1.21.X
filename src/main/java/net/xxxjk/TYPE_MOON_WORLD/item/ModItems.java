@@ -18,9 +18,13 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.CarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemQuality;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.LargeGemItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicStaffItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicScrollItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MoltenGemBottleItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RandomMagicScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PartitionedThoughtFragmentItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SelfGeasScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.AvalonItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaItem;
@@ -94,6 +98,31 @@ public class ModItems {
                                         interactionRange, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                 net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                         .build())));
+    }
+
+    private static net.minecraft.world.item.component.ItemAttributeModifiers staffAttributes(String name, double attackDamage, double attackSpeed) {
+        return net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_damage"),
+                                attackDamage, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                        net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_speed"),
+                                attackSpeed, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                        net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_movement"),
+                                0.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
+                        net.minecraft.world.entity.EquipmentSlotGroup.HAND)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_block_reach"),
+                                1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                        net.minecraft.world.entity.EquipmentSlotGroup.HAND)
+                .build();
     }
 
     public static final DeferredItem<Item> WAKIZASHI = registerJapaneseSword("wakizashi", 4.0, -2.2, -0.25);
@@ -393,6 +422,9 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER = registerServantCard("lancelot_berserker");
     public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR = registerServantCard("iskandar");
 
+    public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_HEAD = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_CHEST = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_LEGS = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_CHEST = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER_LEGS = registerServantArmor("emiya_archer", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_HEAD = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.HEAD);
@@ -587,6 +619,38 @@ public class ModItems {
     public static final DeferredItem<Item> RAW_WHITE_GEMSTONE = ITEMS.register("raw_white_gemstone",
             () -> new Item(new Item.Properties()));
 
+    public static final DeferredItem<Item> CINNABAR = ITEMS.register("cinnabar",
+            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> SULFUR = ITEMS.register("sulfur",
+            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MERCURY_BOTTLE = ITEMS.register("mercury_bottle",
+            () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE)));
+    public static final DeferredItem<Item> MOLTEN_RUBY_BOTTLE = ITEMS.register("molten_ruby_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.RUBY));
+    public static final DeferredItem<Item> MOLTEN_SAPPHIRE_BOTTLE = ITEMS.register("molten_sapphire_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.SAPPHIRE));
+    public static final DeferredItem<Item> MOLTEN_EMERALD_BOTTLE = ITEMS.register("molten_emerald_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.EMERALD));
+    public static final DeferredItem<Item> MOLTEN_TOPAZ_BOTTLE = ITEMS.register("molten_topaz_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.TOPAZ));
+    public static final DeferredItem<Item> MOLTEN_WHITE_GEMSTONE_BOTTLE = ITEMS.register("molten_white_gemstone_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.WHITE_GEMSTONE));
+    public static final DeferredItem<Item> MOLTEN_CYAN_GEMSTONE_BOTTLE = ITEMS.register("molten_cyan_gemstone_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.CYAN));
+    public static final DeferredItem<Item> MOLTEN_BLACK_SHARD_BOTTLE = ITEMS.register("molten_black_shard_bottle",
+            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.BLACK_SHARD));
+
+    public static final DeferredItem<Item> LARGE_RUBY = ITEMS.register("large_ruby",
+            () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.RUBY));
+    public static final DeferredItem<Item> LARGE_SAPPHIRE = ITEMS.register("large_sapphire",
+            () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.SAPPHIRE));
+    public static final DeferredItem<Item> LARGE_EMERALD = ITEMS.register("large_emerald",
+            () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.EMERALD));
+    public static final DeferredItem<Item> LARGE_CYAN_GEMSTONE = ITEMS.register("large_cyan_gemstone",
+            () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.CYAN));
+    public static final DeferredItem<Item> LARGE_TOPAZ = ITEMS.register("large_topaz",
+            () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.TOPAZ));
+
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, true, (String)null, 
                     "jewel_magic_shoot", "jewel_random_shoot"));
@@ -733,6 +797,8 @@ public class ModItems {
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "baptism_rite"));
     public static final DeferredItem<Item> PARTITIONED_THOUGHT_FRAGMENT = ITEMS.register("partitioned_thought_fragment",
             () -> new PartitionedThoughtFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<Item> SELF_GEAS_SCROLL = ITEMS.register("self_geas_scroll",
+            () -> new SelfGeasScrollItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
     public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",
@@ -805,6 +871,42 @@ public class ModItems {
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "zagan"));
     public static final DeferredItem<Item> MAGIC_PAGE_ZAGAN = ITEMS.register("magic_page_zagan",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "zagan"));
+    public static final DeferredItem<Item> MAGIC_BOOK_FLAME_ARRAY = ITEMS.register("magic_book_flame_array",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "flame_array"));
+    public static final DeferredItem<Item> MAGIC_PAGE_FLAME_ARRAY = ITEMS.register("magic_page_flame_array",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "flame_array"));
+    public static final DeferredItem<Item> MAGIC_BOOK_AZURE_WATER_ARRAY = ITEMS.register("magic_book_azure_water_array",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "azure_water_array"));
+    public static final DeferredItem<Item> MAGIC_PAGE_AZURE_WATER_ARRAY = ITEMS.register("magic_page_azure_water_array",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "azure_water_array"));
+    public static final DeferredItem<Item> MAGIC_BOOK_GALE_WIND_ARRAY = ITEMS.register("magic_book_gale_wind_array",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "gale_wind_array"));
+    public static final DeferredItem<Item> MAGIC_PAGE_GALE_WIND_ARRAY = ITEMS.register("magic_page_gale_wind_array",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "gale_wind_array"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ROCK_EARTH_ARRAY = ITEMS.register("magic_book_rock_earth_array",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "rock_earth_array"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ROCK_EARTH_ARRAY = ITEMS.register("magic_page_rock_earth_array",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "rock_earth_array"));
+    public static final DeferredItem<Item> MAGIC_BOOK_CONTRACT_MAGECRAFT = ITEMS.register("magic_book_contract_magecraft",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "contract_magecraft"));
+    public static final DeferredItem<Item> MAGIC_PAGE_CONTRACT_MAGECRAFT = ITEMS.register("magic_page_contract_magecraft",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "contract_magecraft"));
+    public static final DeferredItem<Item> MAGIC_BOOK_AERIAL_STASIS = ITEMS.register("magic_book_aerial_stasis",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "aerial_stasis"));
+    public static final DeferredItem<Item> MAGIC_PAGE_AERIAL_STASIS = ITEMS.register("magic_page_aerial_stasis",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "aerial_stasis"));
+    public static final DeferredItem<Item> MAGIC_BOOK_AERIAL_ASCENT = ITEMS.register("magic_book_aerial_ascent",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "aerial_ascent"));
+    public static final DeferredItem<Item> MAGIC_PAGE_AERIAL_ASCENT = ITEMS.register("magic_page_aerial_ascent",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "aerial_ascent"));
+    public static final DeferredItem<Item> MAGIC_BOOK_TOUKO_TRAVEL = ITEMS.register("magic_book_touko_travel",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "touko_travel"));
+    public static final DeferredItem<Item> MAGIC_PAGE_TOUKO_TRAVEL = ITEMS.register("magic_page_touko_travel",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "touko_travel"));
+    public static final DeferredItem<Item> MAGIC_BOOK_FLIGHT_MAGIC = ITEMS.register("magic_book_flight_magic",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "flight_magic"));
+    public static final DeferredItem<Item> MAGIC_PAGE_FLIGHT_MAGIC = ITEMS.register("magic_page_flight_magic",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "flight_magic"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -956,25 +1058,24 @@ public class ModItems {
                                             2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> STAFF = ITEMS.register("staff",
+            () -> new MagicStaffItem(new Item.Properties().durability(500).stacksTo(1)
+                    .attributes(staffAttributes("staff", 4.0, 0.6)), null));
     public static final DeferredItem<Item> RUBY_STAFF = ITEMS.register("ruby_staff",
-            () -> new RubyStaffItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()
-                    .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
-                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
-                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_damage"),
-                                            7.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
-                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED,
-                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
-                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_speed"),
-                                            0.6, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
-                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
-                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
-                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ruby_staff_range"),
-                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
-                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
-                            .build())));
+            () -> new RubyStaffItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant().durability(600)
+                    .attributes(staffAttributes("ruby_staff", 5.0, 0.6))));
+    public static final DeferredItem<Item> SAPPHIRE_STAFF = ITEMS.register("sapphire_staff",
+            () -> new MagicStaffItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).durability(600)
+                    .attributes(staffAttributes("sapphire_staff", 5.0, 0.6)), GemType.SAPPHIRE));
+    public static final DeferredItem<Item> EMERALD_STAFF = ITEMS.register("emerald_staff",
+            () -> new MagicStaffItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).durability(600)
+                    .attributes(staffAttributes("emerald_staff", 5.0, 0.6)), GemType.EMERALD));
+    public static final DeferredItem<Item> CYAN_STAFF = ITEMS.register("cyan_staff",
+            () -> new MagicStaffItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).durability(600)
+                    .attributes(staffAttributes("cyan_staff", 5.0, 0.6)), GemType.CYAN));
+    public static final DeferredItem<Item> TOPAZ_STAFF = ITEMS.register("topaz_staff",
+            () -> new MagicStaffItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).durability(600)
+                    .attributes(staffAttributes("topaz_staff", 5.0, 0.6)), GemType.TOPAZ));
     public static final DeferredItem<Item> NAMELESS_CHAIN_DAGGER = ITEMS.register("nameless_chain_dagger",
             () -> new NamelessChainDaggerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -1063,6 +1164,8 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.NamelessBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> ARASH_BOW = ITEMS.register("arash_bow",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> BAOBHAN_SITH_HARP = ITEMS.register("baobhan_sith_harp",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.BaobhanSithHarpItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> GILGAMESH_SLATE = ITEMS.register("gilgamesh_slate",
             () -> new GilgameshSlateItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
     public static final DeferredItem<Item> PSEUDO_SPIRAL_SWORD = ITEMS.register("pseudo_spiral_sword",
@@ -1311,6 +1414,12 @@ public class ModItems {
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.HUNDRED_FACES_HASSAN, 0x15151A, 0xD8D2C8));
     public static final DeferredItem<Item> ARASH_SPAWN_EGG = ITEMS.register("arash_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARASH, 0x2F6F65, 0xC66B32));
+    public static final DeferredItem<Item> BAOBHAN_SITH_SPAWN_EGG = ITEMS.register("baobhan_sith_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.GenericServantSpawnEggItem(
+                    net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.GENERIC_SERVANT,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "baobhan_sith"),
+                    0x8B1028,
+                    0x341033));
     public static final DeferredItem<Item> MACEDONIAN_SOLDIER_SPAWN_EGG = ITEMS.register("macedonian_soldier_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.MACEDONIAN_SOLDIER, 0xB98D50, 0x5A3424));
 
@@ -1386,6 +1495,9 @@ public class ModItems {
                 : legs ? SERVANT_CARD_ISKANDAR_LEGS.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_ISKANDAR_FEET.get() : Items.AIR;
             case "senko_muramasa" -> (legs ? SERVANT_CARD_SENKO_MURAMASA_LEGS : SERVANT_CARD_SENKO_MURAMASA_CHEST).get();
+            case "baobhan_sith" -> head ? SERVANT_CARD_BAOBHAN_SITH_HEAD.get()
+                : legs ? SERVANT_CARD_BAOBHAN_SITH_LEGS.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_BAOBHAN_SITH_CHEST.get() : Items.AIR;
             default -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
         };
     }

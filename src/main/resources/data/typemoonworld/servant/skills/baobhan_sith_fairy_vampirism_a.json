@@ -1,0 +1,35 @@
+{
+  "id": "baobhan_sith_fairy_vampirism_a",
+  "display_name": "Fairy Vampirism A",
+  "display_name_zh": "妖精吸血 A",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 500,
+  "duration_ticks": 20,
+  "effects": [
+    {
+      "effect_type": "vampiric_drain_with_curse",
+      "params": {
+        "hp_drain": 60,
+        "mp_drain": 20,
+        "curse": "blood_erosion",
+        "backlash_damage": 50,
+        "backlash_chance": 0.2
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "heal",
+        "strength": 0.65,
+        "requires": ["not_silenced"]
+      },
+      {
+        "type": "control",
+        "strength": 0.45,
+        "requires": ["not_silenced"]
+      }
+    ]
+  }
+}

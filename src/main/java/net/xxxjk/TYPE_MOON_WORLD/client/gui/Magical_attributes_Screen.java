@@ -176,7 +176,16 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("water_magic", "magic.typemoonworld.water_magic.name", "elemental", -10040065);
       this.addMagic("wind_magic", "magic.typemoonworld.wind_magic.name", "elemental", -6684775);
       this.addMagic("earth_magic", "magic.typemoonworld.earth_magic.name", "elemental", -7119279);
+      this.addMagic("flame_array", "magic.typemoonworld.flame_array.name", "elemental", -3386880);
+      this.addMagic("azure_water_array", "magic.typemoonworld.azure_water_array.name", "elemental", -10040065);
+      this.addMagic("gale_wind_array", "magic.typemoonworld.gale_wind_array.name", "elemental", -6684775);
+      this.addMagic("rock_earth_array", "magic.typemoonworld.rock_earth_array.name", "elemental", -7119279);
       this.addMagic("time_alter", "magic.typemoonworld.time_alter.name", "special", -11096625);
+      this.addMagic("contract_magecraft", "magic.typemoonworld.contract_magecraft.name", "special", -11096625);
+      this.addMagic("aerial_stasis", "magic.typemoonworld.aerial_stasis.name", "special", -7701249);
+      this.addMagic("aerial_ascent", "magic.typemoonworld.aerial_ascent.name", "special", -7701249);
+      this.addMagic("touko_travel", "magic.typemoonworld.touko_travel.name", "special", -7701249);
+      this.addMagic("flight_magic", "magic.typemoonworld.flight_magic.name", "special", -7701249);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("black_key_fire_engraving", "key.typemoonworld.magic.black_key_fire_engraving.short", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
@@ -1308,6 +1317,15 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                ? Component.translatable("gui.typemoonworld.mode.other").getString()
                : Component.translatable("gui.typemoonworld.mode.self").getString();
             lines.add(Component.literal(" - " + targetName).withStyle(ChatFormatting.YELLOW));
+         } else if ("touko_travel".equals(magicId)) {
+            if (payload.contains("x") && payload.contains("y") && payload.contains("z")) {
+               lines.add(
+                  Component.literal(
+                        String.format(Locale.ROOT, " - %.1f / %.1f / %.1f", payload.getDouble("x"), payload.getDouble("y"), payload.getDouble("z"))
+                     )
+                     .withStyle(ChatFormatting.YELLOW)
+               );
+            }
          } else {
             if ("projection".equals(magicId)) {
                if (payload.getBoolean("projection_lock_empty")) {
@@ -1891,11 +1909,14 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
+         || "touko_travel".equals(magicId)
          || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
    private boolean shouldOpenPresetDialog(Magical_attributes_Screen.MagicEntry entry, CompoundTag payload) {
-      if (!"crest".equals(entry.sourceType)) {
+      if ("touko_travel".equals(entry.id) && !"plunder".equals(entry.crestSourceKind)) {
+         return payload == null || payload.isEmpty();
+      } else if (!"crest".equals(entry.sourceType)) {
          return false;
       } else if ("plunder".equals(entry.crestSourceKind)) {
          return false;
@@ -1905,6 +1926,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private void openPresetDialog(Magical_attributes_Screen.MagicEntry entry, int targetSlot) {
+      if ("touko_travel".equals(entry.id)) {
+         this.minecraft.setScreen(new ToukoTravelPresetScreen(this, entry.copy(), targetSlot, this.buildDefaultPresetPayloadFromCurrent(entry.id)));
+         return;
+      }
       String stageId = this.getInitialPresetStage(entry.id);
       if (stageId == null) {
          this.sendSetWheelSlot(targetSlot, entry, this.buildDefaultPresetPayloadFromCurrent(entry.id));
@@ -2178,6 +2203,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          CompoundTag payload = new CompoundTag();
          payload.putInt("mana_burst_mode", 1);
          payload.putInt("mana_burst_level", Math.max(1, Math.min(5, 1 + (int)(MagicProficiencyService.get(vars, "mana_burst") / 20.0))));
+         return payload;
+      } else if ("touko_travel".equals(magicId)) {
+         CompoundTag payload = new CompoundTag();
+         payload.putDouble("x", this.entity.getX());
+         payload.putDouble("y", this.entity.getY());
+         payload.putDouble("z", this.entity.getZ());
          return payload;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
          CompoundTag payload = new CompoundTag();

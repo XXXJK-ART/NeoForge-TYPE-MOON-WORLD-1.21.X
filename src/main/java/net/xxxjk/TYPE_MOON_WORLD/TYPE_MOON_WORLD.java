@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModVillagers;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
@@ -178,6 +179,7 @@ public class TYPE_MOON_WORLD {
       ModMobEffects.register(modEventBus);
       ModParticles.register(modEventBus);
       ModSounds.register(modEventBus);
+      ModVillagers.register(modEventBus);
       new TypeMoonAddon(modEventBus, modContainer);
       ModLootModifiers.register(modEventBus);
       ModBiomes.register(modEventBus);

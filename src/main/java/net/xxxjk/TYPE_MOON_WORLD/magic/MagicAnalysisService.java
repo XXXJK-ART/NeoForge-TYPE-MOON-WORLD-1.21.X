@@ -85,6 +85,10 @@ public final class MagicAnalysisService {
          cancel(player);
          return;
       }
+      int split = AdvancedPassiveService.partitionN(vars);
+      if (split > 0) {
+         player.causeFoodExhaustion(Math.max(0.01F, 0.015F * split));
+      }
       AnalysisTask advanced = task.advance(AdvancedPassiveService.analysisWorkPerTick(vars));
       if (advanced.workDone < advanced.totalWork) {
          TASKS.put(player.getUUID(), advanced);

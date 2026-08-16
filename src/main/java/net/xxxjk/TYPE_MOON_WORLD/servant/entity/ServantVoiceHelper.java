@@ -87,6 +87,9 @@ public final class ServantVoiceHelper {
       } else if (isArash(servant)) {
          if (servant.getRandom().nextFloat() > 0.50F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_ATTACK.get());
+      } else if (isBaobhanSith(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.03F, ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get());
       } else if (isArtoria(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -205,6 +208,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       } else if (isArash(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_VICTORY.get());
+      } else if (isBaobhanSith(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.03F, ModSounds.BAOBHAN_SITH_VOICE_VICTORY.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_VICTORY.get());
       } else if (isOdaNobunaga(servant)) {
@@ -264,6 +269,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       } else if (isArash(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_FAIL.get());
+      } else if (isBaobhanSith(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.BAOBHAN_SITH_VOICE_FAIL.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_FAIL.get());
       } else if (isOdaNobunaga(servant)) {
@@ -321,6 +328,12 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "gae_bolg", SPECIAL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
+   }
+
+   public static void tryPlayBaobhanSithNp(ServantEntity servant) {
+      if (isBaobhanSith(servant)) {
+         playVoiceForced(servant, "baobhan_sith_np", 1.15F, 1.0F, ModSounds.BAOBHAN_SITH_VOICE_NP.get());
+      }
    }
 
    public static void tryPlaySpell(ServantEntity servant) {
@@ -676,6 +689,18 @@ public final class ServantVoiceHelper {
 
    private static boolean isArash(ServantEntity servant) {
       return servant != null && ArashEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isBaobhanSith(ServantEntity servant) {
+      if (servant == null) {
+         return false;
+      }
+      String id = servant.getServantId();
+      int separator = id == null ? -1 : id.indexOf(':');
+      if (separator >= 0) {
+         id = id.substring(separator + 1);
+      }
+      return "baobhan_sith".equals(id);
    }
 
    private static boolean isArtoria(ServantEntity servant) {

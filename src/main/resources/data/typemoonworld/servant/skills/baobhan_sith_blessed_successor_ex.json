@@ -1,0 +1,34 @@
+{
+  "id": "baobhan_sith_blessed_successor_ex",
+  "display_name": "Blessed Successor EX",
+  "display_name_zh": "被祝福的后继 EX",
+  "type": "active",
+  "mp_cost": 25,
+  "cooldown_ticks": 700,
+  "duration_ticks": 200,
+  "effects": [
+    {
+      "effect_type": "mana_dominion_circle",
+      "params": {
+        "radius": 20,
+        "skill_suppression_ticks": 200,
+        "self_mana_recovery_bonus_ticks": 300,
+        "mana_drain_per_target": 5
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "control",
+        "strength": 0.9,
+        "requires": ["not_silenced"]
+      },
+      {
+        "type": "area_control",
+        "strength": 0.85,
+        "requires": ["not_silenced"]
+      }
+    ]
+  }
+}

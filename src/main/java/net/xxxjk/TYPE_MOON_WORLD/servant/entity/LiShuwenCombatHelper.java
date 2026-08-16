@@ -17,22 +17,14 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
-import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -494,34 +486,14 @@ public final class LiShuwenCombatHelper {
    }
 
    private static float instantDeathChance(LivingEntity target) {
-      float chance = 0.80F;
-      if (target instanceof ServantEntity servant && servant.getDefinition() != null) {
-         ServantParams params = servant.getDefinition().parameters();
-         int endurance = ServantCombatFormulas.enduranceStep(params);
-         if (endurance >= 4) {
-            chance = 0.30F;
-         } else if (endurance >= 3) {
-            chance = 0.50F;
-         }
-      }
-      CompoundTag data = target.getPersistentData();
-      if (data.getBoolean("BattleContinuationActive") || data.getBoolean("GawainGutsReady")) {
-         chance = Math.max(0.0F, chance - 0.20F);
-      }
-      return chance;
+      return 0.60F;
    }
 
    private static boolean isInstantDeathTarget(LivingEntity target) {
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
-      if (target instanceof WitherBoss || target instanceof EnderDragon || target instanceof Warden || target instanceof Animal) {
-         return false;
-      }
-      if (target.getType().is(net.minecraft.tags.EntityTypeTags.UNDEAD) || target.getType().is(net.minecraft.tags.EntityTypeTags.ARTHROPOD)) {
-         return false;
-      }
-      return target instanceof ServantEntity || CursedArmHassanCombatHelper.isHumanoidInstantDeathTarget(target);
+      return CursedArmHassanCombatHelper.isHumanoidInstantDeathTarget(target);
    }
 
    private static void applyArmorBreak(LivingEntity target, long until) {

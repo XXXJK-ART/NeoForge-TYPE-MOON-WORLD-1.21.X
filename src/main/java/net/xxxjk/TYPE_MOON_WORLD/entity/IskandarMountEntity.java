@@ -477,6 +477,24 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       return super.hurt(source, amount);
    }
 
+   @Override
+   public void die(DamageSource source) {
+      releasePassengersBeforeRemoval();
+      super.die(source);
+   }
+
+   @Override
+   public void remove(RemovalReason reason) {
+      releasePassengersBeforeRemoval();
+      super.remove(reason);
+   }
+
+   private void releasePassengersBeforeRemoval() {
+      for (Entity passenger : List.copyOf(this.getPassengers())) {
+         passenger.stopRiding();
+      }
+   }
+
    public void performCharge(ServerLevel level, LivingEntity source, float damage, double width) {
       if (!canStartCharge()) {
          return;
