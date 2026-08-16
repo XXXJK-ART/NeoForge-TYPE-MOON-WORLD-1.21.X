@@ -67,6 +67,10 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
          return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
             "animations/servant_card_" + servantId + ".animation.json");
       }
+      if (isHeadSlot(animatable) && "baobhan_sith".equals(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "animations/servant_card_" + servantId + ".animation.json");
+      }
       if (isHeadSlot(animatable)) {
          return EMPTY_ANIMATION;
       }
@@ -90,7 +94,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       return switch (servantId) {
          case "artoria_pendragon", "enkidu", "gilgamesh_caster", "li_shuwen",
             "medusa", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
    }
@@ -167,7 +171,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
 
    private static boolean usesLongHairCounterRotation(String servantId) {
       return switch (servantId) {
-         case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "baobhan_sith" -> true;
+         case "enkidu", "medusa", "oda_nobunaga", "paracelsus" -> true;
          default -> false;
       };
    }

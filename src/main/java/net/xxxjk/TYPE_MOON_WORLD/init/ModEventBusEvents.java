@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -81,6 +82,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.RONIN.get(), KendoApprenticeEntity.createAttributes().build());
       event.put(ModEntities.SHINSENGUMI.get(), KendoApprenticeEntity.createAttributes().build());
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
+      event.put(ModEntities.LEFF_LAYNOR_FLAUROS.get(), LeffLaynorFlaurosEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());

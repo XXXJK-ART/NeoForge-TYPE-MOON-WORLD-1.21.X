@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
 import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
 import com.example.typemoonaddon.detection.DetectionService;
+import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService;
+import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService.CastStatus;
 import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
@@ -74,6 +77,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWaterElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicWindElement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -209,11 +213,16 @@ public final class NpcMagicCastBridge {
       "binding_magic",
       "airflow_blade",
       "detection",
+      "imaginary_displacement",
+      "imaginary_space",
+      "spiritron_cannon",
       "mana_burst",
       "fire_magic",
       "water_magic",
       "wind_magic",
       "earth_magic",
+      "aerial_stasis",
+      "aerial_ascent",
       "ruby_flame_sword",
       "sapphire_winter_frost",
       "emerald_winter_river",
@@ -432,10 +441,34 @@ public final class NpcMagicCastBridge {
       vars.proficiency_reinforcement = 65.0;
       vars.proficiency_jewel_magic_shoot = 85.0;
       vars.proficiency_jewel_magic_release = 85.0;
-      String[] magics = new String[]{"gander", "gandr_machine_gun", "gravity_magic", "reinforcement", "jewel_magic_shoot", "jewel_random_shoot", "jewel_magic_release", "jewel_machine_gun"};
+      setNpcKnownMagic(vars, "jewel_magic_shoot", 85.0);
+      setNpcKnownMagic(vars, "jewel_magic_release", 85.0);
+      setNpcKnownMagic(vars, "jewel_random_shoot", 85.0);
+      setNpcKnownMagic(vars, "jewel_machine_gun", 85.0);
+      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
+      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
+      setNpcKnownMagic(vars, "suggestion_magic", 60.0);
+      setNpcKnownMagic(vars, "healing_magic", 60.0);
+      setNpcKnownMagic(vars, "magic_analysis", 78.0);
+      setNpcKnownMagic(vars, "detection", 90.0);
+      grantTohsakaRinMagicCrest(npc, vars);
+      String[] magics = new String[]{
+         "gander",
+         "gandr_machine_gun",
+         "gravity_magic",
+         "reinforcement",
+         "jewel_random_shoot",
+         "jewel_machine_gun",
+         "aerial_ascent",
+         "aerial_stasis",
+         "suggestion_magic",
+         "healing_magic",
+         "detection",
+         "magic_analysis"
+      };
       for (int i = 0; i < magics.length; i++) {
          String magic = magics[i];
-         vars.learned_magics.add(magic);
+         if (!vars.learned_magics.contains(magic)) vars.learned_magics.add(magic);
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, i);
          entry.magicId = magic;
          entry.sourceType = "self";
@@ -463,6 +496,102 @@ public final class NpcMagicCastBridge {
       syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
    }
 
+   public static void configureLeff(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      vars.clearAllWheelSlots();
+      vars.learned_magics.clear();
+      vars.crest_entries.clear();
+      vars.player_max_mana = 800.0;
+      vars.player_mana = 800.0;
+      vars.player_mana_egenerated_every_moment = 5.0;
+      vars.player_restore_magic_moment = 10.0;
+      vars.is_magus = true;
+      vars.player_magic_attributes_earth = false;
+      vars.player_magic_attributes_water = false;
+      vars.player_magic_attributes_fire = false;
+      vars.player_magic_attributes_wind = true;
+      vars.player_magic_attributes_ether = false;
+      vars.player_magic_attributes_none = false;
+      vars.player_magic_attributes_imaginary_number = true;
+      vars.player_magic_attributes_sword = false;
+      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
+      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
+      setNpcKnownMagic(vars, "magic_analysis", 90.0);
+      setNpcKnownMagic(vars, "airflow_blade", 85.0);
+      setNpcKnownMagic(vars, "suggestion_magic", 70.0);
+      setNpcKnownMagic(vars, "reinforcement", 70.0);
+      setNpcKnownMagic(vars, "detection", 90.0);
+      setNpcKnownMagic(vars, "imaginary_displacement", 85.0);
+      setNpcKnownMagic(vars, "imaginary_space", 85.0);
+      setNpcKnownMagic(vars, "spiritron_cannon", 90.0);
+      grantLeffMagicCrest(npc, vars);
+      String[] magics = new String[]{
+         "aerial_stasis",
+         "aerial_ascent",
+         "magic_analysis",
+         "airflow_blade",
+         "suggestion_magic",
+         "reinforcement",
+         "detection",
+         "imaginary_displacement",
+         "imaginary_space",
+         "spiritron_cannon"
+      };
+      for (int i = 0; i < magics.length; i++) {
+         installLeffWheelMagic(vars, i, magics[i]);
+      }
+      vars.rebuildSelectedMagicsFromActiveWheel();
+      CompoundTag data = npc.getPersistentData();
+      data.putBoolean(TAG_MAGIC_INIT, true);
+      data.putBoolean(TAG_ATTR_INIT, true);
+      data.putInt(TAG_FIXED_LEVEL, 5);
+      data.putDouble(TAG_BASE_MAX_HEALTH, LeffLaynorFlaurosEntity.MAX_HEALTH);
+      data.putDouble(TAG_BASE_MOVE_SPEED, 0.28);
+      data.putDouble(TAG_COMBAT_MOVE_SPEED, 0.42);
+      data.putDouble(TAG_BASE_ATTACK_DAMAGE, 5.0);
+      if (npc.getAttribute(Attributes.MAX_HEALTH) != null) npc.getAttribute(Attributes.MAX_HEALTH).setBaseValue(LeffLaynorFlaurosEntity.MAX_HEALTH);
+      if (npc.getAttribute(Attributes.MOVEMENT_SPEED) != null) npc.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28);
+      if (npc.getAttribute(Attributes.ATTACK_DAMAGE) != null) npc.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0);
+      npc.setHealth((float)LeffLaynorFlaurosEntity.MAX_HEALTH);
+      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+   }
+
+   public static void ensureLeffProfile(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.player_max_mana = Math.max(vars.player_max_mana, 800.0);
+      vars.player_mana = Math.min(Math.max(vars.player_mana, 0.0), vars.player_max_mana);
+      vars.player_mana_egenerated_every_moment = Math.max(vars.player_mana_egenerated_every_moment, 5.0);
+      vars.player_restore_magic_moment = 10.0;
+      vars.is_magus = true;
+      vars.player_magic_attributes_wind = true;
+      vars.player_magic_attributes_imaginary_number = true;
+      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
+      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
+      setNpcKnownMagic(vars, "magic_analysis", 90.0);
+      setNpcKnownMagic(vars, "airflow_blade", 85.0);
+      setNpcKnownMagic(vars, "suggestion_magic", 70.0);
+      setNpcKnownMagic(vars, "reinforcement", 70.0);
+      setNpcKnownMagic(vars, "detection", 90.0);
+      setNpcKnownMagic(vars, "imaginary_displacement", 85.0);
+      setNpcKnownMagic(vars, "imaginary_space", 85.0);
+      setNpcKnownMagic(vars, "spiritron_cannon", 90.0);
+      ensureLeffWheelMagic(vars, "aerial_stasis");
+      ensureLeffWheelMagic(vars, "aerial_ascent");
+      ensureLeffWheelMagic(vars, "magic_analysis");
+      ensureLeffWheelMagic(vars, "airflow_blade");
+      ensureLeffWheelMagic(vars, "suggestion_magic");
+      ensureLeffWheelMagic(vars, "reinforcement");
+      ensureLeffWheelMagic(vars, "detection");
+      ensureLeffWheelMagic(vars, "imaginary_displacement");
+      ensureLeffWheelMagic(vars, "imaginary_space");
+      ensureLeffWheelMagic(vars, "spiritron_cannon");
+      grantLeffMagicCrest(npc, vars);
+      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
+   }
+
    /** Keeps the fixed NPC profile intact for Rin entities loaded from older saves. */
    public static void ensureTohsakaRinBajiquan(MysticMagicianEntity npc) {
       if (npc == null || npc.level().isClientSide()) return;
@@ -471,6 +600,135 @@ public final class NpcMagicCastBridge {
       vars.bajiquan_proficiency = 60.0;
       vars.bajiquan_tiger_unlocked = false;
       if (!vars.learned_magics.contains("bajiquan")) vars.learned_magics.add("bajiquan");
+      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
+      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
+      setNpcKnownMagic(vars, "suggestion_magic", 60.0);
+      setNpcKnownMagic(vars, "healing_magic", 60.0);
+      ensureTohsakaRinWheelMagic(vars, "aerial_stasis");
+      ensureTohsakaRinWheelMagic(vars, "aerial_ascent");
+      ensureTohsakaRinWheelMagic(vars, "suggestion_magic");
+      ensureTohsakaRinWheelMagic(vars, "healing_magic");
+      grantTohsakaRinMagicCrest(npc, vars);
+   }
+
+   private static void setNpcKnownMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, double proficiency) {
+      if (vars == null || magicId == null || magicId.isEmpty()) return;
+      if (!vars.learned_magics.contains(magicId)) vars.learned_magics.add(magicId);
+      if (MagicProficiencyService.get(vars, magicId) < proficiency) {
+         MagicProficiencyService.set(vars, magicId, proficiency);
+      }
+   }
+
+   private static void installLeffWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, int slot, String magicId) {
+      TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, slot);
+      entry.magicId = magicId;
+      entry.sourceType = "self";
+      if ("reinforcement".equals(magicId)) {
+         entry.presetPayload.putInt("reinforcement_target", 0);
+         entry.presetPayload.putInt("reinforcement_mode", 0);
+         entry.presetPayload.putInt("reinforcement_level", 4);
+      }
+      vars.setWheelSlotEntry(0, slot, entry);
+   }
+
+   private static void ensureLeffWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      ensureTohsakaRinWheelMagic(vars, magicId);
+   }
+
+   private static void ensureTohsakaRinWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      if (vars == null || magicId == null || magicId.isEmpty()) return;
+      vars.ensureMagicSystemInitialized();
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry existing = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (existing != null && magicId.equals(existing.magicId)) return;
+      }
+      for (int slot = 0; slot < 12; slot++) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry existing = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
+         if (existing == null || existing.isEmpty()) {
+            TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry =
+               new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(vars.active_wheel_index, slot);
+            entry.magicId = magicId;
+            entry.sourceType = "self";
+            vars.setWheelSlotEntry(vars.active_wheel_index, slot, entry);
+            vars.rebuildSelectedMagicsFromActiveWheel();
+            return;
+         }
+      }
+   }
+
+   private static void grantTohsakaRinMagicCrest(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (npc == null || vars == null) return;
+      vars.ensureMagicSystemInitialized();
+      boolean changed = false;
+      if (vars.magicCrestInventory.getStackInSlot(0).isEmpty()) {
+         vars.magicCrestInventory.setStackInSlot(0, new ItemStack(ModItems.MAGIC_CREST.get()));
+         changed = true;
+      }
+      changed |= addTohsakaRinCrestEntry(npc, vars, "aerial_stasis");
+      changed |= addTohsakaRinCrestEntry(npc, vars, "aerial_ascent");
+      changed |= addTohsakaRinCrestEntry(npc, vars, "suggestion_magic");
+      changed |= addTohsakaRinCrestEntry(npc, vars, "reinforcement");
+      changed |= addTohsakaRinCrestEntry(npc, vars, "healing_magic");
+      if (changed) {
+         TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(vars.magicCrestInventory.getStackInSlot(0), vars.crest_entries);
+      }
+   }
+
+   private static boolean addTohsakaRinCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
+         if (existing != null && magicId.equals(existing.magicId) && "tohsaka_rin".equals(existing.originOwnerType)) return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
+      entry.entryId = UUID.randomUUID().toString();
+      entry.magicId = magicId;
+      entry.presetPayload = new CompoundTag();
+      entry.sourceKind = "plunder";
+      entry.originOwnerUuid = npc.getUUID().toString();
+      entry.originOwnerType = "tohsaka_rin";
+      entry.originOwnerName = npc.getName().getString();
+      entry.active = true;
+      vars.crest_entries.add(entry);
+      return true;
+   }
+
+   private static void grantLeffMagicCrest(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (npc == null || vars == null) return;
+      vars.ensureMagicSystemInitialized();
+      boolean changed = false;
+      if (vars.magicCrestInventory.getStackInSlot(0).isEmpty()) {
+         vars.magicCrestInventory.setStackInSlot(0, new ItemStack(ModItems.MAGIC_CREST.get()));
+         changed = true;
+      }
+      changed |= addLeffCrestEntry(npc, vars, "aerial_stasis");
+      changed |= addLeffCrestEntry(npc, vars, "aerial_ascent");
+      changed |= addLeffCrestEntry(npc, vars, "magic_analysis");
+      changed |= addLeffCrestEntry(npc, vars, "airflow_blade");
+      changed |= addLeffCrestEntry(npc, vars, "suggestion_magic");
+      changed |= addLeffCrestEntry(npc, vars, "reinforcement");
+      changed |= addLeffCrestEntry(npc, vars, "detection");
+      changed |= addLeffCrestEntry(npc, vars, "imaginary_displacement");
+      changed |= addLeffCrestEntry(npc, vars, "imaginary_space");
+      changed |= addLeffCrestEntry(npc, vars, "spiritron_cannon");
+      if (changed) {
+         TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(vars.magicCrestInventory.getStackInSlot(0), vars.crest_entries);
+      }
+   }
+
+   private static boolean addLeffCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
+         if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
+      entry.entryId = UUID.randomUUID().toString();
+      entry.magicId = magicId;
+      entry.presetPayload = new CompoundTag();
+      entry.sourceKind = "plunder";
+      entry.originOwnerUuid = npc.getUUID().toString();
+      entry.originOwnerType = "leff_laynor_flauros";
+      entry.originOwnerName = npc.getName().getString();
+      entry.active = true;
+      vars.crest_entries.add(entry);
+      return true;
    }
 
    public static void cleanup(MysticMagicianEntity npc) {
@@ -1461,6 +1719,8 @@ public final class NpcMagicCastBridge {
                   case "earth_magic":
                   case "detection":
                   case "magic_analysis":
+                  case "imaginary_displacement":
+                  case "imaginary_space":
                   case "sapphire_winter_frost":
                   case "emerald_winter_river":
                      hasControl = true;
@@ -1477,6 +1737,7 @@ public final class NpcMagicCastBridge {
                   case "jewel_machine_gun":
                   case "ruby_flame_sword":
                   case "cyan_wind":
+                  case "spiritron_cannon":
                      hasRanged = true;
                      break;
                }
@@ -3561,9 +3822,41 @@ public final class NpcMagicCastBridge {
             return null;
          } else {
             applyAdvancedAndVarietyWeighting(npc, choices, manaRatio);
+            applyLeffPersonalityWeighting(npc, choices, distance, manaRatio);
             choices.sort(Comparator.comparingDouble(NpcMagicCastBridge.Choice::weight).reversed());
             return weightedPick(choices, npc.getRandom()).entry();
          }
+      }
+   }
+
+   private static void applyLeffPersonalityWeighting(MysticMagicianEntity npc, List<NpcMagicCastBridge.Choice> choices, double distance, double manaRatio) {
+      if (!(npc instanceof LeffLaynorFlaurosEntity) || choices == null || choices.isEmpty()) {
+         return;
+      }
+      int personality = Mth.clamp(npc.getPersistentData().getInt(LeffLaynorFlaurosEntity.TAG_PERSONALITY), 0, 2);
+      for (int i = 0; i < choices.size(); i++) {
+         NpcMagicCastBridge.Choice c = choices.get(i);
+         String magicId = c.entry().magicId;
+         double weight = c.weight();
+         if (personality == 0) {
+            if ("imaginary_displacement".equals(magicId)) weight *= 2.8;
+            if ("magic_analysis".equals(magicId)) weight *= 2.2;
+            if ("reinforcement".equals(magicId)) weight *= 1.75;
+            if ("spiritron_cannon".equals(magicId)) weight *= 0.28;
+         } else if (personality == 1) {
+            if ("airflow_blade".equals(magicId)) weight *= 2.2;
+            if ("suggestion_magic".equals(magicId)) weight *= 1.9;
+            if ("reinforcement".equals(magicId)) weight *= 1.5;
+            if ("detection".equals(magicId)) weight *= 1.8;
+            if ("spiritron_cannon".equals(magicId)) weight *= 0.45;
+         } else {
+            if ("spiritron_cannon".equals(magicId)) {
+               weight *= distance >= 12.0 && manaRatio >= 0.72 ? 4.0 : 0.16;
+            }
+            if ("aerial_ascent".equals(magicId) || "aerial_stasis".equals(magicId)) weight *= 1.45;
+            if ("airflow_blade".equals(magicId)) weight *= distance >= 7.0 ? 1.35 : 0.75;
+         }
+         choices.set(i, new NpcMagicCastBridge.Choice(c.entry(), c.slot(), Math.max(0.01, weight)));
       }
    }
 
@@ -3691,6 +3984,10 @@ public final class NpcMagicCastBridge {
                weight += 3.0;
             }
 
+            if ("spiritron_cannon".equals(magicId)) {
+               weight += distance >= 10.0 ? 2.4 : -1.2;
+            }
+
             if ("jewel_random_shoot".equals(magicId) || "magic_bullet".equals(magicId) || "fire_magic".equals(magicId) || isManaBurstDirect(payload, magicId)) {
                weight++;
             }
@@ -3702,6 +3999,12 @@ public final class NpcMagicCastBridge {
          case CONTROL_DRAIN:
             if ("gravity_magic".equals(magicId) || "binding_magic".equals(magicId)) {
                weight += 3.2;
+            }
+
+            if ("imaginary_displacement".equals(magicId)) {
+               weight += 2.8;
+            } else if ("imaginary_space".equals(magicId)) {
+               weight += distance <= 18.0 ? 1.5 : -0.6;
             }
 
             if ("suggestion_magic".equals(magicId)
@@ -3733,7 +4036,9 @@ public final class NpcMagicCastBridge {
                || "ruby_flame_sword".equals(magicId)
                || "sapphire_winter_frost".equals(magicId)
                || "emerald_winter_river".equals(magicId)
-               || "cyan_wind".equals(magicId)) {
+               || "cyan_wind".equals(magicId)
+               || "imaginary_space".equals(magicId)
+               || "spiritron_cannon".equals(magicId)) {
                weight++;
             }
       }
@@ -3758,7 +4063,8 @@ public final class NpcMagicCastBridge {
          if ("gandr_machine_gun".equals(magicId)
             || "jewel_machine_gun".equals(magicId)
             || "ruby_flame_sword".equals(magicId)
-            || "cyan_wind".equals(magicId)) {
+            || "cyan_wind".equals(magicId)
+            || "spiritron_cannon".equals(magicId)) {
             weight *= 0.65;
          }
       } else if (distance > 14.0) {
@@ -3775,13 +4081,14 @@ public final class NpcMagicCastBridge {
             || "water_magic".equals(magicId)
             || "wind_magic".equals(magicId)
             || "ruby_flame_sword".equals(magicId)
-            || "cyan_wind".equals(magicId)) {
+            || "cyan_wind".equals(magicId)
+            || "spiritron_cannon".equals(magicId)) {
             weight += 0.8;
          }
       }
 
       if (manaRatio < 0.3) {
-         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId) || isAdvancedJewelMagic(magicId)) {
+         if ("gandr_machine_gun".equals(magicId) || "jewel_machine_gun".equals(magicId) || isAdvancedJewelMagic(magicId) || "spiritron_cannon".equals(magicId)) {
             weight *= 0.2;
          } else if ("gander".equals(magicId) || "jewel_random_shoot".equals(magicId) || "gravity_magic".equals(magicId)) {
             weight *= 0.75;
@@ -3830,6 +4137,10 @@ public final class NpcMagicCastBridge {
          weight += 1.6;
       } else if ("suggestion_magic".equals(magicId) && distance >= 4.0 && distance <= 12.0) {
          weight += 0.8;
+      } else if ("imaginary_space".equals(magicId) && distance <= 14.0 && manaRatio >= 0.35) {
+         weight += 1.2;
+      } else if ("spiritron_cannon".equals(magicId)) {
+         weight += distance >= 10.0 && distance <= 32.0 && manaRatio >= 0.68 ? 2.0 : -0.9;
       }
 
       if (isElementalMagic(magicId)) {
@@ -3901,6 +4212,8 @@ public final class NpcMagicCastBridge {
                "fire_magic",
                "water_magic",
                "wind_magic",
+               "imaginary_space",
+               "spiritron_cannon",
                "ruby_flame_sword",
                "sapphire_winter_frost",
                "emerald_winter_river",
@@ -3932,6 +4245,9 @@ public final class NpcMagicCastBridge {
          case "magic_bullet" -> 8.0 + proficiency * 0.06;
          case "airflow_blade" -> AirflowBladeService.BLADE_MANA_COST;
          case "detection" -> 6.0;
+         case "imaginary_displacement" -> 70.0 + Math.max(0.0, 100.0 - proficiency) * 0.25;
+         case "imaginary_space" -> 100.0;
+         case "spiritron_cannon" -> SpiritronCannonService.MANA_COST;
          case "suggestion_magic" -> 10.0 + proficiency * 0.08;
          case "binding_magic" -> 12.0 + proficiency * 0.08;
          case "fire_magic" -> 10.0 + proficiency * 0.12;
@@ -4013,6 +4329,64 @@ public final class NpcMagicCastBridge {
       }
       markCastingPose(caster, 12);
       return MagicHealing.healDirect(caster, healTarget, vars, proficiency);
+   }
+
+   static boolean castSpiritronCannon(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (caster == null || vars == null || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (!consumeMana(vars, SpiritronCannonService.MANA_COST)) {
+         return false;
+      }
+      markCastingPose(caster, SpiritronCannonService.WINDUP_TICKS + 10);
+      return SpiritronCannonService.cast(caster, vars, target, false);
+   }
+
+   static boolean castLeffImaginaryDisplacement(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (!(caster instanceof LeffLaynorFlaurosEntity leff) || vars == null) {
+         return false;
+      }
+      CompoundTag data = leff.getPersistentData();
+      if (data.getInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_ACTIVE) > 0
+         || data.getInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_COOLDOWN) > 0) {
+         return false;
+      }
+      double cost = 70.0 + Math.max(0.0, 100.0 - proficiency) * 0.25;
+      if (!consumeMana(vars, cost)) {
+         return false;
+      }
+      int duration = Mth.clamp(50 + (int)Math.round(proficiency * 0.45), 50, 95);
+      data.putInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_ACTIVE, duration);
+      data.putInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_COOLDOWN, 260);
+      markCastingPose(leff, 14);
+      if (leff.level() instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(ParticleTypes.PORTAL, leff.getX(), leff.getY() + leff.getBbHeight() * 0.55, leff.getZ(), 54, 0.8, 0.9, 0.8, 0.16);
+         serverLevel.playSound(null, leff.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 0.9F, 0.72F);
+      }
+      return true;
+   }
+
+   static boolean castLeffImaginarySpace(
+      MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency
+   ) {
+      if (!(caster instanceof LeffLaynorFlaurosEntity) || vars == null || target == null || !target.isAlive()) {
+         return false;
+      }
+      if (!consumeMana(vars, 100.0)) {
+         return false;
+      }
+      markCastingPose(caster, 20);
+      var outcome = ImaginarySpaceService.castNpcCreature(caster, target);
+      if (outcome.status() != CastStatus.SUCCESS) {
+         vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + 100.0);
+         return false;
+      }
+      MagicProficiencyService.add(vars, "imaginary_space", 0.2);
+      return true;
    }
 
    static boolean castSpiritualHealing(
@@ -5005,6 +5379,7 @@ public final class NpcMagicCastBridge {
             case "water_magic" -> vars.proficiency_water_magic;
             case "wind_magic" -> vars.proficiency_wind_magic;
             case "earth_magic" -> vars.proficiency_earth_magic;
+            case "aerial_stasis", "aerial_ascent" -> MagicProficiencyService.get(vars, magicId);
             case "jewel_random_shoot" -> vars.proficiency_jewel_magic_shoot;
             case "jewel_machine_gun",
                "ruby_flame_sword",
@@ -5012,7 +5387,7 @@ public final class NpcMagicCastBridge {
                "emerald_winter_river",
                "topaz_reinforcement",
                "cyan_wind" -> vars.proficiency_jewel_magic_release;
-            default -> 0.0;
+            default -> MagicProficiencyService.get(vars, magicId);
          };
          int fixedLevel = getFixedLevel(npc);
          int combatBonus = getCombatLevelBonus(npc);

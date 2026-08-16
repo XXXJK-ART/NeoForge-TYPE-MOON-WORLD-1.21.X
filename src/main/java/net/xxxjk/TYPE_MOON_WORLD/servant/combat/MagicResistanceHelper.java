@@ -122,6 +122,9 @@ public final class MagicResistanceHelper {
       if (OriginBulletHelper.isOriginBulletDamage(source)) {
          return amount;
       }
+      if (source != null && source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) {
+         return amount;
+      }
       if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source) || complexity == null) {
          return amount;
       }
@@ -141,6 +144,9 @@ public final class MagicResistanceHelper {
       LivingEntity caster, String magicId, double casterProficiency
    ) {
       if (OriginBulletHelper.isOriginBulletDamage(source)) {
+         return amount;
+      }
+      if (source != null && source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) {
          return amount;
       }
       if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source) || complexity == null) {

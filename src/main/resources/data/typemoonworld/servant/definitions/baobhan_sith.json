@@ -38,9 +38,9 @@
   },
   "specialization": {
     "dimensions": {
-      "width": 0.6,
-      "height": 1.8,
-      "eye_height": 1.62
+      "width": 0.54,
+      "height": 1.62,
+      "eye_height": 1.46
     },
     "hand_item_offset": {
       "x": 0.1,

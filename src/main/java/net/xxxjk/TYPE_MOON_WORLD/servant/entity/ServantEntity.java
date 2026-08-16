@@ -785,7 +785,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void equipNpcServantCardArmor(boolean forceClientSync) {
-      String id = this.getServantId();
+      String id = normalizeServantId(this.getServantId());
       if (!usesHumanoidServantSkin(id)) {
          return;
       }
@@ -800,7 +800,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void equipNpcServantCardArmorSlot(EquipmentSlot slot, boolean forceClientSync) {
-      Item armor = ModItems.getServantCardArmor(this.getServantId(), slot);
+      Item armor = ModItems.getServantCardArmor(normalizeServantId(this.getServantId()), slot);
       if (armor == Items.AIR) {
          return;
       }
@@ -818,32 +818,38 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private static boolean usesHumanoidServantSkin(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      return switch (normalizeServantId(servantId)) {
          case "arash", "artoria_pendragon", "cu_chulainn", "cursed_arm_hassan", "gilgamesh_caster", "emiya_archer",
             "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa", "shadow_hassan",
             "hundred_faces_hassan", "diarmuid_ua_duibhne",
             "heracles",
-            "ushiwakamaru_rider", "zhao_yun_rider", "iskandar" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "iskandar", "baobhan_sith" -> true;
          default -> false;
       };
    }
 
    private static boolean hasHumanoidServantCardHelmet(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      return switch (normalizeServantId(servantId)) {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
             "hundred_faces_hassan", "diarmuid_ua_duibhne",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
    }
 
    private static boolean hasHumanoidServantCardBoots(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      return switch (normalizeServantId(servantId)) {
          case "diarmuid_ua_duibhne", "iskandar" -> true;
          default -> false;
       };
+   }
+
+   private static String normalizeServantId(String servantId) {
+      String id = servantId == null ? "" : servantId;
+      String builtinPrefix = net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":";
+      return id.startsWith(builtinPrefix) ? id.substring(builtinPrefix.length()) : id;
    }
 
    @Override

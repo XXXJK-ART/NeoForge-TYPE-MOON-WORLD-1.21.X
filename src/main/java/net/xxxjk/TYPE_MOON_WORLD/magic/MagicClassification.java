@@ -45,6 +45,7 @@ public final class MagicClassification {
       Map.entry("aerial_ascent", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("touko_travel", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("flight_magic", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
+      Map.entry("spiritron_cannon", MagicClassification.ManaCostType.ONE_TIME),
       Map.entry("time_alter", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("spiritual_healing", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),
       Map.entry("baptism_rite", MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT),

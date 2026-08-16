@@ -26,6 +26,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item implements GeoItem {
    private static final double PROJECTILE_SPEED = 3.2;
+   private static final int FULL_CHARGE_TICKS = 20;
    private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.06F, 0.10F), 1.15F);
    private static final DustParticleOptions CURSE_DUST = new DustParticleOptions(new Vector3f(0.08F, 0.02F, 0.10F), 1.0F);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -39,9 +40,6 @@ public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item imp
       ItemStack stack = player.getItemInHand(hand);
       if (hand != InteractionHand.MAIN_HAND) {
          return InteractionResultHolder.pass(stack);
-      }
-      if (level instanceof ServerLevel serverLevel) {
-         fireCurseShot(serverLevel, player, PROJECTILE_SPEED, 1.0F);
       }
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
@@ -57,7 +55,23 @@ public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item imp
       return UseAnim.BOW;
    }
 
+   @Override
+   public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
+      int chargeTicks = this.getUseDuration(stack, living) - timeLeft;
+      if (chargeTicks < FULL_CHARGE_TICKS) {
+         return;
+      }
+      if (level instanceof ServerLevel serverLevel) {
+         int chargeSeconds = Math.max(1, Math.min(5, chargeTicks / FULL_CHARGE_TICKS));
+         fireCurseShot(serverLevel, living, PROJECTILE_SPEED, 1.0F, chargeSeconds);
+      }
+   }
+
    public static void fireCurseShot(ServerLevel level, LivingEntity shooter, double speed, float visualScale) {
+      fireCurseShot(level, shooter, speed, visualScale, 1);
+   }
+
+   public static void fireCurseShot(ServerLevel level, LivingEntity shooter, double speed, float visualScale, int chargeSeconds) {
       Vec3 look = shooter.getLookAngle().normalize();
       Vec3 start = shooter.getEyePosition().add(look.scale(0.65));
       Vec3 direction = ArashAimHelper.autoAimDirection(shooter, start, look, speed);
@@ -65,6 +79,7 @@ public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item imp
       projectile.setPos(start.x, start.y - 0.12, start.z);
       projectile.setDeltaMovement(direction.scale(speed));
       projectile.setMagicSource("baobhan_sith_curse", 70.0);
+      projectile.setChargeSeconds(chargeSeconds);
       projectile.setVisualScale(visualScale);
       level.addFreshEntity(projectile);
       spawnHarpMuzzleFx(level, start, direction);

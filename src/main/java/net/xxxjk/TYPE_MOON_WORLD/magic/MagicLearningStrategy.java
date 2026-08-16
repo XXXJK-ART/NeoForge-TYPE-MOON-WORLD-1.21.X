@@ -45,6 +45,7 @@ public final class MagicLearningStrategy {
       Map.entry("aerial_ascent", new Rule(18, true, true, true, true, false, false)),
       Map.entry("touko_travel", new Rule(40, true, true, true, true, false, false)),
       Map.entry("flight_magic", new Rule(90, true, true, true, true, false, false)),
+      Map.entry("spiritron_cannon", new Rule(90, true, true, true, true, false, false)),
       Map.entry("spiritual_healing", new Rule(50, true, true, true, true, false, false)),
       Map.entry("baptism_rite", new Rule(65, true, true, true, true, false, false)),
       Map.entry("black_key_fire_engraving", new Rule(60, true, true, true, true, false, false)),
@@ -163,6 +164,7 @@ public final class MagicLearningStrategy {
          case "aerial_ascent" -> "magic_page_aerial_ascent";
          case "touko_travel" -> "magic_page_touko_travel";
          case "flight_magic" -> "magic_page_flight_magic";
+         case "spiritron_cannon" -> "magic_page_spiritron_cannon";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
          case "gander" -> "magic_scroll_gander_broken";
          case "broken_phantasm" -> "magic_scroll_broken_phantasm_broken";

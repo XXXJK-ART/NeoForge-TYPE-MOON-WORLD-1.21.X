@@ -186,6 +186,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("aerial_ascent", "magic.typemoonworld.aerial_ascent.name", "special", -7701249);
       this.addMagic("touko_travel", "magic.typemoonworld.touko_travel.name", "special", -7701249);
       this.addMagic("flight_magic", "magic.typemoonworld.flight_magic.name", "special", -7701249);
+      this.addMagic("spiritron_cannon", "magic.typemoonworld.spiritron_cannon.name", "special", -171);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("black_key_fire_engraving", "key.typemoonworld.magic.black_key_fire_engraving.short", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
@@ -1386,6 +1387,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       if (TalentService.isTalent(normalized)) return MagicProficiencyService.get(vars, normalized);
 
       return switch (normalized) {
+         case "magic_analysis" -> vars.proficiency_magic_analysis;
          case "structural_analysis" -> vars.proficiency_structural_analysis;
          case "projection" -> vars.proficiency_projection;
          case "unlimited_blade_works" -> vars.proficiency_unlimited_blade_works;

@@ -322,7 +322,7 @@ public final class ServantCardTransformManager {
       }
    }
 
-   private static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       ServantCardEmiyaSkills.clear(player);
       ServantCardArtoriaSkills.clear(player);
       ServantCardCuChulainnSkills.clear(player);
@@ -978,6 +978,7 @@ public final class ServantCardTransformManager {
          || "ushiwakamaru_rider".equals(servantId)
          || "zhao_yun_rider".equals(servantId)
          || "gilgamesh_caster".equals(servantId)
+         || "baobhan_sith".equals(servantId)
          || "hundred_faces_hassan".equals(servantId);
 
    }

@@ -153,7 +153,7 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
       return switch (armor.servantId()) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
    }

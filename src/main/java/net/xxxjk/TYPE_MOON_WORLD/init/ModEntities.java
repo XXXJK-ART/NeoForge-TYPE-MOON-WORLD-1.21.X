@@ -40,6 +40,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
@@ -65,6 +66,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SpiritronCannonBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwControlledSwordEntity;
@@ -284,6 +286,14 @@ public class ModEntities {
          .updateInterval(1)
          .build("artoria_excalibur_beam")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<SpiritronCannonBeamEntity>> SPIRITRON_CANNON_BEAM = ENTITY_TYPES.register(
+      "spiritron_cannon_beam",
+      () -> Builder.<SpiritronCannonBeamEntity>of((entityType, level) -> new SpiritronCannonBeamEntity(entityType, level), MobCategory.MISC)
+         .sized(15.0F, 5.0F)
+         .clientTrackingRange(96)
+         .updateInterval(1)
+         .build("spiritron_cannon_beam")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<RyougiShikiEntity>> RYOUGI_SHIKI = ENTITY_TYPES.register(
       "ryougi_shiki", () -> Builder.of(RyougiShikiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ryougi_shiki")
    );
@@ -402,6 +412,9 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
       "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LeffLaynorFlaurosEntity>> LEFF_LAYNOR_FLAUROS = ENTITY_TYPES.register(
+      "leff_laynor_flauros", () -> Builder.of(LeffLaynorFlaurosEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("leff_laynor_flauros")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE = ENTITY_TYPES.register(
       "sword_barrel_projectile",

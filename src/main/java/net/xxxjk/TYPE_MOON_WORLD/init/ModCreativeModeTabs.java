@@ -38,6 +38,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MASTER_CARD_ELSA_SAIJO);
                         output.accept(ModItems.MASTER_CARD_WAVER);
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
+                        output.accept(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -159,37 +160,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.AVALON);
                     }).build());
 
-    public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
-            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MAGIC_FRAGMENTS.get()))
-                    .title(Component.translatable("creativetab.typemoonworld.type_moon_world"))
-                    //添加创造栏物品
-                    .displayItems((itemDisplayParameters, output) -> {
-                        output.accept(ModItems.MAGIC_FRAGMENTS);
-                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
-                        output.accept(ModItems.GANRYU_MANUAL);
-                        output.accept(ModItems.HOKUSHIN_MANUAL);
-                        output.accept(ModItems.TENNEN_MANUAL);
-                        output.accept(ModItems.SPARRING_INVITATION);
-                        output.accept(ModItems.HOLY_SHROUD);
-                        output.accept(ModItems.CLAW_OF_CHAOS);
-                        output.accept(ModItems.DRAGON_FANG);
-                        output.accept(ModItems.DRAGONS_REVERSE_SCALE);
-                        output.accept(ModItems.EVIL_BONE);
-                        output.accept(ModItems.HOLY_GRAIL);
-                        output.accept(ModItems.PHOENIX_FEATHER);
-                        output.accept(ModItems.PROOF_OF_HERO);
-                        output.accept(ModItems.QP);
-                        output.accept(ModItems.REMNANTS_OF_MADNESS);
-                        output.accept(ModItems.SEED_OF_YGGDRASIL);
-                        output.accept(ModItems.VOIDS_DUST);
-                        output.accept(ModItems.GEM_NECKLACE);
-                        output.accept(ModItems.MYSTIC_MERCURY);
-                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
-
-                        output.accept(ModItems.WAKIZASHI);
-                        output.accept(ModItems.KATANA);
-                        output.accept(ModItems.NODACHI);
-
+    public static final Supplier<CreativeModeTab> MAGIC_BOOKS_TAB = CREATIVE_MODE_TAB.register("magic_books_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MAGIC_BOOK_MAGIC_ANALYSIS.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.magic_books"))
+                    .displayItems((parameters, output) -> {
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL);
                         output.accept(ModItems.MAGIC_SCROLL_BASIC_JEWEL_BROKEN);
                         output.accept(ModItems.MAGIC_SCROLL_ADVANCED_JEWEL);
@@ -206,6 +180,9 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_SCROLL_BROKEN_PHANTASM_BROKEN);
                         output.accept(ModItems.UNKNOWN_MAGIC_PAGE);
                         output.accept(ModItems.MAGIC_WASTE_PAPER);
+                        output.accept(ModItems.PARTITIONED_THOUGHT_FRAGMENT);
+                        output.accept(ModItems.SELF_GEAS_SCROLL);
+
                         output.accept(ModItems.MAGIC_BOOK_PROJECTION);
                         output.accept(ModItems.MAGIC_PAGE_PROJECTION);
                         output.accept(ModItems.MAGIC_BOOK_STRUCTURAL_ANALYSIS);
@@ -237,8 +214,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
-                        output.accept(ModItems.PARTITIONED_THOUGHT_FRAGMENT);
-                        output.accept(ModItems.SELF_GEAS_SCROLL);
                         output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
                         output.accept(ModItems.MAGIC_BOOK_STIGMA);
@@ -275,6 +250,121 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_STORM);
                         output.accept(ModItems.MAGIC_BOOK_ZAGAN);
                         output.accept(ModItems.MAGIC_PAGE_ZAGAN);
+                        output.accept(ModItems.MAGIC_BOOK_FLAME_ARRAY);
+                        output.accept(ModItems.MAGIC_PAGE_FLAME_ARRAY);
+                        output.accept(ModItems.MAGIC_BOOK_AZURE_WATER_ARRAY);
+                        output.accept(ModItems.MAGIC_PAGE_AZURE_WATER_ARRAY);
+                        output.accept(ModItems.MAGIC_BOOK_GALE_WIND_ARRAY);
+                        output.accept(ModItems.MAGIC_PAGE_GALE_WIND_ARRAY);
+                        output.accept(ModItems.MAGIC_BOOK_ROCK_EARTH_ARRAY);
+                        output.accept(ModItems.MAGIC_PAGE_ROCK_EARTH_ARRAY);
+                        output.accept(ModItems.MAGIC_BOOK_CONTRACT_MAGECRAFT);
+                        output.accept(ModItems.MAGIC_PAGE_CONTRACT_MAGECRAFT);
+                        output.accept(ModItems.MAGIC_BOOK_AERIAL_STASIS);
+                        output.accept(ModItems.MAGIC_PAGE_AERIAL_STASIS);
+                        output.accept(ModItems.MAGIC_BOOK_AERIAL_ASCENT);
+                        output.accept(ModItems.MAGIC_PAGE_AERIAL_ASCENT);
+                        output.accept(ModItems.MAGIC_BOOK_TOUKO_TRAVEL);
+                        output.accept(ModItems.MAGIC_PAGE_TOUKO_TRAVEL);
+                        output.accept(ModItems.MAGIC_BOOK_FLIGHT_MAGIC);
+                        output.accept(ModItems.MAGIC_PAGE_FLIGHT_MAGIC);
+                        output.accept(ModItems.MAGIC_BOOK_SPIRITRON_CANNON);
+                        output.accept(ModItems.MAGIC_PAGE_SPIRITRON_CANNON);
+                    }).build());
+
+    public static final Supplier<CreativeModeTab> SPAWN_EGGS_TAB = CREATIVE_MODE_TAB.register("spawn_eggs_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.spawn_eggs"))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
+                        output.accept(ModItems.MERLIN_SPAWN_EGG);
+                        output.accept(ModItems.STONE_MAN_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_GRAND_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_BRAND_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_PRIDE_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_FES_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_ADEPT_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_UMNOS_SPAWN_EGG);
+                        output.accept(ModItems.MYSTIC_MAGICIAN_FRAME_SPAWN_EGG);
+                        output.accept(ModItems.THE_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.GHOUL_SPAWN_EGG);
+                        output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);
+                        output.accept(ModItems.NIGHT_KIN_SPAWN_EGG);
+                        output.accept(ModItems.NERO_CHAOS_SPAWN_EGG);
+                        output.accept(ModItems.CHURCH_EXECUTOR_SPAWN_EGG);
+                        output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
+                        output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
+                        output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_MASTER_TENNEN_SPAWN_EGG);
+                        output.accept(ModItems.KENDO_APPRENTICE_SPAWN_EGG);
+                        output.accept(ModItems.RONIN_SPAWN_EGG);
+                        output.accept(ModItems.SHINSENGUMI_SPAWN_EGG);
+                        output.accept(ModItems.TOHSAKA_RIN_SPAWN_EGG);
+                        output.accept(ModItems.LEFF_LAYNOR_FLAUROS_SPAWN_EGG);
+                        output.accept(ModItems.HERACLES_SPAWN_EGG);
+                        output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
+                        output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
+                        output.accept(ModItems.DIARMUID_UA_DUIBHNE_SPAWN_EGG);
+                        output.accept(ModItems.LANCELOT_BERSERKER_SPAWN_EGG);
+                        output.accept(ModItems.MEDEA_SPAWN_EGG);
+                        output.accept(ModItems.MEDUSA_SPAWN_EGG);
+                        output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
+                        output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
+                        output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
+                        output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
+                        output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
+                        output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.ISKANDAR_SPAWN_EGG);
+                        output.accept(ModItems.ENKIDU_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_SPAWN_EGG);
+                        output.accept(ModItems.GILGAMESH_CASTER_SPAWN_EGG);
+                        output.accept(ModItems.GAWAIN_SPAWN_EGG);
+                        output.accept(ModItems.SENKO_MURAMASA_SPAWN_EGG);
+                        output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
+                        output.accept(ModItems.PARACELSUS_SPAWN_EGG);
+                        output.accept(ModItems.PALE_RIDER_SPAWN_EGG);
+                        output.accept(ModItems.NIGHTINGALE_SPAWN_EGG);
+                        output.accept(ModItems.SHADOW_HASSAN_SPAWN_EGG);
+                        output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
+                        output.accept(ModItems.HUNDRED_FACES_HASSAN_SPAWN_EGG);
+                        output.accept(ModItems.ARASH_SPAWN_EGG);
+                        output.accept(ModItems.BAOBHAN_SITH_SPAWN_EGG);
+                        output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
+                    }).build());
+
+    public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
+            () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.MAGIC_FRAGMENTS.get()))
+                    .title(Component.translatable("creativetab.typemoonworld.type_moon_world"))
+                    //添加创造栏物品
+                    .displayItems((itemDisplayParameters, output) -> {
+                        output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
+                        output.accept(ModItems.GANRYU_MANUAL);
+                        output.accept(ModItems.HOKUSHIN_MANUAL);
+                        output.accept(ModItems.TENNEN_MANUAL);
+                        output.accept(ModItems.SPARRING_INVITATION);
+                        output.accept(ModItems.HOLY_SHROUD);
+                        output.accept(ModItems.CLAW_OF_CHAOS);
+                        output.accept(ModItems.DRAGON_FANG);
+                        output.accept(ModItems.DRAGONS_REVERSE_SCALE);
+                        output.accept(ModItems.EVIL_BONE);
+                        output.accept(ModItems.HOLY_GRAIL);
+                        output.accept(ModItems.PHOENIX_FEATHER);
+                        output.accept(ModItems.PROOF_OF_HERO);
+                        output.accept(ModItems.QP);
+                        output.accept(ModItems.REMNANTS_OF_MADNESS);
+                        output.accept(ModItems.SEED_OF_YGGDRASIL);
+                        output.accept(ModItems.VOIDS_DUST);
+                        output.accept(ModItems.GEM_NECKLACE);
+                        output.accept(ModItems.MYSTIC_MERCURY);
+                        output.accept(net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem.emptyVariant(ModItems.MYSTIC_MERCURY.get()));
+
+                        output.accept(ModItems.WAKIZASHI);
+                        output.accept(ModItems.KATANA);
+                        output.accept(ModItems.NODACHI);
 
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);
@@ -357,6 +447,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RAW_TOPAZ);
                         output.accept(ModItems.RAW_WHITE_GEMSTONE);
                         output.accept(ModItems.RAW_CYAN_GEMSTONE);
+                        output.accept(ModBlocks.CINNABAR_ORE);
+                        output.accept(ModBlocks.CINNABAR_BLOCK);
                         output.accept(ModItems.CINNABAR);
                         output.accept(ModItems.SULFUR);
                         output.accept(ModItems.MERCURY_BOTTLE);
@@ -464,63 +556,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.SPIRIT_VEIN_BLOCK);
                         output.accept(ModBlocks.SPIRIT_VEIN_NODE);
                         output.accept(ModBlocks.ANCIENT_TEMPLE_STONE);
-                        
-                        output.accept(ModItems.RYOUGI_SHIKI_SPAWN_EGG);
-                        output.accept(ModItems.MERLIN_SPAWN_EGG);
-                        output.accept(ModItems.STONE_MAN_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_GRAND_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_BRAND_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_PRIDE_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_FES_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_ADEPT_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_UMNOS_SPAWN_EGG);
-                        output.accept(ModItems.MYSTIC_MAGICIAN_FRAME_SPAWN_EGG);
-                        output.accept(ModItems.THE_DEAD_SPAWN_EGG);
-                        output.accept(ModItems.GHOUL_SPAWN_EGG);
-                        output.accept(ModItems.LIVING_DEAD_SPAWN_EGG);
-                        output.accept(ModItems.NIGHT_KIN_SPAWN_EGG);
-                        output.accept(ModItems.NERO_CHAOS_SPAWN_EGG);
-                        output.accept(ModItems.CHURCH_EXECUTOR_SPAWN_EGG);
-                        output.accept(ModItems.BAJIQUAN_MASTER_SPAWN_EGG);
-                        output.accept(ModItems.BAJIQUAN_APPRENTICE_SPAWN_EGG);
-                        output.accept(ModItems.MYSTERIOUS_SWORDSMAN_SPAWN_EGG);
-                        output.accept(ModItems.KENDO_MASTER_SPAWN_EGG);
-                        output.accept(ModItems.KENDO_MASTER_TENNEN_SPAWN_EGG);
-                        output.accept(ModItems.KENDO_APPRENTICE_SPAWN_EGG);
-                        output.accept(ModItems.RONIN_SPAWN_EGG);
-                        output.accept(ModItems.SHINSENGUMI_SPAWN_EGG);
-                        output.accept(ModItems.TOHSAKA_RIN_SPAWN_EGG);
-                        output.accept(ModItems.HERACLES_SPAWN_EGG);
-                        output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
-                        output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
-                        output.accept(ModItems.DIARMUID_UA_DUIBHNE_SPAWN_EGG);
-                        output.accept(ModItems.LANCELOT_BERSERKER_SPAWN_EGG);
-                        output.accept(ModItems.MEDEA_SPAWN_EGG);
-                        output.accept(ModItems.MEDUSA_SPAWN_EGG);
-                        output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
-                        output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
-                        output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
-                        output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
-                        output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
-                        output.accept(ModItems.USHIWAKAMARU_RIDER_SPAWN_EGG);
-                        output.accept(ModItems.ZHAO_YUN_RIDER_SPAWN_EGG);
-                        output.accept(ModItems.ISKANDAR_SPAWN_EGG);
-                        output.accept(ModItems.ENKIDU_SPAWN_EGG);
-                        output.accept(ModItems.GILGAMESH_SPAWN_EGG);
-                        output.accept(ModItems.GILGAMESH_CASTER_SPAWN_EGG);
-                        output.accept(ModItems.GAWAIN_SPAWN_EGG);
-                        output.accept(ModItems.SENKO_MURAMASA_SPAWN_EGG);
-                        output.accept(ModItems.LI_SHUWEN_SPAWN_EGG);
-                        output.accept(ModItems.PARACELSUS_SPAWN_EGG);
-                        output.accept(ModItems.PALE_RIDER_SPAWN_EGG);
-                        output.accept(ModItems.NIGHTINGALE_SPAWN_EGG);
-                        output.accept(ModItems.SHADOW_HASSAN_SPAWN_EGG);
-                        output.accept(ModItems.FANATIC_ASSASSIN_SPAWN_EGG);
-                        output.accept(ModItems.HUNDRED_FACES_HASSAN_SPAWN_EGG);
-                        output.accept(ModItems.ARASH_SPAWN_EGG);
-                        output.accept(ModItems.BAOBHAN_SITH_SPAWN_EGG);
-                        output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
                     }).build());
 
     public static void register(IEventBus eventBus) {

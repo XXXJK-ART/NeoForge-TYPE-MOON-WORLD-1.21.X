@@ -60,7 +60,7 @@ public class ModBlocks {
       "alchemy_cauldron", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CAULDRON).strength(2.0F))
    );
    public static final DeferredBlock<Block> CINNABAR_ORE = registerBlock(
-      "cinnabar_ore", () -> new DropExperienceBlock(UniformInt.of(1, 3), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.REDSTONE_ORE))
+      "cinnabar_ore", () -> new DropExperienceBlock(UniformInt.of(1, 3), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
    );
    public static final DeferredBlock<Block> CINNABAR_BLOCK = registerBlock(
       "cinnabar_block", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK).strength(4.0F).requiresCorrectToolForDrops())

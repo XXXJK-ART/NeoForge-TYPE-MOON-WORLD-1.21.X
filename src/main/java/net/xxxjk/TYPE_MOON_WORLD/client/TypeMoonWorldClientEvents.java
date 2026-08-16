@@ -270,6 +270,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.RONIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.RoninRenderer::new);
       event.registerEntityRenderer(ModEntities.SHINSENGUMI.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.ShinsengumiRenderer::new);
       event.registerEntityRenderer(ModEntities.TOHSAKA_RIN.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.TohsakaRinRenderer::new);
+      event.registerEntityRenderer(ModEntities.LEFF_LAYNOR_FLAUROS.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.LeffLaynorFlaurosRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), context -> new HumanoidServantRenderer<>(context, "sasaki_kojiro"));
@@ -338,6 +339,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
+      event.registerEntityRenderer(ModEntities.SPIRITRON_CANNON_BEAM.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_GATE_PROJECTILE.get(), GilgameshGateWeaponRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_CROSS_SLASH.get(), GilgameshCrossSlashRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_EA_BEAM.get(), GilgameshEaRenderer::new);

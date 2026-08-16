@@ -94,6 +94,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          case "li_shuwen" -> 0.874F;
          case "senko_muramasa" -> 0.879F;
          case "ushiwakamaru_rider" -> 0.884F;
+         case "baobhan_sith" -> 0.900F;
          case "medusa" -> 0.905F;
          case "emiya_archer" -> 0.921F;
          case "sasaki_kojiro" -> 0.926F;

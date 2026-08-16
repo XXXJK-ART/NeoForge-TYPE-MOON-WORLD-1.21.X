@@ -54,15 +54,18 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    public static final int WIND_TICKS = 40;
    public static final int ORB_CHARGE_TICKS = 100;
    public static final int BEAM_TICKS = 150;
-   private static final int BEAM_DAMAGE_START = 58;
+   private static final int BEAM_DAMAGE_START = 10;
    private static final int BEAM_DAMAGE_INTERVAL = 5;
-   private static final int BEAM_DAMAGE_PULSES = 18;
+   private static final int BEAM_DAMAGE_PULSES = calculateBeamDamagePulses();
    private static final int EA_THUNDER_TICKS = 45 * 20;
    private static final double WIND_RADIUS = 50.0;
    private static final double BEAM_LENGTH = 150.0;
    private static final double BEAM_HALF_WIDTH = 12.0;
    private static final double BEAM_HALF_HEIGHT = 8.0;
    private static final double BEAM_SWEEP_STEP_RADIANS = Math.toRadians(2.0);
+   private static final double BEAM_VISUAL_HEIGHT_RATIO = 0.58;
+   private static final double BEAM_VISUAL_Y_OFFSET = 0.35;
+   private static final double BEAM_VISUAL_FORWARD_OFFSET = 1.6;
    private UUID ownerUuid;
    private UUID trackedTargetUuid;
    private Vec3 direction = new Vec3(0, 0, 1);
@@ -137,7 +140,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          cancelNpcEa(level, owner);
          return;
       }
-      this.setPos(owner.position().add(0, owner.getBbHeight() * 0.65, 0));
+      syncPositionToOwner(owner);
       if (getStage() != Stage.BEAM) owner.setDeltaMovement(Vec3.ZERO);
       owner.getPersistentData().putLong("GilgameshEaProtectedUntil", level.getGameTime() + 2);
       this.stageTicks++;
@@ -235,7 +238,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          return;
       }
       if (!clashing && stageTicks >= BEAM_DAMAGE_START) {
-         if (stageTicks % BEAM_DAMAGE_INTERVAL == 0) applyBeamDamage(level, owner);
+         if (isBeamDamageTick(stageTicks)) applyBeamDamage(level, owner);
          destroyBeamBlocks(level, owner);
       }
       if (stageTicks >= BEAM_TICKS) setStage(Stage.IMPACT);
@@ -399,6 +402,35 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private void updateDirectionFromOwner(LivingEntity owner) {
       this.direction = normalized(owner.getLookAngle());
       this.updateEnd();
+   }
+
+   private void syncPositionToOwner(LivingEntity owner) {
+      this.setPos(getStage() == Stage.BEAM ? beamVisualOrigin(owner) : owner.position().add(0, owner.getBbHeight() * 0.65, 0));
+   }
+
+   private static Vec3 beamVisualOrigin(LivingEntity owner) {
+      Vec3 look = owner.getLookAngle();
+      Vec3 forward = new Vec3(look.x, 0.0, look.z);
+      if (forward.lengthSqr() < 1.0E-6) forward = Vec3.directionFromRotation(0.0F, owner.getYRot());
+      forward = forward.normalize();
+      double baseY = owner.getY() + owner.getBbHeight() * BEAM_VISUAL_HEIGHT_RATIO + BEAM_VISUAL_Y_OFFSET;
+      return new Vec3(owner.getX(), baseY, owner.getZ()).add(forward.scale(BEAM_VISUAL_FORWARD_OFFSET));
+   }
+
+   private static boolean isBeamDamageTick(int ticks) {
+      int first = firstBeamDamagePulseTick();
+      return ticks >= first && ticks <= BEAM_TICKS && (ticks - first) % BEAM_DAMAGE_INTERVAL == 0;
+   }
+
+   private static int firstBeamDamagePulseTick() {
+      int remainder = BEAM_DAMAGE_START % BEAM_DAMAGE_INTERVAL;
+      return remainder == 0 ? BEAM_DAMAGE_START : BEAM_DAMAGE_START + BEAM_DAMAGE_INTERVAL - remainder;
+   }
+
+   private static int calculateBeamDamagePulses() {
+      int first = firstBeamDamagePulseTick();
+      if (first > BEAM_TICKS) return 1;
+      return (BEAM_TICKS - first) / BEAM_DAMAGE_INTERVAL + 1;
    }
 
    private static void queueImpactTerrainInWaves(ServerLevel level, Vec3 center, double radius) {

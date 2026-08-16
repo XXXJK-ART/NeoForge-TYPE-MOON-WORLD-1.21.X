@@ -293,6 +293,7 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_ELSA_SAIJO = registerMasterCard("elsa_saijo");
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
+    public static final DeferredItem<Item> MASTER_CARD_LEFF_LAYNOR_FLAUROS = registerMasterCard("leff_laynor_flauros");
 
     public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSummoningRelic("relic_apocalypse");
     public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSummoningRelic("relic_apocalypse_page");
@@ -907,6 +908,10 @@ public class ModItems {
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "flight_magic"));
     public static final DeferredItem<Item> MAGIC_PAGE_FLIGHT_MAGIC = ITEMS.register("magic_page_flight_magic",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "flight_magic"));
+    public static final DeferredItem<Item> MAGIC_BOOK_SPIRITRON_CANNON = ITEMS.register("magic_book_spiritron_cannon",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0, (String)null, "spiritron_cannon"));
+    public static final DeferredItem<Item> MAGIC_PAGE_SPIRITRON_CANNON = ITEMS.register("magic_page_spiritron_cannon",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.5, (String)null, "spiritron_cannon"));
 
     public static final DeferredItem<Item> MYSTIC_EYES_OF_DEATH_PERCEPTION = ITEMS.register("mystic_eyes_of_death_perception",
             () -> new MysticEyesItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1)));
@@ -1355,6 +1360,8 @@ public class ModItems {
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SHINSENGUMI, 0x25466A, 0xD7C6A5, new Item.Properties()));
     public static final DeferredItem<Item> TOHSAKA_RIN_SPAWN_EGG = ITEMS.register("tohsaka_rin_spawn_egg",
             () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.TOHSAKA_RIN, 0x8B1126, 0xE8D8C5, new Item.Properties()));
+    public static final DeferredItem<Item> LEFF_LAYNOR_FLAUROS_SPAWN_EGG = ITEMS.register("leff_laynor_flauros_spawn_egg",
+            () -> new net.neoforged.neoforge.common.DeferredSpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.LEFF_LAYNOR_FLAUROS, 0x3B3330, 0xE8D3A8, new Item.Properties()));
 
     public static final DeferredItem<Item> HERACLES_SPAWN_EGG = ITEMS.register("heracles_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.HERACLES, 0x333333, 0x0D0D0D));
@@ -1448,6 +1455,9 @@ public class ModItems {
     }
 
     public static Item getServantCardArmor(String servantId, net.minecraft.world.entity.EquipmentSlot slot) {
+        if (servantId != null && servantId.startsWith(TYPE_MOON_WORLD.MOD_ID + ":")) {
+            servantId = servantId.substring((TYPE_MOON_WORLD.MOD_ID + ":").length());
+        }
         if (servantId != null && servantId.indexOf(':') >= 0) {
             return switch (slot) {
                 case HEAD -> SERVANT_ARMOR_GENERIC_HEAD.get();

@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -15,6 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BaobhanSithHarpItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
@@ -422,7 +424,8 @@ public final class BaobhanSithServantSkills {
       }
       boolean wasAlive = target.isAlive();
       target.invulnerableTime = 0;
-      target.hurt(servant.damageSources().magic(), damage);
+      target.hurt(curseDamageSource(servant), damage);
+      target.invulnerableTime = 0;
       consumeAllMediums(servant, target);
       if (canBurst) {
          triggerBurst(servant, target);
@@ -595,7 +598,9 @@ public final class BaobhanSithServantSkills {
          return;
       }
       if (damage > 0.0F) {
-         target.hurt(owner.damageSources().magic(), damage);
+         target.invulnerableTime = 0;
+         target.hurt(curseDamageSource(owner), damage);
+         target.invulnerableTime = 0;
          if (!target.isAlive()) {
             addMedium(owner, target, MEDIUM_REMAINS, 1);
          }
@@ -615,9 +620,14 @@ public final class BaobhanSithServantSkills {
 
    private static void drainLife(ServantEntity servant, LivingEntity target, float amount) {
       target.invulnerableTime = 0;
-      target.hurt(servant.damageSources().magic(), amount);
+      target.hurt(curseDamageSource(servant), amount);
+      target.invulnerableTime = 0;
       servant.heal(amount);
       spawnDrainParticles(servant, target);
+   }
+
+   private static DamageSource curseDamageSource(LivingEntity owner) {
+      return owner.damageSources().source(BaobhanSithDamageTypes.CURSE, owner);
    }
 
    private static int sealEnemies(ServantEntity servant, long now) {

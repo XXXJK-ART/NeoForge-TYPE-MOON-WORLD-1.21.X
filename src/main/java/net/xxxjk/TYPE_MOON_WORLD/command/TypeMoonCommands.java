@@ -105,6 +105,7 @@ public class TypeMoonCommands {
       "aerial_ascent",
       "touko_travel",
       "flight_magic",
+      "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -151,6 +152,7 @@ public class TypeMoonCommands {
       "aerial_ascent",
       "touko_travel",
       "flight_magic",
+      "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -1386,6 +1388,7 @@ public class TypeMoonCommands {
             case "aerial_ascent":
             case "touko_travel":
             case "flight_magic":
+            case "spiritron_cannon":
                MagicProficiencyService.set(vars, type, value);
                break;
             case "time_alter":

@@ -119,6 +119,7 @@ public final class ServantCardDefenseHandler {
 
       boolean infectionDamage = PaleRiderDamageTypes.isInfection(event.getSource());
       boolean guaranteedHit = event.getSource().is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean defensePiercing = event.getSource().is(FanaticDamageTypes.BYPASSES_DEFENSES);
 
       ServantParams params = paramsFor(vars);
       if (params == null) {
@@ -141,10 +142,10 @@ public final class ServantCardDefenseHandler {
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return true;
       }
-      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
+      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage, defensePiercing)) {
          return true;
       }
-      if ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id)) {
+      if (!defensePiercing && ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id))) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
             player, event.getSource(), event.getAmount()
          );
@@ -156,7 +157,7 @@ public final class ServantCardDefenseHandler {
             }
          }
       }
-      if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
+      if (!defensePiercing && !divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
          float projected = player.getHealth() - event.getAmount();
          if ((projected <= 0.0F || projected <= player.getMaxHealth() * 0.5F) && ServantCardParacelsusSkills.usePhilosopherStone(player)) {
             event.setCanceled(true);
@@ -169,7 +170,7 @@ public final class ServantCardDefenseHandler {
             return true;
          }
       }
-      if ("li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
+      if (!defensePiercing && "li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
          data.remove("ServantCardLiCounterUntil");
          event.setCanceled(true);
          event.setAmount(0.0F);
@@ -188,7 +189,7 @@ public final class ServantCardDefenseHandler {
          ServantCardLiShuwenSkills.spawnLiHitFx(player, sourceEntity instanceof LivingEntity living ? living : null);
          return true;
       }
-      if ("cu_chulainn".equals(vars.servant_card_id)) {
+      if (!defensePiercing && "cu_chulainn".equals(vars.servant_card_id)) {
          float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
             float absorbed = Math.min(shield, event.getAmount());
@@ -205,7 +206,7 @@ public final class ServantCardDefenseHandler {
             }
          }
       }
-      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) {
+      if (!defensePiercing && "ushiwakamaru_rider".equals(vars.servant_card_id)) {
          if (ServantCardUshiwakamaruSkills.tryAbsorbShieldDamage(player, event.getSource(), event.getAmount())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -230,7 +231,7 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = divineDefenseBroken || specialNoblePhantasmDamage
+      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage
          || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
          ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
@@ -254,7 +255,8 @@ public final class ServantCardDefenseHandler {
       LivingIncomingDamageEvent event,
       long now,
       boolean divineDefenseBroken,
-      boolean infectionDamage
+      boolean infectionDamage,
+      boolean defensePiercing
    ) {
       if (!"heracles".equals(vars.servant_card_id) || !HeraclesGodHandHelper.hasGodHand(player)) {
          return false;
@@ -272,7 +274,7 @@ public final class ServantCardDefenseHandler {
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
       boolean poisonOrWither = isPoisonOrWitherDamage(event.getSource());
-      boolean specialAttack = divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
+      boolean specialAttack = defensePiercing || divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
 
       if (!infectionDamage && !specialAttack && damage < data.getFloat("GodHandThreshold")) {
          event.setCanceled(true);

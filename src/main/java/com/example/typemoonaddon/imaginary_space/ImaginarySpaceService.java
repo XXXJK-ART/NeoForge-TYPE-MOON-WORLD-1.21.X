@@ -575,8 +575,32 @@ public final class ImaginarySpaceService {
     }
 
     /** Starts one independent storage window; the actual dimension change is deferred. */
+    public static CastOutcome castNpcCreature(LivingEntity caster, LivingEntity target) {
+        if (caster == null || target == null || !(caster.level() instanceof ServerLevel source)
+                || caster.isRemoved() || !caster.isAlive()) {
+            return CastOutcome.rejected();
+        }
+        MinecraftServer server = source.getServer();
+        ServerLevel imaginaryLevel = server == null ? null : server.getLevel(DIMENSION);
+        if (imaginaryLevel == null) {
+            return CastOutcome.dimensionUnavailable();
+        }
+        if (target == caster
+                || target.level() != source
+                || !target.isAlive()
+                || target.isRemoved()
+                || EntityUtils.isImmunePlayerTarget(target)
+                || target.getBoundingBox().getCenter().distanceToSqr(caster.getBoundingBox().getCenter()) > TARGET_RADIUS_SQUARED) {
+            return CastOutcome.noTarget();
+        }
+        return beginCreatureTransfer(caster, target, imaginaryLevel)
+                ? CastOutcome.success(1)
+                : CastOutcome.rejected();
+    }
+
+    /** Starts one independent storage window; the actual dimension change is deferred. */
     private static boolean beginCreatureTransfer(
-            ServerPlayer caster,
+            LivingEntity caster,
             LivingEntity target,
             ServerLevel imaginaryLevel
     ) {
@@ -630,8 +654,11 @@ public final class ImaginarySpaceService {
         while (iterator.hasNext()) {
             Map.Entry<UUID, PendingCreatureTransfer> entry = iterator.next();
             PendingCreatureTransfer pending = entry.getValue();
-            ServerPlayer caster = server.getPlayerList().getPlayer(pending.casterId());
             ServerLevel source = server.getLevel(pending.sourceDimension());
+            Entity caster = source == null ? null : source.getEntity(pending.casterId());
+            if (caster == null) {
+                caster = server.getPlayerList().getPlayer(pending.casterId());
+            }
             LivingEntity target = source == null
                     ? null
                     : source.getEntity(pending.targetId()) instanceof LivingEntity living ? living : null;
@@ -669,7 +696,8 @@ public final class ImaginarySpaceService {
             if (target instanceof ServerPlayer player) {
                 transferred = enterPlayer(player, imaginaryLevel);
             } else {
-                transferred = teleportAndKill(caster, target, imaginaryLevel);
+                transferred = caster instanceof LivingEntity living
+                        && teleportAndKill(living, target, imaginaryLevel);
             }
             if (transferred) {
                 // The target dimension change is submitted first; remove the prism
@@ -723,21 +751,22 @@ public final class ImaginarySpaceService {
     }
 
     private static boolean isPendingTransferValid(
-            ServerPlayer caster,
+            Entity caster,
             ServerLevel source,
             LivingEntity target,
             PendingCreatureTransfer pending
     ) {
-        return caster != null
-                && isValidCaster(caster)
+        boolean validCaster = caster instanceof ServerPlayer player
+                ? isValidCaster(player) && player.serverLevel() == source
+                : caster instanceof LivingEntity living && living.isAlive() && !living.isRemoved() && living.level() == source;
+        return validCaster
                 && source != null
-                && caster.serverLevel() == source
                 && target != null
                 && target.level() == source
                 && target.isAlive()
                 && !target.isRemoved()
                 && target.getUUID().equals(pending.targetId())
-                && target.canChangeDimensions(source, caster.getServer().getLevel(DIMENSION));
+                && target.canChangeDimensions(source, source.getServer().getLevel(DIMENSION));
     }
 
     private static StorageVisualEntity findStorageVisual(ServerLevel source, UUID visualId) {
@@ -914,18 +943,18 @@ public final class ImaginarySpaceService {
     }
 
     private static boolean teleportAndKill(
-            ServerPlayer caster,
+            LivingEntity caster,
             LivingEntity target,
             ServerLevel imaginaryLevel
     ) {
-        if (EntityUtils.isImmunePlayerTarget(target)) {
+        if (caster == null || !(caster.level() instanceof ServerLevel source) || EntityUtils.isImmunePlayerTarget(target)) {
             return false;
         }
         if (!target.canChangeDimensions(target.level(), imaginaryLevel)) {
             return false;
         }
         Vec3 destination = allocateInstanceCenter();
-        VFXServerEffects.spawn(caster.serverLevel(), ENTER_EFFECT,
+        VFXServerEffects.spawn(source, ENTER_EFFECT,
                 target.getBoundingBox().getCenter(), VFX_OBSERVER_RADIUS);
         try {
             target.getPersistentData().putBoolean(TRANSIENT_TAG, true);
@@ -945,11 +974,11 @@ public final class ImaginarySpaceService {
             living.invulnerableTime = 0;
             VFXServerEffects.spawn(imaginaryLevel, EXIT_EFFECT,
                     living.getBoundingBox().getCenter(), VFX_OBSERVER_RADIUS);
-            DamageSource source = caster.damageSources().source(DamageTypes.GENERIC_KILL, caster);
-            living.hurt(source, Float.MAX_VALUE);
+            DamageSource damageSource = caster.damageSources().source(DamageTypes.GENERIC_KILL, caster);
+            living.hurt(damageSource, Float.MAX_VALUE);
             if (living.isAlive()) {
                 living.setHealth(0.0F);
-                living.die(source);
+                living.die(damageSource);
             }
             return true;
         } catch (RuntimeException exception) {

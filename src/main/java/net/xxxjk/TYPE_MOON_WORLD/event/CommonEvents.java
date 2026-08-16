@@ -95,6 +95,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -858,6 +859,7 @@ public class CommonEvents {
 
    private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F) return false;
+      if (BaobhanSithDamageTypes.isCurse(event.getSource())) return false;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
       if (isZhaoYunBoundMasterFriendlyFire(event.getEntity(), attacker, direct)) {
@@ -1467,6 +1469,7 @@ public class CommonEvents {
 
    private static boolean tryRedirectIskandarMountDamage(LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F) return false;
+      if (BaobhanSithDamageTypes.isCurse(event.getSource())) return false;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
       if (event.getEntity() instanceof IskandarMountEntity mount && mount.isAlive()) {
@@ -1961,6 +1964,7 @@ public class CommonEvents {
 
    private static boolean tryRedirectMedusaPegasusDamage(LivingEntity rider, LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F
+         || BaobhanSithDamageTypes.isCurse(event.getSource())
          || !(rider.getVehicle() instanceof MedusaPegasusEntity pegasus)
          || !pegasus.isAlive()
          || pegasus.getSummoner() != rider) {

@@ -56,6 +56,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.ArcaneMobilityService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UbwSwordControlService;
@@ -121,6 +122,7 @@ public final class BuiltinMagicExecutors {
       registry.register("aerial_ascent", ctx -> executeMobility(ctx, "aerial_ascent"), "typemoonworld_core");
       registry.register("touko_travel", ctx -> executeMobility(ctx, "touko_travel"), "typemoonworld_core");
       registry.register("flight_magic", ctx -> executeMobility(ctx, "flight_magic"), "typemoonworld_core");
+      registry.register("spiritron_cannon", BuiltinMagicExecutors::executeSpiritronCannon, "typemoonworld_core");
       registry.register("time_alter", ctx -> toResult(MagicTimeAlter.execute(ctx.entity())), "typemoonworld_core");
       registry.register("spiritual_healing", ctx -> toResult(MagicSpiritualHealing.execute(ctx.entity())), "typemoonworld_core");
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
@@ -268,6 +270,15 @@ public final class BuiltinMagicExecutors {
          default -> false;
       };
       return success ? MagicExecutionResult.SUCCESS : MagicExecutionResult.FAILED;
+   }
+
+   private static MagicExecutionResult executeSpiritronCannon(MagicExecutionContext context) {
+      if (!(context.entity() instanceof LivingEntity caster) || context.vars() == null) {
+         return MagicExecutionResult.FAILED;
+      }
+      return SpiritronCannonService.cast(caster, context.vars(), null, false)
+         ? MagicExecutionResult.SUCCESS
+         : MagicExecutionResult.FAILED;
    }
 
    private static MagicExecutionResult executeSimple(MagicExecutionContext context, BuiltinMagicExecutors.EntityMagicAction action) {
