@@ -64,6 +64,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UBWInstanceManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
@@ -112,6 +113,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_NEXT_INTERCEPT = "EmiyaUbwNextIntercept";
    public static final String UBW_NEXT_TERRAIN = "EmiyaUbwNextTerrain";
    public static final String UBW_NEXT_BLADE_LIFT = "EmiyaUbwNextBladeLift";
+   public static final String UBW_NEXT_CRIMSON_HOUND = "EmiyaUbwNextCrimsonHound";
    public static final String UBW_CENTER_X = "EmiyaUbwCenterX";
    public static final String UBW_CENTER_Y = "EmiyaUbwCenterY";
    public static final String UBW_CENTER_Z = "EmiyaUbwCenterZ";
@@ -146,6 +148,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_OFFSCREEN_PREVIOUS_INVISIBLE = "EmiyaUbwOffscreenPrevInvisible";
    public static final String UBW_OFFSCREEN_PREVIOUS_INVULNERABLE = "EmiyaUbwOffscreenPrevInvulnerable";
    public static final String UBW_OFFSCREEN_PREVIOUS_NO_AI = "EmiyaUbwOffscreenPrevNoAi";
+   private static final String UBW_BOUNDARY_DIMENSION = "EmiyaUbwBoundaryDimension";
    private static final String LAST_PERSISTENT_STATE_TICK = "EmiyaLastPersistentStateTick";
    public static final int SPIRAL_COOLDOWN = 18 * 20;
    public static final int CRIMSON_COOLDOWN = 16 * 20;
@@ -186,8 +189,9 @@ public final class EmiyaArcherCombatHelper {
    private static final int UBW_CHANT_SURFACE_SPREAD_DELAY = 3 * 20;
    private static final int UBW_CHANT_SURFACE_RADIUS = 14;
    private static final int UBW_RELOCK_TICKS = 3;
+   private static final int UBW_CRIMSON_HOUND_INTERVAL = 10 * 20;
    private static final int UBW_TERRAIN_RADIUS = 16;
-   private static final double UBW_PULL_RADIUS = 25.0;
+   private static final double UBW_PULL_RADIUS = 32.0;
    private static final Map<UUID, Map<BlockPos, BlockBackup>> EMIYA_UBW_BLOCKS = new HashMap<>();
    private static final Map<UUID, Map<BlockPos, BlockBackup>> EMIYA_UBW_CHANT_BLOCKS = new HashMap<>();
 
@@ -205,6 +209,7 @@ public final class EmiyaArcherCombatHelper {
 
       long now = level.getGameTime();
       tickPersistentState(entity);
+      if (!entity.isAlive() || entity.level() != level) return;
       if (entity.getPersistentData().getBoolean(UBW_OFFSCREEN_DUEL)) {
          entity.getNavigation().stop();
          if (now % 10L == 0L) {
@@ -446,9 +451,72 @@ public final class EmiyaArcherCombatHelper {
       if (data.contains(LAST_PERSISTENT_STATE_TICK) && data.getLong(LAST_PERSISTENT_STATE_TICK) == now) return;
       data.putLong(LAST_PERSISTENT_STATE_TICK, now);
       if (data.getBoolean(UBW_OFFSCREEN_DUEL)) return;
+      if (tryTriggerUbwOnEnemyBoundary(entity, level, now)) return;
       tickUbw(entity, level, now);
       expireProjection(entity, now);
       tickUbwTargetRelock(entity, level, now);
+   }
+
+   /**
+    * Red Archer immediately answers an enemy reality marble with UBW.
+    * Re-entry is tracked by dimension id so the normal UBW cooldown does not
+    * cause repeated casts while the same field is still active.
+    */
+   private static boolean tryTriggerUbwOnEnemyBoundary(EmiyaArcherEntity entity, ServerLevel level, long now) {
+      CompoundTag data = entity.getPersistentData();
+      ResourceLocation location = level.dimension().location();
+      String boundary = isEnemyBoundary(location) ? location.toString() : "";
+      if (boundary.isEmpty()) {
+         data.remove(UBW_BOUNDARY_DIMENSION);
+         return false;
+      }
+      if (boundary.equals(data.getString(UBW_BOUNDARY_DIMENSION))) return false;
+      if (data.getLong(UBW_ACTIVE_UNTIL) > now || data.getLong(UBW_CHANT_END_TICK) > now) {
+         data.putString(UBW_BOUNDARY_DIMENSION, boundary);
+         return true;
+      }
+
+      LivingEntity target = findEnemyBoundaryTarget(entity, level);
+      if (target == null || entity.getCurrentMp() < 120.0) return false;
+
+      data.putString(UBW_BOUNDARY_DIMENSION, boundary);
+      entity.setTarget(target);
+      activateUbw(entity, level, target, now);
+      return true;
+   }
+
+   private static boolean isEnemyBoundary(ResourceLocation location) {
+      return ModDimensions.isHajunDimension(location) || ModDimensions.isIonioiHetairoiDimension(location);
+   }
+
+   private static LivingEntity findEnemyBoundaryTarget(EmiyaArcherEntity entity, ServerLevel level) {
+      LivingEntity current = entity.getTarget();
+      if (isEnemyBoundaryTarget(entity, current)) return current;
+
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : level.getEntitiesOfClass(
+         LivingEntity.class,
+         entity.getBoundingBox().inflate(96.0),
+         living -> isEnemyBoundaryTarget(entity, living)
+      )) {
+         double distance = entity.distanceToSqr(candidate);
+         if (distance < nearestDistance) {
+            nearest = candidate;
+            nearestDistance = distance;
+         }
+      }
+      return nearest;
+   }
+
+   private static boolean isEnemyBoundaryTarget(EmiyaArcherEntity entity, LivingEntity candidate) {
+      return candidate != null
+         && candidate != entity
+         && candidate.isAlive()
+         && !candidate.isAlliedTo(entity)
+         && !entity.isAlliedTo(candidate)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting.isContractMaster(entity, candidate)
+         && !EntityUtils.isImmunePlayerTarget(candidate);
    }
 
    public static void markProjectionExpiry(ServantEntity entity, long expiresAt, boolean pair) {
@@ -786,6 +854,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().putLong(UBW_NEXT_INTERCEPT, now + 8L);
       entity.getPersistentData().putLong(UBW_NEXT_TERRAIN, now + 1L);
       entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
+      entity.getPersistentData().putLong(UBW_NEXT_CRIMSON_HOUND, now + UBW_CRIMSON_HOUND_INTERVAL);
       entity.getPersistentData().putInt(UBW_CENTER_X, center.getX());
       entity.getPersistentData().putInt(UBW_CENTER_Y, center.getY());
       entity.getPersistentData().putInt(UBW_CENTER_Z, center.getZ());
@@ -801,6 +870,7 @@ public final class EmiyaArcherCombatHelper {
       entity.getPersistentData().remove(UBW_NEXT_INTERCEPT);
       entity.getPersistentData().remove(UBW_NEXT_TERRAIN);
       entity.getPersistentData().remove(UBW_NEXT_BLADE_LIFT);
+      entity.getPersistentData().remove(UBW_NEXT_CRIMSON_HOUND);
       entity.getPersistentData().remove(UBW_CENTER_X);
       entity.getPersistentData().remove(UBW_CENTER_Y);
       entity.getPersistentData().remove(UBW_CENTER_Z);
@@ -1074,6 +1144,11 @@ public final class EmiyaArcherCombatHelper {
          entity.getPersistentData().putLong(UBW_NEXT_BLADE_LIFT, now + 18L);
       }
 
+      if (now >= entity.getPersistentData().getLong(UBW_NEXT_CRIMSON_HOUND)) {
+         launchUbwCrimsonHounds(entity, level);
+         entity.getPersistentData().putLong(UBW_NEXT_CRIMSON_HOUND, now + UBW_CRIMSON_HOUND_INTERVAL);
+      }
+
       if (now >= entity.getPersistentData().getLong(UBW_NEXT_INTERCEPT)) {
          interceptHostileProjectiles(entity, level);
          entity.getPersistentData().putLong(UBW_NEXT_INTERCEPT, now + 8L);
@@ -1105,6 +1180,57 @@ public final class EmiyaArcherCombatHelper {
          && target != entity
          && !target.isAlliedTo(entity)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   private static void launchUbwCrimsonHounds(EmiyaArcherEntity entity, ServerLevel level) {
+      List<LivingEntity> targets = activeUbwEnemies(entity, level);
+      if (targets.isEmpty()) {
+         return;
+      }
+      for (LivingEntity target : targets) {
+         spawnUbwCrimsonHound(entity, level, target);
+      }
+      level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.9F, 0.65F);
+   }
+
+   private static List<LivingEntity> activeUbwEnemies(EmiyaArcherEntity entity, ServerLevel level) {
+      List<LivingEntity> targets = new ArrayList<>();
+      UUID ownerId = entity.getUUID();
+      for (Entity candidate : level.getEntities().getAll()) {
+         if (candidate instanceof LivingEntity living
+            && living.isAlive()
+            && living != entity
+            && isPulledBy(ownerId, living)
+            && !living.isAlliedTo(entity)
+            && !EntityUtils.isImmunePlayerTarget(living)) {
+            targets.add(living);
+         }
+      }
+      LivingEntity currentTarget = entity.getTarget();
+      if (currentTarget != null
+         && currentTarget.isAlive()
+         && currentTarget.level() == level
+         && currentTarget != entity
+         && !currentTarget.isAlliedTo(entity)
+         && !EntityUtils.isImmunePlayerTarget(currentTarget)
+         && !targets.contains(currentTarget)) {
+         targets.add(currentTarget);
+      }
+      return targets;
+   }
+
+   private static void spawnUbwCrimsonHound(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target) {
+      double angle = entity.getRandom().nextDouble() * Math.PI * 2.0;
+      double radius = 7.0 + entity.getRandom().nextDouble() * 9.0;
+      Vec3 spawn = target.position().add(Math.cos(angle) * radius, 5.0 + entity.getRandom().nextDouble() * 6.0, Math.sin(angle) * radius);
+      CrimsonHoundProjectileEntity projectile = new CrimsonHoundProjectileEntity(level, entity);
+      projectile.setNoGravity(true);
+      projectile.setPos(spawn.x, spawn.y, spawn.z);
+      projectile.setTrackedTarget(target);
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(spawn).normalize();
+      projectile.setDeltaMovement(aim.scale(2.8));
+      level.addFreshEntity(projectile);
+      level.sendParticles(ParticleTypes.FLAME, spawn.x, spawn.y, spawn.z, 10, 0.18, 0.18, 0.18, 0.04);
    }
 
    private static void returnFromUbw(EmiyaArcherEntity entity, ServerLevel level) {
@@ -1808,7 +1934,7 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static boolean isDivineOrSupremeWeapon(ItemStack stack) {
-      return stack.is(ModItems.EXCALIBUR.get()) || stack.is(ModItems.EXCALIBUR_GALLATIN.get()) || stack.is(ModItems.TSUMUKARI_MURAMASA.get());
+      return MagicStructuralAnalysis.isProjectionBanned(stack);
    }
 
    private static void performBorrowedExcalibur(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
@@ -1985,7 +2111,7 @@ public final class EmiyaArcherCombatHelper {
             sl.addFreshEntity(slash);
             if (target.isAlive()) {
                target.invulnerableTime = 0;
-               target.hurt(entity.damageSources().mobAttack(entity), 42.0F);
+               target.hurt(entity.damageSources().mobAttack(entity), 84.0F);
                target.invulnerableTime = 0;
             }
             sl.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 8, 0.45, 0.45, 0.45, 0.35);

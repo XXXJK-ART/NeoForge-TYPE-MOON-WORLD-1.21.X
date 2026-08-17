@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 
 public final class EvasionMovementService {
    private static final String TAG_LAST_EVASION = "TypeMoonAiLastEvasionTick";
@@ -69,6 +70,9 @@ public final class EvasionMovementService {
 
    private static boolean tryEvade(Mob entity, Vec3 threatOrigin, int agility, boolean explicitDouble,
                                    Vec3 pressureTarget) {
+      if (BindingService.isBound(entity.getUUID())) {
+         return false;
+      }
       long now = entity.level().getGameTime();
       if (entity.getPersistentData().contains(TAG_LAST_EVASION)
          && now < entity.getPersistentData().getLong(TAG_LAST_EVASION) + EVASION_COOLDOWN) return false;

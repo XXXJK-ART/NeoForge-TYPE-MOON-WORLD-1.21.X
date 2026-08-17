@@ -16,12 +16,12 @@ public record ManaBurstInputMessage(float forward, float strafe, boolean jump, b
    );
    public static final StreamCodec<RegistryFriendlyByteBuf, ManaBurstInputMessage> STREAM_CODEC = StreamCodec.of(
       (buffer, message) -> {
-         buffer.writeFloat(message.forward);
-         buffer.writeFloat(message.strafe);
+         buffer.writeByte(encodeUnit(message.forward));
+         buffer.writeByte(encodeUnit(message.strafe));
          buffer.writeBoolean(message.jump);
          buffer.writeBoolean(message.sneak);
       },
-      buffer -> new ManaBurstInputMessage(buffer.readFloat(), buffer.readFloat(), buffer.readBoolean(), buffer.readBoolean())
+      buffer -> new ManaBurstInputMessage(decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()), buffer.readBoolean(), buffer.readBoolean())
    );
 
    @Override
@@ -39,5 +39,13 @@ public record ManaBurstInputMessage(float forward, float strafe, boolean jump, b
             ManaBurstService.setInput(player, message.forward, message.strafe, message.jump, message.sneak);
          }
       });
+   }
+
+   private static byte encodeUnit(float value) {
+      return (byte)Math.round(Math.max(-1.0F, Math.min(1.0F, value)) * 127.0F);
+   }
+
+   private static float decodeUnit(byte value) {
+      return value / 127.0F;
    }
 }

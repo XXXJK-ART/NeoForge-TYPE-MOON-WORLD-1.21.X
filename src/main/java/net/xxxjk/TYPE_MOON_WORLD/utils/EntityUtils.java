@@ -24,6 +24,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class EntityUtils {
    private static final double RIGHT_HAND_CAST_FORWARD = 0.78;
@@ -38,8 +39,34 @@ public class EntityUtils {
       return entity instanceof Player player && (player.isCreative() || player.isSpectator());
    }
 
+   public static boolean isUntargetableServantTransition(Entity entity) {
+      return entity instanceof ServantEntity servant && servant.isSpiritualTransitionLocked();
+   }
+
    public static boolean isPetrified(Entity entity) {
       return entity instanceof LivingEntity living && living.hasEffect(ModMobEffects.PETRIFIED);
+   }
+
+   public static LivingEntity redirectMountedCombatTarget(LivingEntity attacker, LivingEntity target) {
+      if (attacker == null || target == null || target == attacker || !target.isAlive()) {
+         return target;
+      }
+      if (!(target.getVehicle() instanceof LivingEntity mount) || mount == attacker || !mount.isAlive() || mount.level() != attacker.level()) {
+         return target;
+      }
+      if (isImmunePlayerTarget(mount) || isUntargetableServantTransition(mount)) {
+         return target;
+      }
+      if (attacker.isAlliedTo(mount) || mount.isAlliedTo(attacker)) {
+         return target;
+      }
+      if (attacker instanceof Player attackerPlayer && mount instanceof Player mountPlayer && !attackerPlayer.canHarmPlayer(mountPlayer)) {
+         return target;
+      }
+      if (attacker instanceof Player attackerPlayer && mount instanceof TamableAnimal tamable && tamable.isOwnedBy(attackerPlayer)) {
+         return target;
+      }
+      return mount;
    }
 
    public static HitResult getRayTraceTarget(ServerPlayer player, double range) {
@@ -126,7 +153,7 @@ public class EntityUtils {
    public static boolean isValidCombatTarget(LivingEntity caster, LivingEntity target) {
       if (caster == null || target == null || !target.isAlive() || target == caster) {
          return false;
-      } else if (isImmunePlayerTarget(target)) {
+      } else if (isImmunePlayerTarget(target) || isUntargetableServantTransition(target)) {
          return false;
       } else if (!caster.isAlliedTo(target) && !target.isAlliedTo(caster)) {
          if (caster instanceof Player casterPlayer) {

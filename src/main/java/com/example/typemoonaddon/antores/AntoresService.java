@@ -28,7 +28,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.example.typemoonaddon.network.AddonNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -133,9 +133,8 @@ public final class AntoresService {
                 VFXServerEffects.spawn(level, HIT_EFFECT, trace.end(), VFX_OBSERVER_RADIUS);
             }
         }
-        PacketDistributor.sendToPlayersNear(
+        AddonNetwork.sendNear(
                 level,
-                null,
                 caster.getX(),
                 caster.getY(),
                 caster.getZ(),

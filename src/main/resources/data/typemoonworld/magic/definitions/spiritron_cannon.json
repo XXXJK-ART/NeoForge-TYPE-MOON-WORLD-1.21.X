@@ -1,0 +1,19 @@
+{
+  "id": "typemoonworld:spiritron_cannon",
+  "name_key": "magic.typemoonworld.spiritron_cannon.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "complexity": 90,
+  "chant_segments": 5,
+  "mana_cost": 500.0,
+  "sustained_mana_cost": 0.0,
+  "cooldown_ticks": 220,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": true,
+  "npc_allowed": true,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 42,
+  "npc_cooldown": 620
+}

@@ -1,0 +1,73 @@
+{
+  "duration": 2.1,
+  "notes": "Leff Spiritron Cannon windup: fixed forward golden charge with no overhead sword lift.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.0,
+      "rate": 420,
+      "particle_lifetime": 0.55,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.03,
+      "velocity": [0.0, 0.0, 0.08],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "sphere", "radius": 0.9, "sample_count": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFD700" },
+        { "t": 0.42, "color": "#FFFFFFFF" },
+        { "t": 1.0, "color": "#00FFB300" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.48, "size": 0.32 },
+        { "t": 1.0, "size": 0.05 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45] },
+        { "t": 0.72, "scale": [1.4, 1.4, 1.4], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.5], "scale": [0.8, 0.8, 0.8] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LEFF_SPIRITRON_CANNON_CHARGE_CORE",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.4, 0.4, 0.4], "offset": [0.0, 0.0, 0.0], "speed": 0.035, "chance": 0.65 }
+      ]
+    },
+    {
+      "start_time": 0.15,
+      "end_time": 2.0,
+      "rate": 260,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.22,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.0, -0.28],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 0,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.7 + 0.25 * sin(t * 12.566)) * cos(t * 31.416 + time * 12.0)",
+        "expr_y": "(0.7 + 0.25 * sin(t * 12.566)) * sin(t * 31.416 + time * 12.0)",
+        "expr_z": "-2.0 + 2.4 * t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 140
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFF2AA" },
+        { "t": 0.45, "color": "#E8FFFFFF" },
+        { "t": 1.0, "color": "#00FFD700" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.45, "size": 0.2 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LEFF_SPIRITRON_CANNON_CHARGE_SPIRAL",
+      "enable_trail": true
+    }
+  ]
+}

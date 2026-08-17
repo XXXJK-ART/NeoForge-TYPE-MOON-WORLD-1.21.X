@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -33,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
@@ -69,6 +71,11 @@ public final class ServantCardDefenseHandler {
       if ("arash".equals(vars.servant_card_id)) {
          staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
          poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
+      }
+      if ("lancelot_berserker".equals(vars.servant_card_id)) {
+         double recoveryMultiplier = LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
+         staminaRegen *= recoveryMultiplier;
+         poiseRegen *= recoveryMultiplier;
       }
       data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
          data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
@@ -113,6 +120,7 @@ public final class ServantCardDefenseHandler {
 
       boolean infectionDamage = PaleRiderDamageTypes.isInfection(event.getSource());
       boolean guaranteedHit = event.getSource().is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean defensePiercing = event.getSource().is(FanaticDamageTypes.BYPASSES_DEFENSES);
 
       ServantParams params = paramsFor(vars);
       if (params == null) {
@@ -135,10 +143,10 @@ public final class ServantCardDefenseHandler {
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return true;
       }
-      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage)) {
+      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage, defensePiercing)) {
          return true;
       }
-      if ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id)) {
+      if (!defensePiercing && ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id))) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
             player, event.getSource(), event.getAmount()
          );
@@ -150,7 +158,7 @@ public final class ServantCardDefenseHandler {
             }
          }
       }
-      if (!divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
+      if (!defensePiercing && !divineDefenseBroken && "paracelsus".equals(vars.servant_card_id)) {
          float projected = player.getHealth() - event.getAmount();
          if ((projected <= 0.0F || projected <= player.getMaxHealth() * 0.5F) && ServantCardParacelsusSkills.usePhilosopherStone(player)) {
             event.setCanceled(true);
@@ -163,7 +171,7 @@ public final class ServantCardDefenseHandler {
             return true;
          }
       }
-      if ("li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
+      if (!defensePiercing && "li_shuwen".equals(vars.servant_card_id) && player.tickCount <= data.getInt("ServantCardLiCounterUntil")) {
          data.remove("ServantCardLiCounterUntil");
          event.setCanceled(true);
          event.setAmount(0.0F);
@@ -182,7 +190,7 @@ public final class ServantCardDefenseHandler {
          ServantCardLiShuwenSkills.spawnLiHitFx(player, sourceEntity instanceof LivingEntity living ? living : null);
          return true;
       }
-      if ("cu_chulainn".equals(vars.servant_card_id)) {
+      if (!defensePiercing && "cu_chulainn".equals(vars.servant_card_id)) {
          float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
             float absorbed = Math.min(shield, event.getAmount());
@@ -199,7 +207,7 @@ public final class ServantCardDefenseHandler {
             }
          }
       }
-      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) {
+      if (!defensePiercing && "ushiwakamaru_rider".equals(vars.servant_card_id)) {
          if (ServantCardUshiwakamaruSkills.tryAbsorbShieldDamage(player, event.getSource(), event.getAmount())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -213,6 +221,7 @@ public final class ServantCardDefenseHandler {
       }
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(event.getSource())
          && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
@@ -223,7 +232,9 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = divineDefenseBroken || specialNoblePhantasmDamage ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
+      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage
+         || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
+         ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
          if (reduced <= 0.0F) {
             event.setCanceled(true);
@@ -245,7 +256,8 @@ public final class ServantCardDefenseHandler {
       LivingIncomingDamageEvent event,
       long now,
       boolean divineDefenseBroken,
-      boolean infectionDamage
+      boolean infectionDamage,
+      boolean defensePiercing
    ) {
       if (!"heracles".equals(vars.servant_card_id) || !HeraclesGodHandHelper.hasGodHand(player)) {
          return false;
@@ -263,7 +275,7 @@ public final class ServantCardDefenseHandler {
       boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
       boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
       boolean poisonOrWither = isPoisonOrWitherDamage(event.getSource());
-      boolean specialAttack = divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
+      boolean specialAttack = defensePiercing || divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
 
       if (!infectionDamage && !specialAttack && damage < data.getFloat("GodHandThreshold")) {
          event.setCanceled(true);
@@ -423,6 +435,9 @@ public final class ServantCardDefenseHandler {
    }
 
    private static boolean tryAutoDodge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event, ServantParams params, long now) {
+      if (BindingService.isBound(player.getUUID())) {
+         return false;
+      }
       if (!canReactTo(player, event.getSource())) {
          return false;
       }
@@ -430,6 +445,9 @@ public final class ServantCardDefenseHandler {
       int cooldown = ServantCombatFormulas.dodgeCooldownTicks(params);
       if ("emiya_archer".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id)) {
          cooldown = Math.max(4, cooldown / 2);
+      }
+      if ("lancelot_berserker".equals(vars.servant_card_id)) {
+         cooldown = Math.max(1, (int)Math.ceil(cooldown / LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier()));
       }
       CompoundTag data = player.getPersistentData();
       if (now < data.getLong(TAG_LAST_DODGE_TICK) + cooldown) {

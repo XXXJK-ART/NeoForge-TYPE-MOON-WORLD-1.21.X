@@ -17,11 +17,11 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
    public static final StreamCodec<RegistryFriendlyByteBuf, ServantCardFlightMessage> STREAM_CODEC = StreamCodec.of(
       (buffer, message) -> {
          buffer.writeBoolean(message.toggle);
-         buffer.writeFloat(message.forward);
-         buffer.writeFloat(message.strafe);
-         buffer.writeFloat(message.vertical);
+         buffer.writeByte(encodeUnit(message.forward));
+         buffer.writeByte(encodeUnit(message.strafe));
+         buffer.writeByte(encodeUnit(message.vertical));
       },
-      buffer -> new ServantCardFlightMessage(buffer.readBoolean(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat())
+      buffer -> new ServantCardFlightMessage(buffer.readBoolean(), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()))
    );
 
    @Override
@@ -40,5 +40,13 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
             ServantCardFlightController.setInput(player, message.toggle, message.forward, message.strafe, message.vertical);
          }
       });
+   }
+
+   private static byte encodeUnit(float value) {
+      return (byte)Math.round(Math.max(-1.0F, Math.min(1.0F, value)) * 127.0F);
+   }
+
+   private static float decodeUnit(byte value) {
+      return value / 127.0F;
    }
 }

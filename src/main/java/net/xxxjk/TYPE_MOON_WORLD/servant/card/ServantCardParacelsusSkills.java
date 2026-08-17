@@ -36,7 +36,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
@@ -47,6 +46,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenParacelsusCraftScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenParacelsusElementScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -154,12 +154,11 @@ public final class ServantCardParacelsusSkills {
 
    public static boolean performParacelsusCraftStone(ServerPlayer player) {
       syncParacelsusStocks(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
-      PacketDistributor.sendToPlayer(
+      ModNetwork.sendToPlayer(
          player,
          new OpenParacelsusCraftScreenMessage(
             getPhilosopherStoneStock(player), getDiamondShieldStock(player), countLeylineMaps(player)
-         ),
-         new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
+         )
       );
       return true;
    }
@@ -533,7 +532,7 @@ public final class ServantCardParacelsusSkills {
    }
 
    public static boolean openElementalGuardianScreen(ServerPlayer player) {
-      PacketDistributor.sendToPlayer(player, new OpenParacelsusElementScreenMessage(), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenParacelsusElementScreenMessage());
       return true;
    }
 
@@ -1079,7 +1078,7 @@ public final class ServantCardParacelsusSkills {
    private static double applyWorkshopDamage(ServerPlayer player, double baseDamage) {
       double halved = baseDamage * 0.5;
       double currentDamage = isInsideWorkshop(player) ? halved * 1.18 : halved;
-      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage * 2.0);
    }
 
    private static void spawnWorkshopHighlight(ServerLevel level, Vec3 center, double radius, boolean burst) {

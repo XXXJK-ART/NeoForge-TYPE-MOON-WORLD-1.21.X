@@ -114,12 +114,14 @@ public final class PlayerMagicCastService {
       if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && !"crest".equals(entry.sourceType)) {
          try (var ignored = WheelCastingModifierService.begin(serverPlayer, entry.magicId)) {
             result = MagicModularRegistry.execute(
-               new MagicExecutionContext(entity, vars, entry.magicId, false)
+               new MagicExecutionContext(entity, vars, entry.magicId, false, entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy())
             );
          }
       } else {
          result = MagicModularRegistry.execute(
-            new MagicExecutionContext(entity, vars, entry.magicId, "crest".equals(entry.sourceType))
+            new MagicExecutionContext(
+               entity, vars, entry.magicId, "crest".equals(entry.sourceType), entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy()
+            )
          );
       }
       if (publicMagicId != null) {
@@ -166,12 +168,12 @@ public final class PlayerMagicCastService {
          cooldown = Math.max(1.0, JEWEL_BASE_COOLDOWN - vars.proficiency_jewel_magic_shoot * 0.2);
       }
 
-      if (entity instanceof LivingEntity living) {
-         cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
-      }
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null && definition.cooldownTicks() > 0) {
          cooldown = definition.cooldownTicks();
+      }
+      if (entity instanceof LivingEntity living) {
+         cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
       }
       vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
    }
@@ -180,7 +182,7 @@ public final class PlayerMagicCastService {
       if (cost <= 0.0 || !(entity instanceof Player) || entry == null || "crest".equals(entry.sourceType)) {
          return cost;
       }
-      return Math.max(0.0, cost * AdvancedPassiveService.manaMultiplier(vars));
+      return Math.max(0.0, cost * AdvancedPassiveService.manaMultiplier(vars) * MercurySwordMagicAmplifier.manaCostMultiplier((LivingEntity)entity));
    }
 
    private static boolean isLegacyJewelMagic(String magicId) {

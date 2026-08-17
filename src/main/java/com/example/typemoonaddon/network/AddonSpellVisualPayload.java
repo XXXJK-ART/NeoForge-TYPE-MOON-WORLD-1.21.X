@@ -13,7 +13,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -173,8 +172,7 @@ public record AddonSpellVisualPayload(
                 16.0D,
                 320.0D
         );
-        PacketDistributor.sendToPlayersNear(
-                level, null, center.x, center.y, center.z, radius, payload);
+        AddonNetwork.sendNear(level, center.x, center.y, center.z, radius, payload);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, AddonSpellVisualPayload message) {

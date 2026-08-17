@@ -1,0 +1,22 @@
+{
+  "id": "typemoonworld:flame_array",
+  "name_key": "magic.typemoonworld.flame_array.name",
+  "category": "typemoonworld:elemental",
+  "school": "typemoonworld:none",
+  "complexity": 45,
+  "chant_segments": 3,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 8.0,
+  "cooldown_ticks": 20,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": true,
+  "npc_allowed": true,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 12,
+  "npc_cooldown": 24,
+  "prerequisite_magic": "typemoonworld:fire_magic",
+  "prerequisite_proficiency": 75.0,
+  "required_attributes": ["typemoonworld:fire"]
+}

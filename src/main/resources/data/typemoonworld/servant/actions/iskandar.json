@@ -1,0 +1,27 @@
+{
+  "servant": "iskandar",
+  "actions": [
+    {
+      "id": "typemoonworld:iskandar/mounted_chariot_charge",
+      "tags": ["melee", "area", "gap_closer", "terrain_break"],
+      "minimum_range": 0,
+      "maximum_range": 32,
+      "mana_cost": 0,
+      "stamina_cost": 8,
+      "timing": {"windup": 8, "active": 20, "recovery": 12},
+      "threat": {"shape": "line", "radius": 3, "length": 32, "danger": 4, "blockable": true, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 0},
+      "terrain_impact": "medium"
+    },
+    {
+      "id": "typemoonworld:iskandar/ionioi_hetairoi",
+      "tags": ["noble_phantasm", "area", "summon", "control"],
+      "minimum_range": 0,
+      "maximum_range": 48,
+      "mana_cost": 120,
+      "stamina_cost": 0,
+      "timing": {"windup": 40, "active": 1200, "recovery": 20},
+      "threat": {"shape": "sphere", "radius": 40, "length": 0, "danger": 5, "blockable": false, "dodgeable": false, "interruptible": false, "friendly_fire_radius": 0},
+      "terrain_impact": "none"
+    }
+  ]
+}

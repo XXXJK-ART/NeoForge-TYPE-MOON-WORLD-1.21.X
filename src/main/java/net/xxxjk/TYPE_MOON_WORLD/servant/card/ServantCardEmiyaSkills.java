@@ -38,6 +38,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
@@ -56,6 +57,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.RhoAiasProjectionHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
@@ -92,6 +95,8 @@ public final class ServantCardEmiyaSkills {
    private static final String EMIYA_AUTO_COUNTER_UNTIL = "ServantCardEmiyaAutoCounterUntil";
    private static final String EMIYA_AUTO_COUNTER_CLAIMED = "ServantCardEmiyaAutoCounterClaimed";
    private static final int EMIYA_AUTO_COUNTER_DURATION = 300;
+   private static final String EMIYA_UBW_NEXT_CRIMSON_HOUND = "ServantCardEmiyaUbwNextCrimsonHound";
+   private static final int EMIYA_UBW_CRIMSON_HOUND_INTERVAL = 10 * 20;
    private static final String EMIYA_COPIED_NP_PENDING_TOKEN = "ServantCardEmiyaCopiedNpPendingToken";
    private static final String EMIYA_COPIED_NP_PENDING_TICK = "ServantCardEmiyaCopiedNpPendingTick";
    private ServantCardEmiyaSkills() {
@@ -219,12 +224,7 @@ public final class ServantCardEmiyaSkills {
    }
 
    public static void spawnRhoAias(ServerPlayer player) {
-      if (player.level() instanceof ServerLevel level) {
-         RhoAiasEntity shield = new RhoAiasEntity(level, player, findLookTarget(player, 24.0, 2.0));
-         level.addFreshEntity(shield);
-         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 320, 2, false, true, true));
-         level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.15F);
-      }
+      RhoAiasProjectionHelper.spawn(player);
    }
 
    public static void stopRhoAias(ServerPlayer player) {
@@ -249,9 +249,12 @@ public final class ServantCardEmiyaSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
          return false;
       }
-      ItemStack weapon = target.getMainHandItem().getItem() instanceof NoblePhantasmItem
-         ? target.getMainHandItem() : target.getOffhandItem();
-      ItemStack traced = weapon.copy();
+      ItemStack original = copyableHeldItem(target);
+      if (original.isEmpty()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.no_trace_weapon"), true);
+         return false;
+      }
+      ItemStack traced = original.copy();
       traced.setCount(1);
       PlayerNoblePhantasmHelper.markUbwProjection(traced);
       PlayerNoblePhantasmHelper.markServantCardCopiedNoblePhantasm(traced);
@@ -309,8 +312,27 @@ public final class ServantCardEmiyaSkills {
       if (target == null) {
          return null;
       }
-      return target.getMainHandItem().getItem() instanceof NoblePhantasmItem
-         || target.getOffhandItem().getItem() instanceof NoblePhantasmItem ? target : null;
+      return copyableHeldItem(target).isEmpty() ? null : target;
+   }
+
+   private static ItemStack copyableHeldItem(LivingEntity target) {
+      ItemStack mainHand = target.getMainHandItem();
+      if (isTypeMoonWorldItem(mainHand)) {
+         return mainHand;
+      }
+      ItemStack offHand = target.getOffhandItem();
+      return isTypeMoonWorldItem(offHand) ? offHand : ItemStack.EMPTY;
+   }
+
+   private static boolean isTypeMoonWorldItem(ItemStack stack) {
+      if (stack == null || stack.isEmpty()) {
+         return false;
+      }
+      if (MagicStructuralAnalysis.isProjectionBanned(stack)) {
+         return false;
+      }
+      ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
+      return key != null && TYPE_MOON_WORLD.MOD_ID.equals(key.getNamespace());
    }
 
    private static LinkedHashSet<String> copiedNoblePhantasmIds(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -368,6 +390,7 @@ public final class ServantCardEmiyaSkills {
       clearEmiyaProjectionRounds(player);
       CompoundTag data = player.getPersistentData();
       data.remove(EMIYA_AUTO_COUNTER_UNTIL);
+      data.remove(EMIYA_UBW_NEXT_CRIMSON_HOUND);
       data.remove(EMIYA_COPIED_NP_PENDING_TOKEN);
       data.remove(EMIYA_COPIED_NP_PENDING_TICK);
    }
@@ -630,11 +653,20 @@ public final class ServantCardEmiyaSkills {
       if (!"emiya_archer".equals(vars.servant_card_id) || !vars.is_in_ubw || !(player.level() instanceof ServerLevel level)) {
          return;
       }
+      long now = level.getGameTime();
+      CompoundTag data = player.getPersistentData();
+      if (!data.contains(EMIYA_UBW_NEXT_CRIMSON_HOUND)) {
+         data.putLong(EMIYA_UBW_NEXT_CRIMSON_HOUND, now + EMIYA_UBW_CRIMSON_HOUND_INTERVAL);
+      }
       if (player.tickCount % 10 == 0) {
          AABB area = player.getBoundingBox().inflate(38.0);
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
             spawnSwordAtTarget(player, level, target);
          }
+      }
+      if (now >= player.getPersistentData().getLong(EMIYA_UBW_NEXT_CRIMSON_HOUND)) {
+         launchServantCardUbwCrimsonHounds(player, level);
+         data.putLong(EMIYA_UBW_NEXT_CRIMSON_HOUND, now + EMIYA_UBW_CRIMSON_HOUND_INTERVAL);
       }
       if (player.tickCount % 8 == 0) {
          AABB area = player.getBoundingBox().inflate(18.0);
@@ -647,6 +679,48 @@ public final class ServantCardEmiyaSkills {
             level.addFreshEntity(new UBWInterceptorSwordEntity(level, projectile, player.getUUID(), spawn));
          }
       }
+   }
+
+   private static void launchServantCardUbwCrimsonHounds(ServerPlayer player, ServerLevel level) {
+      List<LivingEntity> targets = activeServantCardUbwEnemies(player, level);
+      if (targets.isEmpty()) {
+         return;
+      }
+      for (LivingEntity target : targets) {
+         spawnServantCardUbwCrimsonHound(player, level, target);
+      }
+      level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.9F, 0.7F);
+   }
+
+   private static List<LivingEntity> activeServantCardUbwEnemies(ServerPlayer player, ServerLevel level) {
+      List<LivingEntity> targets = new ArrayList<>();
+      for (Entity entity : level.getEntities().getAll()) {
+         if (entity instanceof LivingEntity living && isServantCardUbwEnemy(player, living)) {
+            targets.add(living);
+         }
+      }
+      return targets;
+   }
+
+   private static boolean isServantCardUbwEnemy(ServerPlayer player, LivingEntity target) {
+      if (target == player || !target.isAlive() || target.isAlliedTo(player) || EntityUtils.isImmunePlayerTarget(target)) return false;
+      if (target instanceof ServerPlayer other && (other.isCreative() || other.isSpectator())) return false;
+      TypeMoonWorldModVariables.UBWReturnData data = target.getData(TypeMoonWorldModVariables.UBW_RETURN_DATA);
+      return player.getUUID().equals(data.ownerUUID) || isHostileTo(player, target);
+   }
+
+   private static void spawnServantCardUbwCrimsonHound(ServerPlayer player, ServerLevel level, LivingEntity target) {
+      double angle = player.getRandom().nextDouble() * Math.PI * 2.0;
+      double radius = 7.0 + player.getRandom().nextDouble() * 9.0;
+      Vec3 spawn = target.position().add(Math.cos(angle) * radius, 5.0 + player.getRandom().nextDouble() * 6.0, Math.sin(angle) * radius);
+      CrimsonHoundProjectileEntity projectile = new CrimsonHoundProjectileEntity(level, player);
+      projectile.setNoGravity(true);
+      projectile.setPos(spawn.x, spawn.y, spawn.z);
+      projectile.setTrackedTarget(target);
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0).subtract(spawn).normalize();
+      projectile.setDeltaMovement(aim.scale(2.8));
+      level.addFreshEntity(projectile);
+      level.sendParticles(ParticleTypes.FLAME, spawn.x, spawn.y, spawn.z, 10, 0.18, 0.18, 0.18, 0.04);
    }
 
    public static void spawnSwordAtTarget(ServerPlayer player, ServerLevel level, LivingEntity target) {

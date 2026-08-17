@@ -26,8 +26,11 @@ public final class MagicDefinitionRegistry {
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification.getSchoolType(path).name().toLowerCase(java.util.Locale.ROOT));
          MagicDefinitionData defaults = MagicDefinitionData.defaults(id);
          PROGRAMMATIC.putIfAbsent(id.toString(), new MagicDefinitionData(id, defaults.nameKey(), defaults.category(), school,
-            defaults.manaCost(), defaults.cooldownTicks(), defaults.learnable(), defaults.wheelSelectable(), defaults.crestAllowed(),
-            defaults.npcAllowed(), defaults.knowledgeOnly(), defaults.npcGlobalCooldown(), defaults.npcCooldown()));
+            defaults.complexity(), defaults.chantSegments(), defaults.manaCost(), defaults.sustainedManaCost(),
+            defaults.cooldownTicks(), defaults.learnable(), defaults.wheelSelectable(), defaults.crestAllowed(),
+            defaults.npcAllowed(), defaults.knowledgeOnly(), defaults.copyable(), defaults.npcGlobalCooldown(),
+            defaults.npcCooldown(), defaults.prerequisiteMagic(), defaults.prerequisiteProficiency(),
+            defaults.requiredAttributes(), defaults.resolvedResistanceComplexity()));
       }
    }
 
@@ -78,6 +81,41 @@ public final class MagicDefinitionRegistry {
    public static boolean isKnowledgeOnly(String id) {
       MagicDefinitionData definition = get(id);
       return definition != null && definition.knowledgeOnly();
+   }
+
+   public static boolean isCopyable(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null || definition.copyable();
+   }
+
+   public static boolean hasPrerequisiteMagic(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition != null && definition.prerequisiteMagic() != null;
+   }
+
+   public static String prerequisiteMagic(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null || definition.prerequisiteMagic() == null ? null : definition.prerequisiteMagic().toString();
+   }
+
+   public static double prerequisiteProficiency(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null ? 0.0 : definition.prerequisiteProficiency();
+   }
+
+   public static int complexity(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null ? 50 : definition.complexity();
+   }
+
+   public static int chantSegments(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null ? 1 : definition.chantSegments();
+   }
+
+   public static double sustainedManaCost(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null ? 0.0 : definition.sustainedManaCost();
    }
 
    public static boolean meetsAttributeRequirements(

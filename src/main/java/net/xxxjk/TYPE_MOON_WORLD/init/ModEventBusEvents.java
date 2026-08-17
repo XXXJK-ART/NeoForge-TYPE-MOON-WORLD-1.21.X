@@ -15,14 +15,19 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OkitaShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -35,6 +40,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SenkoMuramasaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
@@ -77,11 +83,16 @@ public class ModEventBusEvents {
       event.put(ModEntities.KENDO_APPRENTICE.get(), KendoApprenticeEntity.createAttributes().build());
       event.put(ModEntities.RONIN.get(), KendoApprenticeEntity.createAttributes().build());
       event.put(ModEntities.SHINSENGUMI.get(), KendoApprenticeEntity.createAttributes().build());
+      event.put(ModEntities.OKITA_SHINSENGUMI.get(), OkitaShinsengumiEntity.createAttributes().build());
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
+      event.put(ModEntities.LEFF_LAYNOR_FLAUROS.get(), LeffLaynorFlaurosEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.OKITA_SOUJI_SABER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CU_CHULAINN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.DIARMUID_UA_DUIBHNE.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.LANCELOT_BERSERKER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDEA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.CURSED_ARM_HASSAN.get(), ServantEntity.createAttributes().build());
@@ -92,7 +103,10 @@ public class ModEventBusEvents {
       event.put(ModEntities.ODA_NOBUNAGA.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.USHIWAKAMARU_RIDER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ZHAO_YUN_RIDER.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.ISKANDAR.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.ZHAO_YUN_HAKURYU.get(), ZhaoYunHakuryuEntity.createAttributes().build());
+      event.put(ModEntities.BUCEPHALUS.get(), BucephalusEntity.createAttributes().build());
+      event.put(ModEntities.GORDIUS_WHEEL.get(), GordiusWheelEntity.createAttributes().build());
       event.put(ModEntities.ENKIDU.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH.get(), GilgameshEntity.createAttributes().build());
       event.put(ModEntities.GILGAMESH_CASTER.get(), CasterGilgameshEntity.createAttributes().build());
@@ -105,6 +119,8 @@ public class ModEventBusEvents {
       event.put(ModEntities.SHADOW_HASSAN_DEATH_SHADOW.get(), Mob.createMobAttributes().build());
       event.put(ModEntities.FANATIC_ASSASSIN.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.FANATIC_ASSASSIN_JINN.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity.createAttributes().build());
+      event.put(ModEntities.HUNDRED_FACES_HASSAN.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.HUNDRED_FACES_HASSAN_PERSONA.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity.createAttributes().build());
       event.put(ModEntities.RAT_SWARM.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity.createAttributes().build());
       event.put(ModEntities.PALE_RIDER_CROW.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity.createAttributes().build());
       event.put(ModEntities.SOUL_ECHO.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity.createAttributes().build());
@@ -112,6 +128,8 @@ public class ModEventBusEvents {
       event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
+      event.put(ModEntities.MACEDONIAN_SOLDIER.get(), MacedonianSoldierEntity.createAttributes().build());
+      event.put(ModEntities.HEAVEN_CHAIN_BINDING.get(), HeavenChainBindingEntity.createAttributes().build());
    }
 
    @SubscribeEvent

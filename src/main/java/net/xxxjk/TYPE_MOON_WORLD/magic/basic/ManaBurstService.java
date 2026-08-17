@@ -52,6 +52,11 @@ public final class ManaBurstService {
    private static final double[] DIRECT_RANGE = {20, 28, 36, 44, 52};
    private static final double[] JET_ACCEL = {0.03, 0.045, 0.06, 0.075, 0.09};
    private static final double[] JET_CAP = {0.38, 0.45, 0.53, 0.60, 0.68};
+   private static final double[] JET_GROUND_LIFT = {0.32, 0.36, 0.40, 0.44, 0.48};
+   private static final double[] JET_AIR_LIFT = {0.050, 0.060, 0.070, 0.080, 0.090};
+   private static final double[] JET_UP_CAP = {0.38, 0.43, 0.48, 0.53, 0.58};
+   private static final Vec3 JUMP_EXHAUST_DIRECTION = new Vec3(0.0, -1.0, 0.0);
+   private static final Vec3 SNEAK_EXHAUST_DIRECTION = new Vec3(0.0, 1.0, 0.0);
 
    private ManaBurstService() {
    }
@@ -173,6 +178,34 @@ public final class ManaBurstService {
       data.putLong(INPUT_TICK_TAG, player.level().getGameTime());
    }
 
+   public static void primeExternalJetMovement(ServerPlayer player, int level) {
+      if (player == null) {
+         return;
+      }
+      player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
+   }
+
+   public static void tickExternalJetMovement(ServerPlayer player, int level) {
+      if (player == null || !player.isAlive()) {
+         return;
+      }
+      int clampedLevel = Math.max(1, Math.min(5, level));
+      applyBodyJetMovement(player, player.getPersistentData(), clampedLevel, player.level().getGameTime());
+   }
+
+   public static void clearExternalJetMovement(ServerPlayer player) {
+      if (player == null) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      data.remove(INPUT_FORWARD_TAG);
+      data.remove(INPUT_STRAFE_TAG);
+      data.remove(INPUT_JUMP_TAG);
+      data.remove(INPUT_SNEAK_TAG);
+      data.remove(INPUT_TICK_TAG);
+      data.remove(JET_TICKS_TAG);
+   }
+
    public static void clear(ServerPlayer player) {
       if (player == null) return;
       player.getPersistentData().remove(MODE_TAG);
@@ -231,7 +264,8 @@ public final class ManaBurstService {
    }
 
    private static void applyBodyJetMovement(ServerPlayer player, CompoundTag data, int level, long now) {
-      if (player.onGround()) {
+      boolean grounded = player.onGround();
+      if (grounded) {
          data.putInt(JET_TICKS_TAG, maxJetTicks(level));
       }
       boolean freshInput = now - data.getLong(INPUT_TICK_TAG) <= 6L;
@@ -249,8 +283,8 @@ public final class ManaBurstService {
          forward = new Vec3(forward.x, 0.0, forward.z);
       }
       forward = forward.normalize();
-      Vec3 left = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 desired = forward.scale(forwardInput).add(left.scale(strafeInput));
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 desired = forward.scale(forwardInput).add(right.scale(strafeInput));
       if (desired.lengthSqr() > 1.0E-4) {
          desired = desired.normalize();
          double accel = JET_ACCEL[level - 1] * (player.onGround() ? 1.35 : 1.0);
@@ -263,9 +297,10 @@ public final class ManaBurstService {
       } else if (jump) {
          int jetTicks = Math.max(0, data.getInt(JET_TICKS_TAG));
          if (jetTicks > 0) {
-            double lift = 0.024 + level * 0.006;
-            double maxUp = 0.04 + (level - 1) * 0.01;
-            next = new Vec3(next.x, Math.min(maxUp, Math.max(next.y * 0.55, next.y + lift)), next.z);
+            double lift = grounded ? JET_GROUND_LIFT[level - 1] : JET_AIR_LIFT[level - 1];
+            double minUp = grounded ? JET_GROUND_LIFT[level - 1] : next.y + lift;
+            double maxUp = JET_UP_CAP[level - 1];
+            next = new Vec3(next.x, Math.min(maxUp, Math.max(minUp, next.y + lift)), next.z);
             data.putInt(JET_TICKS_TAG, jetTicks - 1);
          } else if (next.y < -0.18) {
             next = new Vec3(next.x, next.y * 0.72, next.z);
@@ -314,16 +349,39 @@ public final class ManaBurstService {
 
    private static void spawnJetFx(ServerLevel level, ServerPlayer player, Vec3 desired, boolean jump, boolean sneak, int levelRank) {
       Vec3 base = player.position().add(0.0, 0.18, 0.0);
-      Vec3 backblast = desired.lengthSqr() > 1.0E-4 ? desired.scale(-0.45) : player.getLookAngle().multiply(-0.25, 0.0, -0.25);
-      if (jump) {
-         backblast = backblast.add(0.0, -0.28, 0.0);
-      } else if (sneak) {
-         backblast = backblast.add(0.0, 0.22, 0.0);
+      boolean emitted = false;
+      if (desired.lengthSqr() > 1.0E-4) {
+         Vec3 horizontalExhaust = desired.normalize().scale(-1.0);
+         spawnJetStream(level, base, horizontalExhaust, levelRank, false);
+         emitted = true;
       }
-      Vec3 p = base.add(backblast);
-      level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 5 + levelRank * 2, 0.12, 0.10, 0.12, 0.045);
-      level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 3 + levelRank, 0.12, 0.08, 0.12, 0.035);
-      level.sendParticles(ParticleTypes.END_ROD, p.x, p.y + 0.05, p.z, 2 + levelRank, 0.08, 0.08, 0.08, 0.035);
+      if (jump) {
+         spawnJetStream(level, player.position().add(0.0, 0.12, 0.0), JUMP_EXHAUST_DIRECTION, levelRank, true);
+         emitted = true;
+      } else if (sneak) {
+         spawnJetStream(level, player.position().add(0.0, player.getBbHeight() * 0.72, 0.0), SNEAK_EXHAUST_DIRECTION, levelRank, false);
+         emitted = true;
+      }
+      if (!emitted) {
+         spawnJetStream(level, base, player.getLookAngle().multiply(-1.0, 0.0, -1.0), levelRank, false);
+      }
+   }
+
+   private static void spawnJetStream(ServerLevel level, Vec3 origin, Vec3 exhaustDirection, int levelRank, boolean intense) {
+      Vec3 direction = exhaustDirection.lengthSqr() > 1.0E-4 ? exhaustDirection.normalize() : JUMP_EXHAUST_DIRECTION;
+      int steps = intense ? 3 : 2;
+      for (int i = 0; i < steps; i++) {
+         double distance = 0.16 + i * 0.22;
+         Vec3 p = origin.add(direction.scale(distance));
+         double spread = Math.max(0.035, 0.12 - i * 0.018);
+         level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 2 + levelRank, spread, spread * 0.7, spread, 0.04);
+         if (i == steps - 1) {
+            level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 1 + levelRank / 2, spread * 0.9, spread * 0.6, spread * 0.9, 0.026);
+         }
+         if (intense && i == 0) {
+            level.sendParticles(ParticleTypes.END_ROD, p.x, p.y + 0.03, p.z, 1 + levelRank / 2, spread * 0.55, spread * 0.55, spread * 0.55, 0.03);
+         }
+      }
    }
 
    private static void spawnDirectBeamFx(ServerLevel level, Vec3 eye, Vec3 look, double range, int levelRank) {

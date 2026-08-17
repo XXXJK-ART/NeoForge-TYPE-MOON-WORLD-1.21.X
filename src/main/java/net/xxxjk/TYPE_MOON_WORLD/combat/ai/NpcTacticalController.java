@@ -8,6 +8,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 /** Shared defensive sensor/arbiter for non-Servant combat NPCs. */
 public final class NpcTacticalController {
@@ -21,7 +22,11 @@ public final class NpcTacticalController {
       EvasionMovementService.tickAirState(entity);
       long now = level.getGameTime();
       AiBrain brain = AiBrain.begin(entity);
-      LivingEntity target = entity.getTarget();
+      LivingEntity currentTarget = entity.getTarget();
+      LivingEntity target = EntityUtils.redirectMountedCombatTarget(entity, currentTarget);
+      if (target != currentTarget) {
+         entity.setTarget(target);
+      }
       if (target != null && target.isAlive()) {
          brain.blackboard().observe(target.getUUID(), null, entity.distanceTo(target), 0.0, false, now);
       }

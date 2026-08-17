@@ -1,0 +1,11 @@
+{
+  "type": "typemoonworld:ionioi_hetairoi",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "typemoonworld:ionioi_hetairoi_noise_settings",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "typemoonworld:ionioi_hetairoi_biome"
+    }
+  }
+}

@@ -3,7 +3,7 @@
   "display_name": "Spiritualization B+",
   "display_name_zh": "灵体化 B+",
   "type": "active",
-  "mp_cost": 20,
+  "mp_cost": 5,
   "cooldown_ticks": 0,
   "duration_ticks": 60,
   "effects": [

@@ -1,0 +1,21 @@
+{
+  "id": "gordius_wheel",
+  "display_name": "Gordius Wheel",
+  "display_name_zh": "\u795e\u5a01\u8f66\u8f6e",
+  "type": "anti_army",
+  "rank": "A",
+  "mp_cost": 0,
+  "cooldown_ticks": 300,
+  "windup_ticks": 10,
+  "effects": [
+    {
+      "effect_type": "persistent_mount_charge",
+      "params": {
+        "mount": "typemoonworld:gordius_wheel",
+        "health": 3000,
+        "charge_cooldown_ticks": 300,
+        "lightning_aura_damage": 5
+      }
+    }
+  ]
+}

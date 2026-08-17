@@ -20,6 +20,10 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSpearProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
@@ -36,6 +40,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoyalCannonProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityFieldShellEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GravityShellEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
@@ -50,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OkitaShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
@@ -61,11 +67,13 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SpiritronCannonBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwControlledSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UbwSkyGearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
@@ -81,6 +89,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
@@ -91,6 +101,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanDeathShadowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GenericServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.RatSwarmEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity;
@@ -118,6 +131,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.EnumaChainCrownEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -275,6 +291,14 @@ public class ModEntities {
          .updateInterval(1)
          .build("artoria_excalibur_beam")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<SpiritronCannonBeamEntity>> SPIRITRON_CANNON_BEAM = ENTITY_TYPES.register(
+      "spiritron_cannon_beam",
+      () -> Builder.<SpiritronCannonBeamEntity>of((entityType, level) -> new SpiritronCannonBeamEntity(entityType, level), MobCategory.MISC)
+         .sized(15.0F, 5.0F)
+         .clientTrackingRange(96)
+         .updateInterval(1)
+         .build("spiritron_cannon_beam")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<RyougiShikiEntity>> RYOUGI_SHIKI = ENTITY_TYPES.register(
       "ryougi_shiki", () -> Builder.of(RyougiShikiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ryougi_shiki")
    );
@@ -391,8 +415,15 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<ShinsengumiEntity>> SHINSENGUMI = ENTITY_TYPES.register(
       "shinsengumi", () -> Builder.of(ShinsengumiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("shinsengumi")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<OkitaShinsengumiEntity>> OKITA_SHINSENGUMI = ENTITY_TYPES.register(
+      "okita_shinsengumi", () -> Builder.of(OkitaShinsengumiEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(2).build("okita_shinsengumi")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
       "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LeffLaynorFlaurosEntity>> LEFF_LAYNOR_FLAUROS = ENTITY_TYPES.register(
+      "leff_laynor_flauros", () -> Builder.of(LeffLaynorFlaurosEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("leff_laynor_flauros")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SwordBarrelProjectileEntity>> SWORD_BARREL_PROJECTILE = ENTITY_TYPES.register(
       "sword_barrel_projectile",
@@ -490,8 +521,20 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<SasakiKojiroEntity>> SASAKI_KOJIRO = ENTITY_TYPES.register(
       "sasaki_kojiro", () -> Builder.of(SasakiKojiroEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("sasaki_kojiro")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<OkitaSoujiSaberEntity>> OKITA_SOUJI_SABER = ENTITY_TYPES.register(
+      "okita_souji_saber", () -> Builder.of(OkitaSoujiSaberEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("okita_souji_saber")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<CuChulainnEntity>> CU_CHULAINN = ENTITY_TYPES.register(
       "cu_chulainn", () -> Builder.of(CuChulainnEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cu_chulainn")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<DiarmuidUaDuibhneEntity>> DIARMUID_UA_DUIBHNE = ENTITY_TYPES.register(
+      "diarmuid_ua_duibhne", () -> Builder.of(DiarmuidUaDuibhneEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.84F).clientTrackingRange(64).updateInterval(1).build("diarmuid_ua_duibhne")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<LancelotBerserkerEntity>> LANCELOT_BERSERKER = ENTITY_TYPES.register(
+      "lancelot_berserker", () -> Builder.of(LancelotBerserkerEntity::new, MobCategory.CREATURE)
+         .sized(0.72F, 1.91F).clientTrackingRange(64).updateInterval(1).build("lancelot_berserker")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<MedeaEntity>> MEDEA = ENTITY_TYPES.register(
       "medea", () -> Builder.of(MedeaEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("medea")
@@ -507,6 +550,21 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
       "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSoldierEntity>> MACEDONIAN_SOLDIER = ENTITY_TYPES.register(
+      "macedonian_soldier", () -> Builder.of(MacedonianSoldierEntity::new, MobCategory.CREATURE)
+         .sized(0.65F, 1.9F).clientTrackingRange(64).updateInterval(2).build("macedonian_soldier")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSpearProjectileEntity>> MACEDONIAN_SPEAR_PROJECTILE = ENTITY_TYPES.register(
+      "macedonian_spear_projectile",
+      () -> Builder.<MacedonianSpearProjectileEntity>of(
+            (entityType, level) -> new MacedonianSpearProjectileEntity(
+               (EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC
+         )
+         .sized(0.3F, 0.3F)
+         .clientTrackingRange(16)
+         .updateInterval(1)
+         .build("macedonian_spear_projectile")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GaeBulgProjectileEntity>> GAE_BULG_PROJECTILE = ENTITY_TYPES.register(
       "gae_bulg_projectile",
@@ -562,9 +620,21 @@ public class ModEntities {
       "zhao_yun_rider", () -> Builder.of(ZhaoYunRiderEntity::new, MobCategory.CREATURE)
          .sized(0.7F, 1.9F).clientTrackingRange(64).build("zhao_yun_rider")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<IskandarEntity>> ISKANDAR = ENTITY_TYPES.register(
+      "iskandar", () -> Builder.of(IskandarEntity::new, MobCategory.CREATURE)
+         .sized(0.86F, 2.12F).clientTrackingRange(96).updateInterval(1).build("iskandar")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<ZhaoYunHakuryuEntity>> ZHAO_YUN_HAKURYU = ENTITY_TYPES.register(
       "zhao_yun_hakuryu", () -> Builder.of(ZhaoYunHakuryuEntity::new, MobCategory.CREATURE)
-         .sized(2.2F, 2.4F).clientTrackingRange(64).build("zhao_yun_hakuryu")
+         .sized(2.2F, 2.4F).clientTrackingRange(96).updateInterval(1).build("zhao_yun_hakuryu")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<BucephalusEntity>> BUCEPHALUS = ENTITY_TYPES.register(
+      "bucephalus", () -> Builder.of(BucephalusEntity::new, MobCategory.CREATURE)
+         .sized(1.45F, 1.75F).clientTrackingRange(96).updateInterval(1).build("bucephalus")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<GordiusWheelEntity>> GORDIUS_WHEEL = ENTITY_TYPES.register(
+      "gordius_wheel", () -> Builder.of(GordiusWheelEntity::new, MobCategory.CREATURE)
+         .sized(4.4F, 2.4F).clientTrackingRange(128).updateInterval(1).build("gordius_wheel")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<EnkiduEntity>> ENKIDU = ENTITY_TYPES.register(
       "enkidu", () -> Builder.of(EnkiduEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("enkidu")
@@ -605,6 +675,14 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<FanaticAssassinJinnEntity>> FANATIC_ASSASSIN_JINN = ENTITY_TYPES.register(
       "fanatic_assassin_jinn", () -> Builder.of(FanaticAssassinJinnEntity::new, MobCategory.CREATURE)
          .sized(1.1F, 1.5F).clientTrackingRange(64).updateInterval(1).build("fanatic_assassin_jinn")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HundredFacesHassanEntity>> HUNDRED_FACES_HASSAN = ENTITY_TYPES.register(
+      "hundred_faces_hassan", () -> Builder.of(HundredFacesHassanEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("hundred_faces_hassan")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HundredFacesHassanPersonaEntity>> HUNDRED_FACES_HASSAN_PERSONA = ENTITY_TYPES.register(
+      "hundred_faces_hassan_persona", () -> Builder.of(HundredFacesHassanPersonaEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(2).build("hundred_faces_hassan_persona")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RatSwarmEntity>> RAT_SWARM = ENTITY_TYPES.register(
       "rat_swarm", () -> Builder.of(RatSwarmEntity::new, MobCategory.CREATURE).sized(1.6F, 0.65F).clientTrackingRange(48).updateInterval(2).build("rat_swarm")
@@ -687,6 +765,33 @@ public class ModEntities {
          .clientTrackingRange(64)
          .updateInterval(1)
          .build("chains_of_heaven_binding")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HeavenChainEntity>> HEAVEN_CHAIN = ENTITY_TYPES.register(
+      "heaven_chain",
+      () -> Builder.<HeavenChainEntity>of(HeavenChainEntity::new, MobCategory.MISC)
+         .sized(0.9F, 0.9F)
+         .clientTrackingRange(128)
+         .updateInterval(1)
+         .fireImmune()
+         .build("heaven_chain")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HeavenChainBindingEntity>> HEAVEN_CHAIN_BINDING = ENTITY_TYPES.register(
+      "heaven_chain_binding",
+      () -> Builder.<HeavenChainBindingEntity>of(HeavenChainBindingEntity::new, MobCategory.MISC)
+         .sized(1.2F, 2.0F)
+         .clientTrackingRange(128)
+         .updateInterval(1)
+         .fireImmune()
+         .build("heaven_chain_binding")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EnumaChainCrownEntity>> ENUMA_CHAIN_CROWN = ENTITY_TYPES.register(
+      "enuma_chain_crown",
+      () -> Builder.<EnumaChainCrownEntity>of(EnumaChainCrownEntity::new, MobCategory.MISC)
+         .sized(6.0F, 6.0F)
+         .clientTrackingRange(160)
+         .updateInterval(1)
+         .fireImmune()
+         .build("enuma_chain_crown")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshGateWeaponProjectileEntity>> GILGAMESH_GATE_PROJECTILE = ENTITY_TYPES.register(
       "gilgamesh_gate_projectile",

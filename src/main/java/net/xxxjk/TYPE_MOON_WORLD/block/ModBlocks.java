@@ -56,6 +56,15 @@ public class ModBlocks {
    public static final DeferredBlock<MagicCopyingTableBlock> MAGIC_COPYING_TABLE = registerBlock(
       "magic_copying_table", () -> new MagicCopyingTableBlock(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE).strength(2.5F))
    );
+   public static final DeferredBlock<Block> ALCHEMY_CAULDRON = registerBlock(
+      "alchemy_cauldron", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.CAULDRON).strength(2.0F))
+   );
+   public static final DeferredBlock<Block> CINNABAR_ORE = registerBlock(
+      "cinnabar_ore", () -> new DropExperienceBlock(UniformInt.of(1, 3), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> CINNABAR_BLOCK = registerBlock(
+      "cinnabar_block", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK).strength(4.0F).requiresCorrectToolForDrops())
+   );
    public static final DeferredBlock<Block> EMERALD_BLOCK = registerBlock(
       "emerald_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
    );

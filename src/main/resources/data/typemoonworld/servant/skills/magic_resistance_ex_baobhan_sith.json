@@ -1,0 +1,25 @@
+{
+  "id": "magic_resistance_ex_baobhan_sith",
+  "display_name": "Magic Resistance EX",
+  "display_name_zh": "对魔力 EX",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "magic_resistance",
+      "params": {
+        "rank": "EX"
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "magic_resistance",
+        "strength": 1.0
+      }
+    ]
+  }
+}

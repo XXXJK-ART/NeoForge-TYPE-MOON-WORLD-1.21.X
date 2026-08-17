@@ -21,7 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
@@ -169,7 +168,7 @@ public record SaveStructuralSelectionMessage(String structureName, int minX, int
                                  double progressGain = Math.max(0.2, Math.min(2.0, blocks.size() / 256.0));
                                  net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(var32, "structural_analysis", progressGain);
                                  var32.syncMana(player);
-                                 PacketDistributor.sendToPlayer(player, new TypeMoonWorldModVariables.ProficiencySyncMessage(var32), new CustomPacketPayload[0]);
+                                 ModNetwork.sendToPlayer(player, new TypeMoonWorldModVariables.ProficiencySyncMessage(var32));
                                  CompoundTag delta = new CompoundTag();
                                  delta.put("structure", structure.serializeNBT(player.registryAccess()));
                                  if (!replacedStructureId.isEmpty() && !replacedStructureId.equals(structure.id)) {

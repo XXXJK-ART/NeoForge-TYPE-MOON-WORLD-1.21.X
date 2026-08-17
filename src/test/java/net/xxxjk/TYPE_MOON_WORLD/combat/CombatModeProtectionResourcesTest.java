@@ -15,6 +15,7 @@ class CombatModeProtectionResourcesTest {
       String events = read("event/CombatModeProtectionEvents.java");
       assertTrue(events.contains("onLivingChangeTarget(LivingChangeTargetEvent event)"));
       assertTrue(events.contains("EntityUtils.isImmunePlayerTarget(target)"));
+      assertTrue(events.contains("EntityUtils.isUntargetableServantTransition(target)"));
       assertTrue(events.contains("event.setNewAboutToBeSetTarget(null)"));
       assertTrue(events.contains("onIncomingDamage(LivingIncomingDamageEvent event)"));
       assertTrue(events.contains("!isMysticEyesAttack(event)"));
@@ -27,7 +28,8 @@ class CombatModeProtectionResourcesTest {
       String servant = read("servant/entity/ServantEntity.java");
       String cursedArm = read("servant/entity/CursedArmHassanCombatHelper.java");
       String gaeBolg = read("entity/GaeBulgProjectileEntity.java");
-      assertTrue(servant.contains("super.setTarget(EntityUtils.isImmunePlayerTarget(target) ? null : target)"));
+      assertTrue(servant.contains("EntityUtils.isUntargetableServantTransition(target)"));
+      assertTrue(servant.contains("clearIncomingTargetsDuringSpiritualTransition()"));
       assertTrue(cursedArm.contains("private static void resolveZabaniya"));
       assertTrue(cursedArm.contains("if (EntityUtils.isImmunePlayerTarget(target))"));
       assertTrue(gaeBolg.contains("private void applyDeathThorn"));

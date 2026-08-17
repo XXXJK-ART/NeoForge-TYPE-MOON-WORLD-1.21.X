@@ -74,6 +74,15 @@ public final class MagicPassiveProgressionService {
       ids.add("water_magic");
       ids.add("wind_magic");
       ids.add("earth_magic");
+      ids.add("flame_array");
+      ids.add("azure_water_array");
+      ids.add("gale_wind_array");
+      ids.add("rock_earth_array");
+      ids.add("contract_magecraft");
+      ids.add("aerial_stasis");
+      ids.add("aerial_ascent");
+      ids.add("touko_travel");
+      ids.add("flight_magic");
       ids.add("time_alter");
       ids.add("spiritual_healing");
       ids.add("baptism_rite");

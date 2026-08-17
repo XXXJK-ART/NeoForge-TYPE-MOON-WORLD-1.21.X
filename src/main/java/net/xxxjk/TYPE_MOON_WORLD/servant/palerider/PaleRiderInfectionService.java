@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
@@ -39,6 +40,11 @@ public final class PaleRiderInfectionService {
    private static final String TAG_LETHAL_NEXT_TICK = "PaleRiderLethalNextTick";
 
    private PaleRiderInfectionService() {
+   }
+
+   /** Ionioi soldiers are servants and cannot be controlled by Pale Rider. */
+   public static boolean isUncontrollableServantSoldier(Entity target) {
+      return target instanceof MacedonianSoldierEntity;
    }
 
    public static boolean infect(LivingEntity target, LivingEntity owner, int addedLevels) {
@@ -80,6 +86,10 @@ public final class PaleRiderInfectionService {
       }
       long now = serverLevel.getGameTime();
       boolean controlled = isControlled(target);
+      if (isUncontrollableServantSoldier(target) && controlled) {
+         endControl(target);
+         controlled = false;
+      }
       boolean maintenanceTick = InfectionRules.isScheduled(target.getId(), now, InfectionRules.DAMAGE_INTERVAL_TICKS);
       boolean controlledAiTick = controlled && target instanceof Mob
          && InfectionRules.isScheduled(target.getId(), now, InfectionRules.CONTROLLED_AI_INTERVAL_TICKS);
@@ -263,6 +273,13 @@ public final class PaleRiderInfectionService {
       return mob != null && owner != null && canControl(mob) && beginControl(mob, owner);
    }
 
+   /** Removes legacy or externally applied control from a servant soldier. */
+   public static void releaseControl(LivingEntity target) {
+      if (target != null && isControlled(target)) {
+         endControl(target);
+      }
+   }
+
    public static int controlledCount(LivingEntity owner) {
       if (owner == null || !(owner.level() instanceof ServerLevel level)) return 0;
       return PaleRiderEntityIndex.controlledCount(level, owner.getUUID(), entity ->
@@ -286,7 +303,9 @@ public final class PaleRiderInfectionService {
 
    private static boolean canControl(LivingEntity target) {
       return target instanceof Mob && !isForbiddenControlTarget(target) && !(target instanceof Player)
-         && !(target instanceof ServantEntity) && !target.getType().is(Tags.EntityTypes.BOSSES);
+         && !(target instanceof ServantEntity)
+         && !isUncontrollableServantSoldier(target)
+         && !target.getType().is(Tags.EntityTypes.BOSSES);
    }
 
    private static double controlChance(LivingEntity target, int level) {

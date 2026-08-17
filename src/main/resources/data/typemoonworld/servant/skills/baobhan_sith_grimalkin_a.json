@@ -1,0 +1,29 @@
+{
+  "id": "baobhan_sith_grimalkin_a",
+  "display_name": "Grimalkin A",
+  "display_name_zh": "格雷马尔金 A",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 600,
+  "duration_ticks": 300,
+  "effects": [
+    {
+      "effect_type": "mobility_and_attack_speed",
+      "params": {
+        "movement_speed_bonus": 0.6,
+        "jump_boost": 1.5,
+        "attack_speed_bonus": 0.25,
+        "silent_steps": true
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "gap_close",
+        "strength": 0.85,
+        "requires": ["mobile", "not_silenced"]
+      }
+    ]
+  }
+}

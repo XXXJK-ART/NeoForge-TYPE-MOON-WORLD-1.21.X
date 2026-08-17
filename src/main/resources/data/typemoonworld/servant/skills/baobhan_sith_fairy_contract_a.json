@@ -1,0 +1,26 @@
+{
+  "id": "baobhan_sith_fairy_contract_a",
+  "display_name": "Fairy Contract A",
+  "display_name_zh": "妖精的契约 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "curse_mana_recovery_stack",
+      "params": {
+        "recovery_bonus_per_curse": 0.05,
+        "max_stacks": 10
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "magic_pressure",
+        "strength": 0.65
+      }
+    ]
+  }
+}

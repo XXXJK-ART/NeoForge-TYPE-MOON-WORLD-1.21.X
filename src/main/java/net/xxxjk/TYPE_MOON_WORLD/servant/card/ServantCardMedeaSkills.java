@@ -32,7 +32,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
@@ -52,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.ChantHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMedeaCraftScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaWorkshopHelper;
@@ -181,15 +181,14 @@ public final class ServantCardMedeaSkills {
    public static boolean performMedeaCraftItem(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       ensureMedeaStocks(player, vars);
-      PacketDistributor.sendToPlayer(
+      ModNetwork.sendToPlayer(
          player,
          new OpenMedeaCraftScreenMessage(
             getDragonfangStock(player),
             getManaCharmStock(player),
             getHealCharmStock(player),
             countLeylineMaps(player)
-         ),
-         new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]
+         )
       );
       return true;
    }
@@ -314,7 +313,7 @@ public final class ServantCardMedeaSkills {
       Vec3 aim = target == null ? player.getEyePosition().add(look.scale(20.0)) : target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       for (int i = 0; i < 5; i++) {
          MedeaMagicBoltEntity bolt = new MedeaMagicBoltEntity(level, player);
-         bolt.setMagicDamage(14.0F);
+         bolt.setMagicDamage(28.0F);
          bolt.setMode(i % 2 == 0 ? MedeaMagicBoltEntity.Mode.BOLT : MedeaMagicBoltEntity.Mode.FROST_BOLT);
          Vec3 spawn = player.getEyePosition().add((player.getRandom().nextDouble() - 0.5) * 1.2, (player.getRandom().nextDouble() - 0.5) * 0.7, (player.getRandom().nextDouble() - 0.5) * 1.2);
          bolt.setPos(spawn.x, spawn.y, spawn.z);
@@ -359,7 +358,7 @@ public final class ServantCardMedeaSkills {
          }
          Vec3 dir = new Vec3(away.x, 0.0, away.z).normalize();
          living.invulnerableTime = 0;
-         living.hurt(player.damageSources().playerAttack(player), 10.0F);
+         living.hurt(player.damageSources().playerAttack(player), 20.0F);
          living.invulnerableTime = 0;
          living.push(dir.x * 1.15, 0.28, dir.z * 1.15);
          living.hurtMarked = true;
@@ -786,7 +785,7 @@ public final class ServantCardMedeaSkills {
    }
 
    private static double applyMedeaWorkshopDamage(ServerPlayer player, double baseDamage) {
-      return isInsideMedeaWorkshop(player) ? baseDamage * 1.3 : baseDamage;
+      return (isInsideMedeaWorkshop(player) ? baseDamage * 1.3 : baseDamage) * 2.0;
    }
 
 }

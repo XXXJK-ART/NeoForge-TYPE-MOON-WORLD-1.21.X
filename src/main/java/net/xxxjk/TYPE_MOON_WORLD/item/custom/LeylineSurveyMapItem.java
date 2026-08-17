@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -21,7 +20,7 @@ import net.minecraft.world.item.Item.TooltipContext;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenLeylineSurveyMapMessage;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
@@ -53,7 +52,7 @@ public class LeylineSurveyMapItem extends Item {
             CompoundTag tag = ((CustomData)stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)).copyTag();
             writeSnapshot(tag, result, serverPlayer.serverLevel());
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            PacketDistributor.sendToPlayer(
+            ModNetwork.sendToPlayer(
                serverPlayer,
                new OpenLeylineSurveyMapMessage(
                   result.gridSize(),
@@ -61,8 +60,7 @@ public class LeylineSurveyMapItem extends Item {
                   result.centerChunkZ(),
                   serverPlayer.serverLevel().dimension().location().toString(),
                   result.concentrations()
-               ),
-               new CustomPacketPayload[0]
+               )
             );
             serverPlayer.displayClientMessage(
                Component.translatable("message.typemoonworld.leyline_map.scanned_opened", result.loadedSamples()), false

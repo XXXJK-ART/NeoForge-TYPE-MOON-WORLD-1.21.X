@@ -1,0 +1,69 @@
+{
+  "id": "diarmuid_ua_duibhne",
+  "display_name": "Diarmuid Ua Duibhne",
+  "display_name_zh": "迪尔姆德·奥迪那",
+  "class_type": "lancer",
+  "faction": "human",
+  "traits": ["servant", "humanoid", "living_human", "lancer", "male", "lawful", "neutral", "earth", "fianna_knights", "knight"],
+  "parameters": {
+    "endurance": "C",
+    "endurance_plus": false,
+    "strength": "B",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": true,
+    "magic": "D",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/diarmuid_ua_duibhne.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.84,
+      "eye_height": 1.66
+    },
+    "hand_item_offset": {
+      "x": 0.12,
+      "y": -0.85,
+      "z": 0.18
+    },
+    "default_weapon": "typemoonworld:gae_dearg",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "diarmuid_spear_combo",
+      "gae_dearg_break",
+      "gae_buidhe_curse",
+      "knight_strategy",
+      "mana_burst_jump",
+      "dualspear_reposition"
+    ]
+  },
+  "skills": [
+    "magic_resistance_b",
+    "riding_b",
+    "love_spot_c",
+    "knight_strategy_b",
+    "mana_burst_jump_a"
+  ],
+  "noble_phantasm": "",
+  "personality": {
+    "obedience": "loyal",
+    "principle": "orderly",
+    "morality": "neutral",
+    "social": "enthusiastic",
+    "combat": "balanced",
+    "special_principles": [],
+    "starting_favor": 60.0
+  },
+  "ai_config": "diarmuid_ua_duibhne_ai",
+  "spawn_egg": {
+    "primary": 2444093,
+    "secondary": 15783354
+  }
+}

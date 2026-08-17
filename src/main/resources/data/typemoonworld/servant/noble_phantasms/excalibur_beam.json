@@ -8,5 +8,5 @@
   "cooldown_ticks": 1200,
   "windup_ticks": 120,
   "duration_ticks": 150,
-  "description": "A sustained golden beam in Artoria's facing direction, dealing 500 damage per second across 50 x 15 blocks."
+  "description": "A sustained golden beam in Artoria's facing direction, dealing 500 damage per second across 150 x 24 x 14 blocks."
 }

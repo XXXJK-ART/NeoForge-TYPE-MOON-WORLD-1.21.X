@@ -1,0 +1,33 @@
+{
+  "id": "iskandar",
+  "display_name": "Iskandar",
+  "display_name_zh": "\u4f0a\u65af\u574e\u8fbe\u5c14",
+  "class_type": "rider",
+  "faction": "macedonia",
+  "traits": ["servant", "male", "rider", "human", "humanoid", "living_human", "neutral", "good", "earth", "king", "divinity", "riding", "conqueror_king", "alexander_the_great"],
+  "parameters": {
+    "endurance": "A", "endurance_plus": false,
+    "strength": "B", "strength_plus": false,
+    "agility": "D", "agility_plus": false,
+    "magic": "C", "magic_plus": false,
+    "luck": "A", "luck_plus": true
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/iskandar.geo.json",
+    "texture": "typemoonworld:textures/entity/iskandar.png",
+    "animation": "typemoonworld:animations/iskandar.animation.json"
+  },
+  "specialization": {
+    "dimensions": {"width": 0.86, "height": 2.12, "eye_height": 1.95},
+    "hand_item_offset": {"x": 0.12, "y": -0.9, "z": -0.2},
+    "default_weapon": "typemoonworld:iskandar_shortsword",
+    "immune_to_stone_axe_debuff": true,
+    "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "charge", "mounted_chariot_charge", "leadership_a", "military_tactics_b", "ionioi_hetairoi"]
+  },
+  "skills": ["magic_resistance_d", "riding_a_plus", "divinity_c", "leadership_a_iskandar", "military_tactics_b_iskandar"],
+  "noble_phantasm": "ionioi_hetairoi",
+  "noble_phantasms": ["gordius_wheel", "ionioi_hetairoi"],
+  "personality": {"obedience": "cooperative", "principle": "orderly", "morality": "good", "social": "warm", "combat": "aggressive", "starting_favor": 85.0},
+  "ai_config": "iskandar_ai",
+  "spawn_egg": {"primary": 9125407, "secondary": 14136426}
+}

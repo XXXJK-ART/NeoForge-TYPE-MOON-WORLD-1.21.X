@@ -41,7 +41,7 @@ class ServantTacticalResourcesTest {
             assertTrue(profile.tactical().maximumRange() <= 48.0);
          }
       }
-      assertEquals(23, profileIds.size());
+      assertEquals(27, profileIds.size());
    }
 
    @Test

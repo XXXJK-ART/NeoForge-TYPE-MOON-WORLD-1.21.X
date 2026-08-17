@@ -15,8 +15,11 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -82,6 +85,7 @@ public final class MasterCardProfile {
       TalentService.suspendActiveEffects(player);
       PassiveService.suspendEffects(player);
       BodyTrainingService.clear(player, vars);
+      clearTransientSkillState(player, vars);
       resetToProfileState(vars);
       // MasterStateManager synchronizes immediately; apply the target attributes first so
       // a previous sword attribute cannot auto-awaken Unlimited Blade Works during a switch.
@@ -98,6 +102,10 @@ public final class MasterCardProfile {
       vars.player_mana_egenerated_every_moment = profile.regenAmount();
       vars.player_restore_magic_moment = profile.regenIntervalTicks();
       profile.applyMagic(vars);
+      if (!"emiya_shirou".equals(profile.id())) {
+         grantCommonMasterMagecraft(vars, profile.id());
+      }
+      grantProfileMagicAnalysis(vars);
       grantMasterDetection(vars);
       TYPE_MOON_WORLD.queueServerWork(2, () -> {
          TypeMoonWorldModVariables.PlayerVariables delayedVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -285,9 +293,27 @@ public final class MasterCardProfile {
             learnJewelSuite(vars, 85.0);
             learn(vars, "fire_magic");
             vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, 75.0);
+            setKnownMagic(vars, "flame_array", 75.0);
          }, player -> {
             giveHighGemKit(player);
             give(player, new ItemStack(ModItems.RUBY_STAFF.get()));
+         });
+         case "leff_laynor_flauros" -> new Profile(masterId, "leff", 800.0, 5.0, 10, Attributes.NONE, vars -> {
+            vars.player_magic_attributes_wind = true;
+            vars.player_magic_attributes_imaginary_number = true;
+            setKnownMagic(vars, "aerial_stasis", 100.0);
+            setKnownMagic(vars, "aerial_ascent", 100.0);
+            setKnownMagic(vars, "magic_analysis", 90.0);
+            setKnownMagic(vars, "airflow_blade", 85.0);
+            setKnownMagic(vars, "suggestion_magic", 70.0);
+            setKnownMagic(vars, "reinforcement", 70.0);
+            setKnownMagic(vars, "detection", 90.0);
+            setKnownMagic(vars, "imaginary_displacement", 85.0);
+            setKnownMagic(vars, "imaginary_space", 85.0);
+            setKnownMagic(vars, "spiritron_cannon", 90.0);
+            grantLeffMasterMagicCrest(vars);
+         }, player -> {
+            give(player, new ItemStack(ModItems.MAGIC_BOOK_SPIRITRON_CANNON.get()));
          });
          default -> null;
       };
@@ -338,24 +364,40 @@ public final class MasterCardProfile {
    }
 
    private static void resetToProfileState(TypeMoonWorldModVariables.PlayerVariables vars) {
+      vars.is_magus = false;
+      vars.is_magic_circuit_open = false;
+      vars.magic_circuit_open_timer = 0.0;
       vars.learned_magics.clear();
       vars.magic_proficiencies.clear();
+      vars.talent_proficiencies.clear();
+      vars.passive_ranks.clear();
+      vars.martial_passive_last_threshold = 140;
+      vars.magic_passive_last_threshold = 290;
       vars.selected_magics.clear();
       vars.selected_magic_runtime_slot_indices.clear();
       vars.selected_magic_display_names.clear();
       vars.current_magic_index = 0;
       vars.active_wheel_index = 0;
       vars.clearAllWheelSlots();
+      vars.magic_cooldown = 0.0;
+      vars.analysis_lock_ticks = 0;
+      vars.magic_analysis_active = false;
       vars.crest_entries.clear();
       vars.crest_practice_count.clear();
       vars.mysticEyesInventory.setStackInSlot(0, ItemStack.EMPTY);
       vars.magicCrestInventory.setStackInSlot(0, ItemStack.EMPTY);
+      vars.is_mystic_eyes_active = false;
       vars.analyzed_items.clear();
       vars.projection_selected_item = ItemStack.EMPTY;
       vars.analyzed_structures.clear();
       vars.projection_selected_structure_id = "";
       vars.has_unlimited_blade_works = false;
+      vars.is_chanting_ubw = false;
+      vars.ubw_chant_progress = 0;
+      vars.ubw_chant_timer = 0;
+      vars.is_in_ubw = false;
       vars.proficiency_structural_analysis = 0.0;
+      vars.proficiency_magic_analysis = 0.0;
       vars.proficiency_projection = 0.0;
       vars.proficiency_reinforcement = 0.0;
       vars.proficiency_jewel_magic_shoot = 0.0;
@@ -382,6 +424,12 @@ public final class MasterCardProfile {
       vars.ganryu_learned = false;
       vars.ganryu_proficiency = 0.0;
       vars.ganryu_tsubame_unlocked = false;
+      vars.hokushin_learned = false;
+      vars.hokushin_proficiency = 0.0;
+      vars.hokushin_master_defeated = false;
+      vars.tennen_learned = false;
+      vars.tennen_proficiency = 0.0;
+      vars.tennen_master_defeated = false;
       vars.martial_ukemi_learned = false;
       vars.sword_barrel_mode = 0;
       vars.gandr_machine_gun_mode = 0;
@@ -394,9 +442,96 @@ public final class MasterCardProfile {
       vars.wind_magic_mode = 0;
       vars.earth_magic_mode = 0;
       vars.time_alter_mode = 0;
+      vars.time_alter_multiplier = 4;
       vars.reinforcement_mode = 0;
       vars.reinforcement_target = 0;
       vars.reinforcement_level = 1;
+      vars.is_sword_barrel_active = false;
+      vars.ubw_broken_phantasm_enabled = false;
+      vars.merlin_favor = 0;
+      vars.merlin_talk_counter = 0;
+      vars.crest_cast_context = false;
+      vars.servant_card_transformed = false;
+      vars.servant_card_id = "";
+      vars.servant_card_master_uuid = "";
+      vars.servant_card_contract_id = "";
+      vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
+      vars.servant_card_mana = 0.0;
+      vars.servant_card_max_mana = 0.0;
+      vars.servant_card_mana_regen = 0.0;
+      vars.servant_card_jump_charges = 0;
+      vars.servant_card_jump_recovery_ticks = 0;
+      vars.servant_card_jump_recovery_end = 0L;
+      vars.servant_card_skill_cooldowns = "";
+      vars.servant_card_skill_cooldown_ends = "";
+      vars.servant_card_np_cooldown = 0;
+      vars.servant_card_np_cooldown_end = 0L;
+      vars.servant_card_flying = false;
+      vars.servant_card_flight_mode = 0;
+      vars.servant_card_high_flight_until = 0L;
+      vars.servant_card_high_flight_cooldown_until = 0L;
+      vars.servant_card_oda_flight_ticks = 100;
+      vars.servant_card_oda_flight_cooldown_until = 0L;
+      vars.servant_card_oda_flight_recharge_at = 0L;
+      vars.servant_card_flight_forward = 0.0;
+      vars.servant_card_flight_strafe = 0.0;
+      vars.servant_card_flight_vertical = 0.0;
+      vars.servant_card_emiya_copied_noble_phantasms = "";
+      vars.servant_card_flight_toggle_cooldown = 0;
+      vars.servant_card_action_mode = 0;
+      vars.servant_card_transform_cooldown = 0;
+      vars.servant_card_release_cooldown = 0;
+      vars.servant_card_was_magus = false;
+      vars.servant_card_was_magic_circuit_open = false;
+      vars.servant_card_death_release = false;
+      vars.servant_card_medea_dragonfang_stock = 0;
+      vars.servant_card_medea_mana_charm_stock = 0;
+      vars.servant_card_medea_heal_charm_stock = 0;
+      vars.servant_card_paracelsus_stone_stock = 0;
+      vars.servant_card_paracelsus_diamond_shield_stock = 0;
+      vars.servant_card_arash_arrow_stock = 0;
+      vars.servant_card_royal_cannon_ammo = 0;
+      vars.servant_card_heracles_god_hand_lives = 0;
+      vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+      vars.servant_card_medusa_mystic_eyes_active = false;
+      vars.servant_card_hassan_cloak_broken = false;
+      vars.servant_card_hassan_zabaniya_animation_until = 0;
+      vars.servant_card_food_snapshot_valid = false;
+      vars.servant_card_saved_food_level = 20;
+      vars.servant_card_saved_saturation = 5.0F;
+      vars.servant_card_saved_exhaustion = 0.0F;
+      vars.servant_card_last_combat_tick = Long.MIN_VALUE;
+      vars.master_active = false;
+      vars.master_servant_uuid = "";
+      vars.master_servant_contract_id = "";
+      vars.master_command_spells = 0;
+      vars.master_command_spell_style = "default";
+      vars.master_command_spell_pose_active = false;
+      vars.master_revive_available = false;
+      vars.master_artificial_leyline_dimension = "";
+      vars.master_artificial_leyline_x = 0;
+      vars.master_artificial_leyline_y = 0;
+      vars.master_artificial_leyline_z = 0;
+      vars.master_artificial_leyline_bonus_active = false;
+      vars.servant_card_artificial_leyline_dimension = "";
+      vars.servant_card_artificial_leyline_x = 0;
+      vars.servant_card_artificial_leyline_y = 0;
+      vars.servant_card_artificial_leyline_z = 0;
+      vars.servant_card_artificial_leyline_bonus_active = false;
+   }
+
+   private static void clearTransientSkillState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      TalentService.clearActiveState(player);
+      PassiveService.suspendEffects(player);
+      MagicAnalysisService.cancel(player);
+      ManaBurstService.clear(player);
+      ServantCardFlightController.stop(player, vars, false);
+      ServantCardDefenseHandler.clear(player);
+      ServantCardTransformManager.clearServantRuntimeState(player, vars);
+      ServantCardTraitService.clear(player);
+      PassiveService.reconcileAttributes(player, vars);
+      player.getPersistentData().putBoolean("TypeMoonNoCooldown", false);
+      player.getPersistentData().putBoolean("UBWBrokenPhantasmEnabled", false);
    }
 
    private static CompoundTag saveInventory(ServerPlayer player) {
@@ -456,6 +591,90 @@ public final class MasterCardProfile {
       vars.proficiency_jewel_magic_release = Math.max(vars.proficiency_jewel_magic_release, proficiency);
    }
 
+   private static void grantCommonMasterMagecraft(TypeMoonWorldModVariables.PlayerVariables vars, String masterId) {
+      setKnownMagic(vars, "aerial_stasis", 100.0);
+      setKnownMagic(vars, "aerial_ascent", 100.0);
+      if (shouldGrantMasterSuggestionMagic(masterId)) {
+         setKnownMagic(vars, "suggestion_magic", 60.0);
+      }
+      setKnownMagic(vars, "reinforcement", 60.0);
+      if (shouldGrantMasterHealingMagic(masterId)) {
+         setKnownMagic(vars, "healing_magic", 60.0);
+      }
+      if (shouldGrantMasterMagicCrest(masterId)) {
+         grantCommonMasterMagicCrest(vars, masterId);
+      }
+   }
+
+   private static void setKnownMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, double proficiency) {
+      learn(vars, magicId);
+      MagicProficiencyService.set(vars, magicId, Math.max(MagicProficiencyService.get(vars, magicId), proficiency));
+   }
+
+   private static void grantCommonMasterMagicCrest(TypeMoonWorldModVariables.PlayerVariables vars, String masterId) {
+      ItemStack crest = new ItemStack(ModItems.MAGIC_CREST.get());
+      java.util.List<TypeMoonWorldModVariables.PlayerVariables.CrestEntry> entries = new java.util.ArrayList<>();
+      addMasterCrestEntry(entries, "aerial_stasis", masterId);
+      addMasterCrestEntry(entries, "aerial_ascent", masterId);
+      if (shouldGrantMasterSuggestionMagic(masterId)) {
+         addMasterCrestEntry(entries, "suggestion_magic", masterId);
+      }
+      addMasterCrestEntry(entries, "reinforcement", masterId);
+      if (shouldGrantMasterHealingMagic(masterId)) {
+         addMasterCrestEntry(entries, "healing_magic", masterId);
+      }
+      vars.crest_entries.clear();
+      vars.crest_entries.addAll(entries);
+      TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(crest, vars.crest_entries);
+      vars.magicCrestInventory.setStackInSlot(0, crest);
+   }
+
+   private static boolean shouldGrantMasterHealingMagic(String masterId) {
+      return "tohsaka_rin".equals(masterId) || "kotomine_kirei".equals(masterId);
+   }
+
+   private static boolean shouldGrantMasterMagicCrest(String masterId) {
+      return !"kotomine_kirei".equals(masterId) && !"leff_laynor_flauros".equals(masterId);
+   }
+
+   private static boolean shouldGrantMasterSuggestionMagic(String masterId) {
+      return !"kotomine_kirei".equals(masterId) && !"emiya_kiritsugu".equals(masterId);
+   }
+
+   private static void addMasterCrestEntry(
+      java.util.List<TypeMoonWorldModVariables.PlayerVariables.CrestEntry> entries, String magicId, String masterId
+   ) {
+      TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
+      entry.entryId = java.util.UUID.randomUUID().toString();
+      entry.magicId = magicId;
+      entry.presetPayload = new CompoundTag();
+      entry.sourceKind = "plunder";
+      entry.originOwnerUuid = "";
+      entry.originOwnerType = "master_card";
+      entry.originOwnerName = masterId == null ? "" : masterId;
+      entry.active = true;
+      entries.add(entry);
+   }
+
+   private static void grantLeffMasterMagicCrest(TypeMoonWorldModVariables.PlayerVariables vars) {
+      ItemStack crest = new ItemStack(ModItems.MAGIC_CREST.get());
+      java.util.List<TypeMoonWorldModVariables.PlayerVariables.CrestEntry> entries = new java.util.ArrayList<>();
+      addMasterCrestEntry(entries, "aerial_stasis", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "aerial_ascent", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "magic_analysis", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "airflow_blade", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "suggestion_magic", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "reinforcement", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "detection", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "imaginary_displacement", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "imaginary_space", "leff_laynor_flauros");
+      addMasterCrestEntry(entries, "spiritron_cannon", "leff_laynor_flauros");
+      vars.crest_entries.clear();
+      vars.crest_entries.addAll(entries);
+      TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(crest, vars.crest_entries);
+      vars.magicCrestInventory.setStackInSlot(0, crest);
+   }
+
    private static void learn(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       if (!vars.learned_magics.contains(magicId)) {
          vars.learned_magics.add(magicId);
@@ -465,6 +684,41 @@ public final class MasterCardProfile {
    private static void grantMasterDetection(TypeMoonWorldModVariables.PlayerVariables vars) {
       learn(vars, "detection");
       MagicProficiencyService.set(vars, "detection", Math.max(MagicProficiencyService.get(vars, "detection"), 90.0));
+   }
+
+   private static void grantProfileMagicAnalysis(TypeMoonWorldModVariables.PlayerVariables vars) {
+      int median = medianProfileMagicProficiency(vars);
+      learn(vars, "magic_analysis");
+      MagicProficiencyService.set(vars, "magic_analysis", Math.max(MagicProficiencyService.get(vars, "magic_analysis"), median));
+   }
+
+   private static int medianProfileMagicProficiency(TypeMoonWorldModVariables.PlayerVariables vars) {
+      java.util.ArrayList<Double> values = new java.util.ArrayList<>();
+      for (String magicId : MagicLearningStrategy.displayMagicIds(vars.learned_magics)) {
+         if (isExcludedFromAnalysisMedian(magicId)) continue;
+         double proficiency = MagicProficiencyService.get(vars, magicId);
+         if (proficiency > 0.0) {
+            values.add(proficiency);
+         }
+      }
+      if (values.isEmpty()) {
+         return 0;
+      }
+      java.util.Collections.sort(values);
+      int middle = values.size() / 2;
+      double median = values.size() % 2 == 1
+         ? values.get(middle)
+         : (values.get(middle - 1) + values.get(middle)) / 2.0;
+      return (int)Math.round(median);
+   }
+
+   private static boolean isExcludedFromAnalysisMedian(String magicId) {
+      return "magic_analysis".equals(magicId)
+         || "detection".equals(magicId)
+         || "bajiquan".equals(magicId)
+         || "ganryu".equals(magicId)
+         || "hokushin_ittoryu".equals(magicId)
+         || "tennen_rishin_ryu".equals(magicId);
    }
 
    private static void learnBajiquan(TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {
@@ -525,6 +779,7 @@ public final class MasterCardProfile {
          case "elsa_saijo" -> ModItems.MASTER_CARD_ELSA_SAIJO.get();
          case "waver" -> ModItems.MASTER_CARD_WAVER.get();
          case "tohsaka_tokiomi" -> ModItems.MASTER_CARD_TOHSAKA_TOKIOMI.get();
+         case "leff_laynor_flauros" -> ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get();
          default -> null;
       };
       return item == null ? ItemStack.EMPTY : new ItemStack(item);

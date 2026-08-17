@@ -7,9 +7,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterVisualStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
@@ -38,10 +38,9 @@ public final class MasterVisualStateSync {
    public static void onStartTracking(PlayerEvent.StartTracking event) {
       if (event.getEntity() instanceof ServerPlayer tracker) {
          Entity target = event.getTarget();
-         if (target instanceof ServerPlayer targetPlayer
-            && NetworkRegistry.hasChannel(tracker.connection, MasterVisualStateMessage.TYPE.id())) {
+         if (target instanceof ServerPlayer targetPlayer) {
             TypeMoonWorldModVariables.PlayerVariables vars = targetPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            PacketDistributor.sendToPlayer(tracker, build(targetPlayer, vars));
+            ModNetwork.sendToPlayer(tracker, build(targetPlayer, vars));
          }
       }
    }

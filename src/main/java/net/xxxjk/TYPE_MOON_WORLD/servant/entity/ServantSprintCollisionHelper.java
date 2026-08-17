@@ -36,6 +36,22 @@ public final class ServantSprintCollisionHelper {
       int maxBroken,
       float hardnessCap
    ) {
+      return tryPlayerSprintCollision(player, level, data, cooldownTag, fiery, damage, knockback, verticalKnockback, maxBroken, hardnessCap, null);
+   }
+
+   public static boolean tryPlayerSprintCollision(
+      ServerPlayer player,
+      ServerLevel level,
+      CompoundTag data,
+      String cooldownTag,
+      boolean fiery,
+      float damage,
+      double knockback,
+      double verticalKnockback,
+      int maxBroken,
+      float hardnessCap,
+      Vec3 direction
+   ) {
       long now = level.getGameTime();
       if (player.isSprinting()) {
          data.putLong(PLAYER_LAST_SPRINT_TAG, now);
@@ -48,10 +64,11 @@ public final class ServantSprintCollisionHelper {
          return false;
       }
 
-      Vec3 dir = playerLookDirection(player);
+      Vec3 dir = direction == null ? playerLookDirection(player) : direction.multiply(1.0, 0.0, 1.0);
       if (dir.lengthSqr() < 1.0E-4) {
          return false;
       }
+      dir = dir.normalize();
 
       int hit = hitForwardTargets(level, player, dir, fiery, damage, knockback, verticalKnockback, 1.85, 1.55);
       int broken = breakForwardCube(level, player, dir, maxBroken, hardnessCap);
@@ -70,7 +87,8 @@ public final class ServantSprintCollisionHelper {
       }
       boolean gawain = entity instanceof GawainEntity;
       boolean heracles = entity instanceof HeraclesEntity;
-      if (!gawain && !heracles) {
+      boolean lancelot = entity instanceof LancelotBerserkerEntity;
+      if (!gawain && !heracles && !lancelot) {
          return;
       }
       // NPC terrain damage represents a body collision with an obstacle, not heavy footsteps.
@@ -91,8 +109,9 @@ public final class ServantSprintCollisionHelper {
       }
 
       boolean fiery = entity instanceof GawainEntity gawainEntity && (GawainCombatHelper.hasSunBlessing(gawainEntity) || isUnderSun(level, gawainEntity.blockPosition()));
-      int hit = hitForwardTargets(level, entity, dir, fiery, heracles ? 10.0F : 8.0F, heracles ? 1.25 : 1.0, heracles ? 0.26 : 0.2, 1.85, 1.55);
-      int broken = breakForwardCube(level, entity, dir, heracles ? 32 : 27, heracles ? 45.0F : 42.0F);
+      int hit = hitForwardTargets(level, entity, dir, fiery, heracles || lancelot ? 10.0F : 8.0F, heracles || lancelot ? 1.25 : 1.0,
+         heracles || lancelot ? 0.26 : 0.2, 1.85, 1.55);
+      int broken = breakForwardCube(level, entity, dir, heracles ? 32 : lancelot ? 30 : 27, heracles ? 45.0F : lancelot ? 44.0F : 42.0F);
       if (hit <= 0 && broken <= 0) {
          return;
       }

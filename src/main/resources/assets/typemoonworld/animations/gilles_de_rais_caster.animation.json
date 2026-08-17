@@ -1,0 +1,41 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.gilles_de_rais_caster.idle": {
+      "loop": true,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.walk": {
+      "loop": true,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.summon": {
+      "animation_length": 1.0,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.gaze": {
+      "animation_length": 0.8,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.np": {
+      "animation_length": 2.0,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.slash": {
+      "animation_length": 0.6,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.sweep": {
+      "animation_length": 0.7,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.uppercut": {
+      "animation_length": 0.7,
+      "bones": {}
+    },
+    "animation.gilles_de_rais_caster.horizontal_swing": {
+      "animation_length": 0.7,
+      "bones": {}
+    }
+  }
+}

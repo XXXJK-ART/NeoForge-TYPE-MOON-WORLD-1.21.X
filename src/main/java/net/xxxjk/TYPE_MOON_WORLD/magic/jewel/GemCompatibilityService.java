@@ -9,7 +9,9 @@ public final class GemCompatibilityService {
    private static final Set<String> WHITELIST = Set.of(
       "gravity_magic", "reinforcement", "projection", "gander",
       "healing_magic", "suggestion_magic", "binding_magic",
-      "fire_magic", "water_magic", "wind_magic", "earth_magic"
+      "fire_magic", "water_magic", "wind_magic", "earth_magic",
+      "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array",
+      "aerial_stasis", "aerial_ascent", "flight_magic"
    );
 
    private GemCompatibilityService() {
@@ -52,6 +54,9 @@ public final class GemCompatibilityService {
          case "suggestion_magic" -> -12;
          case "binding_magic" -> -10;
          case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> -8;
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> -14;
+         case "aerial_stasis", "aerial_ascent" -> -4;
+         case "flight_magic" -> -24;
          default -> -30;
       };
    }
@@ -172,6 +177,30 @@ public final class GemCompatibilityService {
             default -> 0;
          };
          case "earth_magic" -> switch (type) {
+            case TOPAZ -> 12;
+            case EMERALD -> 8;
+            case CYAN -> -5;
+            default -> 0;
+         };
+         case "flame_array" -> switch (type) {
+            case RUBY -> 15;
+            case TOPAZ -> 5;
+            case SAPPHIRE -> -12;
+            default -> 0;
+         };
+         case "azure_water_array" -> switch (type) {
+            case SAPPHIRE -> 15;
+            case EMERALD -> 5;
+            case RUBY -> -12;
+            default -> 0;
+         };
+         case "gale_wind_array", "aerial_stasis", "aerial_ascent", "flight_magic" -> switch (type) {
+            case CYAN -> 15;
+            case WHITE_GEMSTONE -> 5;
+            case TOPAZ -> -5;
+            default -> 0;
+         };
+         case "rock_earth_array" -> switch (type) {
             case TOPAZ -> 12;
             case EMERALD -> 8;
             case CYAN -> -5;

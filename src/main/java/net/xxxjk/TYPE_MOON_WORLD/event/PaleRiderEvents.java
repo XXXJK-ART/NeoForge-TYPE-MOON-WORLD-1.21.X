@@ -160,6 +160,13 @@ public final class PaleRiderEvents {
          event.setNewAboutToBeSetTarget(rider.getPossessedHost());
          return;
       }
+      if (event.getEntity() instanceof Mob mob
+         && PaleRiderInfectionService.isUncontrollableServantSoldier(mob)
+         && PaleRiderInfectionService.isControlled(mob)) {
+         PaleRiderInfectionService.releaseControl(mob);
+         event.setNewAboutToBeSetTarget(null);
+         return;
+      }
       if (event.getEntity() instanceof Mob mob && PaleRiderInfectionService.isControlled(mob)) {
          event.setNewAboutToBeSetTarget(PaleRiderInfectionService.getCommandTarget(mob));
       }

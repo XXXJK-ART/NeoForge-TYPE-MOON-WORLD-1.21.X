@@ -1,0 +1,33 @@
+{
+    "format_version":  "1.8.0",
+    "animations":  {
+                       "animation.heaven_chain.shoot_animation":  {
+                                                                      "loop":  "hold_on_last_frame",
+                                                                      "animation_length":  0.45833,
+                                                                      "bones":  {
+                                                                                    "chain_root":  {
+                                                                                                       "scale":  {
+                                                                                                                     "0.0":  [
+                                                                                                                                 0.72,
+                                                                                                                                 0.72,
+                                                                                                                                 0.72
+                                                                                                                             ],
+                                                                                                                     "0.125":  [
+                                                                                                                                   1,
+                                                                                                                                   1,
+                                                                                                                                   1
+                                                                                                                               ]
+                                                                                                                 }
+                                                                                                   }
+                                                                                }
+                                                                  },
+                       "animation.heaven_chain.nomral":  {
+                                                             "loop":  true,
+                                                             "animation_length":  1
+                                                         },
+                       "animation.heaven_chain.normal":  {
+                                                             "loop":  true,
+                                                             "animation_length":  1
+                                                         }
+                   }
+}

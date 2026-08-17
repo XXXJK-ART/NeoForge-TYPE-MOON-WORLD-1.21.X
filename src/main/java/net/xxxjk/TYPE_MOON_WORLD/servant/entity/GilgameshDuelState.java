@@ -45,6 +45,7 @@ public final class GilgameshDuelState {
    private static final int FINALE_THUNDER_TICKS = 45 * 20;
    // Leave enough time for EA's BEAM -> IMPACT tick and controller cleanup.
    private static final int FINAL_TICK_AFTER_RELEASE = FINALE_RELEASE_TICKS + GilgameshEaBeamEntity.BEAM_TICKS + 32;
+   private static final double MIN_RUSH_SEPARATION = 2.4;
 
    private GilgameshDuelState() { }
 
@@ -94,6 +95,7 @@ public final class GilgameshDuelState {
       }
 
       // Once the synchronized finale begins, Enkidu is free to perform its rush.
+      lockGilgameshAnchor(gil, enkidu);
       if (now - data.getLong(FINALE_START) >= FINAL_TICK_AFTER_RELEASE) {
          abort(level, gil, enkidu);
          return false;
@@ -125,9 +127,9 @@ public final class GilgameshDuelState {
       if (enkidu == null || gil == null || level == null || impact == null || !areDuelPartners(gil, enkidu)) return;
       CompoundTag data = gil.getPersistentData();
       if (data.getBoolean(FINAL_IMPACT)) return;
-      data.putDouble(CENTER_X, impact.x);
-      data.putDouble(CENTER_Y, impact.y);
-      data.putDouble(CENTER_Z, impact.z);
+      Vec3 center = sanitizeDuelImpact(gil, enkidu, impact);
+      putCenter(data, center);
+      putCenter(enkidu.getPersistentData(), center);
       for (GilgameshEaBeamEntity beam : level.getEntitiesOfClass(GilgameshEaBeamEntity.class,
          gil.getBoundingBox().inflate(10.0), candidate -> candidate.isAlive() && candidate.isOwnedBy(gil))) {
          beam.stopForDuelImpact();
@@ -147,6 +149,21 @@ public final class GilgameshDuelState {
       }
       if (!data.getBoolean(SYNCHRONIZED_RELEASED)) lockPair(gil, enkidu);
       return true;
+   }
+
+   public static Vec3 enkiduRushStopPosition(EnkiduEntity enkidu, GilgameshEntity gil) {
+      if (enkidu == null || gil == null) return Vec3.ZERO;
+      Vec3 awayFromGil = horizontalDirection(gil.position(), enkidu.position());
+      double separation = Math.max(MIN_RUSH_SEPARATION, (gil.getBbWidth() + enkidu.getBbWidth()) * 0.5 + 1.1);
+      Vec3 stop = gil.position().add(awayFromGil.scale(separation));
+      return new Vec3(stop.x, gil.getY(), stop.z);
+   }
+
+   public static Vec3 duelClashPoint(EnkiduEntity enkidu, GilgameshEntity gil) {
+      if (enkidu == null || gil == null) return Vec3.ZERO;
+      Vec3 enkiduStop = enkiduRushStopPosition(enkidu, gil).add(0.0, enkidu.getBbHeight() * 0.55, 0.0);
+      Vec3 gilCore = gil.position().add(0.0, gil.getBbHeight() * 0.55, 0.0);
+      return enkiduStop.lerp(gilCore, 0.5);
    }
 
    public static boolean areDuelPartners(LivingEntity a, LivingEntity b) {
@@ -204,6 +221,12 @@ public final class GilgameshDuelState {
       gil.faceToward(enkidu.position().add(0, 0.9, 0)); enkidu.faceToward(gil.position().add(0, 0.9, 0));
    }
 
+   private static void lockGilgameshAnchor(GilgameshEntity gil, EnkiduEntity enkidu) {
+      gil.getNavigation().stop();
+      gil.setDeltaMovement(Vec3.ZERO);
+      gil.faceToward(enkidu.position().add(0, 0.9, 0));
+   }
+
    private static void beginRetreat(GilgameshEntity gil, EnkiduEntity enkidu, long now) {
       Vec3 line = enkidu.position().subtract(gil.position()).multiply(1.0, 0.0, 1.0);
       if (line.lengthSqr() < 1.0E-4) line = new Vec3(1.0, 0.0, 0.0);
@@ -245,8 +268,9 @@ public final class GilgameshDuelState {
       gil.setPos(readPos(data, RETREAT_GIL_X, RETREAT_GIL_Y, RETREAT_GIL_Z));
       enkidu.setPos(readPos(data, RETREAT_ENK_X, RETREAT_ENK_Y, RETREAT_ENK_Z));
       Vec3 center = gil.position().lerp(enkidu.position(), 0.5);
-      putPos(data, CENTER_X, CENTER_Y, CENTER_Z, center);
+      putCenter(data, center);
       copyRetreatData(data, enkidu.getPersistentData());
+      putCenter(enkidu.getPersistentData(), center);
       data.putBoolean(RELEASED, true);
       // Start both charge controllers immediately after the retreat. EA's
       // unlock/draw prelude runs inside this same fifteen-second window.
@@ -318,5 +342,24 @@ public final class GilgameshDuelState {
       data.remove(RUSH_STARTED); data.remove(RUSH_TICK); data.remove(CENTER_X); data.remove(CENTER_Y); data.remove(CENTER_Z);
       data.remove(FINAL_IMPACT); data.remove("GilEnkiduDuelOldInvulnerable");
       data.remove(VOICE_PLAYED);
+   }
+
+   private static Vec3 sanitizeDuelImpact(GilgameshEntity gil, EnkiduEntity enkidu, Vec3 impact) {
+      Vec3 fallback = duelClashPoint(enkidu, gil);
+      if (impact == null || !Double.isFinite(impact.x) || !Double.isFinite(impact.y) || !Double.isFinite(impact.z)) {
+         return fallback;
+      }
+      Vec3 gilCore = gil.position().add(0.0, gil.getBbHeight() * 0.55, 0.0);
+      double minimumDistance = Math.max(1.2, (gil.getBbWidth() + enkidu.getBbWidth()) * 0.45);
+      return impact.distanceToSqr(gilCore) < minimumDistance * minimumDistance ? fallback : impact;
+   }
+
+   private static Vec3 horizontalDirection(Vec3 from, Vec3 to) {
+      Vec3 line = to.subtract(from).multiply(1.0, 0.0, 1.0);
+      return line.lengthSqr() < 1.0E-4 ? new Vec3(1.0, 0.0, 0.0) : line.normalize();
+   }
+
+   private static void putCenter(CompoundTag data, Vec3 center) {
+      putPos(data, CENTER_X, CENTER_Y, CENTER_Z, center);
    }
 }

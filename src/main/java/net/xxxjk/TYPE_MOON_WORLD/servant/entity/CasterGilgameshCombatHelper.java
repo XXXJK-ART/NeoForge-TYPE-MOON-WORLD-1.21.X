@@ -44,7 +44,7 @@ public final class CasterGilgameshCombatHelper {
    public static final int MAX_AMMO = 5000;
    public static final int STARTING_AMMO = 500;
    public static final int CANNON_SHOTS_PER_ROUND = 30;
-   public static final float CANNON_DAMAGE_PER_SHOT = 30.0F;
+   public static final float CANNON_DAMAGE_PER_SHOT = 45.0F;
    public static final float CANNON_EXPLOSION_RADIUS = 3.0F;
    private static final String LAST_LEADER = "CasterGilgameshLastLeader";
    private static final String LAST_RETURN = "CasterGilgameshLastReturn";

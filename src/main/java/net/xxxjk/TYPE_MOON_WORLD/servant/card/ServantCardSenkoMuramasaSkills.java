@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.BattlefieldAreaService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
@@ -32,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMuramasaForgeScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -94,7 +94,7 @@ public final class ServantCardSenkoMuramasaSkills {
 
    public static boolean openForgeSelection(ServerPlayer player) {
       if (!isMuramasa(player)) return false;
-      PacketDistributor.sendToPlayer(player, new OpenMuramasaForgeScreenMessage(), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenMuramasaForgeScreenMessage());
       return true;
    }
 
@@ -140,6 +140,33 @@ public final class ServantCardSenkoMuramasaSkills {
 
    public static boolean performKarma(ServerPlayer player) {
       player.getPersistentData().putLong(KARMA_UNTIL, player.level().getGameTime() + 200L);
+      return true;
+   }
+
+   public static boolean tryBypassDefenseAttack(ServerPlayer player, LivingEntity target) {
+      if (!isMuramasa(player) || target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
+         return false;
+      }
+      long now = player.level().getGameTime();
+      CompoundTag data = player.getPersistentData();
+      boolean bypass = now < data.getLong(KARMA_UNTIL)
+         || now < data.getLong(TRIAL_UNTIL) && player.getRandom().nextFloat() < 0.30F;
+      if (!bypass) {
+         return false;
+      }
+      double damage = MuramasaCombatHelper.precisionStrikeDamage(
+         player,
+         target,
+         now < data.getLong(TRIAL_UNTIL),
+         isProjectedMuramasaItem(player.getMainHandItem()),
+         now < data.getLong(KARMA_UNTIL)
+      );
+      MuramasaCombatHelper.applyNoDefenseDamage(player, target, (float)damage);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK,
+            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+            2, 0.2, 0.2, 0.2, 0.0);
+      }
       return true;
    }
 
@@ -338,11 +365,6 @@ public final class ServantCardSenkoMuramasaSkills {
 
    private static void applyTrueDamage(ServerPlayer player, LivingEntity target, float amount) {
       if (!target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) return;
-      float before = target.getHealth();
-      target.invulnerableTime = 0;
-      target.hurt(player.damageSources().magic(), amount);
-      target.invulnerableTime = 0;
-      float expected = Math.max(0.0F, before - amount);
-      if (target.isAlive() && target.getHealth() > expected) target.setHealth(expected);
+      MuramasaCombatHelper.applyNoDefenseDamage(player, target, amount);
    }
 }

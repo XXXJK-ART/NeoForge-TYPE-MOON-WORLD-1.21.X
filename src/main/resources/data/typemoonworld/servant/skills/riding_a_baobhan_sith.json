@@ -1,0 +1,26 @@
+{
+  "id": "riding_a_baobhan_sith",
+  "display_name": "Riding A",
+  "display_name_zh": "骑乘 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mobility_bonus",
+      "params": {
+        "movement_speed_bonus": 0.08
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "gap_close",
+        "strength": 0.35,
+        "requires": ["mobile"]
+      }
+    ]
+  }
+}

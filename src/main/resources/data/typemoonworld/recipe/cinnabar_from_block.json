@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "typemoonworld:cinnabar_block"
+    }
+  ],
+  "result": {
+    "id": "typemoonworld:cinnabar",
+    "count": 9
+  }
+}

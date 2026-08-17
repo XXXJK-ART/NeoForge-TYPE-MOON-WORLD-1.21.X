@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -47,7 +48,6 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.PlayState;
 import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.constant.DataTickets;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** Marker item for treasures exposed from Gilgamesh's vault. */
@@ -65,6 +65,11 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
    }
 
    public String modelId() { return this.modelId; }
+
+   @Override
+   public boolean isFoil(ItemStack stack) {
+      return LancelotCombatHelper.isKnightOfOwner(stack) || super.isFoil(stack);
+   }
 
    @Override
    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
@@ -388,9 +393,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       if ("ea".equals(this.modelId)) controllers.add(new AnimationController<>(this, "ea_spin", 0, this::eaAnimation));
    }
    private PlayState eaAnimation(AnimationState<GilgameshNoblePhantasmItem> state) {
-      Entity entity = state.getData(DataTickets.ENTITY);
-      boolean active = entity instanceof LivingEntity living && GilgameshEaBeamEntity.isEaActiveFor(living);
-      state.getController().setAnimation(RawAnimation.begin().thenLoop(active ? "xuanzhuan2" : "idle"));
+      state.getController().setAnimation(RawAnimation.begin().thenLoop("xuanzhuan2"));
       return PlayState.CONTINUE;
    }
    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }

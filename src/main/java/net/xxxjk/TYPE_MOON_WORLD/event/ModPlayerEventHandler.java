@@ -30,8 +30,12 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardBaobhanSithSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLancelotBerserkerSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 
 @EventBusSubscriber(
    modid = "typemoonworld"
@@ -82,6 +86,11 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
@@ -107,6 +116,11 @@ public class ModPlayerEventHandler {
          }
          if (handleZhaoYunSpearRightClick(event.getEntity(), event.getHand())) {
             event.setCanceled(true);
+            return;
+         }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
             return;
          }
          if (event.getEntity() instanceof ServerPlayer player) {
@@ -138,8 +152,24 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
+         if (handleLancelotKnightOfOwnerThrow(event.getEntity(), event.getHand())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
+         if (event.getEntity() instanceof ServerPlayer player
+            && ServantCardBaobhanSithSkills.tryCollectHairMedium(player, event.getHand(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
+            return;
+         }
+         if (handleHundredFacesPersonaCommand(event.getEntity(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
             return;
          }
          if (handleAvalonArtoriaCardActivation(event.getEntity(), event.getHand(), event.getTarget())) {
@@ -148,6 +178,22 @@ public class ModPlayerEventHandler {
             return;
          }
       }
+   }
+
+   private static boolean handleHundredFacesPersonaCommand(Player player, Entity target) {
+      if (!(player instanceof ServerPlayer serverPlayer)
+         || !serverPlayer.isCrouching()
+         || !(target instanceof HundredFacesHassanPersonaEntity persona)
+         || !ServantCardHundredFacesHassanSkills.isActiveCard(serverPlayer)
+         || !ServantCardHundredFacesHassanSkills.isOwnedBy(persona, serverPlayer)) {
+         return false;
+      }
+      return ServantCardHundredFacesHassanSkills.openSingleCommand(serverPlayer, persona);
+   }
+
+   private static boolean handleLancelotKnightOfOwnerThrow(Player player, InteractionHand hand) {
+      return player instanceof ServerPlayer serverPlayer
+         && ServantCardLancelotBerserkerSkills.tryThrowKnightOfOwnerItem(serverPlayer, hand);
    }
 
    @SubscribeEvent
@@ -194,10 +240,18 @@ public class ModPlayerEventHandler {
          if (vars.servant_card_transformed && "li_shuwen".equals(vars.servant_card_id)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills.revealCircleRealm(player);
          }
+         if (vars.servant_card_transformed && "senko_muramasa".equals(vars.servant_card_id)
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSenkoMuramasaSkills.tryBypassDefenseAttack(player, target)) {
+            event.setCanceled(true);
+            return;
+         }
          if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
          }
          if (vars.servant_card_transformed) {
+            if ("baobhan_sith".equals(vars.servant_card_id)) {
+               ServantCardBaobhanSithSkills.onNormalAttack(player, target);
+            }
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
             if ("zhao_yun_rider".equals(vars.servant_card_id)) {
                ServantCardZhaoYunSkills.markCombatActivity(player);

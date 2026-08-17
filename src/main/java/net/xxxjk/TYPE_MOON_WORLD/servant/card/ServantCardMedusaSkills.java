@@ -344,9 +344,12 @@ public final class ServantCardMedusaSkills {
          }
       }
       pegasus.setFlyingMode(true);
+      pegasus.markFlightControlled(now);
       long chargeUntil = data.getLong(MEDUSA_BELLEROPHON_CHARGE_UNTIL_TAG);
       boolean charging = now < chargeUntil;
-      Vec3 desired = computeMedusaControlledPegasusVelocity(player, pegasus, charging);
+      Vec3 desired = charging
+         ? computeMedusaPegasusVelocity(player, pegasus, now)
+         : computeMedusaControlledPegasusVelocity(player, pegasus, false);
       if (charging) {
          orientMedusaPegasus(player, pegasus, desired);
       } else {
@@ -383,9 +386,12 @@ public final class ServantCardMedusaSkills {
          clearMedusaBellerophonData(player);
          return;
       }
-      pegasus.moveTo(player.getX(), player.getY() + 0.2, player.getZ(), player.getYRot(), player.getXRot());
+      pegasus.moveTo(player.getX(), player.getY() + 1.0, player.getZ(), player.getYRot(), player.getXRot());
       pegasus.setSummoner(player);
       pegasus.setFlyingMode(true);
+      pegasus.markFlightControlled(level.getGameTime());
+      Vec3 launch = player.getLookAngle().normalize();
+      pegasus.setDeltaMovement(launch.x * 0.35, Math.max(0.25, launch.y * 0.35), launch.z * 0.35);
       level.addFreshEntity(pegasus);
       player.startRiding(pegasus, true);
       data.putUUID(MEDUSA_BELLEROPHON_PEGASUS_UUID_TAG, pegasus.getUUID());
@@ -410,12 +416,17 @@ public final class ServantCardMedusaSkills {
 
    private static Vec3 computeMedusaInitialChargeTarget(ServerPlayer player) {
       LivingEntity target = findLookTarget(player, 22.0, 2.4);
-      Vec3 origin = player.position();
+      Vec3 origin = player.position().add(0.0, 1.1, 0.0);
       Vec3 aim = target != null && target.isAlive()
          ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin)
          : player.getLookAngle();
       if (aim.lengthSqr() < 1.0E-4) {
          aim = new Vec3(0.0, 0.0, 1.0);
+      }
+      if (target == null && aim.y < 0.12) {
+         aim = new Vec3(aim.x, 0.12, aim.z);
+      } else if (target != null && aim.y < 0.04) {
+         aim = new Vec3(aim.x, 0.04, aim.z);
       }
       return origin.add(aim.normalize().scale(MEDUSA_BELLEROPHON_CHARGE_DISTANCE));
    }
@@ -445,7 +456,7 @@ public final class ServantCardMedusaSkills {
          aim = player.getLookAngle();
       }
       aim = aim.normalize();
-      return new Vec3(aim.x * speed, Mth.clamp(aim.y * speed, -0.25, 0.35), aim.z * speed);
+      return new Vec3(aim.x * speed, Mth.clamp(aim.y * speed, -0.18, 0.55), aim.z * speed);
    }
 
    private static Vec3 computeMedusaControlledPegasusVelocity(ServerPlayer player, MedusaPegasusEntity pegasus, boolean charging) {
@@ -469,8 +480,11 @@ public final class ServantCardMedusaSkills {
          if (strafe == 0.0 && forwardInput == 0.0 && coastTicks > 0) {
             data.putInt(MEDUSA_PEGASUS_COAST_TICKS_TAG, coastTicks - 1);
             Vec3 inertia = pegasus.getDeltaMovement().multiply(0.88, 0.82, 0.88);
-            double vertical = ascending && !descending ? 0.8 : descending && !ascending ? -0.8 : inertia.y;
-            return new Vec3(inertia.x, Mth.clamp(vertical, -0.8, 0.8), inertia.z);
+            double vertical = ascending && !descending ? 1.0 : descending && !ascending ? -0.75 : inertia.y;
+            if (!descending && pegasus.onGround()) {
+               vertical = Math.max(vertical, 0.35);
+            }
+            return new Vec3(inertia.x, Mth.clamp(vertical, -0.75, 1.0), inertia.z);
          }
          data.remove(MEDUSA_PEGASUS_COAST_TICKS_TAG);
          if (strafe == 0.0 && forwardInput == 0.0 && !ascending && !descending) return Vec3.ZERO;
@@ -489,20 +503,23 @@ public final class ServantCardMedusaSkills {
 
       double vertical = 0.0;
       if (ascending && !descending) {
-         vertical = 0.8;
+         vertical = 1.0;
       } else if (descending && !ascending) {
-         vertical = -0.8;
+         vertical = -0.75;
       } else if (forwardInput > 0.0) {
-         vertical = Mth.clamp(-Math.sin(player.getXRot() * Math.PI / 180.0) * Math.abs(forwardInput) * 0.46, -0.28, 0.34);
+         vertical = Mth.clamp(-Math.sin(player.getXRot() * Math.PI / 180.0) * Math.abs(forwardInput) * 0.72, -0.24, 0.62);
       } else {
          vertical = Mth.clamp(pegasus.getDeltaMovement().y * 0.45, -0.12, 0.12);
+      }
+      if (!descending && pegasus.onGround()) {
+         vertical = Math.max(vertical, 0.35);
       }
       return new Vec3(horizontal.x * speed, vertical, horizontal.z * speed);
    }
 
    private static void applyMedusaChargeHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
-      Vec3 forward = pegasus.getLookAngle().normalize();
-      AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(2.8)).inflate(2.1, 1.2, 2.1);
+      Vec3 forward = medusaPegasusMotionForward(pegasus);
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(3.2)).inflate(2.3, 1.8, 2.3);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now + 20L);
          pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
@@ -517,8 +534,8 @@ public final class ServantCardMedusaSkills {
    }
 
    private static void applyMedusaRideCollisionHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
-      Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 0.5, 1.5);
-      AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(1.9, 1.1, 1.9);
+      Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 1.0, 1.5);
+      AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(2.0, 1.6, 2.0);
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now + 10L);
          victim.invulnerableTime = 0;
@@ -560,6 +577,15 @@ public final class ServantCardMedusaSkills {
       if (pegasus.isAlive()) {
          pegasus.discard();
       }
+   }
+
+   private static Vec3 medusaPegasusMotionForward(MedusaPegasusEntity pegasus) {
+      Vec3 motion = pegasus.getDeltaMovement();
+      if (motion.lengthSqr() > 1.0E-4) {
+         return motion.normalize();
+      }
+      Vec3 look = pegasus.getLookAngle();
+      return look.lengthSqr() > 1.0E-4 ? look.normalize() : new Vec3(0.0, 0.0, 1.0);
    }
 
    private static void pullTowardPegasusHead(MedusaPegasusEntity pegasus, LivingEntity victim, Vec3 forward, double strength, double lift) {
@@ -660,11 +686,12 @@ public final class ServantCardMedusaSkills {
       int length = charging ? 7 : 4;
       int radius = charging ? 2 : 1;
       int height = charging ? 4 : 2;
+      int minYOffset = desired.y > 0.12 ? 0 : -1;
       int broken = 0;
       int maxBroken = charging ? 80 : 24;
       for (int i = 0; i < length; i++) {
          BlockPos check = base.offset((int)Math.round(forward.x * (i + 1)), 0, (int)Math.round(forward.z * (i + 1)));
-         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-radius, -1, -radius), check.offset(radius, height, radius))) {
+         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-radius, minYOffset, -radius), check.offset(radius, height, radius))) {
             if (destroyMedusaRideBlock(level, pos, charging) && ++broken >= maxBroken) {
                break;
             }

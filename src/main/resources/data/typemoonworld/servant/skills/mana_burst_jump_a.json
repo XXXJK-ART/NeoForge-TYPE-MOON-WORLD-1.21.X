@@ -1,0 +1,19 @@
+{
+  "id": "mana_burst_jump_a",
+  "display_name": "Mana Burst (Jump) A",
+  "display_name_zh": "Mana Burst (Jump) A",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 300,
+  "duration_ticks": 200,
+  "effects": [
+    {
+      "effect_type": "mobility_burst",
+      "params": {
+        "movement_speed_bonus": 0.5,
+        "jump_bonus": 1.0,
+        "evasion_recovery_multiplier": 2.0
+      }
+    }
+  ]
+}

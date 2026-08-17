@@ -1,0 +1,24 @@
+{
+  "id": "aroundight",
+  "display_name": "Aroundight",
+  "display_name_zh": "无毁的湖光",
+  "rank": "A",
+  "type": "anti_personnel",
+  "target_type": "self",
+  "mp_cost": 50,
+  "cooldown_ticks": 220,
+  "effects": [
+    {
+      "effect_type": "aroundight_mode",
+      "params": {
+        "drain_mp_per_second": 5,
+        "strength_multiplier": 2.0,
+        "endurance_multiplier": 2.0,
+        "agility_multiplier": 2.0,
+        "st_check_multiplier": 2.0,
+        "dragon_damage_bonus": 0.5,
+        "seals_knight_of_owner": true
+      }
+    }
+  ]
+}

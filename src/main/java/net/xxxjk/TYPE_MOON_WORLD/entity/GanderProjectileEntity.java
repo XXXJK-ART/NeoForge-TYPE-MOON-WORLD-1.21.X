@@ -30,7 +30,9 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
+import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.BaobhanSithServantSkills;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
@@ -169,18 +171,29 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                         duration = MercurySwordMagicAmplifier.amplifyDuration(owner, duration);
                         curseDamage = MercurySwordMagicAmplifier.amplifyDamage(owner, curseDamage);
                      }
-                     livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
-                     curseDamage = MagicResistanceHelper.applyMagicDamageReduction(
-                        livingTarget, this.damageSources().magic(), curseDamage, MagicComplexity.SIMPLE_ACTION,
-                        this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
-                     livingTarget.hurt(this.damageSources().magic(), curseDamage);
-                     int effectDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-                        livingTarget, duration, MagicComplexity.SIMPLE_ACTION,
-                        this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+                     boolean baobhanSithCurse = "baobhan_sith_curse".equals(this.sourceMagicId);
+                     int effectDuration = duration;
+                     if (baobhanSithCurse) {
+                        livingTarget.invulnerableTime = 0;
+                        livingTarget.hurt(this.damageSources().source(BaobhanSithDamageTypes.CURSE, this, this.getOwner()), BASE_HIT_DAMAGE + curseDamage);
+                        livingTarget.invulnerableTime = 0;
+                     } else {
+                        livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
+                        curseDamage = MagicResistanceHelper.applyMagicDamageReduction(
+                           livingTarget, this.damageSources().magic(), curseDamage, MagicComplexity.SIMPLE_ACTION,
+                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+                        livingTarget.hurt(this.damageSources().magic(), curseDamage);
+                        effectDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
+                           livingTarget, duration, MagicComplexity.SIMPLE_ACTION,
+                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+                     }
                      if (effectDuration > 0) {
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, effectDuration, amplifier, false, true, true));
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, effectDuration, amplifier, false, true, true));
                         livingTarget.addEffect(new MobEffectInstance(MobEffects.CONFUSION, Math.max(40, effectDuration / 2), amplifier, false, true, true));
+                     }
+                     if (baobhanSithCurse) {
+                        BaobhanSithServantSkills.onCurseProjectileHit(this.getOwner(), livingTarget);
                      }
                   }
 

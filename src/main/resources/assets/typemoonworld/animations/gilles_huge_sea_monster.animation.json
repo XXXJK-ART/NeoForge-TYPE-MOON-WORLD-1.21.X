@@ -1,0 +1,21 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.gilles_huge_sea_monster.idle": {
+      "loop": true,
+      "bones": {}
+    },
+    "animation.gilles_huge_sea_monster.walk": {
+      "loop": true,
+      "bones": {}
+    },
+    "animation.gilles_huge_sea_monster.slam": {
+      "animation_length": 1.2,
+      "bones": {}
+    },
+    "animation.gilles_huge_sea_monster.grab": {
+      "animation_length": 1.0,
+      "bones": {}
+    }
+  }
+}

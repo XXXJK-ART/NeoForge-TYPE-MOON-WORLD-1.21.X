@@ -7,9 +7,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -34,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacement
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HakuryuRideMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CastMagicMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CycleMagicMessage;
@@ -131,7 +135,18 @@ public class TypeMoonWorldModKeyMappings {
       private static float lastServantFlightStrafe = Float.NaN;
       private static float lastServantFlightVertical = Float.NaN;
       private static int manaBurstInputSendDelay = 0;
+      private static int manaBurstInputKeepaliveChecks = 0;
+      private static float lastManaBurstForward = Float.NaN;
+      private static float lastManaBurstStrafe = Float.NaN;
+      private static boolean lastManaBurstJump = false;
+      private static boolean lastManaBurstSneak = false;
       private static int paleRiderInputSendDelay = 0;
+      private static int paleRiderInputKeepaliveChecks = 0;
+      private static float lastPaleRiderForward = Float.NaN;
+      private static float lastPaleRiderStrafe = Float.NaN;
+      private static float lastPaleRiderVertical = Float.NaN;
+      private static float lastPaleRiderYaw = Float.NaN;
+      private static float lastPaleRiderPitch = Float.NaN;
       private static long castPressStartMs = -1L;
       private static boolean castLongTriggered = false;
       private static boolean machineGunCastKeyDown = false;
@@ -163,6 +178,22 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.isUseItem()) {
+            if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount
+               && !isHakuryuMountedUseReserved(player, vars)) {
+               PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+            if (minecraft.hitResult instanceof EntityHitResult entityHit
+               && entityHit.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount) {
+               PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
+               event.setCanceled(true);
+               event.setSwingHand(true);
+               return;
+            }
+         }
          if (isClientGanryuActive(player, vars)) {
             boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
             if (event.isAttack() && !blockTarget) {
@@ -204,6 +235,13 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
          }
+         if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+            player.swing(InteractionHand.MAIN_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+         }
          if (event.isUseItem() && player.isCrouching() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -217,6 +255,14 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          if (!event.isAttack()) {
+            return;
+         }
+         if (isClientDiarmuidDualWieldActive(player, vars)
+            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            player.swing(InteractionHand.OFF_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
             return;
          }
          if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
@@ -692,11 +738,24 @@ public class TypeMoonWorldModKeyMappings {
             if (paleRiderInputSendDelay > 0) {
                paleRiderInputSendDelay--;
             } else {
-               PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical, yaw, pitch), new CustomPacketPayload[0]);
+               boolean changed = forward != lastPaleRiderForward || strafe != lastPaleRiderStrafe || vertical != lastPaleRiderVertical
+                  || Float.isNaN(lastPaleRiderYaw) || Math.abs(Mth.degreesDifference(lastPaleRiderYaw, yaw)) >= 2.0F
+                  || Float.isNaN(lastPaleRiderPitch) || Math.abs(pitch - lastPaleRiderPitch) >= 2.0F;
+               boolean moving = forward != 0.0F || strafe != 0.0F || vertical != 0.0F;
+               int keepaliveChecks = moving ? 2 : 10;
+               if (changed || ++paleRiderInputKeepaliveChecks >= keepaliveChecks) {
+                  PacketDistributor.sendToServer(new PaleRiderPossessionInputMessage(forward, strafe, vertical, yaw, pitch), new CustomPacketPayload[0]);
+                  lastPaleRiderForward = forward;
+                  lastPaleRiderStrafe = strafe;
+                  lastPaleRiderVertical = vertical;
+                  lastPaleRiderYaw = yaw;
+                  lastPaleRiderPitch = pitch;
+                  paleRiderInputKeepaliveChecks = 0;
+               }
                paleRiderInputSendDelay = 2;
             }
          } else {
-            paleRiderInputSendDelay = 0;
+            clearPaleRiderInputState();
          }
          for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
             if (isHoldServantCardSkill(vars, slot)) {
@@ -760,6 +819,7 @@ public class TypeMoonWorldModKeyMappings {
 
       public static void clearClientInputState() {
          clearServantCardInputState();
+         clearManaBurstInputState();
          bajiquanJumpDown = false;
          bajiquanCrouchDown = false;
          ganryuJumpDown = false;
@@ -778,10 +838,20 @@ public class TypeMoonWorldModKeyMappings {
          lastServantFlightForward = Float.NaN;
          lastServantFlightStrafe = Float.NaN;
          lastServantFlightVertical = Float.NaN;
-         paleRiderInputSendDelay = 0;
+         clearPaleRiderInputState();
          for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
             servantCardHoldDown[slot] = false;
          }
+      }
+
+      private static void clearPaleRiderInputState() {
+         paleRiderInputSendDelay = 0;
+         paleRiderInputKeepaliveChecks = 0;
+         lastPaleRiderForward = Float.NaN;
+         lastPaleRiderStrafe = Float.NaN;
+         lastPaleRiderVertical = Float.NaN;
+         lastPaleRiderYaw = Float.NaN;
+         lastPaleRiderPitch = Float.NaN;
       }
 
       private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
@@ -808,7 +878,16 @@ public class TypeMoonWorldModKeyMappings {
             || "cu_chulainn".equals(servantId)
             || "oda_nobunaga".equals(servantId)
             || "enkidu".equals(servantId)
-            || "gilgamesh".equals(servantId);
+            || "gilgamesh".equals(servantId)
+            || "diarmuid_ua_duibhne".equals(servantId);
+      }
+
+      private static boolean isClientDiarmuidDualWieldActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars.servant_card_transformed
+            && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
+            && vars.servant_card_action_mode == 1
+            && player.getMainHandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem
+            && player.getOffhandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {
@@ -850,10 +929,10 @@ public class TypeMoonWorldModKeyMappings {
          if (minecraft.options == null
             || player == null
             || vars == null
-            || vars.servant_card_transformed
+            || (vars.servant_card_transformed && !isArtoriaServantCard(vars))
             || vars.master_card_active
             || !canSendManaBurstInput(vars)) {
-            manaBurstInputSendDelay = 0;
+            clearManaBurstInputState();
             return;
          }
          if (manaBurstInputSendDelay > 0) {
@@ -862,19 +941,42 @@ public class TypeMoonWorldModKeyMappings {
          }
 
          float forward = (minecraft.options.keyUp.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyDown.isDown() ? -1.0F : 0.0F);
-         float strafe = (minecraft.options.keyLeft.isDown() ? 1.0F : 0.0F) + (minecraft.options.keyRight.isDown() ? -1.0F : 0.0F);
+         float strafe = (minecraft.options.keyLeft.isDown() ? -1.0F : 0.0F) + (minecraft.options.keyRight.isDown() ? 1.0F : 0.0F);
          boolean jump = minecraft.options.keyJump.isDown();
          boolean sneak = minecraft.options.keyShift.isDown();
          if (forward != 0.0F || strafe != 0.0F || jump || sneak) {
-            PacketDistributor.sendToServer(new ManaBurstInputMessage(forward, strafe, jump, sneak), new CustomPacketPayload[0]);
+            boolean changed = forward != lastManaBurstForward || strafe != lastManaBurstStrafe
+               || jump != lastManaBurstJump || sneak != lastManaBurstSneak;
+            if (changed || ++manaBurstInputKeepaliveChecks >= 3) {
+               PacketDistributor.sendToServer(new ManaBurstInputMessage(forward, strafe, jump, sneak), new CustomPacketPayload[0]);
+               lastManaBurstForward = forward;
+               lastManaBurstStrafe = strafe;
+               lastManaBurstJump = jump;
+               lastManaBurstSneak = sneak;
+               manaBurstInputKeepaliveChecks = 0;
+            }
             manaBurstInputSendDelay = 1;
          } else {
+            clearManaBurstInputState();
             manaBurstInputSendDelay = 2;
          }
       }
 
+      private static void clearManaBurstInputState() {
+         manaBurstInputSendDelay = 0;
+         manaBurstInputKeepaliveChecks = 0;
+         lastManaBurstForward = Float.NaN;
+         lastManaBurstStrafe = Float.NaN;
+         lastManaBurstJump = false;
+         lastManaBurstSneak = false;
+      }
+
       private static boolean canSendManaBurstInput(TypeMoonWorldModVariables.PlayerVariables vars) {
-         return vars.learned_magics.contains("mana_burst") || vars.selected_magics.contains("mana_burst");
+         return isArtoriaServantCard(vars) || vars.learned_magics.contains("mana_burst") || vars.selected_magics.contains("mana_burst");
+      }
+
+      private static boolean isArtoriaServantCard(TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars != null && vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id);
       }
 
       private static int getTapCastPoseTicks(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -916,6 +1018,13 @@ public class TypeMoonWorldModKeyMappings {
          return player != null && vars != null && vars.bajiquan_learned && vars.is_magic_circuit_open && !vars.servant_card_transformed
             && player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty()
             && BajiquanCombatService.MAGIC_ID.equals(net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService.getCurrentMagicId(vars));
+      }
+
+      private static boolean isHakuryuMountedUseReserved(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars != null
+            && vars.servant_card_transformed
+            && "zhao_yun_rider".equals(vars.servant_card_id)
+            && player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.YAJIAO_QIANG.get());
       }
 
       private static boolean isClientGanryuActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {

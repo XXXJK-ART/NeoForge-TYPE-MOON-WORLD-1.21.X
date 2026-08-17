@@ -1,0 +1,29 @@
+{
+  "id": "prelatis_spellbook_gilles",
+  "display_name": "Prelati's Spellbook",
+  "display_name_zh": "螺湮城教本",
+  "type": "anti_army",
+  "rank": "A+",
+  "mp_cost": 0,
+  "over_charge_supported": false,
+  "base_damage_multiplier": 1.0,
+  "range": 48.0,
+  "effects": [
+    {
+      "effect_type": "uncontrolled_huge_sea_monster",
+      "params": {
+        "unlock_health_ratio": 0.6,
+        "book_mana_cost": 2000,
+        "max_health": 5000,
+        "attack_damage": 60,
+        "friendly_fire": true,
+        "persists_after_summoner_death": true
+      }
+    }
+  ],
+  "special_attack_conditions": [
+    "unlocked_at_or_below_60_percent_hp",
+    "requires_spellbook_mana_2000"
+  ],
+  "class_restrictions": ["caster"]
+}

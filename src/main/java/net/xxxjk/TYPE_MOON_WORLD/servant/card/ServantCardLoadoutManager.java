@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardLoadoutManager {
@@ -65,7 +66,7 @@ public final class ServantCardLoadoutManager {
             off = stack(ModItems.HECATES_STAFF.get());
          }
          case "medusa" -> main = stack(ModItems.NAMELESS_CHAIN_DAGGER.get());
-         case "cursed_arm_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
+         case "cursed_arm_hassan", "hundred_faces_hassan" -> off = stack(ModItems.DIRK_SMALL_KNIFE.get());
          case "emiya_archer" -> {
          }
          case "gilgamesh" -> {
@@ -80,6 +81,13 @@ public final class ServantCardLoadoutManager {
          case "nightingale" -> main = stack(ModItems.NIGHTINGALE_GUN.get());
          case "zhao_yun_rider" -> main = stack(ModItems.YAJIAO_QIANG.get());
          case "senko_muramasa" -> main = MuramasaCombatHelper.projectedStack(ModItems.MURAMASA.get());
+         case "diarmuid_ua_duibhne" -> {
+            main = stack(ModItems.GAE_DEARG.get());
+            off = stack(ModItems.GAE_BUIDHE.get());
+         }
+         case "lancelot_berserker" -> main = LancelotCombatHelper.knightOfOwnerStack(stack(ModItems.LANCELOT_IRON_ROD.get()), player);
+         case "iskandar" -> main = stack(ModItems.ISKANDAR_SHORTSWORD.get());
+         case "baobhan_sith" -> main = stack(ModItems.BAOBHAN_SITH_HARP.get());
          default -> {
          }
       }

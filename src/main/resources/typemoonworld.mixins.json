@@ -4,14 +4,18 @@
   "package": "net.xxxjk.TYPE_MOON_WORLD.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "AbstractFurnaceBlockEntityMixin",
     "EntityPassengerPositionMixin",
     "AttributesMixin",
+    "FurnaceFuelSlotMixin",
     "LivingEntityInputAccessor",
     "PlayerPegasusDismountMixin",
+    "ServerPlayerCombatMixin",
     "TranslatableContentsMixin"
   ],
   "client": [
     "ItemRendererMixin",
+    "client.GeoItemRendererMixin",
     "client.HumanoidArmorLayerMixin",
     "client.ItemInHandRendererMixin",
     "client.EntityRenderDispatcherMixin",

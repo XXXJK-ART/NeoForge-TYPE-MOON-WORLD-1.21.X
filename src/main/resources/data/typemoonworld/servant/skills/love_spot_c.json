@@ -1,0 +1,21 @@
+{
+  "id": "love_spot_c",
+  "display_name": "Love Spot C",
+  "display_name_zh": "Love Spot C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "conditional_damage_bonus",
+      "params": {
+        "condition": "female_target",
+        "damage_bonus": 0.15,
+        "hesitation_chance": 0.05,
+        "hesitation_attack_speed_penalty": 0.3,
+        "hesitation_duration_ticks": 40
+      }
+    }
+  ]
+}

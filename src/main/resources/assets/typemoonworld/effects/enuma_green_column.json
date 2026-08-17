@@ -1,0 +1,45 @@
+{
+  "duration": 10.0,
+  "notes": "The original Enkidu Enuma Elish green star-breath column, isolated from the removed legacy windup emitters.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 10.0,
+      "rate": 7200,
+      "particle_lifetime": 0.82,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.18, 0.0],
+      "velocity_variance": 0.06,
+      "max_vanilla_particles_per_tick": 5,
+      "component": {
+        "type": "line",
+        "start": [0.0, 0.0, 0.0],
+        "end": [0.0, 44.0, 0.0],
+        "segments": 460
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#6644FF44" },
+        { "t": 0.34, "color": "#DDAAFF88" },
+        { "t": 0.62, "color": "#FFFFFFFF" },
+        { "t": 0.86, "color": "#AAFFD700" },
+        { "t": 1.0, "color": "#0044FF44" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.16 },
+        { "t": 0.42, "size": 1.25 },
+        { "t": 0.75, "size": 0.82 },
+        { "t": 1.0, "size": 0.16 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.0, 1.0, 1.0] },
+        { "t": 0.55, "scale": [2.8, 1.0, 2.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.55, 1.0, 1.55] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ENKIDU_STAR_BREATH_COLUMN",
+      "enable_trail": true
+    }
+  ]
+}

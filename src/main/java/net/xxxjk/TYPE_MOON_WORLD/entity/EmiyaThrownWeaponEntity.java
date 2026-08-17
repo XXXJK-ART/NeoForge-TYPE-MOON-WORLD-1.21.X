@@ -24,14 +24,21 @@ import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
 public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> FIXED_DAMAGE = SynchedEntityData.defineId(EmiyaThrownWeaponEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> BREAK_LOW_HARDNESS = SynchedEntityData.defineId(EmiyaThrownWeaponEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> PIERCING_IMPACT = SynchedEntityData.defineId(EmiyaThrownWeaponEntity.class, EntityDataSerializers.BOOLEAN);
    private final Set<Integer> hitEntities = new HashSet<>();
    private double curveStartX;
    private double curveStartZ;
@@ -41,7 +48,13 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    private double curveSideZ;
    private double curveSideOffset;
    private double curveLength;
+   private double maxDistanceSqr;
+   private double maxDistanceOriginX;
+   private double maxDistanceOriginY;
+   private double maxDistanceOriginZ;
+   private boolean maxDistanceInitialized;
    private boolean arcInitialized;
+   private int lastBreakthroughTick;
 
    public EmiyaThrownWeaponEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -57,6 +70,7 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       super.defineSynchedData(builder);
       builder.define(FIXED_DAMAGE, 24.0F);
       builder.define(BREAK_LOW_HARDNESS, false);
+      builder.define(PIERCING_IMPACT, false);
    }
 
    public void setFixedDamage(float damage) {
@@ -65,6 +79,34 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
 
    public void setBreakLowHardnessBlocks(boolean enabled) {
       this.entityData.set(BREAK_LOW_HARDNESS, enabled);
+   }
+
+   public void setPiercingImpact(boolean enabled) {
+      this.entityData.set(PIERCING_IMPACT, enabled);
+      if (enabled) {
+         this.entityData.set(BREAK_LOW_HARDNESS, true);
+      }
+   }
+
+   public boolean isPiercingImpact() {
+      return this.entityData.get(PIERCING_IMPACT);
+   }
+
+   public boolean isLancelotIronRodProjectile() {
+      return this.getItem().is(ModItems.LANCELOT_IRON_ROD.get());
+   }
+
+   public void setMaxFlightDistance(double blocks) {
+      if (blocks <= 0.0) {
+         this.maxDistanceSqr = 0.0;
+         this.maxDistanceInitialized = false;
+         return;
+      }
+      this.maxDistanceSqr = blocks * blocks;
+      this.maxDistanceOriginX = this.getX();
+      this.maxDistanceOriginY = this.getY();
+      this.maxDistanceOriginZ = this.getZ();
+      this.maxDistanceInitialized = true;
    }
 
    public void setArcingFlight(Vec3 direction, double sideOffset, double curveLength) {
@@ -95,9 +137,20 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
 
    @Override
    public void tick() {
+      Vec3 previousPosition = this.position();
       super.tick();
+      if (!this.level().isClientSide() && exceededMaxFlightDistance()) {
+         this.discard();
+         return;
+      }
       updateArcFlight();
       updatePoseFromMotion();
+      if (!this.level().isClientSide() && !this.isRemoved()) {
+         sweepHit(previousPosition);
+      }
+      if (!this.level().isClientSide() && this.entityData.get(PIERCING_IMPACT)) {
+         destroyBreakthroughPath(previousPosition);
+      }
       if (!this.level().isClientSide() && this.entityData.get(BREAK_LOW_HARDNESS)) {
          destroySoftBlocksAhead();
       }
@@ -118,7 +171,39 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
          living.hurt(source, this.damageForCurrentItem());
          living.invulnerableTime = 0;
       }
-      this.discard();
+      if (!this.entityData.get(PIERCING_IMPACT)) {
+         this.discard();
+      }
+   }
+
+   @Override
+   protected void onHit(HitResult result) {
+      if (this.entityData.get(PIERCING_IMPACT)) {
+         if (result.getType() == HitResult.Type.ENTITY && result instanceof EntityHitResult entityHit) {
+            this.onHitEntity(entityHit);
+            return;
+         }
+         if (result.getType() == HitResult.Type.BLOCK && result instanceof BlockHitResult blockHit) {
+            this.onHitBlock(blockHit);
+            return;
+         }
+      }
+      super.onHit(result);
+   }
+
+   @Override
+   protected void onHitBlock(BlockHitResult result) {
+      if (!this.entityData.get(PIERCING_IMPACT)) {
+         super.onHitBlock(result);
+         return;
+      }
+      if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
+         Vec3 motion = this.getDeltaMovement();
+         Vec3 direction = motion.lengthSqr() > 1.0E-4 ? motion.normalize() : this.getLookAngle();
+         TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+            result.getLocation(), direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), 3.8, 2, 2);
+         this.setPos(result.getLocation().add(direction.scale(0.45)));
+      }
    }
 
    private float damageForCurrentItem() {
@@ -165,6 +250,26 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       this.xRotO = this.getXRot();
    }
 
+   public void alignPoseToMotion() {
+      updatePoseFromMotion();
+   }
+
+   private void sweepHit(Vec3 previousPosition) {
+      Vec3 currentPosition = this.position();
+      if (previousPosition.distanceToSqr(currentPosition) < 1.0E-4) {
+         return;
+      }
+      AABB swept = new AABB(previousPosition, currentPosition).inflate(1.05, 0.8, 1.05);
+      LivingEntity target = this.level().getEntitiesOfClass(LivingEntity.class, swept,
+            living -> this.canHitEntity(living) && !this.hitEntities.contains(living.getId()))
+         .stream()
+         .min((a, b) -> Double.compare(a.distanceToSqr(this), b.distanceToSqr(this)))
+         .orElse(null);
+      if (target != null) {
+         this.onHitEntity(new EntityHitResult(target));
+      }
+   }
+
    private void destroySoftBlocksAhead() {
       if (!(this.level() instanceof ServerLevel serverLevel)) {
          return;
@@ -182,10 +287,47 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       }
    }
 
+   private void destroyBreakthroughPath(Vec3 previousPosition) {
+      if (!(this.level() instanceof ServerLevel serverLevel) || this.tickCount - this.lastBreakthroughTick < 3) {
+         return;
+      }
+      Vec3 motion = this.getDeltaMovement();
+      Vec3 currentPosition = this.position();
+      Vec3 travel = currentPosition.subtract(previousPosition);
+      Vec3 direction = motion.lengthSqr() > 1.0E-4 ? motion.normalize()
+         : travel.lengthSqr() > 1.0E-4 ? travel.normalize()
+         : this.getLookAngle();
+      if (direction.lengthSqr() < 1.0E-4) {
+         return;
+      }
+      this.lastBreakthroughTick = this.tickCount;
+      double length = Math.max(2.5, Math.min(5.0, Math.max(motion.length(), travel.length()) + 1.8));
+      TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+         currentPosition, direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), length, 2, 2);
+   }
+
+   private boolean exceededMaxFlightDistance() {
+      if (this.maxDistanceSqr <= 0.0) {
+         return false;
+      }
+      if (!this.maxDistanceInitialized) {
+         this.maxDistanceOriginX = this.getX();
+         this.maxDistanceOriginY = this.getY();
+         this.maxDistanceOriginZ = this.getZ();
+         this.maxDistanceInitialized = true;
+         return false;
+      }
+      double dx = this.getX() - this.maxDistanceOriginX;
+      double dy = this.getY() - this.maxDistanceOriginY;
+      double dz = this.getZ() - this.maxDistanceOriginZ;
+      return dx * dx + dy * dy + dz * dz > this.maxDistanceSqr;
+   }
+
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       this.entityData.set(FIXED_DAMAGE, tag.getFloat("FixedDamage"));
       this.entityData.set(BREAK_LOW_HARDNESS, tag.getBoolean("BreakLowHardness"));
+      this.entityData.set(PIERCING_IMPACT, tag.getBoolean("PiercingImpact"));
       this.curveStartX = tag.getDouble("CurveStartX");
       this.curveStartZ = tag.getDouble("CurveStartZ");
       this.curveForwardX = tag.getDouble("CurveForwardX");
@@ -194,6 +336,11 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       this.curveSideZ = tag.getDouble("CurveSideZ");
       this.curveSideOffset = tag.getDouble("CurveSideOffset");
       this.curveLength = tag.getDouble("CurveLength");
+      this.maxDistanceSqr = tag.getDouble("MaxFlightDistanceSqr");
+      this.maxDistanceOriginX = tag.getDouble("MaxFlightOriginX");
+      this.maxDistanceOriginY = tag.getDouble("MaxFlightOriginY");
+      this.maxDistanceOriginZ = tag.getDouble("MaxFlightOriginZ");
+      this.maxDistanceInitialized = tag.getBoolean("MaxFlightDistanceInitialized");
       this.arcInitialized = tag.getBoolean("CurveInitialized");
    }
 
@@ -201,6 +348,7 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    public void addAdditionalSaveData(CompoundTag tag) {
       tag.putFloat("FixedDamage", this.entityData.get(FIXED_DAMAGE));
       tag.putBoolean("BreakLowHardness", this.entityData.get(BREAK_LOW_HARDNESS));
+      tag.putBoolean("PiercingImpact", this.entityData.get(PIERCING_IMPACT));
       tag.putDouble("CurveStartX", this.curveStartX);
       tag.putDouble("CurveStartZ", this.curveStartZ);
       tag.putDouble("CurveForwardX", this.curveForwardX);
@@ -209,6 +357,11 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       tag.putDouble("CurveSideZ", this.curveSideZ);
       tag.putDouble("CurveSideOffset", this.curveSideOffset);
       tag.putDouble("CurveLength", this.curveLength);
+      tag.putDouble("MaxFlightDistanceSqr", this.maxDistanceSqr);
+      tag.putDouble("MaxFlightOriginX", this.maxDistanceOriginX);
+      tag.putDouble("MaxFlightOriginY", this.maxDistanceOriginY);
+      tag.putDouble("MaxFlightOriginZ", this.maxDistanceOriginZ);
+      tag.putBoolean("MaxFlightDistanceInitialized", this.maxDistanceInitialized);
       tag.putBoolean("CurveInitialized", this.arcInitialized);
    }
 }

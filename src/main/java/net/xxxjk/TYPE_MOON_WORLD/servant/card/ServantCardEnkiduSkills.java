@@ -14,7 +14,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,17 +40,19 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWInterceptorSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RedSkeletonHajunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -137,7 +138,7 @@ public final class ServantCardEnkiduSkills {
    }
 
    public static void performEnkiduTransfiguration(ServerPlayer player) {
-      PacketDistributor.sendToPlayer(player, new OpenEnkiduTransfigurationScreenMessage(), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenEnkiduTransfigurationScreenMessage());
    }
 
    public static void setTransfigurationPoints(ServerPlayer player, int[] requested) {
@@ -379,36 +380,14 @@ public final class ServantCardEnkiduSkills {
             living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
             ids.add(living.getId());
          }
-         PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);
+         ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));
          VFXServerEffects.spawnReplayable(level, "servant_enkidu_presence_detection", player, 0.65F);
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 1.0, player.getZ(), 32, 1.2, 0.55, 1.2, 0.04);
       }
    }
 
    public static void performEnkiduChains(ServerPlayer player) {
-      if (!(player.level() instanceof ServerLevel level)) {
-         return;
-      }
-      Vec3 eye = player.getEyePosition();
-      Vec3 center = eye.add(player.getLookAngle().scale(22.0));
-      List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(7.0, 4.0, 7.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e));
-      if (targets.isEmpty()) {
-         LivingEntity lookTarget = findLookTarget(player, 30.0, 3.0);
-         if (lookTarget != null) {
-            targets = List.of(lookTarget);
-         }
-      }
-      for (LivingEntity target : targets) {
-         boolean divine = hasTrait(target, ServantTraitTag.DIVINE) || hasTrait(target, ServantTraitTag.CELESTIAL);
-         int duration = divine ? 160 : 90;
-         bindTarget(player, level, target, duration, divine);
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, divine ? 6 : 3, false, true, true));
-         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, divine ? 2 : 0, false, true, true));
-         level.addFreshEntity(new ChainsOfHeavenBindingEntity(level, player, target, duration + 6, divine));
-         VFXServerEffects.spawnReplayable(level, "servant_enkidu_chain_of_heaven", target, Math.max(1.2F, duration / 20.0F));
-      }
-      level.playSound(null, player.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.PLAYERS, 1.25F, 0.8F);
-      TYPE_MOON_WORLD.queueServerWork(10, () -> performBoundPursuit(player));
+      ChainControlService.summonSkillBarrage(player, null);
    }
 
    public static void performEnkiduAgeOfBabylon(ServerPlayer player, int count, float damage, boolean mega) {
@@ -490,9 +469,9 @@ public final class ServantCardEnkiduSkills {
       data.putDouble(ENUMA_START_Z, player.getZ());
       player.setNoGravity(true);
       player.fallDistance = 0.0F;
-      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", player, 192.0);
       spawnEnumaWindupFx(level, player.position());
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.6F, 0.85F);
+      EnumaChainService.beginPlayerEnuma(player);
    }
 
    public static void performEnkiduEarthSpike(ServerPlayer player) {
@@ -704,49 +683,12 @@ public final class ServantCardEnkiduSkills {
    }
 
    private static void spawnEnumaWindupFx(ServerLevel level, Vec3 origin) {
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, origin.x, origin.y + 0.15, origin.z, 220, 12.0, 0.16, 12.0, 0.1);
-      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y + 10.0, origin.z, 220, 2.0, 9.0, 2.0, 0.2);
-      level.sendParticles(ParticleTypes.ENCHANTED_HIT, origin.x, origin.y + 3.0, origin.z, 180, 10.0, 3.0, 10.0, 0.16);
-      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y + 1.0, origin.z, 3, 0.16, 0.16, 0.16, 0.0);
    }
 
    private static void maybeSpawnEnumaFlightFx(ServerLevel level, ServerPlayer player, long now) {
-      CompoundTag data = player.getPersistentData();
-      if (now - data.getLong(ENUMA_LAST_FLIGHT_FX) < 18L) {
-         return;
-      }
-      data.putLong(ENUMA_LAST_FLIGHT_FX, now);
-      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_flight", player, 192.0);
-      Vec3 center = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 28, 0.55, 0.55, 0.55, 0.12);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y, center.z, 18, 0.42, 0.42, 0.42, 0.08);
    }
 
    private static void emitEnumaDrillFx(ServerLevel level, ServerPlayer player, Vec3 targetPoint, long now, boolean release) {
-      Vec3 center = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
-      Vec3 dir = targetPoint.subtract(center);
-      if (dir.lengthSqr() < 1.0E-4) {
-         dir = player.getLookAngle();
-      }
-      dir = dir.normalize();
-      Vec3 side = new Vec3(-dir.z, 0.0, dir.x);
-      if (side.lengthSqr() < 1.0E-4) {
-         side = new Vec3(1.0, 0.0, 0.0);
-      }
-      side = side.normalize();
-      Vec3 up = side.cross(dir).normalize();
-      int points = release ? 18 : 10;
-      double radius = release ? 1.05 : 0.65;
-      for (int i = 0; i < points; i++) {
-         double angle = now * 0.48 + i * Math.PI * 2.0 / points;
-         double along = i * (release ? 0.32 : 0.22);
-         Vec3 ring = side.scale(Math.cos(angle) * radius).add(up.scale(Math.sin(angle) * radius));
-         Vec3 pos = center.add(dir.scale(along)).add(ring);
-         level.sendParticles(i % 3 == 0 ? ParticleTypes.END_ROD : ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.01);
-      }
-      if (now % 3L == 0L) {
-         level.sendParticles(ParticleTypes.ENCHANTED_HIT, center.x, center.y, center.z, release ? 16 : 8, 0.65, 0.65, 0.65, 0.08);
-      }
    }
 
    private static void applyEnumaSmallExplosion(ServerPlayer player, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
@@ -761,6 +703,7 @@ public final class ServantCardEnkiduSkills {
       }
       applyEnumaAreaDamage(player, level, impact, 7.0, 500.0F, directTarget);
       breakEnumaImpactTerrain(level, impact, 6.0);
+      EnumaChainService.bindImpactTarget(player, directTarget);
    }
 
    private static void applyEnumaGroundExplosion(ServerPlayer player, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
@@ -777,6 +720,7 @@ public final class ServantCardEnkiduSkills {
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 5.0F, 0.82F);
       applyEnumaAreaDamage(player, level, impact, radius, 500.0F, directTarget);
       breakEnumaImpactTerrainInWaves(level, impact, radius);
+      EnumaChainService.bindImpactTarget(player, directTarget);
    }
 
    private static void applyEnumaAreaDamage(ServerPlayer player, ServerLevel level, Vec3 impact, double radius, float damage, LivingEntity directTarget) {

@@ -1,0 +1,69 @@
+{
+  "id": "lancelot_berserker",
+  "display_name": "Lancelot",
+  "display_name_zh": "兰斯洛特",
+  "class_type": "berserker",
+  "faction": "earth",
+  "traits": ["servant", "humanoid", "living_human", "berserker", "male", "lawful", "mad", "earth", "round_table", "knight_of_the_lake"],
+  "parameters": {
+    "endurance": "A",
+    "endurance_plus": false,
+    "strength": "A",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": true,
+    "magic": "C",
+    "magic_plus": false,
+    "luck": "B",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/lancelot_berserker.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.72,
+      "height": 1.91,
+      "eye_height": 1.74
+    },
+    "hand_item_offset": {
+      "x": 0.14,
+      "y": -0.82,
+      "z": 0.16
+    },
+    "default_weapon": "typemoonworld:lancelot_iron_rod",
+    "immune_to_stone_axe_debuff": true,
+    "combat_actions": [
+      "lancelot_rush",
+      "lancelot_owner_throw",
+      "lancelot_projectile_counter",
+      "lancelot_mana_reversal",
+      "lancelot_aroundight_draw",
+      "lancelot_wall_crush"
+    ]
+  },
+  "skills": [
+    "mad_enhancement_c",
+    "magic_resistance_e",
+    "eternal_arms_mastership_a_plus",
+    "blessing_of_fairy_a",
+    "mana_reversal_a"
+  ],
+  "noble_phantasm": "aroundight",
+  "personality": {
+    "obedience": "berserk",
+    "principle": "mad",
+    "morality": "lawful",
+    "social": "silent",
+    "combat": "berserker_pressure",
+    "special_principles": ["no_complex_orders"],
+    "starting_favor": 35.0
+  },
+  "ai_config": "lancelot_berserker_ai",
+  "spawn_egg": {
+    "primary": 1110037,
+    "secondary": 5983352
+  }
+}

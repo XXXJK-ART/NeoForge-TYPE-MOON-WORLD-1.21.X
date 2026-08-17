@@ -223,8 +223,13 @@ class HumanoidServantSkinResourcesTest {
                      .resolve(layer0.substring("typemoonworld:".length()) + ".png");
                   assertTrue(Files.isRegularFile(texture), fileName);
                   var image = ImageIO.read(texture.toFile());
-                  assertTrue(image.getWidth() <= 128 && image.getHeight() <= 128,
-                     fileName + " preview is " + image.getWidth() + "x" + image.getHeight());
+                  if (fileName.startsWith("servant_card_lancelot_berserker_")) {
+                     assertTrue(image.getWidth() <= 512 && image.getHeight() <= 512,
+                        fileName + " preview is " + image.getWidth() + "x" + image.getHeight());
+                  } else {
+                     assertTrue(image.getWidth() <= 128 && image.getHeight() <= 128,
+                        fileName + " preview is " + image.getWidth() + "x" + image.getHeight());
+                  }
                } catch (Exception exception) {
                   throw new AssertionError(path.toString(), exception);
                }

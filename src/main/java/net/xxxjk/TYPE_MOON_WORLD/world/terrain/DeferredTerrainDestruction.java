@@ -22,6 +22,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 
 /** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
@@ -163,6 +164,12 @@ public final class DeferredTerrainDestruction {
       return Math.max(8, Config.maxQueuedTerrainJobs);
    }
 
+   public static int totalQueuedJobs() {
+      int total = 0;
+      for (ArrayDeque<Job> queue : JOBS.values()) total += queue.size();
+      return total;
+   }
+
    static boolean overlappingImpactSupersedes(Vec3 center, double radius, float hardness, long queuedAt,
                                                Vec3 otherCenter, double otherRadius, float otherHardness,
                                                long otherQueuedAt) {
@@ -177,7 +184,9 @@ public final class DeferredTerrainDestruction {
       ArrayDeque<Job> queue = JOBS.get(level.dimension()); if (queue == null || queue.isEmpty()) return;
       long started = System.nanoTime(); int checked = 0;
       int maxChecks = Math.max(1000, Config.terrainChecksPerTick);
-      long softBudgetNanos = Math.max(1_000_000L, Config.terrainBudgetMicros * 1000L);
+      long normalBudgetNanos = Math.max(1_000_000L, Config.terrainBudgetMicros * 1000L);
+      long softBudgetNanos = Math.max(500_000L,
+         (long) (normalBudgetNanos * PerformanceMonitor.backgroundBudgetScale()));
       int idleJobs = 0;
       while (!queue.isEmpty() && checked < maxChecks && System.nanoTime() - started < softBudgetNanos) {
          Job job = queue.pollFirst(); int slice = 0;
@@ -390,6 +399,7 @@ public final class DeferredTerrainDestruction {
       private AdvancingCylinder(CylinderJob job) { this.job = job; }
       public void advanceTo(double distance) { job.advanceTo(distance); }
       public void seal() { job.seal(); }
+      public void sealAt(double distance) { job.sealAt(distance); }
       public boolean isComplete() { return job.done; }
    }
 
@@ -401,6 +411,7 @@ public final class DeferredTerrainDestruction {
       final int radius, radiusSqr, scarRadius;
       int along, phase, sideOffset, verticalOffset, scarDepth;
       double targetDistance;
+      double sealedDistance;
       boolean sealed;
 
       CylinderJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, int scarRadius,
@@ -416,11 +427,17 @@ public final class DeferredTerrainDestruction {
          this.scarRadius = Math.max(this.radius, scarRadius);
          this.sideOffset = -this.radius;
          this.verticalOffset = -this.radius;
+         this.sealedDistance = this.length;
          this.completion = completion;
       }
 
       void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
       void seal() { sealed = true; targetDistance = length; }
+      void sealAt(double distance) {
+         sealed = true;
+         sealedDistance = Math.max(0.0, Math.min(length, distance));
+         targetDistance = Math.max(targetDistance, sealedDistance);
+      }
       @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
 
       @Override void advance() {
@@ -485,7 +502,7 @@ public final class DeferredTerrainDestruction {
          phase = CORE_PHASE;
          sideOffset = -radius;
          verticalOffset = -radius;
-         if (along > Math.ceil(length) && sealed) done = true;
+         if (along > Math.ceil(sealedDistance) && sealed) done = true;
       }
    }
 
@@ -494,6 +511,7 @@ public final class DeferredTerrainDestruction {
       private AdvancingSkyRift(SkyRiftJob job) { this.job = job; }
       public void advanceTo(double distance) { job.advanceTo(distance); }
       public void seal() { job.seal(); }
+      public void sealAt(double distance) { job.sealAt(distance); }
       public boolean isComplete() { return job.done; }
    }
 
@@ -503,6 +521,7 @@ public final class DeferredTerrainDestruction {
       final int radius, radiusSqr, minY;
       int along, sideOffset, currentY;
       double targetDistance;
+      double sealedDistance;
       boolean sealed, columnReady;
 
       SkyRiftJob(ServerLevel level, Vec3 origin, Vec3 direction, double length, int radius, Runnable completion) {
@@ -516,11 +535,17 @@ public final class DeferredTerrainDestruction {
          this.radiusSqr = this.radius * this.radius;
          this.minY = Mth.clamp(Mth.floor(origin.y), level.getMinBuildHeight(), level.getMaxBuildHeight() - 1);
          this.sideOffset = -this.radius;
+         this.sealedDistance = this.length;
          this.completion = completion;
       }
 
       void advanceTo(double distance) { targetDistance = Math.max(targetDistance, Math.min(length, distance)); }
       void seal() { sealed = true; targetDistance = length; }
+      void sealAt(double distance) {
+         sealed = true;
+         sealedDistance = Math.max(0.0, Math.min(length, distance));
+         targetDistance = Math.max(targetDistance, sealedDistance);
+      }
       @Override boolean ready() { return !done && along <= Math.floor(targetDistance + 1.0E-6); }
 
       @Override void advance() {
@@ -559,7 +584,7 @@ public final class DeferredTerrainDestruction {
          columnReady = false;
          if (++sideOffset > radius) {
             sideOffset = -radius;
-            if (++along > Math.ceil(length) && sealed) done = true;
+            if (++along > Math.ceil(sealedDistance) && sealed) done = true;
          }
       }
    }

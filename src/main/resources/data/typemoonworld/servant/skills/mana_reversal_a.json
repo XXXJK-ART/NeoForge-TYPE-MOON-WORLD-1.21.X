@@ -1,0 +1,18 @@
+{
+  "id": "mana_reversal_a",
+  "display_name": "Mana Reversal A",
+  "display_name_zh": "魔力逆流 A",
+  "type": "active",
+  "mp_cost": 15,
+  "cooldown_ticks": 360,
+  "duration_ticks": 240,
+  "effects": [
+    {
+      "effect_type": "self_attribute_bonus",
+      "params": {
+        "critical_damage_bonus": 0.5,
+        "attack_damage_bonus": 0.2
+      }
+    }
+  ]
+}

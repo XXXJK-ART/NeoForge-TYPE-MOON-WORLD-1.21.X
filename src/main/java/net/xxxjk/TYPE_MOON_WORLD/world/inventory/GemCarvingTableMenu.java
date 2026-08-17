@@ -178,6 +178,12 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
             ItemStack gemStack = this.itemHandler.getStackInSlot(0);
             if (!(gemStack.getItem() instanceof CarvedGemItem carvedGem)) {
                return GemCarvingTableMenu.EngravePreview.error("message.typemoonworld.gem.engrave.need_gem");
+            } else if (!GemEngravingService.meetsProficiencyThreshold(vars, magicId, carvedGem.getType())) {
+               return GemCarvingTableMenu.EngravePreview.error(
+                  "message.typemoonworld.gem.engrave.proficiency_required",
+                  GemEngravingService.getMagicName(magicId),
+                  (int)Math.ceil(GemEngravingService.requiredProficiencyThreshold(magicId, carvedGem.getType()))
+               );
             } else if (!gemStack.isEmpty() && GemEngravingService.getEngravedMagicId(gemStack) == null) {
                int chance = GemCompatibilityService.calculateEngraveSuccessChance(
                   carvedGem.getQuality(), carvedGem.getType(), magicId, getMagicProficiency(vars, magicId)

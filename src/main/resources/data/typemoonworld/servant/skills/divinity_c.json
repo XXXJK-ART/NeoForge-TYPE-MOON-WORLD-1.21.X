@@ -1,0 +1,24 @@
+{
+  "id": "divinity_c",
+  "display_name": "Divinity C",
+  "display_name_zh": "\u795e\u6027 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "divinity",
+      "params": {
+        "rank": "C",
+        "divine_damage_bonus": 0.06,
+        "anti_divine_resistance": 0.06
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "divinity", "strength": 0.6, "requires": ["living"]}
+    ]
+  }
+}

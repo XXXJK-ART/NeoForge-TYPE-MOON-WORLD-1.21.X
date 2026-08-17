@@ -23,11 +23,11 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem;
@@ -135,7 +135,7 @@ public final class ServantCardGilgameshSkills {
          player.getPersistentData().putBoolean(KEY, true);
       }
       player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilgamesh_key_ready"), true);
-      PacketDistributor.sendToPlayer(player, new OpenGilgameshVaultScreenMessage(player.getPersistentData().getInt(MASK)), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new OpenGilgameshVaultScreenMessage(player.getPersistentData().getInt(MASK)));
       return true;
    }
 
@@ -197,15 +197,7 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void performChains(ServerPlayer player) {
-      if (!(player.level() instanceof ServerLevel level)) return;
-      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 30.0, 3.0);
-      if (target == null) return;
-      int duration = 120;
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 6, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2, false, true, true));
-      level.addFreshEntity(new ChainsOfHeavenBindingEntity(level, player, target, duration + 6, true));
-      player.getPersistentData().putString(CHAIN_TARGET, target.getUUID().toString());
-      player.getPersistentData().putLong(CHAIN_UNTIL, level.getGameTime() + duration);
+      ChainControlService.summonSkillBarrage(player, null);
    }
 
    public static void performVault(ServerPlayer player, boolean grand) {
@@ -276,7 +268,7 @@ public final class ServantCardGilgameshSkills {
          living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
          ids.add(living.getId());
       }
-      PacketDistributor.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));
    }
 
    public static void performCharisma(ServerPlayer player) {

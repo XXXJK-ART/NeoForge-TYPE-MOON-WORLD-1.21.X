@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class DirkProjectileEntity extends ThrowableItemProjectile {
@@ -60,6 +61,10 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
       if (entity instanceof LivingEntity living && this.getOwner() instanceof ServantEntity servant && CursedArmHassanCombatHelper.refusesToHarm(servant, living)) {
          return false;
       }
+      if (entity instanceof LivingEntity living && this.getOwner() instanceof LivingEntity owner
+         && HundredFacesHassanCombatHelper.areSameHundredFacesSide(owner, living)) {
+         return false;
+      }
       return entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity) && super.canHitEntity(entity);
    }
 
@@ -88,6 +93,10 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
       if (result.getEntity() instanceof LivingEntity target) {
          LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
          if (owner instanceof ServantEntity servant && CursedArmHassanCombatHelper.refusesToHarm(servant, target)) {
+            this.discard();
+            return;
+         }
+         if (HundredFacesHassanCombatHelper.areSameHundredFacesSide(owner, target)) {
             this.discard();
             return;
          }

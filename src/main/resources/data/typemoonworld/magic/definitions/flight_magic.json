@@ -1,0 +1,21 @@
+{
+  "id": "typemoonworld:flight_magic",
+  "name_key": "magic.typemoonworld.flight_magic.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "complexity": 90,
+  "chant_segments": 4,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 12.0,
+  "cooldown_ticks": 20,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": true,
+  "npc_allowed": true,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 12,
+  "npc_cooldown": 40,
+  "prerequisite_magic": "typemoonworld:aerial_ascent",
+  "prerequisite_proficiency": 100.0
+}

@@ -1,0 +1,27 @@
+{
+  "id": "weak_constitution_a_okita",
+  "display_name": "Weak Constitution A",
+  "display_name_zh": "病弱 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "risk_after_noble_phantasm",
+      "params": {
+        "trigger_action": "mumyoudan_zuki",
+        "chance": 0.3,
+        "duration_ticks": 300,
+        "attack_multiplier": 0.7,
+        "movement_multiplier": 0.7,
+        "disabled_noble_phantasms": ["mumyoudan_zuki"]
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "self_debuff_risk", "strength": 0.7}
+    ]
+  }
+}

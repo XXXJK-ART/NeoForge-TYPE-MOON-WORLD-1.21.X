@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -16,6 +18,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -347,7 +351,8 @@ public final class MasterStateManager {
          }
          case 1 -> {
             if (master.level() instanceof ServerLevel level) {
-               servant.teleportTo(level, master.getX(), master.getY(), master.getZ(), Set.<RelativeMovement>of(), servant.getYRot(), servant.getXRot());
+               Vec3 destination = findSafeRecallDestination(level, master, servant);
+               servant.teleportTo(level, destination.x, destination.y, destination.z, Set.<RelativeMovement>of(), servant.getYRot(), servant.getXRot());
                yield true;
             }
             yield false;
@@ -475,6 +480,54 @@ public final class MasterStateManager {
 
    private static boolean isBlank(String value) {
       return value == null || value.isBlank();
+   }
+
+   private static Vec3 findSafeRecallDestination(ServerLevel level, ServerPlayer master, ServerPlayer servant) {
+      Vec3 nearMaster = findNearbySafeRecallDestination(level, master, servant);
+      return nearMaster == null ? master.position() : nearMaster;
+   }
+
+   private static Vec3 findNearbySafeRecallDestination(ServerLevel level, ServerPlayer master, ServerPlayer servant) {
+      BlockPos center = master.blockPosition();
+      Vec3 masterPos = master.position();
+      Vec3 preferred = masterPos.add(master.getLookAngle().multiply(-1.4, 0.0, -1.4));
+      BlockPos preferredFeet = BlockPos.containing(preferred.x, master.getY(), preferred.z);
+      Vec3 safe = safeRecallCenter(level, servant, preferredFeet);
+      if (safe != null) return safe;
+
+      for (int radius = 1; radius <= 3; radius++) {
+         for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+               if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+               for (int dy = 1; dy >= -2; dy--) {
+                  safe = safeRecallCenter(level, servant, center.offset(dx, dy, dz));
+                  if (safe != null) return safe;
+               }
+            }
+         }
+      }
+
+      return safeRecallCenter(level, servant, center);
+   }
+
+   private static Vec3 safeRecallCenter(ServerLevel level, ServerPlayer servant, BlockPos feet) {
+      if (!level.getWorldBorder().isWithinBounds(feet)) return null;
+      if (!isSafeRecallFeet(level, feet)) return null;
+      Vec3 destination = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+      return level.noCollision(servant, servant.getBoundingBox().move(destination.subtract(servant.position()))) ? destination : null;
+   }
+
+   private static boolean isSafeRecallFeet(ServerLevel level, BlockPos feet) {
+      BlockPos floor = feet.below();
+      if (!level.getWorldBorder().isWithinBounds(floor)) return false;
+      BlockState floorState = level.getBlockState(floor);
+      BlockState feetState = level.getBlockState(feet);
+      BlockState headState = level.getBlockState(feet.above());
+      return floorState.isFaceSturdy(level, floor, Direction.UP)
+         && feetState.getFluidState().isEmpty()
+         && headState.getFluidState().isEmpty()
+         && (feetState.isAir() || feetState.canBeReplaced())
+         && (headState.isAir() || headState.canBeReplaced());
    }
 
    static boolean isPlayerCardContractPair(boolean masterCard, boolean masterServantCard,

@@ -1,0 +1,25 @@
+{
+  "id": "mumyoudan_zuki",
+  "display_name": "Mumyoudan-zuki",
+  "display_name_zh": "无明三段突",
+  "type": "anti_personnel",
+  "rank": "C",
+  "mp_cost": 10,
+  "cooldown_ticks": 300,
+  "windup_ticks": 6,
+  "effects": [
+    {
+      "effect_type": "triple_piercing_thrust",
+      "params": {
+        "hits": 3,
+        "damage_scale_per_hit": 3.0,
+        "range": 3.2,
+        "damage_type": "typemoonworld:okita_mumyoudan_zuki",
+        "sure_hit": true,
+        "bypass_guard": true,
+        "disable_defense_ticks": 100
+      }
+    }
+  ],
+  "description": "Three thrusts exist at the same point and collapse the target's defense. Weak Constitution only disables this noble phantasm while active."
+}

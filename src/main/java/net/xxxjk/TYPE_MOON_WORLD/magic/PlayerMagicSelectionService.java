@@ -172,6 +172,16 @@ public final class PlayerMagicSelectionService {
          if (normalized.contains("mana_burst_level")) {
             normalized.putInt("mana_burst_level", clamp(normalized.getInt("mana_burst_level"), 1, 5));
          }
+      } else if ("touko_travel".equals(magicId)) {
+         if (normalized.contains("x")) {
+            normalized.putDouble("x", normalized.getDouble("x"));
+         }
+         if (normalized.contains("y")) {
+            normalized.putDouble("y", normalized.getDouble("y"));
+         }
+         if (normalized.contains("z")) {
+            normalized.putDouble("z", normalized.getDouble("z"));
+         }
       } else if (isElementalMagic(magicId) && normalized.contains("element_mode")) {
          normalized.putInt("element_mode", clamp(normalized.getInt("element_mode"), 0, 1));
       }
@@ -187,6 +197,7 @@ public final class PlayerMagicSelectionService {
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
+         || "touko_travel".equals(magicId)
          || isElementalMagic(magicId);
    }
 
@@ -209,6 +220,10 @@ public final class PlayerMagicSelectionService {
       } else if ("mana_burst".equals(magicId)) {
          payload.putInt("mana_burst_mode", 1);
          payload.putInt("mana_burst_level", 1);
+      } else if ("touko_travel".equals(magicId) && entity != null) {
+         payload.putDouble("x", entity.getX());
+         payload.putDouble("y", entity.getY());
+         payload.putDouble("z", entity.getZ());
       } else if (isElementalMagic(magicId)) {
          payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {

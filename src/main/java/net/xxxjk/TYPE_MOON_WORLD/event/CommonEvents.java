@@ -77,6 +77,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.IskandarMountEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MerlinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RhoAiasEntity;
@@ -89,9 +90,12 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.TempleStoneSwordAxeItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.RubyStaffItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SelfGeasScrollItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -102,7 +106,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
@@ -111,7 +117,9 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTraitService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -209,9 +217,11 @@ public class CommonEvents {
          }
          if (event.getEntity() instanceof ServantEntity servant && event.getLevel() instanceof ServerLevel serverLevel) {
             trackServant(servant, serverLevel);
+            servant.ensureDefaultNpcLoadout(false);
             servant.ensureDefaultNpcServantCardArmor(false);
             TYPE_MOON_WORLD.queueServerWork(1, () -> {
                if (servant.isAlive() && servant.level() == serverLevel) {
+                  servant.ensureDefaultNpcLoadout(true);
                   servant.ensureDefaultNpcServantCardArmor(true);
                }
             });
@@ -481,6 +491,16 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
+         if (HundredFacesHassanCombatHelper.isFriendlyFire(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
+         if (ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+         }
          if (event.getEntity() instanceof LivingEntity living && ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -496,6 +516,7 @@ public class CommonEvents {
             return;
          }
          if (tryRedirectZhaoYunMountDamage(event)) return;
+         if (tryRedirectIskandarMountDamage(event)) return;
          if (tryIgnoreZhaoYunChangbanpoFriendlyFire(event)) return;
          if (tryRedirectZhaoYunRescueDamage(event)) return;
          applyZhaoYunRescueDefense(event);
@@ -602,6 +623,14 @@ public class CommonEvents {
                   return;
                }
                if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGawainSkills.tryConsumeBeltGuts(player, vars, event)) {
+                  return;
+               }
+               if (vars.servant_card_transformed
+                  && "hundred_faces_hassan".equals(vars.servant_card_id)
+                  && player.getHealth() - event.getAmount() <= 0.0F
+                  && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)) {
+                  event.setCanceled(true);
+                  event.setAmount(0.0F);
                   return;
                }
                if (vars.servant_card_transformed
@@ -830,6 +859,7 @@ public class CommonEvents {
 
    private static boolean tryRedirectZhaoYunMountDamage(LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F) return false;
+      if (BaobhanSithDamageTypes.isCurse(event.getSource())) return false;
       Entity attacker = event.getSource().getEntity();
       Entity direct = event.getSource().getDirectEntity();
       if (isZhaoYunBoundMasterFriendlyFire(event.getEntity(), attacker, direct)) {
@@ -1264,6 +1294,14 @@ public class CommonEvents {
 
       // --- 战斗续行 A：致死时保留 1HP + 5s 无敌，5min CD ---
       // 斩断因果时跳过
+      if (!causalSevered && servant instanceof HundredFacesHassanEntity hundredFaces
+         && servant.getHealth() - event.getAmount() <= 0
+         && HundredFacesHassanCombatHelper.tryTransferBodyOnLethalDamage(hundredFaces, event.getSource())) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return;
+      }
+
       double battleContinuationRatio = servant instanceof EmiyaArcherEntity
          ? EMIYA_BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO
          : BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO;
@@ -1426,6 +1464,45 @@ public class CommonEvents {
             }
          }
          // 英灵死亡后清理 pendingServantId，防止下一个刷怪蛋继承错误ID
+      }
+   }
+
+   private static boolean tryRedirectIskandarMountDamage(LivingIncomingDamageEvent event) {
+      if (event.getAmount() <= 0.0F) return false;
+      if (BaobhanSithDamageTypes.isCurse(event.getSource())) return false;
+      Entity attacker = event.getSource().getEntity();
+      Entity direct = event.getSource().getDirectEntity();
+      if (event.getEntity() instanceof IskandarMountEntity mount && mount.isAlive()) {
+         if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+         }
+         return false;
+      }
+      LivingEntity passenger = event.getEntity();
+      if (!(passenger.getVehicle() instanceof IskandarMountEntity mount)
+         || !mount.isAlive() || !mount.shouldRedirectPassengerDamage(passenger)) {
+         return false;
+      }
+      if (mount.isBoundCompanion(attacker) || mount.isBoundCompanion(direct)) {
+         event.setCanceled(true);
+         event.setAmount(0.0F);
+         return true;
+      }
+      float redirected = event.getAmount();
+      event.setCanceled(true);
+      event.setAmount(0.0F);
+      mount.hurt(event.getSource(), redirected);
+      return true;
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onHundredFacesCardDeathTransfer(LivingDeathEvent event) {
+      if (!event.getEntity().level().isClientSide
+         && event.getEntity() instanceof ServerPlayer player
+         && ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)) {
+         event.setCanceled(true);
       }
    }
 
@@ -1887,6 +1964,7 @@ public class CommonEvents {
 
    private static boolean tryRedirectMedusaPegasusDamage(LivingEntity rider, LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F
+         || BaobhanSithDamageTypes.isCurse(event.getSource())
          || !(rider.getVehicle() instanceof MedusaPegasusEntity pegasus)
          || !pegasus.isAlive()
          || pegasus.getSummoner() != rider) {
@@ -1930,6 +2008,16 @@ public class CommonEvents {
          if (bonus > 0.0F) {
             event.setAmount(event.getAmount() + bonus);
          }
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public static void onSelfGeasContractDamage(LivingIncomingDamageEvent event) {
+      if (event.isCanceled() || event.getAmount() <= 0.0F || event.getEntity().level().isClientSide()) {
+         return;
+      }
+      if (event.getSource().getEntity() instanceof ServerPlayer attacker && event.getEntity() instanceof LivingEntity target) {
+         SelfGeasScrollItem.tryApplyContract(event, attacker, target);
       }
    }
 
@@ -2142,7 +2230,7 @@ public class CommonEvents {
                      LivingEntity.class, box, ex -> ex.isAlive() && ex != player && !EntityUtils.isImmunePlayerTarget(ex)
                   )) {
                      e.invulnerableTime = 0;
-                     e.hurt(player.damageSources().mobAttack(player), damageBase * 2.0F);
+                     e.hurt(player.damageSources().mobAttack(player), damageBase * 4.0F);
                      e.invulnerableTime = 0;
                   }
                }

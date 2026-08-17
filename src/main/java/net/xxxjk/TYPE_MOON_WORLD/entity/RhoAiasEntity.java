@@ -26,6 +26,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RhoAiasEntity extends Entity implements GeoEntity {
    private static final float MAX_SHIELD_HP = 2000.0F;
+   private static final String FULL_RELEASE_ANIMATION = "7chongyuanhuan";
    private static final EntityDataAccessor<Float> SHIELD_HP = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> LAYERS = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
@@ -302,7 +303,9 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       controllers.add(new AnimationController<>(this, "controller", 0, event ->
-         event.setAndContinue(RawAnimation.begin().thenLoop(String.valueOf(this.getLayers())))
+         this.getLayers() >= 7
+            ? event.setAndContinue(RawAnimation.begin().thenPlayAndHold(FULL_RELEASE_ANIMATION))
+            : event.setAndContinue(RawAnimation.begin().thenLoop(String.valueOf(this.getLayers())))
       ));
    }
 

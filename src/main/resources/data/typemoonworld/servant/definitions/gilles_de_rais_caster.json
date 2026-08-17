@@ -1,0 +1,91 @@
+{
+  "id": "gilles_de_rais_caster",
+  "display_name": "Gilles de Rais (Caster)",
+  "display_name_zh": "吉尔·德·雷（Caster）",
+  "class_type": "caster",
+  "faction": "human",
+  "traits": [
+    "servant",
+    "male",
+    "caster",
+    "human",
+    "chaotic",
+    "evil",
+    "summoner",
+    "cultist",
+    "bluebeard"
+  ],
+  "parameters": {
+    "strength": "D",
+    "strength_plus": false,
+    "endurance": "E",
+    "endurance_plus": false,
+    "agility": "D",
+    "agility_plus": false,
+    "magic": "C",
+    "magic_plus": false,
+    "luck": "E",
+    "luck_plus": false,
+    "noble_phantasm": "A",
+    "noble_phantasm_plus": true
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/gilles_de_rais_caster.geo.json",
+    "texture": "typemoonworld:textures/entity/gilles_de_rais_caster.png",
+    "animation": "typemoonworld:animations/gilles_de_rais_caster.animation.json",
+    "animations": {
+      "idle": "animation.gilles_de_rais_caster.idle",
+      "walk": "animation.gilles_de_rais_caster.walk",
+      "slash": "animation.gilles_de_rais_caster.slash",
+      "sweep": "animation.gilles_de_rais_caster.sweep",
+      "uppercut": "animation.gilles_de_rais_caster.uppercut",
+      "horizontal_swing": "animation.gilles_de_rais_caster.horizontal_swing",
+      "summon": "animation.gilles_de_rais_caster.summon",
+      "gaze": "animation.gilles_de_rais_caster.gaze",
+      "np": "animation.gilles_de_rais_caster.np"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.86,
+      "eye_height": 1.68
+    },
+    "hand_item_offset": {
+      "x": 0.04,
+      "y": -0.62,
+      "z": -0.18
+    },
+    "default_weapon": "typemoonworld:prelatis_spellbook",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "gilles_summon_small_sea_monster",
+      "gilles_summon_large_sea_monster",
+      "gilles_abyssal_gaze",
+      "gilles_life_absorb",
+      "gilles_uncontrolled_huge_sea_monster",
+      "interrupt",
+      "evade"
+    ]
+  },
+  "skills": [
+    "gilles_territory_creation_b",
+    "gilles_mental_pollution_a",
+    "gilles_abyssal_gaze_b",
+    "prelatis_spellbook_a_plus"
+  ],
+  "noble_phantasm": "prelatis_spellbook_gilles",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "chaotic",
+    "morality": "evil",
+    "social": "fanatical",
+    "combat": "cautious",
+    "starting_favor": 45.0
+  },
+  "ai_config": "gilles_de_rais_caster_ai",
+  "spawn_egg": {
+    "primary": 2105386,
+    "secondary": 9114168
+  }
+}

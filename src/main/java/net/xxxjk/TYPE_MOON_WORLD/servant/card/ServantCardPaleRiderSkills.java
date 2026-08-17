@@ -19,10 +19,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -296,9 +295,7 @@ public final class ServantCardPaleRiderSkills {
    }
 
    public static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-         PacketDistributor.sendToPlayer(player, payload);
-      }
+      ModNetwork.sendToPlayer(player, payload);
    }
 
    public static void setCommand(ServerPlayer player, int command) {

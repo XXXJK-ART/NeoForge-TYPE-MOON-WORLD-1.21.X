@@ -95,12 +95,71 @@ class ServantCardBalanceFixesTest {
    }
 
    @Test
+   void odaMountFlightAvoidsPerTickSyncAndParticleSpam() throws IOException {
+      String gun = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/entity/OdaMatchlockGunEntity.java"));
+      String card = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardOdaNobunagaSkills.java"));
+
+      assertTrue(gun.contains("MOUNT_INPUT_SYNC_EPSILON"));
+      assertTrue(gun.contains("AIM_SYNC_EPSILON_DEGREES"));
+      assertTrue(gun.contains("MOUNT_TRAIL_PARTICLE_INTERVAL = 12"));
+      assertTrue(gun.contains("FOOT_SUPPORT_TRAIL_PARTICLE_INTERVAL = 12"));
+      assertTrue(gun.contains("MOUNT_TRAIL_MIN_SPEED_SQR"));
+      assertTrue(gun.contains("setSynchedFloatIfChanged(MOVE_FORWARD"));
+      assertTrue(gun.contains("setSynchedAngleIfChanged(AIM_YAW"));
+      assertTrue(gun.contains("velocity.lengthSqr() >= MOUNT_TRAIL_MIN_SPEED_SQR"));
+      assertTrue(gun.contains("owner.getDeltaMovement().lengthSqr() >= 0.0004"));
+      assertTrue(gun.contains("private static final RawAnimation IDLE_ANIMATION"));
+      assertTrue(card.contains("discardFloatingMatchlocks(level, player)"));
+      assertTrue(card.contains("gun -> gun.isFloatingFor(player.getUUID())"));
+      assertTrue(card.contains("gun.discardSilently()"));
+   }
+
+   @Test
    void gilgameshBabIluMarksEaSummonOnTheItemStack() throws IOException {
       String source = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/item/custom/GilgameshNoblePhantasmItem.java"));
 
       assertTrue(source.contains("BAB_ILU_EA_SUMMONED_TAG"));
       assertTrue(source.contains("tryMarkBabIluEaSummoned(stack)"));
       assertTrue(source.contains("giveEaIfMissing(player)"));
+   }
+
+   @Test
+   void servantCardsReuseNpcCriticalEffectsForMuramasaAndLiShuwen() throws IOException {
+      String muramasaCard = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardSenkoMuramasaSkills.java"));
+      String muramasaHelper = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/MuramasaCombatHelper.java"));
+      String liCard = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardLiShuwenSkills.java"));
+      String liHelper = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/LiShuwenCombatHelper.java"));
+      String guaranteedHits = Files.readString(Path.of("src/main/resources/data/typemoonworld/tags/damage_type/fanatic_guaranteed_hits.json"));
+      String bypassesDefenses = Files.readString(Path.of("src/main/resources/data/typemoonworld/tags/damage_type/fanatic_bypasses_defenses.json"));
+      String noblePhantasmDamage = Files.readString(Path.of("src/main/resources/data/typemoonworld/tags/damage_type/noble_phantasm_damage.json"));
+      String bypassesArmor = Files.readString(Path.of("src/main/resources/data/minecraft/tags/damage_type/bypasses_armor.json"));
+      String bypassesShield = Files.readString(Path.of("src/main/resources/data/minecraft/tags/damage_type/bypasses_shield.json"));
+      String bypassesEnchantments = Files.readString(Path.of("src/main/resources/data/minecraft/tags/damage_type/bypasses_enchantments.json"));
+      String bypassesResistance = Files.readString(Path.of("src/main/resources/data/minecraft/tags/damage_type/bypasses_resistance.json"));
+
+      assertTrue(muramasaHelper.contains("public static void applyNoDefenseDamage(LivingEntity attacker"));
+      assertTrue(muramasaHelper.contains("public static double precisionStrikeDamage(LivingEntity attacker"));
+      assertTrue(muramasaCard.contains("tryBypassDefenseAttack"));
+      assertTrue(muramasaCard.contains("MuramasaCombatHelper.applyNoDefenseDamage(player, target"));
+      assertTrue(muramasaCard.contains("MuramasaCombatHelper.precisionStrikeDamage"));
+
+      assertTrue(liHelper.contains("public static void resolveWuErDa(LivingEntity attacker"));
+      assertTrue(liCard.contains("LiShuwenCombatHelper.resolveWuErDa(player, target"));
+      assertTrue(liCard.contains("findWuErDaTarget"));
+      assertTrue(liCard.contains("WU_ER_DA_LOCK_RANGE = 7.0"));
+      assertTrue(liCard.contains("WU_ER_DA_LOCK_MIN_DOT = 0.35"));
+      assertTrue(liCard.contains("findLookTarget(player, WU_ER_DA_LOCK_RANGE, 2.4"));
+      assertTrue(liHelper.contains("public static final ResourceKey<DamageType> WU_ER_DA"));
+      assertTrue(liHelper.contains("wuErDaDamage(attacker)"));
+      assertTrue(liHelper.contains("source(WU_ER_DA, attacker)"));
+      assertTrue(Files.exists(Path.of("src/main/resources/data/typemoonworld/damage_type/wu_er_da.json")));
+      assertTrue(guaranteedHits.contains("typemoonworld:wu_er_da"));
+      assertTrue(bypassesDefenses.contains("typemoonworld:wu_er_da"));
+      assertTrue(noblePhantasmDamage.contains("typemoonworld:wu_er_da"));
+      assertTrue(bypassesArmor.contains("typemoonworld:wu_er_da"));
+      assertTrue(bypassesShield.contains("typemoonworld:wu_er_da"));
+      assertTrue(bypassesEnchantments.contains("typemoonworld:wu_er_da"));
+      assertTrue(bypassesResistance.contains("typemoonworld:wu_er_da"));
    }
 
    private static boolean getBooleanOrDefault(JsonObject json, String key) {

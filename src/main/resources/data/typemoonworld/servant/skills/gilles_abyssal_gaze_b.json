@@ -1,0 +1,30 @@
+{
+  "id": "gilles_abyssal_gaze_b",
+  "display_name": "Abyssal Gaze B",
+  "display_name_zh": "深渊之邪视 B",
+  "type": "active",
+  "mp_cost": 10,
+  "cooldown_ticks": 400,
+  "duration_ticks": 160,
+  "effects": [
+    {
+      "effect_type": "abyssal_fear",
+      "params": {
+        "attack_reduction": 0.25,
+        "movement_reduction": 0.20,
+        "fear_chance": 0.30,
+        "fear_ticks": 20
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "control",
+        "strength": 0.65,
+        "requires": ["has_mana", "not_silenced"],
+        "bypassed_by": ["stun", "rule_breaker"]
+      }
+    ]
+  }
+}

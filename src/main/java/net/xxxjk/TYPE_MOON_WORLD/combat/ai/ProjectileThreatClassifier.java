@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSpearProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 
@@ -49,6 +50,11 @@ public final class ProjectileThreatClassifier {
    /** Classifies projectile-like entities that use a custom Entity base class. */
    public static Set<FactBypass> classify(Entity projectileLike) {
       if (projectileLike == null) return Set.of();
+      // Keep the Ionioi spear explicit here: it is a normal Projectile, but
+      // custom combat entities must remain visible to every threat classifier.
+      if (projectileLike instanceof MacedonianSpearProjectileEntity spear) {
+         return classify((Projectile)spear);
+      }
       if (projectileLike instanceof Projectile projectile) return classify(projectile);
       if (projectileLike instanceof GilgameshGateWeaponProjectileEntity gate
          && "vajra".equals(gate.getWeaponId())) {
@@ -58,7 +64,9 @@ public final class ProjectileThreatClassifier {
    }
 
    public static boolean isProjectileLike(Entity entity) {
-      return entity instanceof Projectile || entity instanceof GilgameshGateWeaponProjectileEntity;
+      return entity instanceof MacedonianSpearProjectileEntity
+         || entity instanceof Projectile
+         || entity instanceof GilgameshGateWeaponProjectileEntity;
    }
 
    public static Set<FactBypass> classify(DamageSource source) {

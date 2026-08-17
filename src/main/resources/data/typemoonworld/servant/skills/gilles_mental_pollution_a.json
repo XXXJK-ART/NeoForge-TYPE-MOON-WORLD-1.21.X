@@ -1,0 +1,26 @@
+{
+  "id": "gilles_mental_pollution_a",
+  "display_name": "Mental Pollution A",
+  "display_name_zh": "精神污染 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mental_interference_resistance",
+      "params": {
+        "resistance": 1.0,
+        "tactical_complexity_penalty": 0.35
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "control",
+        "strength": 0.4
+      }
+    ]
+  }
+}

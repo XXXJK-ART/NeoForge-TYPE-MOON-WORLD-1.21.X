@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,11 +15,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinJinnEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
@@ -170,8 +169,8 @@ public final class ServantCardFanaticAssassinSkills {
             FanaticAssassinRules.NERVES_DURATION, 0, false, false, false));
       }
       List<Integer> ids = targets.stream().map(LivingEntity::getId).toList();
-      PacketDistributor.sendToPlayer(player,
-         new EnkiduDetectionHighlightMessage(ids, FanaticAssassinRules.NERVES_DURATION), new CustomPacketPayload[0]);
+      ModNetwork.sendToPlayer(player,
+         new EnkiduDetectionHighlightMessage(ids, FanaticAssassinRules.NERVES_DURATION));
       FanaticAssassinCombatHelper.spawnNervesFx(level, player);
    }
 

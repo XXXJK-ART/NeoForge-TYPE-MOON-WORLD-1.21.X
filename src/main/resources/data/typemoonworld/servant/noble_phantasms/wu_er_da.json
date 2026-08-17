@@ -4,7 +4,7 @@
   "display_name_zh": "无二打",
   "type": "anti_unit",
   "rank": "EX",
-  "mp_cost": 30,
+  "mp_cost": 8,
   "cooldown_ticks": 500,
   "windup_ticks": 0,
   "effects": [

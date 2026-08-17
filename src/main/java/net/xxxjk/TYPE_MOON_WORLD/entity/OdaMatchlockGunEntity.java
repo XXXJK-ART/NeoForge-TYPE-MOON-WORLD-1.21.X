@@ -50,6 +50,12 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Float> MOVE_VERTICAL = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> STATIC_VOLLEY_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
    private static final float MOUNT_MAX_HEALTH = 120.0F;
+   private static final float MOUNT_INPUT_SYNC_EPSILON = 0.001F;
+   private static final float AIM_SYNC_EPSILON_DEGREES = 0.5F;
+   private static final double MOUNT_TRAIL_MIN_SPEED_SQR = 0.0025;
+   private static final int MOUNT_TRAIL_PARTICLE_INTERVAL = 12;
+   private static final int FOOT_SUPPORT_TRAIL_PARTICLE_INTERVAL = 12;
+   private static final RawAnimation IDLE_ANIMATION = RawAnimation.begin().thenLoop("1");
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
    private int shootDelay;
@@ -142,10 +148,15 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       return this.entityData.get(MOUNT_MODE);
    }
 
+   public void discardSilently() {
+      this.dissolving = true;
+      this.discard();
+   }
+
    public void setMountInput(double forward, double strafe, double vertical) {
-      this.entityData.set(MOVE_FORWARD, (float)Mth.clamp(forward, -1.0, 1.0));
-      this.entityData.set(MOVE_STRAFE, (float)Mth.clamp(strafe, -1.0, 1.0));
-      this.entityData.set(MOVE_VERTICAL, (float)Mth.clamp(vertical, -1.0, 1.0));
+      setSynchedFloatIfChanged(MOVE_FORWARD, (float)Mth.clamp(forward, -1.0, 1.0), MOUNT_INPUT_SYNC_EPSILON);
+      setSynchedFloatIfChanged(MOVE_STRAFE, (float)Mth.clamp(strafe, -1.0, 1.0), MOUNT_INPUT_SYNC_EPSILON);
+      setSynchedFloatIfChanged(MOVE_VERTICAL, (float)Mth.clamp(vertical, -1.0, 1.0), MOUNT_INPUT_SYNC_EPSILON);
    }
 
    @Override
@@ -196,11 +207,15 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
             dissolveAndDiscard(level);
             return;
          }
-         this.entityData.set(LIFE_TICKS, 20 * 4);
+         if (this.entityData.get(LIFE_TICKS) != 20 * 4) {
+            this.entityData.set(LIFE_TICKS, 20 * 4);
+         }
          updateFootSupportPosition(owner);
-         if (this.tickCount % 6 == 0) {
-            level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.08, this.getZ(), 2, 0.12, 0.04, 0.12, 0.01);
-            level.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY() + 0.08, this.getZ(), 1, 0.08, 0.03, 0.08, 0.005);
+         if (this.tickCount % FOOT_SUPPORT_TRAIL_PARTICLE_INTERVAL == 0 && owner.getDeltaMovement().lengthSqr() >= 0.0004) {
+            level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.08, this.getZ(), 1, 0.1, 0.03, 0.1, 0.008);
+            if (this.tickCount % (FOOT_SUPPORT_TRAIL_PARTICLE_INTERVAL * 2) == 0) {
+               level.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY() + 0.08, this.getZ(), 1, 0.06, 0.02, 0.06, 0.004);
+            }
          }
          return;
       }
@@ -255,7 +270,9 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          dissolveAndDiscard(level);
          return;
       }
-      this.entityData.set(LIFE_TICKS, 20 * 60);
+      if (this.entityData.get(LIFE_TICKS) != 20 * 60) {
+         this.entityData.set(LIFE_TICKS, 20 * 60);
+      }
       this.fallDistance = 0.0F;
       this.noPhysics = true;
       double yaw = Math.toRadians(owner.getYRot());
@@ -273,9 +290,11 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       this.move(net.minecraft.world.entity.MoverType.SELF, velocity);
       setFacing(forward);
       owner.fallDistance = 0.0F;
-      if (this.tickCount % 6 == 0) {
-         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.08, this.getZ(), 3, 0.22, 0.05, 0.22, 0.01);
-         level.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY() + 0.08, this.getZ(), 2, 0.12, 0.04, 0.12, 0.005);
+      if (this.tickCount % MOUNT_TRAIL_PARTICLE_INTERVAL == 0 && velocity.lengthSqr() >= MOUNT_TRAIL_MIN_SPEED_SQR) {
+         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.08, this.getZ(), 1, 0.16, 0.04, 0.16, 0.008);
+         if (this.tickCount % (MOUNT_TRAIL_PARTICLE_INTERVAL * 2) == 0) {
+            level.sendParticles(ParticleTypes.FLAME, this.getX(), this.getY() + 0.08, this.getZ(), 1, 0.08, 0.03, 0.08, 0.004);
+         }
       }
    }
 
@@ -447,13 +466,25 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          float yaw = (float)(Mth.atan2(direction.x, direction.z) * Mth.RAD_TO_DEG);
          this.setYRot(yaw);
          this.yRotO = yaw;
-         this.entityData.set(AIM_YAW, yaw);
+         setSynchedAngleIfChanged(AIM_YAW, yaw);
       }
       double horizontalLength = Math.max(1.0E-4, horizontal.length());
       float pitch = (float)(Mth.atan2(direction.y, horizontalLength) * Mth.RAD_TO_DEG);
       this.setXRot(pitch);
       this.xRotO = pitch;
-      this.entityData.set(AIM_PITCH, pitch);
+      setSynchedAngleIfChanged(AIM_PITCH, pitch);
+   }
+
+   private void setSynchedFloatIfChanged(EntityDataAccessor<Float> accessor, float value, float epsilon) {
+      if (Math.abs(this.entityData.get(accessor) - value) > epsilon) {
+         this.entityData.set(accessor, value);
+      }
+   }
+
+   private void setSynchedAngleIfChanged(EntityDataAccessor<Float> accessor, float value) {
+      if (Math.abs(Mth.degreesDifference(this.entityData.get(accessor), value)) > AIM_SYNC_EPSILON_DEGREES) {
+         this.entityData.set(accessor, value);
+      }
    }
 
    @Override
@@ -509,7 +540,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       controllers.add(new AnimationController<>(this, "controller", 0, event ->
-         event.setAndContinue(RawAnimation.begin().thenLoop("1"))
+         event.setAndContinue(IDLE_ANIMATION)
       ));
    }
 

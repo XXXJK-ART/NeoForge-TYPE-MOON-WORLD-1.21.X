@@ -1,0 +1,9 @@
+{
+  "id": "iskandar_ai",
+  "movement": {"follow_distance": 5.0, "wander_radius": 15.0, "likes_open_space": true},
+  "combat": {"preferred_attack_distance": 8.0, "retreat_health_ratio": 0.3, "melee_preference": 0.75, "berserk_health_ratio": 0.0, "berserk_damage_multiplier": 1.0},
+  "tactical": {"style": "breakthrough", "minimum_range": 2, "preferred_range": 10, "maximum_range": 40, "reposition_distance": 24, "pursuit_aggression": 1.0, "intercept_bias": 4, "vertical_mobility": 0.9, "recovery_tendency": 0.55, "collateral_caution": 0.65, "maximum_terrain_impact": "medium"},
+  "social": {"talk_interval": 0, "greeting_probability": 0.0},
+  "command": {"base_obedience_rate": 0.85, "favor_multiplier": 0.005},
+  "environment": {"liked_biomes": [], "disliked_biomes": [], "preferred_weather": "any"}
+}

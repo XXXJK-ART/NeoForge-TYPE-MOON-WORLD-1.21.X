@@ -24,6 +24,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -148,6 +149,10 @@ public final class ServantCardTransformManager {
       equipArmor(player, servantId);
       ServantCardLoadoutManager.saveAndEquip(player, vars, servantId);
       if ("pale_rider".equals(servantId)) ServantCardPaleRiderSkills.initialize(player, vars);
+      if ("hundred_faces_hassan".equals(servantId)) ServantCardHundredFacesHassanSkills.initialize(player, vars);
+      if ("diarmuid_ua_duibhne".equals(servantId)) ServantCardDiarmuidSkills.initialize(player);
+      if ("lancelot_berserker".equals(servantId)) ServantCardLancelotBerserkerSkills.initialize(player, vars);
+      if ("iskandar".equals(servantId)) ServantCardIskandarSkills.initialize(player);
       if ("shadow_hassan".equals(servantId)) ServantCardShadowHassanSkills.initialize(player);
       if ("fanatic_assassin".equals(servantId)) ServantCardFanaticAssassinSkills.initialize(player);
       applyAttributes(player, definition.parameters(), servantId);
@@ -174,6 +179,10 @@ public final class ServantCardTransformManager {
       if ("ushiwakamaru_rider".equals(vars.servant_card_id)) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
       if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
+      if ("hundred_faces_hassan".equals(vars.servant_card_id)) ServantCardHundredFacesHassanSkills.clear(player);
+      if ("diarmuid_ua_duibhne".equals(vars.servant_card_id)) ServantCardDiarmuidSkills.clear(player);
+      if ("lancelot_berserker".equals(vars.servant_card_id)) ServantCardLancelotBerserkerSkills.clear(player, vars);
+      if ("iskandar".equals(vars.servant_card_id)) ServantCardIskandarSkills.clear(player);
       if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
       if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
@@ -291,6 +300,10 @@ public final class ServantCardTransformManager {
          case "fanatic_assassin" -> ServantCardFanaticAssassinSkills.tick(player, vars);
          case "li_shuwen" -> ServantCardLiShuwenSkills.tick(player, vars);
          case "pale_rider" -> ServantCardPaleRiderSkills.tick(player, vars);
+         case "hundred_faces_hassan" -> ServantCardHundredFacesHassanSkills.tick(player, vars);
+         case "diarmuid_ua_duibhne" -> ServantCardDiarmuidSkills.tick(player, vars);
+         case "lancelot_berserker" -> ServantCardLancelotBerserkerSkills.tick(player, vars);
+         case "iskandar" -> ServantCardIskandarSkills.tick(player, vars);
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
@@ -305,12 +318,13 @@ public final class ServantCardTransformManager {
          case "nightingale" -> ServantCardNightingaleSkills.tick(player, vars);
          case "zhao_yun_rider" -> ServantCardZhaoYunSkills.tick(player, vars);
          case "senko_muramasa" -> ServantCardSenkoMuramasaSkills.tick(player, vars);
+         case "baobhan_sith" -> ServantCardBaobhanSithSkills.tick(player, vars);
          default -> {
          }
       }
    }
 
-   private static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+   static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       ServantCardEmiyaSkills.clear(player);
       ServantCardArtoriaSkills.clear(player);
       ServantCardCuChulainnSkills.clear(player);
@@ -322,6 +336,10 @@ public final class ServantCardTransformManager {
       ServantCardMedusaSkills.clear(player);
       ServantCardLiShuwenSkills.clear(player);
       ServantCardPaleRiderSkills.clear(player);
+      ServantCardHundredFacesHassanSkills.clear(player);
+      ServantCardDiarmuidSkills.clear(player);
+      ServantCardLancelotBerserkerSkills.clear(player, vars);
+      ServantCardIskandarSkills.clear(player);
       ServantCardShadowHassanSkills.clear(player);
       ServantCardFanaticAssassinSkills.clear(player);
       ServantCardEnkiduSkills.clear(player);
@@ -331,6 +349,7 @@ public final class ServantCardTransformManager {
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
       ServantCardSenkoMuramasaSkills.clear(player, vars);
+      ServantCardBaobhanSithSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -459,6 +478,9 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean triggerAction(ServerPlayer player, int slot) {
+      if (EnumaChainService.isCasting(player)) {
+         return false;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || slot < -1 || slot > 9) {
          return false;
@@ -471,6 +493,10 @@ public final class ServantCardTransformManager {
       }
       if (ServantMasterCarryService.isCarryingMaster(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master_carry.skill_blocked"), true);
+         return false;
+      }
+      if (player.getPersistentData().getLong("TypeMoonCombatSuppressedUntil") > player.level().getGameTime()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servant_card_id, slot);
@@ -513,6 +539,19 @@ public final class ServantCardTransformManager {
       }
       if ("hajun".equals(action.effectId())) {
          return ServantCardOdaNobunagaSkills.performOdaHajunAction(player, vars, action);
+      }
+      if ("iskandar_ionioi_hetairoi".equals(action.effectId()) && ServantCardIskandarSkills.isIonioiActiveOrInside(player)) {
+         return ServantCardIskandarSkills.performIonioiHetairoi(player, vars);
+      }
+      if ("iskandar_gordius_wheel".equals(action.effectId()) && ServantCardIskandarSkills.hasActiveGordiusWheel(player)) {
+         return ServantCardIskandarSkills.performGordiusWheel(player);
+      }
+      if ("lancelot_aroundight".equals(action.effectId()) && ServantCardLancelotBerserkerSkills.isAroundightActive(player)) {
+         if (ServantCardLancelotBerserkerSkills.performAroundight(player, vars)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated", Component.translatable(skillTranslationKey(action))), true);
+            vars.syncPlayerVariables(player);
+         }
+         return true;
       }
       if ("gilgamesh_key".equals(action.effectId())) {
          return ServantCardGilgameshSkills.performKey(player);
@@ -626,6 +665,9 @@ public final class ServantCardTransformManager {
       }
       if ("nightingale_pledge".equals(action.effectId())) {
          return ServantCardNightingaleSkills.performNoblePhantasmAction(player, vars, action);
+      }
+      if ("baobhan_sith_fetch_failnaught".equals(action.effectId())) {
+         return ServantCardBaobhanSithSkills.openFetchFailnaughtMap(player);
       }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       boolean zhaoYunBreakthroughDiscount =
@@ -903,6 +945,27 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
          return;
       }
+      if ("diarmuid_ua_duibhne".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
+         player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
+         return;
+      }
+      if ("lancelot_berserker".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
+         player.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+         return;
+      }
+      if ("iskandar".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
+         player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
+         return;
+      }
       if (servantCardHasHeadArmor(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
       } else {
@@ -927,7 +990,9 @@ public final class ServantCardTransformManager {
          || "paracelsus".equals(servantId)
          || "ushiwakamaru_rider".equals(servantId)
          || "zhao_yun_rider".equals(servantId)
-         || "gilgamesh_caster".equals(servantId);
+         || "gilgamesh_caster".equals(servantId)
+         || "baobhan_sith".equals(servantId)
+         || "hundred_faces_hassan".equals(servantId);
 
    }
 
@@ -941,7 +1006,7 @@ public final class ServantCardTransformManager {
 
    private static boolean servantCardHasLegArmor(String servantId) {
       return !"medea".equals(servantId) && !"cursed_arm_hassan".equals(servantId)
-         && !"fanatic_assassin".equals(servantId);
+         && !"fanatic_assassin".equals(servantId) && !"hundred_faces_hassan".equals(servantId);
    }
 
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -1170,7 +1235,10 @@ public final class ServantCardTransformManager {
          return 0;
       }
       String id = action.effectId();
-      if ("zhao_yun_changbanpo".equals(id)) {
+      if ("zhao_yun_changbanpo".equals(id) || "iskandar_ionioi_hetairoi".equals(id)) {
+         return action.cooldownTicks();
+      }
+      if ("baobhan_sith_fetch_failnaught".equals(id)) {
          return action.cooldownTicks();
       }
       int cooldown = action.cooldownTicks();
@@ -1436,6 +1504,38 @@ public final class ServantCardTransformManager {
          case "pale_rider_death_pulse" -> { if (!ServantCardPaleRiderSkills.deathPulse(player)) return false; }
          case "pale_rider_underworld" -> { if (!ServantCardPaleRiderSkills.toggleUnderworld(player)) return false; }
          case "pale_rider_calamity" -> { if (!ServantCardPaleRiderSkills.toggleCalamity(player)) return false; }
+         case "hundred_faces_summon" -> { if (!ServantCardHundredFacesHassanSkills.summonOrOpenMenu(player, false)) return false; }
+         case "hundred_faces_summon_menu" -> { if (!ServantCardHundredFacesHassanSkills.summonOrOpenMenu(player, true)) return false; }
+         case "hundred_faces_command" -> { if (!ServantCardHundredFacesHassanSkills.openGlobalCommand(player)) return false; }
+         case "hundred_faces_single_command" -> { if (!ServantCardHundredFacesHassanSkills.openSingleCommand(player)) return false; }
+         case "hundred_faces_switch" -> { if (!ServantCardHundredFacesHassanSkills.openSwitch(player)) return false; }
+         case "hundred_faces_concealment" -> { if (!ServantCardHundredFacesHassanSkills.performPresenceConcealment(player)) return false; }
+         case "diarmuid_twin_spear_combo" -> ServantCardDiarmuidSkills.performTwinSpearCombo(player);
+         case "diarmuid_red_rose_focus" -> ServantCardDiarmuidSkills.performRedRoseFocus(player);
+         case "diarmuid_yellow_rose_focus" -> ServantCardDiarmuidSkills.performYellowRoseFocus(player);
+         case "diarmuid_knight_strategy" -> ServantCardDiarmuidSkills.performKnightStrategy(player);
+         case "diarmuid_mana_burst_jump" -> ServantCardDiarmuidSkills.performManaBurstJump(player);
+         case "diarmuid_flower_step" -> ServantCardDiarmuidSkills.performFlowerStep(player);
+         case "diarmuid_disengage" -> ServantCardDiarmuidSkills.performDisengage(player);
+         case "diarmuid_dual_wield" -> ServantCardDiarmuidSkills.performDualWieldToggle(player);
+         case "lancelot_maul_combo" -> ServantCardLancelotBerserkerSkills.performMaulCombo(player);
+         case "lancelot_feral_rush" -> ServantCardLancelotBerserkerSkills.performFeralRush(player);
+         case "lancelot_ground_slam" -> ServantCardLancelotBerserkerSkills.performGroundSlam(player);
+         case "lancelot_hunt_step" -> ServantCardLancelotBerserkerSkills.performHuntStep(player);
+         case "lancelot_mana_reversal" -> ServantCardLancelotBerserkerSkills.performManaReversal(player);
+         case "lancelot_berserk_roar" -> ServantCardLancelotBerserkerSkills.performBerserkRoar(player);
+         case "lancelot_knight_of_owner" -> { if (!ServantCardLancelotBerserkerSkills.performKnightOfOwner(player)) return false; }
+         case "lancelot_aroundight" -> { if (!ServantCardLancelotBerserkerSkills.performAroundight(player, vars)) return false; }
+         case "iskandar_bucephalus" -> { if (!ServantCardIskandarSkills.performBucephalus(player)) return false; }
+         case "iskandar_royal_sword_assault" -> { if (!ServantCardIskandarSkills.performRoyalSwordAssault(player)) return false; }
+         case "iskandar_conqueror_order" -> { if (!ServantCardIskandarSkills.performConquerorOrder(player)) return false; }
+         case "iskandar_thunder_call" -> { if (!ServantCardIskandarSkills.performThunderCall(player)) return false; }
+         case "iskandar_battlefield_stride" -> { if (!ServantCardIskandarSkills.performBattlefieldStride(player)) return false; }
+         case "iskandar_vanguard_summon" -> { if (!ServantCardIskandarSkills.performVanguardSummon(player)) return false; }
+         case "iskandar_kingly_war_cry" -> { if (!ServantCardIskandarSkills.performKinglyWarCry(player)) return false; }
+         case "iskandar_charge" -> { if (!ServantCardIskandarSkills.performCharge(player)) return false; }
+         case "iskandar_gordius_wheel" -> { if (!ServantCardIskandarSkills.performGordiusWheel(player)) return false; }
+         case "iskandar_ionioi_hetairoi" -> { if (!ServantCardIskandarSkills.performIonioiHetairoi(player, vars)) return false; }
          case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.toggleConcealment(player)) return false; }
          case "shadow_hassan_lantern" -> { if (!ServantCardShadowHassanSkills.performShadowLantern(player, vars)) return false; }
          case "shadow_hassan_wandering" -> { if (!ServantCardShadowHassanSkills.performShadowWandering(player)) return false; }
@@ -1484,6 +1584,16 @@ public final class ServantCardTransformManager {
          case "muramasa_karma_slash" -> { if (!ServantCardSenkoMuramasaSkills.performKarmaSlash(player)) return false; }
          case "muramasa_sword_field" -> { if (!ServantCardSenkoMuramasaSkills.performSwordField(player)) return false; }
          case "muramasa_no_gen_kensai" -> { if (!ServantCardSenkoMuramasaSkills.performNoblePhantasm(player)) return false; }
+         case "baobhan_sith_curse_panel" -> { if (!ServantCardBaobhanSithSkills.openCursePanel(player)) return false; }
+         case "baobhan_sith_blood_spike" -> { if (!ServantCardBaobhanSithSkills.performBloodSpike(player)) return false; }
+         case "baobhan_sith_blood_thorns" -> { if (!ServantCardBaobhanSithSkills.performBloodThorns(player)) return false; }
+         case "baobhan_sith_curse_volley" -> { if (!ServantCardBaobhanSithSkills.performCurseVolley(player)) return false; }
+         case "baobhan_sith_fingertip_dance" -> { if (!ServantCardBaobhanSithSkills.performFingertipDance(player)) return false; }
+         case "baobhan_sith_night_feast" -> { if (!ServantCardBaobhanSithSkills.performNightFeast(player)) return false; }
+         case "baobhan_sith_grimalkin" -> { if (!ServantCardBaobhanSithSkills.performGrimalkin(player)) return false; }
+         case "baobhan_sith_blessed_successor" -> { if (!ServantCardBaobhanSithSkills.performBlessedSuccessor(player)) return false; }
+         case "baobhan_sith_fairy_vampirism" -> { if (!ServantCardBaobhanSithSkills.performFairyVampirism(player)) return false; }
+         case "baobhan_sith_fetch_failnaught" -> { if (!ServantCardBaobhanSithSkills.performFetchFailnaught(player)) return false; }
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

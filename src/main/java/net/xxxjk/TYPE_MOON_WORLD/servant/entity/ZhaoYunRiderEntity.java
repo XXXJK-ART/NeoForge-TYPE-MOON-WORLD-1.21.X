@@ -89,10 +89,10 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       Entity vehicle = getVehicle();
       super.stopRiding();
       if (vehicle instanceof ZhaoYunHakuryuEntity mount && mount.isAlive()) {
-         // Hakuryu is summoned for Zhao Yun's current ride. Once he gets off,
-         // remove that mount instead of leaving a stray persistent horse.
-         onHakuryuDismounted(mount);
-         mount.discard();
+         // Passenger links can briefly drop during chunk/tracking updates.
+         // Let Hakuryu restore the bound Zhao Yun before treating it as a real
+         // dismount and deleting the persistent mount.
+         mount.requestRiderRelinkGrace();
       }
    }
 
@@ -805,12 +805,13 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       BlockPos base = mount.blockPosition();
       int broken = 0;
       int maxBroken = 80;
-      // Break a broad corridor ahead of the horse, matching Pegasus' charge
-      // behavior instead of only removing blocks at the final tick position.
+      // Break a broad corridor ahead of the horse, but never dig downward.
+      // Hakuryu is a grounded mount, so removing the lower layer in front of
+      // the charge can make it tunnel into terrain instead of clearing it.
       for (int distance = 0; distance < 7 && broken < maxBroken; distance++) {
          BlockPos check = base.offset((int)Math.round(forward.x * (distance + 1)), 0,
             (int)Math.round(forward.z * (distance + 1)));
-         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-2, -1, -2), check.offset(2, 4, 2))) {
+         for (BlockPos pos : BlockPos.betweenClosed(check.offset(-2, 0, -2), check.offset(2, 4, 2))) {
             // Preserve the support directly beneath the ground mount; the
             // corridor starts at its feet and extends forward/upward.
             if (pos.getY() < base.getY()) continue;

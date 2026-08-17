@@ -14,13 +14,16 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonEntrypoint;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantCombatActionExecutor;
+import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantEntityFactory;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantLifecycleHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantNoblePhantasmExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantNoblePhantasmContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
+import net.minecraft.server.level.ServerLevel;
 
 public final class ServantAddonRegistry implements IServantAddonRegistry {
    private static final ServantAddonRegistry INSTANCE = new ServantAddonRegistry();
@@ -31,6 +34,7 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
    private static final Map<String, RegisteredCombatAction> COMBAT_ACTIONS = new ConcurrentHashMap<>();
    private static final Map<String, RegisteredNoblePhantasm> NOBLE_PHANTASMS = new ConcurrentHashMap<>();
    private static final Map<String, RegisteredLifecycleHandler> LIFECYCLE_HANDLERS = new ConcurrentHashMap<>();
+   private static final Map<String, RegisteredEntityFactory> ENTITY_FACTORIES = new ConcurrentHashMap<>();
 
    private ServantAddonRegistry() {
    }
@@ -70,6 +74,36 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
    public static boolean registerExternalLifecycle(String id, IServantLifecycleHandler handler, String providerId) {
       ensureInitialized();
       return INSTANCE.registerLifecycleHandler(id, handler, providerId);
+   }
+
+   public static boolean registerExternalEntityFactory(String id, IServantEntityFactory factory, String providerId) {
+      ensureInitialized();
+      return INSTANCE.registerEntityFactory(id, factory, providerId);
+   }
+
+   public static ServantEntity createExternalEntity(ServerLevel level, ResourceLocation servantId) {
+      ensureInitialized();
+      if (level == null || servantId == null || ENTITY_FACTORIES.isEmpty()) {
+         return null;
+      }
+      RegisteredEntityFactory registered = ENTITY_FACTORIES.get(servantId.toString());
+      if (registered == null) {
+         registered = ENTITY_FACTORIES.get(servantId.getPath());
+      }
+      if (registered == null || registered.factory == null) {
+         return null;
+      }
+      try {
+         return registered.factory.create(level);
+      } catch (Exception e) {
+         TYPE_MOON_WORLD.LOGGER.error(
+            "Addon servant entity factory failed. servantId={}, provider={}",
+            servantId,
+            registered.providerId,
+            e
+         );
+         return null;
+      }
    }
 
    public static Map<String, ServantDefinition> addonDefinitions() {
@@ -285,6 +319,26 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
       return true;
    }
 
+   @Override
+   public boolean registerEntityFactory(String servantId, IServantEntityFactory factory, String providerId) {
+      if (FROZEN.get() || !isValidId(servantId) || factory == null) {
+         return false;
+      }
+      String provider = normalizeProvider(providerId);
+      RegisteredEntityFactory previous = ENTITY_FACTORIES.putIfAbsent(servantId, new RegisteredEntityFactory(servantId, factory, provider));
+      if (previous != null) {
+         TYPE_MOON_WORLD.LOGGER.warn(
+            "Duplicate servant entity factory ignored. servantId={}, existingProvider={}, newProvider={}",
+            servantId,
+            previous.providerId,
+            provider
+         );
+         return false;
+      }
+      TYPE_MOON_WORLD.LOGGER.debug("Registered servant entity factory: {} ({})", servantId, provider);
+      return true;
+   }
+
    private static void loadAddonEntrypoints() {
       for (IServantAddonEntrypoint entrypoint : ServiceLoader.load(IServantAddonEntrypoint.class)) {
          if (entrypoint == null) {
@@ -318,5 +372,8 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
    }
 
    private record RegisteredLifecycleHandler(String handlerId, IServantLifecycleHandler handler, String providerId) {
+   }
+
+   private record RegisteredEntityFactory(String servantId, IServantEntityFactory factory, String providerId) {
    }
 }

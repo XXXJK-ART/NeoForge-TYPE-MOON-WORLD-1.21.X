@@ -1,0 +1,109 @@
+{
+  "duration": 4.6,
+  "notes": "Leff Spiritron Cannon release: fixed forward golden beam only, no sword-lift or falling strike segment.",
+  "environment": [
+    { "type": "screen_tint", "color": "#38FFF4B0", "start": 0.0, "end": 0.55, "fade_in": 0.04, "fade_out": 0.24, "intensity": 0.18 }
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.55,
+      "rate": 1400,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.35,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.0, 0.8],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 6,
+      "component": { "type": "circle", "radius": 1.0, "segments": 180 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#E8FFFFFF" },
+        { "t": 0.38, "color": "#CCFFD700" },
+        { "t": 1.0, "color": "#00FFAA00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.14 },
+        { "t": 0.35, "size": 0.72 },
+        { "t": 1.0, "size": 0.08 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.2, 0.2, 0.2], "easing": "ease_out_cubic" },
+        { "t": 0.42, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [9.2, 9.2, 9.2], "easing": "ease_out_cubic" },
+        { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [12.0, 12.0, 12.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LEFF_SPIRITRON_CANNON_MUZZLE_RING",
+      "vanilla_particles": [
+        { "type": "flash", "count": 1, "spread": [0.02, 0.02, 0.02], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.9 },
+        { "type": "gust", "count": 1, "spread": [0.8, 0.8, 0.8], "offset": [0.0, 0.0, 0.0], "speed": 0.08, "chance": 0.45 }
+      ]
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 4.45,
+      "rate": 5200,
+      "particle_lifetime": 0.48,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.16,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 18.0],
+      "velocity_variance": 0.12,
+      "max_vanilla_particles_per_tick": 5,
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 140.0], "segments": 380 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#E8FFFFFF" },
+        { "t": 0.18, "color": "#CCFFF0A8" },
+        { "t": 0.62, "color": "#BBFFD700" },
+        { "t": 1.0, "color": "#00FFAA00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.5 },
+        { "t": 0.16, "size": 1.8 },
+        { "t": 0.6, "size": 1.1 },
+        { "t": 1.0, "size": 0.28 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.08], "easing": "ease_out_cubic" },
+        { "t": 0.2, "scale": [1.2, 1.2, 0.95], "easing": "ease_out_back" },
+        { "t": 1.0, "scale": [0.62, 0.62, 1.0], "easing": "ease_in_cubic" }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LEFF_SPIRITRON_CANNON_CORE_BEAM",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.15, 0.15, 0.15], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 }
+      ],
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 4.4,
+      "rate": 1250,
+      "particle_lifetime": 0.7,
+      "size_variance": 0.32,
+      "position_variance": 0.06,
+      "velocity": [0.0, 0.0, 10.0],
+      "velocity_variance": 0.2,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 140.0], "segments": 260 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88FFFFFF" },
+        { "t": 0.42, "color": "#77FFD700" },
+        { "t": 1.0, "color": "#00DAA520" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.18 },
+        { "t": 0.35, "size": 0.74 },
+        { "t": 1.0, "size": 0.1 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [2.2, 2.2, 0.35] },
+        { "t": 0.45, "scale": [8.0, 8.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [6.0, 6.0, 1.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LEFF_SPIRITRON_CANNON_OUTER_AURA",
+      "enable_trail": true
+    }
+  ]
+}

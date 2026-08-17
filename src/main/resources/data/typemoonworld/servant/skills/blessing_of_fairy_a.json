@@ -1,0 +1,21 @@
+{
+  "id": "blessing_of_fairy_a",
+  "display_name": "Blessing of Fairy A",
+  "display_name_zh": "精灵的加护 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "battlefield_blessing",
+      "params": {
+        "critical_rate_bonus": 0.3,
+        "low_health_evasion_recovery_multiplier": 2.0,
+        "kill_damage_bonus": 0.1,
+        "kill_damage_bonus_max_stacks": 5,
+        "out_of_combat_expire_ticks": 200
+      }
+    }
+  ]
+}

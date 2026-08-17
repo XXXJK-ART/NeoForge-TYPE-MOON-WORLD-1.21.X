@@ -72,12 +72,6 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
    }
 
-   @Override
-   public void renderCubesOfBone(PoseStack poseStack, GeoBone bone, VertexConsumer buffer,
-                                 int packedLight, int packedOverlay, int colour) {
-      super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, colour);
-   }
-
    private void applyArmorSlotVisibility() {
       if (this.currentSlot != null) {
          applyBoneVisibilityBySlot(this.currentSlot);
@@ -104,6 +98,9 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
          }
          setBoneVisible(this.rightLeg, true);
          setBoneVisible(this.leftLeg, true);
+      } else if (currentSlot == EquipmentSlot.FEET) {
+         setBoneVisible(this.rightBoot, true);
+         setBoneVisible(this.leftBoot, true);
       }
    }
 
@@ -156,7 +153,7 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
       return switch (armor.servantId()) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
    }

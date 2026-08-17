@@ -43,9 +43,7 @@ public final class ServantFlightCombatService {
       if (entity == null || entity.level().isClientSide()) return;
       long now = entity.level().getGameTime();
       if (!isManagedFlight(entity, now)) {
-         if (isFlightCapable(entity) && entity.isNoGravity() && entity.isAlive()
-            && !entity.isSpiritualDissolving() && !actionOwnsMovement(entity)
-            && !ServantCombatMotionService.isLaunched(entity)) {
+         if (shouldForceGroundedGravity(entity, now)) {
             entity.setNoGravity(false);
          }
          ServantFlightHelper.clearAllAnchors(entity);
@@ -103,6 +101,16 @@ public final class ServantFlightCombatService {
       entity.hasImpulse = true;
       markControlled(entity, now);
       return true;
+   }
+
+   public static boolean shouldForceGroundedGravity(ServantEntity entity, long now) {
+      return entity != null
+         && !isManagedFlight(entity, now)
+         && entity.isNoGravity()
+         && entity.isAlive()
+         && !entity.isSpiritualTransitionLocked()
+         && !actionOwnsMovement(entity)
+         && !ServantCombatMotionService.isLaunched(entity);
    }
 
    public static boolean shouldDescend(long disconnectedTicks) {
@@ -188,9 +196,4 @@ public final class ServantFlightCombatService {
       return entity instanceof OdaNobunagaEntity oda && OdaNobunagaCombatHelper.isCombatFlying(oda, now);
    }
 
-   private static boolean isFlightCapable(ServantEntity entity) {
-      return entity instanceof MedeaEntity || entity instanceof GilgameshEntity
-         || entity instanceof CasterGilgameshEntity || entity instanceof EnkiduEntity
-         || entity instanceof OdaNobunagaEntity;
-   }
 }

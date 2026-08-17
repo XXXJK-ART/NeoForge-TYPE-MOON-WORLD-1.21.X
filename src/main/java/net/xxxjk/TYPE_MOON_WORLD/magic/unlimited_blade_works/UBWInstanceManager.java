@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -104,6 +105,34 @@ public final class UBWInstanceManager {
       double x = (random.nextDouble() * 2.0 - 1.0) * ENTRY_RANGE + 0.5;
       double z = (random.nextDouble() * 2.0 - 1.0) * ENTRY_RANGE + 0.5;
       return new Vec3(x, 0.0, z);
+   }
+
+   /**
+    * Picks a fresh coordinate in a shared combat dimension without placing a
+    * new encounter on top of an already loaded encounter.
+    */
+   public static Vec3 randomOpenEntryPosition(ServerLevel level, RandomSource random, double minDistance) {
+      Vec3 fallback = randomEntryPosition(random);
+      if (level == null || minDistance <= 0.0) {
+         return fallback;
+      }
+      double minDistanceSqr = minDistance * minDistance;
+      for (int attempt = 0; attempt < 12; attempt++) {
+         Vec3 candidate = randomEntryPosition(random);
+         boolean clear = true;
+         for (Entity entity : level.getEntities().getAll()) {
+            double dx = entity.getX() - candidate.x;
+            double dz = entity.getZ() - candidate.z;
+            if (entity.isAlive() && dx * dx + dz * dz < minDistanceSqr) {
+               clear = false;
+               break;
+            }
+         }
+         if (clear) {
+            return candidate;
+         }
+      }
+      return fallback;
    }
 
    public static void keepInstanceTicking(UUID ownerId, ServerLevel level, BlockPos centerPos) {

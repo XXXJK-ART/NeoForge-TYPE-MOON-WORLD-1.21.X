@@ -35,7 +35,6 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Post;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone;
@@ -43,9 +42,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimen
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -56,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
@@ -75,10 +73,7 @@ public class TypeMoonWorldModVariables {
    );
 
    private static void sendIfSupported(ServerPlayer player, CustomPacketPayload payload) {
-      if (player != null && !(player instanceof FakePlayer) && payload != null
-         && NetworkRegistry.hasChannel(player.connection, payload.type().id())) {
-         PacketDistributor.sendToPlayer(player, payload);
-      }
+      ModNetwork.sendToPlayer(player, payload);
    }
 
    @EventBusSubscriber
@@ -93,7 +88,7 @@ public class TypeMoonWorldModVariables {
                MasterStateManager.release(player);
             }
             PassiveService.reconcileAttributes(player, vars);
-            vars.syncPlayerVariables(event.getEntity());
+            vars.forceSyncPlayerVariables(event.getEntity());
          }
       }
 
@@ -102,14 +97,14 @@ public class TypeMoonWorldModVariables {
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             PassiveService.reconcileAttributes(player, vars);
-            vars.syncPlayerVariables(event.getEntity());
+            vars.forceSyncPlayerVariables(event.getEntity());
          }
       }
 
       @SubscribeEvent
       public static void onPlayerChangedDimensionSyncPlayerVariables(PlayerChangedDimensionEvent event) {
          if (event.getEntity() instanceof ServerPlayer player) {
-            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).syncPlayerVariables(event.getEntity());
+            ((TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).forceSyncPlayerVariables(event.getEntity());
          }
       }
 
@@ -327,6 +322,7 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
             clone.servant_card_arash_arrow_stock = original.servant_card_arash_arrow_stock;
             clone.servant_card_royal_cannon_ammo = original.servant_card_royal_cannon_ammo;
+            clone.servant_card_heracles_god_hand_lives = original.servant_card_heracles_god_hand_lives;
             clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
             clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
             clone.servant_card_hassan_cloak_broken = original.servant_card_hassan_cloak_broken;
@@ -632,6 +628,7 @@ public class TypeMoonWorldModVariables {
       int paracelsusDiamondShieldStock,
       int arashArrowStock,
       int royalCannonAmmo,
+      int heraclesGodHandLives,
       String enkiduPoints,
       boolean medusaMysticEyesActive,
       boolean hassanCloakBroken,
@@ -681,6 +678,7 @@ public class TypeMoonWorldModVariables {
             buffer.writeVarInt(message.paracelsusDiamondShieldStock);
             buffer.writeVarInt(message.arashArrowStock);
             buffer.writeVarInt(message.royalCannonAmmo);
+            buffer.writeVarInt(message.heraclesGodHandLives);
             buffer.writeUtf(message.enkiduPoints == null ? "" : message.enkiduPoints, MAX_POINTS_LENGTH);
             buffer.writeBoolean(message.medusaMysticEyesActive);
             buffer.writeBoolean(message.hassanCloakBroken);
@@ -715,6 +713,7 @@ public class TypeMoonWorldModVariables {
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readBoolean(),
+            buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
@@ -766,6 +765,7 @@ public class TypeMoonWorldModVariables {
             vars.servant_card_paracelsus_diamond_shield_stock,
             vars.servant_card_arash_arrow_stock,
             vars.servant_card_royal_cannon_ammo,
+            vars.servant_card_heracles_god_hand_lives,
             vars.servant_card_enkidu_transfiguration_points,
             vars.servant_card_medusa_mystic_eyes_active,
             vars.servant_card_hassan_cloak_broken,
@@ -820,6 +820,7 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_paracelsus_diamond_shield_stock = Math.max(0, message.paracelsusDiamondShieldStock);
                   vars.servant_card_arash_arrow_stock = Mth.clamp(message.arashArrowStock, 0, 5000);
                   vars.servant_card_royal_cannon_ammo = Mth.clamp(message.royalCannonAmmo, 0, 5000);
+                  vars.servant_card_heracles_god_hand_lives = Mth.clamp(message.heraclesGodHandLives, 0, 12);
                   vars.servant_card_enkidu_transfiguration_points = message.enkiduPoints == null ? "" : message.enkiduPoints;
                   vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
                   vars.servant_card_hassan_cloak_broken = message.hassanCloakBroken;
@@ -957,6 +958,10 @@ public class TypeMoonWorldModVariables {
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
       private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
+      private transient boolean fullSyncSnapshotSent = false;
+      private transient int fullSyncSnapshotHash = 0;
+      private transient boolean manaSyncSnapshotSent = false;
+      private transient int manaSyncSnapshotHash = 0;
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -1112,6 +1117,7 @@ public class TypeMoonWorldModVariables {
       public int servant_card_paracelsus_diamond_shield_stock = 0;
       public int servant_card_arash_arrow_stock = 0;
       public int servant_card_royal_cannon_ammo = 0;
+      public int servant_card_heracles_god_hand_lives = 0;
       public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       public boolean servant_card_medusa_mystic_eyes_active = false;
       public boolean servant_card_hassan_cloak_broken = false;
@@ -2193,6 +2199,7 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
          nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
          nbt.putInt("servant_card_arash_arrow_stock", this.servant_card_arash_arrow_stock);
+         nbt.putInt("servant_card_heracles_god_hand_lives", this.servant_card_heracles_god_hand_lives);
          nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
          nbt.putBoolean("servant_card_medusa_mystic_eyes_active", this.servant_card_medusa_mystic_eyes_active);
          nbt.putBoolean("servant_card_hassan_cloak_broken", this.servant_card_hassan_cloak_broken);
@@ -2573,6 +2580,7 @@ public class TypeMoonWorldModVariables {
          this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
          this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
          this.servant_card_arash_arrow_stock = nbt.contains("servant_card_arash_arrow_stock") ? Mth.clamp(nbt.getInt("servant_card_arash_arrow_stock"), 0, 5000) : 0;
+         this.servant_card_heracles_god_hand_lives = nbt.contains("servant_card_heracles_god_hand_lives") ? Mth.clamp(nbt.getInt("servant_card_heracles_god_hand_lives"), 0, 12) : 0;
          this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
          this.servant_card_medusa_mystic_eyes_active = nbt.getBoolean("servant_card_medusa_mystic_eyes_active");
          this.servant_card_hassan_cloak_broken = nbt.getBoolean("servant_card_hassan_cloak_broken");
@@ -2789,9 +2797,19 @@ public class TypeMoonWorldModVariables {
          }
 
          this.ensureMagicSystemInitialized();
+         this.resetSyncSnapshots();
       }
 
       public void syncPlayerVariables(Entity entity) {
+         this.syncPlayerVariables(entity, false);
+      }
+
+      public void forceSyncPlayerVariables(Entity entity) {
+         this.syncPlayerVariables(entity, true);
+      }
+
+      private void syncPlayerVariables(Entity entity, boolean force) {
+         long syncStarted = entity instanceof ServerPlayer ? System.nanoTime() : 0L;
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
          MagicCircuitColorHelper.ensureColor(this);
@@ -2903,7 +2921,18 @@ public class TypeMoonWorldModVariables {
          this.gravity_magic_mode = Math.max(-2, Math.min(2, this.gravity_magic_mode));
          this.gandr_machine_gun_mode = Math.max(0, Math.min(1, this.gandr_machine_gun_mode));
          if (entity instanceof ServerPlayer serverPlayer) {
-            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(this.serializeNBT(serverPlayer.registryAccess())));
+            CompoundTag snapshot = this.serializeNBT(serverPlayer.registryAccess());
+            int hash = snapshot.hashCode();
+            boolean snapshotChanged = force || !this.fullSyncSnapshotSent || this.fullSyncSnapshotHash != hash;
+            if (snapshotChanged) {
+               sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.PlayerVariablesSyncMessage(snapshot));
+               this.fullSyncSnapshotSent = true;
+               this.fullSyncSnapshotHash = hash;
+               TypeMoonWorldModVariables.ManaSyncMessage manaSnapshot = new TypeMoonWorldModVariables.ManaSyncMessage(this);
+               this.manaSyncSnapshotSent = true;
+               this.manaSyncSnapshotHash = manaSnapshot.hashCode();
+            }
+            PerformanceMonitor.recordPlayerFullSync(System.nanoTime() - syncStarted, snapshotChanged);
          }
       }
 
@@ -2921,8 +2950,21 @@ public class TypeMoonWorldModVariables {
 
       public void syncMana(Entity entity) {
          if (entity instanceof ServerPlayer serverPlayer) {
-            sendIfSupported(serverPlayer, new TypeMoonWorldModVariables.ManaSyncMessage(this));
+            TypeMoonWorldModVariables.ManaSyncMessage payload = new TypeMoonWorldModVariables.ManaSyncMessage(this);
+            int hash = payload.hashCode();
+            if (!this.manaSyncSnapshotSent || this.manaSyncSnapshotHash != hash) {
+               sendIfSupported(serverPlayer, payload);
+               this.manaSyncSnapshotSent = true;
+               this.manaSyncSnapshotHash = hash;
+            }
          }
+      }
+
+      private void resetSyncSnapshots() {
+         this.fullSyncSnapshotSent = false;
+         this.fullSyncSnapshotHash = 0;
+         this.manaSyncSnapshotSent = false;
+         this.manaSyncSnapshotHash = 0;
       }
 
       public void syncServantCardRuntime(Entity entity) {

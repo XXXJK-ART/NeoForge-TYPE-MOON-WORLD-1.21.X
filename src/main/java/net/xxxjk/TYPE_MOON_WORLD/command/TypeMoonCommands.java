@@ -30,8 +30,11 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
@@ -41,6 +44,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.command.VFXCommands;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class TypeMoonCommands {
    private static final String MAGIC_ANALYSIS_MAGIC_ID = "magic_analysis";
@@ -92,6 +96,16 @@ public class TypeMoonCommands {
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
       EARTH_MAGIC_ID,
+      "flame_array",
+      "azure_water_array",
+      "gale_wind_array",
+      "rock_earth_array",
+      "contract_magecraft",
+      "aerial_stasis",
+      "aerial_ascent",
+      "touko_travel",
+      "flight_magic",
+      "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -129,6 +143,16 @@ public class TypeMoonCommands {
       WATER_MAGIC_ID,
       WIND_MAGIC_ID,
       EARTH_MAGIC_ID,
+      "flame_array",
+      "azure_water_array",
+      "gale_wind_array",
+      "rock_earth_array",
+      "contract_magecraft",
+      "aerial_stasis",
+      "aerial_ascent",
+      "touko_travel",
+      "flight_magic",
+      "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
@@ -151,6 +175,16 @@ public class TypeMoonCommands {
       "storage",
       "storm",
       "zagan",
+      "typemoonworld:imaginary_absorption",
+      "typemoonworld:imaginary_absorption_evolved",
+      "typemoonworld:shadow_materialization",
+      "typemoonworld:black_mud_control",
+      "typemoonworld:summon_black_mud",
+      "typemoonworld:shadow_binding",
+      "typemoonworld:shadow_transfer",
+      "typemoonworld:heroic_spirit_devourer",
+      "typemoonworld:forbidden_magic",
+      "typemoonworld:shadow_art",
       "bajiquan",
       "ganryu",
       KendoCombatService.HOKUSHIN_ID,
@@ -168,6 +202,14 @@ public class TypeMoonCommands {
       dispatcher.register(
          Commands.literal("fate_card_release")
             .executes(TypeMoonCommands::releaseFateCard)
+      );
+      dispatcher.register(
+         Commands.literal("typemoon").requires(source -> source.hasPermission(2))
+            .then(
+               Commands.literal("performance")
+                  .then(Commands.literal("status").executes(TypeMoonCommands::showPerformanceStatus))
+                  .then(Commands.literal("reset").executes(TypeMoonCommands::resetPerformanceStats))
+            )
       );
       dispatcher.register(
          (LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)Commands.literal(
@@ -478,6 +520,11 @@ public class TypeMoonCommands {
             .then(
                Commands.literal("talent")
                   .then(
+                     Commands.literal("grant_all")
+                        .executes(TypeMoonCommands::grantAllTalents)
+                        .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::grantAllTalents))
+                  )
+                  .then(
                      Commands.literal("grant")
                         .then(
                            Commands.argument("talent_id", StringArgumentType.word())
@@ -501,6 +548,11 @@ public class TypeMoonCommands {
             )
             .then(
                Commands.literal("passive")
+                  .then(
+                     Commands.literal("grant_all")
+                        .executes(TypeMoonCommands::grantAllPassives)
+                        .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::grantAllPassives))
+                  )
                   .then(
                      Commands.literal("grant")
                         .then(
@@ -555,6 +607,17 @@ public class TypeMoonCommands {
       return 1;
    }
 
+   private static int grantAllTalents(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      var vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      for (String id : TalentService.IDS) {
+         vars.talent_proficiencies.put(id, 100.0);
+      }
+      vars.syncPlayerVariables(target);
+      ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.talent.granted_all", target.getDisplayName(), TalentService.IDS.size()), true);
+      return TalentService.IDS.size();
+   }
+
    private static int revokeTalent(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
       String id = StringArgumentType.getString(ctx, "talent_id");
       if (!TalentService.isTalent(id)) {
@@ -585,6 +648,18 @@ public class TypeMoonCommands {
       vars.syncPlayerVariables(target);
       ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.passive.granted", target.getDisplayName(), id, rank.name()), true);
       return 1;
+   }
+
+   private static int grantAllPassives(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      var vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      for (String id : PassiveService.IDS) {
+         vars.passive_ranks.put(id, PassiveRank.A);
+      }
+      PassiveService.reconcileAttributes(target, vars);
+      vars.syncPlayerVariables(target);
+      ctx.getSource().sendSuccess(() -> Component.translatable("command.typemoonworld.passive.granted_all", target.getDisplayName(), PassiveService.IDS.size()), true);
+      return PassiveService.IDS.size();
    }
 
    private static int revokePassive(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
@@ -673,8 +748,8 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon talent grant|revoke <id> [target]"), false);
-      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon passive grant|revoke|list <id> [rank] [target]"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon talent grant|grant_all|revoke <id> [target]"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon passive grant|grant_all|revoke|list <id> [rank] [target]"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu|hokushin|tennen"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player martial tiger|tsubame <true|false>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player body xp|points <value> | stat <type> <0-20>"), false);
@@ -972,6 +1047,10 @@ public class TypeMoonCommands {
          }
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) {
+            ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Magic learning requirements not met: " + magicId));
+            return 0;
+         }
          if (("jewel_magic_release".equals(magicId) || "jewel_machine_gun".equals(magicId)) && !vars.learned_magics.contains("jewel_magic_shoot")) {
             ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Learn basic jewel magic first: jewel_magic_shoot"));
             return 0;
@@ -1223,6 +1302,28 @@ public class TypeMoonCommands {
       }
    }
 
+   private static int showPerformanceStatus(CommandContext<CommandSourceStack> ctx) {
+      PerformanceMonitor.Snapshot stats = PerformanceMonitor.snapshot();
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "TYPE-MOON performance: pressure=%s, EWMA=%.2f ms, window avg/p95/max=%.2f/%.2f/%.2f ms (%d ticks)",
+         PerformanceMonitor.pressure(), stats.ewmaMillis(), stats.averageMillis(), stats.p95Millis(),
+         stats.maxMillis(), stats.windowSamples())), false);
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "Pressure ticks: normal=%d, pressured=%d, critical=%d; terrain queue=%d",
+         stats.normalTicks(), stats.pressuredTicks(), stats.criticalTicks(), DeferredTerrainDestruction.totalQueuedJobs())), false);
+      ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+         "Player full sync: attempts=%d, changed=%d, total=%.2f ms, average=%.3f ms",
+         stats.playerFullSyncAttempts(), stats.playerFullSyncChanges(), stats.playerFullSyncMillis(),
+         stats.playerFullSyncAttempts() == 0 ? 0.0 : stats.playerFullSyncMillis() / stats.playerFullSyncAttempts())), false);
+      return 1;
+   }
+
+   private static int resetPerformanceStats(CommandContext<CommandSourceStack> ctx) {
+      PerformanceMonitor.reset();
+      ctx.getSource().sendSuccess(() -> Component.literal("TYPE-MOON performance counters reset."), true);
+      return 1;
+   }
+
    private static int setProficiency(CommandContext<CommandSourceStack> ctx, String type, double value) {
       try {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
@@ -1287,6 +1388,18 @@ public class TypeMoonCommands {
                break;
             case "earth_magic":
                vars.proficiency_earth_magic = value;
+               break;
+            case "flame_array":
+            case "azure_water_array":
+            case "gale_wind_array":
+            case "rock_earth_array":
+            case "contract_magecraft":
+            case "aerial_stasis":
+            case "aerial_ascent":
+            case "touko_travel":
+            case "flight_magic":
+            case "spiritron_cannon":
+               MagicProficiencyService.set(vars, type, value);
                break;
             case "time_alter":
                vars.proficiency_time_alter = value;

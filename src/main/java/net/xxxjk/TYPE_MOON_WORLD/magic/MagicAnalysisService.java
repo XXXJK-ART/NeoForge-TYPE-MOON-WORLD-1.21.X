@@ -16,6 +16,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 
 /** Server-side observer for the magic_analysis wheel entry. */
 public final class MagicAnalysisService {
+   private static final int MIN_PLAYER_ANALYSIS_TICKS = 20;
    private record CastKey(UUID analyst, UUID caster, String magicId) {}
    private record AnalysisTask(String magicId, int complexity, double workDone, double totalWork) {
       AnalysisTask advance(double work) {
@@ -48,7 +49,7 @@ public final class MagicAnalysisService {
          if (MagicLearningStrategy.isDivine(id) && proficiency < 100.0) continue;
          int complexity = MagicLearningStrategy.complexity(id);
          if (MagicLearningStrategy.verses(id) > MagicLearningStrategy.analysisVerseLimit(proficiency)) continue;
-         TASKS.put(analyst.getUUID(), new AnalysisTask(id, complexity, 0.0, baseWork(complexity)));
+         TASKS.put(analyst.getUUID(), new AnalysisTask(id, complexity, 0.0, playerWorkTarget(vars, complexity)));
          analyst.displayClientMessage(Component.translatable("message.typemoonworld.magic.analysis_started", id), true);
       }
       for (MysticMagicianEntity analyst : caster.level().getEntitiesOfClass(
@@ -85,6 +86,10 @@ public final class MagicAnalysisService {
          cancel(player);
          return;
       }
+      int split = AdvancedPassiveService.partitionN(vars);
+      if (split > 0) {
+         player.causeFoodExhaustion(Math.max(0.01F, 0.015F * split));
+      }
       AnalysisTask advanced = task.advance(AdvancedPassiveService.analysisWorkPerTick(vars));
       if (advanced.workDone < advanced.totalWork) {
          TASKS.put(player.getUUID(), advanced);
@@ -117,6 +122,11 @@ public final class MagicAnalysisService {
    public static int baseWork(int complexity) {
       int clamped = Math.max(10, Math.min(100, complexity));
       return (int)Math.ceil(20.0 * Math.pow(600.0, (clamped - 10.0) / 90.0));
+   }
+
+   private static double playerWorkTarget(TypeMoonWorldModVariables.PlayerVariables vars, int complexity) {
+      int workPerTick = Math.max(1, AdvancedPassiveService.analysisWorkPerTick(vars));
+      return Math.max(baseWork(complexity), (double)workPerTick * MIN_PLAYER_ANALYSIS_TICKS);
    }
 
    private static boolean isAnalysisSelected(TypeMoonWorldModVariables.PlayerVariables vars) {

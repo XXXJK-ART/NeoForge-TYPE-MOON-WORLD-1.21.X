@@ -98,6 +98,10 @@ public class MagicStructuralAnalysis {
    private static void analyzeItem(
       ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ItemStack target, boolean swordAttributeActive, boolean crestAnalysisCast
    ) {
+      if (isRhoAiasTarget(target) && !vars.has_unlimited_blade_works) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.structural_analysis.rho_aias_requires_ubw"), true);
+         return;
+      }
       if (isProjectionBanned(target)) {
          player.displayClientMessage(
             Component.translatable(isBedrock(target)
@@ -122,11 +126,18 @@ public class MagicStructuralAnalysis {
       }
    }
 
+   private static boolean isRhoAiasTarget(ItemStack stack) {
+      return stack != null && stack.is(ModItems.RHO_AIAS.get());
+   }
+
    public static boolean isDivineConstruct(ItemStack stack) {
       return stack != null && !stack.isEmpty() && (stack.getItem() instanceof AvalonItem
          || stack.is(ModItems.EXCALIBUR.get())
          || stack.is(ModItems.EXCALIBUR_GALLATIN.get())
-         || stack.is(ModItems.GILGAMESH_EA.get()));
+         || stack.is(ModItems.GILGAMESH_EA.get())
+         || stack.is(ModItems.GILGAMESH_BAB_ILU.get())
+         || stack.is(ModItems.GILGAMESH_VAJRA.get())
+         || stack.is(ModItems.TSUMUKARI_MURAMASA.get()));
    }
 
    /**

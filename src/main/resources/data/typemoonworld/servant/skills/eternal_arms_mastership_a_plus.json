@@ -1,0 +1,20 @@
+{
+  "id": "eternal_arms_mastership_a_plus",
+  "display_name": "Eternal Arms Mastership A+",
+  "display_name_zh": "无穷的武练 A+",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "combat_mastery",
+      "params": {
+        "accuracy_bonus": 0.5,
+        "attack_speed_bonus": 0.3,
+        "front_guard_chance": 0.3,
+        "weapon_penalty_ignored": true
+      }
+    }
+  ]
+}

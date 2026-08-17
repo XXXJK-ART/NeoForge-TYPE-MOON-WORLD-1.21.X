@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
 import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.network.AddonNetwork;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -42,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModVillagers;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
@@ -63,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BajiquanPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.GanryuPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HakuryuRideMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.KendoInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CircleRealmStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BodyTrainingPointMessage;
@@ -125,6 +128,14 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSpawnModeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseRequestMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseTriggerMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesSummonMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesCommandMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesSwitchMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantMasterContractMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.StartStructureProjectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicIndexMessage;
@@ -136,6 +147,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
@@ -171,6 +183,7 @@ public class TYPE_MOON_WORLD {
       ModMobEffects.register(modEventBus);
       ModParticles.register(modEventBus);
       ModSounds.register(modEventBus);
+      ModVillagers.register(modEventBus);
       new TypeMoonAddon(modEventBus, modContainer);
       ModLootModifiers.register(modEventBus);
       ModBiomes.register(modEventBus);
@@ -236,11 +249,20 @@ public class TYPE_MOON_WORLD {
       }
    }
 
+   public static ResourceLocation id(String path) {
+      return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+   }
+
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
+      // Integrated addon payloads must share this registrar. A second registrar
+      // creates a separate protocol channel and leaves mock/server connections
+      // unable to send the payload despite successful class loading.
+      AddonNetwork.registerPayloads(registrar);
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);
+      registrar.playToServer(HakuryuRideMessage.TYPE, HakuryuRideMessage.STREAM_CODEC, HakuryuRideMessage::handleData);
       registrar.playToServer(KendoInputMessage.TYPE, KendoInputMessage.STREAM_CODEC, KendoInputMessage::handleData);
       registrar.playToServer(BodyTrainingPointMessage.TYPE, BodyTrainingPointMessage.STREAM_CODEC, BodyTrainingPointMessage::handleData);
       registrar.playToServer(Basic_information_gui_Message.TYPE, Basic_information_gui_Message.STREAM_CODEC, Basic_information_gui_Message::handleData);
@@ -271,6 +293,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
       registrar.playToServer(MagicResearchMessage.TYPE, MagicResearchMessage.STREAM_CODEC, MagicResearchMessage::handleData);
       registrar.playToServer(MagicCopyMessage.TYPE, MagicCopyMessage.STREAM_CODEC, MagicCopyMessage::handleData);
+      registrar.playToServer(ChainInputPayload.TYPE, ChainInputPayload.STREAM_CODEC, ChainInputPayload::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
       registrar.playToServer(GilgameshVaultSelectionMessage.TYPE, GilgameshVaultSelectionMessage.STREAM_CODEC, GilgameshVaultSelectionMessage::handleData);
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
@@ -288,6 +311,14 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(PaleRiderOpenScreenMessage.TYPE, PaleRiderOpenScreenMessage.STREAM_CODEC, PaleRiderOpenScreenMessage::handleData);
       registrar.playToServer(PaleRiderPossessionInputMessage.TYPE, PaleRiderPossessionInputMessage.STREAM_CODEC, PaleRiderPossessionInputMessage::handleData);
       registrar.playToClient(PaleRiderStateMessage.TYPE, PaleRiderStateMessage.STREAM_CODEC, PaleRiderStateMessage::handleData);
+      registrar.playToClient(HundredFacesOpenScreenMessage.TYPE, HundredFacesOpenScreenMessage.STREAM_CODEC, HundredFacesOpenScreenMessage::handleData);
+      registrar.playToServer(HundredFacesSummonMessage.TYPE, HundredFacesSummonMessage.STREAM_CODEC, HundredFacesSummonMessage::handleData);
+      registrar.playToServer(HundredFacesCommandMessage.TYPE, HundredFacesCommandMessage.STREAM_CODEC, HundredFacesCommandMessage::handleData);
+      registrar.playToServer(HundredFacesSwitchMessage.TYPE, HundredFacesSwitchMessage.STREAM_CODEC, HundredFacesSwitchMessage::handleData);
+      registrar.playToClient(HundredFacesStateMessage.TYPE, HundredFacesStateMessage.STREAM_CODEC, HundredFacesStateMessage::handleData);
+      registrar.playToClient(BaobhanSithCurseOpenScreenMessage.TYPE, BaobhanSithCurseOpenScreenMessage.STREAM_CODEC, BaobhanSithCurseOpenScreenMessage::handleData);
+      registrar.playToServer(BaobhanSithCurseRequestMessage.TYPE, BaobhanSithCurseRequestMessage.STREAM_CODEC, BaobhanSithCurseRequestMessage::handleData);
+      registrar.playToServer(BaobhanSithCurseTriggerMessage.TYPE, BaobhanSithCurseTriggerMessage.STREAM_CODEC, BaobhanSithCurseTriggerMessage::handleData);
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToServer(MasterCommandSpellMessage.TYPE, MasterCommandSpellMessage.STREAM_CODEC, MasterCommandSpellMessage::handleData);
       registrar.playToServer(MasterCommandSpellPoseMessage.TYPE, MasterCommandSpellPoseMessage.STREAM_CODEC, MasterCommandSpellPoseMessage::handleData);

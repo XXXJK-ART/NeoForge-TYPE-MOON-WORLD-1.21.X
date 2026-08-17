@@ -1,0 +1,34 @@
+{
+  "id": "prelatis_spellbook_a_plus",
+  "display_name": "Prelati's Spellbook A+",
+  "display_name_zh": "螺湮城教本 A+",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "independent_spellbook_mana_core",
+      "params": {
+        "book_mana_max": 2000,
+        "book_mana_regen_per_second": 5,
+        "life_absorb_ratio": 1.0,
+        "small_sea_monster_cost": 50,
+        "large_sea_monster_cost": 200,
+        "huge_sea_monster_cost": 2000
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "magic_pressure",
+        "strength": 0.9
+      },
+      {
+        "type": "area_control",
+        "strength": 0.9
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "riding_e",
+  "display_name": "Riding E",
+  "display_name_zh": "骑乘 E",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "conditional_attribute_bonus",
+      "params": {
+        "condition": "mounted",
+        "movement_speed_bonus": 0.05,
+        "armor_bonus": 0.02
+      }
+    }
+  ]
+}

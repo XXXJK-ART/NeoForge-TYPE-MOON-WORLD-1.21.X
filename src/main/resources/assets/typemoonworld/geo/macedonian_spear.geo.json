@@ -1,0 +1,90 @@
+{
+	"format_version": "1.21.110",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 8,
+				"visible_bounds_height": 3.5,
+				"visible_bounds_offset": [0, 1.25, 0]
+			},
+			"bones": [
+				{
+					"name": "bone",
+					"pivot": [0, 1.25, 2.935]
+				},
+				{
+					"name": "bone2",
+					"parent": "bone",
+					"pivot": [0, 2, -9.5],
+					"cubes": [
+						{
+							"origin": [-0.75, 0.18934, -37],
+							"size": [1.5, 1.5, 55],
+							"pivot": [0, 0.93934, -9.5],
+							"rotation": [0, 0, 45],
+							"uv": {
+								"north": {"uv": [7, 20], "uv_size": [1.5, 1.5]},
+								"east": {"uv": [0, 4], "uv_size": [1.5, 55], "uv_rotation": 90},
+								"south": {"uv": [12, 20], "uv_size": [1.5, 1.5]},
+								"west": {"uv": [0, 4], "uv_size": [1.5, 55], "uv_rotation": 90},
+								"up": {"uv": [0, 4], "uv_size": [1.5, 55]},
+								"down": {"uv": [0, 4], "uv_size": [1.5, 55]}
+							}
+						}
+					]
+				},
+				{
+					"name": "bone3",
+					"parent": "bone",
+					"pivot": [0, 1, -38.5]
+				},
+				{
+					"name": "bone4",
+					"parent": "bone",
+					"pivot": [0, 1, 21.5],
+					"cubes": [
+						{
+							"origin": [-1, 0, 18],
+							"size": [2, 2, 7],
+							"uv": {
+								"north": {"uv": [19, 10], "uv_size": [2, 2]},
+								"east": {"uv": [4, 10], "uv_size": [7, 2], "uv_rotation": 180},
+								"south": {"uv": [19, 12], "uv_size": [2, 2]},
+								"west": {"uv": [4, 10], "uv_size": [7, 2]},
+								"up": {"uv": [11, 12], "uv_size": [-7, -2]},
+								"down": {"uv": [11, 12], "uv_size": [-7, -2]}
+							}
+						}
+					]
+				},
+				{
+					"name": "bone6",
+					"parent": "bone4",
+					"pivot": [0, 1, 26]
+				},
+				{
+					"name": "bone5",
+					"parent": "bone",
+					"pivot": [0, 1, 38.24],
+					"cubes": [
+						{
+							"origin": [0, -0.5, 24.5],
+							"size": [0, 3, 11],
+							"uv": {
+								"north": {"uv": [9, 20], "uv_size": [0.5, 2]},
+								"east": {"uv": [4, 6], "uv_size": [11, 2], "uv_rotation": 180},
+								"south": {"uv": [4, 21], "uv_size": [0.5, 2]},
+								"west": {"uv": [4, 6], "uv_size": [11, 2]},
+								"up": {"uv": [10, 12], "uv_size": [0.5, 11]},
+								"down": {"uv": [11, 26], "uv_size": [0.5, -11]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

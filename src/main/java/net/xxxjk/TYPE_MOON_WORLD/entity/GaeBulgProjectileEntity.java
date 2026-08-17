@@ -52,6 +52,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
+   private static final int SINGLE_HOMING_TICKS = 60;
    private int lifeTime = 0;
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -154,11 +155,15 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
       }
       LivingEntity target = this.getTrackedTarget();
-      if (!isUsableTarget(target)) {
+      boolean canHome = this.getMode() != Mode.SINGLE || this.lifeTime <= SINGLE_HOMING_TICKS;
+      if (!canHome) {
+         this.setTrackedTarget(null);
+         target = null;
+      } else if (!isUsableTarget(target)) {
          this.setTrackedTarget(null);
          target = acquireNearbyTarget(level);
       }
-      if (target != null && target.isAlive()) {
+      if (canHome && target != null && target.isAlive()) {
          if (this.getMode() == Mode.SINGLE) {
             this.steerToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0), 0.85, 0.4);
             this.clearPathObstacles(2.4);

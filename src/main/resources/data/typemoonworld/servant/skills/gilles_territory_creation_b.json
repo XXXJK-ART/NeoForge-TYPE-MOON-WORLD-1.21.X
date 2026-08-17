@@ -1,0 +1,27 @@
+{
+  "id": "gilles_territory_creation_b",
+  "display_name": "Territory Creation B",
+  "display_name_zh": "阵地建造 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "workshop_summon_bonus",
+      "params": {
+        "sea_monster_summon_speed_multiplier": 1.5,
+        "sea_monster_regeneration_multiplier": 2.0,
+        "mana_regeneration_multiplier": 1.3
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "area_control",
+        "strength": 0.7
+      }
+    ]
+  }
+}

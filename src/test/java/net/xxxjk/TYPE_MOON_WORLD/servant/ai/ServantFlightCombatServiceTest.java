@@ -31,4 +31,14 @@ class ServantFlightCombatServiceTest {
       assertTrue(descending <= -0.06);
       assertTrue(descending >= -ServantFlightHelper.MAX_VERTICAL_SPEED_DOWN);
    }
+
+   @Test
+   void exposesGroundedGravitySafetyForStrayNoGravityServants() throws Exception {
+      String source = java.nio.file.Files.readString(java.nio.file.Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/ai/ServantFlightCombatService.java"));
+      assertTrue(source.contains("shouldForceGroundedGravity"));
+      assertTrue(source.contains("!isManagedFlight(entity, now)"));
+      assertTrue(source.contains("!entity.isSpiritualTransitionLocked()"));
+      assertTrue(source.contains("entity.setNoGravity(false)"));
+   }
 }

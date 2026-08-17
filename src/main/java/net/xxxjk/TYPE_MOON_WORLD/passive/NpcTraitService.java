@@ -43,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
@@ -109,6 +110,7 @@ public final class NpcTraitService {
       if (event.isCanceled() || event.getEntity().level().isClientSide()) return;
       if (!(event.getEntity() instanceof LivingEntity living) || !isEligible(living)) return;
       ensureInitialized(living);
+      if (LancelotCombatHelper.rollsEternalArmsDodgeBypass(event.getSource())) return;
       if (tryDodge(living, event.getSource())) {
          event.setCanceled(true);
          event.setAmount(0.0F);

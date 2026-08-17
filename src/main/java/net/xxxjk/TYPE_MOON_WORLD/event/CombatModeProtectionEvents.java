@@ -22,6 +22,11 @@ public final class CombatModeProtectionEvents {
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onLivingChangeTarget(LivingChangeTargetEvent event) {
       LivingEntity target = event.getNewAboutToBeSetTarget();
+      if (target != null && EntityUtils.isUntargetableServantTransition(target)) {
+         event.setNewAboutToBeSetTarget(null);
+         return;
+      }
+
       if (target == null || !EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

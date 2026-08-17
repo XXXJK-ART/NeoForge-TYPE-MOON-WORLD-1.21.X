@@ -63,7 +63,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
+import com.example.typemoonaddon.network.AddonNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -133,6 +133,7 @@ public final class ImaginarySpaceService {
     private static final double SWIM_VERTICAL_DAMPING = 0.80D;
     private static final double SWIM_VERTICAL_ACCELERATION = 0.06D;
     private static final double SWIM_MAX_VERTICAL_SPEED = 0.30D;
+    private static final double GENERATION_CENTER_REFRESH_DISTANCE_SQR = 8.0D * 8.0D;
     /** Movement bonus while the player holds the sprint key to enter swim mode. */
     private static final double SWIM_SPEED_MULTIPLIER = 0.65D;
     private static final ResourceLocation SWIM_SPEED_MODIFIER_ID =
@@ -385,6 +386,8 @@ public final class ImaginarySpaceService {
             ChunkPos currentChunk = owner.chunkPosition();
             if (!currentChunk.equals(state.windowCenterChunk)) {
                 updateChunkWindow(owner, data, state, currentChunk);
+            } else if (shouldRefreshGenerationCenter(owner, state)) {
+                updateChunkWindow(owner, data, state, currentChunk, true);
             }
             if (state.advanceRefreshTicker(CONTENT_REFRESH_INTERVAL_TICKS)) {
                 rebuildScene(owner, data, state);
@@ -572,8 +575,32 @@ public final class ImaginarySpaceService {
     }
 
     /** Starts one independent storage window; the actual dimension change is deferred. */
+    public static CastOutcome castNpcCreature(LivingEntity caster, LivingEntity target) {
+        if (caster == null || target == null || !(caster.level() instanceof ServerLevel source)
+                || caster.isRemoved() || !caster.isAlive()) {
+            return CastOutcome.rejected();
+        }
+        MinecraftServer server = source.getServer();
+        ServerLevel imaginaryLevel = server == null ? null : server.getLevel(DIMENSION);
+        if (imaginaryLevel == null) {
+            return CastOutcome.dimensionUnavailable();
+        }
+        if (target == caster
+                || target.level() != source
+                || !target.isAlive()
+                || target.isRemoved()
+                || EntityUtils.isImmunePlayerTarget(target)
+                || target.getBoundingBox().getCenter().distanceToSqr(caster.getBoundingBox().getCenter()) > TARGET_RADIUS_SQUARED) {
+            return CastOutcome.noTarget();
+        }
+        return beginCreatureTransfer(caster, target, imaginaryLevel)
+                ? CastOutcome.success(1)
+                : CastOutcome.rejected();
+    }
+
+    /** Starts one independent storage window; the actual dimension change is deferred. */
     private static boolean beginCreatureTransfer(
-            ServerPlayer caster,
+            LivingEntity caster,
             LivingEntity target,
             ServerLevel imaginaryLevel
     ) {
@@ -627,8 +654,11 @@ public final class ImaginarySpaceService {
         while (iterator.hasNext()) {
             Map.Entry<UUID, PendingCreatureTransfer> entry = iterator.next();
             PendingCreatureTransfer pending = entry.getValue();
-            ServerPlayer caster = server.getPlayerList().getPlayer(pending.casterId());
             ServerLevel source = server.getLevel(pending.sourceDimension());
+            Entity caster = source == null ? null : source.getEntity(pending.casterId());
+            if (caster == null) {
+                caster = server.getPlayerList().getPlayer(pending.casterId());
+            }
             LivingEntity target = source == null
                     ? null
                     : source.getEntity(pending.targetId()) instanceof LivingEntity living ? living : null;
@@ -666,7 +696,8 @@ public final class ImaginarySpaceService {
             if (target instanceof ServerPlayer player) {
                 transferred = enterPlayer(player, imaginaryLevel);
             } else {
-                transferred = teleportAndKill(caster, target, imaginaryLevel);
+                transferred = caster instanceof LivingEntity living
+                        && teleportAndKill(living, target, imaginaryLevel);
             }
             if (transferred) {
                 // The target dimension change is submitted first; remove the prism
@@ -720,21 +751,22 @@ public final class ImaginarySpaceService {
     }
 
     private static boolean isPendingTransferValid(
-            ServerPlayer caster,
+            Entity caster,
             ServerLevel source,
             LivingEntity target,
             PendingCreatureTransfer pending
     ) {
-        return caster != null
-                && isValidCaster(caster)
+        boolean validCaster = caster instanceof ServerPlayer player
+                ? isValidCaster(player) && player.serverLevel() == source
+                : caster instanceof LivingEntity living && living.isAlive() && !living.isRemoved() && living.level() == source;
+        return validCaster
                 && source != null
-                && caster.serverLevel() == source
                 && target != null
                 && target.level() == source
                 && target.isAlive()
                 && !target.isRemoved()
                 && target.getUUID().equals(pending.targetId())
-                && target.canChangeDimensions(source, caster.getServer().getLevel(DIMENSION));
+                && target.canChangeDimensions(source, source.getServer().getLevel(DIMENSION));
     }
 
     private static StorageVisualEntity findStorageVisual(ServerLevel source, UUID visualId) {
@@ -911,18 +943,18 @@ public final class ImaginarySpaceService {
     }
 
     private static boolean teleportAndKill(
-            ServerPlayer caster,
+            LivingEntity caster,
             LivingEntity target,
             ServerLevel imaginaryLevel
     ) {
-        if (EntityUtils.isImmunePlayerTarget(target)) {
+        if (caster == null || !(caster.level() instanceof ServerLevel source) || EntityUtils.isImmunePlayerTarget(target)) {
             return false;
         }
         if (!target.canChangeDimensions(target.level(), imaginaryLevel)) {
             return false;
         }
         Vec3 destination = allocateInstanceCenter();
-        VFXServerEffects.spawn(caster.serverLevel(), ENTER_EFFECT,
+        VFXServerEffects.spawn(source, ENTER_EFFECT,
                 target.getBoundingBox().getCenter(), VFX_OBSERVER_RADIUS);
         try {
             target.getPersistentData().putBoolean(TRANSIENT_TAG, true);
@@ -942,11 +974,11 @@ public final class ImaginarySpaceService {
             living.invulnerableTime = 0;
             VFXServerEffects.spawn(imaginaryLevel, EXIT_EFFECT,
                     living.getBoundingBox().getCenter(), VFX_OBSERVER_RADIUS);
-            DamageSource source = caster.damageSources().source(DamageTypes.GENERIC_KILL, caster);
-            living.hurt(source, Float.MAX_VALUE);
+            DamageSource damageSource = caster.damageSources().source(DamageTypes.GENERIC_KILL, caster);
+            living.hurt(damageSource, Float.MAX_VALUE);
             if (living.isAlive()) {
                 living.setHealth(0.0F);
-                living.die(source);
+                living.die(damageSource);
             }
             return true;
         } catch (RuntimeException exception) {
@@ -1278,6 +1310,16 @@ public final class ImaginarySpaceService {
             InstanceState state,
             ChunkPos newCenter
     ) {
+        updateChunkWindow(player, data, state, newCenter, false);
+    }
+
+    private static void updateChunkWindow(
+            ServerPlayer player,
+            ImaginarySpaceData data,
+            InstanceState state,
+            ChunkPos newCenter,
+            boolean refillExistingWindow
+    ) {
         Set<ChunkPos> oldWindow = new HashSet<>(state.generatedChunks);
         Set<ChunkPos> newWindow = windowAround(newCenter);
         Set<ChunkPos> leaving = new HashSet<>(oldWindow);
@@ -1287,6 +1329,11 @@ public final class ImaginarySpaceService {
 
         state.windowCenterChunk = newCenter;
         state.generationCenter = player.position();
+        if (refillExistingWindow && leaving.isEmpty()) {
+            clearGeneratedContentInChunks(player.serverLevel(), state, newWindow);
+            state.queue.removeIf(task -> newWindow.contains(task.chunk));
+            state.reservedBlockPositions.removeIf(pos -> newWindow.contains(new ChunkPos(pos)));
+        }
         if (!leaving.isEmpty()) {
             clearGeneratedContentInChunks(player.serverLevel(), state, leaving);
             for (ChunkPos chunk : leaving) {
@@ -1306,15 +1353,23 @@ public final class ImaginarySpaceService {
             addInstanceTicket(player.serverLevel(), state, chunk);
         }
 
-        if (!entering.isEmpty() && data.depth() < MAX_DEPTH) {
+        if ((!entering.isEmpty() || refillExistingWindow) && data.depth() < MAX_DEPTH) {
             state.random = newRandom();
             state.depth = data.depth();
-            queueContentForChunks(state, state.generation, entering,
+            Set<ChunkPos> refillChunks = refillExistingWindow ? Set.copyOf(state.generatedChunks) : entering;
+            queueContentForChunks(state, state.generation, refillChunks,
                     scaledCount(ImaginarySpaceConfig.MAX_BLOCKS.get(), BASE_BLOCK_COUNT, state.depth),
                     scaledCount(ImaginarySpaceConfig.MAX_ITEMS.get(), BASE_ITEM_COUNT, state.depth),
                     scaledMobCount(ImaginarySpaceConfig.MAX_MOBS.get(), state.depth));
             data.markContentsGenerated();
         }
+    }
+
+    private static boolean shouldRefreshGenerationCenter(ServerPlayer player, InstanceState state) {
+        return player != null
+                && state != null
+                && isFinite(state.generationCenter)
+                && player.position().distanceToSqr(state.generationCenter) >= GENERATION_CENTER_REFRESH_DISTANCE_SQR;
     }
 
     private static Set<ChunkPos> windowAround(ChunkPos center) {
@@ -2237,7 +2292,7 @@ public final class ImaginarySpaceService {
     }
 
     private static void syncData(ServerPlayer player, ImaginarySpaceData data) {
-        PacketDistributor.sendToPlayer(player, new ImaginarySpaceStatePayload(data));
+        AddonNetwork.sendToPlayer(player, new ImaginarySpaceStatePayload(data));
     }
 
     private static RandomSource newRandom() {

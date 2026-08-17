@@ -4,32 +4,27 @@ import java.util.Collection;
 import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
-import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
-import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -65,6 +60,13 @@ public final class LiShuwenCombatHelper {
    private static final int WU_ER_DA_COOLDOWN = 500;
    private static final int WU_ER_DA_WINDUP = 0;
    private static final double WU_ER_DA_RANGE = 3.0;
+   public static final double CIRCLE_REALM_MP_COST = 1.0;
+   public static final double YIN_YANG_MP_COST = 3.0;
+   public static final double WU_ER_DA_MP_COST = 8.0;
+   public static final double SHOULDER_CHECK_MP_COST = 2.0;
+   public static final double TREMOR_PALM_MP_COST = 2.0;
+   public static final ResourceKey<DamageType> WU_ER_DA = ResourceKey.create(
+      Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "wu_er_da"));
    private static final ResourceLocation YIN_YANG_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "li_shuwen_yin_yang_attack");
    private static final ResourceLocation ARMOR_BREAK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "li_shuwen_wu_er_da_armor_break");
    private static final ResourceLocation CHINESE_MARTIAL_ARTS_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "li_shuwen_chinese_martial_arts_armor");
@@ -252,13 +254,13 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryCircleRealm(LiShuwenEntity entity, ServerLevel level, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (entity.getCurrentMp() < 5.0 || now - data.getLong(TAG_LAST_CIRCLE_REALM) < CIRCLE_REALM_COOLDOWN) {
+      if (entity.getCurrentMp() < CIRCLE_REALM_MP_COST || now - data.getLong(TAG_LAST_CIRCLE_REALM) < CIRCLE_REALM_COOLDOWN) {
          return false;
       }
       data.putLong(TAG_LAST_CIRCLE_REALM, now);
       data.putLong(TAG_CIRCLE_DODGE_UNTIL, now + CIRCLE_REALM_DURATION + 20L);
       data.putLong(TAG_UNTARGETABLE_UNTIL, now + CIRCLE_REALM_DURATION);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 5.0));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - CIRCLE_REALM_MP_COST));
       entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, CIRCLE_REALM_DURATION, 0, false, false, true));
       entity.triggerStepAnimation();
       entity.getNavigation().stop();
@@ -269,13 +271,13 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryYinYang(LiShuwenEntity entity, ServerLevel level, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (entity.getCurrentMp() < 10.0 || now - data.getLong(TAG_LAST_YIN_YANG) < YIN_YANG_COOLDOWN) {
+      if (entity.getCurrentMp() < YIN_YANG_MP_COST || now - data.getLong(TAG_LAST_YIN_YANG) < YIN_YANG_COOLDOWN) {
          return false;
       }
       data.putLong(TAG_LAST_YIN_YANG, now);
       data.putLong(TAG_YIN_YANG_UNTIL, now + YIN_YANG_DURATION);
       data.putBoolean(TAG_YIN_YANG_WEAK_NULL, true);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 10.0));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - YIN_YANG_MP_COST));
       updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), YIN_YANG_ATTACK_ID, 0.30, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       entity.triggerStepAnimation();
       VFXServerEffects.spawn(level, "servant_li_shuwen_yinyang", entity, 64.0);
@@ -298,7 +300,7 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryBeginWuErDa(LiShuwenEntity entity, LivingEntity target, ServerLevel level, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (entity.getCurrentMp() < 30.0 || now - data.getLong(TAG_LAST_WU_ER_DA) < WU_ER_DA_COOLDOWN || data.getLong(TAG_WU_ER_DA_RELEASE) > now) {
+      if (entity.getCurrentMp() < WU_ER_DA_MP_COST || now - data.getLong(TAG_LAST_WU_ER_DA) < WU_ER_DA_COOLDOWN || data.getLong(TAG_WU_ER_DA_RELEASE) > now) {
          return false;
       }
       if (!entity.getSensing().hasLineOfSight(target)) {
@@ -307,7 +309,7 @@ public final class LiShuwenCombatHelper {
       data.putLong(TAG_LAST_WU_ER_DA, now);
       data.putLong(TAG_WU_ER_DA_RELEASE, now + WU_ER_DA_WINDUP);
       data.putInt(TAG_WU_ER_DA_TARGET, target.getId());
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 30.0));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - WU_ER_DA_MP_COST));
       entity.setWuErDaTargeting(true);
       entity.faceToward(target.position());
       entity.triggerWuErDaAnimation();
@@ -355,10 +357,17 @@ public final class LiShuwenCombatHelper {
          entity.setTarget(null);
          return;
       }
+      resolveWuErDa(entity, target, level, entity.getRandom().nextFloat());
+   }
+
+   public static void resolveWuErDa(LivingEntity attacker, LivingEntity target, ServerLevel level, float roll) {
+      if (attacker == null || target == null || level == null || EntityUtils.isImmunePlayerTarget(target)) {
+         return;
+      }
       applyArmorBreak(target, level.getGameTime() + 60L);
       boolean instantDeathTarget = isInstantDeathTarget(target);
       float chance = instantDeathChance(target);
-      boolean killed = instantDeathTarget && entity.getRandom().nextFloat() < chance;
+      boolean killed = instantDeathTarget && roll < chance;
       if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
          HeraclesGodHandHelper.applyAdaptedSlow(target, 80);
          killed = false;
@@ -372,21 +381,26 @@ public final class LiShuwenCombatHelper {
             spawnWuErDaImpact(level, target, true);
             return;
          }
+         DamageSource source = wuErDaDamage(attacker);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().mobAttack(entity), Math.max(target.getMaxHealth() * 2.0F, 500.0F));
+         target.hurt(source, Math.max(target.getMaxHealth() * 2.0F, 500.0F));
          target.invulnerableTime = 0;
          if (target.isAlive()) {
             target.setHealth(0.0F);
-            target.die(entity.damageSources().genericKill());
+            target.die(source);
          }
       } else {
          float damage = Math.max(200.0F, target.getHealth() * 0.90F);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().mobAttack(entity), damage);
+         target.hurt(wuErDaDamage(attacker), damage);
          target.invulnerableTime = 0;
          applyQiSwallow(target, level.getGameTime() + 20L);
       }
       spawnWuErDaImpact(level, target, killed);
+   }
+
+   private static DamageSource wuErDaDamage(LivingEntity attacker) {
+      return attacker.damageSources().source(WU_ER_DA, attacker);
    }
 
    private static boolean tryBajiPunch(LiShuwenEntity entity, LivingEntity target, ServerLevel level, long now, double distance) {
@@ -405,11 +419,11 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryShoulderCheck(LiShuwenEntity entity, LivingEntity target, ServerLevel level, long now, double distance) {
       CompoundTag data = entity.getPersistentData();
-      if (distance < 2.4 || distance > 6.5 || entity.getCurrentMp() < 6.0 || now - data.getLong(TAG_LAST_SHOULDER) < SHOULDER_COOLDOWN) {
+      if (distance < 2.4 || distance > 6.5 || entity.getCurrentMp() < SHOULDER_CHECK_MP_COST || now - data.getLong(TAG_LAST_SHOULDER) < SHOULDER_COOLDOWN) {
          return false;
       }
       data.putLong(TAG_LAST_SHOULDER, now);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 6.0));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - SHOULDER_CHECK_MP_COST));
       Vec3 dir = horizontalDirection(entity, target);
       entity.faceVector(dir);
       entity.triggerStepAnimation();
@@ -424,11 +438,11 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryTremorPalm(LiShuwenEntity entity, LivingEntity target, ServerLevel level, long now, double distance) {
       CompoundTag data = entity.getPersistentData();
-      if (distance > 3.4 || entity.getCurrentMp() < 8.0 || now - data.getLong(TAG_LAST_TREMOR) < TREMOR_COOLDOWN) {
+      if (distance > 3.4 || entity.getCurrentMp() < TREMOR_PALM_MP_COST || now - data.getLong(TAG_LAST_TREMOR) < TREMOR_COOLDOWN) {
          return false;
       }
       data.putLong(TAG_LAST_TREMOR, now);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 8.0));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - TREMOR_PALM_MP_COST));
       entity.faceToward(target.position());
       entity.triggerPunchAnimation();
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(3.2), e -> canHit(entity, e))) {
@@ -472,34 +486,14 @@ public final class LiShuwenCombatHelper {
    }
 
    private static float instantDeathChance(LivingEntity target) {
-      float chance = 0.80F;
-      if (target instanceof ServantEntity servant && servant.getDefinition() != null) {
-         ServantParams params = servant.getDefinition().parameters();
-         int endurance = ServantCombatFormulas.enduranceStep(params);
-         if (endurance >= 4) {
-            chance = 0.30F;
-         } else if (endurance >= 3) {
-            chance = 0.50F;
-         }
-      }
-      CompoundTag data = target.getPersistentData();
-      if (data.getBoolean("BattleContinuationActive") || data.getBoolean("GawainGutsReady")) {
-         chance = Math.max(0.0F, chance - 0.20F);
-      }
-      return chance;
+      return 0.60F;
    }
 
    private static boolean isInstantDeathTarget(LivingEntity target) {
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return false;
       }
-      if (target instanceof WitherBoss || target instanceof EnderDragon || target instanceof Warden || target instanceof Animal) {
-         return false;
-      }
-      if (target.getType().is(net.minecraft.tags.EntityTypeTags.UNDEAD) || target.getType().is(net.minecraft.tags.EntityTypeTags.ARTHROPOD)) {
-         return false;
-      }
-      return target instanceof ServantEntity || CursedArmHassanCombatHelper.isHumanoidInstantDeathTarget(target);
+      return CursedArmHassanCombatHelper.isHumanoidInstantDeathTarget(target);
    }
 
    private static void applyArmorBreak(LivingEntity target, long until) {

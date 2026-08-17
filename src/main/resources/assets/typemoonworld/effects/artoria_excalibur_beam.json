@@ -1,5 +1,5 @@
 {
-  "duration": 30.0,
+  "duration": 7.5,
   "notes": "Golden EA-style Excalibur release. No weather/environment changes.",
   "environment": [
     { "type": "screen_tint", "color": "#33FFF8D8", "start": 0.0, "end": 0.55, "fade_in": 0.05, "fade_out": 0.24, "intensity": 0.18 },
@@ -370,10 +370,10 @@
       ]
     },
     {
-      "start_time": 7.35,
-      "end_time": 30.0,
+      "start_time": 6.8,
+      "end_time": 7.5,
       "rate": 1700,
-      "particle_lifetime": 7.0,
+      "particle_lifetime": 0.7,
       "size_variance": 0.55,
       "lifetime_variance": 0.35,
       "position_variance": 0.9,

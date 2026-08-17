@@ -1,0 +1,26 @@
+{
+  "id": "oath_haori_c",
+  "display_name": "Coat of Oaths C",
+  "display_name_zh": "誓言的羽织 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "max_health_bonus": 80.0,
+        "attack_damage_bonus": 5.0,
+        "movement_speed_multiplier": 1.12,
+        "attack_speed_multiplier": 1.1,
+        "weapon_damage_type": "magic"
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "self_enhancement", "strength": 0.7}
+    ]
+  }
+}

@@ -223,6 +223,68 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
             default -> null;
          };
+         case "hundred_faces_hassan" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
+               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
+            case 1 -> new ServantCardSkillAction(crouching ? "Persona Direct Command" : "Persona Command",
+               crouching ? "hundred_faces_single_command" : "hundred_faces_command", 0.0, 20);
+            case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
+            case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 0);
+            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 110);
+            case 5 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
+            case 6 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
+            case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            default -> null;
+         };
+         case "diarmuid_ua_duibhne" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Twin Spear Combo", "diarmuid_twin_spear_combo", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("Gae Dearg Focus", "diarmuid_red_rose_focus", 12.0, 120);
+            case 1 -> new ServantCardSkillAction("Gae Buidhe Focus", "diarmuid_yellow_rose_focus", 12.0, 120);
+            case 2 -> new ServantCardSkillAction("Knight Strategy", "diarmuid_knight_strategy", 18.0, 300);
+            case 3 -> new ServantCardSkillAction("Mana Burst Jump", "diarmuid_mana_burst_jump", 18.0, 260);
+            case 4 -> new ServantCardSkillAction("Flower Step", "diarmuid_flower_step", 10.0, 100);
+            case 5 -> new ServantCardSkillAction("Disengage", "diarmuid_disengage", 14.0, 280);
+            case 6 -> new ServantCardSkillAction("Dual Spear Stance", "diarmuid_dual_wield", 0.0, 20);
+            default -> null;
+         };
+         case "lancelot_berserker" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Mad Enhancement Combo", "lancelot_maul_combo", 8.0, 80);
+            case 1 -> new ServantCardSkillAction("Feral Rush", "lancelot_feral_rush", 12.0, 140);
+            case 2 -> new ServantCardSkillAction("Ground Slam", "lancelot_ground_slam", 16.0, 200);
+            case 3 -> new ServantCardSkillAction("Hunt Step", "lancelot_hunt_step", 8.0, 100);
+            case 4 -> new ServantCardSkillAction("Mana Reversal", "lancelot_mana_reversal", 15.0, 360);
+            case 5 -> new ServantCardSkillAction("Mad Roar", "lancelot_berserk_roar", 14.0, 320);
+            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
+            case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 1200);
+            default -> null;
+         };
+         case "iskandar" -> switch (slot) {
+            case -1 -> new ServantCardSkillAction("Royal Sword Assault", "iskandar_royal_sword_assault", 0.0, 18);
+            case 0 -> new ServantCardSkillAction("Bucephalus", "iskandar_bucephalus", 20.0, 40);
+            case 1 -> new ServantCardSkillAction("Royal Sword Assault", "iskandar_royal_sword_assault", 10.0, 80);
+            case 2 -> new ServantCardSkillAction("Conqueror Order", "iskandar_conqueror_order", 14.0, 180);
+            case 3 -> new ServantCardSkillAction("Thunder Call", "iskandar_thunder_call", 18.0, 220);
+            case 4 -> new ServantCardSkillAction("Battlefield Stride", "iskandar_battlefield_stride", 12.0, 120);
+            case 5 -> new ServantCardSkillAction("Vanguard Breakthrough", "iskandar_vanguard_summon", 24.0, 300);
+            case 6 -> new ServantCardSkillAction("Kingly War Cry", "iskandar_kingly_war_cry", 16.0, 260);
+            case 7 -> new ServantCardSkillAction("Charge", "iskandar_charge", 20.0, 40);
+            case 8 -> new ServantCardSkillAction("Gordius Wheel", "iskandar_gordius_wheel", 50.0, 400);
+            case 9 -> new ServantCardSkillAction("Ionioi Hetairoi", "iskandar_ionioi_hetairoi", 60.0, 1800);
+            default -> null;
+         };
+         case "baobhan_sith" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Curse Panel", "baobhan_sith_curse_panel", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("Blood Spike", "baobhan_sith_blood_spike", 6.0, 120);
+            case 2 -> new ServantCardSkillAction("Blood Thorns", "baobhan_sith_blood_thorns", 12.0, 220);
+            case 3 -> new ServantCardSkillAction("Fetch Volley", "baobhan_sith_curse_volley", 14.0, 180);
+            case 4 -> new ServantCardSkillAction("Dance of the Fingertips A+", "baobhan_sith_fingertip_dance", 10.0, 300);
+            case 5 -> new ServantCardSkillAction("Invitation to the Night Feast B", "baobhan_sith_night_feast", 15.0, 400);
+            case 6 -> new ServantCardSkillAction("Grimalkin A", "baobhan_sith_grimalkin", 15.0, 600);
+            case 7 -> new ServantCardSkillAction("Blessed Successor EX", "baobhan_sith_blessed_successor", 25.0, 700);
+            case 8 -> new ServantCardSkillAction("Fairy Vampirism A", "baobhan_sith_fairy_vampirism", 10.0, 500);
+            case 9 -> new ServantCardSkillAction("Fetch Failnaught", "baobhan_sith_fetch_failnaught", 35.0, 300);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

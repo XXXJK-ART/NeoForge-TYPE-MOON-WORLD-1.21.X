@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.magic;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 
@@ -22,7 +23,7 @@ public final class WheelCastingModifierService {
       Scope scope = CURRENT.get();
       if (scope == null || scope.player != serverPlayer) return baseCost;
       TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return Math.max(0.0, baseCost * AdvancedPassiveService.manaMultiplier(vars));
+      return Math.max(0.0, baseCost * AdvancedPassiveService.manaMultiplier(vars) * MercurySwordMagicAmplifier.manaCostMultiplier(serverPlayer));
    }
 
    public static int adjustChantTicks(Player player, int baseTicks) {

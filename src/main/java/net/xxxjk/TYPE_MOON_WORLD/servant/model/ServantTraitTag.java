@@ -54,10 +54,12 @@ public enum ServantTraitTag {
    GOOD("good"),
    EVIL("evil"),
    BALANCED("balanced"),
+   MAD("mad"),
 
    ROMAN("roman"),
    GENJI("genji"),
    ROUND_TABLE("round_table"),
+   KNIGHT_OF_THE_LAKE("knight_of_the_lake"),
    STAR_BORN("star_born"),
    CELESTIAL("celestial"),
    WITCH("witch"),

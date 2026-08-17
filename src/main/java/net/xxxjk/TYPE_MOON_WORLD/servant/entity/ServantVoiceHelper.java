@@ -64,6 +64,21 @@ public final class ServantVoiceHelper {
             return;
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_ATTACK.get());
+      } else if (isHundredFacesHassan(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_ATTACK.get());
+      } else if (isDiarmuid(servant)) {
+         if (servant.getRandom().nextFloat() > 0.45F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get());
+      } else if (isLancelotBerserker(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) {
+            return;
+         }
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.18F, 0.74F, ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get());
       } else if (isEmiya(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -72,6 +87,9 @@ public final class ServantVoiceHelper {
       } else if (isArash(servant)) {
          if (servant.getRandom().nextFloat() > 0.50F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_ATTACK.get());
+      } else if (isBaobhanSith(servant)) {
+         if (servant.getRandom().nextFloat() > 0.55F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.03F, ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get());
       } else if (isArtoria(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) {
             return;
@@ -118,6 +136,12 @@ public final class ServantVoiceHelper {
       } else if (isMuramasa(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get());
+      } else if (isIskandar(servant)) {
+         if (servant.getRandom().nextFloat() > 0.42F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.ISKANDAR_VOICE_ATTACK.get());
+      } else if (isOkitaSoujiSaber(servant)) {
+         if (servant.getRandom().nextFloat() > 0.50F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get());
       }
    }
 
@@ -128,11 +152,11 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayRoar(ServantEntity servant) {
-      if (!isHeracles(servant)) {
-         return;
+      if (isHeracles(servant)) {
+         playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.25F, 0.72F, ModSounds.LANCELOT_BERSERKER_VOICE_ROAR.get());
       }
-
-      playVoice(servant, "roar", ROAR_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
    }
 
    public static void tryPlayTsurigameshi(ServantEntity servant) {
@@ -148,6 +172,9 @@ public final class ServantVoiceHelper {
          return;
       }
       if (servant instanceof UshiwakamaruRiderEntity rider && rider.isClone()) {
+         return;
+      }
+      if (servant instanceof HundredFacesHassanPersonaEntity) {
          return;
       }
 
@@ -174,10 +201,18 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_VICTORY.get());
       } else if (isFanaticAssassin(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_VICTORY.get());
+      } else if (isHundredFacesHassan(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_VICTORY.get());
+      } else if (isDiarmuid(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_VICTORY.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.2F, 0.72F, ModSounds.LANCELOT_BERSERKER_VOICE_VICTORY.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_VICTORY.get());
       } else if (isArash(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_VICTORY.get());
+      } else if (isBaobhanSith(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.03F, ModSounds.BAOBHAN_SITH_VOICE_VICTORY.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_VICTORY.get());
       } else if (isOdaNobunaga(servant)) {
@@ -196,11 +231,16 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_VICTORY.get());
       } else if (isMuramasa(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_VICTORY.get());
+      } else if (isIskandar(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.2F, 0.92F, ModSounds.ISKANDAR_VOICE_VICTORY.get());
+      } else if (isOkitaSoujiSaber(servant)) {
+         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_VICTORY.get());
       }
    }
 
    public static void tryPlayFail(ServantEntity servant) {
       if (isArash(servant) && servant.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_SACRIFICE)) return;
+      if (servant instanceof HundredFacesHassanPersonaEntity) return;
       if (isCasterGilgamesh(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F,
             servant.getRandom().nextBoolean()
@@ -224,10 +264,18 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 1.0F, ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get());
       } else if (isFanaticAssassin(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.FANATIC_ASSASSIN_VOICE_FAIL.get());
+      } else if (isHundredFacesHassan(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.96F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_FAIL.get());
+      } else if (isDiarmuid(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_FAIL.get());
+      } else if (isLancelotBerserker(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.18F, 0.68F, ModSounds.LANCELOT_BERSERKER_VOICE_FAIL.get());
       } else if (isEmiya(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.EMIYA_ARCHER_VOICE_FAIL.get());
       } else if (isArash(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.ARASH_VOICE_FAIL.get());
+      } else if (isBaobhanSith(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.98F, ModSounds.BAOBHAN_SITH_VOICE_FAIL.get());
       } else if (isArtoria(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_FAIL.get());
       } else if (isOdaNobunaga(servant)) {
@@ -246,6 +294,26 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.NIGHTINGALE_VOICE_FAIL.get());
       } else if (isMuramasa(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_FAIL.get());
+      } else if (isIskandar(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.12F, 0.88F, ModSounds.ISKANDAR_VOICE_FAIL.get());
+      } else if (isOkitaSoujiSaber(servant)) {
+         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.OKITA_SOUJI_SABER_VOICE_FAIL.get());
+      }
+   }
+
+   public static void tryPlayOkitaSoujiSaberNp(ServantEntity servant) {
+      if (isOkitaSoujiSaber(servant)) {
+         playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+      }
+   }
+
+   public static void tryPlayOkitaSoujiSaberNp(OkitaSoujiSaberEntity servant) {
+      playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+   }
+
+   public static void tryPlayIskandarIonioi(IskandarEntity servant) {
+      if (isIskandar(servant)) {
+         playVoiceForced(servant, "iskandar_ionioi", 1.35F, 0.92F, ModSounds.ISKANDAR_VOICE_IONIOI.get());
       }
    }
 
@@ -277,6 +345,12 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "gae_bolg", SPECIAL_VOICE_COOLDOWN, 1.1F, 1.0F, ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
+   }
+
+   public static void tryPlayBaobhanSithNp(ServantEntity servant) {
+      if (isBaobhanSith(servant)) {
+         playVoiceForced(servant, "baobhan_sith_np", 1.15F, 1.0F, ModSounds.BAOBHAN_SITH_VOICE_NP.get());
+      }
    }
 
    public static void tryPlaySpell(ServantEntity servant) {
@@ -325,6 +399,22 @@ public final class ServantVoiceHelper {
       }
 
       playVoice(servant, "zabaniya", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA.get());
+   }
+
+   public static void tryPlayHundredFacesNp(ServantEntity servant) {
+      if (!isHundredFacesHassan(servant) || servant instanceof HundredFacesHassanPersonaEntity) {
+         return;
+      }
+
+      playVoiceForced(servant, "hundred_faces_np", 1.15F, 0.98F, ModSounds.HUNDRED_FACES_HASSAN_VOICE_NP.get());
+   }
+
+   public static void tryPlayDiarmuidNp(ServantEntity servant) {
+      if (!isDiarmuid(servant)) {
+         return;
+      }
+
+      playVoiceForced(servant, "diarmuid_np", 1.15F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_NP.get());
    }
 
    public static void tryPlayProjection(ServantEntity servant) {
@@ -598,12 +688,36 @@ public final class ServantVoiceHelper {
       return servant != null && FanaticAssassinEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
+   private static boolean isHundredFacesHassan(ServantEntity servant) {
+      return servant != null && HundredFacesHassanEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isDiarmuid(ServantEntity servant) {
+      return servant != null && DiarmuidUaDuibhneEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isLancelotBerserker(ServantEntity servant) {
+      return servant != null && LancelotBerserkerEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
    private static boolean isEmiya(ServantEntity servant) {
       return servant != null && EmiyaArcherEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
    private static boolean isArash(ServantEntity servant) {
       return servant != null && ArashEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isBaobhanSith(ServantEntity servant) {
+      if (servant == null) {
+         return false;
+      }
+      String id = servant.getServantId();
+      int separator = id == null ? -1 : id.indexOf(':');
+      if (separator >= 0) {
+         id = id.substring(separator + 1);
+      }
+      return "baobhan_sith".equals(id);
    }
 
    private static boolean isArtoria(ServantEntity servant) {
@@ -637,4 +751,13 @@ public final class ServantVoiceHelper {
    private static boolean isMuramasa(ServantEntity servant) {
       return servant != null && SenkoMuramasaEntity.SERVANT_KEY.equals(servant.getServantId());
    }
+
+   private static boolean isIskandar(ServantEntity servant) {
+      return servant != null && IskandarEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isOkitaSoujiSaber(ServantEntity servant) {
+      return servant != null && OkitaSoujiSaberEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
 }

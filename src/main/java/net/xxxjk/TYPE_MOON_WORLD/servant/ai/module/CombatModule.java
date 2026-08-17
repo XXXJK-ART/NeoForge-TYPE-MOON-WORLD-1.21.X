@@ -44,10 +44,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.NightingaleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
@@ -64,6 +66,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
@@ -116,6 +120,7 @@ public final class CombatModule implements ServantAiModule {
    private static final int SPEAR_VAULT_COOLDOWN = 75;
    private static final int AFTERIMAGE_SLASH_COOLDOWN = 65;
    private static final int IAIJUTSU_STEP_COOLDOWN = 80;
+   private static final double SASAKI_TSURIGAMESHI_MP_COST = 8.0;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
@@ -398,8 +403,16 @@ public final class CombatModule implements ServantAiModule {
          }
          return;
       }
+      if (entity instanceof OkitaSoujiSaberEntity okita) {
+         OkitaSoujiSaberCombatHelper.tick(okita, context);
+         return;
+      }
       if (entity instanceof FanaticAssassinEntity fanatic) {
          FanaticAssassinCombatHelper.tick(fanatic, context);
+         return;
+      }
+      if (entity instanceof HundredFacesHassanEntity hundredFaces) {
+         HundredFacesHassanCombatHelper.tick(hundredFaces, context);
          return;
       }
       if (entity instanceof ShadowHassanEntity shadowHassan) {
@@ -871,9 +884,9 @@ public final class CombatModule implements ServantAiModule {
       // ——— 燕返（Assassin专属）：目标HP<40%，100固定真伤 + 概率斩杀 ———
       if (canTsurigameshi && distance < 4.0 && !SasakiKojiroCombatHelper.isBladeBroken(entity)) {
          int lastTsurigameshi = data.getInt("LastTsurigameshiTick");
-         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= 30) {
+         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= SASAKI_TSURIGAMESHI_MP_COST) {
             data.putInt("LastTsurigameshiTick", tick);
-            entity.setCurrentMp(entity.getCurrentMp() - 30);
+            entity.setCurrentMp(entity.getCurrentMp() - SASAKI_TSURIGAMESHI_MP_COST);
             entity.triggerTsurigameshiAnimation();
             performTsurigameshi(entity, target);
             return;

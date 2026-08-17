@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
@@ -61,7 +62,7 @@ public final class NpcMagicExecutionService {
       // the NPC and player paths on the same callback implementation.
       if (MagicDefinitionRegistry.contains(magicId)) {
          var definition = MagicDefinitionRegistry.get(magicId);
-         if (definition != null && !definition.npcAllowed()) return false;
+         if (definition != null && !definition.npcAllowed() && !isLeffExclusiveNpcMagic(caster, magicId)) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
          if (external.handled()) return external.success();
@@ -78,6 +79,9 @@ public final class NpcMagicExecutionService {
          case "magic_bullet" -> NpcMagicCastBridge.castMagicBullet(caster, target, vars, effectiveProficiency);
          case "airflow_blade" -> NpcMagicCastBridge.castAirflowBlade(caster, target, vars, effectiveProficiency);
          case "detection" -> NpcMagicCastBridge.castDetection(caster, target, vars, effectiveProficiency);
+         case "spiritron_cannon" -> NpcMagicCastBridge.castSpiritronCannon(caster, target, vars, effectiveProficiency);
+         case "imaginary_displacement" -> NpcMagicCastBridge.castLeffImaginaryDisplacement(caster, target, vars, effectiveProficiency);
+         case "imaginary_space" -> NpcMagicCastBridge.castLeffImaginarySpace(caster, target, vars, effectiveProficiency);
          case "entity_displacement" -> EntityDisplacementService.swapNpc(caster, target);
          case "suggestion_magic" -> NpcMagicCastBridge.castSuggestionMagic(caster, target, vars, effectiveProficiency);
          case "binding_magic" -> NpcMagicCastBridge.castBindingMagic(caster, target, vars, effectiveProficiency);
@@ -96,6 +100,11 @@ public final class NpcMagicExecutionService {
          postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
       }
       return success;
+   }
+
+   private static boolean isLeffExclusiveNpcMagic(MysticMagicianEntity caster, String magicId) {
+      return caster instanceof LeffLaynorFlaurosEntity
+         && ("imaginary_displacement".equals(magicId) || "imaginary_space".equals(magicId));
    }
 
    private static void postNpcLegacyMagicCast(
@@ -126,6 +135,9 @@ public final class NpcMagicExecutionService {
       if ("airflow_blade".equals(magicId)) return 14;
       if ("detection".equals(magicId)) return 10;
       if ("mana_burst".equals(magicId)) return 16;
+      if ("imaginary_displacement".equals(magicId)) return 10;
+      if ("imaginary_space".equals(magicId)) return 18;
+      if ("spiritron_cannon".equals(magicId)) return 42;
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition != null) return Math.max(0, definition.npcGlobalCooldown());
       return switch (magicId) {
@@ -153,6 +165,9 @@ public final class NpcMagicExecutionService {
       if ("magic_analysis".equals(magicId)) return 260;
       if ("airflow_blade".equals(magicId)) return 32;
       if ("detection".equals(magicId)) return 180;
+      if ("imaginary_displacement".equals(magicId)) return 300;
+      if ("imaginary_space".equals(magicId)) return 240;
+      if ("spiritron_cannon".equals(magicId)) return 620;
       if ("mana_burst".equals(magicId)) {
          int mode = payload != null && payload.contains("mana_burst_mode") ? Math.max(0, Math.min(2, payload.getInt("mana_burst_mode"))) : 1;
          return mode == 2 ? 60 : 220;

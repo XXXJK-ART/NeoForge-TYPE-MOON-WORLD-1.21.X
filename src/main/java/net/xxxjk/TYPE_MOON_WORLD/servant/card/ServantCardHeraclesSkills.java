@@ -42,6 +42,9 @@ public final class ServantCardHeraclesSkills {
          return;
       }
       initializeHeraclesGodHand(player);
+      if (syncGodHandLives(player, vars)) {
+         vars.syncServantCardRuntime(player);
+      }
       CompoundTag data = player.getPersistentData();
       tickHeraclesSprintCollisionBreak(player, data);
       boolean onGround = player.onGround();
@@ -98,6 +101,18 @@ public final class ServantCardHeraclesSkills {
       data.putFloat("GodHandAdaptiveMax", 0.75F);
       data.putInt("GodHandStrongCost", 2);
       data.putInt("GodHandExtraStrongCost", 3);
+   }
+
+   private static boolean syncGodHandLives(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      CompoundTag data = player.getPersistentData();
+      int lives = data.getBoolean("GodHandActive")
+         ? Mth.clamp(Math.max(1, data.getInt("GodHandLives") + 1), 1, 12)
+         : 0;
+      if (vars.servant_card_heracles_god_hand_lives == lives) {
+         return false;
+      }
+      vars.servant_card_heracles_god_hand_lives = lives;
+      return true;
    }
 
    private static void tickHeraclesSprintCollisionBreak(ServerPlayer player, CompoundTag data) {

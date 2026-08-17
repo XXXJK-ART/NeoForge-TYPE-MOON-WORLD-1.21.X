@@ -158,6 +158,9 @@ public final class HostileTargetingModule implements ServantAiModule {
          || isForbiddenByPrinciple(entity, target)) {
          return false;
       }
+      if (ServantMasterTargeting.isServantCardPlayer(target)) {
+         return true;
+      }
       if (isImmediateThreat(entity, target)) {
          return true;
       }
@@ -251,6 +254,10 @@ public final class HostileTargetingModule implements ServantAiModule {
          || CursedArmHassanCombatHelper.refusesToHarm(self, other)
          || isForbiddenByPrinciple(self, other)) {
          return false;
+      }
+
+      if (ServantMasterTargeting.isServantCardPlayer(other)) {
+         return true;
       }
 
       if (principle == PrincipleAxis.CHAOTIC && morality == MoralAxis.EVIL) {

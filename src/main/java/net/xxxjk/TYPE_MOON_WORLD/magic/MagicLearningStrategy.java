@@ -5,8 +5,10 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 
 /** Central rules for magic complexity and acquisition. Values are intentionally stable for saves. */
 public final class MagicLearningStrategy {
@@ -34,6 +36,16 @@ public final class MagicLearningStrategy {
       Map.entry("water_magic", new Rule(25, true, true, true, true, false, false)),
       Map.entry("wind_magic", new Rule(25, true, true, true, true, false, false)),
       Map.entry("earth_magic", new Rule(25, true, true, true, true, false, false)),
+      Map.entry("flame_array", new Rule(45, true, true, true, true, false, false)),
+      Map.entry("azure_water_array", new Rule(45, true, true, true, true, false, false)),
+      Map.entry("gale_wind_array", new Rule(45, true, true, true, true, false, false)),
+      Map.entry("rock_earth_array", new Rule(45, true, true, true, true, false, false)),
+      Map.entry("contract_magecraft", new Rule(55, true, true, true, true, false, false)),
+      Map.entry("aerial_stasis", new Rule(12, true, true, true, true, false, false)),
+      Map.entry("aerial_ascent", new Rule(18, true, true, true, true, false, false)),
+      Map.entry("touko_travel", new Rule(40, true, true, true, true, false, false)),
+      Map.entry("flight_magic", new Rule(90, true, true, true, true, false, false)),
+      Map.entry("spiritron_cannon", new Rule(90, true, true, true, true, false, false)),
       Map.entry("spiritual_healing", new Rule(50, true, true, true, true, false, false)),
       Map.entry("baptism_rite", new Rule(65, true, true, true, true, false, false)),
       Map.entry("black_key_fire_engraving", new Rule(60, true, true, true, true, false, false)),
@@ -67,6 +79,8 @@ public final class MagicLearningStrategy {
       ,Map.entry("imaginary_displacement", new Rule(78, true, true, true, true, false, false))
       ,Map.entry("imaginary_dive", new Rule(55, true, true, true, true, false, false))
       ,Map.entry("imaginary_space", new Rule(85, true, true, false, true, false, false))
+      ,Map.entry("typemoonworld:imaginary_absorption", new Rule(60, true, true, true, true, false, false))
+      ,Map.entry("typemoonworld:imaginary_absorption_evolved", new Rule(70, true, true, true, true, false, false))
       ,Map.entry("kimaris", new Rule(75, true, true, true, true, false, false))
       ,Map.entry("nega_summon", new Rule(95, true, true, true, true, false, true))
       ,Map.entry("orias", new Rule(80, true, true, true, true, false, false))
@@ -114,12 +128,19 @@ public final class MagicLearningStrategy {
          || "imaginary_displacement".equals(id)
          || "imaginary_dive".equals(id)
          || "imaginary_space".equals(id)
+         || "typemoonworld:imaginary_absorption".equals(id)
+         || "typemoonworld:imaginary_absorption_evolved".equals(id)
          || "storage".equals(id);
    }
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
    public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null) return false;
-      return (!requiresSword(id) || vars.player_magic_attributes_sword)
+      MagicDefinitionData definition = MagicDefinitionRegistry.get(id);
+      boolean prerequisiteMagicOk = definition == null || definition.prerequisiteMagic() == null
+         || isLearned(vars, definition.prerequisiteMagic().toString())
+            && MagicProficiencyService.get(vars, definition.prerequisiteMagic().toString()) >= definition.prerequisiteProficiency();
+      return prerequisiteMagicOk
+         && (!requiresSword(id) || vars.player_magic_attributes_sword)
          && (!requiresImaginaryAttribute(id) || vars.player_magic_attributes_imaginary_number);
    }
    public static boolean materialAllowed(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
@@ -138,6 +159,18 @@ public final class MagicLearningStrategy {
          case "water_magic" -> "magic_page_water";
          case "wind_magic" -> "magic_page_wind";
          case "earth_magic" -> "magic_page_earth";
+         case "flame_array" -> "magic_page_flame_array";
+         case "azure_water_array" -> "magic_page_azure_water_array";
+         case "gale_wind_array" -> "magic_page_gale_wind_array";
+         case "rock_earth_array" -> "magic_page_rock_earth_array";
+         case "contract_magecraft" -> "magic_page_contract_magecraft";
+         case "aerial_stasis" -> "magic_page_aerial_stasis";
+         case "aerial_ascent" -> "magic_page_aerial_ascent";
+         case "touko_travel" -> "magic_page_touko_travel";
+         case "flight_magic" -> "magic_page_flight_magic";
+         case "spiritron_cannon" -> "magic_page_spiritron_cannon";
+         case "typemoonworld:imaginary_absorption" -> "magic_page_imaginary_storage";
+         case "typemoonworld:imaginary_absorption_evolved" -> "magic_page_imaginary_absorption";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
          case "gander" -> "magic_scroll_gander_broken";
          case "broken_phantasm" -> "magic_scroll_broken_phantasm_broken";

@@ -1,0 +1,25 @@
+{
+  "id": "territory_creation_a_baobhan_sith",
+  "display_name": "Territory Creation A",
+  "display_name_zh": "阵地建造 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mana_control",
+      "params": {
+        "rank": "A"
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {
+        "type": "area_control",
+        "strength": 0.65
+      }
+    ]
+  }
+}

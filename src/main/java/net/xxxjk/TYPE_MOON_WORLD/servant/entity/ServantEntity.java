@@ -24,6 +24,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.Pose;
@@ -324,11 +325,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    public void tick() {
-      if (!this.level().isClientSide && EntityUtils.isImmunePlayerTarget(this.getTarget())) {
+      if (!this.level().isClientSide
+         && (EntityUtils.isImmunePlayerTarget(this.getTarget()) || EntityUtils.isUntargetableServantTransition(this.getTarget()))) {
          super.setTarget(null);
       }
       if (this.isSpiritualTransitionActive()) {
          this.applySpiritualLock();
+         if (!this.level().isClientSide) {
+            this.clearIncomingTargetsDuringSpiritualTransition();
+         }
       }
       super.tick();
       if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
@@ -358,7 +363,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          super.setTarget(null);
          return;
       }
-      super.setTarget(EntityUtils.isImmunePlayerTarget(target) ? null : target);
+      if (EntityUtils.isImmunePlayerTarget(target) || EntityUtils.isUntargetableServantTransition(target)) {
+         super.setTarget(null);
+         return;
+      }
+      LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
+      super.setTarget(EntityUtils.isImmunePlayerTarget(resolvedTarget) || EntityUtils.isUntargetableServantTransition(resolvedTarget)
+         ? null
+         : resolvedTarget);
    }
 
    @Override
@@ -621,7 +633,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    /** Explicit basic-attack hook; special attacks should continue to use doHurtTarget directly. */
    public boolean doBasicHurtTarget(LivingEntity target) {
-      return target != null && this.doHurtTarget(target);
+      LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
+      return resolvedTarget != null && this.doHurtTarget(resolvedTarget);
    }
 
    private void tickNaturalHealthRegen() {
@@ -766,8 +779,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.equipNpcServantCardArmor(forceClientSync);
    }
 
+   public void ensureDefaultNpcLoadout(boolean forceClientSync) {
+      this.equipDefaultWeapon();
+      this.equipNpcServantCardArmor(forceClientSync);
+   }
+
    private void equipNpcServantCardArmor(boolean forceClientSync) {
-      String id = this.getServantId();
+      String id = normalizeServantId(this.getServantId());
       if (!usesHumanoidServantSkin(id)) {
          return;
       }
@@ -776,10 +794,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
       equipNpcServantCardArmorSlot(EquipmentSlot.CHEST, forceClientSync);
       equipNpcServantCardArmorSlot(EquipmentSlot.LEGS, forceClientSync);
+      if (hasHumanoidServantCardBoots(id)) {
+         equipNpcServantCardArmorSlot(EquipmentSlot.FEET, forceClientSync);
+      }
    }
 
    private void equipNpcServantCardArmorSlot(EquipmentSlot slot, boolean forceClientSync) {
-      Item armor = ModItems.getServantCardArmor(this.getServantId(), slot);
+      Item armor = ModItems.getServantCardArmor(normalizeServantId(this.getServantId()), slot);
       if (armor == Items.AIR) {
          return;
       }
@@ -797,22 +818,38 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private static boolean usesHumanoidServantSkin(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
-         case "arash", "artoria_pendragon", "cu_chulainn", "gilgamesh_caster", "emiya_archer",
+      return switch (normalizeServantId(servantId)) {
+         case "arash", "artoria_pendragon", "cu_chulainn", "cursed_arm_hassan", "gilgamesh_caster", "emiya_archer",
             "enkidu", "fanatic_assassin", "nightingale", "gawain", "gilgamesh", "li_shuwen",
-            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro", "senko_muramasa", "shadow_hassan",
+            "hundred_faces_hassan", "diarmuid_ua_duibhne",
+            "heracles",
+            "ushiwakamaru_rider", "zhao_yun_rider", "iskandar", "baobhan_sith" -> true;
          default -> false;
       };
    }
 
    private static boolean hasHumanoidServantCardHelmet(String servantId) {
-      return switch (servantId == null ? "" : servantId) {
+      return switch (normalizeServantId(servantId)) {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "hundred_faces_hassan", "diarmuid_ua_duibhne",
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
+   }
+
+   private static boolean hasHumanoidServantCardBoots(String servantId) {
+      return switch (normalizeServantId(servantId)) {
+         case "diarmuid_ua_duibhne", "iskandar" -> true;
+         default -> false;
+      };
+   }
+
+   private static String normalizeServantId(String servantId) {
+      String id = servantId == null ? "" : servantId;
+      String builtinPrefix = net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":";
+      return id.startsWith(builtinPrefix) ? id.substring(builtinPrefix.length()) : id;
    }
 
    @Override
@@ -1301,6 +1338,16 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.attackSwingTicks = 0;
       if (this.actionCtrl != null) {
          this.actionCtrl.setAnimation(null);
+      }
+   }
+
+   private void clearIncomingTargetsDuringSpiritualTransition() {
+      if (!(this.level() instanceof ServerLevel serverLevel)) {
+         return;
+      }
+
+      for (Mob mob : serverLevel.getEntitiesOfClass(Mob.class, this.getBoundingBox().inflate(48.0), candidate -> candidate.getTarget() == this)) {
+         mob.setTarget(null);
       }
    }
 

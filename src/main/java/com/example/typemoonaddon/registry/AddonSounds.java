@@ -24,6 +24,25 @@ public final class AddonSounds {
             "imaginary_storage_end",
             key -> SoundEvent.createFixedRangeEvent(key, 48.0F));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_ATTACK = SOUNDS.register(
+            "gilles_de_rais_caster_voice_attack",
+            key -> SoundEvent.createFixedRangeEvent(key, 64.0F));
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_FAIL = SOUNDS.register(
+            "gilles_de_rais_caster_voice_fail",
+            key -> SoundEvent.createFixedRangeEvent(key, 64.0F));
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_VICTORY = SOUNDS.register(
+            "gilles_de_rais_caster_voice_victory",
+            key -> SoundEvent.createFixedRangeEvent(key, 64.0F));
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_NP = SOUNDS.register(
+            "gilles_de_rais_caster_voice_np",
+            key -> SoundEvent.createFixedRangeEvent(key, 96.0F));
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_SUMMON = SOUNDS.register(
+            "gilles_de_rais_caster_voice_summon",
+            key -> SoundEvent.createFixedRangeEvent(key, 64.0F));
+    public static final DeferredHolder<SoundEvent, SoundEvent> GILLES_VOICE_GAZE = SOUNDS.register(
+            "gilles_de_rais_caster_voice_gaze",
+            key -> SoundEvent.createFixedRangeEvent(key, 64.0F));
+
     private AddonSounds() {
     }
 

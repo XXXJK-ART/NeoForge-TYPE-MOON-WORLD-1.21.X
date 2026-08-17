@@ -63,6 +63,14 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (isHeadSlot(animatable) && "medusa".equals(servantId)) {
          return MEDUSA_ANIMATION;
       }
+      if (isHeadSlot(animatable) && "lancelot_berserker".equals(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "animations/servant_card_" + servantId + ".animation.json");
+      }
+      if (isHeadSlot(animatable) && "baobhan_sith".equals(servantId)) {
+         return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,
+            "animations/servant_card_" + servantId + ".animation.json");
+      }
       if (isHeadSlot(animatable)) {
          return EMPTY_ANIMATION;
       }
@@ -77,6 +85,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "artoria_pendragon", "sasaki_kojiro", "medusa", "cursed_arm_hassan", "shadow_hassan", "heracles",
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
+         case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith" -> true;
          default -> false;
       };
    }
@@ -85,7 +94,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       return switch (servantId) {
          case "artoria_pendragon", "enkidu", "gilgamesh_caster", "li_shuwen",
             "medusa", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
          default -> false;
       };
    }
@@ -112,6 +121,9 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       if (entityData == null) {
          return;
       }
+      if ("diarmuid_ua_duibhne".equals(animatable.servantId())) {
+         applyDiarmuidArmorFit();
+      }
       GeoBone head = this.getAnimationProcessor().getBone("armorHead");
       if (head != null) {
          float yawRad = Mth.clamp(entityData.netHeadYaw(), -40.0F, 40.0F) * (float)(Math.PI / 180.0);
@@ -130,6 +142,24 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       counterRotateHair("hair", pitchRad, 1.25F);
       counterRotateHair("hair1", pitchRad, 1.35F);
       counterRotateHair("hair2", pitchRad, 1.35F);
+   }
+
+   private void applyDiarmuidArmorFit() {
+      setScale("armorRightArm", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftArm", 1.5F, 1.5F, 1.5F);
+      setScale("armorRightLeg", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftLeg", 1.5F, 1.5F, 1.5F);
+      setScale("armorRightBoot", 1.5F, 1.5F, 1.5F);
+      setScale("armorLeftBoot", 1.5F, 1.5F, 1.5F);
+   }
+
+   private void setScale(String boneName, float x, float y, float z) {
+      GeoBone bone = this.getAnimationProcessor().getBone(boneName);
+      if (bone != null) {
+         bone.setScaleX(x);
+         bone.setScaleY(y);
+         bone.setScaleZ(z);
+      }
    }
 
    private void counterRotateHair(String boneName, float pitchRad, float strength) {
