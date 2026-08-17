@@ -1,7 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
-import com.example.typemoonaddon.entity.GillesDeRaisEntity;
-import com.example.typemoonaddon.registry.AddonSounds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -144,9 +142,6 @@ public final class ServantVoiceHelper {
       } else if (isOkitaSoujiSaber(servant)) {
          if (servant.getRandom().nextFloat() > 0.50F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get());
-      } else if (isGilles(servant)) {
-         if (servant.getRandom().nextFloat() > 0.50F) return;
-         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 0.92F, AddonSounds.GILLES_VOICE_ATTACK.get());
       }
    }
 
@@ -240,8 +235,6 @@ public final class ServantVoiceHelper {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.2F, 0.92F, ModSounds.ISKANDAR_VOICE_VICTORY.get());
       } else if (isOkitaSoujiSaber(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_VICTORY.get());
-      } else if (isGilles(servant)) {
-         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.1F, 0.92F, AddonSounds.GILLES_VOICE_VICTORY.get());
       }
    }
 
@@ -305,32 +298,12 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.12F, 0.88F, ModSounds.ISKANDAR_VOICE_FAIL.get());
       } else if (isOkitaSoujiSaber(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.OKITA_SOUJI_SABER_VOICE_FAIL.get());
-      } else if (isGilles(servant)) {
-         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.05F, 0.88F, AddonSounds.GILLES_VOICE_FAIL.get());
-      }
-   }
-
-   public static void tryPlayGillesSummon(ServantEntity servant) {
-      if (isGilles(servant)) {
-         playVoice(servant, "gilles_summon", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.9F, AddonSounds.GILLES_VOICE_SUMMON.get());
       }
    }
 
    public static void tryPlayOkitaSoujiSaberNp(ServantEntity servant) {
       if (isOkitaSoujiSaber(servant)) {
          playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
-      }
-   }
-
-   public static void tryPlayGillesGaze(ServantEntity servant) {
-      if (isGilles(servant)) {
-         playVoice(servant, "gilles_gaze", SPECIAL_VOICE_COOLDOWN, 1.0F, 0.95F, AddonSounds.GILLES_VOICE_GAZE.get());
-      }
-   }
-
-   public static void tryPlayGillesNp(ServantEntity servant) {
-      if (isGilles(servant)) {
-         playVoiceForced(servant, "gilles_np", 1.45F, 0.9F, AddonSounds.GILLES_VOICE_NP.get());
       }
    }
 
@@ -787,15 +760,4 @@ public final class ServantVoiceHelper {
       return servant != null && OkitaSoujiSaberEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
-   private static boolean isGilles(ServantEntity servant) {
-      if (servant == null) {
-         return false;
-      }
-      String id = servant.getServantId();
-      int separator = id == null ? -1 : id.indexOf(':');
-      if (separator >= 0) {
-         id = id.substring(separator + 1);
-      }
-      return GillesDeRaisEntity.SERVANT_KEY.equals(id);
-   }
 }

@@ -18,7 +18,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -240,7 +239,7 @@ public final class GillesDeRaisCombatHelper {
                     30, 0.45, 0.55, 0.45, 0.04);
             level.playSound(null, target.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 0.9F, 1.25F);
         }
-        ServantVoiceHelper.tryPlayGillesGaze(entity);
+        GillesVoiceHelper.tryPlayGaze(entity);
         return true;
     }
 
@@ -322,7 +321,7 @@ public final class GillesDeRaisCombatHelper {
         data.putUUID(TAG_HUGE_UUID, huge.getUUID());
         data.putLong(TAG_LAST_HUGE_SUMMON, now);
         entity.triggerNamedActionAnimation("np");
-        ServantVoiceHelper.tryPlayGillesNp(entity);
+        GillesVoiceHelper.tryPlayNp(entity);
         ((ServerLevel) entity.level()).sendParticles(ParticleTypes.SQUID_INK, huge.getX(), huge.getY() + 2.0, huge.getZ(),
                 120, 3.0, 1.4, 3.0, 0.08);
         return true;
@@ -350,7 +349,7 @@ public final class GillesDeRaisCombatHelper {
         level.playSound(null, entity.blockPosition(), SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, large ? 1.3F : 0.9F, large ? 0.65F : 0.85F);
         level.sendParticles(ParticleTypes.SQUID_INK, seaMonster.getX(), seaMonster.getY() + 0.7, seaMonster.getZ(),
                 large ? 30 : 14, 0.6, 0.5, 0.6, 0.05);
-        ServantVoiceHelper.tryPlayGillesSummon(entity);
+        GillesVoiceHelper.tryPlaySummon(entity);
     }
 
     private static int countSeaMonsters(GillesDeRaisEntity entity, boolean large) {

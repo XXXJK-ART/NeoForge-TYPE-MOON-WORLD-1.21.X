@@ -2,10 +2,9 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import com.example.typemoonaddon.entity.GillesDeRaisEntity;
-import com.example.typemoonaddon.registry.AddonEntities;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 
 public final class BuiltinServantEntityFactory {
    private BuiltinServantEntityFactory() {
@@ -67,9 +66,9 @@ public final class BuiltinServantEntityFactory {
          && OkitaSoujiSaberEntity.SERVANT_KEY.equals(servantId.getPath())) {
          return ModEntities.OKITA_SOUJI_SABER.get().create(level);
       }
-      if (TYPE_MOON_WORLD.MOD_ID.equals(servantId.getNamespace())
-         && GillesDeRaisEntity.SERVANT_KEY.equals(servantId.getPath())) {
-         return AddonEntities.GILLES_DE_RAIS_CASTER.get().create(level);
+      ServantEntity external = ServantAddonRegistry.createExternalEntity(level, servantId);
+      if (external != null) {
+         return external;
       }
       GenericServantEntity generic = ModEntities.GENERIC_SERVANT.get().create(level);
       if (generic != null) {

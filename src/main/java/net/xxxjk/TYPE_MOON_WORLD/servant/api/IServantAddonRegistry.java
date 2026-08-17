@@ -11,6 +11,8 @@ public interface IServantAddonRegistry {
 
    boolean registerLifecycleHandler(String handlerId, IServantLifecycleHandler handler, String providerId);
 
+   boolean registerEntityFactory(String servantId, IServantEntityFactory factory, String providerId);
+
    default boolean registerDefinition(ServantDefinition definition) {
       return this.registerDefinition(definition, "unknown");
    }
@@ -25,5 +27,9 @@ public interface IServantAddonRegistry {
 
    default boolean registerLifecycleHandler(String handlerId, IServantLifecycleHandler handler) {
       return this.registerLifecycleHandler(handlerId, handler, "unknown");
+   }
+
+   default boolean registerEntityFactory(String servantId, IServantEntityFactory factory) {
+      return this.registerEntityFactory(servantId, factory, "unknown");
    }
 }

@@ -2,6 +2,7 @@ package com.example.typemoonaddon.entity;
 
 import com.example.typemoonaddon.registry.AddonItems;
 import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
+import com.example.typemoonaddon.servant.GillesVoiceHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -16,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 
 public final class GillesDeRaisEntity extends ServantEntity {
     public static final String SERVANT_KEY = "gilles_de_rais_caster";
@@ -78,7 +78,7 @@ public final class GillesDeRaisEntity extends ServantEntity {
     public boolean doHurtTarget(Entity target) {
         boolean hit = super.doHurtTarget(target);
         if (hit) {
-            ServantVoiceHelper.tryPlayAttack(this);
+            GillesVoiceHelper.tryPlayAttack(this);
         }
         return hit;
     }
@@ -86,8 +86,14 @@ public final class GillesDeRaisEntity extends ServantEntity {
     @Override
     public boolean killedEntity(ServerLevel level, LivingEntity victim) {
         boolean result = super.killedEntity(level, victim);
-        ServantVoiceHelper.tryPlayVictory(this, victim);
+        GillesVoiceHelper.tryPlayVictory(this, victim);
         return result;
+    }
+
+    @Override
+    public void die(DamageSource cause) {
+        super.die(cause);
+        GillesVoiceHelper.tryPlayFail(this);
     }
 
     public boolean isGiantSeaMonsterUnlocked() {

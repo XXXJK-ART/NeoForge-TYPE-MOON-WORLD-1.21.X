@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Prevents login repair from granting Grail magics before erosion reaches three. */
-@Mixin(targets = "com.example.typemoonaddon.magic.TypeMoonIntegration", remap = false)
+@Mixin(targets = "com.example.typemoonaddon.magic.SakuraTypeMoonIntegration", remap = false)
 public abstract class GrailKnowledgeGateMixin {
     @Inject(method = "ensureGrailWormPower", at = @At("HEAD"), cancellable = true, remap = false)
     private static void typemoonaddon$gateGrailKnowledge(

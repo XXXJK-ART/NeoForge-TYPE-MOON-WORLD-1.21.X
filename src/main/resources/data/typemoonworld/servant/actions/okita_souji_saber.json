@@ -3,7 +3,7 @@
   "actions": [
     {
       "id": "typemoonworld:okita/shukuchi",
-      "tags": ["melee", "mobility", "pursuit", "intercept", "okita_shukuchi"],
+      "tags": ["melee", "gap_closer", "pursuit", "intercept"],
       "minimum_range": 2.6,
       "maximum_range": 5.5,
       "mana_cost": 5,
@@ -35,7 +35,7 @@
     },
     {
       "id": "typemoonworld:okita/mumyoudan_zuki",
-      "tags": ["noble_phantasm", "melee", "finisher", "piercing", "okita_mumyoudan_zuki"],
+      "tags": ["noble_phantasm", "melee", "finisher", "interrupt"],
       "minimum_range": 0.0,
       "maximum_range": 3.2,
       "mana_cost": 10,
@@ -55,7 +55,7 @@
     },
     {
       "id": "typemoonworld:okita/flag_of_sincerity",
-      "tags": ["noble_phantasm", "summon", "support", "okita_flag_of_sincerity"],
+      "tags": ["noble_phantasm", "summon", "area", "control"],
       "minimum_range": 0.0,
       "maximum_range": 20.0,
       "mana_cost": 80,
