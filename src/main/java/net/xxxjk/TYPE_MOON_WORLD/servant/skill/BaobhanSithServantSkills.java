@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.skill;
 
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BaobhanSithHarpItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonRegistry;
@@ -34,6 +36,9 @@ public final class BaobhanSithServantSkills {
    public static final String SERVANT_ID = "baobhan_sith";
    public static final String PROVIDER_ID = "typemoonworld_core";
    public static final String ACTION_CURSE_SHOT = "baobhan_sith_curse_shot";
+   public static final String ACTION_BLOOD_SPIKE = "baobhan_sith_blood_spike";
+   public static final String ACTION_BLOOD_THORNS = "baobhan_sith_blood_thorns";
+   public static final String ACTION_CURSE_VOLLEY = "baobhan_sith_curse_volley";
    public static final String ACTION_FINGERTIP_DANCE = "baobhan_sith_fingertip_dance";
    public static final String ACTION_NIGHT_FEAST = "baobhan_sith_night_feast";
    public static final String ACTION_GRIMALKIN = "baobhan_sith_grimalkin";
@@ -59,6 +64,9 @@ public final class BaobhanSithServantSkills {
    private static final String TAG_ORBIT_DIRECTION = TAG_PREFIX + "OrbitDirection";
    private static final String TAG_NEXT_ORBIT_SWITCH = TAG_PREFIX + "NextOrbitSwitch";
    private static final String TAG_LAST_HOOF_FX = TAG_PREFIX + "LastHoofFx";
+   private static final String TAG_LAST_BLOOD_SPIKE = TAG_PREFIX + "LastBloodSpike";
+   private static final String TAG_LAST_BLOOD_THORNS = TAG_PREFIX + "LastBloodThorns";
+   private static final String TAG_LAST_CURSE_VOLLEY = TAG_PREFIX + "LastCurseVolley";
    private static final String TAG_IMMUNE_UNTIL = "ImmuneUntil";
    private static final String TAG_BURST_UNTIL = "BurstUntil";
    private static final String TAG_CURSE_LAYERS = "CurseLayers";
@@ -81,6 +89,9 @@ public final class BaobhanSithServantSkills {
 
    public static void registerCombatActions(IServantAddonRegistry registry) {
       registry.registerCombatAction(ACTION_CURSE_SHOT, BaobhanSithServantSkills::castCurseShot, PROVIDER_ID);
+      registry.registerCombatAction(ACTION_BLOOD_SPIKE, BaobhanSithServantSkills::castBloodSpike, PROVIDER_ID);
+      registry.registerCombatAction(ACTION_BLOOD_THORNS, BaobhanSithServantSkills::castBloodThorns, PROVIDER_ID);
+      registry.registerCombatAction(ACTION_CURSE_VOLLEY, BaobhanSithServantSkills::castCurseVolley, PROVIDER_ID);
       registry.registerCombatAction(ACTION_FINGERTIP_DANCE, BaobhanSithServantSkills::castFingertipDance, PROVIDER_ID);
       registry.registerCombatAction(ACTION_NIGHT_FEAST, BaobhanSithServantSkills::castNightFeast, PROVIDER_ID);
       registry.registerCombatAction(ACTION_GRIMALKIN, BaobhanSithServantSkills::castGrimalkin, PROVIDER_ID);
@@ -164,6 +175,8 @@ public final class BaobhanSithServantSkills {
          if (!result.handled()) {
             result = castFairyVampirism(actionContext(context, target, ACTION_FAIRY_VAMPIRISM, distance, lineOfSight));
          }
+      } else if (pressured && distance <= 9.5 && layers < 5 && servant.getCurrentMp() >= 12.0) {
+         result = castBloodThorns(actionContext(context, target, ACTION_BLOOD_THORNS, distance, lineOfSight));
       } else if (pressured && servant.getCurrentMp() >= 15.0) {
          result = castGrimalkin(actionContext(context, target, ACTION_GRIMALKIN, distance, lineOfSight));
       } else if (target instanceof ServantEntity && distance <= 20.0 && servant.getCurrentMp() >= 25.0
@@ -173,6 +186,10 @@ public final class BaobhanSithServantSkills {
          result = castFingertipDance(actionContext(context, target, ACTION_FINGERTIP_DANCE, distance, lineOfSight));
       } else if (distance <= 4.0 && layers >= 2) {
          result = castFairyVampirism(actionContext(context, target, ACTION_FAIRY_VAMPIRISM, distance, lineOfSight));
+      } else if (lineOfSight && distance >= 10.0 && distance <= 34.0 && layers <= 3 && servant.getCurrentMp() >= 14.0) {
+         result = castCurseVolley(actionContext(context, target, ACTION_CURSE_VOLLEY, distance, true));
+      } else if (lineOfSight && distance >= 4.0 && distance <= 18.0 && layers < 5 && servant.getCurrentMp() >= 6.0) {
+         result = castBloodSpike(actionContext(context, target, ACTION_BLOOD_SPIKE, distance, true));
       } else if (lineOfSight && distance >= 6.0 && distance <= 42.0 && layers < 5) {
          result = castCurseShot(actionContext(context, target, ACTION_CURSE_SHOT, distance, true));
       } else if (lineOfSight && distance >= 10.0 && distance <= 42.0 && servant.getCurrentMp() > servant.getMaxMp() * 0.7) {
@@ -282,6 +299,80 @@ public final class BaobhanSithServantSkills {
       }
       ServantVoiceHelper.tryPlayAttack(servant);
       return ServantExecutionResult.SUCCESS.withMpCost(4.0);
+   }
+
+   private static ServantExecutionResult castBloodSpike(ServantCombatActionContext context) {
+      ServantEntity servant = validatedServant(context, 3.0, 18.0, 6.0);
+      if (servant == null || !context.hasLineOfSight()
+         || !ready(servant.getPersistentData(), TAG_LAST_BLOOD_SPIKE, context.gameTick(), 120L)) {
+         return ServantExecutionResult.NOT_HANDLED;
+      }
+      LivingEntity target = context.target();
+      servant.getPersistentData().putLong(TAG_LAST_BLOOD_SPIKE, context.gameTick());
+      servant.setCurrentMp(servant.getCurrentMp() - 6.0);
+      servant.faceToward(target.position());
+      servant.triggerRuneCastAnimation(12);
+      target.invulnerableTime = 0;
+      target.hurt(curseDamageSource(servant), 22.0F);
+      target.invulnerableTime = 0;
+      addMedium(servant, target, MEDIUM_BLOOD, 1);
+      if (servant.getRandom().nextFloat() < 0.45F) {
+         addMedium(servant, target, MEDIUM_SKIN, 1);
+      }
+      applyCurse(servant, target, CURSE_BLOOD, 1, 260, isSunlit(servant) ? 0.5F : 1.0F);
+      if (servant.level() instanceof ServerLevel level) {
+         spawnBloodSpikeFx(level, target.position(), target.getBbHeight());
+      }
+      ServantVoiceHelper.tryPlayAttack(servant);
+      return ServantExecutionResult.SUCCESS.withMpCost(6.0);
+   }
+
+   private static ServantExecutionResult castBloodThorns(ServantCombatActionContext context) {
+      ServantEntity servant = validatedServant(context, 2.0, 22.0, 12.0);
+      if (servant == null || !ready(servant.getPersistentData(), TAG_LAST_BLOOD_THORNS, context.gameTick(), 220L)) {
+         return ServantExecutionResult.NOT_HANDLED;
+      }
+      LivingEntity primary = context.target();
+      servant.getPersistentData().putLong(TAG_LAST_BLOOD_THORNS, context.gameTick());
+      servant.setCurrentMp(servant.getCurrentMp() - 12.0);
+      servant.faceToward(primary.position());
+      servant.triggerRuneCastAnimation(18);
+      if (servant.level() instanceof ServerLevel level) {
+         Vec3 center = primary.position();
+         AABB box = primary.getBoundingBox().inflate(3.4, 1.0, 3.4);
+         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
+            other -> other != servant && other.isAlive() && EntityUtils.isValidCombatTarget(servant, other))) {
+            target.invulnerableTime = 0;
+            target.hurt(curseDamageSource(servant), target == primary ? 18.0F : 14.0F);
+            target.invulnerableTime = 0;
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 5, false, true, true));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, true, true));
+            addMedium(servant, target, MEDIUM_SKIN, 1);
+            applyCurse(servant, target, CURSE_SKIN, 1, 300, isSunlit(servant) ? 0.5F : 1.0F);
+         }
+         spawnBloodThornsFx(level, center, 3.4);
+      }
+      ServantVoiceHelper.tryPlayAttack(servant);
+      return ServantExecutionResult.SUCCESS.withMpCost(12.0);
+   }
+
+   private static ServantExecutionResult castCurseVolley(ServantCombatActionContext context) {
+      ServantEntity servant = validatedServant(context, 10.0, 38.0, 14.0);
+      if (servant == null || !context.hasLineOfSight()
+         || !ready(servant.getPersistentData(), TAG_LAST_CURSE_VOLLEY, context.gameTick(), 180L)) {
+         return ServantExecutionResult.NOT_HANDLED;
+      }
+      LivingEntity target = context.target();
+      servant.getPersistentData().putLong(TAG_LAST_CURSE_VOLLEY, context.gameTick());
+      servant.setCurrentMp(servant.getCurrentMp() - 14.0);
+      servant.faceToward(target.position());
+      servant.triggerRuneCastAnimation(20);
+      if (servant.level() instanceof ServerLevel level) {
+         spawnCurseVolleyBackFx(level, servant, 5);
+         fireBackCurseVolley(level, servant, target);
+      }
+      ServantVoiceHelper.tryPlayAttack(servant);
+      return ServantExecutionResult.SUCCESS.withMpCost(14.0);
    }
 
    private static ServantExecutionResult castFingertipDance(ServantCombatActionContext context) {
@@ -662,6 +753,50 @@ public final class BaobhanSithServantSkills {
       spawnHoofPrint(level, center.subtract(right));
    }
 
+   private static void fireBackCurseVolley(ServerLevel level, ServantEntity servant, LivingEntity target) {
+      Vec3 toTarget = target.getEyePosition().subtract(servant.getEyePosition());
+      Vec3 forward = toTarget.lengthSqr() < 1.0E-5 ? servant.getLookAngle() : toTarget.normalize();
+      Vec3 flatForward = new Vec3(forward.x, 0.0, forward.z);
+      if (flatForward.lengthSqr() < 1.0E-5) {
+         flatForward = new Vec3(0.0, 0.0, 1.0);
+      } else {
+         flatForward = flatForward.normalize();
+      }
+      Vec3 side = new Vec3(-flatForward.z, 0.0, flatForward.x).normalize();
+      Vec3 base = servant.position()
+         .add(0.0, servant.getBbHeight() * 0.78, 0.0)
+         .subtract(flatForward.scale(0.95));
+      for (int i = 0; i < 5; i++) {
+         double spread = (i - 2) * 0.44;
+         double lift = 0.18 + Math.sin(i * Math.PI / 4.0) * 0.26;
+         Vec3 start = base.add(side.scale(spread)).add(0.0, lift, 0.0);
+         Vec3 aim = target.getEyePosition().add(side.scale((i - 2) * 0.18)).subtract(start);
+         Vec3 direction = aim.lengthSqr() < 1.0E-5 ? forward : aim.normalize();
+         fireOffsetCurseShot(level, servant, start, direction, 3.05 + i * 0.06, 0.82F, 1);
+      }
+      level.playSound(null, servant.blockPosition(), SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 1.4F);
+   }
+
+   private static void fireOffsetCurseShot(
+      ServerLevel level,
+      LivingEntity shooter,
+      Vec3 start,
+      Vec3 direction,
+      double speed,
+      float visualScale,
+      int chargeSeconds
+   ) {
+      GanderProjectileEntity projectile = new GanderProjectileEntity(level, shooter);
+      projectile.setPos(start.x, start.y, start.z);
+      projectile.setDeltaMovement(direction.normalize().scale(speed));
+      projectile.setMagicSource("baobhan_sith_curse", 70.0);
+      projectile.setChargeSeconds(chargeSeconds);
+      projectile.setVisualScale(visualScale);
+      level.addFreshEntity(projectile);
+      level.sendParticles(BLOOD_DUST, start.x, start.y, start.z, 7, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(CURSE_DUST, start.x, start.y, start.z, 5, 0.06, 0.06, 0.06, 0.0);
+   }
+
    private static void spawnSlashParticles(ServantEntity servant, LivingEntity target) {
       if (servant.level() instanceof ServerLevel level) {
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
@@ -728,6 +863,66 @@ public final class BaobhanSithServantSkills {
          level.sendParticles(BLOOD_DUST, petal.x, petal.y, petal.z, 1, 0.02, 0.02, 0.02, 0.0);
       }
       level.sendParticles(CURSE_DUST, center.x, center.y, center.z, 8, 0.16, 0.12, 0.16, 0.0);
+   }
+
+   private static void spawnBloodSpikeFx(ServerLevel level, Vec3 base, double targetHeight) {
+      Vec3 root = base.add(0.0, 0.08, 0.0);
+      double height = Math.max(1.1, targetHeight * 0.9);
+      spawnRing(level, BLOOD_DUST, root, 0.42, 18);
+      for (int i = 0; i < 26; i++) {
+         double t = i / 25.0;
+         double twist = t * Math.PI * 3.5;
+         double radius = (1.0 - t) * 0.28;
+         Vec3 pos = root.add(Math.cos(twist) * radius, height * t, Math.sin(twist) * radius);
+         level.sendParticles(BLOOD_DUST, pos.x, pos.y, pos.z, 2, 0.025, 0.025, 0.025, 0.0);
+         if (i % 3 == 0) {
+            level.sendParticles(CURSE_DUST, pos.x, pos.y, pos.z, 1, 0.018, 0.018, 0.018, 0.0);
+         }
+      }
+      level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, root.x, root.y + height * 0.75, root.z, 4, 0.14, 0.18, 0.14, 0.02);
+      level.playSound(null, BlockPos.containing(root), SoundEvents.ROOTED_DIRT_BREAK, SoundSource.HOSTILE, 1.0F, 0.58F);
+   }
+
+   private static void spawnBloodThornsFx(ServerLevel level, Vec3 center, double radius) {
+      Vec3 root = center.add(0.0, 0.08, 0.0);
+      spawnRing(level, CURSE_DUST, root, radius * 0.45, 24);
+      spawnRing(level, BLOOD_DUST, root.add(0.0, 0.04, 0.0), radius, 44);
+      for (int thorn = 0; thorn < 8; thorn++) {
+         double angle = thorn * Math.PI * 2.0 / 8.0;
+         Vec3 thornBase = root.add(Math.cos(angle) * radius * 0.58, 0.0, Math.sin(angle) * radius * 0.58);
+         spawnThornSpiral(level, thornBase, 0.28 + (thorn % 2) * 0.08, 1.0 + (thorn % 3) * 0.22, 16);
+      }
+      for (int i = 0; i < 36; i++) {
+         double angle = i * Math.PI * 2.0 / 36.0;
+         double curl = Math.sin(angle * 4.0) * 0.32;
+         Vec3 pos = root.add(Math.cos(angle) * (radius * 0.78 + curl), 0.2 + Math.sin(angle * 2.0) * 0.12,
+            Math.sin(angle) * (radius * 0.78 - curl));
+         level.sendParticles(BLOOD_DUST, pos.x, pos.y, pos.z, 1, 0.03, 0.03, 0.03, 0.0);
+      }
+      level.playSound(null, BlockPos.containing(root), SoundEvents.GROWING_PLANT_CROP, SoundSource.HOSTILE, 1.1F, 0.62F);
+   }
+
+   private static void spawnCurseVolleyBackFx(ServerLevel level, ServantEntity servant, int bolts) {
+      Vec3 look = servant.getLookAngle();
+      Vec3 flatLook = new Vec3(look.x, 0.0, look.z);
+      if (flatLook.lengthSqr() < 1.0E-5) {
+         flatLook = new Vec3(0.0, 0.0, 1.0);
+      } else {
+         flatLook = flatLook.normalize();
+      }
+      Vec3 side = new Vec3(-flatLook.z, 0.0, flatLook.x).normalize();
+      Vec3 center = servant.position()
+         .add(0.0, servant.getBbHeight() * 0.82, 0.0)
+         .subtract(flatLook.scale(0.9));
+      spawnRing(level, BLOOD_DUST, center, 0.68, 24);
+      spawnRing(level, PURPLE_DUST, center.add(0.0, 0.05, 0.0), 0.92, 30);
+      for (int i = 0; i < bolts; i++) {
+         double spread = (i - (bolts - 1) * 0.5) * 0.44;
+         double lift = 0.18 + Math.sin(i * Math.PI / Math.max(1, bolts - 1)) * 0.26;
+         Vec3 orb = center.add(side.scale(spread)).add(0.0, lift, 0.0);
+         spawnRing(level, BLOOD_DUST, orb, 0.16, 8);
+         level.sendParticles(CURSE_DUST, orb.x, orb.y, orb.z, 6, 0.04, 0.04, 0.04, 0.0);
+      }
    }
 
    private static void spawnCurseSigil(ServerLevel level, Vec3 center, int layers) {

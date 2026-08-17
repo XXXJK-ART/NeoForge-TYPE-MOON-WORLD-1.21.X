@@ -79,6 +79,8 @@ public final class MagicLearningStrategy {
       ,Map.entry("imaginary_displacement", new Rule(78, true, true, true, true, false, false))
       ,Map.entry("imaginary_dive", new Rule(55, true, true, true, true, false, false))
       ,Map.entry("imaginary_space", new Rule(85, true, true, false, true, false, false))
+      ,Map.entry("typemoonworld:imaginary_absorption", new Rule(60, true, true, true, true, false, false))
+      ,Map.entry("typemoonworld:imaginary_absorption_evolved", new Rule(70, true, true, true, true, false, false))
       ,Map.entry("kimaris", new Rule(75, true, true, true, true, false, false))
       ,Map.entry("nega_summon", new Rule(95, true, true, true, true, false, true))
       ,Map.entry("orias", new Rule(80, true, true, true, true, false, false))
@@ -126,6 +128,8 @@ public final class MagicLearningStrategy {
          || "imaginary_displacement".equals(id)
          || "imaginary_dive".equals(id)
          || "imaginary_space".equals(id)
+         || "typemoonworld:imaginary_absorption".equals(id)
+         || "typemoonworld:imaginary_absorption_evolved".equals(id)
          || "storage".equals(id);
    }
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
@@ -165,6 +169,8 @@ public final class MagicLearningStrategy {
          case "touko_travel" -> "magic_page_touko_travel";
          case "flight_magic" -> "magic_page_flight_magic";
          case "spiritron_cannon" -> "magic_page_spiritron_cannon";
+         case "typemoonworld:imaginary_absorption" -> "magic_page_imaginary_storage";
+         case "typemoonworld:imaginary_absorption_evolved" -> "magic_page_imaginary_absorption";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
          case "gander" -> "magic_scroll_gander_broken";
          case "broken_phantasm" -> "magic_scroll_broken_phantasm_broken";

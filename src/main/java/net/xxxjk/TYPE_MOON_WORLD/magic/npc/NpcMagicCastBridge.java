@@ -185,6 +185,18 @@ public final class NpcMagicCastBridge {
    private static final double[] MANA_BURST_DIRECT_COST = new double[]{150.0, 250.0, 350.0, 450.0, 550.0};
    private static final float[] MANA_BURST_DIRECT_DAMAGE = new float[]{40.0F, 80.0F, 120.0F, 160.0F, 200.0F};
    private static final double[] MANA_BURST_DIRECT_RANGE = new double[]{20.0, 28.0, 36.0, 44.0, 52.0};
+   private static final String[] LEFF_FIXED_MAGICS = new String[]{
+      "aerial_stasis",
+      "aerial_ascent",
+      "magic_analysis",
+      "airflow_blade",
+      "suggestion_magic",
+      "reinforcement",
+      "detection",
+      "imaginary_displacement",
+      "imaginary_space",
+      "spiritron_cannon"
+   };
    private static final double RETREAT_HEALTH_RATIO = 0.28;
    private static final double RETREAT_DISTANCE = 12.0;
    private static final double RANGED_KEEP_MIN_DISTANCE = 7.0;
@@ -252,6 +264,10 @@ public final class NpcMagicCastBridge {
 
    public static void onSpawnInitialized(MysticMagicianEntity npc) {
       if (npc != null && !npc.level().isClientSide()) {
+         if (npc instanceof LeffLaynorFlaurosEntity) {
+            configureLeff(npc);
+            return;
+         }
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          initializeIfNeeded(npc, vars);
       }
@@ -499,12 +515,30 @@ public final class NpcMagicCastBridge {
    public static void configureLeff(MysticMagicianEntity npc) {
       if (npc == null || npc.level().isClientSide()) return;
       TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      applyFixedLeffProfile(npc, vars, true);
+   }
+
+   public static void ensureLeffProfile(MysticMagicianEntity npc) {
+      if (npc == null || npc.level().isClientSide()) return;
+      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      applyFixedLeffProfile(npc, vars, false);
+   }
+
+   private static void applyFixedLeffProfile(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, boolean refillMana) {
+      if (npc == null || vars == null) return;
       vars.ensureMagicSystemInitialized();
       vars.clearAllWheelSlots();
       vars.learned_magics.clear();
+      vars.magic_proficiencies.clear();
       vars.crest_entries.clear();
+      vars.crest_practice_count.clear();
+      vars.selected_magics.clear();
+      vars.selected_magic_runtime_slot_indices.clear();
+      vars.selected_magic_display_names.clear();
+      vars.current_magic_index = 0;
+      vars.active_wheel_index = 0;
       vars.player_max_mana = 800.0;
-      vars.player_mana = 800.0;
+      vars.player_mana = refillMana ? 800.0 : Mth.clamp(vars.player_mana, 0.0, 800.0);
       vars.player_mana_egenerated_every_moment = 5.0;
       vars.player_restore_magic_moment = 10.0;
       vars.is_magus = true;
@@ -516,31 +550,23 @@ public final class NpcMagicCastBridge {
       vars.player_magic_attributes_none = false;
       vars.player_magic_attributes_imaginary_number = true;
       vars.player_magic_attributes_sword = false;
-      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
-      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
-      setNpcKnownMagic(vars, "magic_analysis", 90.0);
-      setNpcKnownMagic(vars, "airflow_blade", 85.0);
-      setNpcKnownMagic(vars, "suggestion_magic", 70.0);
-      setNpcKnownMagic(vars, "reinforcement", 70.0);
-      setNpcKnownMagic(vars, "detection", 90.0);
-      setNpcKnownMagic(vars, "imaginary_displacement", 85.0);
-      setNpcKnownMagic(vars, "imaginary_space", 85.0);
-      setNpcKnownMagic(vars, "spiritron_cannon", 90.0);
-      grantLeffMagicCrest(npc, vars);
-      String[] magics = new String[]{
-         "aerial_stasis",
-         "aerial_ascent",
-         "magic_analysis",
-         "airflow_blade",
-         "suggestion_magic",
-         "reinforcement",
-         "detection",
-         "imaginary_displacement",
-         "imaginary_space",
-         "spiritron_cannon"
-      };
-      for (int i = 0; i < magics.length; i++) {
-         installLeffWheelMagic(vars, i, magics[i]);
+      vars.bajiquan_learned = false;
+      vars.bajiquan_proficiency = 0.0;
+      vars.bajiquan_tiger_unlocked = false;
+      vars.ganryu_learned = false;
+      vars.ganryu_proficiency = 0.0;
+      vars.ganryu_tsubame_unlocked = false;
+      vars.hokushin_learned = false;
+      vars.hokushin_proficiency = 0.0;
+      vars.hokushin_master_defeated = false;
+      vars.tennen_learned = false;
+      vars.tennen_proficiency = 0.0;
+      vars.tennen_master_defeated = false;
+      for (String magicId : LEFF_FIXED_MAGICS) {
+         setNpcFixedMagic(vars, magicId, leffFixedProficiency(magicId));
+      }
+      for (int i = 0; i < LEFF_FIXED_MAGICS.length; i++) {
+         installLeffWheelMagic(vars, i, LEFF_FIXED_MAGICS[i]);
       }
       vars.rebuildSelectedMagicsFromActiveWheel();
       CompoundTag data = npc.getPersistentData();
@@ -551,43 +577,15 @@ public final class NpcMagicCastBridge {
       data.putDouble(TAG_BASE_MOVE_SPEED, 0.28);
       data.putDouble(TAG_COMBAT_MOVE_SPEED, 0.42);
       data.putDouble(TAG_BASE_ATTACK_DAMAGE, 5.0);
+      data.putInt(NPC_JEWEL_ITEM_BASIC, 0);
+      data.putInt(NPC_JEWEL_ITEM_ADVANCED, 0);
+      data.putInt(NPC_JEWEL_ITEM_ENGRAVED, 0);
       if (npc.getAttribute(Attributes.MAX_HEALTH) != null) npc.getAttribute(Attributes.MAX_HEALTH).setBaseValue(LeffLaynorFlaurosEntity.MAX_HEALTH);
       if (npc.getAttribute(Attributes.MOVEMENT_SPEED) != null) npc.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.28);
       if (npc.getAttribute(Attributes.ATTACK_DAMAGE) != null) npc.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0);
-      npc.setHealth((float)LeffLaynorFlaurosEntity.MAX_HEALTH);
-      syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
-   }
-
-   public static void ensureLeffProfile(MysticMagicianEntity npc) {
-      if (npc == null || npc.level().isClientSide()) return;
-      TypeMoonWorldModVariables.PlayerVariables vars = npc.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.player_max_mana = Math.max(vars.player_max_mana, 800.0);
-      vars.player_mana = Math.min(Math.max(vars.player_mana, 0.0), vars.player_max_mana);
-      vars.player_mana_egenerated_every_moment = Math.max(vars.player_mana_egenerated_every_moment, 5.0);
-      vars.player_restore_magic_moment = 10.0;
-      vars.is_magus = true;
-      vars.player_magic_attributes_wind = true;
-      vars.player_magic_attributes_imaginary_number = true;
-      setNpcKnownMagic(vars, "aerial_stasis", 100.0);
-      setNpcKnownMagic(vars, "aerial_ascent", 100.0);
-      setNpcKnownMagic(vars, "magic_analysis", 90.0);
-      setNpcKnownMagic(vars, "airflow_blade", 85.0);
-      setNpcKnownMagic(vars, "suggestion_magic", 70.0);
-      setNpcKnownMagic(vars, "reinforcement", 70.0);
-      setNpcKnownMagic(vars, "detection", 90.0);
-      setNpcKnownMagic(vars, "imaginary_displacement", 85.0);
-      setNpcKnownMagic(vars, "imaginary_space", 85.0);
-      setNpcKnownMagic(vars, "spiritron_cannon", 90.0);
-      ensureLeffWheelMagic(vars, "aerial_stasis");
-      ensureLeffWheelMagic(vars, "aerial_ascent");
-      ensureLeffWheelMagic(vars, "magic_analysis");
-      ensureLeffWheelMagic(vars, "airflow_blade");
-      ensureLeffWheelMagic(vars, "suggestion_magic");
-      ensureLeffWheelMagic(vars, "reinforcement");
-      ensureLeffWheelMagic(vars, "detection");
-      ensureLeffWheelMagic(vars, "imaginary_displacement");
-      ensureLeffWheelMagic(vars, "imaginary_space");
-      ensureLeffWheelMagic(vars, "spiritron_cannon");
+      npc.setMartialMask(0);
+      npc.setHasThompson(false);
+      npc.setRangedWeaponMode(false);
       grantLeffMagicCrest(npc, vars);
       syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
    }
@@ -619,6 +617,22 @@ public final class NpcMagicCastBridge {
       }
    }
 
+   private static void setNpcFixedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, double proficiency) {
+      if (vars == null || magicId == null || magicId.isEmpty()) return;
+      if (!vars.learned_magics.contains(magicId)) vars.learned_magics.add(magicId);
+      MagicProficiencyService.set(vars, magicId, proficiency);
+   }
+
+   private static double leffFixedProficiency(String magicId) {
+      return switch (magicId) {
+         case "aerial_stasis", "aerial_ascent" -> 100.0;
+         case "magic_analysis", "detection", "spiritron_cannon" -> 90.0;
+         case "airflow_blade", "imaginary_displacement", "imaginary_space" -> 85.0;
+         case "suggestion_magic", "reinforcement" -> 70.0;
+         default -> 0.0;
+      };
+   }
+
    private static void installLeffWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, int slot, String magicId) {
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, slot);
       entry.magicId = magicId;
@@ -629,10 +643,6 @@ public final class NpcMagicCastBridge {
          entry.presetPayload.putInt("reinforcement_level", 4);
       }
       vars.setWheelSlotEntry(0, slot, entry);
-   }
-
-   private static void ensureLeffWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      ensureTohsakaRinWheelMagic(vars, magicId);
    }
 
    private static void ensureTohsakaRinWheelMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
@@ -719,7 +729,7 @@ public final class NpcMagicCastBridge {
          if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) return false;
       }
       TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
-      entry.entryId = UUID.randomUUID().toString();
+      entry.entryId = "leff_laynor_flauros:" + magicId;
       entry.magicId = magicId;
       entry.presetPayload = new CompoundTag();
       entry.sourceKind = "plunder";
@@ -924,6 +934,10 @@ public final class NpcMagicCastBridge {
    }
 
    private static void initializeIfNeeded(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (npc instanceof LeffLaynorFlaurosEntity) {
+         ensureLeffProfile(npc);
+         return;
+      }
       CompoundTag data = npc.getPersistentData();
       ensureCombatAttributesInitialized(npc, data, npc.getRandom());
       if (!data.getBoolean(TAG_MIGRATION_CLEANED_V3)) {
@@ -3838,8 +3852,14 @@ public final class NpcMagicCastBridge {
          NpcMagicCastBridge.Choice c = choices.get(i);
          String magicId = c.entry().magicId;
          double weight = c.weight();
+         if ("imaginary_displacement".equals(magicId)) {
+            CompoundTag data = npc.getPersistentData();
+            boolean ready = data.getInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_ACTIVE) <= 0
+               && data.getInt(LeffLaynorFlaurosEntity.TAG_IMAGINARY_DISPLACEMENT_COOLDOWN) <= 0;
+            weight *= ready && manaRatio >= 0.12 ? 2.4 : 0.25;
+         }
          if (personality == 0) {
-            if ("imaginary_displacement".equals(magicId)) weight *= 2.8;
+            if ("imaginary_displacement".equals(magicId)) weight *= 3.4;
             if ("magic_analysis".equals(magicId)) weight *= 2.2;
             if ("reinforcement".equals(magicId)) weight *= 1.75;
             if ("spiritron_cannon".equals(magicId)) weight *= 0.28;

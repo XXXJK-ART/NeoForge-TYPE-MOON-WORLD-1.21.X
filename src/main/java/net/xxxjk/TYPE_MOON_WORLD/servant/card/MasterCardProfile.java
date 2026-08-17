@@ -293,6 +293,7 @@ public final class MasterCardProfile {
             learnJewelSuite(vars, 85.0);
             learn(vars, "fire_magic");
             vars.proficiency_fire_magic = Math.max(vars.proficiency_fire_magic, 75.0);
+            setKnownMagic(vars, "flame_array", 75.0);
          }, player -> {
             giveHighGemKit(player);
             give(player, new ItemStack(ModItems.RUBY_STAFF.get()));

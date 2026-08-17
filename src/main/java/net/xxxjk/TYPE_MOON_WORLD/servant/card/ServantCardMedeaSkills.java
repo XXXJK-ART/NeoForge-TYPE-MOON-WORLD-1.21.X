@@ -313,7 +313,7 @@ public final class ServantCardMedeaSkills {
       Vec3 aim = target == null ? player.getEyePosition().add(look.scale(20.0)) : target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       for (int i = 0; i < 5; i++) {
          MedeaMagicBoltEntity bolt = new MedeaMagicBoltEntity(level, player);
-         bolt.setMagicDamage(14.0F);
+         bolt.setMagicDamage(28.0F);
          bolt.setMode(i % 2 == 0 ? MedeaMagicBoltEntity.Mode.BOLT : MedeaMagicBoltEntity.Mode.FROST_BOLT);
          Vec3 spawn = player.getEyePosition().add((player.getRandom().nextDouble() - 0.5) * 1.2, (player.getRandom().nextDouble() - 0.5) * 0.7, (player.getRandom().nextDouble() - 0.5) * 1.2);
          bolt.setPos(spawn.x, spawn.y, spawn.z);
@@ -358,7 +358,7 @@ public final class ServantCardMedeaSkills {
          }
          Vec3 dir = new Vec3(away.x, 0.0, away.z).normalize();
          living.invulnerableTime = 0;
-         living.hurt(player.damageSources().playerAttack(player), 10.0F);
+         living.hurt(player.damageSources().playerAttack(player), 20.0F);
          living.invulnerableTime = 0;
          living.push(dir.x * 1.15, 0.28, dir.z * 1.15);
          living.hurtMarked = true;
@@ -785,7 +785,7 @@ public final class ServantCardMedeaSkills {
    }
 
    private static double applyMedeaWorkshopDamage(ServerPlayer player, double baseDamage) {
-      return isInsideMedeaWorkshop(player) ? baseDamage * 1.3 : baseDamage;
+      return (isInsideMedeaWorkshop(player) ? baseDamage * 1.3 : baseDamage) * 2.0;
    }
 
 }

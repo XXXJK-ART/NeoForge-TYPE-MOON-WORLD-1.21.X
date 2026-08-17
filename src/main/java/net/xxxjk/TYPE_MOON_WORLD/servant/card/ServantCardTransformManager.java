@@ -24,6 +24,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -317,6 +318,7 @@ public final class ServantCardTransformManager {
          case "nightingale" -> ServantCardNightingaleSkills.tick(player, vars);
          case "zhao_yun_rider" -> ServantCardZhaoYunSkills.tick(player, vars);
          case "senko_muramasa" -> ServantCardSenkoMuramasaSkills.tick(player, vars);
+         case "baobhan_sith" -> ServantCardBaobhanSithSkills.tick(player, vars);
          default -> {
          }
       }
@@ -347,6 +349,7 @@ public final class ServantCardTransformManager {
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
       ServantCardSenkoMuramasaSkills.clear(player, vars);
+      ServantCardBaobhanSithSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -475,6 +478,9 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean triggerAction(ServerPlayer player, int slot) {
+      if (EnumaChainService.isCasting(player)) {
+         return false;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || slot < -1 || slot > 9) {
          return false;
@@ -487,6 +493,10 @@ public final class ServantCardTransformManager {
       }
       if (ServantMasterCarryService.isCarryingMaster(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.master_carry.skill_blocked"), true);
+         return false;
+      }
+      if (player.getPersistentData().getLong("TypeMoonCombatSuppressedUntil") > player.level().getGameTime()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servant_card_id, slot);
@@ -1225,6 +1235,9 @@ public final class ServantCardTransformManager {
       if ("zhao_yun_changbanpo".equals(id) || "iskandar_ionioi_hetairoi".equals(id)) {
          return action.cooldownTicks();
       }
+      if ("baobhan_sith_fetch_failnaught".equals(id)) {
+         return action.cooldownTicks();
+      }
       int cooldown = action.cooldownTicks();
       if ("zabaniya".equals(id) || "wu_er_da".equals(id)) {
          return Math.max(cooldown, 1200);
@@ -1568,6 +1581,16 @@ public final class ServantCardTransformManager {
          case "muramasa_karma_slash" -> { if (!ServantCardSenkoMuramasaSkills.performKarmaSlash(player)) return false; }
          case "muramasa_sword_field" -> { if (!ServantCardSenkoMuramasaSkills.performSwordField(player)) return false; }
          case "muramasa_no_gen_kensai" -> { if (!ServantCardSenkoMuramasaSkills.performNoblePhantasm(player)) return false; }
+         case "baobhan_sith_curse_panel" -> { if (!ServantCardBaobhanSithSkills.openCursePanel(player)) return false; }
+         case "baobhan_sith_blood_spike" -> { if (!ServantCardBaobhanSithSkills.performBloodSpike(player)) return false; }
+         case "baobhan_sith_blood_thorns" -> { if (!ServantCardBaobhanSithSkills.performBloodThorns(player)) return false; }
+         case "baobhan_sith_curse_volley" -> { if (!ServantCardBaobhanSithSkills.performCurseVolley(player)) return false; }
+         case "baobhan_sith_fingertip_dance" -> { if (!ServantCardBaobhanSithSkills.performFingertipDance(player)) return false; }
+         case "baobhan_sith_night_feast" -> { if (!ServantCardBaobhanSithSkills.performNightFeast(player)) return false; }
+         case "baobhan_sith_grimalkin" -> { if (!ServantCardBaobhanSithSkills.performGrimalkin(player)) return false; }
+         case "baobhan_sith_blessed_successor" -> { if (!ServantCardBaobhanSithSkills.performBlessedSuccessor(player)) return false; }
+         case "baobhan_sith_fairy_vampirism" -> { if (!ServantCardBaobhanSithSkills.performFairyVampirism(player)) return false; }
+         case "baobhan_sith_fetch_failnaught" -> { if (!ServantCardBaobhanSithSkills.performFetchFailnaught(player)) return false; }
          default -> ServantCardCommonSkills.performFallback(player, id);
       }
       return true;

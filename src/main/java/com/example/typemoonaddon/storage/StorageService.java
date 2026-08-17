@@ -216,7 +216,7 @@ public final class StorageService {
         ), true);
     }
 
-    private static void openStorageMenu(ServerPlayer player) {
+    public static void openStorageMenu(ServerPlayer player) {
         if (player.containerMenu != player.inventoryMenu) {
             stopCastState(player);
             return;

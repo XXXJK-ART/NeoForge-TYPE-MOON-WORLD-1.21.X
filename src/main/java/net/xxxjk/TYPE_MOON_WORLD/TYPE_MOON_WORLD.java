@@ -128,6 +128,9 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSpawnModeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseRequestMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseTriggerMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesSummonMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesCommandMessage;
@@ -144,6 +147,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
@@ -245,6 +249,10 @@ public class TYPE_MOON_WORLD {
       }
    }
 
+   public static ResourceLocation id(String path) {
+      return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+   }
+
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
       // Integrated addon payloads must share this registrar. A second registrar
@@ -285,6 +293,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(GemCarvingEngraveMessage.TYPE, GemCarvingEngraveMessage.STREAM_CODEC, GemCarvingEngraveMessage::handleData);
       registrar.playToServer(MagicResearchMessage.TYPE, MagicResearchMessage.STREAM_CODEC, MagicResearchMessage::handleData);
       registrar.playToServer(MagicCopyMessage.TYPE, MagicCopyMessage.STREAM_CODEC, MagicCopyMessage::handleData);
+      registrar.playToServer(ChainInputPayload.TYPE, ChainInputPayload.STREAM_CODEC, ChainInputPayload::handleData);
       registrar.playToServer(GemGravitySelfCastMessage.TYPE, GemGravitySelfCastMessage.STREAM_CODEC, GemGravitySelfCastMessage::handleData);
       registrar.playToServer(GilgameshVaultSelectionMessage.TYPE, GilgameshVaultSelectionMessage.STREAM_CODEC, GilgameshVaultSelectionMessage::handleData);
       registrar.playToServer(ServantCardActionMessage.TYPE, ServantCardActionMessage.STREAM_CODEC, ServantCardActionMessage::handleData);
@@ -307,6 +316,9 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(HundredFacesCommandMessage.TYPE, HundredFacesCommandMessage.STREAM_CODEC, HundredFacesCommandMessage::handleData);
       registrar.playToServer(HundredFacesSwitchMessage.TYPE, HundredFacesSwitchMessage.STREAM_CODEC, HundredFacesSwitchMessage::handleData);
       registrar.playToClient(HundredFacesStateMessage.TYPE, HundredFacesStateMessage.STREAM_CODEC, HundredFacesStateMessage::handleData);
+      registrar.playToClient(BaobhanSithCurseOpenScreenMessage.TYPE, BaobhanSithCurseOpenScreenMessage.STREAM_CODEC, BaobhanSithCurseOpenScreenMessage::handleData);
+      registrar.playToServer(BaobhanSithCurseRequestMessage.TYPE, BaobhanSithCurseRequestMessage.STREAM_CODEC, BaobhanSithCurseRequestMessage::handleData);
+      registrar.playToServer(BaobhanSithCurseTriggerMessage.TYPE, BaobhanSithCurseTriggerMessage.STREAM_CODEC, BaobhanSithCurseTriggerMessage::handleData);
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToServer(MasterCommandSpellMessage.TYPE, MasterCommandSpellMessage.STREAM_CODEC, MasterCommandSpellMessage::handleData);
       registrar.playToServer(MasterCommandSpellPoseMessage.TYPE, MasterCommandSpellPoseMessage.STREAM_CODEC, MasterCommandSpellPoseMessage::handleData);

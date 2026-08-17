@@ -1,0 +1,19 @@
+﻿{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AEA",
+    "EPE",
+    "ASA"
+  ],
+  "key": {
+    "A": { "item": "minecraft:amethyst_shard" },
+    "E": { "item": "minecraft:ender_pearl" },
+    "P": { "item": "minecraft:paper" },
+    "S": { "item": "minecraft:echo_shard" }
+  },
+  "result": {
+    "id": "typemoonworld:imaginary_primer",
+    "count": 1
+  }
+}

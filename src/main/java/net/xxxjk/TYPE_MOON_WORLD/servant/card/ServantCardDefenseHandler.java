@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -434,6 +435,9 @@ public final class ServantCardDefenseHandler {
    }
 
    private static boolean tryAutoDodge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event, ServantParams params, long now) {
+      if (BindingService.isBound(player.getUUID())) {
+         return false;
+      }
       if (!canReactTo(player, event.getSource())) {
          return false;
       }

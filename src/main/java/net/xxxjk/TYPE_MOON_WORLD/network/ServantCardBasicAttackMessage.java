@@ -7,6 +7,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCasterGilgameshSkills;
@@ -32,6 +33,9 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
 
    public static void handleData(ServantCardBasicAttackMessage message, IPayloadContext context) {
       if (context.flow() != PacketFlow.SERVERBOUND) return;
+      if (context.player() instanceof ServerPlayer player && EnumaChainService.isCasting(player)) {
+         return;
+      }
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);

@@ -93,6 +93,12 @@ public final class ArtoriaPendragonCombatHelper {
    private static final int ROYAL_COMBO_COOLDOWN = 85;
    private static final int WIND_THRUST_COOLDOWN = 65;
    private static final double ARTORIA_VFX_RADIUS = 128.0;
+   private static final double MANA_BURST_JET_ACCEL = 0.095;
+   private static final double MANA_BURST_JET_GROUND_ACCEL = 0.135;
+   private static final double MANA_BURST_JET_CAP = 0.72;
+   private static final double MANA_BURST_JET_GROUND_LIFT = 0.38;
+   private static final double MANA_BURST_JET_AIR_LIFT = 0.065;
+   private static final double MANA_BURST_JET_UP_CAP = 0.55;
    private static final ResourceLocation RIDING_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_speed");
    private static final ResourceLocation RIDING_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_armor");
    private static final ResourceLocation MANA_BURST_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_attack");
@@ -442,10 +448,64 @@ public final class ArtoriaPendragonCombatHelper {
       updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), MANA_BURST_SPEED_ID, manaBurst ? 0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       if (manaBurst && entity.level() instanceof ServerLevel level) {
          spawnManaBurstSustainFx(entity, level);
+         tickManaBurstJetMovement(entity, level);
       }
       if (entity.getPersistentData().getLong(TAG_CHARISMA_UNTIL) <= now) {
          removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), CHARISMA_ATTACK_ID);
       }
+   }
+
+   private static void tickManaBurstJetMovement(ArtoriaPendragonEntity entity, ServerLevel level) {
+      if (isExcaliburWindingOrReleasing(entity) || entity.isPassenger()) {
+         return;
+      }
+      LivingEntity target = entity.getTarget();
+      Vec3 desired = Vec3.ZERO;
+      boolean lift = entity.horizontalCollision;
+      if (target != null && target.isAlive() && !target.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(target)) {
+         Vec3 toTarget = target.position().subtract(entity.position());
+         Vec3 horizontal = new Vec3(toTarget.x, 0.0, toTarget.z);
+         double distance = horizontal.length();
+         if (distance > 2.35) {
+            desired = horizontal.normalize();
+         }
+         lift = lift || toTarget.y > 0.75 && distance < 13.0;
+      } else if (entity.getNavigation() != null && !entity.getNavigation().isDone()) {
+         desired = horizontalLook(entity);
+      }
+
+      Vec3 motion = entity.getDeltaMovement();
+      Vec3 next = motion;
+      boolean moved = false;
+      if (desired.lengthSqr() > 1.0E-4) {
+         double accel = entity.onGround() ? MANA_BURST_JET_GROUND_ACCEL : MANA_BURST_JET_ACCEL;
+         next = clampHorizontal(next.add(desired.scale(accel)), MANA_BURST_JET_CAP);
+         moved = true;
+      }
+      if (lift) {
+         double liftAmount = entity.onGround() ? MANA_BURST_JET_GROUND_LIFT : MANA_BURST_JET_AIR_LIFT;
+         next = new Vec3(next.x, Math.min(MANA_BURST_JET_UP_CAP, Math.max(next.y + liftAmount, entity.onGround() ? MANA_BURST_JET_GROUND_LIFT : next.y)), next.z);
+         moved = true;
+      } else if (!entity.onGround() && next.y < -0.28) {
+         next = new Vec3(next.x, next.y * 0.78, next.z);
+         moved = true;
+      }
+      if (moved && !next.equals(motion)) {
+         entity.setDeltaMovement(next);
+         entity.hurtMarked = true;
+      }
+      if ((moved || desired.lengthSqr() > 1.0E-4) && entity.tickCount % 2 == 0) {
+         spawnManaBurstJetFx(entity, level, desired);
+      }
+   }
+
+   private static Vec3 clampHorizontal(Vec3 motion, double cap) {
+      double horizontal = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+      if (horizontal <= cap || horizontal <= 1.0E-6) {
+         return motion;
+      }
+      double scale = cap / horizontal;
+      return new Vec3(motion.x * scale, motion.y, motion.z * scale);
    }
 
    private static void tickInvisibleAirCleanup(CompoundTag data, long now) {
@@ -961,6 +1021,24 @@ public final class ArtoriaPendragonCombatHelper {
       }
       if (entity.tickCount % 12 == 0) {
          level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.18, cz, 0.12F, 1.05F, 0.04F, 12, 0xFFFFE8, 0.24F, 0.02F));
+      }
+   }
+
+   private static void spawnManaBurstJetFx(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 desired) {
+      Vec3 exhaust = desired.lengthSqr() > 1.0E-4 ? desired.normalize().scale(-1.0) : horizontalLook(entity).scale(-1.0);
+      Vec3 origin = entity.position().add(0.0, 0.16, 0.0);
+      int steps = entity.onGround() ? 2 : 3;
+      for (int i = 0; i < steps; i++) {
+         double distance = 0.18 + i * 0.24;
+         Vec3 pos = origin.add(exhaust.scale(distance));
+         double spread = Math.max(0.035, 0.13 - i * 0.02);
+         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, fxCount(4), spread, spread * 0.65, spread, 0.045);
+         if (i == steps - 1) {
+            level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, fxCount(2), spread * 0.9, spread * 0.55, spread * 0.9, 0.03);
+         }
+         if (!entity.onGround() && i == 0) {
+            level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y + 0.04, pos.z, fxCount(2), spread * 0.5, spread * 0.5, spread * 0.5, 0.025);
+         }
       }
    }
 

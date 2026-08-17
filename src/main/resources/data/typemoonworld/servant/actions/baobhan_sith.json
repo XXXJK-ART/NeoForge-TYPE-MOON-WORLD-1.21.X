@@ -11,6 +11,33 @@
       "terrain_impact": "none"
     },
     {
+      "id": "baobhan_sith_blood_spike",
+      "tags": ["projectile", "control", "interrupt"],
+      "minimum_range": 3,
+      "maximum_range": 18,
+      "mana_cost": 6,
+      "stamina_cost": 3,
+      "terrain_impact": "chip"
+    },
+    {
+      "id": "baobhan_sith_blood_thorns",
+      "tags": ["area", "control", "interrupt"],
+      "minimum_range": 2,
+      "maximum_range": 22,
+      "mana_cost": 12,
+      "stamina_cost": 4,
+      "terrain_impact": "chip"
+    },
+    {
+      "id": "baobhan_sith_curse_volley",
+      "tags": ["projectile", "control", "intercept"],
+      "minimum_range": 10,
+      "maximum_range": 38,
+      "mana_cost": 14,
+      "stamina_cost": 5,
+      "terrain_impact": "none"
+    },
+    {
       "id": "baobhan_sith_fingertip_dance",
       "tags": ["melee", "interrupt", "control"],
       "minimum_range": 0,

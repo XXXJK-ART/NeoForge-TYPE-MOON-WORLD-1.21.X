@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
+import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
@@ -61,7 +62,7 @@ public final class NpcMagicExecutionService {
       // the NPC and player paths on the same callback implementation.
       if (MagicDefinitionRegistry.contains(magicId)) {
          var definition = MagicDefinitionRegistry.get(magicId);
-         if (definition != null && !definition.npcAllowed()) return false;
+         if (definition != null && !definition.npcAllowed() && !isLeffExclusiveNpcMagic(caster, magicId)) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
          if (external.handled()) return external.success();
@@ -99,6 +100,11 @@ public final class NpcMagicExecutionService {
          postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
       }
       return success;
+   }
+
+   private static boolean isLeffExclusiveNpcMagic(MysticMagicianEntity caster, String magicId) {
+      return caster instanceof LeffLaynorFlaurosEntity
+         && ("imaginary_displacement".equals(magicId) || "imaginary_space".equals(magicId));
    }
 
    private static void postNpcLegacyMagicCast(

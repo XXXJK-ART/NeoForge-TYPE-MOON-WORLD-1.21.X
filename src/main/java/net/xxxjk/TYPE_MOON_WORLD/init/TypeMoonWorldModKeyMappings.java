@@ -929,7 +929,7 @@ public class TypeMoonWorldModKeyMappings {
          if (minecraft.options == null
             || player == null
             || vars == null
-            || vars.servant_card_transformed
+            || (vars.servant_card_transformed && !isArtoriaServantCard(vars))
             || vars.master_card_active
             || !canSendManaBurstInput(vars)) {
             clearManaBurstInputState();
@@ -972,7 +972,11 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       private static boolean canSendManaBurstInput(TypeMoonWorldModVariables.PlayerVariables vars) {
-         return vars.learned_magics.contains("mana_burst") || vars.selected_magics.contains("mana_burst");
+         return isArtoriaServantCard(vars) || vars.learned_magics.contains("mana_burst") || vars.selected_magics.contains("mana_burst");
+      }
+
+      private static boolean isArtoriaServantCard(TypeMoonWorldModVariables.PlayerVariables vars) {
+         return vars != null && vars.servant_card_transformed && "artoria_pendragon".equals(vars.servant_card_id);
       }
 
       private static int getTapCastPoseTicks(TypeMoonWorldModVariables.PlayerVariables vars) {

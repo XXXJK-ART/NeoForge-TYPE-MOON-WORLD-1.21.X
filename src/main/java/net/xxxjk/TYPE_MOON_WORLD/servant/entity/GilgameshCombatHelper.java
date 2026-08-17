@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
@@ -392,25 +393,7 @@ public final class GilgameshCombatHelper {
    }
 
    private static void bindWithChains(GilgameshEntity entity, ServerLevel level, LivingEntity target, long now, int duration, boolean divine) {
-      target.setDeltaMovement(Vec3.ZERO);
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, divine ? 20 : 8, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, divine ? 20 : 8, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, divine ? 10 : 4, false, true, true));
-      target.getPersistentData().putLong("ChainsOfHeavenBoundUntil", now + duration);
-      target.getPersistentData().putBoolean("ChainsOfHeavenBlocksTeleport", true);
-      target.getPersistentData().putUUID(CHAIN_OWNER, entity.getUUID());
-      entity.getPersistentData().putLong(NEXT_BOUND_GATE, now + 12L);
-      level.addFreshEntity(new ChainsOfHeavenBindingEntity(level, entity, target, duration, divine));
-      long boundUntil = now + duration;
-      TYPE_MOON_WORLD.queueServerWork(duration, () -> {
-         if (target.getPersistentData().getLong("ChainsOfHeavenBoundUntil") <= boundUntil) {
-            target.getPersistentData().remove("ChainsOfHeavenBlocksTeleport");
-            if (target.getPersistentData().hasUUID(CHAIN_OWNER)
-               && entity.getUUID().equals(target.getPersistentData().getUUID(CHAIN_OWNER))) {
-               target.getPersistentData().remove(CHAIN_OWNER);
-            }
-         }
-      });
+      ChainControlService.summonSkillBarrage(entity, target);
       entity.triggerNamedActionAnimation("chain_of_heaven");
    }
 

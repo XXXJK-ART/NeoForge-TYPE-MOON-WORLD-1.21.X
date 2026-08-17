@@ -129,6 +129,9 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBearEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosCatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBatEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.EnumaChainCrownEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainBindingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -752,6 +755,33 @@ public class ModEntities {
          .clientTrackingRange(64)
          .updateInterval(1)
          .build("chains_of_heaven_binding")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HeavenChainEntity>> HEAVEN_CHAIN = ENTITY_TYPES.register(
+      "heaven_chain",
+      () -> Builder.<HeavenChainEntity>of(HeavenChainEntity::new, MobCategory.MISC)
+         .sized(0.9F, 0.9F)
+         .clientTrackingRange(128)
+         .updateInterval(1)
+         .fireImmune()
+         .build("heaven_chain")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<HeavenChainBindingEntity>> HEAVEN_CHAIN_BINDING = ENTITY_TYPES.register(
+      "heaven_chain_binding",
+      () -> Builder.<HeavenChainBindingEntity>of(HeavenChainBindingEntity::new, MobCategory.MISC)
+         .sized(1.2F, 2.0F)
+         .clientTrackingRange(128)
+         .updateInterval(1)
+         .fireImmune()
+         .build("heaven_chain_binding")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<EnumaChainCrownEntity>> ENUMA_CHAIN_CROWN = ENTITY_TYPES.register(
+      "enuma_chain_crown",
+      () -> Builder.<EnumaChainCrownEntity>of(EnumaChainCrownEntity::new, MobCategory.MISC)
+         .sized(6.0F, 6.0F)
+         .clientTrackingRange(160)
+         .updateInterval(1)
+         .fireImmune()
+         .build("enuma_chain_crown")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GilgameshGateWeaponProjectileEntity>> GILGAMESH_GATE_PROJECTILE = ENTITY_TYPES.register(
       "gilgamesh_gate_projectile",

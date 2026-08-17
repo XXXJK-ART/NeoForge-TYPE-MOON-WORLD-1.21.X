@@ -7,10 +7,12 @@ import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatPersonality;
@@ -46,6 +48,7 @@ public class LeffLaynorFlaurosEntity extends MysticMagicianEntity {
    public void tick() {
       super.tick();
       if (!this.level().isClientSide()) {
+         clearHandItems();
          NpcScaleHelper.ensureFixedScale(this, FIXED_SCALE);
          ensureFixedHealth();
          tickPersonality();
@@ -91,6 +94,24 @@ public class LeffLaynorFlaurosEntity extends MysticMagicianEntity {
       this.setHealth(this.getMaxHealth());
       this.setPersistenceRequired();
       return result;
+   }
+
+   @Override
+   public void initializeMartialLoadout() {
+      clearHandItems();
+   }
+
+   @Override
+   public void ensurePhysicalEquipment() {
+      clearHandItems();
+   }
+
+   private void clearHandItems() {
+      if (this.level().isClientSide()) return;
+      this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+      this.setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+      this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+      this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
    }
 
    private void ensureFixedHealth() {

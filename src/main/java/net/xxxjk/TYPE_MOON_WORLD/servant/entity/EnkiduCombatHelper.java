@@ -44,6 +44,8 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
@@ -717,7 +719,7 @@ public final class EnkiduCombatHelper {
       int duration = divine ? (3 + Math.max(1, divinity)) * 20 : 20;
       data.putLong(TAG_LAST_CHAIN, now);
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 30.0));
-      bindTarget(entity, level, target, duration, divine);
+      ChainControlService.summonSkillBarrage(entity, target);
       entity.triggerNamedActionAnimation("chain_of_heaven");
       VFXServerEffects.spawnReplayable(level, "servant_enkidu_chain_of_heaven", target, Math.max(1.2F, duration / 20.0F));
       level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 1.4F, divine ? 1.4F : 1.0F);
@@ -2117,17 +2119,13 @@ public final class EnkiduCombatHelper {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 150.0));
       entity.triggerNamedActionAnimation("enkidu_enuma_elish");
       ServantVoiceHelper.tryPlayEnkiduNp(entity);
-      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish", entity.position(), 192.0);
       spawnEnumaWindupVanillaFx(level, entity.position());
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.6F, 0.85F);
+      EnumaChainService.beginNpcEnuma(entity);
       return true;
    }
 
    private static void spawnEnumaWindupVanillaFx(ServerLevel level, Vec3 origin) {
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, origin.x, origin.y + 0.15, origin.z, 280, 14.0, 0.16, 14.0, 0.1);
-      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y + 12.0, origin.z, 260, 2.2, 11.0, 2.2, 0.2);
-      level.sendParticles(ParticleTypes.ENCHANTED_HIT, origin.x, origin.y + 3.0, origin.z, 210, 12.0, 3.5, 12.0, 0.16);
-      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y + 1.0, origin.z, 3, 0.16, 0.16, 0.16, 0.0);
    }
 
    private static void tickEnumaWindup(EnkiduEntity entity, ServerLevel level, long now) {
@@ -2303,22 +2301,6 @@ public final class EnkiduCombatHelper {
    }
 
    private static void tickEnumaSequentialBinds(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now) {
-      CompoundTag data = entity.getPersistentData();
-      if (isChainForbiddenTarget(entity, target)) {
-         data.putInt(TAG_ENUMA_BIND_STEP, ENUMA_BIND_COUNT);
-         return;
-      }
-      int step = data.getInt(TAG_ENUMA_BIND_STEP);
-      if (step >= ENUMA_BIND_COUNT || now < data.getLong(TAG_ENUMA_NEXT_BIND)) {
-         return;
-      }
-      boolean divine = hasTrait(target, ServantTraitTag.DIVINE);
-      bindTarget(entity, level, target, ENUMA_BIND_DURATION, divine);
-      entity.triggerNamedActionAnimation("chain_of_heaven");
-      VFXServerEffects.spawnReplayable(level, "servant_enkidu_chain_of_heaven", target, Math.max(1.5F, ENUMA_BIND_DURATION / 20.0F));
-      level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 1.55F, divine ? 1.45F : 1.12F);
-      data.putInt(TAG_ENUMA_BIND_STEP, step + 1);
-      data.putLong(TAG_ENUMA_NEXT_BIND, now + ENUMA_BIND_DURATION + 4L);
    }
 
    private static boolean isChainForbiddenTarget(EnkiduEntity entity, LivingEntity target) {
@@ -2326,15 +2308,6 @@ public final class EnkiduCombatHelper {
    }
 
    private static void maybeSpawnEnumaFlightFx(EnkiduEntity entity, ServerLevel level, long now) {
-      CompoundTag data = entity.getPersistentData();
-      if (now - data.getLong(TAG_ENUMA_LAST_FLIGHT_FX) < 18L) {
-         return;
-      }
-      data.putLong(TAG_ENUMA_LAST_FLIGHT_FX, now);
-      VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_flight", entity, 192.0);
-      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 28, 0.55, 0.55, 0.55, 0.12);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y, center.z, 18, 0.42, 0.42, 0.42, 0.08);
    }
 
    private static void clearEnumaState(EnkiduEntity entity) {
@@ -2390,30 +2363,6 @@ public final class EnkiduCombatHelper {
    }
 
    private static void emitEnumaDrillFx(ServerLevel level, EnkiduEntity entity, Vec3 targetPoint, long now, boolean release) {
-      Vec3 center = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
-      Vec3 dir = targetPoint.subtract(center);
-      if (dir.lengthSqr() < 1.0E-4) {
-         dir = entity.getLookAngle();
-      }
-      dir = dir.normalize();
-      Vec3 side = new Vec3(-dir.z, 0.0, dir.x);
-      if (side.lengthSqr() < 1.0E-4) {
-         side = new Vec3(1.0, 0.0, 0.0);
-      }
-      side = side.normalize();
-      Vec3 up = side.cross(dir).normalize();
-      int points = release ? 18 : 10;
-      double radius = release ? 1.05 : 0.65;
-      for (int i = 0; i < points; i++) {
-         double angle = (now * 0.48 + i * Math.PI * 2.0 / points);
-         double along = i * (release ? 0.32 : 0.22);
-         Vec3 ring = side.scale(Math.cos(angle) * radius).add(up.scale(Math.sin(angle) * radius));
-         Vec3 pos = center.add(dir.scale(along)).add(ring);
-         level.sendParticles(i % 3 == 0 ? ParticleTypes.END_ROD : ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.01);
-      }
-      if (now % 3L == 0L) {
-         level.sendParticles(ParticleTypes.ENCHANTED_HIT, center.x, center.y, center.z, release ? 16 : 8, 0.65, 0.65, 0.65, 0.08);
-      }
    }
 
    private static Vec3 findEnumaGroundImpact(ServerLevel level, Vec3 start, Vec3 direction, double maxDistance) {
@@ -2443,6 +2392,7 @@ public final class EnkiduCombatHelper {
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.0F, 1.45F);
       applyEnumaAreaDamage(entity, level, impact, 7.0, 500.0F, directTarget);
       breakEnumaImpactTerrain(level, impact, 6.0, 260);
+      EnumaChainService.bindImpactTarget(entity, directTarget);
    }
 
    private static void applyEnumaGroundExplosion(EnkiduEntity entity, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
@@ -2461,6 +2411,7 @@ public final class EnkiduCombatHelper {
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.5F, 0.82F);
       applyEnumaAreaDamage(entity, level, impact, radius, 500.0F, directTarget);
       breakEnumaImpactTerrainInWaves(level, impact, radius);
+      EnumaChainService.bindImpactTarget(entity, directTarget);
    }
 
    private static void applyEnumaAreaDamage(EnkiduEntity entity, ServerLevel level, Vec3 impact, double radius, float damage, LivingEntity directTarget) {

@@ -51,6 +51,9 @@
     "immune_to_stone_axe_debuff": false,
     "combat_actions": [
       "baobhan_sith_curse_shot",
+      "baobhan_sith_blood_spike",
+      "baobhan_sith_blood_thorns",
+      "baobhan_sith_curse_volley",
       "baobhan_sith_fingertip_dance",
       "baobhan_sith_night_feast",
       "baobhan_sith_grimalkin",

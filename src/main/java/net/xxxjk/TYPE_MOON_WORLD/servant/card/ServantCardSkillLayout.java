@@ -272,6 +272,19 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Ionioi Hetairoi", "iskandar_ionioi_hetairoi", 60.0, 1800);
             default -> null;
          };
+         case "baobhan_sith" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Curse Panel", "baobhan_sith_curse_panel", 0.0, 0);
+            case 1 -> new ServantCardSkillAction("Blood Spike", "baobhan_sith_blood_spike", 6.0, 120);
+            case 2 -> new ServantCardSkillAction("Blood Thorns", "baobhan_sith_blood_thorns", 12.0, 220);
+            case 3 -> new ServantCardSkillAction("Fetch Volley", "baobhan_sith_curse_volley", 14.0, 180);
+            case 4 -> new ServantCardSkillAction("Dance of the Fingertips A+", "baobhan_sith_fingertip_dance", 10.0, 300);
+            case 5 -> new ServantCardSkillAction("Invitation to the Night Feast B", "baobhan_sith_night_feast", 15.0, 400);
+            case 6 -> new ServantCardSkillAction("Grimalkin A", "baobhan_sith_grimalkin", 15.0, 600);
+            case 7 -> new ServantCardSkillAction("Blessed Successor EX", "baobhan_sith_blessed_successor", 25.0, 700);
+            case 8 -> new ServantCardSkillAction("Fairy Vampirism A", "baobhan_sith_fairy_vampirism", 10.0, 500);
+            case 9 -> new ServantCardSkillAction("Fetch Failnaught", "baobhan_sith_fetch_failnaught", 35.0, 600);
+            default -> null;
+         };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
             case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);

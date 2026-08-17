@@ -19,6 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -48,6 +49,7 @@ public final class ServantCardArtoriaSkills {
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, ARTORIA_MANA_BURST_DURATION, 1, false, true, true));
       player.getPersistentData().putLong(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL, until);
       player.getPersistentData().putInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK, player.tickCount + 20);
+      ManaBurstService.primeExternalJetMovement(player, 5);
       spawnManaBurstActivationFx(player);
    }
 
@@ -64,6 +66,7 @@ public final class ServantCardArtoriaSkills {
       data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_RELEASED);
       data.remove(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL);
       data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+      ManaBurstService.clearExternalJetMovement(player);
       PlayerNoblePhantasmHelper.clearArtoriaExcaliburWindLock(player);
    }
 
@@ -78,15 +81,18 @@ public final class ServantCardArtoriaSkills {
       long manaBurstUntil = data.getLong(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
       if (manaBurstUntil <= now) {
          data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+         ManaBurstService.clearExternalJetMovement(player);
          return;
       }
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 45, 2, false, true, true));
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 45, 1, false, true, true));
+      ManaBurstService.tickExternalJetMovement(player, 5);
       if (player.tickCount >= data.getInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK)) {
          data.putInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK, player.tickCount + 20);
          if (!ServantCardManaService.consume(player, vars, ARTORIA_MANA_BURST_DRAIN_PER_SECOND)) {
             data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
             data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+            ManaBurstService.clearExternalJetMovement(player);
             player.removeEffect(MobEffects.DAMAGE_BOOST);
             player.removeEffect(MobEffects.MOVEMENT_SPEED);
             player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);

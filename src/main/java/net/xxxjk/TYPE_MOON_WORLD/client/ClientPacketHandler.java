@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.BaobhanSithCurseScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.LeylineSurveyMapScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MedeaCraftSelectScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MuramasaForgeSelectScreen;
@@ -14,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.GilgameshVaultScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.HundredFacesScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.PaleRiderScreen;
+import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 
@@ -92,6 +94,20 @@ public class ClientPacketHandler {
 
    public static void openGilgameshVaultScreen(int usedMask) {
       if (!ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) Minecraft.getInstance().setScreen(new GilgameshVaultScreen(usedMask));
+   }
+
+   public static void openBaobhanSithCurseScreen(List<BaobhanSithCurseOpenScreenMessage.Target> targets) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
+         return;
+      }
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null) {
+         if (mc.screen instanceof BaobhanSithCurseScreen screen) {
+            screen.updateTargets(targets);
+         } else {
+            mc.setScreen(new BaobhanSithCurseScreen(targets));
+         }
+      }
    }
 
    public static void openPaleRiderScreen(int kind, List<PaleRiderOpenScreenMessage.Target> targets) {

@@ -1078,7 +1078,7 @@ public final class ServantCardParacelsusSkills {
    private static double applyWorkshopDamage(ServerPlayer player, double baseDamage) {
       double halved = baseDamage * 0.5;
       double currentDamage = isInsideWorkshop(player) ? halved * 1.18 : halved;
-      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.reduceDamage(currentDamage * 2.0);
    }
 
    private static void spawnWorkshopHighlight(ServerLevel level, Vec3 center, double radius, boolean burst) {

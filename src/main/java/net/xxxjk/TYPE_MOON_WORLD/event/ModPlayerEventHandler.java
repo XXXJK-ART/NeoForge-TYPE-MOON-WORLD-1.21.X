@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.BizenNagamitsuItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ThompsonContenderItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardBaobhanSithSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLancelotBerserkerSkills;
@@ -156,6 +157,12 @@ public class ModPlayerEventHandler {
             event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
             return;
          }
+         if (event.getEntity() instanceof ServerPlayer player
+            && ServantCardBaobhanSithSkills.tryCollectHairMedium(player, event.getHand(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            return;
+         }
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
             return;
@@ -242,6 +249,9 @@ public class ModPlayerEventHandler {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
          }
          if (vars.servant_card_transformed) {
+            if ("baobhan_sith".equals(vars.servant_card_id)) {
+               ServantCardBaobhanSithSkills.onNormalAttack(player, target);
+            }
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayAttack(player);
             if ("zhao_yun_rider".equals(vars.servant_card_id)) {
                ServantCardZhaoYunSkills.markCombatActivity(player);

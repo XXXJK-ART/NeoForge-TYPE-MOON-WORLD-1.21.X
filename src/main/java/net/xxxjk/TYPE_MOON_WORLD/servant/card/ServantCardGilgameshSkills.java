@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshNoblePhantasmItem;
@@ -196,15 +197,7 @@ public final class ServantCardGilgameshSkills {
    }
 
    public static void performChains(ServerPlayer player) {
-      if (!(player.level() instanceof ServerLevel level)) return;
-      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 30.0, 3.0);
-      if (target == null) return;
-      int duration = 120;
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 6, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 2, false, true, true));
-      level.addFreshEntity(new ChainsOfHeavenBindingEntity(level, player, target, duration + 6, true));
-      player.getPersistentData().putString(CHAIN_TARGET, target.getUUID().toString());
-      player.getPersistentData().putLong(CHAIN_UNTIL, level.getGameTime() + duration);
+      ChainControlService.summonSkillBarrage(player, null);
    }
 
    public static void performVault(ServerPlayer player, boolean grand) {

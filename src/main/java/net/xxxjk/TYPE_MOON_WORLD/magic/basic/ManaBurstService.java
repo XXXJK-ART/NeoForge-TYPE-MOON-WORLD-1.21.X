@@ -178,6 +178,34 @@ public final class ManaBurstService {
       data.putLong(INPUT_TICK_TAG, player.level().getGameTime());
    }
 
+   public static void primeExternalJetMovement(ServerPlayer player, int level) {
+      if (player == null) {
+         return;
+      }
+      player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
+   }
+
+   public static void tickExternalJetMovement(ServerPlayer player, int level) {
+      if (player == null || !player.isAlive()) {
+         return;
+      }
+      int clampedLevel = Math.max(1, Math.min(5, level));
+      applyBodyJetMovement(player, player.getPersistentData(), clampedLevel, player.level().getGameTime());
+   }
+
+   public static void clearExternalJetMovement(ServerPlayer player) {
+      if (player == null) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      data.remove(INPUT_FORWARD_TAG);
+      data.remove(INPUT_STRAFE_TAG);
+      data.remove(INPUT_JUMP_TAG);
+      data.remove(INPUT_SNEAK_TAG);
+      data.remove(INPUT_TICK_TAG);
+      data.remove(JET_TICKS_TAG);
+   }
+
    public static void clear(ServerPlayer player) {
       if (player == null) return;
       player.getPersistentData().remove(MODE_TAG);

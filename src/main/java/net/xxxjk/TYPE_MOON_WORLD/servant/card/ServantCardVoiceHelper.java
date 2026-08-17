@@ -40,6 +40,7 @@ public final class ServantCardVoiceHelper {
          case "senko_muramasa" -> ModSounds.SENKO_MURAMASA_VOICE_ATTACK.get();
          case "diarmuid_ua_duibhne" -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
          case "lancelot_berserker" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
+         case "baobhan_sith" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -87,6 +88,10 @@ public final class ServantCardVoiceHelper {
          case "lancelot_berserk_roar" -> ModSounds.LANCELOT_BERSERKER_VOICE_ROAR.get();
          case "lancelot_maul_combo", "lancelot_feral_rush", "lancelot_ground_slam", "lancelot_hunt_step",
             "lancelot_mana_reversal", "lancelot_knight_of_owner" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
+         case "baobhan_sith_fetch_failnaught" -> ModSounds.BAOBHAN_SITH_VOICE_NP.get();
+         case "baobhan_sith_blood_spike", "baobhan_sith_blood_thorns", "baobhan_sith_curse_volley",
+            "baobhan_sith_fingertip_dance", "baobhan_sith_night_feast", "baobhan_sith_grimalkin",
+            "baobhan_sith_blessed_successor", "baobhan_sith_fairy_vampirism" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
          default -> null;
       };
       play(player, sound, 40);

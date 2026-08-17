@@ -46,7 +46,7 @@ class CasterGilgameshResourcesTest {
       assertEquals(CasterGilgameshCombatHelper.STARTING_AMMO, 500);
       assertEquals(CasterGilgameshCombatHelper.MAX_AMMO, 5000);
       assertEquals(30, CasterGilgameshCombatHelper.CANNON_SHOTS_PER_ROUND);
-      assertEquals(30.0F, CasterGilgameshCombatHelper.CANNON_DAMAGE_PER_SHOT);
+      assertEquals(45.0F, CasterGilgameshCombatHelper.CANNON_DAMAGE_PER_SHOT);
       assertEquals(3.0F, CasterGilgameshCombatHelper.CANNON_EXPLOSION_RADIUS);
       assertEquals("medium", ai.getAsJsonObject("tactical").get("maximum_terrain_impact").getAsString());
    }

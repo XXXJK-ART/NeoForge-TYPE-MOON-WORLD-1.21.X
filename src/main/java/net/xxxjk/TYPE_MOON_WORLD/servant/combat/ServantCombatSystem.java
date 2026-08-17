@@ -24,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
@@ -580,6 +581,9 @@ public final class ServantCombatSystem {
    }
 
    private static boolean tryAutoDodge(ServantEntity servant, DamageSource source, ServantParams params, long now) {
+      if (BindingService.isBound(servant.getUUID())) {
+         return false;
+      }
       if (EnkiduCombatHelper.isBoundByChainsOfHeaven(servant)) {
          return false;
       }

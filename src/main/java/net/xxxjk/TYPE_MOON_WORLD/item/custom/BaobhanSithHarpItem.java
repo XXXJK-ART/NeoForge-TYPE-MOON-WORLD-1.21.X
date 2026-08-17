@@ -26,6 +26,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item implements GeoItem {
    private static final double PROJECTILE_SPEED = 3.2;
+   private static final int MIN_CHARGE_TICKS = 10;
    private static final int FULL_CHARGE_TICKS = 20;
    private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.06F, 0.10F), 1.15F);
    private static final DustParticleOptions CURSE_DUST = new DustParticleOptions(new Vector3f(0.08F, 0.02F, 0.10F), 1.0F);
@@ -58,7 +59,7 @@ public final class BaobhanSithHarpItem extends net.minecraft.world.item.Item imp
    @Override
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
       int chargeTicks = this.getUseDuration(stack, living) - timeLeft;
-      if (chargeTicks < FULL_CHARGE_TICKS) {
+      if (chargeTicks < MIN_CHARGE_TICKS) {
          return;
       }
       if (level instanceof ServerLevel serverLevel) {

@@ -31,6 +31,7 @@ public final class ServantCardRegistry {
       new Entry("zhao_yun_rider", "Zhao Yun (Rider)", "赵云（Rider）", true),
       new Entry("senko_muramasa", "Senko Muramasa (Saber)", "千子村正", true),
       new Entry("iskandar", "Iskandar (Rider)", "伊斯坎达尔（Rider）", true)
+      , new Entry("baobhan_sith", "Baobhan Sith (Archer)", "芭万·希（Archer）", true)
    );
 
    private ServantCardRegistry() {
