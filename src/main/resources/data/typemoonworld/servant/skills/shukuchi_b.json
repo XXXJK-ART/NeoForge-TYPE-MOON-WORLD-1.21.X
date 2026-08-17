@@ -1,0 +1,25 @@
+{
+  "id": "shukuchi_b",
+  "display_name": "Shukuchi B",
+  "display_name_zh": "缩地 B",
+  "type": "active",
+  "mp_cost": 5,
+  "cooldown_ticks": 240,
+  "duration_ticks": 200,
+  "effects": [
+    {
+      "effect_type": "movement_skill",
+      "params": {
+        "range": 5.0,
+        "movement_speed_bonus": 0.5,
+        "attack_speed_bonus": 0.4
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "mobility", "strength": 0.9},
+      {"type": "gap_close", "strength": 0.85}
+    ]
+  }
+}

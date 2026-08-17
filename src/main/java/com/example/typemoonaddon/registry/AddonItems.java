@@ -63,6 +63,11 @@ public final class AddonItems {
             () -> new HolyGrailFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC))
     );
 
+    public static final DeferredItem<Item> PRELATIS_SPELLBOOK = ITEMS.register(
+            "prelatis_spellbook",
+            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
+    );
+
     public static final DeferredItem<CursedArmorRenderItem> CURSED_ARMOR_RENDER = ITEMS.register(
             "cursed_armor_render",
             () -> new CursedArmorRenderItem(new Item.Properties().stacksTo(1).fireResistant())
@@ -105,6 +110,21 @@ public final class AddonItems {
     public static final DeferredItem<DeferredSpawnEggItem> BLACK_SHADOW_SPAWN_EGG = ITEMS.register(
             "black_shadow_spawn_egg",
             () -> new DeferredSpawnEggItem(AddonEntities.BLACK_SHADOW, 0x08050A, 0x991C2C, new Item.Properties())
+    );
+
+    public static final DeferredItem<DeferredSpawnEggItem> GILLES_DE_RAIS_CASTER_SPAWN_EGG = ITEMS.register(
+            "gilles_de_rais_caster_spawn_egg",
+            () -> new DeferredSpawnEggItem(AddonEntities.GILLES_DE_RAIS_CASTER, 0x20202A, 0x8B1238, new Item.Properties())
+    );
+
+    public static final DeferredItem<DeferredSpawnEggItem> GILLES_SEA_MONSTER_SPAWN_EGG = ITEMS.register(
+            "gilles_sea_monster_spawn_egg",
+            () -> new DeferredSpawnEggItem(AddonEntities.GILLES_SEA_MONSTER, 0x143B48, 0x6E1B64, new Item.Properties())
+    );
+
+    public static final DeferredItem<DeferredSpawnEggItem> GILLES_HUGE_SEA_MONSTER_SPAWN_EGG = ITEMS.register(
+            "gilles_huge_sea_monster_spawn_egg",
+            () -> new DeferredSpawnEggItem(AddonEntities.GILLES_HUGE_SEA_MONSTER, 0x071B20, 0x2FA6A5, new Item.Properties())
     );
 
     private AddonItems() {

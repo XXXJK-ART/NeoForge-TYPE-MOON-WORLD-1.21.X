@@ -66,6 +66,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
@@ -399,6 +401,10 @@ public final class CombatModule implements ServantAiModule {
          } else {
             entity.setTarget(null);
          }
+         return;
+      }
+      if (entity instanceof OkitaSoujiSaberEntity okita) {
+         OkitaSoujiSaberCombatHelper.tick(okita, context);
          return;
       }
       if (entity instanceof FanaticAssassinEntity fanatic) {

@@ -2918,5 +2918,18 @@
     "entity.typemoonworld.shadow_piercing_rho_aias":  "炽天覆七重圆环",
     "message.typemoonworld.emiya_shadow_chant_1":  "§bI am the bone of my sword.",
     "message.typemoonworld.emiya_shadow_chant_2":  "§bSteel is my body, and fire is my blood.",
-    "message.typemoonworld.emiya_shadow_chant_interrupted":  "§c吟唱中断。Rho Aias！"
+    "message.typemoonworld.emiya_shadow_chant_interrupted":  "§c吟唱中断。Rho Aias！",
+    "entity.typemoonworld.gilles_de_rais_caster":  "吉尔·德·雷（Caster）",
+    "entity.typemoonworld.gilles_sea_monster":  "海魔",
+    "entity.typemoonworld.gilles_huge_sea_monster":  "失控巨型海魔",
+    "item.typemoonworld.gilles_de_rais_caster_spawn_egg":  "吉尔·德·雷（Caster）刷怪蛋",
+    "item.typemoonworld.gilles_sea_monster_spawn_egg":  "海魔刷怪蛋",
+    "item.typemoonworld.gilles_huge_sea_monster_spawn_egg":  "失控巨型海魔刷怪蛋",
+    "item.typemoonworld.prelatis_spellbook":  "螺湮城教本",
+    "entity.typemoonworld.okita_souji_saber":  "冲田总司（Saber）",
+    "entity.typemoonworld.okita_shinsengumi":  "新选组队员",
+    "item.typemoonworld.okita_souji_saber_spawn_egg":  "冲田总司（Saber）刷怪蛋",
+    "item.typemoonworld.kiku_ichimonji_norimune":  "菊一文字则宗",
+    "death.attack.okita_mumyoudan_zuki":  "%1$s 被无明三段突贯穿",
+    "death.attack.okita_mumyoudan_zuki.player":  "%1$s 被 %2$s 的无明三段突贯穿"
 }

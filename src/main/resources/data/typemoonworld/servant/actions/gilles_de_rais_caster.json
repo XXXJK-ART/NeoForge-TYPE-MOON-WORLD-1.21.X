@@ -1,0 +1,50 @@
+{
+  "servant": "gilles_de_rais_caster",
+  "actions": [
+    {
+      "id": "gilles_summon_small_sea_monster",
+      "tags": ["summon", "control", "area"],
+      "minimum_range": 4.0,
+      "maximum_range": 32.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_summon_large_sea_monster",
+      "tags": ["summon", "control", "area", "interrupt"],
+      "minimum_range": 6.0,
+      "maximum_range": 36.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "small"
+    },
+    {
+      "id": "gilles_abyssal_gaze",
+      "tags": ["control", "interrupt"],
+      "minimum_range": 2.0,
+      "maximum_range": 24.0,
+      "mana_cost": 10.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_life_absorb",
+      "tags": ["control"],
+      "minimum_range": 2.0,
+      "maximum_range": 12.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_uncontrolled_huge_sea_monster",
+      "tags": ["summon", "noble_phantasm", "area"],
+      "minimum_range": 6.0,
+      "maximum_range": 48.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "np"
+    }
+  ]
+}

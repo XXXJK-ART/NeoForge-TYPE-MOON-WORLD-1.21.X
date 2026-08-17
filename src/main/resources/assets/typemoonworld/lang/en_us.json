@@ -2918,5 +2918,18 @@
     "entity.typemoonworld.shadow_piercing_rho_aias":  "Rho Aias",
     "message.typemoonworld.emiya_shadow_chant_1":  "§bI am the bone of my sword.",
     "message.typemoonworld.emiya_shadow_chant_2":  "§bSteel is my body, and fire is my blood.",
-    "message.typemoonworld.emiya_shadow_chant_interrupted":  "§cThe chant is interrupted. Rho Aias!"
+    "message.typemoonworld.emiya_shadow_chant_interrupted":  "§cThe chant is interrupted. Rho Aias!",
+    "entity.typemoonworld.gilles_de_rais_caster":  "Gilles de Rais (Caster)",
+    "entity.typemoonworld.gilles_sea_monster":  "Sea Monster",
+    "entity.typemoonworld.gilles_huge_sea_monster":  "Uncontrolled Huge Sea Monster",
+    "item.typemoonworld.gilles_de_rais_caster_spawn_egg":  "Gilles de Rais (Caster) Spawn Egg",
+    "item.typemoonworld.gilles_sea_monster_spawn_egg":  "Sea Monster Spawn Egg",
+    "item.typemoonworld.gilles_huge_sea_monster_spawn_egg":  "Uncontrolled Huge Sea Monster Spawn Egg",
+    "item.typemoonworld.prelatis_spellbook":  "Prelati's Spellbook",
+    "entity.typemoonworld.okita_souji_saber":  "Okita Souji (Saber)",
+    "entity.typemoonworld.okita_shinsengumi":  "Shinsengumi Member",
+    "item.typemoonworld.okita_souji_saber_spawn_egg":  "Okita Souji (Saber) Spawn Egg",
+    "item.typemoonworld.kiku_ichimonji_norimune":  "Kiku-ichimonji Norimune",
+    "death.attack.okita_mumyoudan_zuki":  "%1$s was pierced by Mumyoudan-zuki",
+    "death.attack.okita_mumyoudan_zuki.player":  "%1$s was pierced by %2$s's Mumyoudan-zuki"
 }

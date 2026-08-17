@@ -65,6 +65,7 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.VOID_RING_REGALIA);
         }
         if (event.getTab() == ModCreativeModeTabs.MAGIC_BOOKS_TAB.get()) {
+            event.accept(AddonItems.PRELATIS_SPELLBOOK);
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_STORAGE);
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_STORAGE);
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_ABSORPTION);
@@ -78,6 +79,11 @@ public final class TypeMoonAddon {
             event.insertAfter(afterMasterCards, sakura, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.insertAfter(sakura, sakuraAlter, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.insertAfter(sakuraAlter, sakuraFha, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+        if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get() || event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+            event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);
+            event.accept(AddonItems.GILLES_SEA_MONSTER_SPAWN_EGG);
+            event.accept(AddonItems.GILLES_HUGE_SEA_MONSTER_SPAWN_EGG);
         }
     }
 

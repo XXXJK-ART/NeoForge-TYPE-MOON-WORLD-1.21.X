@@ -1,0 +1,25 @@
+{
+  "id": "flag_of_sincerity",
+  "display_name": "Flag of Sincerity",
+  "display_name_zh": "诚之旗",
+  "type": "anti_army",
+  "rank": "B",
+  "mp_cost": 80,
+  "cooldown_ticks": 1800,
+  "windup_ticks": 20,
+  "effects": [
+    {
+      "effect_type": "summon_shinsengumi",
+      "params": {
+        "entity": "typemoonworld:okita_shinsengumi",
+        "count": 8,
+        "duration_ticks": 2400,
+        "range": 20,
+        "pool_decrements_on_death": true,
+        "pool_decrements_on_timeout": false,
+        "usable_during_weak_constitution": true
+      }
+    }
+  ],
+  "description": "Summons up to eight Shinsengumi members. The remaining pool only decreases when a summoned member is killed."
+}

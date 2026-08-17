@@ -128,6 +128,7 @@ public class ModItems {
     public static final DeferredItem<Item> WAKIZASHI = registerJapaneseSword("wakizashi", 4.0, -2.2, -0.25);
     public static final DeferredItem<Item> KATANA = registerJapaneseSword("katana", 5.0, -2.4, 0.0);
     public static final DeferredItem<Item> NODACHI = registerJapaneseSword("nodachi", 6.0, -2.6, 0.5);
+    public static final DeferredItem<Item> KIKU_ICHIMONJI_NORIMUNE = registerJapaneseSword("kiku_ichimonji_norimune", 7.0, -2.0, 0.25);
 
     public static final DeferredItem<Item> TEMPLE_STONE_SWORD_AXE = ITEMS.register("temple_stone_sword_axe",
             () -> new TempleStoneSwordAxeItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()
@@ -1369,6 +1370,9 @@ public class ModItems {
 
     public static final DeferredItem<Item> SASAKI_KOJIRO_SPAWN_EGG = ITEMS.register("sasaki_kojiro_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.SASAKI_KOJIRO, 0x3355AA, 0x6633AA));
+
+    public static final DeferredItem<Item> OKITA_SOUJI_SABER_SPAWN_EGG = ITEMS.register("okita_souji_saber_spawn_egg",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.OKITA_SOUJI_SABER, 0x74D9E8, 0xF4F5F5));
 
     public static final DeferredItem<Item> CU_CHULAINN_SPAWN_EGG = ITEMS.register("cu_chulainn_spawn_egg",
             () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantEntitySpawnEggItem(net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.CU_CHULAINN, 0x2B60C7, 0xC8D1DD));

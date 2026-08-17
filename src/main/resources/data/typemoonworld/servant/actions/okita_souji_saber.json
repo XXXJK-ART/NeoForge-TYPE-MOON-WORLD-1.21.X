@@ -1,0 +1,77 @@
+{
+  "servant": "okita_souji_saber",
+  "actions": [
+    {
+      "id": "typemoonworld:okita/shukuchi",
+      "tags": ["melee", "mobility", "pursuit", "intercept", "okita_shukuchi"],
+      "minimum_range": 2.6,
+      "maximum_range": 5.5,
+      "mana_cost": 5,
+      "stamina_cost": 6,
+      "timing": {"windup": 2, "active": 4, "recovery": 4},
+      "threat": {
+        "shape": "line",
+        "radius": 1.5,
+        "length": 5.5,
+        "danger": 2,
+        "blockable": false,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 1.0
+      },
+      "terrain_impact": "none",
+      "maneuver": {
+        "movement": "intercept",
+        "control": "iaijutsu_step",
+        "pursuit_window": 10,
+        "combo_cost": 1,
+        "interrupt_level": 3,
+        "horizontal_force": 0.55,
+        "vertical_force": 0.02,
+        "approach_range": 8.0,
+        "damage_scale": 0.0,
+        "interrupt_resistance": 3
+      }
+    },
+    {
+      "id": "typemoonworld:okita/mumyoudan_zuki",
+      "tags": ["noble_phantasm", "melee", "finisher", "piercing", "okita_mumyoudan_zuki"],
+      "minimum_range": 0.0,
+      "maximum_range": 3.2,
+      "mana_cost": 10,
+      "stamina_cost": 20,
+      "timing": {"windup": 6, "active": 6, "recovery": 12},
+      "threat": {
+        "shape": "line",
+        "radius": 1.2,
+        "length": 3.2,
+        "danger": 5,
+        "blockable": false,
+        "dodgeable": false,
+        "interruptible": true,
+        "friendly_fire_radius": 1.0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:okita/flag_of_sincerity",
+      "tags": ["noble_phantasm", "summon", "support", "okita_flag_of_sincerity"],
+      "minimum_range": 0.0,
+      "maximum_range": 20.0,
+      "mana_cost": 80,
+      "stamina_cost": 0,
+      "timing": {"windup": 20, "active": 10, "recovery": 20},
+      "threat": {
+        "shape": "sphere",
+        "radius": 20.0,
+        "length": 0.0,
+        "danger": 4,
+        "blockable": false,
+        "dodgeable": false,
+        "interruptible": true,
+        "friendly_fire_radius": 0.0
+      },
+      "terrain_impact": "none"
+    }
+  ]
+}

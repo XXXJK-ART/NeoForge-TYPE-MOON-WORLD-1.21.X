@@ -1,0 +1,100 @@
+{
+  "id": "okita_souji_saber",
+  "display_name": "Okita Souji (Saber)",
+  "display_name_zh": "冲田总司（Saber）",
+  "class_type": "saber",
+  "faction": "human",
+  "traits": [
+    "servant",
+    "humanoid",
+    "living_human",
+    "human",
+    "female",
+    "saber",
+    "riding",
+    "shinsengumi",
+    "weak_constitution",
+    "neutral",
+    "balanced"
+  ],
+  "parameters": {
+    "endurance": "E",
+    "endurance_plus": false,
+    "strength": "C",
+    "strength_plus": false,
+    "agility": "A",
+    "agility_plus": true,
+    "magic": "E",
+    "magic_plus": false,
+    "luck": "D",
+    "luck_plus": false
+  },
+  "model": {
+    "geometry": "typemoonworld:geo/okita_souji_saber.geo.json",
+    "texture": "typemoonworld:textures/entity/okita_souji_saber.png",
+    "animation": "typemoonworld:animations/okita_souji_saber.animation.json",
+    "animations": {
+      "idle": "animation",
+      "walk": "animation",
+      "sweep": "animation",
+      "slash": "animation",
+      "uppercut": "animation",
+      "horizontal_swing": "animation",
+      "charge": "animation",
+      "shadow_step": "animation",
+      "np": "animation"
+    }
+  },
+  "specialization": {
+    "dimensions": {
+      "width": 0.6,
+      "height": 1.8,
+      "eye_height": 1.62
+    },
+    "hand_item_offset": {
+      "x": 0.1,
+      "y": -0.8,
+      "z": -0.2
+    },
+    "default_weapon": "typemoonworld:kiku_ichimonji_norimune",
+    "immune_to_stone_axe_debuff": false,
+    "combat_actions": [
+      "slash",
+      "sweep",
+      "uppercut",
+      "horizontal_swing",
+      "launcher",
+      "pursuit",
+      "charge",
+      "interrupt",
+      "teleport_behind",
+      "afterimage_slash",
+      "iaijutsu_step",
+      "okita_shukuchi",
+      "okita_mumyoudan_zuki",
+      "okita_flag_of_sincerity"
+    ]
+  },
+  "skills": [
+    "magic_resistance_e",
+    "riding_e",
+    "shukuchi_b",
+    "weak_constitution_a_okita",
+    "mind_eye_false_a_okita",
+    "oath_haori_c"
+  ],
+  "noble_phantasm": "mumyoudan_zuki",
+  "personality": {
+    "obedience": "cooperative",
+    "principle": "orderly",
+    "morality": "neutral",
+    "social": "friendly",
+    "combat": "aggressive",
+    "starting_favor": 70.0
+  },
+  "ai_config": "okita_souji_saber_ai",
+  "spawn_egg": {
+    "primary": 7657960,
+    "secondary": 16053749
+  }
+}

@@ -306,6 +306,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.LEFF_LAYNOR_FLAUROS_SPAWN_EGG);
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
+                        output.accept(ModItems.OKITA_SOUJI_SABER_SPAWN_EGG);
                         output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
                         output.accept(ModItems.DIARMUID_UA_DUIBHNE_SPAWN_EGG);
                         output.accept(ModItems.LANCELOT_BERSERKER_SPAWN_EGG);
@@ -366,6 +367,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.WAKIZASHI);
                         output.accept(ModItems.KATANA);
                         output.accept(ModItems.NODACHI);
+                        output.accept(ModItems.KIKU_ICHIMONJI_NORIMUNE);
 
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION);
                         output.accept(ModItems.MYSTIC_EYES_OF_DEATH_PERCEPTION_NOBLE_COLOR);

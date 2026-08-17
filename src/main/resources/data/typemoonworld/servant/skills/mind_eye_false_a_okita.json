@@ -1,0 +1,25 @@
+{
+  "id": "mind_eye_false_a_okita",
+  "display_name": "Mind's Eye (False) A",
+  "display_name_zh": "心眼（伪）A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": -1,
+  "effects": [
+    {
+      "effect_type": "dodge_window_bonus",
+      "params": {
+        "perfect_dodge_window_bonus": 0.04,
+        "stamina_recovery_bonus": 2.0,
+        "retreat_bias": 0.25
+      }
+    }
+  ],
+  "ai": {
+    "facts": [
+      {"type": "prediction", "strength": 0.85},
+      {"type": "evasion", "strength": 0.8}
+    ]
+  }
+}

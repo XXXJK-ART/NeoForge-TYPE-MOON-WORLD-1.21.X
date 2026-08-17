@@ -1530,5 +1530,64 @@
     "sounds": [
       {"name": "typemoonworld:voice/iskandar/np", "stream": true}
     ]
+  },
+  "gilles_de_rais_caster_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/attack1", "stream": true},
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/attack2", "stream": true}
+    ]
+  },
+  "gilles_de_rais_caster_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/fail1", "stream": true},
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/fail2", "stream": true}
+    ]
+  },
+  "gilles_de_rais_caster_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/victory1", "stream": true},
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/victory2", "stream": true}
+    ]
+  },
+  "gilles_de_rais_caster_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/np", "stream": true}
+    ]
+  },
+  "gilles_de_rais_caster_voice_summon": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/summon", "stream": true}
+    ]
+  },
+  "gilles_de_rais_caster_voice_gaze": {
+    "sounds": [
+      {"name": "typemoonworld:voice/gilles_de_rais_caster/gaze", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/attack1", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack2", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack3", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_fail": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/fail1", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/fail2", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/fail3", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_victory": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/victory1", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/victory2", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/victory3", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/np", "stream": true}
+    ]
   }
 }

@@ -1,0 +1,40 @@
+{
+  "id": "gilles_de_rais_caster_ai",
+  "movement": {
+    "follow_distance": 7.0,
+    "wander_radius": 12.0,
+    "likes_high_places": true
+  },
+  "combat": {
+    "preferred_attack_distance": 30.0,
+    "retreat_health_ratio": 0.6,
+    "melee_preference": 0.0,
+    "berserk_health_ratio": 0.6,
+    "berserk_damage_multiplier": 1.0
+  },
+  "tactical": {
+    "style": "controller",
+    "minimum_range": 20.0,
+    "preferred_range": 30.0,
+    "maximum_range": 44.0,
+    "reposition_distance": 12.0,
+    "pursuit_aggression": 0.0,
+    "intercept_bias": 0.0,
+    "vertical_mobility": 0.35,
+    "recovery_tendency": 0.75,
+    "collateral_caution": 0.05,
+    "maximum_terrain_impact": "small"
+  },
+  "social": {
+    "obedience_rate": 0.7
+  },
+  "command": {
+    "summon_orders_bonus": 0.2,
+    "reckless_orders_penalty": 0.3
+  },
+  "environment": {
+    "prefers_waterfront": true,
+    "prefers_villages": true,
+    "avoids_bright_open_fields": true
+  }
+}

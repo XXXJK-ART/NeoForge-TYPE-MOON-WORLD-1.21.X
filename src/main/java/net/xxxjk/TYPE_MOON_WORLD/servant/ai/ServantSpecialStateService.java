@@ -16,6 +16,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
@@ -43,6 +45,8 @@ public final class ServantSpecialStateService {
          EmiyaArcherCombatHelper.tickPersistentState(emiya);
       } else if (entity instanceof OdaNobunagaEntity oda) {
          OdaNobunagaCombatHelper.tickPersistentState(oda);
+      } else if (entity instanceof OkitaSoujiSaberEntity okita) {
+         OkitaSoujiSaberCombatHelper.tickPersistentState(okita);
       } else if (entity instanceof PaleRiderEntity paleRider) {
          PaleRiderCombatHelper.tickPersistentState(paleRider);
       }

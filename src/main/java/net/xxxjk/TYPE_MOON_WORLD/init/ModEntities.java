@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysteriousSwordsmanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.KendoMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OkitaShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TohsakaRinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
@@ -88,6 +89,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
@@ -413,6 +415,10 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<ShinsengumiEntity>> SHINSENGUMI = ENTITY_TYPES.register(
       "shinsengumi", () -> Builder.of(ShinsengumiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("shinsengumi")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<OkitaShinsengumiEntity>> OKITA_SHINSENGUMI = ENTITY_TYPES.register(
+      "okita_shinsengumi", () -> Builder.of(OkitaShinsengumiEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(2).build("okita_shinsengumi")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<TohsakaRinEntity>> TOHSAKA_RIN = ENTITY_TYPES.register(
       "tohsaka_rin", () -> Builder.of(TohsakaRinEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("tohsaka_rin")
    );
@@ -514,6 +520,10 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<SasakiKojiroEntity>> SASAKI_KOJIRO = ENTITY_TYPES.register(
       "sasaki_kojiro", () -> Builder.of(SasakiKojiroEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("sasaki_kojiro")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<OkitaSoujiSaberEntity>> OKITA_SOUJI_SABER = ENTITY_TYPES.register(
+      "okita_souji_saber", () -> Builder.of(OkitaSoujiSaberEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.8F).clientTrackingRange(64).updateInterval(1).build("okita_souji_saber")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<CuChulainnEntity>> CU_CHULAINN = ENTITY_TYPES.register(
       "cu_chulainn", () -> Builder.of(CuChulainnEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("cu_chulainn")

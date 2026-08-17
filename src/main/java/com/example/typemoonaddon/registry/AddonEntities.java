@@ -2,10 +2,13 @@ package com.example.typemoonaddon.registry;
 
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.AirflowBladeEntity;
+import com.example.typemoonaddon.entity.GillesDeRaisEntity;
+import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
 import com.example.typemoonaddon.entity.SakuraBlackShadowEntity;
 import com.example.typemoonaddon.entity.SakuraShadowArtRibbonEntity;
 import com.example.typemoonaddon.entity.SakuraShadowFamiliarEntity;
 import com.example.typemoonaddon.entity.SakuraShadowPiercingRhoAiasEntity;
+import com.example.typemoonaddon.entity.SeaMonsterEntity;
 import com.example.typemoonaddon.entity.SakuraVisualEntity;
 import com.example.typemoonaddon.entity.StorageVisualEntity;
 import net.minecraft.core.registries.Registries;
@@ -68,6 +71,30 @@ public final class AddonEntities {
                     .updateInterval(1)
                     .build("shadow_piercing_rho_aias"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<GillesDeRaisEntity>> GILLES_DE_RAIS_CASTER =
+            ENTITIES.register("gilles_de_rais_caster", () -> EntityType.Builder
+                    .of(GillesDeRaisEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.86F)
+                    .eyeHeight(1.68F)
+                    .clientTrackingRange(12)
+                    .build("gilles_de_rais_caster"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SeaMonsterEntity>> GILLES_SEA_MONSTER =
+            ENTITIES.register("gilles_sea_monster", () -> EntityType.Builder
+                    .of(SeaMonsterEntity::new, MobCategory.MONSTER)
+                    .sized(1.0F, 1.85F)
+                    .eyeHeight(1.0F)
+                    .clientTrackingRange(12)
+                    .build("gilles_sea_monster"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<HugeSeaMonsterEntity>> GILLES_HUGE_SEA_MONSTER =
+            ENTITIES.register("gilles_huge_sea_monster", () -> EntityType.Builder
+                    .of(HugeSeaMonsterEntity::new, MobCategory.MONSTER)
+                    .sized(6.0F, 8.0F)
+                    .eyeHeight(5.0F)
+                    .clientTrackingRange(16)
+                    .build("gilles_huge_sea_monster"));
+
     private AddonEntities() {
     }
 
@@ -78,5 +105,8 @@ public final class AddonEntities {
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(SHADOW_FAMILIAR.get(), SakuraShadowFamiliarEntity.createAttributes().build());
         event.put(BLACK_SHADOW.get(), SakuraBlackShadowEntity.createAttributes().build());
+        event.put(GILLES_DE_RAIS_CASTER.get(), GillesDeRaisEntity.createAttributes().build());
+        event.put(GILLES_SEA_MONSTER.get(), SeaMonsterEntity.createAttributes().build());
+        event.put(GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterEntity.createAttributes().build());
     }
 }

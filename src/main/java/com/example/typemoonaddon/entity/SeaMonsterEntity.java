@@ -1,0 +1,308 @@
+package com.example.typemoonaddon.entity;
+
+import java.util.UUID;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
+
+public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
+    private static final EntityDataAccessor<Boolean> LARGE =
+            SynchedEntityData.defineId(SeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final int SMALL_LIFETIME = 20 * 60 * 5;
+    private static final int LARGE_LIFETIME = 20 * 60 * 3;
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    @Nullable
+    private UUID controllerUuid;
+
+    public SeaMonsterEntity(EntityType<? extends SeaMonsterEntity> type, Level level) {
+        super(type, level);
+        this.setPersistenceRequired();
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return PathfinderMob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 200.0)
+                .add(Attributes.ATTACK_DAMAGE, 12.0)
+                .add(Attributes.MOVEMENT_SPEED, 0.16)
+                .add(Attributes.ARMOR, 4.0)
+                .add(Attributes.FOLLOW_RANGE, 48.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.55);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(LARGE, false);
+    }
+
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.0, true));
+        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.75));
+        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 10.0F));
+        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (!(this.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (this.tickCount > (this.isLarge() ? LARGE_LIFETIME : SMALL_LIFETIME)) {
+            this.discard();
+            return;
+        }
+        if (this.controllerUuid != null && this.getController() == null) {
+            this.discard();
+            return;
+        }
+        LivingEntity controller = this.getController();
+        if (controller instanceof GillesDeRaisEntity gilles && !gilles.hasUsableSpellbook()) {
+            this.discard();
+            return;
+        }
+        if (this.tickCount % 20 == 0) {
+            this.heal(this.isLarge() ? 15.0F : 5.0F);
+            this.pollutionAura(level);
+        }
+        if (this.tickCount % 20 == 5) {
+            this.refreshTarget();
+        }
+        if (this.isLarge() && this.tickCount % 55 == 0) {
+            this.largeSweep(level);
+        }
+    }
+
+    public boolean isLarge() {
+        return this.entityData.get(LARGE);
+    }
+
+    public void setLarge(boolean large) {
+        this.entityData.set(LARGE, large);
+        this.applyVariantAttributes();
+        this.refreshDimensions();
+        if (large && this.getHealth() < 1000.0F) {
+            this.setHealth(this.getMaxHealth());
+        }
+    }
+
+    public void setController(LivingEntity controller) {
+        this.controllerUuid = controller.getUUID();
+    }
+
+    @Nullable
+    public UUID getControllerUuid() {
+        return this.controllerUuid;
+    }
+
+    @Nullable
+    public LivingEntity getController() {
+        if (this.controllerUuid == null || !(this.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        Entity entity = level.getEntity(this.controllerUuid);
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
+    @Override
+    public boolean isAlliedTo(Entity other) {
+        if (super.isAlliedTo(other)) {
+            return true;
+        }
+        LivingEntity controller = this.getController();
+        if (controller == null) {
+            return false;
+        }
+        if (other == controller || controller.isAlliedTo(other)) {
+            return true;
+        }
+        return other instanceof SeaMonsterEntity seaMonster
+                && this.controllerUuid != null
+                && this.controllerUuid.equals(seaMonster.controllerUuid);
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.isFriendly(source.getEntity()) || this.isFriendly(source.getDirectEntity())) {
+            return false;
+        }
+        return super.hurt(source, amount);
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        boolean hit = super.doHurtTarget(target);
+        if (hit) {
+            this.swing(InteractionHand.MAIN_HAND);
+            this.triggerAnim("action_controller", this.isLarge() ? "sweep" : "attack");
+        }
+        return hit;
+    }
+
+    @Override
+    public void die(DamageSource cause) {
+        if (!this.level().isClientSide() && this.isLarge()) {
+            GillesPollutionZoneService.add(this.level().dimension(), this.position(), 5.5, 60 * 20, 10.0F);
+        }
+        super.die(cause);
+    }
+
+    @Override
+    protected EntityDimensions getDefaultDimensions(Pose pose) {
+        return this.isLarge() ? EntityDimensions.fixed(2.0F, 3.7F) : EntityDimensions.fixed(1.0F, 1.85F);
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("GillesSeaMonsterLarge", this.isLarge());
+        if (this.controllerUuid != null) {
+            tag.putUUID("GillesSeaMonsterController", this.controllerUuid);
+        }
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        this.entityData.set(LARGE, tag.getBoolean("GillesSeaMonsterLarge"));
+        if (tag.hasUUID("GillesSeaMonsterController")) {
+            this.controllerUuid = tag.getUUID("GillesSeaMonsterController");
+        }
+        this.applyVariantAttributes();
+    }
+
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+            String loop = event.isMoving() ? "animation.gilles_sea_monster.walk" : "animation.gilles_sea_monster.idle";
+            return event.setAndContinue(RawAnimation.begin().thenLoop(loop));
+        }));
+        AnimationController<SeaMonsterEntity> action = new AnimationController<>(this, "action_controller", 0, event -> PlayState.STOP);
+        action.triggerableAnim("attack", RawAnimation.begin().thenPlay("animation.gilles_sea_monster.attack"));
+        action.triggerableAnim("sweep", RawAnimation.begin().thenPlay("animation.gilles_sea_monster.sweep"));
+        controllers.add(action);
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return this.cache;
+    }
+
+    private void applyVariantAttributes() {
+        this.setAttribute(Attributes.MAX_HEALTH, this.isLarge() ? 1000.0 : 200.0);
+        this.setAttribute(Attributes.ATTACK_DAMAGE, this.isLarge() ? 30.0 : 12.0);
+        this.setAttribute(Attributes.MOVEMENT_SPEED, this.isLarge() ? 0.10 : 0.16);
+        this.setAttribute(Attributes.KNOCKBACK_RESISTANCE, this.isLarge() ? 0.9 : 0.55);
+    }
+
+    private void setAttribute(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double value) {
+        AttributeInstance instance = this.getAttribute(attribute);
+        if (instance != null) {
+            instance.setBaseValue(value);
+        }
+    }
+
+    private void refreshTarget() {
+        LivingEntity controller = this.getController();
+        LivingEntity preferred = controller instanceof net.minecraft.world.entity.Mob mob ? mob.getTarget() : null;
+        if (isValidTarget(preferred)) {
+            this.setTarget(preferred);
+            return;
+        }
+        if (!isValidTarget(this.getTarget())) {
+            this.setTarget(this.findNearestTarget(24.0));
+        }
+    }
+
+    @Nullable
+    private LivingEntity findNearestTarget(double radius) {
+        AABB box = this.getBoundingBox().inflate(radius);
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (LivingEntity candidate : this.level().getEntitiesOfClass(LivingEntity.class, box, this::isValidTarget)) {
+            double distance = this.distanceToSqr(candidate);
+            if (distance < bestDistance) {
+                best = candidate;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
+    private boolean isValidTarget(@Nullable LivingEntity target) {
+        return target != null && target != this && target.isAlive() && !target.isAlliedTo(this)
+                && !EntityUtils.isImmunePlayerTarget(target);
+    }
+
+    private boolean isFriendly(@Nullable Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        LivingEntity controller = this.getController();
+        if (entity == controller || entity == this) {
+            return true;
+        }
+        if (controller != null && controller.isAlliedTo(entity)) {
+            return true;
+        }
+        return entity instanceof SeaMonsterEntity seaMonster
+                && this.controllerUuid != null
+                && this.controllerUuid.equals(seaMonster.controllerUuid);
+    }
+
+    private void pollutionAura(ServerLevel level) {
+        double radius = this.isLarge() ? 6.0 : 3.5;
+        float damage = this.isLarge() ? 10.0F : 2.0F;
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), this::isValidTarget)) {
+            living.hurt(this.damageSources().magic(), damage);
+        }
+        level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
+                this.isLarge() ? 18 : 7, radius * 0.25, 0.4, radius * 0.25, 0.03);
+    }
+
+    private void largeSweep(ServerLevel level) {
+        this.triggerAnim("action_controller", "sweep");
+        level.playSound(null, this.blockPosition(), SoundEvents.GUARDIAN_ATTACK, SoundSource.HOSTILE, 1.1F, 0.55F);
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(5.5), this::isValidTarget)) {
+            living.invulnerableTime = 0;
+            living.hurt(this.damageSources().mobAttack(this), 18.0F);
+            living.push((living.getX() - this.getX()) * 0.18, 0.25, (living.getZ() - this.getZ()) * 0.18);
+            living.hurtMarked = true;
+        }
+    }
+}
