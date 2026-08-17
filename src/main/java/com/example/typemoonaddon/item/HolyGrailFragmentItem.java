@@ -51,7 +51,7 @@ public final class HolyGrailFragmentItem extends Item {
                             : "message.typemoonworld.holy_grail.failed"), true);
             return InteractionResultHolder.fail(used);
         }
-        serverPlayer.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(serverPlayer, AddonAttachments.IMAGINARY_SPACE);
         if (!serverPlayer.getAbilities().instabuild) {
             used.shrink(1);
             other.shrink(1);

@@ -126,7 +126,7 @@ public final class SakuraTypeMoonIntegration {
             learn(context, SHADOW_ART, 70.0D);
             context.player().getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).unlockForbiddenMagic();
             context.player().getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).unlockShadowArt();
-            context.player().syncData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+            com.example.typemoonaddon.registry.AddonAttachments.sync(context.player(), com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE);
         }
         context.mana().add(context.profile().maximumMana());
     }

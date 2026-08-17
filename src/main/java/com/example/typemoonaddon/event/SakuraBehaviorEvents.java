@@ -31,7 +31,7 @@ public final class SakuraBehaviorEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             SakuraShadowMaterializationService.maintainHeld(player);
             if (player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).tickProtection()) {
-                player.syncData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+                com.example.typemoonaddon.registry.AddonAttachments.sync(player, com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE);
             }
         }
     }
@@ -56,12 +56,12 @@ public final class SakuraBehaviorEvents {
             if (remaining <= 0.0F) {
                 event.setAmount(0.0F);
                 event.setCanceled(true);
-                player.syncData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+                com.example.typemoonaddon.registry.AddonAttachments.sync(player, com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE);
                 return;
             }
             if (remaining < event.getAmount()) {
                 event.setAmount(remaining);
-                player.syncData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+                com.example.typemoonaddon.registry.AddonAttachments.sync(player, com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE);
             }
         }
         if (SakuraShadowBindingService.absorbDamage(event)) {

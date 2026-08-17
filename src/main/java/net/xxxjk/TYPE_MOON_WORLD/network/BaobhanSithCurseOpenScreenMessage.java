@@ -10,10 +10,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 
-public record BaobhanSithCurseOpenScreenMessage(List<Target> targets) implements CustomPacketPayload {
+public record BaobhanSithCurseOpenScreenMessage(List<Target> targets, boolean noblePhantasmMode) implements CustomPacketPayload {
    public static final Type<BaobhanSithCurseOpenScreenMessage> TYPE =
       new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "baobhan_sith_curse_open_screen"));
    public static final StreamCodec<RegistryFriendlyByteBuf, BaobhanSithCurseOpenScreenMessage> STREAM_CODEC = StreamCodec.of((buf, msg) -> {
+      buf.writeBoolean(msg.noblePhantasmMode);
       buf.writeVarInt(msg.targets.size());
       for (Target target : msg.targets) {
          buf.writeVarInt(target.entityId);
@@ -36,6 +37,7 @@ public record BaobhanSithCurseOpenScreenMessage(List<Target> targets) implements
          buf.writeVarInt(target.remainsCurse);
       }
    }, buf -> {
+      boolean noblePhantasmMode = buf.readBoolean();
       int count = Math.min(256, buf.readVarInt());
       List<Target> targets = new ArrayList<>();
       for (int i = 0; i < count; i++) {
@@ -60,7 +62,7 @@ public record BaobhanSithCurseOpenScreenMessage(List<Target> targets) implements
             buf.readVarInt()
          ));
       }
-      return new BaobhanSithCurseOpenScreenMessage(targets);
+      return new BaobhanSithCurseOpenScreenMessage(targets, noblePhantasmMode);
    });
 
    @Override
@@ -69,7 +71,7 @@ public record BaobhanSithCurseOpenScreenMessage(List<Target> targets) implements
    }
 
    public static void handleData(BaobhanSithCurseOpenScreenMessage msg, IPayloadContext ctx) {
-      ctx.enqueueWork(() -> ClientPacketHandler.openBaobhanSithCurseScreen(msg.targets));
+      ctx.enqueueWork(() -> ClientPacketHandler.openBaobhanSithCurseScreen(msg.targets, msg.noblePhantasmMode));
    }
 
    public record Target(

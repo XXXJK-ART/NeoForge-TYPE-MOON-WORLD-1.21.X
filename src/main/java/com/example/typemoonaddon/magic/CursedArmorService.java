@@ -87,8 +87,8 @@ public final class CursedArmorService {
             data.cursedArmorState(),
             data.cursedArmorStageStartTick()
         );
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
-        player.syncData(AddonAttachments.CURSED_ARMOR_VIEW.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
+        AddonAttachments.sync(player, AddonAttachments.CURSED_ARMOR_VIEW);
     }
 
     public static float reduceDamage(ServerPlayer player, DamageSource source, float amount) {

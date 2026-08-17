@@ -27,7 +27,7 @@ public final class SakuraBlackMudControlService {
         }
         var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
         if (data.setSelectedShadowCommandMode(mode)) {
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         }
         return true;
     }
@@ -41,7 +41,7 @@ public final class SakuraBlackMudControlService {
         if (selectedMode == ImaginarySpaceData.ShadowCommandMode.DISMISS) {
             SakuraBlackMudHuntService.end(player);
             data.advanceShadowDismissalGeneration();
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
             int dismissed = dismissLoadedSummons(player);
             player.displayClientMessage(Component.translatable("message.typemoonworld.black_mud_control.dismissed", dismissed), true);
             playCommandSound(player, selectedMode);
@@ -62,7 +62,7 @@ public final class SakuraBlackMudControlService {
         }
         SakuraBlackMudHuntService.end(player);
         data.applySelectedShadowCommandMode();
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         player.serverLevel().getEntitiesOfClass(SakuraShadowFamiliarEntity.class, player.getBoundingBox().inflate(COMMAND_UPDATE_RADIUS), familiar -> player.getUUID().equals(familiar.getOwnerId())).forEach(SakuraShadowFamiliarEntity::onCommandModeApplied);
         player.serverLevel().getEntitiesOfClass(SakuraBlackShadowEntity.class, player.getBoundingBox().inflate(COMMAND_UPDATE_RADIUS), shadow -> player.getUUID().equals(shadow.getOwnerId())).forEach(SakuraBlackShadowEntity::onCommandModeApplied);
         player.displayClientMessage(Component.translatable("message.typemoonworld.black_mud_control." + selectedMode.serializedName()), true);
@@ -76,7 +76,7 @@ public final class SakuraBlackMudControlService {
         }
         var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
         if (data.setShadowAttackAround(enabled)) {
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
             player.displayClientMessage(Component.translatable("message.typemoonworld.black_mud_control.attack_around_" + (enabled ? "enabled" : "disabled")), true);
             playCommandSound(player, ImaginarySpaceData.ShadowCommandMode.ATTACK_AROUND);
         }

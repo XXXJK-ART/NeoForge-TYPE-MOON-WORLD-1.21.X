@@ -32,7 +32,7 @@ public final class SakuraImaginaryStorageService {
             return false;
         }
         if (data.setMagicMode(mode)) {
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         }
         return true;
     }
@@ -145,7 +145,7 @@ public final class SakuraImaginaryStorageService {
         } else if (entity != null) {
             entity.discard();
         }
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         addProficiency(player, 0.2D);
         player.displayClientMessage(Component.translatable("message.typemoonworld.storage.stored"), true);
         return true;
@@ -183,7 +183,7 @@ public final class SakuraImaginaryStorageService {
             player.displayClientMessage(Component.translatable("message.typemoonworld.space_full"), true);
             return false;
         }
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         addProficiency(player, 0.2D);
         player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorbed"), true);
         return true;
@@ -198,7 +198,7 @@ public final class SakuraImaginaryStorageService {
         } else {
             data.activateProtection();
         }
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         player.displayClientMessage(Component.translatable(data.protectionActive()
                 ? "message.typemoonworld.mode.protection"
                 : "message.typemoonworld.mode.protection_disabled"), true);

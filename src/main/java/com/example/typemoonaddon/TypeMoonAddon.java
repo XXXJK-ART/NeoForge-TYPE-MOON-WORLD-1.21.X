@@ -18,13 +18,16 @@ import com.example.typemoonaddon.magic.ImaginaryDisplacementAttachments;
 import com.example.typemoonaddon.storage.StorageAttachments;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
 
 public final class TypeMoonAddon {
@@ -68,9 +71,13 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_ABSORPTION);
         }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
-            event.accept(AddonItems.MASTER_CARD_MATOU_SAKURA);
-            event.accept(AddonItems.MASTER_CARD_MATOU_SAKURA_ALTER);
-            event.accept(AddonItems.MASTER_CARD_MATOU_SAKURA_FHA);
+            ItemStack afterMasterCards = new ItemStack(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get());
+            ItemStack sakura = AddonItems.MASTER_CARD_MATOU_SAKURA.toStack();
+            ItemStack sakuraAlter = AddonItems.MASTER_CARD_MATOU_SAKURA_ALTER.toStack();
+            ItemStack sakuraFha = AddonItems.MASTER_CARD_MATOU_SAKURA_FHA.toStack();
+            event.insertAfter(afterMasterCards, sakura, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.insertAfter(sakura, sakuraAlter, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.insertAfter(sakuraAlter, sakuraFha, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
     }
 

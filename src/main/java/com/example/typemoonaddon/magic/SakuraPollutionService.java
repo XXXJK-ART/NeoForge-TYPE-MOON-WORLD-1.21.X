@@ -62,7 +62,7 @@ public final class SakuraPollutionService {
             changed = true;
         }
         if (changed) {
-            target.syncData(AddonAttachments.POLLUTION.get());
+            AddonAttachments.sync(target, AddonAttachments.POLLUTION);
         }
         if (data.progress() > 0.0F) {
             int amplifier = data.fullyCorrupted() ? 2 : 0;
@@ -88,7 +88,7 @@ public final class SakuraPollutionService {
         snapshot.putString("id", entityId.toString());
         snapshot.putString("CustomName", target.getDisplayName().getString());
         if (ownerData.addCorruptedServant(pollution.rosterId(), snapshot, null)) {
-            owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
             owner.displayClientMessage(Component.translatable("message.typemoonworld.heroic_spirit_devourer.selection_saved", ownerData.corruptedServants().size()), true);
         }
     }
@@ -122,7 +122,7 @@ public final class SakuraPollutionService {
             summoned++;
         }
         if (summoned > 0) {
-            owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
             owner.displayClientMessage(Component.translatable("message.typemoonworld.heroic_spirit_devourer.summoned", summoned), true);
         } else {
             owner.displayClientMessage(Component.translatable("message.typemoonworld.heroic_spirit_devourer.empty"), true);
@@ -162,7 +162,7 @@ public final class SakuraPollutionService {
         }
         ImaginarySpaceData data = owner.getData(AddonAttachments.IMAGINARY_SPACE.get());
         if (data.setSelectedCorruptedServants(new HashSet<>(rosterIds))) {
-            owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
         }
         owner.displayClientMessage(Component.translatable(
                 "message.typemoonworld.heroic_spirit_devourer.selection_saved",

@@ -125,7 +125,7 @@ public final class SakuraSummonBlackMudService {
         ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
         ImaginarySpaceData.BlackMudSummonMode validated = mode == null ? ImaginarySpaceData.BlackMudSummonMode.RELEASE : mode;
         if (data.setBlackMudSummonMode(validated)) {
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         }
         player.displayClientMessage(Component.translatable("message.typemoonworld.summon_black_mud.mode." + validated.serializedName()), true);
         return true;

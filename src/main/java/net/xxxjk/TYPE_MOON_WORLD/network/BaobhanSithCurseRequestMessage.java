@@ -8,11 +8,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardBaobhanSithSkills;
 
-public record BaobhanSithCurseRequestMessage() implements CustomPacketPayload {
+public record BaobhanSithCurseRequestMessage(boolean noblePhantasmMode) implements CustomPacketPayload {
    public static final Type<BaobhanSithCurseRequestMessage> TYPE =
       new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld", "baobhan_sith_curse_request"));
-   public static final StreamCodec<RegistryFriendlyByteBuf, BaobhanSithCurseRequestMessage> STREAM_CODEC =
-      StreamCodec.unit(new BaobhanSithCurseRequestMessage());
+   public static final StreamCodec<RegistryFriendlyByteBuf, BaobhanSithCurseRequestMessage> STREAM_CODEC = StreamCodec.of(
+      (buf, msg) -> buf.writeBoolean(msg.noblePhantasmMode),
+      buf -> new BaobhanSithCurseRequestMessage(buf.readBoolean())
+   );
 
    @Override
    public Type<BaobhanSithCurseRequestMessage> type() {
@@ -22,7 +24,7 @@ public record BaobhanSithCurseRequestMessage() implements CustomPacketPayload {
    public static void handleData(BaobhanSithCurseRequestMessage msg, IPayloadContext ctx) {
       ctx.enqueueWork(() -> {
          if (ctx.player() instanceof ServerPlayer player) {
-            ServantCardBaobhanSithSkills.refreshCursePanel(player);
+            ServantCardBaobhanSithSkills.refreshCursePanel(player, msg.noblePhantasmMode);
          }
       });
    }

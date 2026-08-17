@@ -85,7 +85,7 @@ public final class SakuraShadowArtService {
             }
         }
         data.finishShadowArtActivation();
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         player.serverLevel().playSound(null, player.blockPosition(), SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.PLAYERS, 1.0F, 0.55F);
         return true;
     }
@@ -99,7 +99,7 @@ public final class SakuraShadowArtService {
             data.unlockShadowArt();
         }
         data.setShadowArtMode(mode);
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         player.displayClientMessage(Component.translatable("message.typemoonworld.shadow_art.mode." + data.shadowArtMode().serializedName()), true);
         return true;
     }
@@ -118,7 +118,7 @@ public final class SakuraShadowArtService {
         }
         CANCEL_CONFIRM_UNTIL.remove(player.getUUID());
         clearOwnerState(player.getUUID());
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         return true;
     }
 
@@ -141,7 +141,7 @@ public final class SakuraShadowArtService {
         if (data.shadowArtState() == ImaginarySpaceData.ShadowArtState.DEACTIVATING) {
             if (owned.isEmpty()) {
                 data.finishShadowArtDeactivation();
-                player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+                AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
             }
             return;
         }
@@ -229,7 +229,7 @@ public final class SakuraShadowArtService {
         LivingEntity owner = owner(ribbon);
         if (owner instanceof ServerPlayer player) {
             player.getData(AddonAttachments.IMAGINARY_SPACE.get()).breakShadowArtRibbon(ribbon.ribbonIndex());
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         } else if (owner instanceof SakuraBlackShadowEntity shadow) {
             shadow.breakShadowArtRibbon(ribbon.ribbonIndex());
         }
@@ -434,7 +434,7 @@ public final class SakuraShadowArtService {
             deactivate(player, false);
             ribbons(player).forEach(Entity::discard);
             player.getData(AddonAttachments.IMAGINARY_SPACE.get()).finishShadowArtDeactivation();
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         }
     }
 

@@ -45,7 +45,7 @@ public final class SakuraForbiddenMagicService {
         }
         player.serverLevel().sendParticles(ParticleTypes.REVERSE_PORTAL, player.getX(), player.getY() + 1.0D, player.getZ(), 64, 1.2D, 0.8D, 1.2D, 0.08D);
         player.getData(AddonAttachments.IMAGINARY_SPACE.get()).unlockForbiddenMagic();
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         SakuraTypeMoonIntegration.addProficiency(player, 0.35D);
         return true;
     }

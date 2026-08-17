@@ -666,6 +666,9 @@ public final class ServantCardTransformManager {
       if ("nightingale_pledge".equals(action.effectId())) {
          return ServantCardNightingaleSkills.performNoblePhantasmAction(player, vars, action);
       }
+      if ("baobhan_sith_fetch_failnaught".equals(action.effectId())) {
+         return ServantCardBaobhanSithSkills.openFetchFailnaughtMap(player);
+      }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       boolean zhaoYunBreakthroughDiscount =
          "zhao_yun_rider".equals(vars.servant_card_id)

@@ -96,16 +96,16 @@ public class ClientPacketHandler {
       if (!ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) Minecraft.getInstance().setScreen(new GilgameshVaultScreen(usedMask));
    }
 
-   public static void openBaobhanSithCurseScreen(List<BaobhanSithCurseOpenScreenMessage.Target> targets) {
+   public static void openBaobhanSithCurseScreen(List<BaobhanSithCurseOpenScreenMessage.Target> targets, boolean noblePhantasmMode) {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
          return;
       }
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
          if (mc.screen instanceof BaobhanSithCurseScreen screen) {
-            screen.updateTargets(targets);
+            screen.updateTargets(targets, noblePhantasmMode);
          } else {
-            mc.setScreen(new BaobhanSithCurseScreen(targets));
+            mc.setScreen(new BaobhanSithCurseScreen(targets, noblePhantasmMode));
          }
       }
    }

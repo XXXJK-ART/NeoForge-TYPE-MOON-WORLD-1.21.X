@@ -229,6 +229,11 @@ public final class AddonNetwork {
                 ImaginarySpaceStatePayload::handle
         );
         registrar.playToClient(
+                SakuraAttachmentSyncPayload.TYPE,
+                SakuraAttachmentSyncPayload.STREAM_CODEC,
+                SakuraAttachmentSyncPayload::handle
+        );
+        registrar.playToClient(
                 OpenDevourerSelectionPayload.TYPE,
                 OpenDevourerSelectionPayload.STREAM_CODEC,
                 OpenDevourerSelectionPayload::handle

@@ -32,7 +32,7 @@ public final class SakuraRuleBreakerDispelService {
         } else {
             data.clearProtection();
         }
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         CursedArmorService.sync(player);
         return true;
     }

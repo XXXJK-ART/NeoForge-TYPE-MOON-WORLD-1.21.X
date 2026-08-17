@@ -39,6 +39,8 @@ public final class ServantCardBaobhanSithSkills {
    private static final long HAIR_COLLECT_COOLDOWN_TICKS = 20L;
    private static final float HAIR_COLLECT_HEALTH_COST = 0.5F;
    private static final float NORMAL_ATTACK_MEDIUM_CHANCE = 0.55F;
+   private static final double FETCH_FAILNAUGHT_MP_COST = 35.0;
+   private static final int FETCH_FAILNAUGHT_COOLDOWN_TICKS = 300;
    private static final ResourceLocation GRIMALKIN_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "baobhan_sith_grimalkin_speed");
    private static final ResourceLocation GRIMALKIN_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "baobhan_sith_grimalkin_attack");
    private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.04F, 0.08F), 1.12F);
@@ -124,13 +126,21 @@ public final class ServantCardBaobhanSithSkills {
       if (!isActive(player)) {
          return false;
       }
-      sendPanel(player);
+      sendPanel(player, false);
       return true;
    }
 
-   public static void refreshCursePanel(ServerPlayer player) {
+   public static boolean openFetchFailnaughtMap(ServerPlayer player) {
       if (isActive(player)) {
-         sendPanel(player);
+         sendPanel(player, true);
+         return true;
+      }
+      return false;
+   }
+
+   public static void refreshCursePanel(ServerPlayer player, boolean noblePhantasmMode) {
+      if (isActive(player)) {
+         sendPanel(player, noblePhantasmMode);
       }
    }
 
@@ -139,7 +149,7 @@ public final class ServantCardBaobhanSithSkills {
          return false;
       }
       BaobhanSithCurseService.setSelectedTarget(player, targetId);
-      sendPanel(player);
+      sendPanel(player, false);
       return true;
    }
 
@@ -186,7 +196,7 @@ public final class ServantCardBaobhanSithSkills {
       player.getPersistentData().putLong(BaobhanSithCurseService.TAG_PANEL_LAST_TRIGGER, now);
       player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.triggered_medium",
          Component.translatable("screen.typemoonworld.baobhan_sith.medium." + normalized.toLowerCase(java.util.Locale.ROOT))), true);
-      sendPanel(player);
+      sendPanel(player, false);
       return true;
    }
 
@@ -319,20 +329,87 @@ public final class ServantCardBaobhanSithSkills {
    }
 
    public static boolean performFetchFailnaught(ServerPlayer player) {
-      LivingEntity target = BaobhanSithCurseService.selectedTarget(player);
+      return openFetchFailnaughtMap(player);
+   }
+
+   public static boolean detonateFetchFailnaught(ServerPlayer player, UUID targetId) {
+      if (!isActive(player)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!checkFetchFailnaughtReady(player, vars)) {
+         return false;
+      }
+      LivingEntity target = BaobhanSithCurseService.findCursedTarget(player, targetId);
       if (target == null || !validTarget(player, target)) {
          return noTarget(player);
+      }
+      if (!hasFetchPayload(player, target)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.no_curse_payload"), true);
+         return false;
+      }
+      if (!ServantCardManaService.consumeNoblePhantasm(player, vars, FETCH_FAILNAUGHT_MP_COST)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
+         return false;
+      }
+      executeFetchFailnaught(player, target);
+      BaobhanSithCurseService.consumeAllMediums(player, target);
+      finishFetchFailnaught(player, vars, 1);
+      return true;
+   }
+
+   public static boolean detonateAllFetchFailnaught(ServerPlayer player) {
+      if (!isActive(player)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!checkFetchFailnaughtReady(player, vars)) {
+         return false;
+      }
+      List<LivingEntity> targets = BaobhanSithCurseService.snapshots(player).stream()
+         .map(snapshot -> BaobhanSithCurseService.findCursedTarget(player, snapshot.uuid()))
+         .filter(target -> target != null && validTarget(player, target) && hasFetchPayload(player, target))
+         .distinct()
+         .toList();
+      if (targets.isEmpty()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.no_curse_payload"), true);
+         return false;
+      }
+      if (!ServantCardManaService.consumeNoblePhantasm(player, vars, FETCH_FAILNAUGHT_MP_COST)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
+         return false;
+      }
+      int detonated = 0;
+      for (LivingEntity target : targets) {
+         if (executeFetchFailnaught(player, target)) {
+            BaobhanSithCurseService.consumeAllMediums(player, target);
+            detonated++;
+         }
+      }
+      if (detonated <= 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.no_curse_payload"), true);
+         return false;
+      }
+      finishFetchFailnaught(player, vars, detonated);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.fetch_all", detonated), true);
+      return true;
+   }
+
+   private static boolean executeFetchFailnaught(ServerPlayer player, LivingEntity target) {
+      if (target == null || !validTarget(player, target)) {
+         return false;
       }
       int layers = BaobhanSithCurseService.totalCurseLayers(player, target);
       int mediums = BaobhanSithCurseService.totalMediumCount(player, target);
       if (layers <= 0 && mediums <= 0) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.no_curse_payload"), true);
          return false;
       }
       float damage = Math.min(180.0F, 30.0F + layers * 12.0F + mediums * 8.0F);
       boolean wasAlive = target.isAlive();
-      BaobhanSithCurseService.hurtWithCurse(player, target, damage);
       appendExistingCurseTypes(player, target);
+      BaobhanSithCurseService.triggerBurst(player, target);
+      float burstDamage = fetchFailnaughtBurstDamage(player, target, layers, mediums);
+      BaobhanSithCurseService.hurtWithCurse(player, target, damage + burstDamage);
       if (player.level() instanceof ServerLevel level) {
          spawnFetchFailnaughtFx(level, player, target);
       }
@@ -340,11 +417,47 @@ public final class ServantCardBaobhanSithSkills {
          BaobhanSithCurseService.addMedium(player, target, BaobhanSithCurseService.MEDIUM_REMAINS, 1);
          player.heal(100.0F);
       }
-      ServantCardVoiceHelper.tryPlaySkill(player, "baobhan_sith_fetch_failnaught");
+      BaobhanSithCurseService.setSelectedTarget(player, target.getUUID());
       return true;
    }
 
-   private static void sendPanel(ServerPlayer player) {
+   private static boolean checkFetchFailnaughtReady(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown",
+            String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
+         return false;
+      }
+      return true;
+   }
+
+   private static boolean hasFetchPayload(ServerPlayer player, LivingEntity target) {
+      return BaobhanSithCurseService.totalCurseLayers(player, target) > 0
+         || BaobhanSithCurseService.totalMediumCount(player, target) > 0;
+   }
+
+   private static float fetchFailnaughtBurstDamage(ServerPlayer player, LivingEntity target, int originalLayers, int originalMediums) {
+      int blood = BaobhanSithCurseService.curseCount(player, target, BaobhanSithCurseService.CURSE_BLOOD);
+      int skin = BaobhanSithCurseService.curseCount(player, target, BaobhanSithCurseService.CURSE_SKIN);
+      int hair = BaobhanSithCurseService.curseCount(player, target, BaobhanSithCurseService.CURSE_HAIR);
+      int remains = BaobhanSithCurseService.curseCount(player, target, BaobhanSithCurseService.CURSE_REMAINS);
+      float typedPower = blood * 5.0F + skin * 4.0F + hair * 3.0F + remains * 15.0F;
+      if (typedPower <= 0.0F && originalLayers <= 0 && originalMediums <= 0) {
+         return 0.0F;
+      }
+      return Math.min(120.0F, Math.max(18.0F, typedPower * 2.5F + originalLayers * 4.0F + originalMediums * 2.5F));
+   }
+
+   private static void finishFetchFailnaught(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int detonatedCount) {
+      ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, FETCH_FAILNAUGHT_COOLDOWN_TICKS);
+      vars.syncPlayerVariables(player);
+      if (detonatedCount == 1) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_activated",
+            Component.translatable("skill.typemoonworld.servant_card.baobhan_sith_fetch_failnaught")), true);
+      }
+      ServantCardVoiceHelper.tryPlaySkill(player, "baobhan_sith_fetch_failnaught");
+   }
+
+   private static void sendPanel(ServerPlayer player, boolean noblePhantasmMode) {
       List<BaobhanSithCurseService.Snapshot> snapshots = new ArrayList<>(BaobhanSithCurseService.snapshots(player));
       LivingEntity selectedTarget = BaobhanSithCurseService.selectedTarget(player);
       if (!snapshots.isEmpty() && selectedTarget == null) {
@@ -375,7 +488,7 @@ public final class ServantCardBaobhanSithSkills {
             snapshot.remainsCurse()
          ))
          .toList();
-      ModNetwork.sendToPlayer(player, new BaobhanSithCurseOpenScreenMessage(targets));
+      ModNetwork.sendToPlayer(player, new BaobhanSithCurseOpenScreenMessage(targets, noblePhantasmMode));
    }
 
    private static LivingEntity findLookTarget(ServerPlayer player, double range, double inflate) {

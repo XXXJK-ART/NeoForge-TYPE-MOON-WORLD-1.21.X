@@ -45,7 +45,7 @@ public final class CrestWormItem extends Item {
                             : "message.typemoonworld.crest_worm.failed"), true);
             return InteractionResultHolder.fail(held);
         }
-        serverPlayer.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(serverPlayer, AddonAttachments.IMAGINARY_SPACE);
         if (!serverPlayer.getAbilities().instabuild) {
             held.shrink(1);
         }

@@ -37,7 +37,7 @@ public final class MatouSakuraMasterProfile {
             data.completePendingGrailErosion(Long.MAX_VALUE);
             VoidRingRegaliaService.equip(player);
         }
-        player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
     }
 
     public static void restoreAddonState(ServerPlayer player) {
@@ -50,7 +50,7 @@ public final class MatouSakuraMasterProfile {
                     player.registryAccess(),
                     persisted.getCompound(SNAPSHOT)
             );
-            player.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
         }
         persisted.remove(SNAPSHOT);
         persisted.remove(SNAPSHOT_ACTIVE);

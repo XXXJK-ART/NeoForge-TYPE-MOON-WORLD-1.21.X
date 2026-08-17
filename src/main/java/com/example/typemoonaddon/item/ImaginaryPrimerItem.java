@@ -39,7 +39,7 @@ public final class ImaginaryPrimerItem extends Item {
             return InteractionResultHolder.fail(held);
         }
         data.unlock();
-        serverPlayer.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(serverPlayer, AddonAttachments.IMAGINARY_SPACE);
         if (!serverPlayer.getAbilities().instabuild) {
             held.shrink(1);
         }

@@ -89,7 +89,7 @@ public final class SakuraBlackMudHuntService {
             familiar.prepareForHunt(target, uniformSize);
         }
         owner.getData(AddonAttachments.IMAGINARY_SPACE.get()).setActiveShadowCommandMode(ImaginarySpaceData.ShadowCommandMode.HUNT);
-        owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+        AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
         return StartResult.STARTED;
     }
 
@@ -225,7 +225,7 @@ public final class SakuraBlackMudHuntService {
         if (resetMode && owner != null) {
             var data = owner.getData(AddonAttachments.IMAGINARY_SPACE.get());
             if (data.setActiveShadowCommandMode(ImaginarySpaceData.ShadowCommandMode.FREE) && syncOwner) {
-                owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+                AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
             }
         }
     }
@@ -236,7 +236,7 @@ public final class SakuraBlackMudHuntService {
         if (resetMode && owner != null) {
             var data = owner.getData(AddonAttachments.IMAGINARY_SPACE.get());
             if (data.setActiveShadowCommandMode(ImaginarySpaceData.ShadowCommandMode.FREE) && syncOwner) {
-                owner.syncData(AddonAttachments.IMAGINARY_SPACE.get());
+                AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
             }
         }
     }

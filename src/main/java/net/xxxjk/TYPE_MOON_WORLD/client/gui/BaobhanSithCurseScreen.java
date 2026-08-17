@@ -26,11 +26,14 @@ public final class BaobhanSithCurseScreen extends Screen {
    private static final int MARKER_SIZE = 14;
    private static final int MEDIUM_BUTTON_WIDTH = 66;
    private static final int MEDIUM_BUTTON_HEIGHT = 19;
+   private static final int NP_BUTTON_HEIGHT = 22;
+   private static final UUID ALL_TARGETS_UUID = new UUID(0L, 0L);
 
    private List<BaobhanSithCurseOpenScreenMessage.Target> targets;
    private UUID selected;
    private int refreshTicks;
    private BaobhanSithCurseOpenScreenMessage.Target hoveredTarget;
+   private boolean noblePhantasmMode;
    private List<Marker> cachedMarkers = List.of();
    private int cachedMapX = Integer.MIN_VALUE;
    private int cachedMapY = Integer.MIN_VALUE;
@@ -40,21 +43,30 @@ public final class BaobhanSithCurseScreen extends Screen {
    private int cachedPlayerZ = Integer.MIN_VALUE;
    private String cachedDimension = "";
    private final List<MediumButton> mediumButtons = new ArrayList<>();
+   private final List<NoblePhantasmButton> noblePhantasmButtons = new ArrayList<>();
 
-   public BaobhanSithCurseScreen(List<BaobhanSithCurseOpenScreenMessage.Target> targets) {
-      super(Component.translatable("screen.typemoonworld.baobhan_sith.curse_panel"));
+   public BaobhanSithCurseScreen(List<BaobhanSithCurseOpenScreenMessage.Target> targets, boolean noblePhantasmMode) {
+      super(Component.translatable(noblePhantasmMode
+         ? "screen.typemoonworld.baobhan_sith.fetch_failnaught_map"
+         : "screen.typemoonworld.baobhan_sith.curse_panel"));
+      this.noblePhantasmMode = noblePhantasmMode;
       this.targets = targets == null ? List.of() : List.copyOf(targets);
-      if (!this.targets.isEmpty()) {
+      if (!this.noblePhantasmMode && !this.targets.isEmpty()) {
          this.selected = this.targets.get(0).uuid();
       }
    }
 
-   public void updateTargets(List<BaobhanSithCurseOpenScreenMessage.Target> targets) {
+   public void updateTargets(List<BaobhanSithCurseOpenScreenMessage.Target> targets, boolean noblePhantasmMode) {
+      boolean modeChanged = this.noblePhantasmMode != noblePhantasmMode;
+      this.noblePhantasmMode = noblePhantasmMode;
       this.targets = targets == null ? List.of() : List.copyOf(targets);
-      if (this.selected != null && this.targets.stream().noneMatch(target -> target.uuid().equals(this.selected))) {
-         this.selected = this.targets.isEmpty() ? null : this.targets.get(0).uuid();
+      if (modeChanged && this.noblePhantasmMode) {
+         this.selected = null;
       }
-      if (this.selected == null && !this.targets.isEmpty()) {
+      if (this.selected != null && this.targets.stream().noneMatch(target -> target.uuid().equals(this.selected))) {
+         this.selected = this.targets.isEmpty() || this.noblePhantasmMode ? null : this.targets.get(0).uuid();
+      }
+      if (!this.noblePhantasmMode && this.selected == null && !this.targets.isEmpty()) {
          this.selected = this.targets.get(0).uuid();
       }
       this.invalidateMarkerCache();
@@ -64,7 +76,7 @@ public final class BaobhanSithCurseScreen extends Screen {
    public void tick() {
       if (++this.refreshTicks >= 20) {
          this.refreshTicks = 0;
-         PacketDistributor.sendToServer(new BaobhanSithCurseRequestMessage(), new CustomPacketPayload[0]);
+         PacketDistributor.sendToServer(new BaobhanSithCurseRequestMessage(this.noblePhantasmMode), new CustomPacketPayload[0]);
       }
    }
 
@@ -74,7 +86,10 @@ public final class BaobhanSithCurseScreen extends Screen {
       int panelX = (this.width - PANEL_WIDTH) / 2;
       int panelY = (this.height - PANEL_HEIGHT) / 2;
       GuiUtils.renderArcaneWindow(gui, panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT, ACCENT);
-      gui.drawCenteredString(this.font, this.title, this.width / 2, panelY + 9, GuiUtils.ARCANE_TEXT);
+      Component currentTitle = Component.translatable(this.noblePhantasmMode
+         ? "screen.typemoonworld.baobhan_sith.fetch_failnaught_map"
+         : "screen.typemoonworld.baobhan_sith.curse_panel");
+      gui.drawCenteredString(this.font, currentTitle, this.width / 2, panelY + 9, GuiUtils.ARCANE_TEXT);
       Component count = Component.translatable("screen.typemoonworld.baobhan_sith.target_count", this.targets.size());
       gui.drawString(this.font, count, panelX + PANEL_WIDTH - 12 - this.font.width(count), panelY + 9, GuiUtils.ARCANE_TEXT_MUTED, false);
 
@@ -94,6 +109,7 @@ public final class BaobhanSithCurseScreen extends Screen {
 
       this.hoveredTarget = null;
       this.mediumButtons.clear();
+      this.noblePhantasmButtons.clear();
       if (this.targets.isEmpty()) {
          gui.drawCenteredString(this.font, Component.translatable("screen.typemoonworld.baobhan_sith.no_targets"),
             mapX + MAP_WIDTH / 2, mapY + MAP_HEIGHT / 2 - 4, GuiUtils.ARCANE_TEXT_MUTED);
@@ -119,16 +135,36 @@ public final class BaobhanSithCurseScreen extends Screen {
 
    @Override
    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      if (this.noblePhantasmMode) {
+         for (NoblePhantasmButton npButton : this.noblePhantasmButtons) {
+            if (npButton.contains(mouseX, mouseY)) {
+               if (npButton.allTargets) {
+                  this.detonateAllTargets();
+               } else if (npButton.target != null) {
+                  this.detonateTarget(npButton.target);
+               }
+               return true;
+            }
+         }
+      }
       for (MediumButton mediumButton : this.mediumButtons) {
          if (mediumButton.contains(mouseX, mouseY)) {
-            PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(mediumButton.target.uuid(), mediumButton.medium, false),
-               new CustomPacketPayload[0]);
+            if (this.noblePhantasmMode) {
+               this.detonateTarget(mediumButton.target);
+            } else {
+               PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(mediumButton.target.uuid(), mediumButton.medium, false, false, false),
+                  new CustomPacketPayload[0]);
+            }
             return true;
          }
       }
       Marker marker = markerAt(mouseX, mouseY);
       if (marker != null) {
          this.selectTarget(marker.target);
+         return true;
+      }
+      if (this.noblePhantasmMode && this.selected != null) {
+         this.clearSelectedTarget();
          return true;
       }
       return super.mouseClicked(mouseX, mouseY, button);
@@ -216,6 +252,10 @@ public final class BaobhanSithCurseScreen extends Screen {
       if (target == null) {
          gui.drawCenteredString(this.font, Component.translatable("screen.typemoonworld.baobhan_sith.no_selected"),
             x + width / 2, y + height / 2 - 4, GuiUtils.ARCANE_TEXT_MUTED);
+         if (this.noblePhantasmMode) {
+            this.renderNoblePhantasmButton(gui, null, true, x + 8, y + height - NP_BUTTON_HEIGHT - 10,
+               width - 16, mouseX, mouseY);
+         }
          return;
       }
       gui.drawString(this.font, Component.translatable("screen.typemoonworld.baobhan_sith.selected"), x + 8, y + 8, GuiUtils.ARCANE_TEXT_MUTED, false);
@@ -234,12 +274,36 @@ public final class BaobhanSithCurseScreen extends Screen {
       gui.drawString(this.font, Component.translatable("screen.typemoonworld.baobhan_sith.curse_summary",
          target.bloodCurse(), target.skinCurse(), target.hairCurse(), target.remainsCurse()), x + 8, y + 92, GuiUtils.ARCANE_TEXT_MUTED, false);
 
+      if (this.noblePhantasmMode) {
+         int buttonX = x + 8;
+         int buttonW = width - 16;
+         this.renderNoblePhantasmButton(gui, target, false, buttonX, y + 120, buttonW, mouseX, mouseY);
+         this.renderNoblePhantasmButton(gui, null, true, buttonX, y + 150, buttonW, mouseX, mouseY);
+         return;
+      }
+
       int buttonX = x + 8;
       int buttonY = y + 116;
       this.renderMediumButton(gui, target, BaobhanSithCurseService.MEDIUM_BLOOD, target.blood(), buttonX, buttonY, mouseX, mouseY);
       this.renderMediumButton(gui, target, BaobhanSithCurseService.MEDIUM_SKIN, target.skin(), buttonX + MEDIUM_BUTTON_WIDTH + 6, buttonY, mouseX, mouseY);
       this.renderMediumButton(gui, target, BaobhanSithCurseService.MEDIUM_HAIR, target.hair(), buttonX, buttonY + MEDIUM_BUTTON_HEIGHT + 7, mouseX, mouseY);
       this.renderMediumButton(gui, target, BaobhanSithCurseService.MEDIUM_REMAINS, target.remains(), buttonX + MEDIUM_BUTTON_WIDTH + 6, buttonY + MEDIUM_BUTTON_HEIGHT + 7, mouseX, mouseY);
+   }
+
+   private void renderNoblePhantasmButton(GuiGraphics gui, BaobhanSithCurseOpenScreenMessage.Target target, boolean allTargets,
+                                          int x, int y, int width, int mouseX, int mouseY) {
+      boolean enabled = allTargets ? this.targets.stream().anyMatch(this::hasPayload) : target != null && hasPayload(target);
+      boolean hovered = enabled && mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + NP_BUTTON_HEIGHT;
+      int accent = enabled ? (hovered ? 0xFFFF5475 : ACCENT) : 0xFF4B3B42;
+      gui.fill(x, y, x + width, y + NP_BUTTON_HEIGHT, enabled ? 0xD0260914 : 0x90201B1F);
+      gui.renderOutline(x, y, width, NP_BUTTON_HEIGHT, accent);
+      Component label = Component.translatable(allTargets
+         ? "screen.typemoonworld.baobhan_sith.fetch_failnaught_all_button"
+         : "screen.typemoonworld.baobhan_sith.fetch_failnaught_target_button");
+      gui.drawCenteredString(this.font, label, x + width / 2, y + 7, enabled ? GuiUtils.ARCANE_TEXT : GuiUtils.ARCANE_TEXT_MUTED);
+      if (enabled) {
+         this.noblePhantasmButtons.add(new NoblePhantasmButton(target, allTargets, x, y, width, NP_BUTTON_HEIGHT));
+      }
    }
 
    private void renderMediumButton(GuiGraphics gui, BaobhanSithCurseOpenScreenMessage.Target target, String medium, int count, int x, int y, int mouseX, int mouseY) {
@@ -327,7 +391,24 @@ public final class BaobhanSithCurseScreen extends Screen {
 
    private void selectTarget(BaobhanSithCurseOpenScreenMessage.Target target) {
       this.selected = target.uuid();
-      PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(target.uuid(), "", true), new CustomPacketPayload[0]);
+      if (!this.noblePhantasmMode) {
+         PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(target.uuid(), "", true, false, false), new CustomPacketPayload[0]);
+      }
+   }
+
+   private void clearSelectedTarget() {
+      this.selected = null;
+   }
+
+   private void detonateTarget(BaobhanSithCurseOpenScreenMessage.Target target) {
+      this.selected = target.uuid();
+      PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(target.uuid(), "", false, true, false), new CustomPacketPayload[0]);
+      this.onClose();
+   }
+
+   private void detonateAllTargets() {
+      PacketDistributor.sendToServer(new BaobhanSithCurseTriggerMessage(ALL_TARGETS_UUID, "", false, true, true), new CustomPacketPayload[0]);
+      this.onClose();
    }
 
    private BaobhanSithCurseOpenScreenMessage.Target selectedTarget() {
@@ -389,6 +470,10 @@ public final class BaobhanSithCurseScreen extends Screen {
       return Math.max(0.0, Math.min(1.0, value));
    }
 
+   private boolean hasPayload(BaobhanSithCurseOpenScreenMessage.Target target) {
+      return target != null && (target.layers() > 0 || target.blood() + target.skin() + target.hair() + target.remains() > 0);
+   }
+
    private void invalidateMarkerCache() {
       this.cachedMarkers = List.of();
       this.cachedMapX = Integer.MIN_VALUE;
@@ -400,6 +485,12 @@ public final class BaobhanSithCurseScreen extends Screen {
    private record MediumButton(BaobhanSithCurseOpenScreenMessage.Target target, String medium, int x, int y) {
       boolean contains(double mouseX, double mouseY) {
          return mouseX >= this.x && mouseX < this.x + MEDIUM_BUTTON_WIDTH && mouseY >= this.y && mouseY < this.y + MEDIUM_BUTTON_HEIGHT;
+      }
+   }
+
+   private record NoblePhantasmButton(BaobhanSithCurseOpenScreenMessage.Target target, boolean allTargets, int x, int y, int width, int height) {
+      boolean contains(double mouseX, double mouseY) {
+         return mouseX >= this.x && mouseX < this.x + this.width && mouseY >= this.y && mouseY < this.y + this.height;
       }
    }
 }

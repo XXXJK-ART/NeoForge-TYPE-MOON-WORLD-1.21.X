@@ -282,7 +282,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Grimalkin A", "baobhan_sith_grimalkin", 15.0, 600);
             case 7 -> new ServantCardSkillAction("Blessed Successor EX", "baobhan_sith_blessed_successor", 25.0, 700);
             case 8 -> new ServantCardSkillAction("Fairy Vampirism A", "baobhan_sith_fairy_vampirism", 10.0, 500);
-            case 9 -> new ServantCardSkillAction("Fetch Failnaught", "baobhan_sith_fetch_failnaught", 35.0, 600);
+            case 9 -> new ServantCardSkillAction("Fetch Failnaught", "baobhan_sith_fetch_failnaught", 35.0, 300);
             default -> null;
          };
          case "ushiwakamaru_rider" -> switch (slot) {
