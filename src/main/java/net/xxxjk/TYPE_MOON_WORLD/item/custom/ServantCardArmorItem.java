@@ -70,7 +70,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
             "enkidu",
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
-         case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith" -> true;
+         case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith", "okita_souji_saber" -> true;
          default -> false;
       };
    }
@@ -131,7 +131,8 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       } else if ("enkidu".equals(this.servantId) || "cu_chulainn".equals(this.servantId)
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)
-         || "paracelsus".equals(this.servantId) || "oda_nobunaga".equals(this.servantId)) {
+         || "paracelsus".equals(this.servantId) || "oda_nobunaga".equals(this.servantId)
+         || "okita_souji_saber".equals(this.servantId)) {
          animation = "animation";
       }
       state.getController().setAnimation(RawAnimation.begin().thenLoop(animation));

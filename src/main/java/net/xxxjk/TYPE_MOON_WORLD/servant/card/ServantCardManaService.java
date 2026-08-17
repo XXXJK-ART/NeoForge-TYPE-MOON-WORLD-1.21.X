@@ -78,6 +78,7 @@ public final class ServantCardManaService {
 
    private static double fullRegenSeconds(ServantParams params) {
       return switch (params.magic()) {
+         case A_PLUS_PLUS -> 60.0;
          case A -> 60.0;
          case B -> 120.0;
          case C -> 180.0;

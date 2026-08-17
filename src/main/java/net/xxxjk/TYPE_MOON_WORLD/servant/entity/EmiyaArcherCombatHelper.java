@@ -2274,6 +2274,7 @@ public final class EmiyaArcherCombatHelper {
          case C -> 3;
          case B -> 4;
          case A -> 5;
+         case A_PLUS_PLUS -> 5;
       };
       return plus ? Math.min(5, level + 1) : level;
    }

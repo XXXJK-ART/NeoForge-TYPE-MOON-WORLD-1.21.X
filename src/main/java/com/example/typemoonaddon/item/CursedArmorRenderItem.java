@@ -6,7 +6,7 @@ import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/** Internal GeckoLib carrier. The item is never inserted into a player inventory. */
+/** GeckoLib carrier item for rendered armor pieces and creative inspection. */
 public final class CursedArmorRenderItem extends Item implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 

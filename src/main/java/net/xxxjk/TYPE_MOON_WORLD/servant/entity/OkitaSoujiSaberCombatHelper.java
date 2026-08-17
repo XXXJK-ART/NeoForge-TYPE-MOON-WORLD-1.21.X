@@ -140,8 +140,7 @@ public final class OkitaSoujiSaberCombatHelper {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) {
          return;
       }
-      initializeFlagPool(entity);
-      applyHaori(entity);
+      ensureHaoriActive(entity);
       long now = level.getGameTime();
       boolean shukuchi = isShukuchiActive(entity);
       updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), SHUKUCHI_SPEED_ID,
@@ -156,6 +155,14 @@ public final class OkitaSoujiSaberCombatHelper {
       if (weak && entity.getTarget() != null && now % 5L == 0L) {
          retreatFrom(entity, entity.getTarget(), 1.15);
       }
+   }
+
+   public static void ensureHaoriActive(OkitaSoujiSaberEntity entity) {
+      if (!(entity.level() instanceof ServerLevel) || !entity.isAlive()) {
+         return;
+      }
+      initializeFlagPool(entity);
+      applyHaori(entity);
    }
 
    public static void initializeFlagPool(OkitaSoujiSaberEntity entity) {
@@ -276,9 +283,9 @@ public final class OkitaSoujiSaberCombatHelper {
    }
 
    private static void applyHaori(OkitaSoujiSaberEntity entity) {
-      updateModifier(entity.getAttribute(Attributes.MAX_HEALTH), HAORI_HEALTH_ID, 80.0, AttributeModifier.Operation.ADD_VALUE);
-      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_ATTACK_ID, 5.0, AttributeModifier.Operation.ADD_VALUE);
-      updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_SPEED_ID, 0.12, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      updateModifier(entity.getAttribute(Attributes.MAX_HEALTH), HAORI_HEALTH_ID, 0.0, AttributeModifier.Operation.ADD_VALUE);
+      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_ATTACK_ID, 0.0, AttributeModifier.Operation.ADD_VALUE);
+      updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_SPEED_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), HAORI_ATTACK_SPEED_ID, 0.10, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       CompoundTag data = entity.getPersistentData();
       if (!data.getBoolean(TAG_HAORI_INIT)) {

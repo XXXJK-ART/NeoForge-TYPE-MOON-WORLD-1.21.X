@@ -1,6 +1,8 @@
 package com.example.typemoonaddon.entity;
 
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -9,7 +11,10 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -24,10 +29,13 @@ import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -38,11 +46,23 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEntity {
+    private static final DustParticleOptions PURPLE_FOG =
+            new DustParticleOptions(new Vector3f(0.34F, 0.04F, 0.58F), 4.0F);
+    private static final DustParticleOptions DEEP_PURPLE_FOG =
+            new DustParticleOptions(new Vector3f(0.08F, 0.01F, 0.14F), 3.2F);
     private static final EntityDataAccessor<Boolean> AWAKENED =
             SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DISSOLVING =
+            SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final int DISSOLVE_DURATION = 72;
+    private static final int WALK_TERRAIN_BREAK_INTERVAL = 5;
+    private static final int WALK_TERRAIN_BREAK_LIMIT = 128;
+    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 320;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID sourceUuid;
+    private int dissolveTicks;
+    private boolean deathEffectsApplied;
 
     public HugeSeaMonsterEntity(EntityType<HugeSeaMonsterEntity> type, Level level) {
         super(type, level);
@@ -64,6 +84,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(AWAKENED, true);
+        builder.define(DISSOLVING, false);
     }
 
     @Override
@@ -77,12 +98,22 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
 
     @Override
     protected void customServerAiStep() {
+        if (this.isDissolving()) {
+            this.tickDissolve();
+            return;
+        }
         super.customServerAiStep();
         if (!(this.level() instanceof ServerLevel level)) {
             return;
         }
+        if (this.tickCount % WALK_TERRAIN_BREAK_INTERVAL == 0 && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
+            this.breakTerrainAhead(level, 18.0, 13.0F, 16, WALK_TERRAIN_BREAK_LIMIT);
+        }
         if (this.tickCount % 20 == 0) {
             this.pollutionAura(level);
+        }
+        if (this.tickCount % 2 == 0) {
+            this.spawnUnknowableFog(level);
         }
         if (this.tickCount % 100 == 0) {
             this.heal(50.0F);
@@ -99,11 +130,21 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (this.tickCount % 100 == 40) {
             this.trySummonBrood(level);
         }
-        GillesPollutionZoneService.tick(level);
     }
 
     public void setSource(@Nullable LivingEntity source) {
         this.sourceUuid = source == null ? null : source.getUUID();
+    }
+
+    public boolean isDissolving() {
+        return this.entityData.get(DISSOLVING);
+    }
+
+    public float getDissolveProgress(float partialTick) {
+        if (!this.isDissolving()) {
+            return 0.0F;
+        }
+        return Math.min(1.0F, (this.dissolveTicks + partialTick) / (float) DISSOLVE_DURATION);
     }
 
     @Nullable
@@ -142,17 +183,55 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (hit) {
             this.swing(InteractionHand.MAIN_HAND);
             this.triggerAnim("action_controller", "slam");
+            if (this.level() instanceof ServerLevel level) {
+                this.breakTerrainAhead(level, 22.0, 15.0F, 22, ATTACK_TERRAIN_BREAK_LIMIT);
+            }
         }
         return hit;
     }
 
     @Override
-    public void die(net.minecraft.world.damagesource.DamageSource cause) {
-        if (!this.level().isClientSide()) {
-            this.breakSourceSpellbook();
-            GillesPollutionZoneService.add(this.level().dimension(), this.position(), 9.0, 60 * 20, 14.0F);
+    public boolean hurt(DamageSource source, float amount) {
+        if (this.isDissolving() || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.CRAMMING)) {
+            return false;
         }
-        super.die(cause);
+        if (this.isFriendly(source.getEntity()) || this.isFriendly(source.getDirectEntity())) {
+            return false;
+        }
+        if (!this.level().isClientSide() && amount >= this.getHealth()) {
+            this.beginDissolve(source);
+            return true;
+        }
+        return super.hurt(source, amount);
+    }
+
+    @Override
+    public boolean isAttackable() {
+        return !this.isDissolving() && super.isAttackable();
+    }
+
+    @Override
+    public boolean isPickable() {
+        return !this.isDissolving() && super.isPickable();
+    }
+
+    @Override
+    public boolean isAlliedTo(Entity other) {
+        return super.isAlliedTo(other) || this.isFriendly(other);
+    }
+
+    @Override
+    public void die(DamageSource cause) {
+        this.beginDissolve(cause);
+    }
+
+    @Override
+    protected void tickDeath() {
+        if (this.isDissolving()) {
+            this.tickDissolve();
+            return;
+        }
+        super.tickDeath();
     }
 
     @Override
@@ -161,6 +240,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (this.sourceUuid != null) {
             tag.putUUID("GillesHugeSeaMonsterSource", this.sourceUuid);
         }
+        tag.putBoolean("GillesHugeSeaMonsterDissolving", this.isDissolving());
+        tag.putInt("GillesHugeSeaMonsterDissolveTicks", this.dissolveTicks);
+        tag.putBoolean("GillesHugeSeaMonsterDeathEffectsApplied", this.deathEffectsApplied);
     }
 
     @Override
@@ -169,6 +251,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (tag.hasUUID("GillesHugeSeaMonsterSource")) {
             this.sourceUuid = tag.getUUID("GillesHugeSeaMonsterSource");
         }
+        this.entityData.set(DISSOLVING, tag.getBoolean("GillesHugeSeaMonsterDissolving"));
+        this.dissolveTicks = tag.getInt("GillesHugeSeaMonsterDissolveTicks");
+        this.deathEffectsApplied = tag.getBoolean("GillesHugeSeaMonsterDeathEffectsApplied");
     }
 
     @Override
@@ -196,9 +281,20 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 2.0, this.getZ(), 35, 2.4, 1.2, 2.4, 0.04);
     }
 
+    private void spawnUnknowableFog(ServerLevel level) {
+        double y = this.getY() + this.getBbHeight() * 0.62;
+        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 120, 18.0, 14.0, 18.0, 0.025);
+        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 90, 15.0, 12.0, 15.0, 0.018);
+        if (this.tickCount % 8 == 0) {
+            level.sendParticles(ParticleTypes.DRAGON_BREATH, this.getX(), y, this.getZ(), 110, 19.0, 13.0, 19.0, 0.012);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 80, 17.0, 11.0, 17.0, 0.018);
+        }
+    }
+
     private void areaSweep(ServerLevel level) {
         this.triggerAnim("action_controller", "slam");
         level.playSound(null, this.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1.6F, 0.55F);
+        this.breakTerrainAhead(level, 24.0, 16.0F, 24, ATTACK_TERRAIN_BREAK_LIMIT);
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(9.0), this::isValidTarget)) {
             living.invulnerableTime = 0;
             living.hurt(this.damageSources().mobAttack(this), 34.0F);
@@ -271,7 +367,113 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
 
     private boolean isValidTarget(@Nullable LivingEntity target) {
         return target != null && target != this && target.isAlive() && target.getVehicle() != this
-                && !this.getPassengers().contains(target) && !EntityUtils.isImmunePlayerTarget(target);
+                && !this.getPassengers().contains(target) && !target.isAlliedTo(this) && !this.isFriendly(target)
+                && !EntityUtils.isImmunePlayerTarget(target);
+    }
+
+    private boolean isFriendly(@Nullable Entity entity) {
+        if (entity == null) {
+            return false;
+        }
+        if (entity == this || entity.getVehicle() == this || this.getPassengers().contains(entity)) {
+            return true;
+        }
+        LivingEntity source = this.getSourceEntity();
+        if (source != null && (entity == source || source.isAlliedTo(entity))) {
+            return true;
+        }
+        if (entity instanceof SeaMonsterEntity seaMonster) {
+            UUID controller = seaMonster.getControllerUuid();
+            return this.getUUID().equals(controller) || (this.sourceUuid != null && this.sourceUuid.equals(controller));
+        }
+        return entity instanceof HugeSeaMonsterEntity other
+                && this.sourceUuid != null
+                && this.sourceUuid.equals(other.sourceUuid);
+    }
+
+    @Nullable
+    private LivingEntity getSourceEntity() {
+        if (this.sourceUuid == null || !(this.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        Entity entity = level.getEntity(this.sourceUuid);
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
+    private void beginDissolve(@Nullable DamageSource cause) {
+        if (this.isDissolving()) {
+            return;
+        }
+        if (!this.level().isClientSide() && !this.deathEffectsApplied) {
+            this.breakSourceSpellbook();
+            com.example.typemoonaddon.servant.GillesDeRaisCombatHelper.addPollutionZone(
+                    this.level().dimension(), this.position(), 9.0, 60 * 20, 14.0F);
+            this.deathEffectsApplied = true;
+        }
+        this.entityData.set(DISSOLVING, true);
+        this.dissolveTicks = 0;
+        this.setHealth(Math.max(1.0F, this.getHealth()));
+        this.getNavigation().stop();
+        this.setTarget(null);
+        this.setDeltaMovement(0.0, 0.0, 0.0);
+        this.setNoGravity(true);
+        this.hurtTime = 0;
+        this.hurtDuration = 0;
+    }
+
+    private void tickDissolve() {
+        this.getNavigation().stop();
+        this.setTarget(null);
+        this.setDeltaMovement(0.0, 0.0, 0.0);
+        this.setNoGravity(true);
+        this.hurtTime = 0;
+        this.hurtDuration = 0;
+        if (!this.level().isClientSide()) {
+            this.dissolveTicks++;
+            if (this.dissolveTicks >= DISSOLVE_DURATION) {
+                this.discard();
+            }
+        }
+    }
+
+    private void breakTerrainAhead(ServerLevel level, double forwardDistance, float halfWidth, int height, int maxBlocks) {
+        if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+            return;
+        }
+        Vec3 forward = Vec3.directionFromRotation(0.0F, this.getYRot()).normalize();
+        Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+        int broken = 0;
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        int startY = Mth.floor(this.getY());
+        int stepHeight = Math.min(height, Mth.ceil(this.getBbHeight() * 0.45F));
+        for (int y = 0; y < stepHeight && broken < maxBlocks; y++) {
+            for (double forwardOffset = 0.0; forwardOffset <= forwardDistance && broken < maxBlocks; forwardOffset += 1.0) {
+                for (double sideOffset = -halfWidth; sideOffset <= halfWidth && broken < maxBlocks; sideOffset += 1.0) {
+                    Vec3 position = this.position()
+                            .add(forward.scale(forwardOffset))
+                            .add(right.scale(sideOffset));
+                    mutable.set(Mth.floor(position.x), startY + y, Mth.floor(position.z));
+                    if (this.tryBreakBlock(level, mutable)) {
+                        broken++;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean tryBreakBlock(ServerLevel level, BlockPos pos) {
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() || state.hasBlockEntity()) {
+            return false;
+        }
+        float hardness = state.getDestroySpeed(level, pos);
+        if (hardness < 0.0F || hardness > 80.0F) {
+            return false;
+        }
+        return level.destroyBlock(pos, false, this);
     }
 
     private void breakSourceSpellbook() {

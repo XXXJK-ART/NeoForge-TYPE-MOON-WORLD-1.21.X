@@ -10,6 +10,7 @@ import com.example.typemoonaddon.magic.SakuraShadowBindingService;
 import com.example.typemoonaddon.magic.SakuraShadowMaterializationService;
 import com.example.typemoonaddon.magic.SakuraShadowTransferService;
 import com.example.typemoonaddon.magic.SakuraSummonBlackMudService;
+import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -40,6 +41,7 @@ public final class SakuraBehaviorEvents {
     public static void onServerTick(ServerTickEvent.Post event) {
         SakuraShadowMaterializationService.tick(event.getServer());
         event.getServer().getAllLevels().forEach(SakuraBlackMudService::tick);
+        event.getServer().getAllLevels().forEach(GillesDeRaisCombatHelper::tickPollutionZones);
         SakuraSummonBlackMudService.tick(event.getServer());
         SakuraBlackMudHuntService.tick(event.getServer());
         SakuraShadowBindingService.tick(event.getServer());

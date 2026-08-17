@@ -5,12 +5,19 @@ public enum StatRank {
    D(20),
    C(30),
    B(40),
-   A(50);
+   A(50),
+   A_PLUS_PLUS(150, "A++");
 
    private final int coefficient;
+   private final String displayKey;
 
    StatRank(int coefficient) {
+      this(coefficient, null);
+   }
+
+   StatRank(int coefficient, String displayKey) {
       this.coefficient = coefficient;
+      this.displayKey = displayKey;
    }
 
    public int coefficient() {
@@ -18,7 +25,17 @@ public enum StatRank {
    }
 
    public int plusCoefficient() {
+      if (this == A_PLUS_PLUS) {
+         return this.coefficient;
+      }
       return this.coefficient * 2;
+   }
+
+   public String displayKey(boolean plus) {
+      if (this.displayKey != null) {
+         return this.displayKey;
+      }
+      return plus ? this.name() + "+" : this.name();
    }
 
    public double toMaxHealth() {
@@ -50,7 +67,10 @@ public enum StatRank {
          return E;
       }
 
-      String normalized = key.trim().toUpperCase();
+      String normalized = key.trim().toUpperCase().replace('＋', '+');
+      if ("A++".equals(normalized) || "A_PLUS_PLUS".equals(normalized) || "A PLUS PLUS".equals(normalized)) {
+         return A_PLUS_PLUS;
+      }
       if (normalized.endsWith("+")) {
          normalized = normalized.substring(0, normalized.length() - 1);
       }

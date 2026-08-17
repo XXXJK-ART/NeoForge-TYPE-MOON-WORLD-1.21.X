@@ -8,11 +8,13 @@
   "duration_ticks": -1,
   "effects": [
     {
-      "effect_type": "attribute_bonus",
+      "effect_type": "rank_bonus",
       "params": {
-        "max_health_bonus": 80.0,
-        "attack_damage_bonus": 5.0,
-        "movement_speed_multiplier": 1.12,
+        "strength_rank": "B",
+        "endurance_rank": "D",
+        "agility_rank": "A++",
+        "magic_rank_unchanged": true,
+        "luck_rank_unchanged": true,
         "attack_speed_multiplier": 1.1,
         "weapon_damage_type": "magic"
       }

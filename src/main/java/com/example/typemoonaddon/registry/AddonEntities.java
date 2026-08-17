@@ -90,9 +90,9 @@ public final class AddonEntities {
     public static final DeferredHolder<EntityType<?>, EntityType<HugeSeaMonsterEntity>> GILLES_HUGE_SEA_MONSTER =
             ENTITIES.register("gilles_huge_sea_monster", () -> EntityType.Builder
                     .of(HugeSeaMonsterEntity::new, MobCategory.MONSTER)
-                    .sized(6.0F, 8.0F)
-                    .eyeHeight(5.0F)
-                    .clientTrackingRange(16)
+                    .sized(30.0F, 55.5F)
+                    .eyeHeight(28.0F)
+                    .clientTrackingRange(32)
                     .build("gilles_huge_sea_monster"));
 
     private AddonEntities() {

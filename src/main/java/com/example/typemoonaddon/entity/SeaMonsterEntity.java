@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.entity;
 
 import java.util.UUID;
+import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -11,6 +12,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -41,11 +43,16 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private static final EntityDataAccessor<Boolean> LARGE =
             SynchedEntityData.defineId(SeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DISSOLVING =
+            SynchedEntityData.defineId(SeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int SMALL_LIFETIME = 20 * 60 * 5;
     private static final int LARGE_LIFETIME = 20 * 60 * 3;
+    private static final int DISSOLVE_DURATION = 72;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID controllerUuid;
+    private int dissolveTicks;
+    private boolean deathEffectsApplied;
 
     public SeaMonsterEntity(EntityType<? extends SeaMonsterEntity> type, Level level) {
         super(type, level);
@@ -66,6 +73,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(LARGE, false);
+        builder.define(DISSOLVING, false);
     }
 
     @Override
@@ -79,21 +87,25 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     protected void customServerAiStep() {
+        if (this.isDissolving()) {
+            this.tickDissolve();
+            return;
+        }
         super.customServerAiStep();
         if (!(this.level() instanceof ServerLevel level)) {
             return;
         }
         if (this.tickCount > (this.isLarge() ? LARGE_LIFETIME : SMALL_LIFETIME)) {
-            this.discard();
+            this.beginDissolve(null);
             return;
         }
         if (this.controllerUuid != null && this.getController() == null) {
-            this.discard();
+            this.beginDissolve(null);
             return;
         }
         LivingEntity controller = this.getController();
         if (controller instanceof GillesDeRaisEntity gilles && !gilles.hasUsableSpellbook()) {
-            this.discard();
+            this.beginDissolve(null);
             return;
         }
         if (this.tickCount % 20 == 0) {
@@ -123,6 +135,17 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     public void setController(LivingEntity controller) {
         this.controllerUuid = controller.getUUID();
+    }
+
+    public boolean isDissolving() {
+        return this.entityData.get(DISSOLVING);
+    }
+
+    public float getDissolveProgress(float partialTick) {
+        if (!this.isDissolving()) {
+            return 0.0F;
+        }
+        return Math.min(1.0F, (this.dissolveTicks + partialTick) / (float) DISSOLVE_DURATION);
     }
 
     @Nullable
@@ -158,10 +181,27 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (this.isDissolving() || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.CRAMMING)) {
+            return false;
+        }
         if (this.isFriendly(source.getEntity()) || this.isFriendly(source.getDirectEntity())) {
             return false;
         }
+        if (!this.level().isClientSide() && amount >= this.getHealth()) {
+            this.beginDissolve(source);
+            return true;
+        }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public boolean isAttackable() {
+        return !this.isDissolving() && super.isAttackable();
+    }
+
+    @Override
+    public boolean isPickable() {
+        return !this.isDissolving() && super.isPickable();
     }
 
     @Override
@@ -176,10 +216,16 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public void die(DamageSource cause) {
-        if (!this.level().isClientSide() && this.isLarge()) {
-            GillesPollutionZoneService.add(this.level().dimension(), this.position(), 5.5, 60 * 20, 10.0F);
+        this.beginDissolve(cause);
+    }
+
+    @Override
+    protected void tickDeath() {
+        if (this.isDissolving()) {
+            this.tickDissolve();
+            return;
         }
-        super.die(cause);
+        super.tickDeath();
     }
 
     @Override
@@ -191,6 +237,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("GillesSeaMonsterLarge", this.isLarge());
+        tag.putBoolean("GillesSeaMonsterDissolving", this.isDissolving());
+        tag.putInt("GillesSeaMonsterDissolveTicks", this.dissolveTicks);
+        tag.putBoolean("GillesSeaMonsterDeathEffectsApplied", this.deathEffectsApplied);
         if (this.controllerUuid != null) {
             tag.putUUID("GillesSeaMonsterController", this.controllerUuid);
         }
@@ -200,6 +249,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         this.entityData.set(LARGE, tag.getBoolean("GillesSeaMonsterLarge"));
+        this.entityData.set(DISSOLVING, tag.getBoolean("GillesSeaMonsterDissolving"));
+        this.dissolveTicks = tag.getInt("GillesSeaMonsterDissolveTicks");
+        this.deathEffectsApplied = tag.getBoolean("GillesSeaMonsterDeathEffectsApplied");
         if (tag.hasUUID("GillesSeaMonsterController")) {
             this.controllerUuid = tag.getUUID("GillesSeaMonsterController");
         }
@@ -280,9 +332,46 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         if (controller != null && controller.isAlliedTo(entity)) {
             return true;
         }
+        if (entity instanceof HugeSeaMonsterEntity hugeSeaMonster && hugeSeaMonster.isAlliedTo(this)) {
+            return true;
+        }
         return entity instanceof SeaMonsterEntity seaMonster
                 && this.controllerUuid != null
                 && this.controllerUuid.equals(seaMonster.controllerUuid);
+    }
+
+    private void beginDissolve(@Nullable DamageSource cause) {
+        if (this.isDissolving()) {
+            return;
+        }
+        if (!this.level().isClientSide() && this.isLarge() && !this.deathEffectsApplied) {
+            GillesDeRaisCombatHelper.addPollutionZone(this.level().dimension(), this.position(), 5.5, 60 * 20, 10.0F);
+            this.deathEffectsApplied = true;
+        }
+        this.entityData.set(DISSOLVING, true);
+        this.dissolveTicks = 0;
+        this.setHealth(Math.max(1.0F, this.getHealth()));
+        this.getNavigation().stop();
+        this.setTarget(null);
+        this.setDeltaMovement(0.0, 0.0, 0.0);
+        this.setNoGravity(true);
+        this.hurtTime = 0;
+        this.hurtDuration = 0;
+    }
+
+    private void tickDissolve() {
+        this.getNavigation().stop();
+        this.setTarget(null);
+        this.setDeltaMovement(0.0, 0.0, 0.0);
+        this.setNoGravity(true);
+        this.hurtTime = 0;
+        this.hurtDuration = 0;
+        if (!this.level().isClientSide()) {
+            this.dissolveTicks++;
+            if (this.dissolveTicks >= DISSOLVE_DURATION) {
+                this.discard();
+            }
+        }
     }
 
     private void pollutionAura(ServerLevel level) {

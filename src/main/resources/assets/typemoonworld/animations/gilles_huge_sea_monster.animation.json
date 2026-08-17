@@ -3,19 +3,90 @@
   "animations": {
     "animation.gilles_huge_sea_monster.idle": {
       "loop": true,
-      "bones": {}
+      "animation_length": 2.0,
+      "bones": {
+        "bone8": {
+          "scale": [15.0, 15.0, 15.0],
+          "rotation": {
+            "0.0": [0, -1.5, 0],
+            "1.0": [0, 1.5, 0],
+            "2.0": [0, -1.5, 0]
+          }
+        },
+        "bone4": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "1.0": [1.5, 0, 0],
+            "2.0": [0, 0, 0]
+          }
+        }
+      }
     },
     "animation.gilles_huge_sea_monster.walk": {
       "loop": true,
-      "bones": {}
+      "animation_length": 1.4,
+      "bones": {
+        "bone8": {
+          "scale": [15.0, 15.0, 15.0],
+          "rotation": {
+            "0.0": [0, -3, 0],
+            "0.7": [0, 3, 0],
+            "1.4": [0, -3, 0]
+          }
+        },
+        "bone4": {
+          "rotation": {
+            "0.0": [2, 0, 0],
+            "0.7": [-2, 0, 0],
+            "1.4": [2, 0, 0]
+          }
+        },
+        "bone7": {
+          "rotation": {
+            "0.0": [0, 0, -2],
+            "0.7": [0, 0, 2],
+            "1.4": [0, 0, -2]
+          }
+        }
+      }
     },
     "animation.gilles_huge_sea_monster.slam": {
       "animation_length": 1.2,
-      "bones": {}
+      "bones": {
+        "bone8": {
+          "scale": [15.0, 15.0, 15.0]
+        },
+        "bone4": {
+          "rotation": {
+            "0.0": [0, 0, 0],
+            "0.35": [-9, 0, 0],
+            "0.7": [13, 0, 0],
+            "1.2": [0, 0, 0]
+          }
+        }
+      }
     },
     "animation.gilles_huge_sea_monster.grab": {
       "animation_length": 1.0,
-      "bones": {}
+      "bones": {
+        "bone8": {
+          "scale": [15.0, 15.0, 15.0]
+        },
+        "bone": {
+          "rotation": {
+            "0.0": [0, 45, 0],
+            "0.45": [-18, 38, -10],
+            "1.0": [0, 45, 0]
+          }
+        },
+        "bone2": {
+          "rotation": {
+            "0.0": [0, -45, 0],
+            "0.45": [-18, -38, 10],
+            "1.0": [0, -45, 0]
+          }
+        }
+      }
     }
   }
 }

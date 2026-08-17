@@ -28,8 +28,7 @@ public final class OkitaSoujiSaberEntity extends ServantEntity {
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType,
                                        @Nullable SpawnGroupData groupData) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, groupData);
-      this.equipKikuIchimonji();
-      OkitaSoujiSaberCombatHelper.initializeFlagPool(this);
+      this.ensureOkitaDefaultLoadout(false);
       return result;
    }
 
@@ -59,8 +58,22 @@ public final class OkitaSoujiSaberEntity extends ServantEntity {
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
+      this.ensureOkitaDefaultLoadout(false);
+   }
+
+   public void ensureOkitaDefaultLoadout(boolean forceClientSync) {
+      if (this.level() instanceof ServerLevel) {
+         this.ensureDefaultNpcLoadout(forceClientSync);
+         this.equipKikuIchimonji();
+         OkitaSoujiSaberCombatHelper.ensureHaoriActive(this);
+      }
+   }
+
+   @Override
+   public void ensureDefaultNpcLoadout(boolean forceClientSync) {
+      super.ensureDefaultNpcLoadout(forceClientSync);
       this.equipKikuIchimonji();
-      OkitaSoujiSaberCombatHelper.initializeFlagPool(this);
+      OkitaSoujiSaberCombatHelper.ensureHaoriActive(this);
    }
 
    public void onShinsengumiKilled() {

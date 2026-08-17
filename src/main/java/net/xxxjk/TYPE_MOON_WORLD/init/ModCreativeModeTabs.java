@@ -70,6 +70,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_HEAD);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER_FEET);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_CHEST);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON_HEAD);
@@ -153,6 +157,11 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_PHILOSOPHERS_STONE);
                         output.accept(ModItems.RELIC_GOLDEN_FLEECE);
                         output.accept(ModItems.RELIC_ATO_CRADLE);
+                        output.accept(ModItems.RELIC_GILGAMESH_ASH_URN);
+                        output.accept(ModItems.RELIC_BAOBHAN_SITH_HEELS);
+                        output.accept(ModItems.RELIC_DIARMUID_YELLOW_ROSE_TIP);
+                        output.accept(ModItems.RELIC_ISKANDAR_CLOAK_FRAGMENT);
+                        output.accept(ModItems.RELIC_OKITA_KATANA);
                         output.accept(ModItems.SEA_BEAST_BONE);
                         output.accept(ModItems.ODA_MATCHLOCK_CATALYST);
                         output.accept(ModItems.BROKEN_BOWSTRING);

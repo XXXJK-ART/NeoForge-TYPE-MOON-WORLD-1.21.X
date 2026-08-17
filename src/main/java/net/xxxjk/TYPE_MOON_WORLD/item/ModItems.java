@@ -60,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.BajiquanManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GanryuManualItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ChalkItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.OdaMatchlockCatalystItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.OkitaKatanaRelicItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.SummoningRelicItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
@@ -321,6 +322,12 @@ public class ModItems {
     public static final DeferredItem<Item> RELIC_PHILOSOPHERS_STONE = registerSummoningRelic("relic_philosophers_stone");
     public static final DeferredItem<Item> RELIC_GOLDEN_FLEECE = registerSummoningRelic("relic_golden_fleece");
     public static final DeferredItem<Item> RELIC_ATO_CRADLE = registerSummoningRelic("relic_ato_cradle");
+    public static final DeferredItem<Item> RELIC_GILGAMESH_ASH_URN = registerSummoningRelic("relic_gilgamesh_ash_urn");
+    public static final DeferredItem<Item> RELIC_BAOBHAN_SITH_HEELS = registerSummoningRelic("relic_baobhan_sith_heels");
+    public static final DeferredItem<Item> RELIC_DIARMUID_YELLOW_ROSE_TIP = registerSummoningRelic("relic_diarmuid_yellow_rose_tip");
+    public static final DeferredItem<Item> RELIC_ISKANDAR_CLOAK_FRAGMENT = registerSummoningRelic("relic_iskandar_cloak_fragment");
+    public static final DeferredItem<Item> RELIC_OKITA_KATANA = ITEMS.register("relic_okita_katana",
+            () -> new OkitaKatanaRelicItem(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> GEM_NECKLACE = registerSummoningRelic("gem_necklace");
     public static final DeferredItem<Item> MYSTIC_MERCURY = ITEMS.register("mystic_mercury",
             () -> new MysticMercuryItem(new Item.Properties().rarity(Rarity.RARE)));
@@ -433,6 +440,10 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_HEAD = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_CHEST = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON_LEGS = registerServantArmor("artoria_pendragon", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER_HEAD = registerServantArmor("okita_souji_saber", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER_CHEST = registerServantArmor("okita_souji_saber", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER_LEGS = registerServantArmor("okita_souji_saber", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER_FEET = registerServantArmor("okita_souji_saber", net.minecraft.world.entity.EquipmentSlot.FEET);
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_HEAD = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_CHEST = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO_LEGS = registerServantArmor("sasaki_kojiro", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -1477,6 +1488,10 @@ public class ModItems {
             case "pale_rider" -> Items.AIR;
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
             case "artoria_pendragon" -> (head ? SERVANT_CARD_ARTORIA_PENDRAGON_HEAD : legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
+            case "okita_souji_saber" -> head ? SERVANT_CARD_OKITA_SOUJI_SABER_HEAD.get()
+                : legs ? SERVANT_CARD_OKITA_SOUJI_SABER_LEGS.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_OKITA_SOUJI_SABER_FEET.get()
+                : SERVANT_CARD_OKITA_SOUJI_SABER_CHEST.get();
             case "sasaki_kojiro" -> (head ? SERVANT_CARD_SASAKI_KOJIRO_HEAD : legs ? SERVANT_CARD_SASAKI_KOJIRO_LEGS : SERVANT_CARD_SASAKI_KOJIRO_CHEST).get();
             case "cu_chulainn" -> (legs ? SERVANT_CARD_CU_CHULAINN_LEGS : SERVANT_CARD_CU_CHULAINN_CHEST).get();
             case "medea" -> (head ? SERVANT_CARD_MEDEA_HEAD : legs ? SERVANT_CARD_MEDEA_LEGS : SERVANT_CARD_MEDEA_CHEST).get();

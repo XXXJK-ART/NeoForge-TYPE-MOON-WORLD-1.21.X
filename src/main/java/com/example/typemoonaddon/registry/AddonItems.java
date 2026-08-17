@@ -5,6 +5,7 @@ import com.example.typemoonaddon.item.CrestWormItem;
 import com.example.typemoonaddon.item.CursedArmorRenderItem;
 import com.example.typemoonaddon.item.HolyGrailFragmentItem;
 import com.example.typemoonaddon.item.ImaginaryPrimerItem;
+import com.example.typemoonaddon.item.SeaMonsterSpawnEggItem;
 import com.example.typemoonaddon.item.VoidRingRegaliaItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
@@ -119,7 +120,12 @@ public final class AddonItems {
 
     public static final DeferredItem<DeferredSpawnEggItem> GILLES_SEA_MONSTER_SPAWN_EGG = ITEMS.register(
             "gilles_sea_monster_spawn_egg",
-            () -> new DeferredSpawnEggItem(AddonEntities.GILLES_SEA_MONSTER, 0x143B48, 0x6E1B64, new Item.Properties())
+            () -> new SeaMonsterSpawnEggItem(AddonEntities.GILLES_SEA_MONSTER, 0x143B48, 0x6E1B64, new Item.Properties(), false)
+    );
+
+    public static final DeferredItem<DeferredSpawnEggItem> GILLES_LARGE_SEA_MONSTER_SPAWN_EGG = ITEMS.register(
+            "gilles_large_sea_monster_spawn_egg",
+            () -> new SeaMonsterSpawnEggItem(AddonEntities.GILLES_SEA_MONSTER, 0x10303A, 0xB22FA0, new Item.Properties(), true)
     );
 
     public static final DeferredItem<DeferredSpawnEggItem> GILLES_HUGE_SEA_MONSTER_SPAWN_EGG = ITEMS.register(

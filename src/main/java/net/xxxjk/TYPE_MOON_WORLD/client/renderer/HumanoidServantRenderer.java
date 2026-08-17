@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
@@ -37,6 +38,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
       this.addLayer(new HumanoidArmorLayer<>(this,
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
          new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
+      this.addLayer(new ItemInHandLayer<>(this, context.getItemInHandRenderer()));
    }
 
    @Override
@@ -88,7 +90,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
       }
       return switch (normalizedId) {
          case "oda_nobunaga" -> 0.800F;
-         case "artoria_pendragon" -> 0.811F;
+         case "artoria_pendragon", "okita_souji_saber" -> 0.811F;
          case "fanatic_assassin", "medea" -> 0.858F;
          case "nightingale" -> 0.868F;
          case "li_shuwen" -> 0.874F;

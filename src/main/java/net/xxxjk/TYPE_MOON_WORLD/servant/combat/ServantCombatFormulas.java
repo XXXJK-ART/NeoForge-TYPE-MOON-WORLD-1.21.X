@@ -16,6 +16,7 @@ public final class ServantCombatFormulas {
          case C -> 2;
          case B -> 3;
          case A -> 4;
+         case A_PLUS_PLUS -> 5;
       };
       return plus ? Math.min(5, base + 1) : base;
    }

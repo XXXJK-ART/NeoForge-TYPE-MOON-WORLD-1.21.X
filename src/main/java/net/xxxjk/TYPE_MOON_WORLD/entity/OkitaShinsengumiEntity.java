@@ -27,6 +27,9 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    private static final String TAG_TARGET = "OkitaShinsengumiTarget";
    private static final String TAG_EXPIRES = "OkitaShinsengumiExpires";
    private static final String TAG_NATURAL_TIMEOUT = "OkitaShinsengumiNaturalTimeout";
+   private static final double FOLLOW_STOP_DISTANCE_SQR = 3.0 * 3.0;
+   private static final double FOLLOW_START_DISTANCE_SQR = 5.0 * 5.0;
+   private static final double FOLLOW_URGENT_DISTANCE_SQR = 14.0 * 14.0;
    @Nullable private UUID ownerUuid;
    @Nullable private UUID targetUuid;
 
@@ -60,6 +63,7 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       this.setSchool(KendoSchool.TENNEN);
       this.setProficiency(90);
       this.equipOkitaLoadout();
+      this.clearPersonalName();
       this.setHealth(this.getMaxHealth());
       this.setPersistenceRequired();
    }
@@ -71,6 +75,7 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       this.setSchool(KendoSchool.TENNEN);
       this.setProficiency(90);
       this.equipOkitaLoadout();
+      this.clearPersonalName();
       return result;
    }
 
@@ -103,10 +108,21 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          data.putUUID(TAG_TARGET, this.targetUuid);
          this.setTarget(target);
       } else {
+         this.targetUuid = null;
+         data.remove(TAG_TARGET);
          this.setTarget(null);
       }
       this.equipOkitaLoadout();
       super.customServerAiStep();
+      this.clearPersonalName();
+      if (this.getTarget() == null) {
+         this.followOwnerWhenIdle(owner);
+      }
+   }
+
+   @Override
+   public void ensureRandomName() {
+      this.clearPersonalName();
    }
 
    @Override
@@ -181,6 +197,7 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.getPersistentData().putUUID(TAG_TARGET, this.targetUuid);
       }
       this.equipOkitaLoadout();
+      this.clearPersonalName();
    }
 
    @Nullable
@@ -205,6 +222,26 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       return target != null && target.isAlive() && target != this && target != owner
          && !owner.isAlliedTo(target) && !this.isAlliedTo(target)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   private void followOwnerWhenIdle(OkitaSoujiSaberEntity owner) {
+      double distanceSqr = this.distanceToSqr(owner);
+      if (distanceSqr <= FOLLOW_STOP_DISTANCE_SQR) {
+         this.getNavigation().stop();
+         return;
+      }
+      if (distanceSqr < FOLLOW_START_DISTANCE_SQR && !this.getNavigation().isDone()) {
+         return;
+      }
+      double speed = distanceSqr >= FOLLOW_URGENT_DISTANCE_SQR ? 1.35 : 1.05;
+      this.getNavigation().moveTo(owner, speed);
+   }
+
+   private void clearPersonalName() {
+      if (!this.level().isClientSide()) {
+         this.setCustomName(null);
+         this.setCustomNameVisible(false);
+      }
    }
 
    private void equipOkitaLoadout() {

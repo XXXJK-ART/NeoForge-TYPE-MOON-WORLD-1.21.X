@@ -543,7 +543,7 @@ public final class MasterStateManager {
       if (style == null || style.isBlank()) {
          return "default";
       }
-      if ("elsa_saijo".equals(style) || "supervisor".equals(style)) {
+      if ("elsa_saijo".equals(style) || "supervisor".equals(style) || "leff".equals(style)) {
          return style;
       }
       for (String known : COMMAND_SPELL_STYLES) {
