@@ -90,14 +90,22 @@ public class ServantCardHud {
             drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00838F, 0xFF00E5FF);
          }
       } else {
-         drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
-         int linkedBarY = manaY - 11;
+         int barY = manaY;
+         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         barY -= 11;
+         if ("gilles_de_rais_caster".equals(vars.servant_card_id) && vars.servant_card_gilles_spellbook_max_mana > 0.0) {
+            drawBar(gui, minecraft, manaX, barY, 120,
+               Component.translatable("hud.typemoonworld.servant_card.gilles_spellbook_mana").getString(),
+               vars.servant_card_gilles_spellbook_mana, vars.servant_card_gilles_spellbook_max_mana,
+               0xFF0D47A1, 0xFF42A5F5);
+            barY -= 11;
+         }
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, linkedBarY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+            drawBar(gui, minecraft, manaX, barY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+            barY -= 11;
          }
          if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
-            int subServantY = vars.master_servant_link_partner_max_mana > 0.0 ? linkedBarY - 11 : linkedBarY;
-            drawBar(gui, minecraft, manaX, subServantY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF006064, 0xFF00E5FF);
+            drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF006064, 0xFF00E5FF);
          }
       }
 

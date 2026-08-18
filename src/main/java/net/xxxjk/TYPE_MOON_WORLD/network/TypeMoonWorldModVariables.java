@@ -326,6 +326,8 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
             clone.servant_card_arash_arrow_stock = original.servant_card_arash_arrow_stock;
             clone.servant_card_royal_cannon_ammo = original.servant_card_royal_cannon_ammo;
+            clone.servant_card_gilles_spellbook_mana = original.servant_card_gilles_spellbook_mana;
+            clone.servant_card_gilles_spellbook_max_mana = original.servant_card_gilles_spellbook_max_mana;
             clone.servant_card_heracles_god_hand_lives = original.servant_card_heracles_god_hand_lives;
             clone.servant_card_enkidu_transfiguration_points = original.servant_card_enkidu_transfiguration_points;
             clone.servant_card_medusa_mystic_eyes_active = original.servant_card_medusa_mystic_eyes_active;
@@ -652,6 +654,8 @@ public class TypeMoonWorldModVariables {
       int paracelsusDiamondShieldStock,
       int arashArrowStock,
       int royalCannonAmmo,
+      double gillesSpellbookMana,
+      double gillesSpellbookMaxMana,
       int heraclesGodHandLives,
       String enkiduPoints,
       boolean medusaMysticEyesActive,
@@ -702,6 +706,8 @@ public class TypeMoonWorldModVariables {
             buffer.writeVarInt(message.paracelsusDiamondShieldStock);
             buffer.writeVarInt(message.arashArrowStock);
             buffer.writeVarInt(message.royalCannonAmmo);
+            buffer.writeDouble(message.gillesSpellbookMana);
+            buffer.writeDouble(message.gillesSpellbookMaxMana);
             buffer.writeVarInt(message.heraclesGodHandLives);
             buffer.writeUtf(message.enkiduPoints == null ? "" : message.enkiduPoints, MAX_POINTS_LENGTH);
             buffer.writeBoolean(message.medusaMysticEyesActive);
@@ -744,6 +750,8 @@ public class TypeMoonWorldModVariables {
             buffer.readVarInt(),
             buffer.readVarInt(),
             buffer.readVarInt(),
+            buffer.readDouble(),
+            buffer.readDouble(),
             buffer.readVarInt(),
             buffer.readUtf(MAX_POINTS_LENGTH),
             buffer.readBoolean(),
@@ -789,6 +797,8 @@ public class TypeMoonWorldModVariables {
             vars.servant_card_paracelsus_diamond_shield_stock,
             vars.servant_card_arash_arrow_stock,
             vars.servant_card_royal_cannon_ammo,
+            vars.servant_card_gilles_spellbook_mana,
+            vars.servant_card_gilles_spellbook_max_mana,
             vars.servant_card_heracles_god_hand_lives,
             vars.servant_card_enkidu_transfiguration_points,
             vars.servant_card_medusa_mystic_eyes_active,
@@ -844,6 +854,8 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_paracelsus_diamond_shield_stock = Math.max(0, message.paracelsusDiamondShieldStock);
                   vars.servant_card_arash_arrow_stock = Mth.clamp(message.arashArrowStock, 0, 5000);
                   vars.servant_card_royal_cannon_ammo = Mth.clamp(message.royalCannonAmmo, 0, 5000);
+                  vars.servant_card_gilles_spellbook_mana = Math.max(0.0, message.gillesSpellbookMana);
+                  vars.servant_card_gilles_spellbook_max_mana = Math.max(0.0, message.gillesSpellbookMaxMana);
                   vars.servant_card_heracles_god_hand_lives = Mth.clamp(message.heraclesGodHandLives, 0, 12);
                   vars.servant_card_enkidu_transfiguration_points = message.enkiduPoints == null ? "" : message.enkiduPoints;
                   vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
@@ -1145,6 +1157,8 @@ public class TypeMoonWorldModVariables {
       public int servant_card_paracelsus_diamond_shield_stock = 0;
       public int servant_card_arash_arrow_stock = 0;
       public int servant_card_royal_cannon_ammo = 0;
+      public double servant_card_gilles_spellbook_mana = 0.0;
+      public double servant_card_gilles_spellbook_max_mana = 0.0;
       public int servant_card_heracles_god_hand_lives = 0;
       public String servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       public boolean servant_card_medusa_mystic_eyes_active = false;
@@ -2231,6 +2245,8 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
          nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
          nbt.putInt("servant_card_arash_arrow_stock", this.servant_card_arash_arrow_stock);
+         nbt.putDouble("servant_card_gilles_spellbook_mana", this.servant_card_gilles_spellbook_mana);
+         nbt.putDouble("servant_card_gilles_spellbook_max_mana", this.servant_card_gilles_spellbook_max_mana);
          nbt.putInt("servant_card_heracles_god_hand_lives", this.servant_card_heracles_god_hand_lives);
          nbt.putString("servant_card_enkidu_transfiguration_points", this.servant_card_enkidu_transfiguration_points == null ? "6,6,6,6,6" : this.servant_card_enkidu_transfiguration_points);
          nbt.putBoolean("servant_card_medusa_mystic_eyes_active", this.servant_card_medusa_mystic_eyes_active);
@@ -2616,6 +2632,8 @@ public class TypeMoonWorldModVariables {
          this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
          this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
          this.servant_card_arash_arrow_stock = nbt.contains("servant_card_arash_arrow_stock") ? Mth.clamp(nbt.getInt("servant_card_arash_arrow_stock"), 0, 5000) : 0;
+         this.servant_card_gilles_spellbook_mana = nbt.contains("servant_card_gilles_spellbook_mana") ? Math.max(0.0, nbt.getDouble("servant_card_gilles_spellbook_mana")) : 0.0;
+         this.servant_card_gilles_spellbook_max_mana = nbt.contains("servant_card_gilles_spellbook_max_mana") ? Math.max(0.0, nbt.getDouble("servant_card_gilles_spellbook_max_mana")) : 0.0;
          this.servant_card_heracles_god_hand_lives = nbt.contains("servant_card_heracles_god_hand_lives") ? Mth.clamp(nbt.getInt("servant_card_heracles_god_hand_lives"), 0, 12) : 0;
          this.servant_card_enkidu_transfiguration_points = nbt.contains("servant_card_enkidu_transfiguration_points") ? nbt.getString("servant_card_enkidu_transfiguration_points") : "6,6,6,6,6";
          this.servant_card_medusa_mystic_eyes_active = nbt.getBoolean("servant_card_medusa_mystic_eyes_active");

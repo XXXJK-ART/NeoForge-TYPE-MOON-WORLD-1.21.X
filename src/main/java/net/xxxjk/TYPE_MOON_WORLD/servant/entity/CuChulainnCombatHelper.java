@@ -36,7 +36,7 @@ public final class CuChulainnCombatHelper {
    public static final String EXHAUST_EXPIRES_TAG = "CuExhaustExpires";
    public static final int SINGLE_GAE_BOLG_COOLDOWN = 160;
    public static final int ARMY_GAE_BOLG_COOLDOWN = 2400;
-   public static final int GAE_BOLG_WINDUP_TICKS = 50;
+   public static final int GAE_BOLG_WINDUP_TICKS = 10;
    public static final int OUT_OF_COMBAT_RECOVERY_TICKS = 100;
    public static final int RUNE_CAST_COOLDOWN = 80;
    public static final int RECAST_RESET_TICKS = 200;

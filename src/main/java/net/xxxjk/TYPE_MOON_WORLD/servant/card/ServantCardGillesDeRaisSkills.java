@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
 import com.example.typemoonaddon.entity.SeaMonsterEntity;
 import com.example.typemoonaddon.registry.AddonEntities;
+import com.example.typemoonaddon.registry.AddonItems;
 import com.example.typemoonaddon.registry.AddonSounds;
 import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ServantCardGillesDeRaisSkills {
@@ -49,13 +51,26 @@ public final class ServantCardGillesDeRaisSkills {
       data.remove(TAG_SHROUD_UNTIL);
       data.remove(TAG_HUGE_RIDE_UUID);
       data.remove(TAG_MASTER_LOSS_DEFERRED);
+      updateSyncedBookMana(player);
+      syncRuntime(player);
    }
 
-   public static void tick(ServerPlayer player, net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PlayerVariables vars) {
+   public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
       if (!data.contains(TAG_BOOK_MANA)) {
          initialize(player);
+      }
+      if (data.getLong(TAG_SHROUD_UNTIL) <= now) {
+         data.remove(TAG_SHROUD_UNTIL);
+      }
+      if (!hasUsableSpellbook(player)) {
+         data.putLong(TAG_LAST_REGEN, now);
+         if (player.tickCount % 20 == 0) {
+            updateSyncedBookMana(player);
+            syncRuntime(player);
+         }
+         return;
       }
       long last = data.getLong(TAG_LAST_REGEN);
       if (last <= 0L || last > now) {
@@ -67,13 +82,15 @@ public final class ServantCardGillesDeRaisSkills {
          data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + regen));
          data.putLong(TAG_LAST_REGEN, now);
       }
-      if (data.getLong(TAG_SHROUD_UNTIL) <= now) {
-         data.remove(TAG_SHROUD_UNTIL);
-      } else if ((player.tickCount & 7) == 0) {
+      if (data.getLong(TAG_SHROUD_UNTIL) > now && (player.tickCount & 7) == 0) {
          LivingEntity attacker = player.getLastHurtByMob();
          if (isEnemy(player, attacker) && player.distanceToSqr(attacker) <= 48.0 * 48.0) {
             commandSeaMonsters(player, attacker);
          }
+      }
+      if (player.tickCount % 20 == 0) {
+         updateSyncedBookMana(player);
+         syncRuntime(player);
       }
    }
 
@@ -87,9 +104,13 @@ public final class ServantCardGillesDeRaisSkills {
       data.remove(TAG_SHROUD_UNTIL);
       data.remove(TAG_HUGE_RIDE_UUID);
       data.remove(TAG_MASTER_LOSS_DEFERRED);
+      updateSyncedBookMana(player);
    }
 
    public static boolean summonSmallSeaMonsters(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 50.0)) {
          return false;
       }
@@ -120,6 +141,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean summonLargeSeaMonster(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 200.0)) {
          return false;
       }
@@ -145,6 +169,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performAbyssalGaze(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       LivingEntity target = findLookTarget(player, 24.0, 2.0);
       if (target == null) {
          return false;
@@ -165,6 +192,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performLifeAbsorb(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       LivingEntity target = findLookTarget(player, 12.0, 1.8);
       if (target == null) {
          target = findNearestEnemy(player, 8.0);
@@ -189,6 +219,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performCommand(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       LivingEntity target = findLookTarget(player, 32.0, 2.8);
       int commanded = commandSeaMonsters(player, target);
       if (commanded <= 0) {
@@ -202,6 +235,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performPollutionInkFog(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 120.0)) {
          return false;
       }
@@ -220,6 +256,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performPrelatiShroud(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 180.0)) {
          return false;
       }
@@ -237,6 +276,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean performProfaneGrowth(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 300.0)) {
          return false;
       }
@@ -292,6 +334,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    public static boolean summonHugeSeaMonster(ServerPlayer player) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, BOOK_MAX_MANA)) {
          return false;
       }
@@ -388,6 +433,9 @@ public final class ServantCardGillesDeRaisSkills {
    }
 
    private static boolean consumeBookMana(ServerPlayer player, double amount) {
+      if (!requireUsableSpellbook(player)) {
+         return false;
+      }
       CompoundTag data = player.getPersistentData();
       if (!data.contains(TAG_BOOK_MANA)) {
          initialize(player);
@@ -395,9 +443,13 @@ public final class ServantCardGillesDeRaisSkills {
       double mana = data.getDouble(TAG_BOOK_MANA);
       if (mana + 1.0E-6 < amount) {
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilles_not_enough_book_mana"), true);
+         updateSyncedBookMana(player);
+         syncRuntime(player);
          return false;
       }
       data.putDouble(TAG_BOOK_MANA, Math.max(0.0, mana - amount));
+      updateSyncedBookMana(player);
+      syncRuntime(player);
       return true;
    }
 
@@ -407,6 +459,34 @@ public final class ServantCardGillesDeRaisSkills {
          initialize(player);
       }
       data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + Math.max(0.0, amount)));
+      updateSyncedBookMana(player);
+      syncRuntime(player);
+   }
+
+   private static boolean requireUsableSpellbook(ServerPlayer player) {
+      if (hasUsableSpellbook(player)) {
+         return true;
+      }
+      player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilles_spellbook_required"), true);
+      updateSyncedBookMana(player);
+      syncRuntime(player);
+      return false;
+   }
+
+   private static boolean hasUsableSpellbook(ServerPlayer player) {
+      return player.getMainHandItem().is(AddonItems.PRELATIS_SPELLBOOK.get())
+         || player.getOffhandItem().is(AddonItems.PRELATIS_SPELLBOOK.get());
+   }
+
+   private static void updateSyncedBookMana(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      CompoundTag data = player.getPersistentData();
+      vars.servant_card_gilles_spellbook_mana = data.contains(TAG_BOOK_MANA) ? Math.max(0.0, data.getDouble(TAG_BOOK_MANA)) : 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = isGillesCardPlayer(player) ? BOOK_MAX_MANA : 0.0;
+   }
+
+   private static void syncRuntime(ServerPlayer player) {
+      player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).syncServantCardRuntime(player);
    }
 
    private static int commandSeaMonsters(ServerPlayer player, LivingEntity target) {

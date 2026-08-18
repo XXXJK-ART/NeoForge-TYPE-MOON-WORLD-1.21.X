@@ -57,7 +57,7 @@
     },
     {
       "id": "gilles_prelati_shroud",
-      "tags": ["defense", "control"],
+      "tags": ["guard", "control"],
       "minimum_range": 0.0,
       "maximum_range": 0.0,
       "mana_cost": 0.0,
@@ -66,7 +66,7 @@
     },
     {
       "id": "gilles_profane_growth",
-      "tags": ["buff", "summon"],
+      "tags": ["control", "summon"],
       "minimum_range": 0.0,
       "maximum_range": 64.0,
       "mana_cost": 0.0,
@@ -75,7 +75,7 @@
     },
     {
       "id": "gilles_evil_god_praise",
-      "tags": ["defense", "area"],
+      "tags": ["guard", "area"],
       "minimum_range": 0.0,
       "maximum_range": 8.0,
       "mana_cost": 0.0,

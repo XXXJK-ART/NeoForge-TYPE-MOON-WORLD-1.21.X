@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/generated",
+  "parent": "builtin/entity",
   "textures": {
-    "layer0": "typemoonworld:item/katana"
+    "particle": "typemoonworld:item/kiku_ichimonji_norimune"
   }
 }

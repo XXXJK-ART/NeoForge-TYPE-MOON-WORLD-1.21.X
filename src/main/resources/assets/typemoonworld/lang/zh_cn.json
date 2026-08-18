@@ -1630,6 +1630,8 @@
     "skill.typemoonworld.servant_card.gilles_evil_god_praise":  "邪神礼赞",
     "skill.typemoonworld.servant_card.gilles_uncontrolled_huge_sea_monster":  "螺湮城教本：巨大海魔",
     "message.typemoonworld.servant_card.gilles_not_enough_book_mana":  "螺湮城教本魔力不足。",
+    "message.typemoonworld.servant_card.gilles_spellbook_required":  "没有螺湮城教本，无法使用海魔相关技能。",
+    "hud.typemoonworld.servant_card.gilles_spellbook_mana":  "教本",
     "hud.typemoonworld.servant_card.royal_cannon":  "王之号炮弹药",
     "hud.typemoonworld.servant_card.royal_cannon_ammo":  "%s / %s 发",
     "gui.typemoonworld.gilgamesh_vault.title":  "王之宝库",

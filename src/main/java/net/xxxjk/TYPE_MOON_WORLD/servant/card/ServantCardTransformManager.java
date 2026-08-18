@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -107,6 +108,8 @@ public final class ServantCardTransformManager {
       vars.servant_card_np_cooldown_end = 0L;
       vars.servant_card_skill_cooldowns = "";
       vars.servant_card_skill_cooldown_ends = "";
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       if ("medea".equals(servantId)) {
          vars.servant_card_np_cooldown = 3600;
       }
@@ -215,6 +218,8 @@ public final class ServantCardTransformManager {
       vars.servant_card_skill_cooldown_ends = "";
       vars.servant_card_np_cooldown = 0;
       vars.servant_card_np_cooldown_end = 0L;
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       vars.servant_card_action_mode = 0;
       vars.servant_card_flying = false;
       vars.servant_card_flight_mode = 0;
@@ -990,6 +995,13 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
          return;
       }
+      if ("gilles_de_rais_caster".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.CHEST, addonArmor("typemoonworld:cursed_armor_render"));
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+         return;
+      }
       if (servantCardHasHeadArmor(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
       } else {
@@ -1026,6 +1038,14 @@ public final class ServantCardTransformManager {
          net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem.create(stack, servantId);
       }
       return markGeneratedItem(stack, false, false);
+   }
+
+   private static ItemStack addonArmor(String id) {
+      ResourceLocation key = ResourceLocation.tryParse(id);
+      if (key == null || !BuiltInRegistries.ITEM.containsKey(key)) {
+         return ItemStack.EMPTY;
+      }
+      return markGeneratedItem(new ItemStack(BuiltInRegistries.ITEM.get(key)), false, false);
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {

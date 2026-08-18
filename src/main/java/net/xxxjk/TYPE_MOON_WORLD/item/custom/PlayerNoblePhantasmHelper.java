@@ -82,8 +82,8 @@ public final class PlayerNoblePhantasmHelper {
    private static final int SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS = 60;
    private static final double SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS = 96.0;
    private static final DustParticleOptions GAE_BULG_CHARGE_PARTICLE = new DustParticleOptions(new Vector3f(0.85F, 0.0F, 0.03F), 1.35F);
-   private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 20;
-   private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 60;
+   private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 10;
+   private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 40;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
@@ -308,7 +308,10 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useGaeBulgMelee(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 4.0, 1.15);
+      LivingEntity target = findLookTarget(player, 4.0, 2.0);
+      if (target == null) {
+         target = findNearestCombatTarget(player, 4.0);
+      }
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return true;
@@ -351,8 +354,7 @@ public final class PlayerNoblePhantasmHelper {
       if (deathFlight && charged >= GAE_DEATH_FLIGHT_CHARGE_TICKS) {
          LivingEntity target = findLookTarget(player, 48.0, 2.0);
          if (target == null) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-            return true;
+            target = findNearestCombatTarget(player, 48.0);
          }
          Float armyDamage = consumeGaeBulgArmyManaAndDamage(player, charged);
          if (armyDamage == null) {
@@ -661,6 +663,9 @@ public final class PlayerNoblePhantasmHelper {
          return;
       }
       LivingEntity target = findLookTarget(player, 32.0, 1.5);
+      if (target == null) {
+         target = findNearestCombatTarget(player, 32.0);
+      }
       GaeBulgProjectileEntity projectile = new GaeBulgProjectileEntity(level, player);
       projectile.setMode(GaeBulgProjectileEntity.Mode.SINGLE);
       projectile.setTrackedTarget(target);
@@ -893,9 +898,11 @@ public final class PlayerNoblePhantasmHelper {
       projectile.setArmyDamage(damage);
       projectile.setTrackedTarget(target);
       projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.3, 0.0);
+      Vec3 aim = target != null
+         ? target.position().add(0.0, target.getBbHeight() * 0.3, 0.0)
+         : player.getEyePosition().add(player.getLookAngle().scale(48.0));
       Vec3 dir = aim.subtract(projectile.position()).normalize();
-      projectile.shoot(dir.x, dir.y + 0.14, dir.z, 2.0F, 0.0F);
+      projectile.shoot(dir.x, dir.y + 0.14, dir.z, 2.65F, 0.0F);
       level.addFreshEntity(projectile);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.5F, 0.65F);
    }
@@ -1018,6 +1025,23 @@ public final class PlayerNoblePhantasmHelper {
          range * range
       );
       return hit != null && hit.getEntity() instanceof LivingEntity living ? living : null;
+   }
+
+   private static LivingEntity findNearestCombatTarget(ServerPlayer player, double range) {
+      if (!(range > 0.0)) {
+         return null;
+      }
+      AABB box = player.getBoundingBox().inflate(range);
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : player.level().getEntitiesOfClass(LivingEntity.class, box, living -> EntityUtils.isValidCombatTarget(player, living))) {
+         double distance = candidate.distanceToSqr(player);
+         if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = candidate;
+         }
+      }
+      return nearest;
    }
 
    private static void triggerPseudoSpiralExplosion(ServerLevel level, LivingEntity owner, Vec3 center) {

@@ -491,6 +491,8 @@ public final class MasterCardProfile {
       vars.servant_card_paracelsus_diamond_shield_stock = 0;
       vars.servant_card_arash_arrow_stock = 0;
       vars.servant_card_royal_cannon_ammo = 0;
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       vars.servant_card_heracles_god_hand_lives = 0;
       vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       vars.servant_card_medusa_mystic_eyes_active = false;

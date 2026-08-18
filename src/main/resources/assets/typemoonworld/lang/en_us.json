@@ -1630,6 +1630,8 @@
     "skill.typemoonworld.servant_card.gilles_evil_god_praise":  "Praise of the Evil God",
     "skill.typemoonworld.servant_card.gilles_uncontrolled_huge_sea_monster":  "Prelati's Spellbook: Huge Sea Monster",
     "message.typemoonworld.servant_card.gilles_not_enough_book_mana":  "The spellbook is out of mana.",
+    "message.typemoonworld.servant_card.gilles_spellbook_required":  "Prelati's Spellbook is required for sea-monster skills.",
+    "hud.typemoonworld.servant_card.gilles_spellbook_mana":  "Book",
     "hud.typemoonworld.servant_card.royal_cannon":  "Royal Cannon Ammo",
     "hud.typemoonworld.servant_card.royal_cannon_ammo":  "%s / %s shots",
     "gui.typemoonworld.gilgamesh_vault.title":  "Gate of Babylon",
