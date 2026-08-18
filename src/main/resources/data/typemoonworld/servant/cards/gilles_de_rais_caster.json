@@ -1,0 +1,10 @@
+{
+  "servant_id": "typemoonworld:gilles_de_rais_caster",
+  "actions": [
+    {"slot": 0, "action": "typemoonworld:gilles_summon_small_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_summon_small_sea_monster"},
+    {"slot": 1, "action": "typemoonworld:gilles_summon_large_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_summon_large_sea_monster"},
+    {"slot": 2, "action": "typemoonworld:gilles_abyssal_gaze", "translation_key": "skill.typemoonworld.servant_card.gilles_abyssal_gaze"},
+    {"slot": 3, "action": "typemoonworld:gilles_life_absorb", "translation_key": "skill.typemoonworld.servant_card.gilles_life_absorb"},
+    {"slot": 9, "action": "typemoonworld:gilles_uncontrolled_huge_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_uncontrolled_huge_sea_monster"}
+  ]
+}

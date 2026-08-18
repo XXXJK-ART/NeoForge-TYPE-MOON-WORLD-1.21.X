@@ -244,12 +244,20 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    }
 
    public void assignOkitaCardTarget(ServerPlayer owner, @Nullable LivingEntity target) {
+      this.assignOkitaOwnerTarget(owner, target);
+   }
+
+   public void assignOkitaOwnerTarget(LivingEntity owner, @Nullable LivingEntity target) {
       this.ownerUuid = owner.getUUID();
       this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
       if (target != null && target.isAlive()) {
          this.targetUuid = target.getUUID();
          this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
          this.setTarget(target);
+      } else {
+         this.targetUuid = null;
+         this.getPersistentData().remove(TAG_TARGET);
+         this.setTarget(null);
       }
    }
 

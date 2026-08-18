@@ -426,7 +426,7 @@ public final class MedeaCombatHelper {
          }
       }
 
-      dispelled |= purgeOwnedSummons(target);
+      dispelled = purgeOwnedSummons(target) || dispelled;
       notifyRuleBreakerResult(attacker, dispelled);
    }
 

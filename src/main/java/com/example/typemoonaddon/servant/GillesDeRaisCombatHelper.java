@@ -171,6 +171,62 @@ public final class GillesDeRaisCombatHelper {
         }
     }
 
+    public static void shareSeaMonsterRetaliation(Entity harmedSeaMonster, LivingEntity attacker) {
+        if (!(harmedSeaMonster.level() instanceof ServerLevel level) || attacker == null || !attacker.isAlive()
+                || EntityUtils.isImmunePlayerTarget(attacker)) {
+            return;
+        }
+        UUID gillesUuid = null;
+        UUID hugeUuid = null;
+        if (harmedSeaMonster instanceof SeaMonsterEntity seaMonster) {
+            UUID controllerUuid = seaMonster.getControllerUuid();
+            if (controllerUuid == null) {
+                return;
+            }
+            Entity controller = level.getEntity(controllerUuid);
+            if (controller instanceof GillesDeRaisEntity gilles) {
+                gillesUuid = gilles.getUUID();
+                markGillesRetaliation(gilles, attacker);
+            } else if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster) {
+                hugeUuid = hugeSeaMonster.getUUID();
+                gillesUuid = hugeSeaMonster.getSourceUuid();
+                if (!hugeSeaMonster.isAlliedTo(attacker)) {
+                    hugeSeaMonster.setTarget(attacker);
+                }
+                markSourceGillesRetaliation(level, gillesUuid, attacker);
+            } else {
+                gillesUuid = controllerUuid;
+            }
+        } else if (harmedSeaMonster instanceof HugeSeaMonsterEntity hugeSeaMonster) {
+            hugeUuid = hugeSeaMonster.getUUID();
+            gillesUuid = hugeSeaMonster.getSourceUuid();
+            if (!hugeSeaMonster.isAlliedTo(attacker)) {
+                hugeSeaMonster.setTarget(attacker);
+            }
+            markSourceGillesRetaliation(level, gillesUuid, attacker);
+        } else {
+            return;
+        }
+
+        UUID finalGillesUuid = gillesUuid;
+        UUID finalHugeUuid = hugeUuid;
+        AABB alertBox = harmedSeaMonster.getBoundingBox().inflate(72.0);
+        for (SeaMonsterEntity ally : level.getEntitiesOfClass(SeaMonsterEntity.class, alertBox,
+                seaMonster -> seaMonster.isAlive() && sameSeaMonsterSource(seaMonster, finalGillesUuid, finalHugeUuid))) {
+            if (!ally.isAlliedTo(attacker)) {
+                ally.setTarget(attacker);
+            }
+        }
+        if (finalGillesUuid != null) {
+            for (HugeSeaMonsterEntity ally : level.getEntitiesOfClass(HugeSeaMonsterEntity.class, alertBox,
+                    hugeSeaMonster -> hugeSeaMonster.isAlive() && finalGillesUuid.equals(hugeSeaMonster.getSourceUuid()))) {
+                if (!ally.isAlliedTo(attacker)) {
+                    ally.setTarget(attacker);
+                }
+            }
+        }
+    }
+
     public static net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult executeCombatAction(
             net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext context) {
         if (!(context.caster() instanceof GillesDeRaisEntity entity) || !(entity.level() instanceof ServerLevel)) {
@@ -203,6 +259,32 @@ public final class GillesDeRaisCombatHelper {
             data.putBoolean(TAG_BOOK_INITIALIZED, true);
             data.putDouble(TAG_BOOK_MANA, BOOK_MAX_MANA);
         }
+    }
+
+    private static void markSourceGillesRetaliation(ServerLevel level, @Nullable UUID gillesUuid, LivingEntity attacker) {
+        if (gillesUuid == null) {
+            return;
+        }
+        Entity source = level.getEntity(gillesUuid);
+        if (source instanceof GillesDeRaisEntity gilles) {
+            markGillesRetaliation(gilles, attacker);
+        }
+    }
+
+    private static void markGillesRetaliation(GillesDeRaisEntity gilles, LivingEntity attacker) {
+        if (!isValidTarget(gilles, attacker)) {
+            return;
+        }
+        gilles.setLastHurtByMob(attacker);
+        if (!isSummonChanting(gilles)) {
+            gilles.setTarget(attacker);
+        }
+    }
+
+    private static boolean sameSeaMonsterSource(SeaMonsterEntity seaMonster, @Nullable UUID gillesUuid, @Nullable UUID hugeUuid) {
+        UUID controllerUuid = seaMonster.getControllerUuid();
+        return controllerUuid != null
+                && (controllerUuid.equals(gillesUuid) || controllerUuid.equals(hugeUuid));
     }
 
     private static void regenerateBookMana(CompoundTag data, long now) {

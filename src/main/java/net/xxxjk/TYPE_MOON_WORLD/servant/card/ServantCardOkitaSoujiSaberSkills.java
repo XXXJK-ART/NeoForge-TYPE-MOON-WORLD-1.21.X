@@ -253,9 +253,9 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (isWeak(player) || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity primary = findEnemyLookTarget(player, 3.0, 1.8);
+      LivingEntity primary = findEnemyLookTarget(player, 4.0, 2.0);
       if (primary == null) {
-         primary = findNearestEnemy(player, 3.0);
+         primary = findNearestEnemy(player, 4.0);
       }
       if (primary == null) {
          return false;

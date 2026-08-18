@@ -422,6 +422,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ENKIDU = registerServantCard("enkidu");
     public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH = registerServantCard("gilgamesh");
     public static final DeferredItem<Item> SERVANT_CARD_GILGAMESH_CASTER = registerServantCard("gilgamesh_caster");
+    public static final DeferredItem<Item> SERVANT_CARD_GILLES_DE_RAIS_CASTER = registerServantCard("gilles_de_rais_caster");
     public static final DeferredItem<Item> SERVANT_CARD_GAWAIN = registerServantCard("gawain");
     public static final DeferredItem<Item> SERVANT_CARD_PARACELSUS = registerServantCard("paracelsus");
     public static final DeferredItem<Item> SERVANT_CARD_LI_SHUWEN = registerServantCard("li_shuwen");

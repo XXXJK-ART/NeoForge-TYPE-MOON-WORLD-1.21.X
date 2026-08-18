@@ -53,6 +53,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
    private static final int SINGLE_HOMING_TICKS = 60;
+   private static final double ARMY_EXPLOSION_DISTANCE_SQR = 1.0D;
    private int lifeTime = 0;
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -180,10 +181,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
          this.syncRotationToMotion();
 
-         if (this.distanceToSqr(target) <= 2.25) {
-            if (this.getMode() == Mode.SINGLE) {
-               this.resolveSingleTargetHit(target);
-            } else {
+          if (this.distanceToSqr(target) <= ARMY_EXPLOSION_DISTANCE_SQR) {
+             if (this.getMode() == Mode.SINGLE) {
+                this.resolveSingleTargetHit(target);
+             } else {
                this.resolveArmyExplosion(target.position().add(0.0, target.getBbHeight() * 0.4, 0.0));
             }
             return;

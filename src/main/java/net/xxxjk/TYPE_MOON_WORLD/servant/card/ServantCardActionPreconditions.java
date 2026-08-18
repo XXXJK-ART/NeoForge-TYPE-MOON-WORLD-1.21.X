@@ -27,7 +27,8 @@ public final class ServantCardActionPreconditions {
          case "fanatic_computer" -> 2.0;
          case "rule_breaker" -> 5.0;
          case "okita_ichimonji" -> 4.5;
-         case "okita_kaifuu", "okita_mumyoudan_zuki" -> 3.0;
+         case "okita_kaifuu" -> 3.0;
+         case "okita_mumyoudan_zuki" -> 4.0;
          case "okita_stance_break" -> 4.0;
          case "oda_encircle_matchlocks" -> 30.0;
          case "anti_mystery", "chains", "gilgamesh_chains", "gilgamesh_ring_vault" -> 30.0;

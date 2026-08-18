@@ -53,6 +53,8 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private static final int SMALL_TARGET_REFRESH_INTERVAL = 40;
     private static final int LARGE_TARGET_REFRESH_INTERVAL = 30;
     private static final int LARGE_SWEEP_INTERVAL = 70;
+    private static final double SMALL_MOVEMENT_SPEED = 0.22;
+    private static final double LARGE_MOVEMENT_SPEED = 0.15;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID controllerUuid;
@@ -71,7 +73,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 200.0)
                 .add(Attributes.ATTACK_DAMAGE, 12.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.16)
+                .add(Attributes.MOVEMENT_SPEED, SMALL_MOVEMENT_SPEED)
                 .add(Attributes.ARMOR, 4.0)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.55);
@@ -207,6 +209,11 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         if (this.isFriendly(source.getEntity()) || this.isFriendly(source.getDirectEntity())) {
             return false;
         }
+        LivingEntity attacker = this.livingAttacker(source);
+        if (!this.level().isClientSide() && isValidTarget(attacker)) {
+            this.setTarget(attacker);
+            GillesDeRaisCombatHelper.shareSeaMonsterRetaliation(this, attacker);
+        }
         if (!this.level().isClientSide() && amount >= this.getHealth()) {
             this.beginDissolve(source);
             return true;
@@ -301,7 +308,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private void applyVariantAttributes() {
         this.setAttribute(Attributes.MAX_HEALTH, this.isLarge() ? 1000.0 : 200.0);
         this.setAttribute(Attributes.ATTACK_DAMAGE, this.isLarge() ? 30.0 : 12.0);
-        this.setAttribute(Attributes.MOVEMENT_SPEED, this.isLarge() ? 0.10 : 0.16);
+        this.setAttribute(Attributes.MOVEMENT_SPEED, this.isLarge() ? LARGE_MOVEMENT_SPEED : SMALL_MOVEMENT_SPEED);
         this.setAttribute(Attributes.KNOCKBACK_RESISTANCE, this.isLarge() ? 0.9 : 0.55);
     }
 
@@ -315,6 +322,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private void refreshTarget() {
         LivingEntity controller = this.getController();
         LivingEntity preferred = controller instanceof net.minecraft.world.entity.Mob mob ? mob.getTarget() : null;
+        if (!isValidTarget(preferred) && controller != null) {
+            preferred = controller.getLastHurtByMob();
+        }
         if (isValidTarget(preferred)) {
             this.setTarget(preferred);
             return;
@@ -370,6 +380,14 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         return entity instanceof SeaMonsterEntity seaMonster
                 && this.controllerUuid != null
                 && this.controllerUuid.equals(seaMonster.controllerUuid);
+    }
+
+    @Nullable
+    private LivingEntity livingAttacker(DamageSource source) {
+        if (source.getEntity() instanceof LivingEntity living) {
+            return living;
+        }
+        return source.getDirectEntity() instanceof LivingEntity living ? living : null;
     }
 
     private void beginDissolve(@Nullable DamageSource cause) {

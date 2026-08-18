@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.entity;
 
 import java.util.UUID;
+import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -63,6 +64,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final int BROOD_SUMMON_INTERVAL = 140;
     private static final int AURA_INTERVAL = 20;
     private static final int FOG_INTERVAL = 5;
+    private static final double HUGE_MOVEMENT_SPEED = 0.11;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID sourceUuid;
@@ -83,7 +85,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 5000.0)
                 .add(Attributes.ATTACK_DAMAGE, 60.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.08)
+                .add(Attributes.MOVEMENT_SPEED, HUGE_MOVEMENT_SPEED)
                 .add(Attributes.ARMOR, 12.0)
                 .add(Attributes.FOLLOW_RANGE, 96.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1.0)
@@ -129,7 +131,8 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             this.heal(50.0F);
         }
         if (this.isStaggeredTick(TARGET_REFRESH_INTERVAL, 7) && !isValidTarget(this.getTarget())) {
-            this.setTarget(this.findNearestTarget(48.0));
+            LivingEntity revenge = this.getLastHurtByMob();
+            this.setTarget(isValidTarget(revenge) ? revenge : this.findNearestTarget(48.0));
         }
         if (this.isStaggeredTick(60, 0)) {
             this.areaSweep(level);
@@ -224,6 +227,11 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         }
         if (this.isFriendly(source.getEntity()) || this.isFriendly(source.getDirectEntity())) {
             return false;
+        }
+        LivingEntity attacker = this.livingAttacker(source);
+        if (!this.level().isClientSide() && isValidTarget(attacker)) {
+            this.setTarget(attacker);
+            GillesDeRaisCombatHelper.shareSeaMonsterRetaliation(this, attacker);
         }
         if (!this.level().isClientSide() && amount >= this.getHealth()) {
             this.beginDissolve(source);
@@ -437,6 +445,14 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         return entity instanceof HugeSeaMonsterEntity other
                 && this.sourceUuid != null
                 && this.sourceUuid.equals(other.sourceUuid);
+    }
+
+    @Nullable
+    private LivingEntity livingAttacker(DamageSource source) {
+        if (source.getEntity() instanceof LivingEntity living) {
+            return living;
+        }
+        return source.getDirectEntity() instanceof LivingEntity living ? living : null;
     }
 
     @Nullable

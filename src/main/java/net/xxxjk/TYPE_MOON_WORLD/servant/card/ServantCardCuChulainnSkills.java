@@ -33,7 +33,7 @@ public final class ServantCardCuChulainnSkills {
    private static final String CU_RUNE_BERKANA_NEXT_HEAL_TAG = "ServantCardCuBerkanaNextHeal";
    private static final String CU_RECAST_USED_TAG = "ServantCardCuRecastUsed";
    private static final String CU_LAST_COMBAT_TICK_TAG = "ServantCardCuLastCombatTick";
-   private static final int CU_OUT_OF_COMBAT_RECOVERY_TICKS = 200;
+   private static final int CU_OUT_OF_COMBAT_RECOVERY_TICKS = 1200;
    private static final double CU_RECAST_MP_COST = 35.0;
 
    private ServantCardCuChulainnSkills() {

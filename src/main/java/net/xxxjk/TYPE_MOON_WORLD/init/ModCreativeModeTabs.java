@@ -54,6 +54,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ENKIDU);
                         output.accept(ModItems.SERVANT_CARD_GILGAMESH);
                         output.accept(new ItemStack(ModItems.SERVANT_CARD_GILGAMESH_CASTER.get()));
+                        output.accept(ModItems.SERVANT_CARD_GILLES_DE_RAIS_CASTER);
                         output.accept(ModItems.SERVANT_CARD_GAWAIN);
                         output.accept(ModItems.SERVANT_CARD_PARACELSUS);
                         output.accept(ModItems.SERVANT_CARD_LI_SHUWEN);
@@ -360,6 +361,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.HOKUSHIN_MANUAL);
                         output.accept(ModItems.TENNEN_MANUAL);
                         output.accept(ModItems.SPARRING_INVITATION);
+                        output.accept(ModItems.SERVANT_CARD_GILLES_DE_RAIS_CASTER);
                         output.accept(ModItems.HOLY_SHROUD);
                         output.accept(ModItems.CLAW_OF_CHAOS);
                         output.accept(ModItems.DRAGON_FANG);

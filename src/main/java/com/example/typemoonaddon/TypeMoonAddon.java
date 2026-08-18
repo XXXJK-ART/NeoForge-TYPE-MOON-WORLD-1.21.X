@@ -71,6 +71,9 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_ABSORPTION);
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_ABSORPTION);
         }
+        if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
+            event.accept(AddonItems.PRELATIS_SPELLBOOK);
+        }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
             ItemStack afterMasterCards = new ItemStack(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get());
             ItemStack sakura = AddonItems.MASTER_CARD_MATOU_SAKURA.toStack();
