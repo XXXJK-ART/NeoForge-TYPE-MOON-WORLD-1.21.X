@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
@@ -7,6 +8,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -25,6 +27,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
@@ -64,6 +68,17 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
    @Override
    public UseAnim getUseAnimation(ItemStack stack) {
       return UseAnim.BOW;
+   }
+
+   @Override
+   public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      if (!(living instanceof ServerPlayer player) || !(level instanceof ServerLevel serverLevel) || living.tickCount % 5 != 0) {
+         return;
+      }
+      LivingEntity target = findVisibleLookTarget(serverLevel, player, MAX_TARGET_RANGE);
+      if (target != null) {
+         ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(Collections.singletonList(target.getId()), 20));
+      }
    }
 
    @Override
@@ -124,6 +139,34 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
          LivingEntity.class,
          area,
          target -> target != player && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)
+      )) {
+         Vec3 toTarget = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(eye);
+         double distance = toTarget.length();
+         if (distance <= 0.01 || distance > range) {
+            continue;
+         }
+
+         double score = look.dot(toTarget.normalize());
+         if (score > bestScore) {
+            bestScore = score;
+            best = living;
+         }
+      }
+
+      return best;
+   }
+
+   private static LivingEntity findVisibleLookTarget(ServerLevel level, Player player, double range) {
+      Vec3 eye = player.getEyePosition();
+      Vec3 look = player.getLookAngle().normalize();
+      AABB area = player.getBoundingBox().expandTowards(look.scale(range)).inflate(3.0);
+      LivingEntity best = null;
+      double bestScore = 0.985;
+
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         area,
+         target -> target != player && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target) && player.hasLineOfSight(target)
       )) {
          Vec3 toTarget = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(eye);
          double distance = toTarget.length();

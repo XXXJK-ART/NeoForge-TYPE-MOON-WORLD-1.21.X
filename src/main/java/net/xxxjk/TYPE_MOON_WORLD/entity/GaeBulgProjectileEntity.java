@@ -106,7 +106,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setArmyDamage(float damage) {
-      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 500.0F));
+      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 100000.0F));
    }
 
    public float getArmyDamage() {
@@ -124,6 +124,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    protected boolean canHitEntity(Entity entity) {
+      if (this.getMode() == Mode.ARMY) {
+         return entity != null && entity == this.getTrackedTarget() && super.canHitEntity(entity);
+      }
       return entity != null && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity) && super.canHitEntity(entity);
    }
 
@@ -155,10 +158,14 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
       }
       LivingEntity target = this.getTrackedTarget();
-      boolean canHome = this.getMode() != Mode.SINGLE || this.lifeTime <= SINGLE_HOMING_TICKS;
+      boolean armyMode = this.getMode() == Mode.ARMY;
+      boolean canHome = armyMode || this.lifeTime <= SINGLE_HOMING_TICKS;
       if (!canHome) {
          this.setTrackedTarget(null);
          target = null;
+      } else if (armyMode && !isUsableTarget(target)) {
+         this.discard();
+         return;
       } else if (!isUsableTarget(target)) {
          this.setTrackedTarget(null);
          target = acquireNearbyTarget(level);
@@ -169,6 +176,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             this.clearPathObstacles(2.4);
          } else {
             this.steerToward(target.position().add(0.0, target.getBbHeight() * 0.3, 0.0), 0.35, 0.18);
+            this.clearPathObstacles(2.6);
          }
          this.syncRotationToMotion();
 
@@ -176,17 +184,15 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             if (this.getMode() == Mode.SINGLE) {
                this.resolveSingleTargetHit(target);
             } else {
-               this.resolveArmyExplosion(this.position());
+               this.resolveArmyExplosion(target.position().add(0.0, target.getBbHeight() * 0.4, 0.0));
             }
             return;
          }
       }
 
-      if ((this.getMode() == Mode.SINGLE && this.lifeTime > 120) || (this.getMode() == Mode.ARMY && this.lifeTime > 80)) {
+      if (this.getMode() == Mode.SINGLE && this.lifeTime > 120) {
          if (this.getMode() == Mode.SINGLE && target != null && target.isAlive()) {
             this.resolveSingleTargetHit(target);
-         } else if (this.getMode() == Mode.ARMY) {
-            this.resolveArmyExplosion(this.position());
          } else {
             this.discard();
          }
@@ -260,7 +266,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (result.getEntity() instanceof LivingEntity living) {
          if (this.getMode() == Mode.SINGLE) {
             this.resolveSingleTargetHit(living);
-         } else {
+         } else if (living == this.getTrackedTarget()) {
             this.resolveArmyExplosion(result.getLocation());
          }
       }
@@ -275,7 +281,16 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       if (result.getType() == HitResult.Type.BLOCK) {
          if (this.getMode() == Mode.ARMY) {
-            this.resolveArmyExplosion(result.getLocation());
+            if (result instanceof BlockHitResult blockHit) {
+               this.tryDestroyBlock(blockHit.getBlockPos());
+            }
+            LivingEntity target = this.getTrackedTarget();
+            if (target != null && target.isAlive()) {
+               this.setPos(this.getX() + this.getDeltaMovement().x * 0.16, this.getY() + this.getDeltaMovement().y * 0.16, this.getZ() + this.getDeltaMovement().z * 0.16);
+               this.nudgeAroundObstacle(target);
+            } else {
+               this.discard();
+            }
          } else {
             if (this.getTrackedTarget() != null && result instanceof BlockHitResult blockHit && this.tryDestroyBlock(blockHit.getBlockPos())) {
                this.setPos(this.getX() + this.getDeltaMovement().x * 0.1, this.getY() + this.getDeltaMovement().y * 0.1, this.getZ() + this.getDeltaMovement().z * 0.1);

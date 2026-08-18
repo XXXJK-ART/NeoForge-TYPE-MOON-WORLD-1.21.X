@@ -8,6 +8,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -48,9 +49,16 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private static final int SMALL_LIFETIME = 20 * 60 * 5;
     private static final int LARGE_LIFETIME = 20 * 60 * 3;
     private static final int DISSOLVE_DURATION = 72;
+    private static final int AURA_TICK_INTERVAL = 20;
+    private static final int SMALL_TARGET_REFRESH_INTERVAL = 40;
+    private static final int LARGE_TARGET_REFRESH_INTERVAL = 30;
+    private static final int LARGE_SWEEP_INTERVAL = 70;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID controllerUuid;
+    @Nullable
+    private LivingEntity cachedController;
+    private long cachedControllerGameTime = Long.MIN_VALUE;
     private int dissolveTicks;
     private boolean deathEffectsApplied;
 
@@ -108,14 +116,15 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             this.beginDissolve(null);
             return;
         }
-        if (this.tickCount % 20 == 0) {
+        if (this.isStaggeredTick(AURA_TICK_INTERVAL, 0)) {
             this.heal(this.isLarge() ? 15.0F : 5.0F);
             this.pollutionAura(level);
         }
-        if (this.tickCount % 20 == 5) {
+        int targetRefreshInterval = this.isLarge() ? LARGE_TARGET_REFRESH_INTERVAL : SMALL_TARGET_REFRESH_INTERVAL;
+        if (this.isStaggeredTick(targetRefreshInterval, 5)) {
             this.refreshTarget();
         }
-        if (this.isLarge() && this.tickCount % 55 == 0) {
+        if (this.isLarge() && this.isStaggeredTick(LARGE_SWEEP_INTERVAL, 0)) {
             this.largeSweep(level);
         }
     }
@@ -135,6 +144,8 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     public void setController(LivingEntity controller) {
         this.controllerUuid = controller.getUUID();
+        this.cachedController = controller;
+        this.cachedControllerGameTime = this.level().getGameTime();
     }
 
     public boolean isDissolving() {
@@ -158,13 +169,22 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         if (this.controllerUuid == null || !(this.level() instanceof ServerLevel level)) {
             return null;
         }
+        long now = level.getGameTime();
+        if (this.cachedControllerGameTime == now) {
+            return this.cachedController != null && this.cachedController.isAlive() ? this.cachedController : null;
+        }
+        this.cachedControllerGameTime = now;
         Entity entity = level.getEntity(this.controllerUuid);
-        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+        this.cachedController = entity instanceof LivingEntity living && living.isAlive() ? living : null;
+        return this.cachedController;
     }
 
     @Override
     public boolean isAlliedTo(Entity other) {
         if (super.isAlliedTo(other)) {
+            return true;
+        }
+        if (this.isFriendly(other)) {
             return true;
         }
         LivingEntity controller = this.getController();
@@ -206,6 +226,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (this.isFriendly(target)) {
+            return false;
+        }
         boolean hit = super.doHurtTarget(target);
         if (hit) {
             this.swing(InteractionHand.MAIN_HAND);
@@ -317,7 +340,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     private boolean isValidTarget(@Nullable LivingEntity target) {
-        return target != null && target != this && target.isAlive() && !target.isAlliedTo(this)
+        return target != null && target != this && target.isAlive() && !target.isAlliedTo(this) && !this.isFriendly(target)
                 && !EntityUtils.isImmunePlayerTarget(target);
     }
 
@@ -328,6 +351,15 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         LivingEntity controller = this.getController();
         if (entity == controller || entity == this) {
             return true;
+        }
+        if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster && hugeSeaMonster.isFriendlyTo(entity)) {
+            return true;
+        }
+        if (controller instanceof GillesDeRaisEntity gilles) {
+            ServerPlayer master = gilles.getEntityMaster();
+            if (entity == master || master != null && master.isAlliedTo(entity)) {
+                return true;
+            }
         }
         if (controller != null && controller.isAlliedTo(entity)) {
             return true;
@@ -345,7 +377,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             return;
         }
         if (!this.level().isClientSide() && this.isLarge() && !this.deathEffectsApplied) {
-            GillesDeRaisCombatHelper.addPollutionZone(this.level().dimension(), this.position(), 5.5, 60 * 20, 10.0F);
+            GillesDeRaisCombatHelper.addPollutionZone(
+                    this.level().dimension(), this.position(), 5.5, 60 * 20, 10.0F,
+                    this.getPollutionSourceUuid(), this.getPollutionMasterUuid());
             this.deathEffectsApplied = true;
         }
         this.entityData.set(DISSOLVING, true);
@@ -393,5 +427,30 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             living.push((living.getX() - this.getX()) * 0.18, 0.25, (living.getZ() - this.getZ()) * 0.18);
             living.hurtMarked = true;
         }
+    }
+
+    @Nullable
+    private UUID getPollutionSourceUuid() {
+        LivingEntity controller = this.getController();
+        if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster && hugeSeaMonster.getSourceUuid() != null) {
+            return hugeSeaMonster.getSourceUuid();
+        }
+        return this.controllerUuid;
+    }
+
+    @Nullable
+    private UUID getPollutionMasterUuid() {
+        LivingEntity controller = this.getController();
+        if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster) {
+            return hugeSeaMonster.getMasterUuid();
+        }
+        if (controller instanceof GillesDeRaisEntity gilles && gilles.getEntityMaster() != null) {
+            return gilles.getEntityMaster().getUUID();
+        }
+        return null;
+    }
+
+    private boolean isStaggeredTick(int interval, int offset) {
+        return Math.floorMod(this.tickCount + this.getId(), interval) == offset;
     }
 }

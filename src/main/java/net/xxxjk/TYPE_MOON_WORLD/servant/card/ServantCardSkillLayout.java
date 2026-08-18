@@ -17,6 +17,19 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Mana Burst: Light Cannon", "mana_burst_beam", 100.0, 300);
             default -> null;
          };
+         case "okita_souji_saber" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Shukuchi B", "okita_shukuchi", 0.0, 10);
+            case 1 -> new ServantCardSkillAction("Tennen Rishin-ryu: Ichimonji", "okita_ichimonji", 8.0, 60);
+            case 2 -> new ServantCardSkillAction("Tennen Rishin-ryu: Kaifu", "okita_kaifuu", 10.0, 90);
+            case 3 -> new ServantCardSkillAction("Mind's Eye (False) A", "okita_mind_eye", 12.0, 160);
+            case 4 -> new ServantCardSkillAction("Oath Haori: Swift Advance", "okita_oath_haori", 18.0, 260);
+            case 5 -> new ServantCardSkillAction("Coughing Feint", "okita_feigned_retreat", 8.0, 140);
+            case 6 -> new ServantCardSkillAction("Stance-Breaking Thrust", "okita_stance_break", 14.0, 180);
+            case 7 -> new ServantCardSkillAction("Shinsengumi Command", "okita_shinsengumi_command", 6.0, 80);
+            case 8 -> new ServantCardSkillAction("Mumyoudan-zuki", "okita_mumyoudan_zuki", 20.0, 300);
+            case 9 -> new ServantCardSkillAction("Flag of Sincerity", "okita_flag_of_sincerity", 100.0, 2400);
+            default -> null;
+         };
          case "cu_chulainn" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Spear Thrust", "cu_crouch_thrust", 0.0, 18);
             case 0 -> new ServantCardSkillAction("Ansuz Rune", "cu_ansuz", 22.0, 120);

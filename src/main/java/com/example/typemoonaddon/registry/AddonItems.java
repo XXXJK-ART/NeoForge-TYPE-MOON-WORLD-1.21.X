@@ -5,6 +5,7 @@ import com.example.typemoonaddon.item.CrestWormItem;
 import com.example.typemoonaddon.item.CursedArmorRenderItem;
 import com.example.typemoonaddon.item.HolyGrailFragmentItem;
 import com.example.typemoonaddon.item.ImaginaryPrimerItem;
+import com.example.typemoonaddon.item.PrelatisSpellbookItem;
 import com.example.typemoonaddon.item.SeaMonsterSpawnEggItem;
 import com.example.typemoonaddon.item.VoidRingRegaliaItem;
 import net.minecraft.world.item.Item;
@@ -64,9 +65,9 @@ public final class AddonItems {
             () -> new HolyGrailFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC))
     );
 
-    public static final DeferredItem<Item> PRELATIS_SPELLBOOK = ITEMS.register(
+    public static final DeferredItem<PrelatisSpellbookItem> PRELATIS_SPELLBOOK = ITEMS.register(
             "prelatis_spellbook",
-            () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
+            () -> new PrelatisSpellbookItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
     );
 
     public static final DeferredItem<CursedArmorRenderItem> CURSED_ARMOR_RENDER = ITEMS.register(

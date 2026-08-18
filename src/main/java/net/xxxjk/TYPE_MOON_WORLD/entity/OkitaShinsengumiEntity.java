@@ -51,21 +51,11 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    }
 
    public void initializeForOkita(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target, long expiresAt) {
-      this.ownerUuid = owner.getUUID();
-      this.targetUuid = target == null ? null : target.getUUID();
-      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
-      if (target != null) {
-         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
-         this.setTarget(target);
-      }
-      this.getPersistentData().putLong(TAG_EXPIRES, expiresAt);
-      this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, false);
-      this.setSchool(KendoSchool.TENNEN);
-      this.setProficiency(90);
-      this.equipOkitaLoadout();
-      this.clearPersonalName();
-      this.setHealth(this.getMaxHealth());
-      this.setPersistenceRequired();
+      this.initialize(owner, target, expiresAt);
+   }
+
+   public void initializeForOkitaCard(ServerPlayer owner, @Nullable LivingEntity target, long expiresAt) {
+      this.initialize(owner, target, expiresAt);
    }
 
    @Override
@@ -93,13 +83,13 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.targetUuid = data.getUUID(TAG_TARGET);
       }
       long expires = data.getLong(TAG_EXPIRES);
-      OkitaSoujiSaberEntity owner = this.getOwner(level);
+      LivingEntity owner = this.getOwner(level);
       if (expires > 0L && level.getGameTime() >= expires || owner == null || !owner.isAlive()) {
          data.putBoolean(TAG_NATURAL_TIMEOUT, true);
          this.discard();
          return;
       }
-      LivingEntity target = owner.getTarget();
+      LivingEntity target = owner instanceof OkitaSoujiSaberEntity okita ? okita.getTarget() : this.getTargetByUuid(level, this.targetUuid);
       if (!this.isValidAssignedTarget(owner, target)) {
          target = this.getTargetByUuid(level, this.targetUuid);
       }
@@ -138,14 +128,14 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       if (!(this.level() instanceof ServerLevel level)) {
          return false;
       }
-      OkitaSoujiSaberEntity owner = this.getOwner(level);
+      LivingEntity owner = this.getOwner(level);
       if (owner == null) {
          return false;
       }
       if (other == owner || owner.isAlliedTo(other)) {
          return true;
       }
-      ServerPlayer master = owner.getEntityMaster();
+      ServerPlayer master = owner instanceof OkitaSoujiSaberEntity okitaOwner ? okitaOwner.getEntityMaster() : null;
       if (master != null && (other == master || master.isAlliedTo(other))) {
          return true;
       }
@@ -162,9 +152,11 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource source) {
       if (!this.getPersistentData().getBoolean(TAG_NATURAL_TIMEOUT) && this.level() instanceof ServerLevel level) {
-         OkitaSoujiSaberEntity owner = this.getOwner(level);
+         LivingEntity owner = this.getOwner(level);
          if (owner != null) {
-            owner.onShinsengumiKilled();
+            if (owner instanceof OkitaSoujiSaberEntity okita) {
+               okita.onShinsengumiKilled();
+            }
          }
       }
       super.die(source);
@@ -201,12 +193,12 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    }
 
    @Nullable
-   private OkitaSoujiSaberEntity getOwner(ServerLevel level) {
+   private LivingEntity getOwner(ServerLevel level) {
       if (this.ownerUuid == null) {
          return null;
       }
       Entity entity = level.getEntity(this.ownerUuid);
-      return entity instanceof OkitaSoujiSaberEntity okita ? okita : null;
+      return entity instanceof LivingEntity living ? living : null;
    }
 
    @Nullable
@@ -218,13 +210,13 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       return entity instanceof LivingEntity living ? living : null;
    }
 
-   private boolean isValidAssignedTarget(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target) {
+   private boolean isValidAssignedTarget(LivingEntity owner, @Nullable LivingEntity target) {
       return target != null && target.isAlive() && target != this && target != owner
          && !owner.isAlliedTo(target) && !this.isAlliedTo(target)
          && !EntityUtils.isImmunePlayerTarget(target);
    }
 
-   private void followOwnerWhenIdle(OkitaSoujiSaberEntity owner) {
+   private void followOwnerWhenIdle(LivingEntity owner) {
       double distanceSqr = this.distanceToSqr(owner);
       if (distanceSqr <= FOLLOW_STOP_DISTANCE_SQR) {
          this.getNavigation().stop();
@@ -249,5 +241,33 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.KATANA.get()));
          this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
       }
+   }
+
+   public void assignOkitaCardTarget(ServerPlayer owner, @Nullable LivingEntity target) {
+      this.ownerUuid = owner.getUUID();
+      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
+      if (target != null && target.isAlive()) {
+         this.targetUuid = target.getUUID();
+         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
+         this.setTarget(target);
+      }
+   }
+
+   private void initialize(LivingEntity owner, @Nullable LivingEntity target, long expiresAt) {
+      this.ownerUuid = owner.getUUID();
+      this.targetUuid = target == null ? null : target.getUUID();
+      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
+      if (target != null) {
+         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
+         this.setTarget(target);
+      }
+      this.getPersistentData().putLong(TAG_EXPIRES, expiresAt);
+      this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, false);
+      this.setSchool(KendoSchool.TENNEN);
+      this.setProficiency(90);
+      this.equipOkitaLoadout();
+      this.clearPersonalName();
+      this.setHealth(this.getMaxHealth());
+      this.setPersistenceRequired();
    }
 }

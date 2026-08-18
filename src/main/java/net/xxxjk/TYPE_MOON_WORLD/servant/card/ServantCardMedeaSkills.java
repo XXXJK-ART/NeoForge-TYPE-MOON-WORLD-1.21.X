@@ -187,7 +187,9 @@ public final class ServantCardMedeaSkills {
             getDragonfangStock(player),
             getManaCharmStock(player),
             getHealCharmStock(player),
-            countLeylineMaps(player)
+            countLeylineMaps(player),
+            countInventoryItems(player, ModItems.MEDEA_REINFORCEMENT_CHARM.get()),
+            countInventoryItems(player, ModItems.MEDEA_SERVANT_CONTRACT.get())
          )
       );
       return true;
@@ -220,6 +222,12 @@ public final class ServantCardMedeaSkills {
       } else if (choice == 3) {
          giveCraftedItem(player, new ItemStack(ModItems.LEYLINE_SURVEY_MAP.get()));
          made = Component.translatable("item.typemoonworld.leyline_survey_map");
+      } else if (choice == 4) {
+         giveCraftedItem(player, new ItemStack(ModItems.MEDEA_REINFORCEMENT_CHARM.get()));
+         made = Component.translatable("item.typemoonworld.medea_reinforcement_charm");
+      } else if (choice == 5) {
+         giveCraftedItem(player, new ItemStack(ModItems.MEDEA_SERVANT_CONTRACT.get()));
+         made = Component.translatable("item.typemoonworld.medea_servant_contract");
       } else {
          return false;
       }
@@ -242,6 +250,22 @@ public final class ServantCardMedeaSkills {
       }
       for (ItemStack stack : player.getInventory().items) {
          if (stack.is(ModItems.LEYLINE_SURVEY_MAP.get())) {
+            count += stack.getCount();
+         }
+      }
+      return count;
+   }
+
+   private static int countInventoryItems(ServerPlayer player, net.minecraft.world.item.Item item) {
+      int count = 0;
+      if (player.getMainHandItem().is(item)) {
+         count += player.getMainHandItem().getCount();
+      }
+      if (player.getOffhandItem().is(item)) {
+         count += player.getOffhandItem().getCount();
+      }
+      for (ItemStack stack : player.getInventory().items) {
+         if (stack.is(item)) {
             count += stack.getCount();
          }
       }
@@ -598,7 +622,7 @@ public final class ServantCardMedeaSkills {
          case 0 -> getDragonfangStock(player) < MedeaWorkshopHelper.MAX_DRAGONFANG_STOCK;
          case 1 -> getManaCharmStock(player) < MedeaWorkshopHelper.MAX_MANA_CHARM_STOCK;
          case 2 -> getHealCharmStock(player) < MedeaWorkshopHelper.MAX_HEAL_CHARM_STOCK;
-         case 3 -> true;
+         case 3, 4, 5 -> true;
          default -> false;
       };
    }

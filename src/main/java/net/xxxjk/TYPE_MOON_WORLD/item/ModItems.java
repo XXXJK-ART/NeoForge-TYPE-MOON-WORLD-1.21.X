@@ -44,6 +44,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LancelotWeaponItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaServantContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MercurySwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MysticMercuryItem;
@@ -268,6 +270,10 @@ public class ModItems {
 
     public static final DeferredItem<Item> SERVANT_MASTER_CONTRACT = ITEMS.register("servant_master_contract",
             () -> new ServantMasterContractItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> MEDEA_REINFORCEMENT_CHARM = ITEMS.register("medea_reinforcement_charm",
+            () -> new MedeaReinforcementCharmItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
+    public static final DeferredItem<Item> MEDEA_SERVANT_CONTRACT = ITEMS.register("medea_servant_contract",
+            () -> new MedeaServantContractItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
     public static final DeferredItem<Item> COMMAND_SPELL = ITEMS.register("command_spell",
             () -> new CommandSpellItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> SUPERVISOR_COMMAND_SPELL = ITEMS.register("supervisor_command_spell",
@@ -431,6 +437,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER = registerServantCard("lancelot_berserker");
     public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR = registerServantCard("iskandar");
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH = registerServantCard("baobhan_sith");
+    public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER = registerServantCard("okita_souji_saber");
 
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_HEAD = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_CHEST = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.CHEST);

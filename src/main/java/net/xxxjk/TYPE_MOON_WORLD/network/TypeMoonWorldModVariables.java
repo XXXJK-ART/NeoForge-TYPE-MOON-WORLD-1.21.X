@@ -318,6 +318,10 @@ public class TypeMoonWorldModVariables {
             clone.servant_card_medea_dragonfang_stock = original.servant_card_medea_dragonfang_stock;
             clone.servant_card_medea_mana_charm_stock = original.servant_card_medea_mana_charm_stock;
             clone.servant_card_medea_heal_charm_stock = original.servant_card_medea_heal_charm_stock;
+            clone.servant_card_medea_sub_servant_uuid = original.servant_card_medea_sub_servant_uuid;
+            clone.servant_card_medea_sub_servant_mana = original.servant_card_medea_sub_servant_mana;
+            clone.servant_card_medea_sub_servant_max_mana = original.servant_card_medea_sub_servant_max_mana;
+            clone.servant_card_medea_sub_servant_active = original.servant_card_medea_sub_servant_active;
             clone.servant_card_paracelsus_stone_stock = original.servant_card_paracelsus_stone_stock;
             clone.servant_card_paracelsus_diamond_shield_stock = original.servant_card_paracelsus_diamond_shield_stock;
             clone.servant_card_arash_arrow_stock = original.servant_card_arash_arrow_stock;
@@ -438,7 +442,11 @@ public class TypeMoonWorldModVariables {
       String master_servant_servant_dimension,
       double master_servant_servant_x,
       double master_servant_servant_y,
-      double master_servant_servant_z
+      double master_servant_servant_z,
+      String servant_card_medea_sub_servant_uuid,
+      double servant_card_medea_sub_servant_mana,
+      double servant_card_medea_sub_servant_max_mana,
+      boolean servant_card_medea_sub_servant_active
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ManaSyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "mana_sync")
@@ -475,6 +483,10 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.master_servant_servant_x);
             buffer.writeDouble(message.master_servant_servant_y);
             buffer.writeDouble(message.master_servant_servant_z);
+            buffer.writeUtf(message.servant_card_medea_sub_servant_uuid == null ? "" : message.servant_card_medea_sub_servant_uuid, 48);
+            buffer.writeDouble(message.servant_card_medea_sub_servant_mana);
+            buffer.writeDouble(message.servant_card_medea_sub_servant_max_mana);
+            buffer.writeBoolean(message.servant_card_medea_sub_servant_active);
          },
          buffer -> new TypeMoonWorldModVariables.ManaSyncMessage(
             buffer.readDouble(),
@@ -506,7 +518,11 @@ public class TypeMoonWorldModVariables {
             buffer.readUtf(256),
             buffer.readDouble(),
             buffer.readDouble(),
-            buffer.readDouble()
+            buffer.readDouble(),
+            buffer.readUtf(48),
+            buffer.readDouble(),
+            buffer.readDouble(),
+            buffer.readBoolean()
          )
       );
 
@@ -541,7 +557,11 @@ public class TypeMoonWorldModVariables {
             vars.master_servant_servant_dimension,
             vars.master_servant_servant_x,
             vars.master_servant_servant_y,
-            vars.master_servant_servant_z
+            vars.master_servant_servant_z,
+            vars.servant_card_medea_sub_servant_uuid,
+            vars.servant_card_medea_sub_servant_mana,
+            vars.servant_card_medea_sub_servant_max_mana,
+            vars.servant_card_medea_sub_servant_active
          );
       }
 
@@ -586,6 +606,10 @@ public class TypeMoonWorldModVariables {
                    vars.master_servant_servant_x = message.master_servant_servant_x;
                    vars.master_servant_servant_y = message.master_servant_servant_y;
                    vars.master_servant_servant_z = message.master_servant_servant_z;
+                   vars.servant_card_medea_sub_servant_uuid = message.servant_card_medea_sub_servant_uuid == null ? "" : message.servant_card_medea_sub_servant_uuid;
+                   vars.servant_card_medea_sub_servant_mana = Math.max(0.0, message.servant_card_medea_sub_servant_mana);
+                   vars.servant_card_medea_sub_servant_max_mana = Math.max(0.0, message.servant_card_medea_sub_servant_max_mana);
+                   vars.servant_card_medea_sub_servant_active = message.servant_card_medea_sub_servant_active;
                }
             );
          }
@@ -1113,6 +1137,10 @@ public class TypeMoonWorldModVariables {
       public int servant_card_medea_dragonfang_stock = 0;
       public int servant_card_medea_mana_charm_stock = 0;
       public int servant_card_medea_heal_charm_stock = 0;
+      public String servant_card_medea_sub_servant_uuid = "";
+      public double servant_card_medea_sub_servant_mana = 0.0;
+      public double servant_card_medea_sub_servant_max_mana = 0.0;
+      public boolean servant_card_medea_sub_servant_active = false;
       public int servant_card_paracelsus_stone_stock = 0;
       public int servant_card_paracelsus_diamond_shield_stock = 0;
       public int servant_card_arash_arrow_stock = 0;
@@ -2196,6 +2224,10 @@ public class TypeMoonWorldModVariables {
          nbt.putInt("servant_card_medea_dragonfang_stock", this.servant_card_medea_dragonfang_stock);
          nbt.putInt("servant_card_medea_mana_charm_stock", this.servant_card_medea_mana_charm_stock);
          nbt.putInt("servant_card_medea_heal_charm_stock", this.servant_card_medea_heal_charm_stock);
+         nbt.putString("servant_card_medea_sub_servant_uuid", this.servant_card_medea_sub_servant_uuid == null ? "" : this.servant_card_medea_sub_servant_uuid);
+         nbt.putDouble("servant_card_medea_sub_servant_mana", this.servant_card_medea_sub_servant_mana);
+         nbt.putDouble("servant_card_medea_sub_servant_max_mana", this.servant_card_medea_sub_servant_max_mana);
+         nbt.putBoolean("servant_card_medea_sub_servant_active", this.servant_card_medea_sub_servant_active);
          nbt.putInt("servant_card_paracelsus_stone_stock", this.servant_card_paracelsus_stone_stock);
          nbt.putInt("servant_card_paracelsus_diamond_shield_stock", this.servant_card_paracelsus_diamond_shield_stock);
          nbt.putInt("servant_card_arash_arrow_stock", this.servant_card_arash_arrow_stock);
@@ -2577,6 +2609,10 @@ public class TypeMoonWorldModVariables {
          this.servant_card_medea_dragonfang_stock = nbt.contains("servant_card_medea_dragonfang_stock") ? nbt.getInt("servant_card_medea_dragonfang_stock") : 0;
          this.servant_card_medea_mana_charm_stock = nbt.contains("servant_card_medea_mana_charm_stock") ? nbt.getInt("servant_card_medea_mana_charm_stock") : 0;
          this.servant_card_medea_heal_charm_stock = nbt.contains("servant_card_medea_heal_charm_stock") ? nbt.getInt("servant_card_medea_heal_charm_stock") : 0;
+         this.servant_card_medea_sub_servant_uuid = nbt.contains("servant_card_medea_sub_servant_uuid") ? nbt.getString("servant_card_medea_sub_servant_uuid") : "";
+         this.servant_card_medea_sub_servant_mana = nbt.contains("servant_card_medea_sub_servant_mana") ? nbt.getDouble("servant_card_medea_sub_servant_mana") : 0.0;
+         this.servant_card_medea_sub_servant_max_mana = nbt.contains("servant_card_medea_sub_servant_max_mana") ? nbt.getDouble("servant_card_medea_sub_servant_max_mana") : 0.0;
+         this.servant_card_medea_sub_servant_active = nbt.getBoolean("servant_card_medea_sub_servant_active");
          this.servant_card_paracelsus_stone_stock = nbt.contains("servant_card_paracelsus_stone_stock") ? nbt.getInt("servant_card_paracelsus_stone_stock") : 0;
          this.servant_card_paracelsus_diamond_shield_stock = nbt.contains("servant_card_paracelsus_diamond_shield_stock") ? nbt.getInt("servant_card_paracelsus_diamond_shield_stock") : 0;
          this.servant_card_arash_arrow_stock = nbt.contains("servant_card_arash_arrow_stock") ? Mth.clamp(nbt.getInt("servant_card_arash_arrow_stock"), 0, 5000) : 0;

@@ -30,7 +30,7 @@ public record MedeaCraftSelectionMessage(int choice) implements CustomPacketPayl
    public static void handleData(MedeaCraftSelectionMessage message, IPayloadContext context) {
       if (context.flow() == PacketFlow.SERVERBOUND) {
          context.enqueueWork(() -> {
-            if (context.player() instanceof ServerPlayer player && message.choice >= 0 && message.choice <= 3) {
+            if (context.player() instanceof ServerPlayer player && message.choice >= 0 && message.choice <= 5) {
                ServantCardMedeaSkills.craftSelectedMedeaItem(player, message.choice);
             }
          }).exceptionally(e -> {

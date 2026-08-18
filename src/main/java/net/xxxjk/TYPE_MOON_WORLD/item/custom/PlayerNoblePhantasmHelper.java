@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -45,6 +46,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.ProjectionDataHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCuChulainnSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
@@ -54,6 +56,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import org.joml.Vector3f;
 
 public final class PlayerNoblePhantasmHelper {
    public static final String ONE_SHOT_TSUBAME_TAG = "TypeMoonOneShotTsubame";
@@ -78,7 +81,9 @@ public final class PlayerNoblePhantasmHelper {
    private static final int ONE_SHOT_PROJECTION_NP_COOLDOWN = 1200;
    private static final int SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS = 60;
    private static final double SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS = 96.0;
-   private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 30;
+   private static final DustParticleOptions GAE_BULG_CHARGE_PARTICLE = new DustParticleOptions(new Vector3f(0.85F, 0.0F, 0.03F), 1.35F);
+   private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 20;
+   private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 60;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
@@ -91,11 +96,14 @@ public final class PlayerNoblePhantasmHelper {
    private static final double GOLDEN_EXCALIBUR_MANA_PER_TICK = 3.0;
    private static final int GALLATIN_MAX_CHARGE_TICKS = 100;
    private static final int GALLATIN_PLAYER_COOLDOWN = 1200;
-   private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 600;
-   private static final int GAE_BULG_ARMY_PLAYER_COOLDOWN = 2400;
+   private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 300;
+   private static final int GAE_BULG_ARMY_PLAYER_COOLDOWN = 1200;
    private static final double GALLATIN_RANGE = 100.0;
    private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
    private static final double CHARGE_MANA_PER_TICK = 10.0;
+   private static final double GAE_BULG_ARMY_BASE_MANA = CHARGE_MANA_PER_TICK * 30.0;
+   private static final float GAE_BULG_ARMY_BASE_DAMAGE = 500.0F;
+   private static final float GAE_BULG_ARMY_MAX_DAMAGE = 100000.0F;
 
    private PlayerNoblePhantasmHelper() {
    }
@@ -308,6 +316,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!consumeStrict(player, 20.0)) {
          return false;
       }
+      ServantCardCuChulainnSkills.markCombat(player);
       resolveGaeBulgHit(player, target);
       addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
       return true;
@@ -324,41 +333,38 @@ public final class PlayerNoblePhantasmHelper {
       if (!(living instanceof ServerPlayer player) || !player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_TAG)) {
          return;
       }
-      int charged = Math.min(GAE_DEATH_FLIGHT_CHARGE_TICKS, useTicks);
-      player.getPersistentData().putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", charged);
+      player.getPersistentData().putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", Math.max(0, useTicks));
       tickServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-      if (useTicks >= GAE_DEATH_FLIGHT_CHARGE_TICKS && !player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_PAID_TAG)) {
-         if (!consumeStrict(player, CHARGE_MANA_PER_TICK * GAE_DEATH_FLIGHT_CHARGE_TICKS)) {
-            stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-            player.releaseUsingItem();
-         } else {
-            player.getPersistentData().putBoolean(GAE_DEATH_FLIGHT_PAID_TAG, true);
-         }
-      }
-      if (charged < GAE_DEATH_FLIGHT_CHARGE_TICKS && level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 6, 0.5, 0.55, 0.5, 0.04);
+      if (useTicks >= GAE_BULG_MELEE_MIN_CHARGE_TICKS && level instanceof ServerLevel serverLevel) {
+         serverLevel.sendParticles(GAE_BULG_CHARGE_PARTICLE, player.getX(), player.getY() + 1.0, player.getZ(), 8, 0.42, 0.58, 0.42, 0.02);
+         serverLevel.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 3, 0.38, 0.48, 0.38, 0.035);
       }
    }
 
-   public static boolean releaseGaeBulg(ServerPlayer player, boolean crouchingRelease) {
+   public static boolean releaseGaeBulg(ServerPlayer player) {
       boolean deathFlight = player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_TAG);
       int charged = player.getPersistentData().getInt(GAE_DEATH_FLIGHT_TAG + "Ticks");
-      boolean deathFlightPaid = player.getPersistentData().getBoolean(GAE_DEATH_FLIGHT_PAID_TAG);
       stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_TAG);
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_TAG + "Ticks");
       player.getPersistentData().remove(GAE_DEATH_FLIGHT_PAID_TAG);
-      if (deathFlight && charged >= GAE_DEATH_FLIGHT_CHARGE_TICKS && deathFlightPaid) {
-         throwGaeBulgArmy(player);
+      if (deathFlight && charged >= GAE_DEATH_FLIGHT_CHARGE_TICKS) {
+         LivingEntity target = findLookTarget(player, 48.0, 2.0);
+         if (target == null) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+            return true;
+         }
+         Float armyDamage = consumeGaeBulgArmyManaAndDamage(player, charged);
+         if (armyDamage == null) {
+            return false;
+         }
+         ServantCardCuChulainnSkills.markCombat(player);
+         throwGaeBulgArmy(player, target, armyDamage);
          addGaeBulgCooldown(player, GAE_BULG_ARMY_PLAYER_COOLDOWN);
          return true;
       }
-      if (crouchingRelease || deathFlight) {
-         if (consumeStrict(player, 20.0)) {
-            throwGaeBulgSingle(player);
-            addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
-         }
-         return true;
+      if (deathFlight && charged >= GAE_BULG_MELEE_MIN_CHARGE_TICKS) {
+         return useGaeBulgMelee(player);
       }
       return false;
    }
@@ -858,15 +864,36 @@ public final class PlayerNoblePhantasmHelper {
       }
    }
 
-   private static void throwGaeBulgArmy(ServerPlayer player) {
-      if (!(player.level() instanceof ServerLevel level)) {
-         return;
+   private static Float consumeGaeBulgArmyManaAndDamage(ServerPlayer player, int chargedTicks) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed) {
+         return consumeStrict(player, GAE_BULG_ARMY_BASE_MANA) ? GAE_BULG_ARMY_BASE_DAMAGE : null;
       }
-      LivingEntity target = findLookTarget(player, 48.0, 2.0);
-      GaeBulgArmyProjectileEntity projectile = new GaeBulgArmyProjectileEntity(level, player);
-      projectile.setArmyDamage(500.0F);
+      double desiredMana = GAE_BULG_ARMY_BASE_MANA
+         + Math.max(0, chargedTicks - GAE_DEATH_FLIGHT_CHARGE_TICKS) * CHARGE_MANA_PER_TICK;
+      double available = ServantCardManaService.availableForConsume(player, vars);
+      if (available + 1.0E-6 < GAE_BULG_ARMY_BASE_MANA) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+         return null;
+      }
+      double paid = ServantCardManaService.consumeUpTo(player, vars, Math.min(desiredMana, available));
+      if (paid + 1.0E-6 < GAE_BULG_ARMY_BASE_MANA) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+         return null;
+      }
+      float damage = (float)(GAE_BULG_ARMY_BASE_DAMAGE * paid / GAE_BULG_ARMY_BASE_MANA);
+      return Mth.clamp(damage, GAE_BULG_ARMY_BASE_DAMAGE, GAE_BULG_ARMY_MAX_DAMAGE);
+   }
+
+   private static void throwGaeBulgArmy(ServerPlayer player, LivingEntity target, float damage) {
+      if (!(player.level() instanceof ServerLevel level)) {
+          return;
+       }
+       GaeBulgArmyProjectileEntity projectile = new GaeBulgArmyProjectileEntity(level, player);
+      projectile.setArmyDamage(damage);
+      projectile.setTrackedTarget(target);
       projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-      Vec3 aim = target != null ? target.position().add(0.0, target.getBbHeight() * 0.3, 0.0) : player.getEyePosition().add(player.getLookAngle().scale(48.0));
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.3, 0.0);
       Vec3 dir = aim.subtract(projectile.position()).normalize();
       projectile.shoot(dir.x, dir.y + 0.14, dir.z, 2.0F, 0.0F);
       level.addFreshEntity(projectile);

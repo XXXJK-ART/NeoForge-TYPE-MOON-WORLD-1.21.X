@@ -32,6 +32,8 @@ public final class ServantCardCuChulainnSkills {
    private static final String CU_RUNE_BERKANA_UNTIL_TAG = "ServantCardCuBerkanaUntil";
    private static final String CU_RUNE_BERKANA_NEXT_HEAL_TAG = "ServantCardCuBerkanaNextHeal";
    private static final String CU_RECAST_USED_TAG = "ServantCardCuRecastUsed";
+   private static final String CU_LAST_COMBAT_TICK_TAG = "ServantCardCuLastCombatTick";
+   private static final int CU_OUT_OF_COMBAT_RECOVERY_TICKS = 200;
    private static final double CU_RECAST_MP_COST = 35.0;
 
    private ServantCardCuChulainnSkills() {
@@ -45,6 +47,11 @@ public final class ServantCardCuChulainnSkills {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG, true);
       long now = player.level().getGameTime();
+      long lastCombat = data.getLong(CU_LAST_COMBAT_TICK_TAG);
+      if (lastCombat > 0L && now - lastCombat >= CU_OUT_OF_COMBAT_RECOVERY_TICKS) {
+         restoreOutOfCombat(player, vars);
+         data.remove(CU_LAST_COMBAT_TICK_TAG);
+      }
       long tiwazUntil = data.getLong(CU_RUNE_TIWAZ_UNTIL_TAG);
       if (tiwazUntil > 0L && now >= tiwazUntil) {
          clearCuTiwaz(player);
@@ -78,6 +85,7 @@ public final class ServantCardCuChulainnSkills {
       if (!ServantCardManaService.consume(player, vars, CU_RECAST_MP_COST)) {
          return;
       }
+      markCombat(player);
       CompoundTag data = player.getPersistentData();
       data.putBoolean(CU_RECAST_USED_TAG, true);
       ServantCardSkillUtils.clearHarmfulEffects(player);
@@ -100,11 +108,46 @@ public final class ServantCardCuChulainnSkills {
       data.remove(CU_RUNE_BERKANA_UNTIL_TAG);
       data.remove(CU_RUNE_BERKANA_NEXT_HEAL_TAG);
       data.remove(CU_RECAST_USED_TAG);
+      data.remove(CU_LAST_COMBAT_TICK_TAG);
       data.remove(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG);
       clearCuTiwaz(player);
    }
 
+   public static void markCombat(ServerPlayer player) {
+      if (isCuCard(player)) {
+         player.getPersistentData().putLong(CU_LAST_COMBAT_TICK_TAG, player.level().getGameTime());
+      }
+   }
+
+   private static boolean isCuCard(ServerPlayer player) {
+      if (player == null) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "cu_chulainn".equals(vars.servant_card_id);
+   }
+
+   private static void restoreOutOfCombat(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      clearCuTiwaz(player);
+      CompoundTag data = player.getPersistentData();
+      data.remove(CU_RUNE_ALGIZ_SHIELD_TAG);
+      data.remove(CU_RUNE_TIWAZ_UNTIL_TAG);
+      data.remove(CU_RUNE_BERKANA_UNTIL_TAG);
+      data.remove(CU_RUNE_BERKANA_NEXT_HEAL_TAG);
+      data.putBoolean(CU_RECAST_USED_TAG, false);
+      ServantCardSkillUtils.clearHarmfulEffects(player);
+      player.setHealth(player.getMaxHealth());
+      player.clearFire();
+      vars.servant_card_mana = vars.servant_card_max_mana;
+      vars.syncMana(player);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + player.getBbHeight() * 0.65, player.getZ(), 16, 0.45, 0.55, 0.45, 0.04);
+         level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.65F, 1.8F);
+      }
+   }
+
    public static void performAnsuzRune(ServerPlayer player) {
+      markCombat(player);
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
@@ -138,6 +181,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performLaguzRune(ServerPlayer player) {
+      markCombat(player);
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 220, 2, false, true, true));
       player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, 220, 0, false, true, true));
       player.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, 400, 0, false, true, true));
@@ -150,6 +194,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performTiwazRune(ServerPlayer player) {
+      markCombat(player);
       long until = player.level().getGameTime() + 300L;
       player.getPersistentData().putLong(CU_RUNE_TIWAZ_UNTIL_TAG, until);
       ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), CU_TIWAZ_ATTACK_ID, 0.30);
@@ -163,6 +208,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performAlgizRune(ServerPlayer player) {
+      markCombat(player);
       player.getPersistentData().putFloat(CU_RUNE_ALGIZ_SHIELD_TAG, 100.0F);
       if (player.level() instanceof ServerLevel level) {
          spawnRuneParticles(level, player, ModParticles.ALGIZ_RUNE.get(), 16, 0.55, 0.01);
@@ -172,6 +218,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performBerkanaRune(ServerPlayer player) {
+      markCombat(player);
       long now = player.level().getGameTime();
       player.getPersistentData().putLong(CU_RUNE_BERKANA_UNTIL_TAG, now + 180L);
       player.getPersistentData().putLong(CU_RUNE_BERKANA_NEXT_HEAL_TAG, now + 1L);
@@ -187,6 +234,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performCrouchThrust(ServerPlayer player) {
+      markCombat(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       player.setDeltaMovement(player.getDeltaMovement().add(dir.x * 1.18, 0.12, dir.z * 1.18));
       player.hurtMarked = true;
@@ -200,6 +248,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void performDisengage(ServerPlayer player) {
+      markCombat(player);
       ServantCardSkillUtils.clearHarmfulEffects(player);
       player.heal(Math.max(4.0F, player.getMaxHealth() * 0.1F));
       Vec3 back = PlayerNoblePhantasmHelper.horizontalLook(player).scale(-1.6);

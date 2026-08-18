@@ -54,6 +54,7 @@ public final class GillesDeRaisCombatHelper {
     private static final int SMALL_SUMMON_CHANT_TICKS = 40;
     private static final int LARGE_SUMMON_CHANT_TICKS = 100;
     private static final int HUGE_SUMMON_CHANT_TICKS = 100;
+    private static boolean pollutionZoneServiceAvailable = true;
 
     private GillesDeRaisCombatHelper() {
     }
@@ -139,16 +140,34 @@ public final class GillesDeRaisCombatHelper {
     }
 
     public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks, float damagePerSecond) {
+        addPollutionZone(dimension, center, radius, lifetimeTicks, damagePerSecond, null);
+    }
+
+    public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks,
+                                        float damagePerSecond, @Nullable UUID sourceUuid) {
+        addPollutionZone(dimension, center, radius, lifetimeTicks, damagePerSecond, sourceUuid, null);
+    }
+
+    public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks,
+                                        float damagePerSecond, @Nullable UUID sourceUuid, @Nullable UUID masterUuid) {
+        if (!pollutionZoneServiceAvailable) {
+            return;
+        }
         try {
-            GillesPollutionZoneService.add(dimension, center, radius, lifetimeTicks, damagePerSecond);
+            GillesPollutionZoneService.add(dimension, center, radius, lifetimeTicks, damagePerSecond, sourceUuid, masterUuid);
         } catch (LinkageError ignored) {
+            pollutionZoneServiceAvailable = false;
         }
     }
 
     public static void tickPollutionZones(ServerLevel level) {
+        if (!pollutionZoneServiceAvailable) {
+            return;
+        }
         try {
             GillesPollutionZoneService.tick(level);
         } catch (LinkageError ignored) {
+            pollutionZoneServiceAvailable = false;
         }
     }
 

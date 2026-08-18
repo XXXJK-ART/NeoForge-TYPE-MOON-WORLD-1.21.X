@@ -437,7 +437,6 @@ public final class EnkiduCombatHelper {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(100.0),
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
          living.removeEffect(MobEffects.INVISIBILITY);
-         living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 10 * 20, 0, false, true, true));
       }
       return true;
    }

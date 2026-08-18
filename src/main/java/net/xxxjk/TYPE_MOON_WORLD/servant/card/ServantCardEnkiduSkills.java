@@ -377,7 +377,6 @@ public final class ServantCardEnkiduSkills {
             return !EntityUtils.isImmunePlayerTarget(e) && !player.isAlliedTo(e) && !e.isAlliedTo(player);
          })) {
             living.removeEffect(MobEffects.INVISIBILITY);
-            living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
             ids.add(living.getId());
          }
          ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));

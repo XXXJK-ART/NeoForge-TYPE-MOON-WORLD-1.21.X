@@ -91,8 +91,13 @@ public class ServantCardHud {
          }
       } else {
          drawBar(gui, minecraft, manaX, manaY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         int linkedBarY = manaY - 11;
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, manaY - 11, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+            drawBar(gui, minecraft, manaX, linkedBarY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+         }
+         if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
+            int subServantY = vars.master_servant_link_partner_max_mana > 0.0 ? linkedBarY - 11 : linkedBarY;
+            drawBar(gui, minecraft, manaX, subServantY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF006064, 0xFF00E5FF);
          }
       }
 
@@ -110,7 +115,13 @@ public class ServantCardHud {
       drawScaledString(
          gui,
          minecraft,
-         Component.translatable("hud.typemoonworld.servant_card.jump_np", effectiveJumpCharges(minecraft, vars), ticksToSeconds(effectiveNpCooldown(minecraft, vars))),
+         Component.translatable(
+            vars.servant_card_flying
+               ? "hud.typemoonworld.servant_card.dash_np"
+               : "hud.typemoonworld.servant_card.jump_np",
+            effectiveJumpCharges(minecraft, vars),
+            ticksToSeconds(effectiveNpCooldown(minecraft, vars))
+         ),
          x,
          y + 48,
          0xFFE0E0E0,
@@ -258,6 +269,7 @@ public class ServantCardHud {
       return switch (vars.master_servant_link_state == null ? "" : vars.master_servant_link_state) {
          case "normal" -> base + " [G]";
          case "unstable" -> base + " [Y]";
+         case "medea_subservant" -> base + " [M]";
          case "independent_action" -> base + " [Y]";
          case "broken", "forced_death", "decaying" -> base + " [R]";
          default -> base;

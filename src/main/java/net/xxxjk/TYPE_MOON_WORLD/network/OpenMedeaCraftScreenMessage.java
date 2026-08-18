@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 import org.jetbrains.annotations.NotNull;
 
-public record OpenMedeaCraftScreenMessage(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock) implements CustomPacketPayload {
+public record OpenMedeaCraftScreenMessage(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock, int reinforcementCharmStock, int servantContractStock) implements CustomPacketPayload {
    public static final Type<OpenMedeaCraftScreenMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "open_medea_craft_screen")
    );
@@ -22,8 +22,10 @@ public record OpenMedeaCraftScreenMessage(int dragonfangStock, int manaCharmStoc
          buffer.writeInt(message.manaCharmStock);
          buffer.writeInt(message.healCharmStock);
          buffer.writeInt(message.leylineMapStock);
+         buffer.writeInt(message.reinforcementCharmStock);
+         buffer.writeInt(message.servantContractStock);
       },
-      buffer -> new OpenMedeaCraftScreenMessage(buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt())
+      buffer -> new OpenMedeaCraftScreenMessage(buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt(), buffer.readInt())
    );
 
    @NotNull
@@ -36,7 +38,7 @@ public record OpenMedeaCraftScreenMessage(int dragonfangStock, int manaCharmStoc
       if (context.flow() == PacketFlow.CLIENTBOUND) {
          context.enqueueWork(() -> {
             if (FMLEnvironment.dist == Dist.CLIENT) {
-               ClientPacketHandler.openMedeaCraftScreen(message.dragonfangStock, message.manaCharmStock, message.healCharmStock, message.leylineMapStock);
+               ClientPacketHandler.openMedeaCraftScreen(message.dragonfangStock, message.manaCharmStock, message.healCharmStock, message.leylineMapStock, message.reinforcementCharmStock, message.servantContractStock);
             }
          });
       }

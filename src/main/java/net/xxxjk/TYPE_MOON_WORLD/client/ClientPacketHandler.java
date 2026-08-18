@@ -42,14 +42,14 @@ public class ClientPacketHandler {
       }
    }
 
-   public static void openMedeaCraftScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock) {
+   public static void openMedeaCraftScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock, int reinforcementCharmStock, int servantContractStock) {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) {
          return;
       }
 
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
-         mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock, leylineMapStock));
+         mc.setScreen(new MedeaCraftSelectScreen(dragonfangStock, manaCharmStock, healCharmStock, leylineMapStock, reinforcementCharmStock, servantContractStock));
       }
    }
 

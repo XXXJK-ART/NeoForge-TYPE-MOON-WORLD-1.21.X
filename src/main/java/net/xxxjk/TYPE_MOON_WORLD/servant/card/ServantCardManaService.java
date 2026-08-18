@@ -107,6 +107,51 @@ public final class ServantCardManaService {
       return consume(player, vars, amount, true, true);
    }
 
+   public static double availableForConsume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null) {
+         return 0.0;
+      }
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return Double.MAX_VALUE;
+      }
+      double available = Math.max(0.0, vars.servant_card_mana);
+      ServerPlayer master = getMaster(player, vars);
+      if (master != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
+         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         available += Math.max(0.0, masterVars.player_mana);
+      }
+      return available;
+   }
+
+   public static double consumeUpTo(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (player == null || vars == null || amount <= 0.0) {
+         return 0.0;
+      }
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return amount;
+      }
+      double own = Math.min(Math.max(0.0, vars.servant_card_mana), amount);
+      double remaining = amount - own;
+      ServerPlayer master = getMaster(player, vars);
+      TypeMoonWorldModVariables.PlayerVariables masterVars = master == null
+         ? null
+         : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double masterSpent = 0.0;
+      if (remaining > 0.0 && masterVars != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
+         masterSpent = Math.min(Math.max(0.0, masterVars.player_mana), remaining);
+      }
+      if (own > 0.0) {
+         vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - own);
+         vars.syncMana(player);
+      }
+      if (masterSpent > 0.0 && masterVars != null) {
+         masterVars.player_mana = Math.max(0.0, masterVars.player_mana - masterSpent);
+         MasterServantLinkService.markDrawingMasterMana(master, player);
+         masterVars.syncMana(master);
+      }
+      return own + masterSpent;
+   }
+
    public static ManaSnapshot snapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       ServerPlayer master = getMaster(player, vars);
       double masterMana = master == null ? 0.0 : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;

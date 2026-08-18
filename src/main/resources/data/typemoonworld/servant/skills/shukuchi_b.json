@@ -3,8 +3,8 @@
   "display_name": "Shukuchi B",
   "display_name_zh": "缩地 B",
   "type": "active",
-  "mp_cost": 5,
-  "cooldown_ticks": 240,
+  "mp_cost": 0,
+  "cooldown_ticks": 10,
   "duration_ticks": 200,
   "effects": [
     {
@@ -12,14 +12,16 @@
       "params": {
         "range": 5.0,
         "movement_speed_bonus": 0.5,
-        "attack_speed_bonus": 0.4
+        "attack_speed_bonus": 0.4,
+        "can_target_seen_block": true,
+        "retreat_uses_reverse_direction": true
       }
     }
   ],
   "ai": {
     "facts": [
-      {"type": "mobility", "strength": 0.9},
-      {"type": "gap_close", "strength": 0.85}
+      {"type": "gap_close", "strength": 0.9},
+      {"type": "pursuit", "strength": 0.85}
     ]
   }
 }

@@ -44,15 +44,15 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_TARGET_ACQUIRED = "OkitaTargetAcquiredTick";
    private static final String TAG_LAST_PRESSURE_REPOSITION = "OkitaLastPressureReposition";
    private static final String SHINSENGUMI_OWNER_TAG = "OkitaShinsengumiOwner";
-   private static final int FLAG_POOL_MAX = 8;
-   private static final int SHUKUCHI_COOLDOWN = 240;
+   private static final int FLAG_POOL_MAX = 13;
+   private static final int SHUKUCHI_COOLDOWN = 10;
    private static final int SHUKUCHI_DURATION = 200;
-   private static final double SHUKUCHI_MP_COST = 5.0;
+   private static final double SHUKUCHI_MP_COST = 0.0;
    private static final int MUMYOUDAN_COOLDOWN = 300;
-   private static final double MUMYOUDAN_MP_COST = 10.0;
+   private static final double MUMYOUDAN_MP_COST = 20.0;
    private static final int WEAK_DURATION = 300;
-   private static final int FLAG_COOLDOWN = 1800;
-   private static final double FLAG_MP_COST = 80.0;
+   private static final int FLAG_COOLDOWN = 2400;
+   private static final double FLAG_MP_COST = 100.0;
    private static final int FLAG_DURATION = 2400;
    private static final ResourceLocation HAORI_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_health");
    private static final ResourceLocation HAORI_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_attack");
@@ -94,6 +94,9 @@ public final class OkitaSoujiSaberCombatHelper {
             return;
          }
          if (distance < 5.5 && tryMindEye(entity, target, now, true)) {
+            return;
+         }
+         if (tryRetreatShukuchi(entity, target, level, now)) {
             return;
          }
          retreatFrom(entity, target, distance < 7.0 ? 1.35 : 1.15);
@@ -153,6 +156,9 @@ public final class OkitaSoujiSaberCombatHelper {
       updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), WEAK_SPEED_ID,
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       if (weak && entity.getTarget() != null && now % 5L == 0L) {
+         if (now % 10L == 0L && tryRetreatShukuchi(entity, entity.getTarget(), level, now)) {
+            return;
+         }
          retreatFrom(entity, entity.getTarget(), 1.15);
       }
    }
@@ -181,8 +187,6 @@ public final class OkitaSoujiSaberCombatHelper {
 
    public static void decrementFlagPool(OkitaSoujiSaberEntity entity) {
       initializeFlagPool(entity);
-      CompoundTag data = entity.getPersistentData();
-      data.putInt(TAG_FLAG_POOL, Math.max(0, data.getInt(TAG_FLAG_POOL) - 1));
    }
 
    private static boolean tryShukuchi(OkitaSoujiSaberEntity entity, LivingEntity target, ServerLevel level, long now) {
@@ -244,7 +248,7 @@ public final class OkitaSoujiSaberCombatHelper {
                                              int enemies, boolean emergency) {
       CompoundTag data = entity.getPersistentData();
       initializeFlagPool(entity);
-      if (entity.isPerformingAction() || ServantCombatSystem.cannotAct(entity) || data.getInt(TAG_FLAG_POOL) <= 0
+      if (entity.isPerformingAction() || ServantCombatSystem.cannotAct(entity)
          || entity.getCurrentMp() < FLAG_MP_COST || now < data.getLong(TAG_FLAG_COOLDOWN)
          || !entity.hasMasterNoblePhantasmPermission()) {
          return false;
@@ -252,8 +256,7 @@ public final class OkitaSoujiSaberCombatHelper {
       if (enemies < 3 && !emergency) {
          return false;
       }
-      int activeSoldiers = countActiveShinsengumi(level, entity);
-      int count = Math.min(Math.min(FLAG_POOL_MAX, data.getInt(TAG_FLAG_POOL)), Math.max(0, FLAG_POOL_MAX - activeSoldiers));
+      int count = FLAG_POOL_MAX;
       if (count <= 0) {
          return false;
       }
@@ -423,6 +426,34 @@ public final class OkitaSoujiSaberCombatHelper {
       }
       Vec3 destination = entity.position().add(away.normalize().scale(7.0));
       entity.getNavigation().moveTo(destination.x, destination.y, destination.z, speed);
+   }
+
+   private static boolean tryRetreatShukuchi(OkitaSoujiSaberEntity entity, LivingEntity target, ServerLevel level, long now) {
+      CompoundTag data = entity.getPersistentData();
+      if (entity.isPerformingAction() || now < data.getLong(TAG_SHUKUCHI_COOLDOWN)) {
+         return false;
+      }
+      Vec3 away = entity.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
+      if (away.lengthSqr() < 1.0E-4) {
+         away = entity.getLookAngle().scale(-1.0).multiply(1.0, 0.0, 1.0);
+      }
+      if (away.lengthSqr() < 1.0E-4) {
+         return false;
+      }
+      Vec3 destination = safePositionNear(entity, entity.position().add(away.normalize().scale(5.0)));
+      if (destination == null) {
+         return false;
+      }
+      data.putLong(TAG_SHUKUCHI_COOLDOWN, now + SHUKUCHI_COOLDOWN);
+      data.putLong(TAG_SHUKUCHI_UNTIL, now + SHUKUCHI_DURATION);
+      Vec3 start = entity.position();
+      entity.triggerTeleportAnimation();
+      entity.teleportTo(destination.x, destination.y, destination.z);
+      entity.faceToward(target.position());
+      level.sendParticles(ASAGI, start.x, start.y + 0.45, start.z, 12, 0.25, 0.35, 0.25, 0.03);
+      level.sendParticles(ASAGI, destination.x, destination.y + 0.45, destination.z, 18, 0.25, 0.35, 0.25, 0.03);
+      level.playSound(null, entity.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.HOSTILE, 0.75F, 1.85F);
+      return true;
    }
 
    private static Vec3 findShukuchiDestination(OkitaSoujiSaberEntity entity, LivingEntity target) {

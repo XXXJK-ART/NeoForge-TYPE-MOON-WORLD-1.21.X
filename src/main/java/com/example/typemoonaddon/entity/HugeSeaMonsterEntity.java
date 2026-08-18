@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -55,12 +56,21 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final EntityDataAccessor<Boolean> DISSOLVING =
             SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int DISSOLVE_DURATION = 72;
-    private static final int WALK_TERRAIN_BREAK_INTERVAL = 5;
-    private static final int WALK_TERRAIN_BREAK_LIMIT = 128;
-    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 320;
+    private static final int WALK_TERRAIN_BREAK_INTERVAL = 12;
+    private static final int WALK_TERRAIN_BREAK_LIMIT = 96;
+    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 224;
+    private static final int TARGET_REFRESH_INTERVAL = 30;
+    private static final int BROOD_SUMMON_INTERVAL = 140;
+    private static final int AURA_INTERVAL = 20;
+    private static final int FOG_INTERVAL = 5;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID sourceUuid;
+    @Nullable
+    private UUID masterUuid;
+    @Nullable
+    private LivingEntity cachedSourceEntity;
+    private long cachedSourceEntityGameTime = Long.MIN_VALUE;
     private int dissolveTicks;
     private boolean deathEffectsApplied;
 
@@ -106,34 +116,39 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!(this.level() instanceof ServerLevel level)) {
             return;
         }
-        if (this.tickCount % WALK_TERRAIN_BREAK_INTERVAL == 0 && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
+        if (this.isStaggeredTick(WALK_TERRAIN_BREAK_INTERVAL, 0) && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
             this.breakTerrainAhead(level, 18.0, 13.0F, 16, WALK_TERRAIN_BREAK_LIMIT);
         }
-        if (this.tickCount % 20 == 0) {
+        if (this.isStaggeredTick(AURA_INTERVAL, 0)) {
             this.pollutionAura(level);
         }
-        if (this.tickCount % 2 == 0) {
+        if (this.isStaggeredTick(FOG_INTERVAL, 0)) {
             this.spawnUnknowableFog(level);
         }
         if (this.tickCount % 100 == 0) {
             this.heal(50.0F);
         }
-        if (this.tickCount % 20 == 7 && !isValidTarget(this.getTarget())) {
+        if (this.isStaggeredTick(TARGET_REFRESH_INTERVAL, 7) && !isValidTarget(this.getTarget())) {
             this.setTarget(this.findNearestTarget(48.0));
         }
-        if (this.tickCount % 60 == 0) {
+        if (this.isStaggeredTick(60, 0)) {
             this.areaSweep(level);
         }
-        if (this.tickCount % 80 == 20) {
+        if (this.isStaggeredTick(80, 20)) {
             this.tentacleGrab(level);
         }
-        if (this.tickCount % 100 == 40) {
+        if (this.isStaggeredTick(BROOD_SUMMON_INTERVAL, 40)) {
             this.trySummonBrood(level);
         }
     }
 
     public void setSource(@Nullable LivingEntity source) {
         this.sourceUuid = source == null ? null : source.getUUID();
+        this.masterUuid = source instanceof GillesDeRaisEntity gilles && gilles.getEntityMaster() != null
+                ? gilles.getEntityMaster().getUUID()
+                : null;
+        this.cachedSourceEntity = source;
+        this.cachedSourceEntityGameTime = this.level().getGameTime();
     }
 
     public boolean isDissolving() {
@@ -150,6 +165,15 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     @Nullable
     public UUID getSourceUuid() {
         return this.sourceUuid;
+    }
+
+    @Nullable
+    public UUID getMasterUuid() {
+        return this.masterUuid;
+    }
+
+    public boolean isFriendlyTo(@Nullable Entity entity) {
+        return this.isFriendly(entity);
     }
 
     @Override
@@ -179,6 +203,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (this.isFriendly(target)) {
+            return false;
+        }
         boolean hit = super.doHurtTarget(target);
         if (hit) {
             this.swing(InteractionHand.MAIN_HAND);
@@ -240,6 +267,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (this.sourceUuid != null) {
             tag.putUUID("GillesHugeSeaMonsterSource", this.sourceUuid);
         }
+        if (this.masterUuid != null) {
+            tag.putUUID("GillesHugeSeaMonsterMaster", this.masterUuid);
+        }
         tag.putBoolean("GillesHugeSeaMonsterDissolving", this.isDissolving());
         tag.putInt("GillesHugeSeaMonsterDissolveTicks", this.dissolveTicks);
         tag.putBoolean("GillesHugeSeaMonsterDeathEffectsApplied", this.deathEffectsApplied);
@@ -250,6 +280,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         super.readAdditionalSaveData(tag);
         if (tag.hasUUID("GillesHugeSeaMonsterSource")) {
             this.sourceUuid = tag.getUUID("GillesHugeSeaMonsterSource");
+        }
+        if (tag.hasUUID("GillesHugeSeaMonsterMaster")) {
+            this.masterUuid = tag.getUUID("GillesHugeSeaMonsterMaster");
         }
         this.entityData.set(DISSOLVING, tag.getBoolean("GillesHugeSeaMonsterDissolving"));
         this.dissolveTicks = tag.getInt("GillesHugeSeaMonsterDissolveTicks");
@@ -283,11 +316,11 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
 
     private void spawnUnknowableFog(ServerLevel level) {
         double y = this.getY() + this.getBbHeight() * 0.62;
-        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 120, 18.0, 14.0, 18.0, 0.025);
-        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 90, 15.0, 12.0, 15.0, 0.018);
+        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 90, 18.0, 14.0, 18.0, 0.025);
+        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 70, 15.0, 12.0, 15.0, 0.018);
         if (this.tickCount % 8 == 0) {
-            level.sendParticles(ParticleTypes.DRAGON_BREATH, this.getX(), y, this.getZ(), 110, 19.0, 13.0, 19.0, 0.012);
-            level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 80, 17.0, 11.0, 17.0, 0.018);
+            level.sendParticles(ParticleTypes.DRAGON_BREATH, this.getX(), y, this.getZ(), 80, 19.0, 13.0, 19.0, 0.012);
+            level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 60, 17.0, 11.0, 17.0, 0.018);
         }
     }
 
@@ -321,20 +354,25 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void trySummonBrood(ServerLevel level) {
-        int small = countBrood(level, false);
-        int large = countBrood(level, true);
+        int small = 0;
+        int large = 0;
+        for (SeaMonsterEntity seaMonster : level.getEntitiesOfClass(SeaMonsterEntity.class, this.getBoundingBox().inflate(96.0),
+                seaMonster -> seaMonster.isAlive() && this.getUUID().equals(seaMonster.getControllerUuid()))) {
+            if (seaMonster.isLarge()) {
+                large++;
+            } else {
+                small++;
+            }
+            if (small >= 100 && large >= 10) {
+                break;
+            }
+        }
         if (small < 100) {
             spawnBrood(level, false);
         }
         if (large < 10 && this.random.nextFloat() < 0.35F) {
             spawnBrood(level, true);
         }
-    }
-
-    private int countBrood(ServerLevel level, boolean large) {
-        AABB box = this.getBoundingBox().inflate(96.0);
-        return level.getEntitiesOfClass(SeaMonsterEntity.class, box, seaMonster ->
-                seaMonster.isAlive() && seaMonster.isLarge() == large && this.getUUID().equals(seaMonster.getControllerUuid())).size();
     }
 
     private void spawnBrood(ServerLevel level, boolean large) {
@@ -378,9 +416,19 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (entity == this || entity.getVehicle() == this || this.getPassengers().contains(entity)) {
             return true;
         }
+        LivingEntity master = this.getMasterEntity();
+        if (entity == master || master != null && master.isAlliedTo(entity)) {
+            return true;
+        }
         LivingEntity source = this.getSourceEntity();
         if (source != null && (entity == source || source.isAlliedTo(entity))) {
             return true;
+        }
+        if (source instanceof GillesDeRaisEntity gilles) {
+            ServerPlayer sourceMaster = gilles.getEntityMaster();
+            if (entity == sourceMaster || sourceMaster != null && sourceMaster.isAlliedTo(entity)) {
+                return true;
+            }
         }
         if (entity instanceof SeaMonsterEntity seaMonster) {
             UUID controller = seaMonster.getControllerUuid();
@@ -392,12 +440,27 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     @Nullable
+    private LivingEntity getMasterEntity() {
+        if (this.masterUuid == null || !(this.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        Entity entity = level.getEntity(this.masterUuid);
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
+    @Nullable
     private LivingEntity getSourceEntity() {
         if (this.sourceUuid == null || !(this.level() instanceof ServerLevel level)) {
             return null;
         }
+        long now = level.getGameTime();
+        if (this.cachedSourceEntityGameTime == now) {
+            return this.cachedSourceEntity != null && this.cachedSourceEntity.isAlive() ? this.cachedSourceEntity : null;
+        }
+        this.cachedSourceEntityGameTime = now;
         Entity entity = level.getEntity(this.sourceUuid);
-        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+        this.cachedSourceEntity = entity instanceof LivingEntity living && living.isAlive() ? living : null;
+        return this.cachedSourceEntity;
     }
 
     private void beginDissolve(@Nullable DamageSource cause) {
@@ -407,7 +470,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!this.level().isClientSide() && !this.deathEffectsApplied) {
             this.breakSourceSpellbook();
             com.example.typemoonaddon.servant.GillesDeRaisCombatHelper.addPollutionZone(
-                    this.level().dimension(), this.position(), 9.0, 60 * 20, 14.0F);
+                    this.level().dimension(), this.position(), 9.0, 60 * 20, 14.0F, this.sourceUuid, this.masterUuid);
             this.deathEffectsApplied = true;
         }
         this.entityData.set(DISSOLVING, true);
@@ -443,12 +506,15 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         Vec3 forward = Vec3.directionFromRotation(0.0F, this.getYRot()).normalize();
         Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
         int broken = 0;
+        int checks = 0;
+        int maxChecks = maxBlocks * 6;
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         int startY = Mth.floor(this.getY());
         int stepHeight = Math.min(height, Mth.ceil(this.getBbHeight() * 0.45F));
-        for (int y = 0; y < stepHeight && broken < maxBlocks; y++) {
-            for (double forwardOffset = 0.0; forwardOffset <= forwardDistance && broken < maxBlocks; forwardOffset += 1.0) {
-                for (double sideOffset = -halfWidth; sideOffset <= halfWidth && broken < maxBlocks; sideOffset += 1.0) {
+        for (int y = 0; y < stepHeight && broken < maxBlocks && checks < maxChecks; y += 2) {
+            for (double forwardOffset = 0.0; forwardOffset <= forwardDistance && broken < maxBlocks && checks < maxChecks; forwardOffset += 2.0) {
+                for (double sideOffset = -halfWidth; sideOffset <= halfWidth && broken < maxBlocks && checks < maxChecks; sideOffset += 2.0) {
+                    checks++;
                     Vec3 position = this.position()
                             .add(forward.scale(forwardOffset))
                             .add(right.scale(sideOffset));
@@ -459,6 +525,10 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
                 }
             }
         }
+    }
+
+    private boolean isStaggeredTick(int interval, int offset) {
+        return Math.floorMod(this.tickCount + this.getId(), interval) == offset;
     }
 
     private boolean tryBreakBlock(ServerLevel level, BlockPos pos) {

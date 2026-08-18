@@ -84,12 +84,8 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
       if (player.getCooldowns().isOnCooldown(this)) {
          return InteractionResultHolder.fail(stack);
       }
-      if (player.isCrouching()) {
-         PlayerNoblePhantasmHelper.startGaeBulgDeathFlight(serverPlayer);
-         player.startUsingItem(hand);
-         return InteractionResultHolder.consume(stack);
-      }
-      PlayerNoblePhantasmHelper.useGaeBulgMelee(serverPlayer);
+      PlayerNoblePhantasmHelper.startGaeBulgDeathFlight(serverPlayer);
+      player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }
 
@@ -112,7 +108,7 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
    @Override
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
       if (!level.isClientSide() && living instanceof ServerPlayer player) {
-         PlayerNoblePhantasmHelper.releaseGaeBulg(player, player.isCrouching());
+         PlayerNoblePhantasmHelper.releaseGaeBulg(player);
       }
    }
 

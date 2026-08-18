@@ -5,10 +5,18 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 
 public final class ServantCardFlightController {
    private static final String FLIGHT_WAS_AIRBORNE_TAG = "ServantCardFlightWasAirborne";
+   private static final String FLIGHT_DASH_DIR_X_TAG = "ServantCardFlightDashDirX";
+   private static final String FLIGHT_DASH_DIR_Z_TAG = "ServantCardFlightDashDirZ";
+   private static final String FLIGHT_DASH_POWER_TAG = "ServantCardFlightDashPower";
+   private static final String FLIGHT_DASH_TICKS_TAG = "ServantCardFlightDashTicks";
+   private static final String FLIGHT_DASH_DURATION_TAG = "ServantCardFlightDashDuration";
    private static final double MP_PER_TICK = 0.28;
    private static final int MODE_OFF = 0;
    private static final int MODE_NORMAL = 1;
@@ -17,6 +25,7 @@ public final class ServantCardFlightController {
    private static final int HIGH_FLIGHT_EXHAUSTED_COOLDOWN = 20 * 20;
    private static final int HIGH_FLIGHT_RECHARGE_INTERVAL = 3 * 20;
    private static final int HIGH_FLIGHT_RECHARGE_AMOUNT = 20;
+   private static final int FLIGHT_DASH_DURATION_TICKS = 6;
 
    private ServantCardFlightController() {
    }
@@ -24,6 +33,35 @@ public final class ServantCardFlightController {
    public static boolean canFly(String servantId) {
       return "medea".equals(servantId) || "oda_nobunaga".equals(servantId) || "enkidu".equals(servantId)
          || "gilgamesh".equals(servantId) || "gilgamesh_caster".equals(servantId);
+   }
+
+   public static boolean tryDash(ServerPlayer player, float forwardInput, float strafeInput) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed || !vars.servant_card_flying || vars.servant_card_jump_charges <= 0) {
+         return false;
+      }
+      if ("shadow_hassan".equals(vars.servant_card_id) && !ServantCardShadowHassanSkills.canAttack(player)) return false;
+      if (PlayerNoblePhantasmHelper.isChargingMovementLocked(player)) {
+         return false;
+      }
+      ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
+      double scale = definition == null ? 1.0 : Mth.clamp(definition.parameters().movementSpeed() / 0.28, 0.8, 1.8);
+      Vec3 horizontal = buildHorizontalMotion(player, forwardInput, strafeInput);
+      if (horizontal.lengthSqr() < 0.0001) {
+         horizontal = buildHorizontalMotion(player, 1.0F, 0.0F);
+      }
+      startDashMotion(player, horizontal.normalize(), scale);
+      player.fallDistance = 0.0F;
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, player.getX(), player.getY() + 0.15, player.getZ(), 14, 0.25, 0.10, 0.25, 0.06);
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, player.getX(), player.getY() + 0.35, player.getZ(), 8, 0.20, 0.14, 0.20, 0.05);
+         level.playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.TRIDENT_RIPTIDE_1.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.65F, 1.35F);
+      }
+      vars.servant_card_jump_charges--;
+      vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
+      vars.servant_card_jump_recovery_end = 0L;
+      vars.syncPlayerVariables(player);
+      return true;
    }
 
    public static void setInput(ServerPlayer player, boolean toggle, double forward, double strafe, double vertical) {
@@ -46,6 +84,56 @@ public final class ServantCardFlightController {
          vars.servant_card_flight_strafe = clampedStrafe;
          vars.servant_card_flight_vertical = clampedVertical;
       }
+   }
+
+   private static Vec3 buildHorizontalMotion(ServerPlayer player, float forwardInput, float strafeInput) {
+      double yaw = Math.toRadians(player.getYRot());
+      Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 horizontal = forward.scale(Mth.clamp(forwardInput, -1.0F, 1.0F)).add(right.scale(Mth.clamp(strafeInput, -1.0F, 1.0F)));
+      if (horizontal.lengthSqr() > 1.0) {
+         horizontal = horizontal.normalize();
+      }
+      return horizontal;
+   }
+
+   private static void startDashMotion(ServerPlayer player, Vec3 horizontal, double scale) {
+      Vec3 direction = horizontal.lengthSqr() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
+      double power = 1.08 * scale;
+      var data = player.getPersistentData();
+      data.putDouble(FLIGHT_DASH_DIR_X_TAG, direction.x);
+      data.putDouble(FLIGHT_DASH_DIR_Z_TAG, direction.z);
+      data.putDouble(FLIGHT_DASH_POWER_TAG, power);
+      data.putInt(FLIGHT_DASH_TICKS_TAG, FLIGHT_DASH_DURATION_TICKS);
+      data.putInt(FLIGHT_DASH_DURATION_TAG, FLIGHT_DASH_DURATION_TICKS);
+   }
+
+   private static Vec3 consumeDashMotion(ServerPlayer player) {
+      var data = player.getPersistentData();
+      int ticks = data.getInt(FLIGHT_DASH_TICKS_TAG);
+      int duration = Math.max(1, data.getInt(FLIGHT_DASH_DURATION_TAG));
+      if (ticks <= 0 || duration <= 0) {
+         clearDashMotion(player);
+         return Vec3.ZERO;
+      }
+      double dirX = data.getDouble(FLIGHT_DASH_DIR_X_TAG);
+      double dirZ = data.getDouble(FLIGHT_DASH_DIR_Z_TAG);
+      double power = data.getDouble(FLIGHT_DASH_POWER_TAG);
+      double scale = ticks / (double)duration;
+      data.putInt(FLIGHT_DASH_TICKS_TAG, ticks - 1);
+      if (ticks - 1 <= 0) {
+         clearDashMotion(player);
+      }
+      return new Vec3(dirX, 0.0, dirZ).scale(power * Math.max(0.15, scale));
+   }
+
+   private static void clearDashMotion(ServerPlayer player) {
+      var data = player.getPersistentData();
+      data.remove(FLIGHT_DASH_DIR_X_TAG);
+      data.remove(FLIGHT_DASH_DIR_Z_TAG);
+      data.remove(FLIGHT_DASH_POWER_TAG);
+      data.remove(FLIGHT_DASH_TICKS_TAG);
+      data.remove(FLIGHT_DASH_DURATION_TAG);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -119,6 +207,7 @@ public final class ServantCardFlightController {
          verticalInput = Math.min(verticalInput, -0.28);
       }
       Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, verticalInput * 0.42, 0.0);
+      velocity = velocity.add(consumeDashMotion(player));
       if (velocity.lengthSqr() < 0.0001) {
          velocity = new Vec3(0.0, -0.015, 0.0);
       }
@@ -131,6 +220,7 @@ public final class ServantCardFlightController {
 
    public static void stop(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, boolean sync) {
       player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
+      clearDashMotion(player);
       if ("oda_nobunaga".equals(vars.servant_card_id)) {
          if (vars.servant_card_flight_mode == MODE_HIGH) {
             beginHighFlightRecharge(player, vars);

@@ -22,6 +22,8 @@ public class ModCreativeModeTabs {
                     .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
+                        output.accept(ModItems.MEDEA_REINFORCEMENT_CHARM);
+                        output.accept(ModItems.MEDEA_SERVANT_CONTRACT);
                         output.accept(ModItems.COMMAND_SPELL);
                         output.accept(ModItems.SUPERVISOR_COMMAND_SPELL);
                         output.accept(ModItems.SINGLE_COMMAND_SPELL);
@@ -67,6 +69,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER);
                         output.accept(ModItems.SERVANT_CARD_ISKANDAR);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH);
+                        output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_HEAD);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_LEGS);

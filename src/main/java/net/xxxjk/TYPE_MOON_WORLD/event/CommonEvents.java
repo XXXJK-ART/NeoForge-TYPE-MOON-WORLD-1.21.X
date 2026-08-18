@@ -117,6 +117,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDissolutionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCuChulainnSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
@@ -378,6 +379,7 @@ public class CommonEvents {
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
@@ -395,6 +397,7 @@ public class CommonEvents {
             ServantCardTransformManager.tick(serverPlayer, cardVars);
             MasterStateManager.tick(serverPlayer, cardVars);
             MasterServantLinkService.tick(serverPlayer, cardVars);
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.MedeaSpecialContractService.tick(serverPlayer);
          }
 
          if (player.isSpectator()) {
@@ -491,13 +494,19 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
-         if (HundredFacesHassanCombatHelper.isFriendlyFire(event.getEntity(), event.getSource())) {
-            event.setCanceled(true);
-            event.setAmount(0.0F);
-            return;
-         }
-         if (ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
-            event.setCanceled(true);
+          if (HundredFacesHassanCombatHelper.isFriendlyFire(event.getEntity(), event.getSource())) {
+             event.setCanceled(true);
+             event.setAmount(0.0F);
+             return;
+          }
+          if (event.getEntity() instanceof ServerPlayer damagedCu) {
+             ServantCardCuChulainnSkills.markCombat(damagedCu);
+          }
+          if (event.getSource().getEntity() instanceof ServerPlayer attackingCu) {
+             ServantCardCuChulainnSkills.markCombat(attackingCu);
+          }
+          if (ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
+             event.setCanceled(true);
             event.setAmount(0.0F);
             return;
          }

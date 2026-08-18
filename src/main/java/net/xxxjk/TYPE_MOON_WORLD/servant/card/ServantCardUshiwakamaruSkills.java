@@ -15,8 +15,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -28,6 +26,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatRules;
@@ -193,13 +193,15 @@ public final class ServantCardUshiwakamaruSkills {
    public static void performSixSecret(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
       long until = level.getGameTime() + 8L * 20L;
+      List<Integer> highlighted = new ArrayList<>();
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(15.0), LivingEntity::isAlive)) {
          boolean ally = isAlly(player, living);
          applyTimedModifier(living, Attributes.MOVEMENT_SPEED,
-            ally ? SIX_SECRET_ALLY_SPEED_ID : SIX_SECRET_ENEMY_SPEED_ID,
-            ally ? 0.30 : -0.30, AttributeModifier.Operation.ADD_MULTIPLIED_BASE, until, 8 * 20);
-         if (!ally) living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 8 * 20, 0, false, true, true));
+             ally ? SIX_SECRET_ALLY_SPEED_ID : SIX_SECRET_ENEMY_SPEED_ID,
+             ally ? 0.30 : -0.30, AttributeModifier.Operation.ADD_MULTIPLIED_BASE, until, 8 * 20);
+         if (!ally) highlighted.add(living.getId());
       }
+      ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(highlighted, 8 * 20));
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_six_secret", player, 96.0);
       level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 0.3, player.getZ(), 80, 7.0, 0.5, 7.0, 0.05);
       level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.1F, 0.85F);
