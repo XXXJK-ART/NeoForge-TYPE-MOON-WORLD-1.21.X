@@ -63,6 +63,11 @@
       "gilles_summon_large_sea_monster",
       "gilles_abyssal_gaze",
       "gilles_life_absorb",
+      "gilles_sea_monster_command",
+      "gilles_pollution_ink_fog",
+      "gilles_prelati_shroud",
+      "gilles_profane_growth",
+      "gilles_evil_god_praise",
       "gilles_uncontrolled_huge_sea_monster",
       "interrupt",
       "evade"

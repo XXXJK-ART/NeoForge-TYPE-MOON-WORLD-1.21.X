@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.mixin;
 
 import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
+import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedusaPegasusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity;
@@ -23,6 +24,9 @@ public abstract class PlayerPegasusDismountMixin {
          cir.setReturnValue(false);
       } else if (player.getVehicle() instanceof ZhaoYunHakuryuEntity && player.isShiftKeyDown()) {
          cir.setReturnValue(true);
+      } else if (player.getVehicle() instanceof HugeSeaMonsterEntity hugeSeaMonster
+         && hugeSeaMonster.isAlive()) {
+         cir.setReturnValue(false);
       } else if (player.getVehicle() instanceof MedusaPegasusEntity || player.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isMountMode()) {
          cir.setReturnValue(false);
       }

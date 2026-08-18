@@ -30,6 +30,19 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Flag of Sincerity", "okita_flag_of_sincerity", 100.0, 2400);
             default -> null;
          };
+         case "gilles_de_rais_caster" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Summon Small Sea Monster", "gilles_summon_small_sea_monster", 0.0, 80);
+            case 1 -> new ServantCardSkillAction("Summon Large Sea Monster", "gilles_summon_large_sea_monster", 0.0, 240);
+            case 2 -> new ServantCardSkillAction("Abyssal Gaze", "gilles_abyssal_gaze", 10.0, 400);
+            case 3 -> new ServantCardSkillAction("Life Absorption", "gilles_life_absorb", 0.0, 80);
+            case 4 -> new ServantCardSkillAction("Sea Monster Command", "gilles_sea_monster_command", 0.0, 20);
+            case 5 -> new ServantCardSkillAction("Pollution Ink Fog", "gilles_pollution_ink_fog", 0.0, 360);
+            case 6 -> new ServantCardSkillAction("Prelati Shroud", "gilles_prelati_shroud", 0.0, 600);
+            case 7 -> new ServantCardSkillAction("Profane Growth", "gilles_profane_growth", 0.0, 900);
+            case 8 -> new ServantCardSkillAction("Evil God Praise", "gilles_evil_god_praise", 40.0, 800);
+            case 9 -> new ServantCardSkillAction("Prelati's Spellbook: Huge Sea Monster", "gilles_uncontrolled_huge_sea_monster", 0.0, 1200);
+            default -> null;
+         };
          case "cu_chulainn" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Spear Thrust", "cu_crouch_thrust", 0.0, 18);
             case 0 -> new ServantCardSkillAction("Ansuz Rune", "cu_ansuz", 22.0, 120);

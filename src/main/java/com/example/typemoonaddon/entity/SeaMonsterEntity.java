@@ -126,6 +126,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         if (this.isStaggeredTick(targetRefreshInterval, 5)) {
             this.refreshTarget();
         }
+        if (!isValidTarget(this.getTarget())) {
+            this.followController(controller);
+        }
         if (this.isLarge() && this.isStaggeredTick(LARGE_SWEEP_INTERVAL, 0)) {
             this.largeSweep(level);
         }
@@ -330,8 +333,25 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             return;
         }
         if (!isValidTarget(this.getTarget())) {
-            this.setTarget(this.findNearestTarget(24.0));
+            LivingEntity nearest = this.findNearestTarget(24.0);
+            this.setTarget(nearest);
+            if (nearest == null) {
+                this.getNavigation().stop();
+            }
         }
+    }
+
+    private void followController(@Nullable LivingEntity controller) {
+        if (controller == null || !controller.isAlive()) {
+            return;
+        }
+        double distance = this.distanceTo(controller);
+        if (distance > (this.isLarge() ? 7.0 : 4.5)) {
+            this.getNavigation().moveTo(controller, this.isLarge() ? 0.95 : 1.05);
+        } else {
+            this.getNavigation().stop();
+        }
+        this.getLookControl().setLookAt(controller, 30.0F, 30.0F);
     }
 
     @Nullable

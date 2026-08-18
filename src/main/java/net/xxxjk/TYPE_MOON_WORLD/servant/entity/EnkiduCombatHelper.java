@@ -95,6 +95,7 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_FINISH = "EnkiduEnumaFinish";
    private static final String TAG_ENUMA_TARGET = "EnkiduEnumaTarget";
    private static final String TAG_ENUMA_DAMAGE_DONE = "EnkiduEnumaDamageDone";
+   private static final String TAG_ENUMA_DAMAGE_BYPASS_UNTIL = "EnkiduEnumaDamageBypassUntil";
    private static final String TAG_ENUMA_INVISIBLE = "EnkiduEnumaInvisible";
    private static final String TAG_ENUMA_PREV_INVISIBLE = "EnkiduEnumaPrevInvisible";
    private static final String TAG_ENUMA_START_X = "EnkiduEnumaStartX";
@@ -349,6 +350,16 @@ public final class EnkiduCombatHelper {
 
    public static boolean isPerfectFormUndefendableDamage(DamageSource source) {
       return source != null && source.is(DamageTypes.WITHER);
+   }
+
+   public static boolean isEnumaDamageBypassing(LivingEntity entity) {
+      return entity != null && entity.getPersistentData().getLong(TAG_ENUMA_DAMAGE_BYPASS_UNTIL) > entity.level().getGameTime();
+   }
+
+   public static void markEnumaDamageBypass(LivingEntity entity) {
+      if (entity != null && entity.level() != null) {
+         entity.getPersistentData().putLong(TAG_ENUMA_DAMAGE_BYPASS_UNTIL, entity.level().getGameTime() + 3L);
+      }
    }
 
    public static void cleanup(EnkiduEntity entity) {
@@ -2507,6 +2518,7 @@ public final class EnkiduCombatHelper {
       target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
       target.removeEffect(MobEffects.ABSORPTION);
       target.setAbsorptionAmount(0.0F);
+      markEnumaDamageBypass(target);
       target.invulnerableTime = 0;
       float before = target.getHealth();
       target.hurt(entity.damageSources().magic(), amount);

@@ -285,6 +285,13 @@ public final class MasterServantLinkService {
       }
    }
 
+   public static void forceMasterlessDeathAfterHugeSeaMonster(ServerPlayer servant) {
+      if (servant == null || servant.isRemoved() || !servant.isAlive()) {
+         return;
+      }
+      forceMasterlessDeath(servant);
+   }
+
    public static void onServantLost(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars) {
       if (servant == null || servantVars == null || isBlank(servantVars.servant_card_master_uuid)) {
          if (servantVars != null) {
@@ -418,6 +425,9 @@ public final class MasterServantLinkService {
       vars.master_servant_link_decay = 1.0;
       servant.getPersistentData().putBoolean("MasterServantIndependentActionState",
          SURVIVAL_INDEPENDENT.equals(vars.master_servant_survival_state));
+      if (ServantCardGillesDeRaisSkills.isGillesCardPlayer(servant)) {
+         ServantCardGillesDeRaisSkills.deferMasterLossUntilHugeDeath(servant);
+      }
    }
 
    public static void clearSurvival(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -482,6 +492,18 @@ public final class MasterServantLinkService {
       if (!isBlank(vars.servant_card_master_uuid)) {
          vars.master_servant_master_position_online = false;
          if (servant.tickCount % 20 == 0) vars.syncMana(servant);
+      }
+
+      boolean gillesHugeDeferral = ServantCardGillesDeRaisSkills.hasMasterLossDeferral(servant);
+      if (gillesHugeDeferral) {
+         if (ServantCardGillesDeRaisSkills.hasLivingHugeSeaMonster(servant)) {
+            vars.master_servant_link_state = STATE_FORCED_DEATH;
+            vars.master_servant_link_decay = 1.0;
+            return;
+         }
+         ServantCardGillesDeRaisSkills.clearMasterLossDeferral(servant);
+         forceMasterlessDeathAfterHugeSeaMonster(servant);
+         return;
       }
 
       String survival = sanitizeSurvival(vars.master_servant_survival_state);

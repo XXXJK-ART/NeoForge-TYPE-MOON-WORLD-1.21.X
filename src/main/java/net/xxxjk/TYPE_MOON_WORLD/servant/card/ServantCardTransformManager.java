@@ -128,6 +128,9 @@ public final class ServantCardTransformManager {
       if ("okita_souji_saber".equals(servantId)) {
          ServantCardOkitaSoujiSaberSkills.initialize(player);
       }
+      if ("gilles_de_rais_caster".equals(servantId)) {
+         ServantCardGillesDeRaisSkills.initialize(player);
+      }
       vars.servant_card_medusa_mystic_eyes_active = false;
       vars.servant_card_hassan_cloak_broken = false;
       vars.servant_card_hassan_zabaniya_animation_until = 0;
@@ -192,6 +195,7 @@ public final class ServantCardTransformManager {
       if ("zhao_yun_rider".equals(vars.servant_card_id)) ServantCardZhaoYunSkills.clear(player);
       if ("gilgamesh_caster".equals(vars.servant_card_id)) ServantCardCasterGilgameshSkills.clear(player);
       if ("okita_souji_saber".equals(vars.servant_card_id)) ServantCardOkitaSoujiSaberSkills.clear(player);
+      if ("gilles_de_rais_caster".equals(vars.servant_card_id)) ServantCardGillesDeRaisSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
       vars.servant_card_transformed = false;
@@ -311,6 +315,7 @@ public final class ServantCardTransformManager {
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
+         case "gilles_de_rais_caster" -> ServantCardGillesDeRaisSkills.tick(player, vars);
          case "emiya_archer" -> {
             ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
@@ -350,6 +355,7 @@ public final class ServantCardTransformManager {
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
       ServantCardCasterGilgameshSkills.clear(player);
+      ServantCardGillesDeRaisSkills.clear(player);
       ServantCardArashSkills.clear(player);
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
@@ -1259,6 +1265,9 @@ public final class ServantCardTransformManager {
       if ("baobhan_sith_fetch_failnaught".equals(id)) {
          return action.cooldownTicks();
       }
+      if ("gilles_uncontrolled_huge_sea_monster".equals(id)) {
+         return action.cooldownTicks();
+      }
       int cooldown = action.cooldownTicks();
       if ("zabaniya".equals(id) || "wu_er_da".equals(id)) {
          return Math.max(cooldown, 1200);
@@ -1306,6 +1315,36 @@ public final class ServantCardTransformManager {
          }
          case "okita_flag_of_sincerity" -> {
             if (!ServantCardOkitaSoujiSaberSkills.performFlagOfSincerity(player)) return false;
+         }
+         case "gilles_summon_small_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonSmallSeaMonsters(player)) return false;
+         }
+         case "gilles_summon_large_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonLargeSeaMonster(player)) return false;
+         }
+         case "gilles_abyssal_gaze" -> {
+            if (!ServantCardGillesDeRaisSkills.performAbyssalGaze(player)) return false;
+         }
+         case "gilles_life_absorb" -> {
+            if (!ServantCardGillesDeRaisSkills.performLifeAbsorb(player)) return false;
+         }
+         case "gilles_sea_monster_command" -> {
+            if (!ServantCardGillesDeRaisSkills.performCommand(player)) return false;
+         }
+         case "gilles_pollution_ink_fog" -> {
+            if (!ServantCardGillesDeRaisSkills.performPollutionInkFog(player)) return false;
+         }
+         case "gilles_prelati_shroud" -> {
+            if (!ServantCardGillesDeRaisSkills.performPrelatiShroud(player)) return false;
+         }
+         case "gilles_profane_growth" -> {
+            if (!ServantCardGillesDeRaisSkills.performProfaneGrowth(player)) return false;
+         }
+         case "gilles_evil_god_praise" -> {
+            if (!ServantCardGillesDeRaisSkills.performEvilGodPraise(player)) return false;
+         }
+         case "gilles_uncontrolled_huge_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonHugeSeaMonster(player)) return false;
          }
          case "nightingale_steel_nursing" -> {
             if (!ServantCardNightingaleSkills.performSteelNursing(player)) return false;

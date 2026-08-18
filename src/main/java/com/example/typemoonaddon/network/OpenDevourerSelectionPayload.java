@@ -1,11 +1,9 @@
 package com.example.typemoonaddon.network;
 
 import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.client.HeroicSpiritDevourerScreen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.PacketFlow;
@@ -38,7 +36,7 @@ public record OpenDevourerSelectionPayload(List<Entry> entries) implements Custo
         if (context.flow() != PacketFlow.CLIENTBOUND) {
             return;
         }
-        context.enqueueWork(() -> Minecraft.getInstance().setScreen(new HeroicSpiritDevourerScreen(message)));
+        context.enqueueWork(() -> ClientScreenAccess.openDevourerSelection(message));
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, OpenDevourerSelectionPayload payload) {

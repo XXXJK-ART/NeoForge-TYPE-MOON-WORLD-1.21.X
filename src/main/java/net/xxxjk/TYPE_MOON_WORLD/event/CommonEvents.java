@@ -1072,6 +1072,7 @@ public class CommonEvents {
       boolean antiHeraclesNoblePhantasm = HeraclesGodHandHelper.hasGodHand(servant) && (majorBrokenPhantasmExplosion || gaeBulgArmy);
       boolean heraclesPoisonOrWitherSpecialAttack = isHeraclesPoisonOrWitherSpecialAttack(servant, event.getSource());
       boolean enkiduWitherUndefendable = servant instanceof EnkiduEntity && EnkiduCombatHelper.isPerfectFormUndefendableDamage(event.getSource());
+      boolean enumaElishBypass = EnkiduCombatHelper.isEnumaDamageBypassing(servant);
       boolean invisibleAirBypass = data.getLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL) > currentTick;
       boolean inPlaceGodHandRevive = shouldUseInPlaceGodHandRevive(event.getSource(), originalDamage);
       boolean paleRiderInfection = net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource());
@@ -1128,13 +1129,15 @@ public class CommonEvents {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }
       if (!fanaticGuaranteedHit && !paleRiderInfection && !originBullet && !enkiduWitherUndefendable
-         && ServantCombatSystem.isUntargetable(servant)) {
+         && !enumaElishBypass
+          && ServantCombatSystem.isUntargetable(servant)) {
          event.setCanceled(true);
          return;
       }
 
       if (!fanaticDefensePiercing && !originBullet && !artoriaExcalibur && !antiHeraclesNoblePhantasm
-         && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass) {
+         && !heraclesPoisonOrWitherSpecialAttack && !enkiduWitherUndefendable && !invisibleAirBypass
+         && !enumaElishBypass) {
          ServantCombatSystem.handleIncomingDamage(servant, event);
          if (event.isCanceled()) {
             return;
@@ -1241,8 +1244,9 @@ public class CommonEvents {
       // --- God Hand: immunity against low-rank damage ---
       if (data.getBoolean("GodHandActive")) {
          float threshold = data.getFloat("GodHandThreshold");
-         if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
-            && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && damage < threshold) {
+      if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
+         && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && !enumaElishBypass
+         && damage < threshold) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.ENCHANT,
                   servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
@@ -1255,8 +1259,8 @@ public class CommonEvents {
          }
 
          // Adaptive resistance: repeated damage types are reduced over time.
-         if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
-            && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy) {
+      if (!fanaticDefensePiercing && !paleRiderInfection && !heraclesPoisonOrWitherSpecialAttack
+         && !artoriaExcalibur && !majorBrokenPhantasmExplosion && !gaeBulgArmy && !enumaElishBypass) {
             float reduction = data.getFloat("GodHandAdaptiveReduction");
             float maxReduction = data.getFloat("GodHandAdaptiveMax");
             float currentResistance = data.getFloat("GodHandCurrentResistance");

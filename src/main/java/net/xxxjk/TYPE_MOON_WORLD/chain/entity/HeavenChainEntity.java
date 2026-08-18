@@ -50,6 +50,9 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
     private static final EntityDataAccessor<Float> DURABILITY_CAP = SynchedEntityData.defineId(
         HeavenChainEntity.class, EntityDataSerializers.FLOAT
     );
+    private static final EntityDataAccessor<Integer> STACKED_CHAIN_COUNT = SynchedEntityData.defineId(
+        HeavenChainEntity.class, EntityDataSerializers.INT
+    );
     private static final EntityDataAccessor<CompoundTag> ANCHORS = SynchedEntityData.defineId(
         HeavenChainEntity.class, EntityDataSerializers.COMPOUND_TAG
     );
@@ -233,12 +236,36 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         return entityData.get(DURABILITY_CAP);
     }
 
-    public void setEnumaAggregatedHealth(float health, List<Vec3> gateOrigins) {
+    public int stackedChainCount() {
+        return entityData.get(STACKED_CHAIN_COUNT);
+    }
+
+    public void setStackedChainCount(int count) {
+        int clamped = clampStackedChainCount(count);
+        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        entityData.set(STACKED_CHAIN_COUNT, clamped);
+        entityData.set(DURABILITY_CAP, maximumHealth);
+        entityData.set(HEALTH, maximumHealth);
+    }
+
+    public void setStackedChainCountPreservingDamage(int count) {
+        int clamped = clampStackedChainCount(count);
+        float previousMissingHealth = Math.max(0.0F, chainMaxHealth() - chainHealth());
+        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        entityData.set(STACKED_CHAIN_COUNT, clamped);
+        entityData.set(DURABILITY_CAP, maximumHealth);
+        entityData.set(HEALTH, Mth.clamp(maximumHealth - previousMissingHealth, 0.0F, maximumHealth));
+    }
+
+    public void setEnumaAggregatedHealth(float health, int logicalChainCount, List<Vec3> gateOrigins) {
         if (!isEnumaChain() || state() == ChainState.BROKEN) {
             return;
         }
-        float aggregated = Mth.clamp(health, 0.0F, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH);
-        entityData.set(DURABILITY_CAP, Math.max(ChainConfig.CHAIN_MAX_HEALTH, aggregated));
+        int clamped = clampStackedChainCount(logicalChainCount);
+        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        float aggregated = Mth.clamp(health, 0.0F, maximumHealth);
+        entityData.set(STACKED_CHAIN_COUNT, clamped);
+        entityData.set(DURABILITY_CAP, maximumHealth);
         entityData.set(HEALTH, aggregated);
         entityData.set(ENUMA_MERGED_GATES, pointsTag(gateOrigins, ChainConfig.ENUMA_CHAIN_COUNT));
     }
@@ -408,6 +435,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         builder.define(STATE, (byte)ChainState.SEEKING.ordinal());
         builder.define(HEALTH, ChainConfig.CHAIN_MAX_HEALTH);
         builder.define(DURABILITY_CAP, ChainConfig.CHAIN_MAX_HEALTH);
+        builder.define(STACKED_CHAIN_COUNT, 1);
         builder.define(ANCHORS, new CompoundTag());
         builder.define(SKILL_CHAIN, false);
         builder.define(TETHER_ORIGIN, new CompoundTag());
@@ -870,12 +898,16 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         float maximumHealth = tag.contains("ChainMaxHealth", Tag.TAG_FLOAT)
             ? tag.getFloat("ChainMaxHealth")
             : ChainConfig.CHAIN_MAX_HEALTH;
-        float storageCap = tag.getBoolean("EnumaChain")
-            ? ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH
-            : ChainConfig.CHAIN_MAX_HEALTH;
-        maximumHealth = Mth.clamp(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH, storageCap);
+        int stackedCount = tag.contains("StackedChainCount", Tag.TAG_INT)
+            ? tag.getInt("StackedChainCount")
+            : (int)Math.ceil(Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH) / ChainConfig.CHAIN_MAX_HEALTH);
+        stackedCount = clampStackedChainCount(stackedCount);
+        maximumHealth = Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH * stackedCount);
+        maximumHealth = Mth.clamp(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH);
+        entityData.set(STACKED_CHAIN_COUNT, stackedCount);
         entityData.set(DURABILITY_CAP, maximumHealth);
-        entityData.set(HEALTH, Mth.clamp(tag.getFloat("ChainHealth"), 0.0F, maximumHealth));
+        float savedHealth = tag.contains("ChainHealth", Tag.TAG_FLOAT) ? tag.getFloat("ChainHealth") : maximumHealth;
+        entityData.set(HEALTH, Mth.clamp(savedHealth, 0.0F, maximumHealth));
         int stateOrdinal = tag.getByte("ChainState");
         if (stateOrdinal >= 0 && stateOrdinal < ChainState.values().length) {
             setState(ChainState.values()[stateOrdinal]);
@@ -949,6 +981,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         tag.putInt("OwnerId", entityData.get(OWNER_ID));
         tag.putFloat("ChainHealth", chainHealth());
         tag.putFloat("ChainMaxHealth", chainMaxHealth());
+        tag.putInt("StackedChainCount", stackedChainCount());
         tag.putByte("ChainState", (byte)state().ordinal());
         ListTag targets = new ListTag();
         for (UUID target : targetQueue) {
@@ -1015,6 +1048,10 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         result.putDouble("Y", point.y);
         result.putDouble("Z", point.z);
         return result;
+    }
+
+    private static int clampStackedChainCount(int count) {
+        return Mth.clamp(count, 1, ChainConfig.MAX_FUSED_CHAIN_COUNT);
     }
 
     private boolean isEnumaBindingProtected(long gameTime) {

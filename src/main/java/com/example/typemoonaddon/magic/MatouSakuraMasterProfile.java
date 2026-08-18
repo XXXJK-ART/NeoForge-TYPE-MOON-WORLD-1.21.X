@@ -25,6 +25,7 @@ public final class MatouSakuraMasterProfile {
         }
         data.deserializeNBT(player.registryAccess(), new CompoundTag());
         SakuraImaginaryStorageService.learnAndGrantAttribute(player);
+        SakuraTypeMoonIntegration.grantMasterCardAttributes(player);
         data.unlock();
         if (variant != Variant.STAY_NIGHT) {
             data.assimilateCrestWorm();

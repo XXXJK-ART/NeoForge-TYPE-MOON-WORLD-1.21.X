@@ -298,7 +298,7 @@ public final class MasterCardProfile {
             giveHighGemKit(player);
             give(player, new ItemStack(ModItems.RUBY_STAFF.get()));
          });
-         case "leff_laynor_flauros" -> new Profile(masterId, "leff", 800.0, 5.0, 10, Attributes.NONE, vars -> {
+         case "leff_laynor_flauros" -> new Profile(masterId, "leff", 800.0, 5.0, 10, Attributes.WIND_IMAGINARY, vars -> {
             vars.player_magic_attributes_wind = true;
             vars.player_magic_attributes_imaginary_number = true;
             setKnownMagic(vars, "aerial_stasis", 100.0);
@@ -579,6 +579,10 @@ public final class MasterCardProfile {
          case SWORD -> vars.player_magic_attributes_sword = true;
          case EARTH -> vars.player_magic_attributes_earth = true;
          case WIND -> vars.player_magic_attributes_wind = true;
+         case WIND_IMAGINARY -> {
+            vars.player_magic_attributes_wind = true;
+            vars.player_magic_attributes_imaginary_number = true;
+         }
          case FIRE -> vars.player_magic_attributes_fire = true;
       }
    }
@@ -791,6 +795,7 @@ public final class MasterCardProfile {
       SWORD,
       EARTH,
       WIND,
+      WIND_IMAGINARY,
       FIRE,
       NONE
    }

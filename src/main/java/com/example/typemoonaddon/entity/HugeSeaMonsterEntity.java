@@ -2,6 +2,7 @@ package com.example.typemoonaddon.entity;
 
 import java.util.UUID;
 import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGillesDeRaisSkills;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -134,6 +135,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             LivingEntity revenge = this.getLastHurtByMob();
             this.setTarget(isValidTarget(revenge) ? revenge : this.findNearestTarget(48.0));
         }
+        if (!isValidTarget(this.getTarget())) {
+            this.followSource();
+        }
         if (this.isStaggeredTick(60, 0)) {
             this.areaSweep(level);
         }
@@ -180,17 +184,23 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (!(this.level() instanceof ServerLevel level) || this.isDissolving()) {
+            return;
+        }
+        this.maintainOwnerPassenger(level);
+    }
+
+    @Override
     @Nullable
     public LivingEntity getControllingPassenger() {
-        return null;
+        return this.getFirstPassenger() instanceof LivingEntity living ? living : null;
     }
 
     @Override
     protected boolean canAddPassenger(Entity passenger) {
-        return this.getPassengers().isEmpty()
-                && passenger instanceof GillesDeRaisEntity gilles
-                && this.sourceUuid != null
-                && this.sourceUuid.equals(gilles.getUUID());
+        return this.getPassengers().isEmpty() && this.isAuthorizedPassenger(passenger);
     }
 
     @Override
@@ -447,6 +457,20 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
                 && this.sourceUuid.equals(other.sourceUuid);
     }
 
+    private void followSource() {
+        LivingEntity source = this.getSourceEntity();
+        if (source == null || !source.isAlive()) {
+            return;
+        }
+        double distance = this.distanceTo(source);
+        if (distance > 12.0) {
+            this.getNavigation().moveTo(source, 0.9);
+        } else {
+            this.getNavigation().stop();
+        }
+        this.getLookControl().setLookAt(source, 25.0F, 25.0F);
+    }
+
     @Nullable
     private LivingEntity livingAttacker(DamageSource source) {
         if (source.getEntity() instanceof LivingEntity living) {
@@ -500,6 +524,41 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         this.hurtDuration = 0;
     }
 
+    private void maintainOwnerPassenger(ServerLevel level) {
+        LivingEntity source = this.getSourceEntity();
+        if (source == null || !source.isAlive()) {
+            if (!this.getPassengers().isEmpty()) {
+                this.ejectPassengers();
+            }
+            return;
+        }
+        if (this.getPassengers().size() > 1) {
+            for (Entity passenger : java.util.List.copyOf(this.getPassengers()).subList(1, this.getPassengers().size())) {
+                passenger.stopRiding();
+            }
+        }
+        if (!this.getPassengers().isEmpty() && this.getPassengers().get(0) != source) {
+            for (Entity passenger : java.util.List.copyOf(this.getPassengers())) {
+                if (passenger != source) {
+                    passenger.stopRiding();
+                }
+            }
+        }
+        if (!this.hasPassenger(source) && source.getVehicle() != this && this.isAuthorizedPassenger(source)) {
+            source.startRiding(this, true);
+        }
+    }
+
+    private boolean isAuthorizedPassenger(Entity passenger) {
+        if (this.sourceUuid == null || passenger == null) {
+            return false;
+        }
+        if (passenger instanceof GillesDeRaisEntity gilles) {
+            return this.sourceUuid.equals(gilles.getUUID());
+        }
+        return passenger instanceof ServerPlayer player && this.sourceUuid.equals(player.getUUID());
+    }
+
     private void tickDissolve() {
         this.getNavigation().stop();
         this.setTarget(null);
@@ -510,7 +569,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!this.level().isClientSide()) {
             this.dissolveTicks++;
             if (this.dissolveTicks >= DISSOLVE_DURATION) {
+                this.ejectPassengers();
                 this.discard();
+                ServantCardGillesDeRaisSkills.onHugeSeaMonsterDeath(this);
             }
         }
     }

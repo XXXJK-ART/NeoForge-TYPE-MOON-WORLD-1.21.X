@@ -112,6 +112,7 @@ public final class SakuraTypeMoonIntegration {
 
     private static void initializeMaster(MasterProfileContext context, MasterVariant variant) {
         learn(context, IMAGINARY_STORAGE, 40.0D);
+        grantMasterCardAttributes(context.player());
         if (variant != MasterVariant.STAY_NIGHT) {
             learn(context, IMAGINARY_ABSORPTION, 60.0D);
             learn(context, SHADOW_MATERIALIZATION, 40.0D);
@@ -335,6 +336,10 @@ public final class SakuraTypeMoonIntegration {
             vars.syncPlayerVariables(player);
         }
         return true;
+    }
+
+    public static boolean grantMasterCardAttributes(ServerPlayer player) {
+        return ensureImaginaryAttribute(player) && grantWaterAttribute(player);
     }
 
     public static boolean assimilateCrestWorm(ServerPlayer player) {

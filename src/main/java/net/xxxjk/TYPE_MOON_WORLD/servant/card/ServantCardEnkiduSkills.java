@@ -65,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
@@ -809,6 +810,7 @@ public final class ServantCardEnkiduSkills {
       target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
       target.removeEffect(MobEffects.ABSORPTION);
       target.setAbsorptionAmount(0.0F);
+      EnkiduCombatHelper.markEnumaDamageBypass(target);
       target.invulnerableTime = 0;
       float before = target.getHealth();
       target.hurt(player.damageSources().magic(), amount);

@@ -38,6 +38,51 @@
       "terrain_impact": "none"
     },
     {
+      "id": "gilles_sea_monster_command",
+      "tags": ["control", "summon"],
+      "minimum_range": 0.0,
+      "maximum_range": 32.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_pollution_ink_fog",
+      "tags": ["control", "area"],
+      "minimum_range": 4.0,
+      "maximum_range": 24.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "small"
+    },
+    {
+      "id": "gilles_prelati_shroud",
+      "tags": ["defense", "control"],
+      "minimum_range": 0.0,
+      "maximum_range": 0.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_profane_growth",
+      "tags": ["buff", "summon"],
+      "minimum_range": 0.0,
+      "maximum_range": 64.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
+      "id": "gilles_evil_god_praise",
+      "tags": ["defense", "area"],
+      "minimum_range": 0.0,
+      "maximum_range": 8.0,
+      "mana_cost": 0.0,
+      "stamina_cost": 0.0,
+      "terrain_impact": "none"
+    },
+    {
       "id": "gilles_uncontrolled_huge_sea_monster",
       "tags": ["summon", "noble_phantasm", "area"],
       "minimum_range": 6.0,
