@@ -48,7 +48,7 @@ public final class AlchemyFurnaceService {
          case TOPAZ -> ModItems.MOLTEN_TOPAZ_BOTTLE.get();
          case WHITE_GEMSTONE -> ModItems.MOLTEN_WHITE_GEMSTONE_BOTTLE.get();
          case CYAN -> ModItems.MOLTEN_CYAN_GEMSTONE_BOTTLE.get();
-         case BLACK_SHARD -> ModItems.MOLTEN_BLACK_SHARD_BOTTLE.get();
+         case BLACK_SHARD -> Items.AIR;
       };
    }
 }

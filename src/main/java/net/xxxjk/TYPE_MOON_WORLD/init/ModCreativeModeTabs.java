@@ -41,6 +41,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MASTER_CARD_WAVER);
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
                         output.accept(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS);
+                        output.accept(ModItems.MASTER_CARD_URYU_RYUNOSUKE);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -475,7 +476,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MOLTEN_TOPAZ_BOTTLE);
                         output.accept(ModItems.MOLTEN_WHITE_GEMSTONE_BOTTLE);
                         output.accept(ModItems.MOLTEN_CYAN_GEMSTONE_BOTTLE);
-                        output.accept(ModItems.MOLTEN_BLACK_SHARD_BOTTLE);
                         output.accept(ModItems.LARGE_RUBY);
                         output.accept(ModItems.LARGE_SAPPHIRE);
                         output.accept(ModItems.LARGE_EMERALD);

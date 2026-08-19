@@ -102,11 +102,11 @@ public final class MasterCardProfile {
       vars.player_mana_egenerated_every_moment = profile.regenAmount();
       vars.player_restore_magic_moment = profile.regenIntervalTicks();
       profile.applyMagic(vars);
-      if (!"emiya_shirou".equals(profile.id())) {
+      if (shouldGrantMasterMagecraft(profile.id())) {
          grantCommonMasterMagecraft(vars, profile.id());
+         grantProfileMagicAnalysis(vars);
+         grantMasterDetection(vars);
       }
-      grantProfileMagicAnalysis(vars);
-      grantMasterDetection(vars);
       TYPE_MOON_WORLD.queueServerWork(2, () -> {
          TypeMoonWorldModVariables.PlayerVariables delayedVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (delayedVars.master_active && delayedVars.master_card_active && profile.id().equals(delayedVars.master_card_id)) {
@@ -280,6 +280,10 @@ public final class MasterCardProfile {
             vars.proficiency_water_magic = Math.max(vars.proficiency_water_magic, 55.0);
          }, player -> {
          });
+         case "uryu_ryunosuke" -> new Profile(masterId, "default", 10.0, 1.0, 1, Attributes.NONE, vars -> {
+         }, player -> {
+            give(player, new ItemStack(Items.IRON_SWORD));
+         });
          case "waver" -> new Profile(masterId, "waver", 120.0, 3.0, 18, Attributes.EARTH, vars -> {
             learn(vars, "reinforcement");
             vars.proficiency_reinforcement = Math.max(vars.proficiency_reinforcement, 35.0);
@@ -312,9 +316,7 @@ public final class MasterCardProfile {
             setKnownMagic(vars, "imaginary_space", 85.0);
             setKnownMagic(vars, "spiritron_cannon", 90.0);
             grantLeffMasterMagicCrest(vars);
-         }, player -> {
-            give(player, new ItemStack(ModItems.MAGIC_BOOK_SPIRITRON_CANNON.get()));
-         });
+         }, player -> { });
          default -> null;
       };
    }
@@ -639,6 +641,10 @@ public final class MasterCardProfile {
       return "tohsaka_rin".equals(masterId) || "kotomine_kirei".equals(masterId);
    }
 
+   private static boolean shouldGrantMasterMagecraft(String masterId) {
+      return !"uryu_ryunosuke".equals(masterId);
+   }
+
    private static boolean shouldGrantMasterMagicCrest(String masterId) {
       return !"kotomine_kirei".equals(masterId) && !"leff_laynor_flauros".equals(masterId);
    }
@@ -783,6 +789,7 @@ public final class MasterCardProfile {
          case "kotomine_kirei" -> ModItems.MASTER_CARD_KOTOMINE_KIREI.get();
          case "luvia" -> ModItems.MASTER_CARD_LUVIA.get();
          case "elsa_saijo" -> ModItems.MASTER_CARD_ELSA_SAIJO.get();
+         case "uryu_ryunosuke" -> ModItems.MASTER_CARD_URYU_RYUNOSUKE.get();
          case "waver" -> ModItems.MASTER_CARD_WAVER.get();
          case "tohsaka_tokiomi" -> ModItems.MASTER_CARD_TOHSAKA_TOKIOMI.get();
          case "leff_laynor_flauros" -> ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get();

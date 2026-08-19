@@ -302,6 +302,7 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
     public static final DeferredItem<Item> MASTER_CARD_LEFF_LAYNOR_FLAUROS = registerMasterCard("leff_laynor_flauros");
+    public static final DeferredItem<Item> MASTER_CARD_URYU_RYUNOSUKE = registerMasterCard("uryu_ryunosuke");
 
     public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSummoningRelic("relic_apocalypse");
     public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSummoningRelic("relic_apocalypse_page");
@@ -659,8 +660,6 @@ public class ModItems {
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.WHITE_GEMSTONE));
     public static final DeferredItem<Item> MOLTEN_CYAN_GEMSTONE_BOTTLE = ITEMS.register("molten_cyan_gemstone_bottle",
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.CYAN));
-    public static final DeferredItem<Item> MOLTEN_BLACK_SHARD_BOTTLE = ITEMS.register("molten_black_shard_bottle",
-            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.BLACK_SHARD));
 
     public static final DeferredItem<Item> LARGE_RUBY = ITEMS.register("large_ruby",
             () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.RUBY));
