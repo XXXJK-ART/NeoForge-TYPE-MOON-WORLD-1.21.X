@@ -58,7 +58,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final double SPLIT_TRIGGER_DISTANCE = 5.0D;
    private static final double SPLIT_IMPACT_DISTANCE_SQR = 9.0D;
    private static final int SPLIT_COUNT = 10;
-   private static final double SPLIT_BURST_RADIUS = 4.25D;
+   private static final double SPLIT_BURST_RADIUS = 18.0D;
    private int lifeTime = 0;
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -147,7 +147,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (this.getMode() == Mode.ARMY || this.getMode() == Mode.SPLIT) {
          return entity != null && entity == this.getTrackedTarget() && super.canHitEntity(entity);
       }
-      return entity != null && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity) && super.canHitEntity(entity);
+      LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
+      return entity instanceof LivingEntity living && isUsableTarget(living, owner) && super.canHitEntity(entity);
    }
 
    @Override
@@ -198,7 +199,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             this.steerToward(targetPoint, 5.2, 0.82);
             this.syncRotationToMotion();
             if (this.position().distanceToSqr(targetPoint) <= SPLIT_IMPACT_DISTANCE_SQR || this.lifeTime > 90) {
-               this.resolveSplitBurst(level, target, targetPoint);
+               this.resolveSplitBurst(level);
                return;
             }
          } else if (armyMode) {
@@ -244,26 +245,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    private Vec3 targetPoint(LivingEntity target) {
       Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
-      if (this.getMode() == Mode.SPLIT) {
-         return center.add(splitOffset(this.getSplitIndex()));
-      }
       return center;
-   }
-
-   private static Vec3 splitOffset(int index) {
-      Vec3 unit = switch (Math.floorMod(index, SPLIT_COUNT)) {
-         case 0 -> new Vec3(0.0, 1.0, 0.0);
-         case 1 -> new Vec3(0.0, -0.35, 1.0);
-         case 2 -> new Vec3(1.0, 0.2, 0.0);
-         case 3 -> new Vec3(-1.0, 0.2, 0.0);
-         case 4 -> new Vec3(0.0, 0.15, -1.0);
-         case 5 -> new Vec3(0.75, 0.55, 0.75);
-         case 6 -> new Vec3(-0.75, 0.55, 0.75);
-         case 7 -> new Vec3(0.75, -0.15, -0.75);
-         case 8 -> new Vec3(-0.75, -0.15, -0.75);
-         default -> new Vec3(0.45, 0.9, -0.45);
-      };
-      return unit.normalize().scale(SPLIT_BURST_RADIUS * 0.78);
    }
 
    private void spawnSplitSpears(ServerLevel level, LivingEntity target) {
@@ -279,11 +261,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          spear.setSplitIndex(i);
          spear.setArmyDamage(splitDamage);
          spear.setTrackedTarget(target);
-         Vec3 side = splitOffset(i).normalize().scale(0.85);
-         spear.setPos(origin.x + side.x, origin.y + side.y, origin.z + side.z);
+         spear.setPos(origin.x, origin.y, origin.z);
          spear.noPhysics = true;
          spear.setNoGravity(true);
-         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0).add(splitOffset(i));
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          Vec3 dir = aim.subtract(spear.position());
          if (dir.lengthSqr() < 1.0E-4) {
             dir = this.getDeltaMovement().lengthSqr() > 1.0E-4 ? this.getDeltaMovement() : this.getLookAngle();
@@ -297,7 +278,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       level.playSound(null, BlockPos.containing(origin), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 1.8F, 0.52F);
    }
 
-   private void resolveSplitBurst(ServerLevel level, LivingEntity trackedTarget, Vec3 center) {
+   private void resolveSplitBurst(ServerLevel level) {
       Vec3 burstCenter = this.position();
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
@@ -325,22 +306,27 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
       }
 
-      VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 96.0);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 1, 0.12, 0.12, 0.12, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.1, 0.1, 0.1, 0.0);
-      level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 32, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, 0.12);
-      level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 24, SPLIT_BURST_RADIUS * 0.25, 0.35, SPLIT_BURST_RADIUS * 0.25, 0.04);
+      VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
+      this.spawnArmyExplosionShellEffects(level, burstCenter, SPLIT_BURST_RADIUS);
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.FLASH, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 96, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, 0.16);
+      level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 72, SPLIT_BURST_RADIUS * 0.42, SPLIT_BURST_RADIUS * 0.24, SPLIT_BURST_RADIUS * 0.42, 0.05);
       level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
       this.breakLowHardnessTerrain(level, burstCenter, SPLIT_BURST_RADIUS, 0.0);
+      this.breakSphereTerrain(level, burstCenter, SPLIT_BURST_RADIUS);
       this.discard();
    }
 
    private boolean isUsableTarget(LivingEntity target) {
-      Entity ownerEntity = this.getOwner();
-      return target != null && target.isAlive() && target != ownerEntity
-         && (ownerEntity == null || !target.isAlliedTo(ownerEntity))
-         && (!(ownerEntity instanceof LivingEntity owner) || !ServantMasterTargeting.isContractMaster(owner, target))
-         && !EntityUtils.isImmunePlayerTarget(target);
+      return isUsableTarget(target, this.getOwner() instanceof LivingEntity living ? living : null);
+   }
+
+   private static boolean isUsableTarget(LivingEntity target, LivingEntity owner) {
+      return target != null && target.isAlive() && target != owner
+         && (owner == null || !target.isAlliedTo(owner))
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && (!(owner instanceof LivingEntity) || !ServantMasterTargeting.isContractMaster(owner, target));
    }
 
    private LivingEntity acquireNearbyTarget(ServerLevel level) {
@@ -402,7 +388,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             this.spawnSplitSpears((ServerLevel)this.level(), living);
             this.discard();
          } else if (this.getMode() == Mode.SPLIT) {
-            this.resolveSplitBurst((ServerLevel)this.level(), living, this.targetPoint(living));
+            this.resolveSplitBurst((ServerLevel)this.level());
          }
       }
    }
@@ -648,6 +634,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
          }
       });
+   }
+
+   private void breakSphereTerrain(ServerLevel level, Vec3 center, double radius) {
+      DeferredTerrainDestruction.ExpandingSphere terrain = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.ceil(radius), null);
+      terrain.advanceTo(radius);
+      terrain.seal();
    }
 
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {

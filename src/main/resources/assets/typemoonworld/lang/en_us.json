@@ -2980,6 +2980,13 @@
     "item.typemoonworld.servant_card_okita_souji_saber_legs":  "Okita Souji (Saber) Haori Legwear",
     "item.typemoonworld.servant_card_okita_souji_saber_feet":  "Okita Souji (Saber) Haori Footwear",
     "item.typemoonworld.kiku_ichimonji_norimune":  "Kiku-ichimonji Norimune",
+    "message.typemoonworld.gae_bulg.locked":  "Death Thorn locked: %s",
+    "message.typemoonworld.gae_bulg.lock_expired":  "Death Thorn lock expired",
+    "message.typemoonworld.gae_bulg.death_flight_charge":  "No melee lock: charging Death Flight",
+    "message.typemoonworld.gae_bulg.death_thorn_release":  "Gae Bolg: Barbed Spear!",
+    "message.typemoonworld.gae_bulg.death_flight_release":  "Gae Bolg: Soaring Spear!",
+    "message.typemoonworld.gae_bulg.death_thorn_hit":  "Death Thorn struck",
+    "message.typemoonworld.gae_bulg.charge_short":  "Death Thorn charge too short",
     "death.attack.okita_mumyoudan_zuki":  "%1$s was pierced by Mumyoudan-zuki",
     "death.attack.okita_mumyoudan_zuki.player":  "%1$s was pierced by %2$s's Mumyoudan-zuki"
 }

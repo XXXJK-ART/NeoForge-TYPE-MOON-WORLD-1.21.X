@@ -15,11 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,8 +24,6 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,13 +50,11 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final EntityDataAccessor<Boolean> DISSOLVING =
             SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int DISSOLVE_DURATION = 72;
-    private static final int WALK_TERRAIN_BREAK_INTERVAL = 24;
-    private static final int WALK_TERRAIN_BREAK_LIMIT = 48;
-    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 96;
-    private static final int TARGET_REFRESH_INTERVAL = 100;
-    private static final int BROOD_SUMMON_INTERVAL = 320;
-    private static final int AURA_INTERVAL = 60;
-    private static final int FOG_INTERVAL = 20;
+    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 32;
+    private static final int TARGET_REFRESH_INTERVAL = 200;
+    private static final int BOSS_ATTACK_INTERVAL = 120;
+    private static final int BROOD_SUMMON_INTERVAL = 600;
+    private static final int FOG_INTERVAL = 60;
     private static final double HUGE_MOVEMENT_SPEED = 0.11;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
@@ -100,7 +93,6 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 0.85, true));
     }
 
     @Override
@@ -115,39 +107,32 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         }
         boolean nearbyPlayer = level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 128.0);
         if (!nearbyPlayer) {
-            if (!isValidTarget(this.getTarget())) {
-                this.followSource();
-            }
+            this.getNavigation().stop();
             return;
         }
         LivingEntity target = this.getTarget();
-        boolean inCombat = this.isValidTarget(target);
-        if (inCombat && this.isStaggeredTick(WALK_TERRAIN_BREAK_INTERVAL, 0) && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
-            this.breakTerrainAhead(level, 18.0, 13.0F, 16, WALK_TERRAIN_BREAK_LIMIT);
-        }
-        if (inCombat && this.isStaggeredTick(AURA_INTERVAL, 0)) {
-            this.pollutionAura(level);
-        }
         if (this.isStaggeredTick(FOG_INTERVAL, 0)) {
             this.spawnUnknowableFog(level);
         }
         if (this.tickCount % 100 == 0) {
             this.heal(50.0F);
         }
-        if (this.isStaggeredTick(TARGET_REFRESH_INTERVAL, 7) && !isValidTarget(this.getTarget())) {
+        if (this.isStaggeredTick(TARGET_REFRESH_INTERVAL, 7) && !isValidTarget(target)) {
             LivingEntity revenge = this.getLastHurtByMob();
             this.setTarget(isValidTarget(revenge) ? revenge : this.findNearestTarget(48.0));
+            target = this.getTarget();
         }
-        if (!isValidTarget(this.getTarget())) {
-            this.followSource();
+        if (this.isValidTarget(target) && this.distanceToSqr(target) <= 56.0 * 56.0) {
+            this.getNavigation().stop();
+            this.getLookControl().setLookAt(target, 20.0F, 20.0F);
+            if (this.isStaggeredTick(BOSS_ATTACK_INTERVAL, 0)) {
+                this.bossPulseAttack(level, target);
+            }
+        } else {
+            this.getNavigation().stop();
+            this.setTarget(null);
         }
-        if (inCombat && this.isStaggeredTick(90, 0)) {
-            this.areaSweep(level);
-        }
-        if (inCombat && this.isStaggeredTick(120, 20)) {
-            this.tentacleGrab(level);
-        }
-        if (inCombat && this.isStaggeredTick(BROOD_SUMMON_INTERVAL, 40)) {
+        if (this.isStaggeredTick(BROOD_SUMMON_INTERVAL, 40)) {
             this.trySummonBrood(level);
         }
     }
@@ -222,15 +207,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (this.isFriendly(target)) {
             return false;
         }
-        boolean hit = super.doHurtTarget(target);
-        if (hit) {
-            this.swing(InteractionHand.MAIN_HAND);
-            this.triggerAnim("action_controller", "slam");
-            if (this.level() instanceof ServerLevel level) {
-                this.breakTerrainAhead(level, 22.0, 15.0F, 22, ATTACK_TERRAIN_BREAK_LIMIT);
-            }
-        }
-        return hit;
+        return false;
     }
 
     @Override
@@ -327,63 +304,37 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         return this.cache;
     }
 
-    private void pollutionAura(ServerLevel level) {
-        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
-            return;
-        }
-        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0), this::isValidTarget)) {
-            living.hurt(this.damageSources().magic(), 8.0F);
-            living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0, false, true, true));
-        }
-        level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 2.0, this.getZ(), 35, 2.4, 1.2, 2.4, 0.04);
-    }
-
     private void spawnUnknowableFog(ServerLevel level) {
         if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
             return;
         }
         double y = this.getY() + this.getBbHeight() * 0.62;
-        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 90, 18.0, 14.0, 18.0, 0.025);
-        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 70, 15.0, 12.0, 15.0, 0.018);
-        if (this.tickCount % 8 == 0) {
-            level.sendParticles(ParticleTypes.DRAGON_BREATH, this.getX(), y, this.getZ(), 80, 19.0, 13.0, 19.0, 0.012);
-            level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 60, 17.0, 11.0, 17.0, 0.018);
-        }
+        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 24, 18.0, 14.0, 18.0, 0.02);
+        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 18, 15.0, 12.0, 15.0, 0.015);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 12, 17.0, 11.0, 17.0, 0.014);
     }
 
-    private void areaSweep(ServerLevel level) {
+    private void bossPulseAttack(ServerLevel level, LivingEntity target) {
         if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
+        if (!this.isValidTarget(target) || this.distanceToSqr(target) > 56.0 * 56.0) {
             return;
         }
         this.triggerAnim("action_controller", "slam");
         level.playSound(null, this.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1.6F, 0.55F);
-        this.breakTerrainAhead(level, 24.0, 16.0F, 24, ATTACK_TERRAIN_BREAK_LIMIT);
-        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(9.0), this::isValidTarget)) {
+        this.breakTerrainAhead(level, 16.0, 10.0F, 12, ATTACK_TERRAIN_BREAK_LIMIT);
+        Vec3 center = target.position();
+        AABB box = new AABB(center.x - 8.0, center.y - 4.0, center.z - 8.0,
+                center.x + 8.0, center.y + 5.0, center.z + 8.0);
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
+                living -> this.isValidTarget(living) && living.distanceToSqr(center) <= 64.0)) {
             living.invulnerableTime = 0;
-            living.hurt(this.damageSources().mobAttack(this), 34.0F);
-            living.push((living.getX() - this.getX()) * 0.28, 0.35, (living.getZ() - this.getZ()) * 0.28);
+            living.hurt(this.damageSources().mobAttack(this), 36.0F);
+            living.push((living.getX() - this.getX()) * 0.22, 0.32, (living.getZ() - this.getZ()) * 0.22);
             living.hurtMarked = true;
         }
-        level.sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY() + 1.0, this.getZ(), 8, 3.0, 0.4, 3.0, 0.02);
-    }
-
-    private void tentacleGrab(ServerLevel level) {
-        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
-            return;
-        }
-        this.triggerAnim("action_controller", "grab");
-        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(13.0), this::isValidTarget)) {
-            if (this.random.nextFloat() > 0.35F) {
-                continue;
-            }
-            Vec3 pull = this.position().subtract(living.position()).normalize().scale(0.45);
-            living.setDeltaMovement(living.getDeltaMovement().add(pull.x, 0.12, pull.z));
-            living.hurtMarked = true;
-            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 4, false, true, true));
-            living.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 45, 0, false, true, true));
-            living.hurt(this.damageSources().magic(), 12.0F);
-            level.sendParticles(ParticleTypes.SCULK_SOUL, living.getX(), living.getY() + 0.3, living.getZ(), 18, 0.4, 0.6, 0.4, 0.04);
-        }
+        level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY() + 0.8, target.getZ(), 4, 2.0, 0.35, 2.0, 0.02);
     }
 
     private void trySummonBrood(ServerLevel level) {
@@ -392,7 +343,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         }
         int small = 0;
         int large = 0;
-        for (SeaMonsterEntity seaMonster : level.getEntitiesOfClass(SeaMonsterEntity.class, this.getBoundingBox().inflate(96.0),
+        for (SeaMonsterEntity seaMonster : level.getEntitiesOfClass(SeaMonsterEntity.class, this.getBoundingBox().inflate(64.0),
                 seaMonster -> seaMonster.isAlive() && this.getUUID().equals(seaMonster.getControllerUuid()))) {
             if (seaMonster.isLarge()) {
                 large++;
@@ -406,7 +357,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (small < 100) {
             spawnBrood(level, false);
         }
-        if (large < 10 && this.random.nextFloat() < 0.35F) {
+        if (large < 10 && this.random.nextFloat() < 0.20F) {
             spawnBrood(level, true);
         }
     }
@@ -421,7 +372,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         seaMonster.setController(this);
         seaMonster.setLarge(large);
         level.addFreshEntity(seaMonster);
-        level.sendParticles(ParticleTypes.SQUID_INK, seaMonster.getX(), seaMonster.getY() + 0.6, seaMonster.getZ(), large ? 24 : 12, 0.5, 0.5, 0.5, 0.05);
+        level.sendParticles(ParticleTypes.SQUID_INK, seaMonster.getX(), seaMonster.getY() + 0.6, seaMonster.getZ(), large ? 10 : 5, 0.5, 0.5, 0.5, 0.05);
     }
 
     @Nullable

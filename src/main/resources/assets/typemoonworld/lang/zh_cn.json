@@ -2980,6 +2980,13 @@
     "item.typemoonworld.servant_card_okita_souji_saber_legs":  "冲田总司（Saber）羽织下装",
     "item.typemoonworld.servant_card_okita_souji_saber_feet":  "冲田总司（Saber）羽织足具",
     "item.typemoonworld.kiku_ichimonji_norimune":  "菊一文字则宗",
+    "message.typemoonworld.gae_bulg.locked":  "死棘锁定：%s",
+    "message.typemoonworld.gae_bulg.lock_expired":  "死棘锁定消失",
+    "message.typemoonworld.gae_bulg.death_flight_charge":  "未锁定近战目标：死翔蓄力",
+    "message.typemoonworld.gae_bulg.death_thorn_release":  "刺穿死棘之枪！",
+    "message.typemoonworld.gae_bulg.death_flight_release":  "突穿死翔之枪！",
+    "message.typemoonworld.gae_bulg.death_thorn_hit":  "死棘命中",
+    "message.typemoonworld.gae_bulg.charge_short":  "死棘蓄力不足",
     "death.attack.okita_mumyoudan_zuki":  "%1$s 被无明三段突贯穿",
     "death.attack.okita_mumyoudan_zuki.player":  "%1$s 被 %2$s 的无明三段突贯穿"
 }
