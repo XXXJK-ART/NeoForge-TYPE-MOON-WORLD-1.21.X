@@ -57,6 +57,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private static final int BEAM_DAMAGE_START = 10;
    private static final int BEAM_DAMAGE_INTERVAL = 5;
    private static final int BEAM_DAMAGE_PULSES = calculateBeamDamagePulses();
+   private static final float BEAM_DAMAGE_TOTAL = 5000.0F;
    private static final int EA_THUNDER_TICKS = 45 * 20;
    private static final double WIND_RADIUS = 50.0;
    private static final double BEAM_LENGTH = 150.0;
@@ -266,7 +267,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          search = search.minmax(new AABB(end, end));
       }
       search = search.inflate(BEAM_HALF_WIDTH + 2, BEAM_HALF_HEIGHT + 2, BEAM_HALF_WIDTH + 2);
-      float pulse = 5000.0F * getPowerScale() * clashDamageScale / BEAM_DAMAGE_PULSES;
+      float pulse = BEAM_DAMAGE_TOTAL * getPowerScale() * clashDamageScale / BEAM_DAMAGE_PULSES;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e))) {
@@ -563,6 +564,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    @Override public Vec3 beamEnd() { return getEndPos(); }
    @Override public double beamHalfWidth() { return BEAM_HALF_WIDTH; }
    @Override public float clashPower() { return 1.18F * getPowerScale(); }
+   @Override public float clashBaseDamage() { return BEAM_DAMAGE_TOTAL * getPowerScale(); }
    @Override public boolean isBeamDamageActive() { return getStage() == Stage.BEAM && stageTicks >= BEAM_DAMAGE_START; }
    @Override public boolean isClashing() { return clashing; }
    @Override public void setClashing(boolean value) { clashing = value; }

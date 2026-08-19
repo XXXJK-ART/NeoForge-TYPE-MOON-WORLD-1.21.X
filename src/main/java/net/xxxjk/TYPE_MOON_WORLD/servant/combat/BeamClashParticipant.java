@@ -21,6 +21,9 @@ public interface BeamClashParticipant {
    /** Relative output used by the clash resolver before current mana is considered. */
    float clashPower();
 
+   /** Total beam damage used to settle the opening gap before mana contests begin. */
+   default float clashBaseDamage() { return 0.0F; }
+
    boolean isBeamDamageActive();
 
    boolean isClashing();

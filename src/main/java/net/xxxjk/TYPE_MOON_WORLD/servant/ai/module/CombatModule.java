@@ -915,6 +915,17 @@ public final class CombatModule implements ServantAiModule {
          && entity.getCurrentMp() >= 10
          && ServantCombatSystem.canUseNoblePhantasm(entity)
          && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
+         double targetHealthRatio = target.getHealth() / Math.max(1.0, target.getMaxHealth());
+         boolean desperateArmyWindow = healthRatio <= 0.28 && targetHealthRatio >= 0.55;
+         if (!gaeBolgWindingUp
+            && canGaeBolgArmy
+            && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)
+            && desperateArmyWindow
+            && hasLineOfSight
+            && passesSkillChance(entity, 62, skillChanceScale)) {
+            performGaeBolgArmy(entity, target);
+            return;
+         }
          CuChulainnCombatRules.SingleGaeBolgPlan gaeBolgPlan = CuChulainnCombatRules.singleGaeBolgPlan(distance);
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.MELEE) {
             performGaeBolg(entity, target, true);
@@ -924,12 +935,6 @@ public final class CombatModule implements ServantAiModule {
             entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
             entity.faceToward(target.position());
             moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
-            return;
-         }
-         if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.PROJECTILE
-            && hasLineOfSight
-            && passesSkillChance(entity, 20, skillChanceScale)) {
-            performGaeBolg(entity, target, false);
             return;
          }
       }

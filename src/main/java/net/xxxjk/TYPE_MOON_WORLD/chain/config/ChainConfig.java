@@ -10,7 +10,7 @@ public final class ChainConfig {
     public static final double SKILL_GATE_RADIUS = 6.0D;
     public static final double SKILL_GATE_VERTICAL_OFFSET = 4.5D;
     public static final int SKILL_GATE_REFRESH_TICKS = 16;
-    public static final float CHAIN_MAX_HEALTH = 200.0F;
+    public static final float CHAIN_MAX_HEALTH = 100.0F;
     public static final double TARGET_RADIUS = 50.0D;
     public static final double TARGET_RADIUS_SQR = TARGET_RADIUS * TARGET_RADIUS;
     public static final double MAX_EXTENSION = 100.0D;

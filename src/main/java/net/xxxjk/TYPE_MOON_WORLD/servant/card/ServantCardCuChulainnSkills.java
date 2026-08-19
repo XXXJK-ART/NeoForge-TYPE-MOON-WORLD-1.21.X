@@ -110,6 +110,7 @@ public final class ServantCardCuChulainnSkills {
       data.remove(CU_RECAST_USED_TAG);
       data.remove(CU_LAST_COMBAT_TICK_TAG);
       data.remove(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG);
+      PlayerNoblePhantasmHelper.clearGaeBulgUseState(player);
       clearCuTiwaz(player);
    }
 

@@ -27,10 +27,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -58,13 +55,13 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final EntityDataAccessor<Boolean> DISSOLVING =
             SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int DISSOLVE_DURATION = 72;
-    private static final int WALK_TERRAIN_BREAK_INTERVAL = 12;
-    private static final int WALK_TERRAIN_BREAK_LIMIT = 96;
-    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 224;
-    private static final int TARGET_REFRESH_INTERVAL = 30;
-    private static final int BROOD_SUMMON_INTERVAL = 140;
-    private static final int AURA_INTERVAL = 20;
-    private static final int FOG_INTERVAL = 5;
+    private static final int WALK_TERRAIN_BREAK_INTERVAL = 24;
+    private static final int WALK_TERRAIN_BREAK_LIMIT = 48;
+    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 96;
+    private static final int TARGET_REFRESH_INTERVAL = 100;
+    private static final int BROOD_SUMMON_INTERVAL = 320;
+    private static final int AURA_INTERVAL = 60;
+    private static final int FOG_INTERVAL = 20;
     private static final double HUGE_MOVEMENT_SPEED = 0.11;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
@@ -104,9 +101,6 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 0.85, true));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.55));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
     @Override
@@ -119,10 +113,19 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!(this.level() instanceof ServerLevel level)) {
             return;
         }
-        if (this.isStaggeredTick(WALK_TERRAIN_BREAK_INTERVAL, 0) && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
+        boolean nearbyPlayer = level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 128.0);
+        if (!nearbyPlayer) {
+            if (!isValidTarget(this.getTarget())) {
+                this.followSource();
+            }
+            return;
+        }
+        LivingEntity target = this.getTarget();
+        boolean inCombat = this.isValidTarget(target);
+        if (inCombat && this.isStaggeredTick(WALK_TERRAIN_BREAK_INTERVAL, 0) && this.getDeltaMovement().horizontalDistanceSqr() > 1.0E-4) {
             this.breakTerrainAhead(level, 18.0, 13.0F, 16, WALK_TERRAIN_BREAK_LIMIT);
         }
-        if (this.isStaggeredTick(AURA_INTERVAL, 0)) {
+        if (inCombat && this.isStaggeredTick(AURA_INTERVAL, 0)) {
             this.pollutionAura(level);
         }
         if (this.isStaggeredTick(FOG_INTERVAL, 0)) {
@@ -138,13 +141,13 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!isValidTarget(this.getTarget())) {
             this.followSource();
         }
-        if (this.isStaggeredTick(60, 0)) {
+        if (inCombat && this.isStaggeredTick(90, 0)) {
             this.areaSweep(level);
         }
-        if (this.isStaggeredTick(80, 20)) {
+        if (inCombat && this.isStaggeredTick(120, 20)) {
             this.tentacleGrab(level);
         }
-        if (this.isStaggeredTick(BROOD_SUMMON_INTERVAL, 40)) {
+        if (inCombat && this.isStaggeredTick(BROOD_SUMMON_INTERVAL, 40)) {
             this.trySummonBrood(level);
         }
     }
@@ -325,6 +328,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void pollutionAura(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0), this::isValidTarget)) {
             living.hurt(this.damageSources().magic(), 8.0F);
             living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0, false, true, true));
@@ -333,6 +339,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void spawnUnknowableFog(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
         double y = this.getY() + this.getBbHeight() * 0.62;
         level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 90, 18.0, 14.0, 18.0, 0.025);
         level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 70, 15.0, 12.0, 15.0, 0.018);
@@ -343,6 +352,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void areaSweep(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
         this.triggerAnim("action_controller", "slam");
         level.playSound(null, this.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1.6F, 0.55F);
         this.breakTerrainAhead(level, 24.0, 16.0F, 24, ATTACK_TERRAIN_BREAK_LIMIT);
@@ -356,6 +368,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void tentacleGrab(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
         this.triggerAnim("action_controller", "grab");
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(13.0), this::isValidTarget)) {
             if (this.random.nextFloat() > 0.35F) {
@@ -372,6 +387,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     private void trySummonBrood(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            return;
+        }
         int small = 0;
         int large = 0;
         for (SeaMonsterEntity seaMonster : level.getEntitiesOfClass(SeaMonsterEntity.class, this.getBoundingBox().inflate(96.0),

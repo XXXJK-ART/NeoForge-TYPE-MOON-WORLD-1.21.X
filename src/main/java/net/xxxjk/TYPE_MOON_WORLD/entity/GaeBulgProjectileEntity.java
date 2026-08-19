@@ -56,7 +56,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final int SINGLE_HOMING_TICKS = 60;
    private static final double ARMY_EXPLOSION_DISTANCE_SQR = 4.0D;
    private static final double SPLIT_TRIGGER_DISTANCE = 5.0D;
-   private static final double SPLIT_IMPACT_DISTANCE_SQR = 4.0D;
+   private static final double SPLIT_IMPACT_DISTANCE_SQR = 9.0D;
    private static final int SPLIT_COUNT = 10;
    private static final double SPLIT_BURST_RADIUS = 4.25D;
    private int lifeTime = 0;
@@ -195,14 +195,14 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          Vec3 targetPoint = this.targetPoint(target);
          double distanceToTarget = this.distanceTo(target);
          if (splitMode) {
-            this.steerToward(targetPoint, 3.75, 0.72);
+            this.steerToward(targetPoint, 5.2, 0.82);
             this.syncRotationToMotion();
             if (this.position().distanceToSqr(targetPoint) <= SPLIT_IMPACT_DISTANCE_SQR || this.lifeTime > 90) {
                this.resolveSplitBurst(level, target, targetPoint);
                return;
             }
          } else if (armyMode) {
-            this.steerToward(targetPoint, 3.1, 0.56);
+            this.steerToward(targetPoint, 4.0, 0.72);
             this.syncRotationToMotion();
             if (distanceToTarget <= SPLIT_TRIGGER_DISTANCE) {
                this.spawnSplitSpears(level, target);
@@ -289,7 +289,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             dir = this.getDeltaMovement().lengthSqr() > 1.0E-4 ? this.getDeltaMovement() : this.getLookAngle();
          }
          dir = dir.normalize();
-         spear.shoot(dir.x, dir.y, dir.z, 3.8F, 0.0F);
+         spear.shoot(dir.x, dir.y, dir.z, 5.8F, 0.0F);
          level.addFreshEntity(spear);
       }
       level.sendParticles(DEATH_THORN_TRAIL, origin.x, origin.y, origin.z, 46, 1.2, 1.0, 1.2, 0.06);
@@ -298,17 +298,18 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void resolveSplitBurst(ServerLevel level, LivingEntity trackedTarget, Vec3 center) {
+      Vec3 burstCenter = this.position();
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
       float damage = this.getArmyDamage();
       Set<Integer> damaged = new HashSet<>();
-      AABB damageBox = new AABB(center, center).inflate(SPLIT_BURST_RADIUS);
+      AABB damageBox = new AABB(burstCenter, burstCenter).inflate(SPLIT_BURST_RADIUS);
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
          e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
       )) {
-         if (living.distanceToSqr(center) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
+         if (living.distanceToSqr(burstCenter) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
             continue;
          }
          float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
@@ -316,7 +317,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          if (!this.tryConsumeGodHandLife(living, finalDamage, false)) {
             this.applyGuaranteedDamage(living, source, finalDamage);
          }
-         Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
+         Vec3 push = living.position().subtract(burstCenter).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {
             push = push.normalize();
             living.push(push.x * 1.0, 0.36, push.z * 1.0);
@@ -324,12 +325,13 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
       }
 
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 1, 0.12, 0.12, 0.12, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 2, 0.1, 0.1, 0.1, 0.0);
-      level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 32, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, 0.12);
-      level.sendParticles(ParticleTypes.CLOUD, center.x, center.y, center.z, 24, SPLIT_BURST_RADIUS * 0.25, 0.35, SPLIT_BURST_RADIUS * 0.25, 0.04);
-      level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
-      this.breakLowHardnessTerrain(level, center, SPLIT_BURST_RADIUS, 0.0);
+      VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 96.0);
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 1, 0.12, 0.12, 0.12, 0.0);
+      level.sendParticles(ParticleTypes.FLASH, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.1, 0.1, 0.1, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 32, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, SPLIT_BURST_RADIUS * 0.35, 0.12);
+      level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 24, SPLIT_BURST_RADIUS * 0.25, 0.35, SPLIT_BURST_RADIUS * 0.25, 0.04);
+      level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
+      this.breakLowHardnessTerrain(level, burstCenter, SPLIT_BURST_RADIUS, 0.0);
       this.discard();
    }
 

@@ -120,6 +120,8 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_DIR_Y = "EnkiduEnumaDirY";
    private static final String TAG_ENUMA_DIR_Z = "EnkiduEnumaDirZ";
    private static final String TAG_ENUMA_DUEL_FINALE = "EnkiduEnumaGilgameshFinale";
+   private static final String TAG_ENUMA_CORE_DAMAGE_STARTED = "EnkiduEnumaCoreDamageStarted";
+   private static final float ENUMA_CORE_DAMAGE_TOTAL = 5000.0F;
    private static final String TAG_BOUND_UNTIL = "EnkiduBoundUntil";
    private static final String TAG_BOUND_OWNER = "EnkiduBoundOwner";
    private static final String TAG_BOUND_PREV_NO_AI = "EnkiduBoundPrevNoAi";
@@ -2077,6 +2079,7 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_ENUMA_RELEASE, now + synchronizedChargeTicks);
       data.putLong(TAG_ENUMA_FINISH, now + synchronizedChargeTicks + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED, false);
       data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
       data.remove(TAG_ENUMA_INVISIBLE);
       data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
@@ -2110,6 +2113,7 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_ENUMA_RELEASE, now + ENUMA_WINDUP);
       data.putLong(TAG_ENUMA_FINISH, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL);
       data.putBoolean(TAG_ENUMA_DAMAGE_DONE, false);
+      data.putBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED, false);
       data.putBoolean(TAG_ENUMA_PREV_INVISIBLE, entity.isInvisible());
       data.remove(TAG_ENUMA_INVISIBLE);
       data.putUUID(TAG_ENUMA_TARGET, target.getUUID());
@@ -2218,6 +2222,10 @@ public final class EnkiduCombatHelper {
          }
          return;
       }
+      if (!duelFinale && !data.getBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED) && now < finish) {
+         data.putBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED, true);
+         applyNoDefenseDamageOverTicks(entity, target, ENUMA_CORE_DAMAGE_TOTAL, Math.max(1, (int)(finish - now)));
+      }
       if (duelFinale) GilgameshDuelState.markEnkiduRushStarted(entity, level, now);
       if (data.getBoolean(TAG_ENUMA_DAMAGE_DONE)) {
          if (now % 5L == 0L) {
@@ -2292,7 +2300,6 @@ public final class EnkiduCombatHelper {
          data.putDouble(TAG_ENUMA_DIR_Z, flightDir.z);
          entity.setPos(impact.x, Math.max(target.getY(), impact.y - entity.getBbHeight() * 0.45), impact.z);
          entity.setDeltaMovement(Vec3.ZERO);
-         if (!duelFinale) applyNoDefenseDamageOverTicks(entity, target, 4000.0F, 20);
          restoreEnumaInvisibility(entity);
          if (!duelFinale) applyEnumaSmallExplosion(entity, level, impact, target);
          if (impact.distanceTo(groundImpact) > 1.8 && impact.distanceTo(groundImpact) <= 28.0 && now < release + ENUMA_RELEASE_VISUAL - 10L) {
@@ -2346,6 +2353,7 @@ public final class EnkiduCombatHelper {
       data.remove(TAG_ENUMA_DIR_Y);
       data.remove(TAG_ENUMA_DIR_Z);
       data.remove(TAG_ENUMA_DUEL_FINALE);
+      data.remove(TAG_ENUMA_CORE_DAMAGE_STARTED);
    }
 
    private static void activateEnumaInvisibility(EnkiduEntity entity) {

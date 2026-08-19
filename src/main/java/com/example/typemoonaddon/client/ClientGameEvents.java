@@ -177,7 +177,7 @@ public final class ClientGameEvents {
                 height,
                 erosion,
                 0xFF8A244F,
-                Component.translatable("gui.typemoonaddon.grail_erosion", Math.round(erosion * 100.0F))
+                Component.translatable("gui.typemoonworld.grail_erosion", Math.round(erosion * 100.0F))
             );
         }
         if (shown != null) {
@@ -191,13 +191,13 @@ public final class ClientGameEvents {
                 height,
                 progress,
                 0xFFE0202A,
-                Component.translatable("gui.typemoonaddon.pollution", Math.round(progress * 100.0F))
+                Component.translatable("gui.typemoonworld.pollution", Math.round(progress * 100.0F))
             );
         }
         if (spiritualShown != null) {
             var spiritual = spiritualShown.getData(AddonAttachments.SPIRITUAL_DAMAGE.get());
             float percent = spiritual.percent();
-            renderProgressBar(event, minecraft, x, event.getGuiGraphics().guiHeight() - 40, width, height, percent / 100.0F, 0xFF7A102B, Component.translatable("gui.typemoonaddon.spiritual_damage", Math.round(percent)));
+            renderProgressBar(event, minecraft, x, event.getGuiGraphics().guiHeight() - 40, width, height, percent / 100.0F, 0xFF7A102B, Component.translatable("gui.typemoonworld.spiritual_damage", Math.round(percent)));
             float collapse = spiritual.collapseProgress(spiritualShown.level().getGameTime());
             if (collapse > 0.0F) {
                 renderProgressBar(
@@ -209,7 +209,7 @@ public final class ClientGameEvents {
                     height,
                     collapse,
                     0xFFD52020,
-                    Component.translatable("gui.typemoonaddon.spiritual_collapse", Math.round(collapse * 100.0F))
+                    Component.translatable("gui.typemoonworld.spiritual_collapse", Math.round(collapse * 100.0F))
                 );
             }
         }

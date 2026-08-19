@@ -403,6 +403,16 @@ public final class BindingService {
         if (!(target instanceof Mob mob) || mob.isNoAi()) {
             return;
         }
+        LivingEntity currentTarget = mob.getTarget();
+        if (currentTarget instanceof HeavenChainBindingEntity currentBinding
+            && currentBinding.isAlive()
+            && isBoundToVisual(level, target.getUUID(), currentBinding.getUUID())) {
+            if (!mob.isAggressive()) {
+                mob.setAggressive(true);
+            }
+            mob.getLookControl().setLookAt(currentBinding, 30.0F, 30.0F);
+            return;
+        }
         HeavenChainBindingEntity nearest = bindingsForTarget(level.dimension(), target.getUUID()).stream()
             .map(Binding::visualId)
             .filter(id -> id != null)
@@ -414,6 +424,12 @@ public final class BindingService {
             .orElse(null);
         if (nearest != null && mob.getTarget() != nearest) {
             mob.setTarget(nearest);
+        }
+        if (nearest != null) {
+            if (!mob.isAggressive()) {
+                mob.setAggressive(true);
+            }
+            mob.getLookControl().setLookAt(nearest, 30.0F, 30.0F);
         }
     }
 
@@ -438,6 +454,13 @@ public final class BindingService {
         }
         Entity oldTarget = state.oldTargetId() == null ? null : level.getEntity(state.oldTargetId());
         mob.setTarget(oldTarget instanceof LivingEntity living && living.isAlive() ? living : null);
+        mob.setAggressive(mob.getTarget() != null);
+    }
+
+    private static boolean isBoundToVisual(ServerLevel level, UUID targetId, UUID visualId) {
+        return bindingsForTarget(level.dimension(), targetId).stream()
+            .map(Binding::visualId)
+            .anyMatch(visualId::equals);
     }
 
     private static List<Binding> bindingsForTarget(ResourceKey<Level> dimension, UUID targetId) {

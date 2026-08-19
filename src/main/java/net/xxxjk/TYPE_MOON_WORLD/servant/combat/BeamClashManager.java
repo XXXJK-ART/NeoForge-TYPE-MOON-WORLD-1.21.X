@@ -122,14 +122,22 @@ public final class BeamClashManager {
    }
 
    private static void start(ServerLevel level, BeamClashParticipant a, BeamClashParticipant b) {
+      LivingEntity ownerA = a.beamOwner(level);
+      LivingEntity ownerB = b.beamOwner(level);
+      Vec3 center = clashPoint(a, b, 0.0F);
+      if (ownerA == null || ownerB == null || !ownerA.isAlive() || !ownerB.isAlive()) {
+         finishDraw(level, a, b, center, ownerA);
+         return;
+      }
+      if (resolveInitialDamageGap(level, a, b, ownerA, ownerB, center)) {
+         return;
+      }
       link(a, b, 0.0F);
       link(b, a, 0.0F);
       a.setClashing(true);
       b.setClashing(true);
-      Vec3 center = clashPoint(a, b, 0.0F);
       long now = level.getGameTime();
-      LivingEntity owner = a.beamOwner(level);
-      UUID source = owner == null ? a.clashEntity().getUUID() : owner.getUUID();
+      UUID source = ownerA.getUUID();
       CombatThreatService.publish(level, new CombatThreat(CLASH_THREAT, source, null, center, Vec3.ZERO,
          CombatThreat.Shape.SPHERE, 20.0, 0.0, 5, now, now + 5L, now + CONTEST_INTERVAL + 2L,
          false, true, false));
@@ -138,6 +146,25 @@ public final class BeamClashManager {
       spawnSustainFx(level, center, 0.0F);
       level.playSound(null, BlockPos.containing(center), SoundEvents.RESPAWN_ANCHOR_CHARGE,
          SoundSource.HOSTILE, 2.4F, 0.72F);
+   }
+
+   private static boolean resolveInitialDamageGap(ServerLevel level, BeamClashParticipant a, BeamClashParticipant b,
+                                                  LivingEntity ownerA, LivingEntity ownerB, Vec3 center) {
+      float debtA = initialDamageDebt(a.clashBaseDamage(), b.clashBaseDamage());
+      float debtB = initialDamageDebt(b.clashBaseDamage(), a.clashBaseDamage());
+      if (debtA <= 0.0F && debtB <= 0.0F) return false;
+
+      BeamClashParticipant debtor = debtA > 0.0F ? a : b;
+      BeamClashParticipant winner = debtA > 0.0F ? b : a;
+      LivingEntity debtorOwner = debtA > 0.0F ? ownerA : ownerB;
+      LivingEntity winnerOwner = debtA > 0.0F ? ownerB : ownerA;
+      drain(debtorOwner, debtA > 0.0F ? debtA : debtB);
+      if (currentMp(debtorOwner) > 0.001) return false;
+
+      float winnerPower = effectiveStrength(winner.clashPower(), manaFraction(winnerOwner));
+      float loserPower = effectiveStrength(debtor.clashPower(), manaFraction(debtorOwner));
+      finishWithWinner(level, winner, debtor, center, winnerPower, loserPower, WIN_BALANCE, winnerOwner);
+      return true;
    }
 
    private static void link(BeamClashParticipant beam, BeamClashParticipant partner, float balance) {
@@ -251,6 +278,17 @@ public final class BeamClashManager {
       return Math.max(0.05F, beamPower) * (0.25F + 0.75F * clamp(manaFraction, 0.0F, 1.0F));
    }
 
+   public static float initialDamageDebt(float ownBaseDamage, float opposingBaseDamage) {
+      float own = Math.max(0.0F, ownBaseDamage);
+      float opposing = Math.max(0.0F, opposingBaseDamage);
+      if (own <= 0.0F || opposing <= 0.0F) return 0.0F;
+      return Math.max(0.0F, opposing - own);
+   }
+
+   public static boolean hasRemainingManaAfterInitialDamageDebt(double currentMp, float ownBaseDamage, float opposingBaseDamage) {
+      return currentMp - initialDamageDebt(ownBaseDamage, opposingBaseDamage) > 0.001;
+   }
+
    public static float pressureDelta(float powerA, float powerB) {
       float total = Math.max(0.1F, powerA + powerB);
       return clamp((powerA - powerB) / total * 0.18F, -0.12F, 0.12F);
@@ -268,13 +306,19 @@ public final class BeamClashManager {
 
    private static double currentMp(LivingEntity owner) {
       if (owner instanceof ServantEntity servant) return servant.getCurrentMp();
-      if (owner instanceof ServerPlayer player) return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_mana;
+      if (owner instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed ? vars.servant_card_mana : vars.player_mana;
+      }
       return 0.0;
    }
 
    private static double maxMp(LivingEntity owner) {
       if (owner instanceof ServantEntity servant) return servant.getMaxMp();
-      if (owner instanceof ServerPlayer player) return Math.max(1.0, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_max_mana);
+      if (owner instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return Math.max(1.0, vars.servant_card_transformed ? vars.servant_card_max_mana : vars.player_max_mana);
+      }
       return 1.0;
    }
 
@@ -283,8 +327,13 @@ public final class BeamClashManager {
          servant.setCurrentMp(Math.max(0.0, servant.getCurrentMp() - amount));
       } else if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
-         vars.syncPlayerVariables(player);
+         if (vars.servant_card_transformed) {
+            vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
+            vars.syncPlayerVariables(player);
+         } else {
+            vars.player_mana = Math.max(0.0, vars.player_mana - amount);
+            vars.syncMana(player);
+         }
       }
    }
 

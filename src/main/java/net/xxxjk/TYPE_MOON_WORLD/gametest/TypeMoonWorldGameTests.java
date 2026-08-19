@@ -13,6 +13,7 @@ import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -775,9 +776,12 @@ public final class TypeMoonWorldGameTests {
       excaliburOwner.setYHeadRot(90.0F);
       var eaMana = eaOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       eaMana.player_mana = 10000.0;
+      eaMana.player_max_mana = 10000.0;
       eaMana.servant_card_mana = 1000.0;
       eaMana.servant_card_max_mana = 1000.0;
       var excaliburMana = excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      excaliburMana.player_mana = 1000.0;
+      excaliburMana.player_max_mana = 1000.0;
       excaliburMana.servant_card_mana = 1000.0;
       excaliburMana.servant_card_max_mana = 1000.0;
 
@@ -801,6 +805,91 @@ public final class TypeMoonWorldGameTests {
             "Excalibur did not continue with residual output after winning the clash");
          helper.succeed();
       });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 210)
+   public static void fullEaOpeningDamageGapBeatsEqualManaExcalibur(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var eaOwner = helper.makeMockServerPlayerInLevel();
+      var excaliburOwner = helper.makeMockServerPlayerInLevel();
+      placeBeamClashOwners(helper, eaOwner, excaliburOwner);
+      setPlayerMana(eaOwner, 2000.0, 2000.0);
+      setPlayerMana(excaliburOwner, 1000.0, 1000.0);
+
+      var ea = new net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity(level, eaOwner, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0));
+      level.addFreshEntity(ea);
+      var excalibur = new java.util.concurrent.atomic.AtomicReference<net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity>();
+      helper.runAfterDelay(145, () -> ea.requestRelease(
+         net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.WIND_TICKS
+            + net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.ORB_CHARGE_TICKS));
+      helper.runAfterDelay(160, () -> {
+         setPlayerMana(eaOwner, 1000.0, 1000.0);
+         setPlayerMana(excaliburOwner, 1000.0, 1000.0);
+         var beam = new net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity(
+            level, excaliburOwner, excaliburOwner.getEyePosition(), 220, 0, 1.0F);
+         excalibur.set(beam);
+         level.addFreshEntity(beam);
+      });
+      helper.runAfterDelay(178, () -> {
+         helper.assertTrue(ea.isAlive() && !ea.isClashing(), "full EA did not survive the opening damage gap");
+         helper.assertTrue(excalibur.get() != null && !excalibur.get().isAlive(),
+            "equal-mana Excalibur survived after paying EA's 1000 damage gap");
+         helper.assertTrue(excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana <= 0.001,
+            "Excalibur owner did not spend all mana on the opening damage gap");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 210)
+   public static void excaliburWithExtraManaContinuesAfterOpeningDamageGap(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var eaOwner = helper.makeMockServerPlayerInLevel();
+      var excaliburOwner = helper.makeMockServerPlayerInLevel();
+      placeBeamClashOwners(helper, eaOwner, excaliburOwner);
+      setPlayerMana(eaOwner, 2000.0, 2000.0);
+      setPlayerMana(excaliburOwner, 1600.0, 1600.0);
+
+      var ea = new net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity(level, eaOwner, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0));
+      level.addFreshEntity(ea);
+      var excalibur = new java.util.concurrent.atomic.AtomicReference<net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity>();
+      helper.runAfterDelay(145, () -> ea.requestRelease(
+         net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.WIND_TICKS
+            + net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.ORB_CHARGE_TICKS));
+      helper.runAfterDelay(160, () -> {
+         setPlayerMana(eaOwner, 1000.0, 1000.0);
+         setPlayerMana(excaliburOwner, 1600.0, 1600.0);
+         var beam = new net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity(
+            level, excaliburOwner, excaliburOwner.getEyePosition(), 220, 0, 1.0F);
+         excalibur.set(beam);
+         level.addFreshEntity(beam);
+      });
+      helper.runAfterDelay(172, () -> {
+         double excaliburMana = excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
+         helper.assertTrue(ea.isClashing() && excalibur.get() != null && excalibur.get().isClashing(),
+            "extra-mana Excalibur did not enter the sustained clash after paying the opening gap");
+         helper.assertTrue(excaliburMana > 0.001 && excaliburMana < 700.0,
+            "Excalibur owner did not pay the opening damage gap before the sustained contest");
+         helper.succeed();
+      });
+   }
+
+   private static void placeBeamClashOwners(GameTestHelper helper, ServerPlayer eaOwner, ServerPlayer excaliburOwner) {
+      eaOwner.teleportTo(helper.absolutePos(new BlockPos(2, 100, 5)).getCenter().x,
+         helper.absolutePos(new BlockPos(2, 100, 5)).getY(), helper.absolutePos(new BlockPos(2, 100, 5)).getCenter().z);
+      excaliburOwner.teleportTo(helper.absolutePos(new BlockPos(26, 100, 5)).getCenter().x,
+         helper.absolutePos(new BlockPos(26, 100, 5)).getY(), helper.absolutePos(new BlockPos(26, 100, 5)).getCenter().z);
+      eaOwner.setYRot(-90.0F);
+      eaOwner.setYHeadRot(-90.0F);
+      excaliburOwner.setYRot(90.0F);
+      excaliburOwner.setYHeadRot(90.0F);
+   }
+
+   private static void setPlayerMana(ServerPlayer player, double current, double maximum) {
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.player_mana = current;
+      vars.player_max_mana = maximum;
+      vars.servant_card_mana = current;
+      vars.servant_card_max_mana = maximum;
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 40)

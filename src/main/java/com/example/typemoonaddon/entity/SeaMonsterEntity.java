@@ -24,10 +24,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -49,10 +46,10 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private static final int SMALL_LIFETIME = 20 * 60 * 5;
     private static final int LARGE_LIFETIME = 20 * 60 * 3;
     private static final int DISSOLVE_DURATION = 72;
-    private static final int AURA_TICK_INTERVAL = 20;
-    private static final int SMALL_TARGET_REFRESH_INTERVAL = 40;
-    private static final int LARGE_TARGET_REFRESH_INTERVAL = 30;
-    private static final int LARGE_SWEEP_INTERVAL = 70;
+    private static final int AURA_TICK_INTERVAL = 60;
+    private static final int SMALL_TARGET_REFRESH_INTERVAL = 120;
+    private static final int LARGE_TARGET_REFRESH_INTERVAL = 90;
+    private static final int LARGE_SWEEP_INTERVAL = 180;
     private static final double SMALL_MOVEMENT_SPEED = 0.22;
     private static final double LARGE_MOVEMENT_SPEED = 0.15;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -90,9 +87,6 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.0, true));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 0.75));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 10.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
     }
 
     @Override
@@ -103,6 +97,12 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         }
         super.customServerAiStep();
         if (!(this.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
+            if (!this.isValidTarget(this.getTarget())) {
+                this.followController(this.getController());
+            }
             return;
         }
         if (this.tickCount > (this.isLarge() ? LARGE_LIFETIME : SMALL_LIFETIME)) {
@@ -118,7 +118,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             this.beginDissolve(null);
             return;
         }
-        if (this.isStaggeredTick(AURA_TICK_INTERVAL, 0)) {
+        LivingEntity target = this.getTarget();
+        boolean inCombat = this.isValidTarget(target);
+        if (inCombat && this.isStaggeredTick(AURA_TICK_INTERVAL, 0)) {
             this.heal(this.isLarge() ? 15.0F : 5.0F);
             this.pollutionAura(level);
         }
@@ -126,10 +128,10 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         if (this.isStaggeredTick(targetRefreshInterval, 5)) {
             this.refreshTarget();
         }
-        if (!isValidTarget(this.getTarget())) {
+        if (!this.isValidTarget(this.getTarget())) {
             this.followController(controller);
         }
-        if (this.isLarge() && this.isStaggeredTick(LARGE_SWEEP_INTERVAL, 0)) {
+        if (inCombat && this.isLarge() && this.isStaggeredTick(LARGE_SWEEP_INTERVAL, 0)) {
             this.largeSweep(level);
         }
     }
@@ -447,6 +449,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void pollutionAura(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 72.0)) {
+            return;
+        }
         double radius = this.isLarge() ? 6.0 : 3.5;
         float damage = this.isLarge() ? 10.0F : 2.0F;
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), this::isValidTarget)) {
@@ -457,6 +462,9 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     private void largeSweep(ServerLevel level) {
+        if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 72.0)) {
+            return;
+        }
         this.triggerAnim("action_controller", "sweep");
         level.playSound(null, this.blockPosition(), SoundEvents.GUARDIAN_ATTACK, SoundSource.HOSTILE, 1.1F, 0.55F);
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(5.5), this::isValidTarget)) {
