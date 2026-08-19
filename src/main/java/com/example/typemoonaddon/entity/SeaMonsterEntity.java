@@ -28,6 +28,7 @@ import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -50,8 +51,14 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     private static final int SMALL_TARGET_REFRESH_INTERVAL = 120;
     private static final int LARGE_TARGET_REFRESH_INTERVAL = 90;
     private static final int LARGE_SWEEP_INTERVAL = 180;
+    private static final int SMALL_SPIT_INTERVAL = 90;
+    private static final int LARGE_SPIT_INTERVAL = 70;
     private static final double SMALL_MOVEMENT_SPEED = 0.22;
     private static final double LARGE_MOVEMENT_SPEED = 0.15;
+    private static final double SMALL_SPIT_MIN_RANGE = 8.0;
+    private static final double SMALL_SPIT_MAX_RANGE = 30.0;
+    private static final double LARGE_SPIT_MIN_RANGE = 11.0;
+    private static final double LARGE_SPIT_MAX_RANGE = 44.0;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID controllerUuid;
@@ -127,6 +134,11 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         int targetRefreshInterval = this.isLarge() ? LARGE_TARGET_REFRESH_INTERVAL : SMALL_TARGET_REFRESH_INTERVAL;
         if (this.isStaggeredTick(targetRefreshInterval, 5)) {
             this.refreshTarget();
+        }
+        target = this.getTarget();
+        inCombat = this.isValidTarget(target);
+        if (inCombat && this.trySpitAttack(level, target, this.distanceTo(target))) {
+            return;
         }
         if (!this.isValidTarget(this.getTarget())) {
             this.followController(controller);
@@ -237,6 +249,11 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     @Override
+    public boolean onClimbable() {
+        return this.isClimbing();
+    }
+
+    @Override
     public boolean doHurtTarget(Entity target) {
         if (this.isFriendly(target)) {
             return false;
@@ -324,6 +341,10 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
+    private boolean isClimbing() {
+        return this.horizontalCollision && !this.isInWater();
+    }
+
     private void refreshTarget() {
         LivingEntity controller = this.getController();
         LivingEntity preferred = controller instanceof net.minecraft.world.entity.Mob mob ? mob.getTarget() : null;
@@ -335,7 +356,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             return;
         }
         if (!isValidTarget(this.getTarget())) {
-            LivingEntity nearest = this.findNearestTarget(24.0);
+            LivingEntity nearest = this.findNearestTarget(this.isLarge() ? LARGE_SPIT_MAX_RANGE : SMALL_SPIT_MAX_RANGE);
             this.setTarget(nearest);
             if (nearest == null) {
                 this.getNavigation().stop();
@@ -476,7 +497,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     @Nullable
-    private UUID getPollutionSourceUuid() {
+    UUID getPollutionSourceUuid() {
         LivingEntity controller = this.getController();
         if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster && hugeSeaMonster.getSourceUuid() != null) {
             return hugeSeaMonster.getSourceUuid();
@@ -485,7 +506,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
     }
 
     @Nullable
-    private UUID getPollutionMasterUuid() {
+    UUID getPollutionMasterUuid() {
         LivingEntity controller = this.getController();
         if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster) {
             return hugeSeaMonster.getMasterUuid();
@@ -494,6 +515,44 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             return gilles.getEntityMaster().getUUID();
         }
         return null;
+    }
+
+    private boolean trySpitAttack(ServerLevel level, LivingEntity target, double distance) {
+        int interval = this.isLarge() ? LARGE_SPIT_INTERVAL : SMALL_SPIT_INTERVAL;
+        if (!this.isStaggeredTick(interval, this.isLarge() ? 13 : 17)) {
+            return false;
+        }
+        double minRange = this.isLarge() ? LARGE_SPIT_MIN_RANGE : SMALL_SPIT_MIN_RANGE;
+        double maxRange = this.isLarge() ? LARGE_SPIT_MAX_RANGE : SMALL_SPIT_MAX_RANGE;
+        if (distance < minRange || distance > maxRange || !this.hasLineOfSight(target)
+                || !level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 72.0)) {
+            return false;
+        }
+        Vec3 targetPoint = target.position().add(0.0, target.getBbHeight() * 0.42, 0.0);
+        Vec3 mouth = this.position().add(0.0, this.getBbHeight() * (this.isLarge() ? 0.48 : 0.55), 0.0);
+        Vec3 direction = targetPoint.subtract(mouth);
+        if (direction.lengthSqr() < 1.0E-4) {
+            direction = this.getLookAngle();
+        }
+        direction = direction.normalize();
+        Vec3 spawn = mouth.add(direction.scale(this.isLarge() ? 1.8 : 1.05));
+        SeaMonsterSpitEntity spit = new SeaMonsterSpitEntity(level, this);
+        spit.setPos(spawn.x, spawn.y, spawn.z);
+        if (this.isLarge()) {
+            spit.configure(14.0F, LARGE_SPIT_MAX_RANGE + 6.0, 6.5, 240, 6.0F);
+            spit.setDeltaMovement(direction.scale(1.28));
+        } else {
+            spit.configure(8.0F, SMALL_SPIT_MAX_RANGE + 4.0, 3.5, 160, 3.0F);
+            spit.setDeltaMovement(direction.scale(1.12));
+        }
+        this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        this.triggerAnim("action_controller", "attack");
+        level.addFreshEntity(spit);
+        level.playSound(null, this.blockPosition(), SoundEvents.GUARDIAN_HURT, SoundSource.HOSTILE,
+                this.isLarge() ? 1.2F : 0.85F, this.isLarge() ? 0.55F : 0.75F);
+        level.sendParticles(ParticleTypes.SQUID_INK, spawn.x, spawn.y, spawn.z,
+                this.isLarge() ? 28 : 12, 0.22, 0.16, 0.22, 0.05);
+        return true;
     }
 
     private boolean isStaggeredTick(int interval, int offset) {

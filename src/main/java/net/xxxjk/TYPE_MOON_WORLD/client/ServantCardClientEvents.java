@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
 import com.mojang.math.Axis;
+import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +23,10 @@ public final class ServantCardClientEvents {
    @SubscribeEvent
    public static void onComputeFov(ComputeFovModifierEvent event) {
       if (event.getPlayer() != Minecraft.getInstance().player) {
+         return;
+      }
+      if (event.getPlayer().getVehicle() instanceof HugeSeaMonsterEntity) {
+         event.setNewFovModifier(event.getNewFovModifier() * 4.0F);
          return;
       }
       ItemStack using = event.getPlayer().getUseItem();

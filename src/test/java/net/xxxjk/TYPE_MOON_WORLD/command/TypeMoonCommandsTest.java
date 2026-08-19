@@ -23,6 +23,10 @@ class TypeMoonCommandsTest {
       Set<String> ids = Set.copyOf(Arrays.asList((String[])field.get(null)));
 
       assertFalse(ids.contains("black_key_fire_engraving"));
+      assertTrue(ids.contains("theology"));
+      assertTrue(ids.contains("black_key_making"));
+      assertTrue(ids.contains("iron_armor_action"));
+      assertTrue(ids.contains("cremation_rite"));
       assertTrue(ids.contains("stigma"));
       assertTrue(ids.contains("ubw_sword_control"));
       assertTrue(ids.contains("entity_displacement"));

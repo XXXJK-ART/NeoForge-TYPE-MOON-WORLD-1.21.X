@@ -210,6 +210,8 @@ class DiarmuidResourcesTest {
       assertEquals(100, DiarmuidCombatHelper.YELLOW_ROSE_DAMAGE_INTERVAL_TICKS);
       assertEquals(0.10, DiarmuidCombatHelper.MAX_HEALTH_REDUCTION_PER_STACK, 1.0E-9);
       assertEquals(1.0F, DiarmuidCombatHelper.DIRECT_DAMAGE_PER_STACK, 1.0E-6F);
+      assertEquals(0.10, DiarmuidCombatHelper.LIMB_DISABLE_CHANCE, 1.0E-9);
+      assertEquals(0.50, DiarmuidCombatHelper.FULL_STACK_LIMB_DISABLE_CHANCE, 1.0E-9);
       String helper = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/diarmuid/DiarmuidCombatHelper.java");
       String events = readJava("net/xxxjk/TYPE_MOON_WORLD/event/DiarmuidEvents.java");
       String items = readJava("net/xxxjk/TYPE_MOON_WORLD/item/ModItems.java");
@@ -218,6 +220,7 @@ class DiarmuidResourcesTest {
       assertTrue(helper.contains("clearCursesFromOwner"));
       assertTrue(helper.contains("CURSE_NEXT_DAMAGE_TICK_TAG"));
       assertTrue(helper.contains("now + YELLOW_ROSE_DAMAGE_INTERVAL_TICKS"));
+      assertTrue(helper.contains("limbDisableChance(stacks)"));
       assertTrue(helper.contains("createSpearStack"));
       assertTrue(helper.contains("syncSpearItemToOwner"));
       assertTrue(helper.contains("RED_ROSE_DUST"));

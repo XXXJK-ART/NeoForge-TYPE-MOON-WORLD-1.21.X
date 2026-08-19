@@ -24,6 +24,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -71,6 +72,7 @@ public final class ClientModEvents {
         event.registerEntityRenderer(AddonEntities.SHADOW_PIERCING_RHO_AIAS.get(), ShadowPiercingRhoAiasRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_DE_RAIS_CASTER.get(), GillesDeRaisRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER.get(), SeaMonsterRenderer::new);
+        event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER_SPIT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterRenderer::new);
     }
 

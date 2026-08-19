@@ -9,6 +9,7 @@ import com.example.typemoonaddon.entity.SakuraShadowArtRibbonEntity;
 import com.example.typemoonaddon.entity.SakuraShadowFamiliarEntity;
 import com.example.typemoonaddon.entity.SakuraShadowPiercingRhoAiasEntity;
 import com.example.typemoonaddon.entity.SeaMonsterEntity;
+import com.example.typemoonaddon.entity.SeaMonsterSpitEntity;
 import com.example.typemoonaddon.entity.SakuraVisualEntity;
 import com.example.typemoonaddon.entity.StorageVisualEntity;
 import net.minecraft.core.registries.Registries;
@@ -86,6 +87,14 @@ public final class AddonEntities {
                     .eyeHeight(1.0F)
                     .clientTrackingRange(12)
                     .build("gilles_sea_monster"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SeaMonsterSpitEntity>> GILLES_SEA_MONSTER_SPIT =
+            ENTITIES.register("gilles_sea_monster_spit", () -> EntityType.Builder
+                    .<SeaMonsterSpitEntity>of(SeaMonsterSpitEntity::new, MobCategory.MISC)
+                    .sized(0.55F, 0.55F)
+                    .clientTrackingRange(96)
+                    .updateInterval(1)
+                    .build("gilles_sea_monster_spit"));
 
     public static final DeferredHolder<EntityType<?>, EntityType<HugeSeaMonsterEntity>> GILLES_HUGE_SEA_MONSTER =
             ENTITIES.register("gilles_huge_sea_monster", () -> EntityType.Builder

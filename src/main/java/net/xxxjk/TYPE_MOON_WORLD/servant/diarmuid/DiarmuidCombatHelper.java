@@ -37,7 +37,8 @@ public final class DiarmuidCombatHelper {
    public static final int YELLOW_ROSE_DAMAGE_INTERVAL_TICKS = 5 * 20;
    public static final double MAX_HEALTH_REDUCTION_PER_STACK = 0.10;
    public static final float DIRECT_DAMAGE_PER_STACK = 1.0F;
-   public static final double LIMB_DISABLE_CHANCE = 0.04;
+   public static final double LIMB_DISABLE_CHANCE = 0.10;
+   public static final double FULL_STACK_LIMB_DISABLE_CHANCE = 0.50;
    public static final String RED_SPEAR_DURABILITY_TAG = "DiarmuidGaeDeargDurability";
    public static final String YELLOW_SPEAR_DURABILITY_TAG = "DiarmuidGaeBuidheDurability";
    public static final String YELLOW_CURSES_TAG = "DiarmuidYellowRoseCurses";
@@ -109,8 +110,8 @@ public final class DiarmuidCombatHelper {
    public static void applyYellowRoseHit(LivingEntity owner, LivingEntity target) {
       if (owner == null || target == null || target == owner || !isYellowActive(owner)) return;
       consumeDurability(owner, YELLOW_SPEAR_DURABILITY_TAG, 1);
-      applyYellowRoseCurse(owner, target);
-      if (target.level().random.nextDouble() < LIMB_DISABLE_CHANCE) {
+      int stacks = applyYellowRoseCurse(owner, target);
+      if (target.level().random.nextDouble() < limbDisableChance(stacks)) {
          applyRandomLimbDisable(target);
       }
    }
@@ -277,8 +278,8 @@ public final class DiarmuidCombatHelper {
       }
    }
 
-   private static void applyYellowRoseCurse(LivingEntity owner, LivingEntity target) {
-      if (target instanceof DiarmuidUaDuibhneEntity) return;
+   private static int applyYellowRoseCurse(LivingEntity owner, LivingEntity target) {
+      if (target instanceof DiarmuidUaDuibhneEntity) return stacks(target);
       CompoundTag data = target.getPersistentData();
       data.putUUID(CURSE_OWNER_TAG, owner.getUUID());
       data.putUUID(CURSE_SPEAR_TAG, owner.getUUID());
@@ -296,6 +297,11 @@ public final class DiarmuidCombatHelper {
          level.sendParticles(ParticleTypes.WITCH, target.getX(), target.getY() + target.getBbHeight() * 0.64, target.getZ(),
             Math.min(8, 2 + next), 0.2, 0.28, 0.2, 0.01);
       }
+      return next;
+   }
+
+   private static double limbDisableChance(int stacks) {
+      return stacks >= MAX_YELLOW_ROSE_STACKS ? FULL_STACK_LIMB_DISABLE_CHANCE : LIMB_DISABLE_CHANCE;
    }
 
    private static void applyRandomLimbDisable(LivingEntity target) {

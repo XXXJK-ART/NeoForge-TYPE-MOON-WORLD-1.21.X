@@ -36,7 +36,7 @@ public final class ServantCardGillesDeRaisSkills {
    public static final String TAG_HUGE_RIDE_UUID = "GillesCardHugeSeaMonsterRideUuid";
    public static final String TAG_MASTER_LOSS_DEFERRED = "GillesCardMasterLossDeferredUntilHugeDeath";
    private static final double BOOK_MAX_MANA = 2000.0;
-   private static final double BOOK_REGEN_PER_SECOND = 5.0;
+   private static final double BOOK_REGEN_PER_SECOND = 20.0;
    private static final int SMALL_COUNT = 3;
    private static final int SHROUD_DURATION = 160;
    private static final int GROWTH_DURATION = 400;
@@ -203,6 +203,7 @@ public final class ServantCardGillesDeRaisSkills {
          return false;
       }
       float amount = 8.0F;
+      float before = target.getHealth();
       target.invulnerableTime = 0;
       boolean hit = target.hurt(player.damageSources().magic(), amount);
       target.invulnerableTime = 0;
@@ -210,7 +211,7 @@ public final class ServantCardGillesDeRaisSkills {
          return false;
       }
       player.heal(4.0F);
-      addBookMana(player, amount);
+      addBookMana(player, Math.max(0.0F, before - target.getHealth()));
       if (player.level() instanceof ServerLevel level) {
          ServantCardSkillUtils.spawnLineParticles(level, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), player.position().add(0.0, 1.0, 0.0), ParticleTypes.WITCH);
          level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_DRINK, SoundSource.PLAYERS, 0.75F, 0.75F);
@@ -441,11 +442,20 @@ public final class ServantCardGillesDeRaisSkills {
          initialize(player);
       }
       double mana = data.getDouble(TAG_BOOK_MANA);
-      if (mana + 1.0E-6 < amount) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double totalAvailable = mana + Math.max(0.0, vars.servant_card_mana);
+      if (totalAvailable + 1.0E-6 < amount) {
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.servant_card.gilles_not_enough_book_mana"), true);
          updateSyncedBookMana(player);
          syncRuntime(player);
          return false;
+      }
+      if (mana + 1.0E-6 < amount) {
+         double refill = amount - mana;
+         if (ServantCardManaService.consumeOwnMana(player, vars, refill)) {
+            mana += refill;
+            data.putDouble(TAG_BOOK_MANA, mana);
+         }
       }
       data.putDouble(TAG_BOOK_MANA, Math.max(0.0, mana - amount));
       updateSyncedBookMana(player);

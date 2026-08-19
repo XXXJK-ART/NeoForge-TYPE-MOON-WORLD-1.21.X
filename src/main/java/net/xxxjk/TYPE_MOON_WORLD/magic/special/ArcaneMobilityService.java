@@ -163,7 +163,7 @@ public final class ArcaneMobilityService {
       double horizontalDistance = Math.sqrt((x - caster.getX()) * (x - caster.getX()) + (z - caster.getZ()) * (z - caster.getZ()));
       double verticalDistance = Math.abs(y - caster.getY());
       int duration = Mth.clamp((int)Math.ceil(Math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance) / 3.15), 8, 360);
-      double arcHeight = Mth.clamp(horizontalDistance * 0.12 + verticalDistance * 0.25, 2.4, 28.0);
+      double arcHeight = Mth.clamp(horizontalDistance * 0.18 + verticalDistance * 0.35, 4.0, 48.0);
       data.putBoolean(TAG_TOUKO_ACTIVE, true);
       data.putDouble(TAG_TOUKO_X, x);
       data.putDouble(TAG_TOUKO_Y, y);
