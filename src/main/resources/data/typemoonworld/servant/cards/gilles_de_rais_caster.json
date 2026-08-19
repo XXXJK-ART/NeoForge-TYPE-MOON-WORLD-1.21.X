@@ -1,0 +1,15 @@
+{
+  "servant_id": "typemoonworld:gilles_de_rais_caster",
+  "actions": [
+    {"slot": 0, "action": "typemoonworld:gilles_summon_small_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_summon_small_sea_monster"},
+    {"slot": 1, "action": "typemoonworld:gilles_summon_large_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_summon_large_sea_monster"},
+    {"slot": 2, "action": "typemoonworld:gilles_abyssal_gaze", "translation_key": "skill.typemoonworld.servant_card.gilles_abyssal_gaze"},
+    {"slot": 3, "action": "typemoonworld:gilles_life_absorb", "translation_key": "skill.typemoonworld.servant_card.gilles_life_absorb"},
+    {"slot": 4, "action": "typemoonworld:gilles_sea_monster_command", "translation_key": "skill.typemoonworld.servant_card.gilles_sea_monster_command"},
+    {"slot": 5, "action": "typemoonworld:gilles_pollution_ink_fog", "translation_key": "skill.typemoonworld.servant_card.gilles_pollution_ink_fog"},
+    {"slot": 6, "action": "typemoonworld:gilles_prelati_shroud", "translation_key": "skill.typemoonworld.servant_card.gilles_prelati_shroud"},
+    {"slot": 7, "action": "typemoonworld:gilles_profane_growth", "translation_key": "skill.typemoonworld.servant_card.gilles_profane_growth"},
+    {"slot": 8, "action": "typemoonworld:gilles_evil_god_praise", "translation_key": "skill.typemoonworld.servant_card.gilles_evil_god_praise"},
+    {"slot": 9, "action": "typemoonworld:gilles_uncontrolled_huge_sea_monster", "translation_key": "skill.typemoonworld.servant_card.gilles_uncontrolled_huge_sea_monster"}
+  ]
+}

@@ -3,7 +3,6 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 public final class CuChulainnCombatRules {
    public static final double MELEE_GAE_BOLG_RANGE = 3.75;
    public static final double MELEE_GAE_BOLG_COMMIT_RANGE = 7.0;
-   public static final double PROJECTILE_GAE_BOLG_RANGE = 12.0;
    public static final int ARMY_DECISION_INTERVAL_TICKS = 40;
    public static final double ARMY_HEALTH_RATIO = 0.15;
    public static final double ARMY_CRITICAL_HEALTH_RATIO = 0.08;
@@ -17,8 +16,7 @@ public final class CuChulainnCombatRules {
    public enum SingleGaeBolgPlan {
       NONE,
       CLOSE_FOR_MELEE,
-      MELEE,
-      PROJECTILE
+      MELEE;
    }
 
    public static SingleGaeBolgPlan singleGaeBolgPlan(double distance) {
@@ -30,9 +28,6 @@ public final class CuChulainnCombatRules {
       }
       if (distance <= MELEE_GAE_BOLG_COMMIT_RANGE) {
          return SingleGaeBolgPlan.CLOSE_FOR_MELEE;
-      }
-      if (distance <= PROJECTILE_GAE_BOLG_RANGE) {
-         return SingleGaeBolgPlan.PROJECTILE;
       }
       return SingleGaeBolgPlan.NONE;
    }

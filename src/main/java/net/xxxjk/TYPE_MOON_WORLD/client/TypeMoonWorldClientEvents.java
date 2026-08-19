@@ -72,7 +72,6 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ParacelsusSpiritCannonRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockGunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OdaMatchlockBulletRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OkitaShinsengumiRenderer;
-import net.xxxjk.TYPE_MOON_WORLD.client.renderer.OkitaSoujiSaberRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RyougiShikiRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.RedSkeletonHajunRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
@@ -280,7 +279,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), context -> new HumanoidServantRenderer<>(context, "sasaki_kojiro"));
-      event.registerEntityRenderer(ModEntities.OKITA_SOUJI_SABER.get(), OkitaSoujiSaberRenderer::new);
+      event.registerEntityRenderer(ModEntities.OKITA_SOUJI_SABER.get(), context -> new HumanoidServantRenderer<>(context, "okita_souji_saber_body"));
       event.registerEntityRenderer(ModEntities.CU_CHULAINN.get(), context -> new HumanoidServantRenderer<>(context, "cu_chulainn"));
       event.registerEntityRenderer(ModEntities.DIARMUID_UA_DUIBHNE.get(), context -> new HumanoidServantRenderer<>(context, "diarmuid_ua_duibhne"));
       event.registerEntityRenderer(ModEntities.LANCELOT_BERSERKER.get(), context -> new HumanoidServantRenderer<>(context, "lancelot_berserker"));

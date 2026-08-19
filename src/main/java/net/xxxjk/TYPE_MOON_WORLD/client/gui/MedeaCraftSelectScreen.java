@@ -14,23 +14,29 @@ public class MedeaCraftSelectScreen extends Screen {
    private static final int MAX_DRAGONFANG = 50;
    private static final int MAX_MANA_CHARM = 10;
    private static final int MAX_HEAL_CHARM = 10;
-   private static final int CHOICE_COUNT = 4;
+   private static final int CHOICE_COUNT = 6;
    private static final ResourceLocation DRAGONFANG_ICON = ResourceLocation.withDefaultNamespace("textures/item/bone.png");
    private static final ResourceLocation MANA_CHARM_ICON = ResourceLocation.withDefaultNamespace("textures/item/amethyst_shard.png");
    private static final ResourceLocation HEAL_CHARM_ICON = ResourceLocation.withDefaultNamespace("textures/item/golden_apple.png");
    private static final ResourceLocation LEYLINE_MAP_ICON = ResourceLocation.withDefaultNamespace("textures/item/map.png");
+   private static final ResourceLocation REINFORCEMENT_CHARM_ICON = ResourceLocation.withDefaultNamespace("textures/item/iron_nugget.png");
+   private static final ResourceLocation SERVANT_CONTRACT_ICON = ResourceLocation.withDefaultNamespace("textures/item/paper.png");
    private final int dragonfangStock;
    private final int manaCharmStock;
    private final int healCharmStock;
    private final int leylineMapStock;
+   private final int reinforcementCharmStock;
+   private final int servantContractStock;
    private int selectedIndex = 0;
 
-   public MedeaCraftSelectScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock) {
+   public MedeaCraftSelectScreen(int dragonfangStock, int manaCharmStock, int healCharmStock, int leylineMapStock, int reinforcementCharmStock, int servantContractStock) {
       super(Component.translatable("gui.typemoonworld.medea_craft.title"));
       this.dragonfangStock = Math.max(0, dragonfangStock);
       this.manaCharmStock = Math.max(0, manaCharmStock);
       this.healCharmStock = Math.max(0, healCharmStock);
       this.leylineMapStock = Math.max(0, leylineMapStock);
+      this.reinforcementCharmStock = Math.max(0, reinforcementCharmStock);
+      this.servantContractStock = Math.max(0, servantContractStock);
    }
 
    @Override
@@ -82,16 +88,18 @@ public class MedeaCraftSelectScreen extends Screen {
 
    @Override
    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-      int itemWidth = 78;
-      int itemHeight = 58;
+      int itemWidth = 82;
+      int itemHeight = 56;
       int gap = 8;
-      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
+      int columns = 3;
+      int rows = 2;
+      int totalWidth = itemWidth * columns + gap * (columns - 1);
       int startX = (this.width - totalWidth) / 2;
-      int startY = this.height / 2 - itemHeight / 2;
+      int startY = this.height / 2 - (itemHeight * rows + gap) / 2;
       int bgX1 = startX - 12;
       int bgY1 = startY - 28;
       int bgX2 = startX + totalWidth + 12;
-      int bgY2 = startY + itemHeight + 12;
+      int bgY2 = startY + itemHeight * rows + gap + 12;
 
       this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
       GuiUtils.renderScreenBackdrop(guiGraphics, this.width, this.height);
@@ -100,8 +108,9 @@ public class MedeaCraftSelectScreen extends Screen {
       this.updateSelectionAt(mouseX, mouseY);
 
       for (int i = 0; i < CHOICE_COUNT; i++) {
-         int x = startX + i * (itemWidth + gap);
-         this.renderChoice(guiGraphics, i, x, startY, itemWidth, itemHeight);
+         int x = startX + (i % columns) * (itemWidth + gap);
+         int y = startY + (i / columns) * (itemHeight + gap);
+         this.renderChoice(guiGraphics, i, x, y, itemWidth, itemHeight);
       }
    }
 
@@ -130,15 +139,17 @@ public class MedeaCraftSelectScreen extends Screen {
    }
 
    private boolean updateSelectionAt(double mouseX, double mouseY) {
-      int itemWidth = 78;
-      int itemHeight = 58;
+      int itemWidth = 82;
+      int itemHeight = 56;
       int gap = 8;
-      int totalWidth = itemWidth * CHOICE_COUNT + gap * (CHOICE_COUNT - 1);
+      int columns = 3;
+      int totalWidth = itemWidth * columns + gap * (columns - 1);
       int startX = (this.width - totalWidth) / 2;
-      int startY = this.height / 2 - itemHeight / 2;
+      int startY = this.height / 2 - (itemHeight * 2 + gap) / 2;
       for (int i = 0; i < CHOICE_COUNT; i++) {
-         int x = startX + i * (itemWidth + gap);
-         if (mouseX >= x && mouseX < x + itemWidth && mouseY >= startY && mouseY < startY + itemHeight) {
+         int x = startX + (i % columns) * (itemWidth + gap);
+         int y = startY + (i / columns) * (itemHeight + gap);
+         if (mouseX >= x && mouseX < x + itemWidth && mouseY >= y && mouseY < y + itemHeight) {
             this.selectedIndex = i;
             return true;
          }
@@ -156,6 +167,7 @@ public class MedeaCraftSelectScreen extends Screen {
          case 1 -> this.manaCharmStock >= MAX_MANA_CHARM;
          case 2 -> this.healCharmStock >= MAX_HEAL_CHARM;
          case 3 -> false;
+         case 4, 5 -> false;
          default -> true;
       };
    }
@@ -166,6 +178,8 @@ public class MedeaCraftSelectScreen extends Screen {
          case 1 -> Component.translatable("hud.typemoonworld.servant_card.medea_mana_charm");
          case 2 -> Component.translatable("hud.typemoonworld.servant_card.medea_heal_charm");
          case 3 -> Component.translatable("item.typemoonworld.leyline_survey_map");
+         case 4 -> Component.translatable("item.typemoonworld.medea_reinforcement_charm");
+         case 5 -> Component.translatable("item.typemoonworld.medea_servant_contract");
          default -> Component.empty();
       };
    }
@@ -176,6 +190,8 @@ public class MedeaCraftSelectScreen extends Screen {
          case 1 -> Component.literal(this.manaCharmStock + "/" + MAX_MANA_CHARM);
          case 2 -> Component.literal(this.healCharmStock + "/" + MAX_HEAL_CHARM);
          case 3 -> Component.literal(String.valueOf(this.leylineMapStock));
+         case 4 -> Component.literal(String.valueOf(this.reinforcementCharmStock));
+         case 5 -> Component.literal(String.valueOf(this.servantContractStock));
          default -> Component.empty();
       };
    }
@@ -185,6 +201,8 @@ public class MedeaCraftSelectScreen extends Screen {
          case 1 -> MANA_CHARM_ICON;
          case 2 -> HEAL_CHARM_ICON;
          case 3 -> LEYLINE_MAP_ICON;
+         case 4 -> REINFORCEMENT_CHARM_ICON;
+         case 5 -> SERVANT_CONTRACT_ICON;
          default -> DRAGONFANG_ICON;
       };
    }

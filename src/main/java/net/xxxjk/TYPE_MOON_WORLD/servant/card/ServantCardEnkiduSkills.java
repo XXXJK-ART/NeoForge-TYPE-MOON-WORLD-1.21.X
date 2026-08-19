@@ -65,6 +65,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
@@ -98,6 +99,7 @@ public final class ServantCardEnkiduSkills {
    private static final String ENUMA_START_X = "ServantCardEnkiduEnumaStartX";
    private static final String ENUMA_START_Y = "ServantCardEnkiduEnumaStartY";
    private static final String ENUMA_START_Z = "ServantCardEnkiduEnumaStartZ";
+   private static final String ENUMA_CORE_DAMAGE_STARTED = "ServantCardEnkiduEnumaCoreDamageStarted";
    private static final ResourceLocation TRANSFIG_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_attack");
    private static final ResourceLocation TRANSFIG_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_health");
    private static final ResourceLocation TRANSFIG_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_enkidu_transfig_speed");
@@ -108,6 +110,7 @@ public final class ServantCardEnkiduSkills {
    private static final Map<UUID, Set<UUID>> BOUND_TARGETS_BY_OWNER = new HashMap<>();
    private static final int ENUMA_WINDUP = 10 * 20;
    private static final int ENUMA_RELEASE_VISUAL = 5 * 20;
+   private static final float ENUMA_CORE_DAMAGE_TOTAL = 5000.0F;
    private static final double ENUMA_GROUND_EXPLOSION_RADIUS = 60.0;
    private static final ItemStack[] AGE_WEAPONS = new ItemStack[]{
       new ItemStack(Items.IRON_SWORD), new ItemStack(Items.IRON_AXE), new ItemStack(Items.IRON_PICKAXE), new ItemStack(Items.TRIDENT),
@@ -377,7 +380,6 @@ public final class ServantCardEnkiduSkills {
             return !EntityUtils.isImmunePlayerTarget(e) && !player.isAlliedTo(e) && !e.isAlliedTo(player);
          })) {
             living.removeEffect(MobEffects.INVISIBILITY);
-            living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false, false));
             ids.add(living.getId());
          }
          ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(ids, 200));
@@ -463,6 +465,7 @@ public final class ServantCardEnkiduSkills {
       data.putBoolean(ENUMA_PREV_INVULNERABLE, player.isInvulnerable());
       data.putBoolean(ENUMA_PREV_INVISIBLE, player.isInvisible());
       data.remove(ENUMA_INVISIBLE);
+      data.putBoolean(ENUMA_CORE_DAMAGE_STARTED, false);
       data.putLong(ENUMA_LAST_FLIGHT_FX, 0L);
       data.putDouble(ENUMA_START_X, player.getX());
       data.putDouble(ENUMA_START_Y, player.getY());
@@ -595,6 +598,16 @@ public final class ServantCardEnkiduSkills {
       if (player.isInvulnerable() && data.contains(ENUMA_PREV_INVULNERABLE)) {
          player.setInvulnerable(data.getBoolean(ENUMA_PREV_INVULNERABLE));
       }
+      if (!data.getBoolean(ENUMA_CORE_DAMAGE_STARTED) && now >= release && now < data.getLong(ENUMA_FINISH_TICK)) {
+         data.putBoolean(ENUMA_CORE_DAMAGE_STARTED, true);
+         LivingEntity coreTarget = findLookTarget(player, 48.0, 2.5);
+         if (coreTarget == null || !coreTarget.isAlive()) {
+            coreTarget = findFlightHit(player, level);
+         }
+         if (coreTarget != null) {
+            applyNoDefenseDamageOverTicks(player, coreTarget, ENUMA_CORE_DAMAGE_TOTAL, Math.max(1, (int)(data.getLong(ENUMA_FINISH_TICK) - now)));
+         }
+      }
       if (data.getInt(ENUMA_STAGE) <= 1) {
          activateEnumaInvisibility(player);
       }
@@ -618,11 +631,11 @@ public final class ServantCardEnkiduSkills {
             player.setDeltaMovement(boosted);
             player.hurtMarked = true;
          } else {
-            Vec3 impact = hit == null ? player.position() : hit.position().add(0.0, hit.getBbHeight() * 0.45, 0.0);
-            restoreEnumaInvisibility(player);
-            applyEnumaGroundExplosion(player, level, impact, hit);
-            clearEnumaState(player);
-         }
+         Vec3 impact = hit == null ? player.position() : hit.position().add(0.0, hit.getBbHeight() * 0.45, 0.0);
+         restoreEnumaInvisibility(player);
+         applyEnumaGroundExplosion(player, level, impact, hit);
+         clearEnumaState(player);
+      }
       }
    }
 
@@ -661,6 +674,7 @@ public final class ServantCardEnkiduSkills {
       data.remove(ENUMA_START_X);
       data.remove(ENUMA_START_Y);
       data.remove(ENUMA_START_Z);
+      data.remove(ENUMA_CORE_DAMAGE_STARTED);
    }
 
    private static void activateEnumaInvisibility(ServerPlayer player) {
@@ -699,7 +713,7 @@ public final class ServantCardEnkiduSkills {
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.2, impact.z, 38, 1.5, 0.75, 1.5, 0.1);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.0F, 1.45F);
       if (directTarget != null) {
-         applyNoDefenseDamageOverTicks(player, directTarget, 4000.0F, 20);
+         applyNoDefenseDamageOverTicks(player, directTarget, ENUMA_CORE_DAMAGE_TOTAL, 20);
       }
       applyEnumaAreaDamage(player, level, impact, 7.0, 500.0F, directTarget);
       breakEnumaImpactTerrain(level, impact, 6.0);
@@ -810,6 +824,7 @@ public final class ServantCardEnkiduSkills {
       target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
       target.removeEffect(MobEffects.ABSORPTION);
       target.setAbsorptionAmount(0.0F);
+      EnkiduCombatHelper.markEnumaDamageBypass(target);
       target.invulnerableTime = 0;
       float before = target.getHealth();
       target.hurt(player.damageSources().magic(), amount);

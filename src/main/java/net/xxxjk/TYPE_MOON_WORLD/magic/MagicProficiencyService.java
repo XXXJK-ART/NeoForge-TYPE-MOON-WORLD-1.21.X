@@ -59,11 +59,7 @@ public final class MagicProficiencyService {
       current = Math.max(0.0, Math.min(100.0, current));
       if (id == null || baseGain <= 0.0) return Math.round(current * 100.0) / 100.0;
       double stage = "magic_analysis".equals(id) ? (current < 50.0 ? 1.0 : current < 75.0 ? 0.25 : 0.10) : 1.0;
-      int complexity = net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry.contains(id)
-         ? net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry.complexity(id)
-         : MagicLearningStrategy.complexity(MagicLearningStrategy.normalizeDisplayId(id));
-      double complexityFactor = Math.max(0.25, Math.min(1.0, 1.0 - complexity / 160.0));
-      double effective = baseGain * complexityFactor * Math.max(0.05, 1.0 - current / 100.0) * stage;
+      double effective = baseGain * Math.max(0.05, 1.0 - current / 100.0) * stage;
       return Math.min(100.0, Math.round((current + effective) * 100.0) / 100.0);
    }
 

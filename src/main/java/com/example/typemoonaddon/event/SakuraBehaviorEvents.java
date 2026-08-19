@@ -2,19 +2,25 @@ package com.example.typemoonaddon.event;
 
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.SakuraShadowFamiliarEntity;
+import com.example.typemoonaddon.magic.CursedArmorService;
 import com.example.typemoonaddon.magic.SakuraBlackMudHuntService;
 import com.example.typemoonaddon.magic.SakuraBlackMudService;
+import com.example.typemoonaddon.magic.SakuraGrailErosionService;
 import com.example.typemoonaddon.magic.SakuraPollutionService;
 import com.example.typemoonaddon.magic.SakuraShadowArtService;
 import com.example.typemoonaddon.magic.SakuraShadowBindingService;
 import com.example.typemoonaddon.magic.SakuraShadowMaterializationService;
 import com.example.typemoonaddon.magic.SakuraShadowTransferService;
 import com.example.typemoonaddon.magic.SakuraSummonBlackMudService;
+import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
+import com.example.typemoonaddon.registry.AddonAttachments;
+import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -40,11 +46,16 @@ public final class SakuraBehaviorEvents {
     public static void onServerTick(ServerTickEvent.Post event) {
         SakuraShadowMaterializationService.tick(event.getServer());
         event.getServer().getAllLevels().forEach(SakuraBlackMudService::tick);
+        event.getServer().getAllLevels().forEach(GillesDeRaisCombatHelper::tickPollutionZones);
         SakuraSummonBlackMudService.tick(event.getServer());
         SakuraBlackMudHuntService.tick(event.getServer());
         SakuraShadowBindingService.tick(event.getServer());
         SakuraShadowTransferService.tick(event.getServer());
         SakuraShadowArtService.tick(event.getServer());
+        SakuraGrailErosionService.tick(event.getServer());
+        for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+            CursedArmorService.tick(player);
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -71,8 +82,15 @@ public final class SakuraBehaviorEvents {
     }
 
     @SubscribeEvent
+    public static void onDamageApplied(LivingDamageEvent.Post event) {
+        if (event.getNewDamage() > 0.0F) {
+            SakuraPollutionService.rememberServantDamage(event.getEntity(), event.getSource());
+        }
+    }
+
+    @SubscribeEvent
     public static void onDeath(LivingDeathEvent event) {
-        SakuraPollutionService.entityDied(event.getEntity());
+        SakuraPollutionService.entityDied(event.getEntity(), event.getSource());
     }
 
     @SubscribeEvent
@@ -102,6 +120,21 @@ public final class SakuraBehaviorEvents {
             SakuraSummonBlackMudService.playerUnavailable(player);
             SakuraBlackMudHuntService.playerUnavailable(player);
             SakuraShadowArtService.playerUnavailable(player);
+            syncSakuraState(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncSakuraState(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            syncSakuraState(player);
         }
     }
 
@@ -113,5 +146,22 @@ public final class SakuraBehaviorEvents {
         SakuraShadowBindingService.serverStopping(event.getServer());
         SakuraShadowTransferService.serverStopping();
         SakuraShadowArtService.serverStopping();
+    }
+
+    private static void syncSakuraState(ServerPlayer player) {
+        var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+        if (data.learned()) {
+            SakuraTypeMoonIntegration.ensureImaginaryAttribute(player);
+            SakuraTypeMoonIntegration.ensureGrailWormPower(player);
+            if (data.forbiddenMagicUnlocked()) {
+                SakuraTypeMoonIntegration.ensureForbiddenMagicKnowledge(player);
+            }
+            if (data.shadowArtUnlocked()) {
+                SakuraTypeMoonIntegration.ensureShadowArtKnowledge(player);
+            }
+        }
+        SakuraGrailErosionService.ensureCrestWormExpelled(player);
+        CursedArmorService.beginFormation(player);
+        CursedArmorService.sync(player);
     }
 }

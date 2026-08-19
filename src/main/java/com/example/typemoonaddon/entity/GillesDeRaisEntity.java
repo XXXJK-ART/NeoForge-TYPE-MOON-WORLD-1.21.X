@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import org.jetbrains.annotations.Nullable;
 
 public final class GillesDeRaisEntity extends ServantEntity {
     public static final String SERVANT_KEY = "gilles_de_rais_caster";
@@ -47,6 +48,9 @@ public final class GillesDeRaisEntity extends ServantEntity {
             this.setDeltaMovement(Vec3.ZERO);
             return;
         }
+        if (!this.level().isClientSide() && GillesDeRaisCombatHelper.tickSummonChant(this)) {
+            return;
+        }
         super.customServerAiStep();
         if (!this.level().isClientSide() && this.isAlive() && !this.isSpiritualDissolving()) {
             GillesDeRaisCombatHelper.tick(this);
@@ -58,10 +62,20 @@ public final class GillesDeRaisEntity extends ServantEntity {
         if (this.isShelteredInsideHugeSeaMonster()) {
             return false;
         }
-        if (source.getEntity() instanceof LivingEntity attacker && attacker != this) {
+        if (!GillesDeRaisCombatHelper.isSummonChanting(this)
+                && source.getEntity() instanceof LivingEntity attacker && attacker != this) {
             this.setTarget(attacker);
         }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        if (target != null && GillesDeRaisCombatHelper.isSummonChanting(this)) {
+            super.setTarget(null);
+            return;
+        }
+        super.setTarget(target);
     }
 
     @Override
@@ -76,6 +90,9 @@ public final class GillesDeRaisEntity extends ServantEntity {
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        if (GillesDeRaisCombatHelper.isSummonChanting(this)) {
+            return false;
+        }
         boolean hit = super.doHurtTarget(target);
         if (hit) {
             GillesVoiceHelper.tryPlayAttack(this);

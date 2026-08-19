@@ -26,8 +26,10 @@ class ServantTacticalResourcesTest {
    @Test
    void allServantsUseDedicatedBoundedTacticalProfiles() throws Exception {
       Set<String> profileIds = new HashSet<>();
+      int definitionCount = 0;
       try (var definitions = Files.list(RESOURCES.resolve("definitions"))) {
          for (Path path : definitions.filter(file -> file.toString().endsWith(".json")).toList()) {
+            definitionCount++;
             var definition = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
             String profileId = definition.get("ai_config").getAsString();
             assertFalse(profileId.startsWith("default_"), path.toString());
@@ -41,7 +43,7 @@ class ServantTacticalResourcesTest {
             assertTrue(profile.tactical().maximumRange() <= 48.0);
          }
       }
-      assertEquals(27, profileIds.size());
+      assertEquals(definitionCount, profileIds.size());
    }
 
    @Test

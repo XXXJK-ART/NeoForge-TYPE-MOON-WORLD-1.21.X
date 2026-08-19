@@ -81,28 +81,29 @@ public final class ChainControlService {
             .toList();
         chains = new ArrayList<>(chains);
         List<LivingEntity> targets = findTargets(level, owner);
-        List<List<LivingEntity>> assignments = new ArrayList<>(ChainConfig.CHAIN_COUNT);
-        for (int i = 0; i < ChainConfig.CHAIN_COUNT; i++) {
-            assignments.add(new ArrayList<>());
-        }
-        for (int i = 0; i < targets.size(); i++) {
-            assignments.get(TargetingMath.roundRobinIndex(i, ChainConfig.CHAIN_COUNT)).add(targets.get(i));
-        }
+        int physicalChainCount = physicalChainCount(ChainConfig.RIGHT_CLICK_PHYSICAL_CHAIN_COUNT, ChainConfig.CHAIN_COUNT);
         Vec3 origin = HeavenChainEntity.ownerHand(owner);
         Vec3 look = owner.getLookAngle();
+        List<List<LivingEntity>> assignments = assignTargetsByLocality(targets, origin, look, physicalChainCount);
         TypeMoonBridge.spawnGoldenGate(level, origin, look);
-        while (chains.size() < ChainConfig.CHAIN_COUNT) {
+        while (chains.size() < physicalChainCount) {
             int index = chains.size();
             HeavenChainEntity chain = ModEntities.HEAVEN_CHAIN.get().create(level);
             if (chain == null) {
                 break;
             }
-            chain.initialize(owner, origin, assignments.get(index), spreadDirection(look, index, ChainConfig.CHAIN_COUNT));
+            chain.initialize(owner, origin, assignments.get(index), spreadDirection(look, index, physicalChainCount));
+            chain.setStackedChainCount(logicalStackCount(index, physicalChainCount, ChainConfig.CHAIN_COUNT));
             chains.add(chain);
             level.addFreshEntity(chain);
         }
         for (int i = 0; i < chains.size(); i++) {
             HeavenChainEntity chain = chains.get(i);
+            if (i >= physicalChainCount) {
+                chain.beginRetracting();
+                continue;
+            }
+            chain.setStackedChainCountPreservingDamage(logicalStackCount(i, physicalChainCount, ChainConfig.CHAIN_COUNT));
             if (chain.tickCount > 0 || chain.ownerUuid() != null && chain.position().distanceToSqr(origin) > 1.0E-6D) {
                 chain.setTargets(assignments.get(i));
             }
@@ -139,6 +140,9 @@ public final class ChainControlService {
     private static void spawnGatePlanes(ServerLevel level, LivingEntity owner, LivingEntity target) {
         Vec3 targetCenter = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
         int gates = ChainConfig.SKILL_GATES_PER_PLANE;
+        int logicalChains = gates * 2;
+        int physicalChainCount = physicalChainCount(ChainConfig.SKILL_PHYSICAL_CHAINS_PER_TARGET, logicalChains);
+        int spawnedChains = 0;
         for (int plane = 0; plane < 2; plane++) {
             double vertical = plane == 0
                 ? ChainConfig.SKILL_GATE_VERTICAL_OFFSET
@@ -153,8 +157,11 @@ public final class ChainControlService {
                 );
                 Vec3 direction = targetCenter.subtract(gate).normalize();
                 TypeMoonBridge.spawnGoldenGate(level, gate, direction);
-                HeavenChainEntity chain = ModEntities.HEAVEN_CHAIN.get().create(level);
-                if (chain != null) {
+                if (spawnedChains < physicalChainCount) {
+                    HeavenChainEntity chain = ModEntities.HEAVEN_CHAIN.get().create(level);
+                    if (chain == null) {
+                        continue;
+                    }
                     chain.initializeFromGate(
                         owner,
                         gate,
@@ -162,7 +169,9 @@ public final class ChainControlService {
                         direction,
                         ChainConfig.SKILL_GATE_LAUNCH_DELAY + i / 2
                     );
+                    chain.setStackedChainCount(logicalStackCount(spawnedChains, physicalChainCount, logicalChains));
                     level.addFreshEntity(chain);
+                    spawnedChains++;
                 }
             }
         }
@@ -187,13 +196,12 @@ public final class ChainControlService {
         List<LivingEntity> targets = findTargets(level, owner).stream()
             .filter(target -> !BindingService.isBound(target.getUUID()))
             .toList();
-        List<List<LivingEntity>> assignments = new ArrayList<>();
-        for (int i = 0; i < seekers.size(); i++) {
-            assignments.add(new ArrayList<>());
-        }
-        for (int i = 0; i < targets.size(); i++) {
-            assignments.get(TargetingMath.roundRobinIndex(i, seekers.size())).add(targets.get(i));
-        }
+        List<List<LivingEntity>> assignments = assignTargetsByLocality(
+            targets,
+            HeavenChainEntity.ownerHand(owner),
+            owner.getLookAngle(),
+            seekers.size()
+        );
         for (int i = 0; i < seekers.size(); i++) {
             if (!assignments.get(i).isEmpty()) {
                 seekers.get(i).setTargets(assignments.get(i));
@@ -245,6 +253,84 @@ public final class ChainControlService {
         ));
         targets.sort(Comparator.<LivingEntity>comparingDouble(owner::distanceToSqr).thenComparing(Entity::getUUID));
         return targets;
+    }
+
+    private static List<List<LivingEntity>> assignTargetsByLocality(
+        List<LivingEntity> targets,
+        Vec3 origin,
+        Vec3 look,
+        int chainCount
+    ) {
+        List<List<LivingEntity>> assignments = new ArrayList<>(chainCount);
+        for (int i = 0; i < chainCount; i++) {
+            assignments.add(new ArrayList<>());
+        }
+        if (chainCount <= 0) {
+            return assignments;
+        }
+        List<Vec3> lanes = new ArrayList<>(chainCount);
+        for (int i = 0; i < chainCount; i++) {
+            lanes.add(spreadDirection(look, i, chainCount));
+        }
+        for (LivingEntity target : targets) {
+            Vec3 direction = target.getEyePosition().subtract(origin);
+            int index = bestLocalityLane(direction, lanes, assignments);
+            assignments.get(index).add(target);
+        }
+        for (int i = 0; i < assignments.size(); i++) {
+            assignments.set(i, nearestPathOrder(origin, assignments.get(i)));
+        }
+        return assignments;
+    }
+
+    private static int bestLocalityLane(
+        Vec3 direction,
+        List<Vec3> lanes,
+        List<List<LivingEntity>> assignments
+    ) {
+        if (lanes.size() == 1 || direction.lengthSqr() <= 1.0E-10D) {
+            return 0;
+        }
+        Vec3 normalized = direction.normalize();
+        int bestIndex = 0;
+        double bestScore = -Double.MAX_VALUE;
+        for (int i = 0; i < lanes.size(); i++) {
+            double score = normalized.dot(lanes.get(i)) - assignments.get(i).size() * 0.025D;
+            if (score > bestScore + 1.0E-8D
+                || Math.abs(score - bestScore) <= 1.0E-8D
+                && assignments.get(i).size() < assignments.get(bestIndex).size()) {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    private static List<LivingEntity> nearestPathOrder(Vec3 origin, List<LivingEntity> targets) {
+        if (targets.size() <= 1) {
+            return targets;
+        }
+        List<LivingEntity> pending = new ArrayList<>(targets);
+        List<LivingEntity> ordered = new ArrayList<>(targets.size());
+        Vec3 cursor = origin;
+        while (!pending.isEmpty()) {
+            int bestIndex = 0;
+            double bestDistance = Double.MAX_VALUE;
+            for (int i = 0; i < pending.size(); i++) {
+                LivingEntity target = pending.get(i);
+                double distance = cursor.distanceToSqr(target.position());
+                if (distance < bestDistance - 1.0E-8D
+                    || Math.abs(distance - bestDistance) <= 1.0E-8D
+                    && target.getUUID().compareTo(pending.get(bestIndex).getUUID()) < 0) {
+                    bestDistance = distance;
+                    bestIndex = i;
+                }
+            }
+            LivingEntity next = pending.remove(bestIndex);
+            ordered.add(next);
+            cursor = next.position();
+        }
+        return ordered;
     }
 
     private static boolean isEnemy(LivingEntity owner, LivingEntity target) {
@@ -300,6 +386,16 @@ public final class ChainControlService {
         Vec3 vertical = right.cross(look).normalize();
         double angle = (Math.PI * 2.0D * index) / Math.max(1, count);
         return look.add(right.scale(Math.cos(angle) * 0.16D)).add(vertical.scale(Math.sin(angle) * 0.16D)).normalize();
+    }
+
+    private static int physicalChainCount(int configuredPhysicalCount, int logicalChainCount) {
+        return Math.max(1, Math.min(configuredPhysicalCount, logicalChainCount));
+    }
+
+    private static int logicalStackCount(int index, int physicalChainCount, int logicalChainCount) {
+        int base = logicalChainCount / physicalChainCount;
+        int remainder = logicalChainCount % physicalChainCount;
+        return base + (index < remainder ? 1 : 0);
     }
 
     private record PressState(long startedAt, boolean retracted) {

@@ -2,12 +2,14 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
@@ -88,6 +90,8 @@ public final class ServantCardLoadoutManager {
          case "lancelot_berserker" -> main = LancelotCombatHelper.knightOfOwnerStack(stack(ModItems.LANCELOT_IRON_ROD.get()), player);
          case "iskandar" -> main = stack(ModItems.ISKANDAR_SHORTSWORD.get());
          case "baobhan_sith" -> main = stack(ModItems.BAOBHAN_SITH_HARP.get());
+         case "okita_souji_saber" -> main = stack(ModItems.KIKU_ICHIMONJI_NORIMUNE.get());
+         case "gilles_de_rais_caster" -> main = registryStack("typemoonworld:prelatis_spellbook");
          default -> {
          }
       }
@@ -99,6 +103,14 @@ public final class ServantCardLoadoutManager {
 
    private static ItemStack stack(Item item) {
       return item == null ? ItemStack.EMPTY : new ItemStack(item);
+   }
+
+   private static ItemStack registryStack(String id) {
+      ResourceLocation key = ResourceLocation.tryParse(id);
+      if (key != null && BuiltInRegistries.ITEM.containsKey(key)) {
+         return new ItemStack(BuiltInRegistries.ITEM.get(key));
+      }
+      return ItemStack.EMPTY;
    }
 
    private static ItemStack veiledExcalibur() {

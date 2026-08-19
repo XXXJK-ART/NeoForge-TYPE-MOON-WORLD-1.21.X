@@ -1,10 +1,10 @@
 {
   "id": "mumyoudan_zuki",
   "display_name": "Mumyoudan-zuki",
-  "display_name_zh": "无明三段突",
+  "display_name_zh": "\u65e0\u660e\u4e09\u6bb5\u7a81",
   "type": "anti_personnel",
   "rank": "C",
-  "mp_cost": 10,
+  "mp_cost": 20,
   "cooldown_ticks": 300,
   "windup_ticks": 6,
   "effects": [
@@ -13,7 +13,7 @@
       "params": {
         "hits": 3,
         "damage_scale_per_hit": 3.0,
-        "range": 3.2,
+        "range": 3.0,
         "damage_type": "typemoonworld:okita_mumyoudan_zuki",
         "sure_hit": true,
         "bypass_guard": true,

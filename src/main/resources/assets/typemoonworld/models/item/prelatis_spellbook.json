@@ -1,6 +1,118 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "typemoonworld:item/prelatis_spellbook"
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    32,
+    32
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "ground": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "gui": {
+      "rotation": [
+        90,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        1.5
+      ]
+    },
+    "head": {
+      "rotation": [
+        75.25,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2.75,
+        -0.75
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        -90,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        1.5
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        90,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        1.5
+      ]
+    }
   }
 }

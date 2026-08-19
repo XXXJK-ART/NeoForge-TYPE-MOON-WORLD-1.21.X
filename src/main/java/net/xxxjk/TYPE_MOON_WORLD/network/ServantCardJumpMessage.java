@@ -7,7 +7,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardFlightController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
 public record ServantCardJumpMessage(float forward, float strafe) implements CustomPacketPayload {
@@ -34,7 +36,12 @@ public record ServantCardJumpMessage(float forward, float strafe) implements Cus
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player
             && ServerPacketRateLimiter.allow(player, "servant_card_jump", 4)) {
-            ServantCardTransformManager.bigJump(player, message.forward, message.strafe);
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && vars.servant_card_flying) {
+               ServantCardFlightController.tryDash(player, message.forward, message.strafe);
+            } else {
+               ServantCardTransformManager.bigJump(player, message.forward, message.strafe);
+            }
          }
       });
    }

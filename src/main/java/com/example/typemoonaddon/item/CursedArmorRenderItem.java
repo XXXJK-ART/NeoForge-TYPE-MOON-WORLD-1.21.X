@@ -1,17 +1,19 @@
 package com.example.typemoonaddon.item;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterials;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-/** Internal GeckoLib carrier. The item is never inserted into a player inventory. */
-public final class CursedArmorRenderItem extends Item implements GeoItem {
+/** GeckoLib carrier item for rendered armor pieces and creative inspection. */
+public final class CursedArmorRenderItem extends ArmorItem implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public CursedArmorRenderItem(Properties properties) {
-        super(properties);
+        super(ArmorMaterials.LEATHER, Type.CHESTPLATE, properties);
     }
 
     @Override

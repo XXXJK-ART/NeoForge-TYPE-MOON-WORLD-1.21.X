@@ -201,7 +201,6 @@ public final class GilgameshCombatHelper {
             && !ServantMasterTargeting.isContractMaster(entity, target)
       )) {
          living.removeEffect(MobEffects.INVISIBILITY);
-         living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, false));
       }
    }
 

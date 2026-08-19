@@ -26,9 +26,15 @@ public class RhoAiasEntityModel extends GeoModel<RhoAiasEntity> {
    @Override
    public void setCustomAnimations(RhoAiasEntity entity, long instanceId, AnimationState<RhoAiasEntity> state) {
       super.setCustomAnimations(entity, instanceId, state);
-      GeoBone root = this.getAnimationProcessor().getBone("bone");
+      float facingRotation = -entity.getFacingYaw() * Mth.DEG_TO_RAD;
+      rotateRoot("bone", facingRotation);
+      rotateRoot("Rhoaias", facingRotation);
+   }
+
+   private void rotateRoot(String boneName, float facingRotation) {
+      GeoBone root = this.getAnimationProcessor().getBone(boneName);
       if (root != null) {
-         root.setRotY(-entity.getFacingYaw() * Mth.DEG_TO_RAD);
+         root.setRotY(facingRotation);
       }
    }
 }

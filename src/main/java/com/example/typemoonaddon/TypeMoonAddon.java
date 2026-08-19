@@ -65,11 +65,14 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.VOID_RING_REGALIA);
         }
         if (event.getTab() == ModCreativeModeTabs.MAGIC_BOOKS_TAB.get()) {
-            event.accept(AddonItems.PRELATIS_SPELLBOOK);
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_STORAGE);
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_STORAGE);
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_ABSORPTION);
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_ABSORPTION);
+        }
+        if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
+            event.insertAfter(ModItems.KIKU_ICHIMONJI_NORIMUNE.toStack(), AddonItems.PRELATIS_SPELLBOOK.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
             ItemStack afterMasterCards = new ItemStack(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get());
@@ -79,10 +82,12 @@ public final class TypeMoonAddon {
             event.insertAfter(afterMasterCards, sakura, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.insertAfter(sakura, sakuraAlter, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.insertAfter(sakuraAlter, sakuraFha, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.CURSED_ARMOR_RENDER);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get() || event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);
             event.accept(AddonItems.GILLES_SEA_MONSTER_SPAWN_EGG);
+            event.accept(AddonItems.GILLES_LARGE_SEA_MONSTER_SPAWN_EGG);
             event.accept(AddonItems.GILLES_HUGE_SEA_MONSTER_SPAWN_EGG);
         }
     }

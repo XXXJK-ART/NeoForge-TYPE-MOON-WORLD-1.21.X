@@ -11,17 +11,18 @@
       "effect_type": "risk_after_noble_phantasm",
       "params": {
         "trigger_action": "mumyoudan_zuki",
+        "trigger_actions": ["mumyoudan_zuki", "okita_mumyoudan_zuki"],
         "chance": 0.3,
         "duration_ticks": 300,
         "attack_multiplier": 0.7,
         "movement_multiplier": 0.7,
-        "disabled_noble_phantasms": ["mumyoudan_zuki"]
+        "disabled_noble_phantasms": ["mumyoudan_zuki", "okita_mumyoudan_zuki"]
       }
     }
   ],
   "ai": {
     "facts": [
-      {"type": "self_debuff_risk", "strength": 0.7}
+      {"type": "damage_threshold", "strength": 0.7}
     ]
   }
 }

@@ -119,6 +119,11 @@ class AiCoreTest {
       float fullEa = BeamClashManager.effectiveStrength(1.18F, 1.0F);
       float exhaustedEa = BeamClashManager.effectiveStrength(1.18F, 0.1F);
       float fullExcalibur = BeamClashManager.effectiveStrength(1.0F, 1.0F);
+      assertEquals(1000.0F, BeamClashManager.initialDamageDebt(4000.0F, 5000.0F));
+      assertEquals(0.0F, BeamClashManager.initialDamageDebt(5000.0F, 4000.0F));
+      assertEquals(0.0F, BeamClashManager.initialDamageDebt(0.0F, 5000.0F));
+      assertFalse(BeamClashManager.hasRemainingManaAfterInitialDamageDebt(1000.0, 4000.0F, 5000.0F));
+      assertTrue(BeamClashManager.hasRemainingManaAfterInitialDamageDebt(1000.01, 4000.0F, 5000.0F));
       assertTrue(BeamClashManager.pressureDelta(fullEa, fullExcalibur) > 0.0F);
       assertTrue(BeamClashManager.pressureDelta(exhaustedEa, fullExcalibur) < 0.0F);
       assertTrue(BeamClashManager.residualScale(fullEa, fullExcalibur, 0.4F) >= 0.25F);

@@ -915,6 +915,17 @@ public final class CombatModule implements ServantAiModule {
          && entity.getCurrentMp() >= 10
          && ServantCombatSystem.canUseNoblePhantasm(entity)
          && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
+         double targetHealthRatio = target.getHealth() / Math.max(1.0, target.getMaxHealth());
+         boolean desperateArmyWindow = healthRatio <= 0.28 && targetHealthRatio >= 0.55;
+         if (!gaeBolgWindingUp
+            && canGaeBolgArmy
+            && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)
+            && desperateArmyWindow
+            && hasLineOfSight
+            && passesSkillChance(entity, 62, skillChanceScale)) {
+            performGaeBolgArmy(entity, target);
+            return;
+         }
          CuChulainnCombatRules.SingleGaeBolgPlan gaeBolgPlan = CuChulainnCombatRules.singleGaeBolgPlan(distance);
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.MELEE) {
             performGaeBolg(entity, target, true);
@@ -924,12 +935,6 @@ public final class CombatModule implements ServantAiModule {
             entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
             entity.faceToward(target.position());
             moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
-            return;
-         }
-         if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.PROJECTILE
-            && hasLineOfSight
-            && passesSkillChance(entity, 20, skillChanceScale)) {
-            performGaeBolg(entity, target, false);
             return;
          }
       }
@@ -2293,12 +2298,12 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : null;
-      if (resolvedTarget == null) {
+      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : findNearestCombatTarget(entity, 32.0);
+      if (resolvedTarget == null && fallbackAim == null) {
          return;
       }
 
-      if (preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
+      if (resolvedTarget != null && preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
          if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
             sl.sendParticles(ParticleTypes.END_ROD,
                resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),
@@ -2331,8 +2336,10 @@ public final class CombatModule implements ServantAiModule {
       projectile.setMode(GaeBulgProjectileEntity.Mode.SINGLE);
       projectile.setTrackedTarget(resolvedTarget);
       projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.65, entity.getZ());
-      Vec3 aim = resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.45, 0.0);
-      if (fallbackAim != null && !resolvedTarget.isAlive()) {
+      Vec3 aim = resolvedTarget != null
+         ? resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.45, 0.0)
+         : fallbackAim;
+      if (fallbackAim != null && resolvedTarget != null && !resolvedTarget.isAlive()) {
          aim = fallbackAim;
       }
       Vec3 toTarget = aim.subtract(projectile.position()).normalize();
@@ -2346,7 +2353,7 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : null;
+      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : findNearestCombatTarget(entity, 48.0);
       if (resolvedTarget == null && fallbackAim == null) {
          return;
       }
@@ -2358,8 +2365,29 @@ public final class CombatModule implements ServantAiModule {
          ? resolvedTarget.position().add(0.0, resolvedTarget.getBbHeight() * 0.3, 0.0)
          : fallbackAim;
       Vec3 toTarget = aim.subtract(projectile.position()).normalize();
-      projectile.shoot(toTarget.x, toTarget.y + 0.14, toTarget.z, 2.0F, 0.0F);
+      projectile.shoot(toTarget.x, toTarget.y + 0.14, toTarget.z, 2.65F, 0.0F);
       sl.addFreshEntity(projectile);
+   }
+
+   private LivingEntity findNearestCombatTarget(ServantEntity entity, double range) {
+      if (entity == null || !(entity.level() instanceof ServerLevel)) {
+         return null;
+      }
+      AABB box = entity.getBoundingBox().inflate(range);
+      LivingEntity nearest = null;
+      double nearestDistance = Double.MAX_VALUE;
+      for (LivingEntity candidate : entity.level().getEntitiesOfClass(
+         LivingEntity.class,
+         box,
+         living -> living.isAlive() && living != entity && !EntityUtils.isImmunePlayerTarget(living) && !living.isAlliedTo(entity)
+      )) {
+         double distance = candidate.distanceToSqr(entity);
+         if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearest = candidate;
+         }
+      }
+      return nearest;
    }
 
    private void performCuLungingThrust(ServantEntity entity, LivingEntity target) {

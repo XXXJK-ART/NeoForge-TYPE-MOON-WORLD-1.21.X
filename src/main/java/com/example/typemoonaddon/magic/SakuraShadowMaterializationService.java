@@ -191,7 +191,11 @@ public final class SakuraShadowMaterializationService {
     }
 
     private static boolean validCaster(ServerPlayer player) {
-        return player != null && player.isAlive() && !player.isSpectator() && SakuraTypeMoonIntegration.isShadowMaterializationLearned(player);
+        return player != null
+                && player.isAlive()
+                && !player.isSpectator()
+                && !player.getData(AddonAttachments.IMAGINARY_SPACE.get()).grailErosionPending()
+                && SakuraTypeMoonIntegration.isShadowMaterializationLearned(player);
     }
 
     private static void notify(ServerPlayer player, String key) {

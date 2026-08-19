@@ -1,7 +1,11 @@
 package com.example.typemoonaddon.magic;
 
+import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.data.ImaginarySpaceData;
 import com.example.typemoonaddon.data.PollutionData;
+import com.example.typemoonaddon.entity.SakuraBlackShadowEntity;
+import com.example.typemoonaddon.entity.SakuraShadowArtRibbonEntity;
+import com.example.typemoonaddon.entity.SakuraShadowFamiliarEntity;
 import com.example.typemoonaddon.registry.AddonAttachments;
 import com.example.typemoonaddon.registry.AddonMobEffects;
 import com.example.typemoonaddon.network.AddonNetwork;
@@ -14,17 +18,24 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 
 public final class SakuraPollutionService {
     private static final float BLACK_MUD_PROGRESS_PER_SECOND = 0.035F;
     private static final float SERVANT_KILL_PROGRESS = 0.25F;
+    private static final String LAST_EROSION_CONTROLLER_TAG = "TypeMoonAddonLastErosionController";
+    private static final String LAST_EROSION_DAMAGE_TICK_TAG = "TypeMoonAddonLastErosionDamageTick";
+    private static final long EROSION_KILL_CREDIT_TICKS = 20L * 15L;
 
     public static boolean isPolluted(LivingEntity target) {
         return target != null && progress(target) > 0.0F;
@@ -59,6 +70,9 @@ public final class SakuraPollutionService {
                 : data.addProgress(SERVANT_KILL_PROGRESS);
         if (data.progress() >= 1.0F) {
             data.complete(UUID.randomUUID());
+            if (isServantLike(target)) {
+                SakuraGrailErosionService.record(controller, target, "full_pollution");
+            }
             changed = true;
         }
         if (changed) {
@@ -71,10 +85,18 @@ public final class SakuraPollutionService {
     }
 
     public static void entityDied(LivingEntity target) {
+        entityDied(target, null);
+    }
+
+    public static void entityDied(LivingEntity target, DamageSource source) {
         if (!(target.level() instanceof ServerLevel level)) {
             return;
         }
         PollutionData pollution = target.getData(AddonAttachments.POLLUTION.get());
+        if (isServantLike(target) && !pollution.fullyCorrupted()) {
+            recordServantDeath(target, source);
+        }
+        clearRecentErosionController(target);
         if (!pollution.fullyCorrupted() || pollution.controllerId() == null || pollution.rosterId() == null) {
             return;
         }
@@ -91,6 +113,22 @@ public final class SakuraPollutionService {
             AddonAttachments.sync(owner, AddonAttachments.IMAGINARY_SPACE);
             owner.displayClientMessage(Component.translatable("message.typemoonworld.heroic_spirit_devourer.selection_saved", ownerData.corruptedServants().size()), true);
         }
+    }
+
+    public static void rememberServantDamage(LivingEntity target, DamageSource source) {
+        if (target == null || source == null || target.level().isClientSide() || !isServantLike(target)) {
+            return;
+        }
+        ServerPlayer controller = controllerOf(source.getEntity());
+        if (controller == null) {
+            controller = controllerOf(source.getDirectEntity());
+        }
+        if (controller == null) {
+            return;
+        }
+        CompoundTag persistentData = target.getPersistentData();
+        persistentData.putUUID(LAST_EROSION_CONTROLLER_TAG, controller.getUUID());
+        persistentData.putLong(LAST_EROSION_DAMAGE_TICK_TAG, target.level().getGameTime());
     }
 
     public static int summonCorruptedServants(ServerPlayer owner) {
@@ -177,6 +215,112 @@ public final class SakuraPollutionService {
         }
         EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(id);
         return type == EntityType.PLAYER ? null : type.create(level);
+    }
+
+    private static void recordServantDeath(LivingEntity target, DamageSource source) {
+        Entity killingEntity = source == null ? null : source.getEntity();
+        Entity directKiller = source == null ? null : source.getDirectEntity();
+        String attribution = "damage_source";
+        ServerPlayer killer = controllerOf(killingEntity);
+        if (killer == null) {
+            attribution = "direct_entity";
+            killer = controllerOf(directKiller);
+        }
+        if (killer == null) {
+            attribution = "last_hurt_mob";
+            killer = controllerOf(target.getLastHurtByMob());
+        }
+        if (killer == null) {
+            attribution = "recent_damage";
+            killer = recentErosionController(target);
+        }
+        if (killer != null) {
+            SakuraGrailErosionService.record(killer, target, attribution);
+            return;
+        }
+        TypeMoonAddon.LOGGER.info(
+                "Grail erosion outcome victim_type={} servant_id={} source_entity={} direct_entity={} accepted=false reason=controller_unresolved",
+                BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()),
+                servantId(target),
+                killingEntity == null ? "none" : BuiltInRegistries.ENTITY_TYPE.getKey(killingEntity.getType()),
+                directKiller == null ? "none" : BuiltInRegistries.ENTITY_TYPE.getKey(directKiller.getType())
+        );
+    }
+
+    private static boolean isServantLike(LivingEntity target) {
+        return ServantIdentityHelper.isServantLike(target);
+    }
+
+    private static String servantId(LivingEntity target) {
+        var definition = ServantIdentityHelper.definitionOf(target);
+        return definition == null ? "unknown" : definition.id();
+    }
+
+    private static ServerPlayer recentErosionController(LivingEntity target) {
+        CompoundTag persistentData = target.getPersistentData();
+        if (!persistentData.hasUUID(LAST_EROSION_CONTROLLER_TAG)
+                || !persistentData.contains(LAST_EROSION_DAMAGE_TICK_TAG)) {
+            return null;
+        }
+        long elapsed = target.level().getGameTime() - persistentData.getLong(LAST_EROSION_DAMAGE_TICK_TAG);
+        if (elapsed < 0L || elapsed > EROSION_KILL_CREDIT_TICKS || target.getServer() == null) {
+            return null;
+        }
+        ServerPlayer controller = target.getServer().getPlayerList().getPlayer(
+                persistentData.getUUID(LAST_EROSION_CONTROLLER_TAG)
+        );
+        return controller != null
+                && controller.getData(AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                ? controller
+                : null;
+    }
+
+    private static void clearRecentErosionController(LivingEntity target) {
+        CompoundTag persistentData = target.getPersistentData();
+        persistentData.remove(LAST_EROSION_CONTROLLER_TAG);
+        persistentData.remove(LAST_EROSION_DAMAGE_TICK_TAG);
+    }
+
+    private static ServerPlayer controllerOf(Entity source) {
+        if (source instanceof ServerPlayer player
+                && player.getData(AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()) {
+            return player;
+        }
+        if (source instanceof SakuraShadowFamiliarEntity familiar) {
+            return controllerOf(familiar.getOwner());
+        }
+        if (source instanceof SakuraBlackShadowEntity shadow) {
+            return controllerOf(shadow.getOwner());
+        }
+        if (source instanceof SakuraShadowArtRibbonEntity ribbon && ribbon.ownerId() != null) {
+            MinecraftServer server = source.getServer();
+            if (server != null) {
+                ServerPlayer player = server.getPlayerList().getPlayer(ribbon.ownerId());
+                if (player != null && player.getData(AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()) {
+                    return player;
+                }
+                for (ServerLevel level : server.getAllLevels()) {
+                    Entity owner = level.getEntity(ribbon.ownerId());
+                    ServerPlayer controller = controllerOf(owner);
+                    if (controller != null) {
+                        return controller;
+                    }
+                }
+            }
+        }
+        if (source instanceof Projectile projectile && projectile.getOwner() != source) {
+            ServerPlayer controller = controllerOf(projectile.getOwner());
+            if (controller != null) {
+                return controller;
+            }
+        }
+        if (source instanceof LivingEntity living) {
+            PollutionData pollution = living.getExistingDataOrNull(AddonAttachments.POLLUTION.get());
+            if (pollution != null && pollution.fullyCorrupted() && living.getServer() != null) {
+                return living.getServer().getPlayerList().getPlayer(pollution.controllerId());
+            }
+        }
+        return null;
     }
 
     private SakuraPollutionService() {

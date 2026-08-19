@@ -1032,7 +1032,7 @@ public final class ArtoriaPendragonCombatHelper {
          double distance = 0.18 + i * 0.24;
          Vec3 pos = origin.add(exhaust.scale(distance));
          double spread = Math.max(0.035, 0.13 - i * 0.02);
-         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, fxCount(4), spread, spread * 0.65, spread, 0.045);
+         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, fxCount(4), spread, spread * 0.65, spread, 0.045);
          if (i == steps - 1) {
             level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, fxCount(2), spread * 0.9, spread * 0.55, spread * 0.9, 0.03);
          }

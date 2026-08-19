@@ -78,6 +78,7 @@ public final class ServantCardManaService {
 
    private static double fullRegenSeconds(ServantParams params) {
       return switch (params.magic()) {
+         case A_PLUS_PLUS -> 60.0;
          case A -> 60.0;
          case B -> 120.0;
          case C -> 180.0;
@@ -104,6 +105,51 @@ public final class ServantCardManaService {
 
    public static boolean consumeNoblePhantasm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       return consume(player, vars, amount, true, true);
+   }
+
+   public static double availableForConsume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player == null || vars == null) {
+         return 0.0;
+      }
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return Double.MAX_VALUE;
+      }
+      double available = Math.max(0.0, vars.servant_card_mana);
+      ServerPlayer master = getMaster(player, vars);
+      if (master != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
+         TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         available += Math.max(0.0, masterVars.player_mana);
+      }
+      return available;
+   }
+
+   public static double consumeUpTo(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
+      if (player == null || vars == null || amount <= 0.0) {
+         return 0.0;
+      }
+      if (ServantCardUnlimitedMode.isEnabled(player)) {
+         return amount;
+      }
+      double own = Math.min(Math.max(0.0, vars.servant_card_mana), amount);
+      double remaining = amount - own;
+      ServerPlayer master = getMaster(player, vars);
+      TypeMoonWorldModVariables.PlayerVariables masterVars = master == null
+         ? null
+         : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double masterSpent = 0.0;
+      if (remaining > 0.0 && masterVars != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
+         masterSpent = Math.min(Math.max(0.0, masterVars.player_mana), remaining);
+      }
+      if (own > 0.0) {
+         vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - own);
+         vars.syncMana(player);
+      }
+      if (masterSpent > 0.0 && masterVars != null) {
+         masterVars.player_mana = Math.max(0.0, masterVars.player_mana - masterSpent);
+         MasterServantLinkService.markDrawingMasterMana(master, player);
+         masterVars.syncMana(master);
+      }
+      return own + masterSpent;
    }
 
    public static ManaSnapshot snapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

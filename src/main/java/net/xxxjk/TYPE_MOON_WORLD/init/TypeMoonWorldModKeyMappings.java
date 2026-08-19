@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.init;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -120,6 +121,13 @@ public class TypeMoonWorldModKeyMappings {
       private static final boolean[] numpadWheelDown = new boolean[10];
       private static final boolean[] servantCardHoldDown = new boolean[10];
       private static boolean servantJumpDown = false;
+      private static final long SERVANT_FLIGHT_DASH_TAP_WINDOW_MS = 280L;
+      private static final int SERVANT_FLIGHT_DASH_FORWARD = 0;
+      private static final int SERVANT_FLIGHT_DASH_BACK = 1;
+      private static final int SERVANT_FLIGHT_DASH_LEFT = 2;
+      private static final int SERVANT_FLIGHT_DASH_RIGHT = 3;
+      private static final long[] servantFlightDashLastTapMs = new long[4];
+      private static final boolean[] servantFlightDashDown = new boolean[4];
       private static boolean bajiquanJumpDown = false;
       private static boolean bajiquanCrouchDown = false;
       private static boolean ganryuJumpDown = false;
@@ -775,6 +783,9 @@ public class TypeMoonWorldModKeyMappings {
          boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
          boolean sneakDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
          boolean backDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1;
+         boolean forwardDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1;
+         boolean leftDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1;
+         boolean rightDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1;
          if (jumpDown && !servantJumpDown) {
             long now = System.currentTimeMillis();
             boolean flightServant = "medea".equals(vars.servant_card_id) || "oda_nobunaga".equals(vars.servant_card_id)
@@ -785,16 +796,24 @@ public class TypeMoonWorldModKeyMappings {
                servantLastJumpTapMs = 0L;
             } else {
                servantLastJumpTapMs = now;
-               if (sneakDown) {
+               if (sneakDown && !vars.servant_card_flying) {
                   float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
                   float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
                   PacketDistributor.sendToServer(new ServantCardJumpMessage(forward, strafe), new CustomPacketPayload[0]);
                }
             }
          }
+         if (vars.servant_card_flying) {
+            handleServantFlightDashTap(forwardDown, SERVANT_FLIGHT_DASH_FORWARD, 1.0F, 0.0F);
+            handleServantFlightDashTap(backDown, SERVANT_FLIGHT_DASH_BACK, -1.0F, 0.0F);
+            handleServantFlightDashTap(leftDown, SERVANT_FLIGHT_DASH_LEFT, 0.0F, -1.0F);
+            handleServantFlightDashTap(rightDown, SERVANT_FLIGHT_DASH_RIGHT, 0.0F, 1.0F);
+         } else {
+            clearServantFlightDashState();
+         }
          if (vars.servant_card_flying && servantFlightInputSendDelay-- <= 0) {
-            float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
-            float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
+            float forward = (forwardDown ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
+            float strafe = (rightDown ? 1.0F : 0.0F) + (leftDown ? -1.0F : 0.0F);
             float vertical = (jumpDown ? 1.0F : 0.0F) + (sneakDown ? -1.0F : 0.0F);
             boolean changed = forward != lastServantFlightForward || strafe != lastServantFlightStrafe || vertical != lastServantFlightVertical;
             if (changed || ++servantFlightInputKeepaliveChecks >= 10) {
@@ -815,6 +834,23 @@ public class TypeMoonWorldModKeyMappings {
             lastServantFlightVertical = Float.NaN;
          }
          servantJumpDown = jumpDown;
+      }
+
+      private static void handleServantFlightDashTap(boolean down, int index, float forward, float strafe) {
+         if (down == servantFlightDashDown[index]) {
+            return;
+         }
+         servantFlightDashDown[index] = down;
+         if (!down) {
+            return;
+         }
+         long now = System.currentTimeMillis();
+         if (now - servantFlightDashLastTapMs[index] <= SERVANT_FLIGHT_DASH_TAP_WINDOW_MS) {
+            PacketDistributor.sendToServer(new ServantCardJumpMessage(forward, strafe), new CustomPacketPayload[0]);
+            servantFlightDashLastTapMs[index] = 0L;
+         } else {
+            servantFlightDashLastTapMs[index] = now;
+         }
       }
 
       public static void clearClientInputState() {
@@ -838,10 +874,16 @@ public class TypeMoonWorldModKeyMappings {
          lastServantFlightForward = Float.NaN;
          lastServantFlightStrafe = Float.NaN;
          lastServantFlightVertical = Float.NaN;
+         clearServantFlightDashState();
          clearPaleRiderInputState();
          for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
             servantCardHoldDown[slot] = false;
          }
+      }
+
+      private static void clearServantFlightDashState() {
+         Arrays.fill(servantFlightDashDown, false);
+         Arrays.fill(servantFlightDashLastTapMs, 0L);
       }
 
       private static void clearPaleRiderInputState() {

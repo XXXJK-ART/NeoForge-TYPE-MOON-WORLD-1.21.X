@@ -6,7 +6,9 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -35,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MedeaSpecialContractService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -362,13 +365,16 @@ public final class MedeaCombatHelper {
          return;
       }
 
+      boolean dispelled = false;
       Collection<MobEffectInstance> activeEffects = List.copyOf(target.getActiveEffects());
       for (MobEffectInstance effect : activeEffects) {
          if (effect.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL) {
+            dispelled = true;
             target.removeEffect(effect.getEffect());
          }
       }
 
+      dispelled |= hasAnyReinforcementEffect(target);
       target.removeEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY);
       target.removeEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE);
       target.removeEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT);
@@ -379,6 +385,11 @@ public final class MedeaCombatHelper {
       target.removeEffect(ModMobEffects.REINFORCEMENT_OTHER_STRENGTH);
 
       if (target instanceof ServantEntity servant) {
+         dispelled |= MedeaSpecialContractService.clearOnRuleBreakerHit(attacker, servant);
+         dispelled |= servant.getPersistentData().getBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG)
+            || servant.getPersistentData().contains(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG)
+            || servant.getPersistentData().contains(CuChulainnCombatHelper.GAE_BOLG_WINDUP_UNTIL_TAG)
+            || CuChulainnCombatHelper.getActiveRune(servant) != CuChulainnCombatHelper.RuneType.NONE;
          servant.getPersistentData().remove(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG);
          servant.getPersistentData().remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
          servant.getPersistentData().remove(CuChulainnCombatHelper.GAE_BOLG_WINDUP_UNTIL_TAG);
@@ -390,11 +401,13 @@ public final class MedeaCombatHelper {
          if (targetVars.servant_card_transformed) {
             net.minecraft.server.level.ServerPlayer master = MasterStateManager.getMaster(targetPlayer, targetVars);
             if (master != null) {
+               dispelled = true;
                MasterServantLinkService.terminateContract(master, targetPlayer);
             }
          } else if (targetVars.master_active) {
             net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(targetPlayer, targetVars);
             if (servant != null) {
+               dispelled = true;
                MasterServantLinkService.terminateContract(targetPlayer, servant);
             }
          }
@@ -402,8 +415,10 @@ public final class MedeaCombatHelper {
 
       if (target.getPersistentData().getBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON)) {
          if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
+            notifyRuleBreakerResult(attacker, dispelled);
             return;
          }
+         dispelled = true;
          target.invulnerableTime = 0;
          target.hurt(attacker != null ? attacker.damageSources().magic() : target.damageSources().magic(), Float.MAX_VALUE);
          if (target.isAlive()) {
@@ -411,7 +426,27 @@ public final class MedeaCombatHelper {
          }
       }
 
-      purgeOwnedSummons(target);
+      dispelled = purgeOwnedSummons(target) || dispelled;
+      notifyRuleBreakerResult(attacker, dispelled);
+   }
+
+   private static boolean hasAnyReinforcementEffect(LivingEntity target) {
+      return target.hasEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_SELF_DEFENSE)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_AGILITY)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_DEFENSE)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_SIGHT)
+         || target.hasEffect(ModMobEffects.REINFORCEMENT_OTHER_STRENGTH);
+   }
+
+   private static void notifyRuleBreakerResult(LivingEntity attacker, boolean success) {
+      if (attacker instanceof ServerPlayer player) {
+         player.displayClientMessage(Component.translatable(success
+            ? "message.typemoonworld.rule_breaker.success"
+            : "message.typemoonworld.rule_breaker.failed"), true);
+      }
    }
 
    private static boolean canCastBolt(MedeaEntity entity, long now) {
@@ -2163,19 +2198,22 @@ public final class MedeaCombatHelper {
       }
    }
 
-   private static void purgeOwnedSummons(LivingEntity target) {
+   private static boolean purgeOwnedSummons(LivingEntity target) {
       if (!(target.level() instanceof ServerLevel serverLevel)) {
-         return;
+         return false;
       }
       String ownerId = target.getUUID().toString();
       AABB purgeBox = target.getBoundingBox().inflate(192.0);
+      boolean purged = false;
       for (DragonfangSoldierEntity summon : serverLevel.getEntitiesOfClass(
          DragonfangSoldierEntity.class,
          purgeBox,
          dragonfang -> dragonfang.isAlive() && ownerId.equals(dragonfang.getPersistentData().getString(MedeaWorkshopHelper.TAG_MAGIC_SUMMON_OWNER))
       )) {
          summon.discard();
+         purged = true;
       }
+      return purged;
    }
 
    private record LineOfFireState(boolean blocked, Vec3 targetPoint, Vec3 hitPoint) {

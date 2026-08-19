@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -107,6 +108,8 @@ public final class ServantCardTransformManager {
       vars.servant_card_np_cooldown_end = 0L;
       vars.servant_card_skill_cooldowns = "";
       vars.servant_card_skill_cooldown_ends = "";
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       if ("medea".equals(servantId)) {
          vars.servant_card_np_cooldown = 3600;
       }
@@ -124,6 +127,12 @@ public final class ServantCardTransformManager {
       }
       if ("zhao_yun_rider".equals(servantId)) {
          ServantCardZhaoYunSkills.initialize(player);
+      }
+      if ("okita_souji_saber".equals(servantId)) {
+         ServantCardOkitaSoujiSaberSkills.initialize(player);
+      }
+      if ("gilles_de_rais_caster".equals(servantId)) {
+         ServantCardGillesDeRaisSkills.initialize(player);
       }
       vars.servant_card_medusa_mystic_eyes_active = false;
       vars.servant_card_hassan_cloak_broken = false;
@@ -188,6 +197,8 @@ public final class ServantCardTransformManager {
       if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
       if ("zhao_yun_rider".equals(vars.servant_card_id)) ServantCardZhaoYunSkills.clear(player);
       if ("gilgamesh_caster".equals(vars.servant_card_id)) ServantCardCasterGilgameshSkills.clear(player);
+      if ("okita_souji_saber".equals(vars.servant_card_id)) ServantCardOkitaSoujiSaberSkills.clear(player);
+      if ("gilles_de_rais_caster".equals(vars.servant_card_id)) ServantCardGillesDeRaisSkills.clear(player);
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
       vars.servant_card_transformed = false;
@@ -207,6 +218,8 @@ public final class ServantCardTransformManager {
       vars.servant_card_skill_cooldown_ends = "";
       vars.servant_card_np_cooldown = 0;
       vars.servant_card_np_cooldown_end = 0L;
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       vars.servant_card_action_mode = 0;
       vars.servant_card_flying = false;
       vars.servant_card_flight_mode = 0;
@@ -307,6 +320,7 @@ public final class ServantCardTransformManager {
          case "enkidu" -> ServantCardEnkiduSkills.tick(player, vars);
          case "gilgamesh" -> ServantCardGilgameshSkills.tick(player, vars);
          case "gilgamesh_caster" -> ServantCardCasterGilgameshSkills.tick(player, vars);
+         case "gilles_de_rais_caster" -> ServantCardGillesDeRaisSkills.tick(player, vars);
          case "emiya_archer" -> {
             ServantCardEmiyaSkills.tickEmiyaContinuousProjection(player, vars);
             ServantCardEmiyaSkills.tickEmiyaUbwChantSwords(player, vars);
@@ -319,6 +333,7 @@ public final class ServantCardTransformManager {
          case "zhao_yun_rider" -> ServantCardZhaoYunSkills.tick(player, vars);
          case "senko_muramasa" -> ServantCardSenkoMuramasaSkills.tick(player, vars);
          case "baobhan_sith" -> ServantCardBaobhanSithSkills.tick(player, vars);
+         case "okita_souji_saber" -> ServantCardOkitaSoujiSaberSkills.tick(player, vars);
          default -> {
          }
       }
@@ -345,11 +360,13 @@ public final class ServantCardTransformManager {
       ServantCardEnkiduSkills.clear(player);
       ServantCardGilgameshSkills.clear(player);
       ServantCardCasterGilgameshSkills.clear(player);
+      ServantCardGillesDeRaisSkills.clear(player);
       ServantCardArashSkills.clear(player);
       ServantCardNightingaleSkills.clear(player, false);
       ServantCardZhaoYunSkills.clear(player);
       ServantCardSenkoMuramasaSkills.clear(player, vars);
       ServantCardBaobhanSithSkills.clear(player);
+      ServantCardOkitaSoujiSaberSkills.clear(player);
    }
 
    public static void normalizeFood(ServerPlayer player) {
@@ -674,7 +691,14 @@ public final class ServantCardTransformManager {
          "zhao_yun_rider".equals(vars.servant_card_id)
             && ServantCardZhaoYunSkills.hasSevenInSevenOutDiscount(player)
             && ServantCardZhaoYunSkills.isMeleeSmallSkill(action.effectId());
+      boolean ubwFreeLayeredProjection =
+         "emiya_archer".equals(vars.servant_card_id)
+            && "emiya_layered_projection".equals(action.effectId())
+            && vars.is_in_ubw;
       if (zhaoYunBreakthroughDiscount) {
+         mpCost = 0.0;
+      }
+      if (ubwFreeLayeredProjection) {
          mpCost = 0.0;
       }
       ServantCardManaService.ManaSnapshot manaBeforeAction = ServantCardManaService.snapshot(player, vars);
@@ -693,6 +717,9 @@ public final class ServantCardTransformManager {
       int cooldownTicks = effectiveCooldownTicks(action, npSlot);
       if (zhaoYunBreakthroughDiscount) {
          cooldownTicks = Math.max(1, (cooldownTicks + 1) / 2);
+      }
+      if (ubwFreeLayeredProjection) {
+         cooldownTicks = 0;
       }
       if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
@@ -743,6 +770,8 @@ public final class ServantCardTransformManager {
       );
       PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
          player, "nightingale", ModSounds.NIGHTINGALE_VOICE_NP.get(), null);
+      PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
+         player, "okita_souji_saber", ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get(), null);
    }
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
@@ -966,6 +995,13 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
          return;
       }
+      if ("gilles_de_rais_caster".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.CHEST, addonArmor("typemoonworld:cursed_armor_render"));
+         player.setItemSlot(EquipmentSlot.LEGS, ItemStack.EMPTY);
+         player.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+         return;
+      }
       if (servantCardHasHeadArmor(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
       } else {
@@ -1002,6 +1038,14 @@ public final class ServantCardTransformManager {
          net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem.create(stack, servantId);
       }
       return markGeneratedItem(stack, false, false);
+   }
+
+   private static ItemStack addonArmor(String id) {
+      ResourceLocation key = ResourceLocation.tryParse(id);
+      if (key == null || !BuiltInRegistries.ITEM.containsKey(key)) {
+         return ItemStack.EMPTY;
+      }
+      return markGeneratedItem(new ItemStack(BuiltInRegistries.ITEM.get(key)), false, false);
    }
 
    private static boolean servantCardHasLegArmor(String servantId) {
@@ -1241,6 +1285,9 @@ public final class ServantCardTransformManager {
       if ("baobhan_sith_fetch_failnaught".equals(id)) {
          return action.cooldownTicks();
       }
+      if ("gilles_uncontrolled_huge_sea_monster".equals(id)) {
+         return action.cooldownTicks();
+      }
       int cooldown = action.cooldownTicks();
       if ("zabaniya".equals(id) || "wu_er_da".equals(id)) {
          return Math.max(cooldown, 1200);
@@ -1255,6 +1302,70 @@ public final class ServantCardTransformManager {
    private static boolean performAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServantCardSkillAction action) {
       String id = action.effectId();
       switch (id) {
+         case "okita_shukuchi" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performShukuchi(player)) return false;
+         }
+         case "okita_ichimonji" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performIchimonji(player)) return false;
+         }
+         case "okita_kaifuu" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performKaifuu(player)) return false;
+         }
+         case "okita_mind_eye" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performMindEye(player)) return false;
+         }
+         case "okita_oath_haori" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performHaoriRush(player)) return false;
+         }
+         case "okita_feigned_retreat" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performFeignedRetreat(player)) return false;
+         }
+         case "okita_stance_break" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performStanceBreak(player)) return false;
+         }
+         case "okita_shinsengumi_command" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performCommand(player)) return false;
+         }
+         case "okita_mumyoudan_zuki" -> {
+            if (ServantCardOkitaSoujiSaberSkills.isWeak(player)) {
+               player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.okita_weak_np_blocked"), true);
+               return false;
+            }
+            if (!ServantCardOkitaSoujiSaberSkills.performMumyoudanZuki(player)) return false;
+         }
+         case "okita_flag_of_sincerity" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performFlagOfSincerity(player)) return false;
+         }
+         case "gilles_summon_small_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonSmallSeaMonsters(player)) return false;
+         }
+         case "gilles_summon_large_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonLargeSeaMonster(player)) return false;
+         }
+         case "gilles_abyssal_gaze" -> {
+            if (!ServantCardGillesDeRaisSkills.performAbyssalGaze(player)) return false;
+         }
+         case "gilles_life_absorb" -> {
+            if (!ServantCardGillesDeRaisSkills.performLifeAbsorb(player)) return false;
+         }
+         case "gilles_sea_monster_command" -> {
+            if (!ServantCardGillesDeRaisSkills.performCommand(player)) return false;
+         }
+         case "gilles_pollution_ink_fog" -> {
+            if (!ServantCardGillesDeRaisSkills.performPollutionInkFog(player)) return false;
+         }
+         case "gilles_prelati_shroud" -> {
+            if (!ServantCardGillesDeRaisSkills.performPrelatiShroud(player)) return false;
+         }
+         case "gilles_profane_growth" -> {
+            if (!ServantCardGillesDeRaisSkills.performProfaneGrowth(player)) return false;
+         }
+         case "gilles_evil_god_praise" -> {
+            if (!ServantCardGillesDeRaisSkills.performEvilGodPraise(player)) return false;
+         }
+         case "gilles_uncontrolled_huge_sea_monster" -> {
+            if (!ServantCardGillesDeRaisSkills.summonHugeSeaMonster(player)) return false;
+         }
          case "nightingale_steel_nursing" -> {
             if (!ServantCardNightingaleSkills.performSteelNursing(player)) return false;
          }
@@ -1602,6 +1713,7 @@ public final class ServantCardTransformManager {
    static boolean isNoblePhantasmAction(String servantId, int slot) {
       return isUshiwakamaruNoblePhantasmSlot(servantId, slot)
          || "zhao_yun_rider".equals(servantId) && (slot == 8 || slot == 9)
+         || "okita_souji_saber".equals(servantId) && (slot == 8 || slot == 9)
          || slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId);
    }
 
@@ -1611,6 +1723,7 @@ public final class ServantCardTransformManager {
 
    static boolean usesSharedNoblePhantasmCooldown(String servantId, int slot) {
       return slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
+         && !"okita_souji_saber".equals(servantId)
          && !isUshiwakamaruNoblePhantasmSlot(servantId, slot);
    }
 

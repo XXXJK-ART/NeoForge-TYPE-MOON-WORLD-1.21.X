@@ -7,6 +7,7 @@ import com.example.typemoonaddon.client.model.ShadowFamiliarOutlineModel;
 import com.example.typemoonaddon.client.renderer.BlackMudCorruptionLayer;
 import com.example.typemoonaddon.client.renderer.BlackShadowRenderer;
 import com.example.typemoonaddon.client.renderer.CursedArmorLayer;
+import com.example.typemoonaddon.client.renderer.GillesDeRaisArmorRenderer;
 import com.example.typemoonaddon.client.renderer.GillesDeRaisRenderer;
 import com.example.typemoonaddon.client.renderer.HugeSeaMonsterRenderer;
 import com.example.typemoonaddon.client.renderer.ShadowFamiliarRenderer;
@@ -97,6 +98,34 @@ public final class ClientModEvents {
                 return renderer;
             }
         }, AddonItems.VOID_RING_REGALIA.get());
+        event.registerItem(new IClientItemExtensions() {
+            private GillesDeRaisArmorRenderer renderer;
+
+            @Override
+            public Model getGenericArmorModel(
+                    LivingEntity livingEntity,
+                    ItemStack itemStack,
+                    EquipmentSlot equipmentSlot,
+                    HumanoidModel<?> original
+            ) {
+                if (renderer == null) {
+                    renderer = new GillesDeRaisArmorRenderer();
+                }
+                renderer.prepForRender(
+                        livingEntity,
+                        itemStack,
+                        equipmentSlot,
+                        original,
+                        null,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F,
+                        0.0F
+                );
+                return renderer;
+            }
+        }, AddonItems.CURSED_ARMOR_RENDER.get());
         event.registerFluidType(new IClientFluidTypeExtensions() {
             private static final ResourceLocation STILL = TypeMoonAddon.id("block/black_mud_still");
             private static final ResourceLocation FLOW = TypeMoonAddon.id("block/black_mud_flow");

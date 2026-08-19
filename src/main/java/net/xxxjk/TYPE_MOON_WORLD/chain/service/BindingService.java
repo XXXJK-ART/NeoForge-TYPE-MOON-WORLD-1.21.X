@@ -30,6 +30,9 @@ public final class BindingService {
     private static final double POSITION_CORRECTION_EPSILON_SQR = 1.0E-6D;
     private static final Map<BindingKey, Binding> BINDINGS = new HashMap<>();
     private static final Map<UUID, Set<BindingKey>> BINDINGS_BY_CHAIN = new HashMap<>();
+    private static final Map<UUID, Set<BindingKey>> BINDINGS_BY_TARGET = new HashMap<>();
+    private static final Map<UUID, Set<BindingKey>> BINDINGS_BY_OWNER = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Set<BindingKey>> BINDINGS_BY_DIMENSION = new HashMap<>();
     private static final Map<UUID, TargetState> TARGET_STATES = new HashMap<>();
 
     public static void bind(ServerLevel level, LivingEntity owner, LivingEntity target, HeavenChainEntity chain) {
@@ -163,15 +166,16 @@ public final class BindingService {
         }
         HeavenChainBindingEntity visual = ModEntities.HEAVEN_CHAIN_BINDING.get().create(level);
         UUID visualId = visual == null ? null : visual.getUUID();
-        BINDINGS.put(key, new Binding(
+        Binding binding = new Binding(
             key,
             owner.getUUID(),
             pathAnchor,
             level.getGameTime(),
             minimumBoundUntil,
             visualId
-        ));
-        indexBinding(key);
+        );
+        BINDINGS.put(key, binding);
+        indexBinding(binding);
         chain.addAnchor(pathAnchor);
 
         if (visual != null) {
@@ -200,15 +204,16 @@ public final class BindingService {
 
         TargetState state = TARGET_STATES.computeIfAbsent(target.getUUID(), ignored -> captureTargetState(target));
         Vec3 pathAnchor = target.position().add(0.0D, target.getBbHeight() * 0.55D, 0.0D);
-        BINDINGS.put(key, new Binding(
+        Binding binding = new Binding(
             key,
             chain.ownerUuid(),
             pathAnchor,
             level.getGameTime(),
             Math.max(level.getGameTime(), visual.minimumBoundUntil()),
             visual.getUUID()
-        ));
-        indexBinding(key);
+        );
+        BINDINGS.put(key, binding);
+        indexBinding(binding);
         chain.addAnchor(pathAnchor);
         holdTarget(target, state);
     }
@@ -216,8 +221,13 @@ public final class BindingService {
     public static void tick(ServerLevel level) {
         long gameTime = level.getGameTime();
         Set<UUID> maintainedTargets = new HashSet<>();
-        for (Binding binding : new ArrayList<>(BINDINGS.values())) {
-            if (!binding.key().dimension().equals(level.dimension()) || !BINDINGS.containsKey(binding.key())) {
+        Set<BindingKey> levelBindings = BINDINGS_BY_DIMENSION.get(level.dimension());
+        if (levelBindings == null || levelBindings.isEmpty()) {
+            return;
+        }
+        for (BindingKey key : new ArrayList<>(levelBindings)) {
+            Binding binding = BINDINGS.get(key);
+            if (binding == null) {
                 continue;
             }
             Entity targetEntity = level.getEntity(binding.key().targetId());
@@ -288,12 +298,13 @@ public final class BindingService {
     }
 
     public static boolean isBound(UUID targetId) {
-        return BINDINGS.keySet().stream().anyMatch(key -> key.targetId().equals(targetId));
+        Set<BindingKey> keys = BINDINGS_BY_TARGET.get(targetId);
+        return keys != null && !keys.isEmpty();
     }
 
     public static boolean isBoundByChain(UUID targetId, UUID chainId) {
-        return BINDINGS.keySet().stream()
-            .anyMatch(key -> key.targetId().equals(targetId) && key.chainId().equals(chainId));
+        Set<BindingKey> keys = BINDINGS_BY_TARGET.get(targetId);
+        return keys != null && keys.stream().anyMatch(key -> key.chainId().equals(chainId));
     }
 
     public static void releaseByChain(ServerLevel level, UUID chainId) {
@@ -310,16 +321,26 @@ public final class BindingService {
     }
 
     public static void releaseByOwner(ServerLevel level, UUID ownerId) {
-        for (Binding binding : new ArrayList<>(BINDINGS.values())) {
-            if (binding.key().dimension().equals(level.dimension()) && ownerId.equals(binding.ownerId())) {
+        Set<BindingKey> keys = BINDINGS_BY_OWNER.get(ownerId);
+        if (keys == null) {
+            return;
+        }
+        for (BindingKey key : new ArrayList<>(keys)) {
+            Binding binding = BINDINGS.get(key);
+            if (binding != null && binding.key().dimension().equals(level.dimension())) {
                 release(level, binding);
             }
         }
     }
 
     public static void clearLevel(ServerLevel level) {
-        for (Binding binding : new ArrayList<>(BINDINGS.values())) {
-            if (binding.key().dimension().equals(level.dimension())) {
+        Set<BindingKey> keys = BINDINGS_BY_DIMENSION.get(level.dimension());
+        if (keys == null) {
+            return;
+        }
+        for (BindingKey key : new ArrayList<>(keys)) {
+            Binding binding = BINDINGS.get(key);
+            if (binding != null) {
                 release(level, binding);
             }
         }
@@ -329,7 +350,7 @@ public final class BindingService {
         if (!BINDINGS.remove(binding.key(), binding)) {
             return;
         }
-        unindexBinding(binding.key());
+        unindexBinding(binding);
         Entity chain = level.getEntity(binding.key().chainId());
         if (chain instanceof HeavenChainEntity heavenChain) {
             heavenChain.removeAnchor(binding.pathAnchor());
@@ -382,6 +403,16 @@ public final class BindingService {
         if (!(target instanceof Mob mob) || mob.isNoAi()) {
             return;
         }
+        LivingEntity currentTarget = mob.getTarget();
+        if (currentTarget instanceof HeavenChainBindingEntity currentBinding
+            && currentBinding.isAlive()
+            && isBoundToVisual(level, target.getUUID(), currentBinding.getUUID())) {
+            if (!mob.isAggressive()) {
+                mob.setAggressive(true);
+            }
+            mob.getLookControl().setLookAt(currentBinding, 30.0F, 30.0F);
+            return;
+        }
         HeavenChainBindingEntity nearest = bindingsForTarget(level.dimension(), target.getUUID()).stream()
             .map(Binding::visualId)
             .filter(id -> id != null)
@@ -393,6 +424,12 @@ public final class BindingService {
             .orElse(null);
         if (nearest != null && mob.getTarget() != nearest) {
             mob.setTarget(nearest);
+        }
+        if (nearest != null) {
+            if (!mob.isAggressive()) {
+                mob.setAggressive(true);
+            }
+            mob.getLookControl().setLookAt(nearest, 30.0F, 30.0F);
         }
     }
 
@@ -417,26 +454,70 @@ public final class BindingService {
         }
         Entity oldTarget = state.oldTargetId() == null ? null : level.getEntity(state.oldTargetId());
         mob.setTarget(oldTarget instanceof LivingEntity living && living.isAlive() ? living : null);
+        mob.setAggressive(mob.getTarget() != null);
+    }
+
+    private static boolean isBoundToVisual(ServerLevel level, UUID targetId, UUID visualId) {
+        return bindingsForTarget(level.dimension(), targetId).stream()
+            .map(Binding::visualId)
+            .anyMatch(visualId::equals);
     }
 
     private static List<Binding> bindingsForTarget(ResourceKey<Level> dimension, UUID targetId) {
-        return BINDINGS.values().stream()
-            .filter(binding -> binding.key().dimension().equals(dimension) && binding.key().targetId().equals(targetId))
+        Set<BindingKey> keys = BINDINGS_BY_TARGET.get(targetId);
+        if (keys == null || keys.isEmpty()) {
+            return List.of();
+        }
+        return keys.stream()
+            .map(BINDINGS::get)
+            .filter(binding -> binding != null && binding.key().dimension().equals(dimension))
             .toList();
     }
 
-    private static void indexBinding(BindingKey key) {
+    private static void indexBinding(Binding binding) {
+        BindingKey key = binding.key();
         BINDINGS_BY_CHAIN.computeIfAbsent(key.chainId(), ignored -> new HashSet<>()).add(key);
+        BINDINGS_BY_TARGET.computeIfAbsent(key.targetId(), ignored -> new HashSet<>()).add(key);
+        BINDINGS_BY_DIMENSION.computeIfAbsent(key.dimension(), ignored -> new HashSet<>()).add(key);
+        if (binding.ownerId() != null) {
+            BINDINGS_BY_OWNER.computeIfAbsent(binding.ownerId(), ignored -> new HashSet<>()).add(key);
+        }
     }
 
-    private static void unindexBinding(BindingKey key) {
-        Set<BindingKey> keys = BINDINGS_BY_CHAIN.get(key.chainId());
-        if (keys == null) {
-            return;
+    private static void unindexBinding(Binding binding) {
+        BindingKey key = binding.key();
+        Set<BindingKey> chainKeys = BINDINGS_BY_CHAIN.get(key.chainId());
+        if (chainKeys != null) {
+            chainKeys.remove(key);
+            if (chainKeys.isEmpty()) {
+                BINDINGS_BY_CHAIN.remove(key.chainId());
+            }
         }
-        keys.remove(key);
-        if (keys.isEmpty()) {
-            BINDINGS_BY_CHAIN.remove(key.chainId());
+
+        Set<BindingKey> targetKeys = BINDINGS_BY_TARGET.get(key.targetId());
+        if (targetKeys != null) {
+            targetKeys.remove(key);
+            if (targetKeys.isEmpty()) {
+                BINDINGS_BY_TARGET.remove(key.targetId());
+            }
+        }
+
+        Set<BindingKey> dimensionKeys = BINDINGS_BY_DIMENSION.get(key.dimension());
+        if (dimensionKeys != null) {
+            dimensionKeys.remove(key);
+            if (dimensionKeys.isEmpty()) {
+                BINDINGS_BY_DIMENSION.remove(key.dimension());
+            }
+        }
+
+        if (binding.ownerId() != null) {
+            Set<BindingKey> ownerKeys = BINDINGS_BY_OWNER.get(binding.ownerId());
+            if (ownerKeys != null) {
+                ownerKeys.remove(key);
+                if (ownerKeys.isEmpty()) {
+                    BINDINGS_BY_OWNER.remove(binding.ownerId());
+                }
+            }
         }
     }
 

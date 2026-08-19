@@ -1,7 +1,7 @@
 {
   "id": "okita_souji_saber",
-  "display_name": "Okita Souji (Saber)",
-  "display_name_zh": "冲田总司（Saber）",
+  "display_name": "Okita Souji",
+  "display_name_zh": "冲田总司",
   "class_type": "saber",
   "faction": "human",
   "traits": [
@@ -18,12 +18,12 @@
     "balanced"
   ],
   "parameters": {
-    "endurance": "E",
+    "endurance": "D",
     "endurance_plus": false,
-    "strength": "C",
+    "strength": "B",
     "strength_plus": false,
-    "agility": "A",
-    "agility_plus": true,
+    "agility": "A++",
+    "agility_plus": false,
     "magic": "E",
     "magic_plus": false,
     "luck": "D",

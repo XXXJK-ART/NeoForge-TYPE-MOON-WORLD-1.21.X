@@ -298,7 +298,7 @@ public final class MasterCardProfile {
             giveHighGemKit(player);
             give(player, new ItemStack(ModItems.RUBY_STAFF.get()));
          });
-         case "leff_laynor_flauros" -> new Profile(masterId, "leff", 800.0, 5.0, 10, Attributes.NONE, vars -> {
+         case "leff_laynor_flauros" -> new Profile(masterId, "leff", 800.0, 5.0, 10, Attributes.WIND_IMAGINARY, vars -> {
             vars.player_magic_attributes_wind = true;
             vars.player_magic_attributes_imaginary_number = true;
             setKnownMagic(vars, "aerial_stasis", 100.0);
@@ -491,6 +491,8 @@ public final class MasterCardProfile {
       vars.servant_card_paracelsus_diamond_shield_stock = 0;
       vars.servant_card_arash_arrow_stock = 0;
       vars.servant_card_royal_cannon_ammo = 0;
+      vars.servant_card_gilles_spellbook_mana = 0.0;
+      vars.servant_card_gilles_spellbook_max_mana = 0.0;
       vars.servant_card_heracles_god_hand_lives = 0;
       vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
       vars.servant_card_medusa_mystic_eyes_active = false;
@@ -579,6 +581,10 @@ public final class MasterCardProfile {
          case SWORD -> vars.player_magic_attributes_sword = true;
          case EARTH -> vars.player_magic_attributes_earth = true;
          case WIND -> vars.player_magic_attributes_wind = true;
+         case WIND_IMAGINARY -> {
+            vars.player_magic_attributes_wind = true;
+            vars.player_magic_attributes_imaginary_number = true;
+         }
          case FIRE -> vars.player_magic_attributes_fire = true;
       }
    }
@@ -791,6 +797,7 @@ public final class MasterCardProfile {
       SWORD,
       EARTH,
       WIND,
+      WIND_IMAGINARY,
       FIRE,
       NONE
    }

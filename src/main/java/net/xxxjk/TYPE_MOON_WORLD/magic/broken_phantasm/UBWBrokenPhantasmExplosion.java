@@ -195,10 +195,7 @@ public class UBWBrokenPhantasmExplosion {
    }
 
    static float emiyaDamageAtDistance(float centerDamage, double distance, double radius) {
-      float safeCenter = Math.max(0.0F, centerDamage);
-      float outerDamage = Math.min(80.0F, safeCenter);
-      float progress = radius <= 0.0 ? 1.0F : Mth.clamp((float)(distance / radius), 0.0F, 1.0F);
-      return Mth.lerp(progress, safeCenter, outerDamage);
+      return Math.max(0.0F, centerDamage);
    }
 
    private static boolean isEmiyaBrokenPhantasmOwner(Entity owner) {

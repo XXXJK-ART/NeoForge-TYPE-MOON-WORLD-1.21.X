@@ -8,6 +8,7 @@ import com.example.typemoonaddon.registry.AddonEntities;
 import java.util.UUID;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +44,22 @@ public final class GillesDeRaisCombatHelper {
     private static final String TAG_LAST_ABSORB = "GillesLastLifeAbsorb";
     private static final String TAG_HUGE_UUID = "GillesHugeSeaMonsterUuid";
     private static final String TAG_LAST_HELPER_TICK = "GillesLastHelperTick";
+    private static final String TAG_COUNT_CACHE_TICK = "GillesCountCacheTick";
+    private static final String TAG_COUNT_CACHE_SMALL = "GillesCountCacheSmall";
+    private static final String TAG_COUNT_CACHE_LARGE = "GillesCountCacheLarge";
+    private static final String TAG_COUNT_CACHE_NEARBY = "GillesCountCacheNearby";
+    private static final String TAG_COUNT_CACHE_HUGE = "GillesCountCacheHuge";
     private static final String TAG_LAST_RETREAT = "GillesLastRetreat";
+    private static final String TAG_CHANT_KIND = "GillesSummonChantKind";
+    private static final String TAG_CHANT_END = "GillesSummonChantEnd";
+    private static final String TAG_CHANT_TARGET = "GillesSummonChantTarget";
+    private static final String CHANT_SMALL = "small";
+    private static final String CHANT_LARGE = "large";
+    private static final String CHANT_HUGE = "huge";
+    private static final int SMALL_SUMMON_CHANT_TICKS = 40;
+    private static final int LARGE_SUMMON_CHANT_TICKS = 100;
+    private static final int HUGE_SUMMON_CHANT_TICKS = 100;
+    private static boolean pollutionZoneServiceAvailable = true;
 
     private GillesDeRaisCombatHelper() {
     }
@@ -51,13 +68,15 @@ public final class GillesDeRaisCombatHelper {
         if (!(entity.level() instanceof ServerLevel level)) {
             return;
         }
+        if (isSummonChanting(entity)) {
+            return;
+        }
         CompoundTag data = entity.getPersistentData();
         long now = level.getGameTime();
         if (data.getLong(TAG_LAST_HELPER_TICK) == now) {
             return;
         }
         data.putLong(TAG_LAST_HELPER_TICK, now);
-        GillesPollutionZoneService.tick(level);
         initializeBookMana(data);
         if (!entity.hasUsableSpellbook()) {
             if (entity.hasLostSpellbook()) {
@@ -67,7 +86,10 @@ public final class GillesDeRaisCombatHelper {
         }
         regenerateBookMana(data, now);
 
-        LivingEntity target = selectStrategicTarget(entity);
+        LivingEntity target = entity.getTarget();
+        if (!isValidTarget(entity, target)) {
+            target = selectStrategicTarget(entity);
+        }
 
         if (entity.getHealth() <= entity.getMaxHealth() * 0.60F) {
             entity.unlockGiantSeaMonster();
@@ -88,6 +110,34 @@ public final class GillesDeRaisCombatHelper {
         return entity.getPersistentData().getDouble(TAG_BOOK_MANA);
     }
 
+    public static boolean isSummonChanting(GillesDeRaisEntity entity) {
+        CompoundTag data = entity.getPersistentData();
+        return !data.getString(TAG_CHANT_KIND).isBlank();
+    }
+
+    public static boolean tickSummonChant(GillesDeRaisEntity entity) {
+        if (!(entity.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        CompoundTag data = entity.getPersistentData();
+        String kind = data.getString(TAG_CHANT_KIND);
+        if (kind.isBlank()) {
+            return false;
+        }
+        entity.getNavigation().stop();
+        entity.setTarget(null);
+        entity.setDeltaMovement(Vec3.ZERO);
+        LivingEntity target = getChantTarget(level, data);
+        if (target != null) {
+            entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+        }
+        if (level.getGameTime() >= data.getLong(TAG_CHANT_END)) {
+            completeSummonChant(entity, target, data, level.getGameTime());
+            clearSummonChant(data);
+        }
+        return true;
+    }
+
     public static void addBookMana(GillesDeRaisEntity entity, double amount) {
         if (!entity.hasUsableSpellbook()) {
             return;
@@ -97,10 +147,101 @@ public final class GillesDeRaisCombatHelper {
         data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + Math.max(0.0, amount)));
     }
 
+    public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks, float damagePerSecond) {
+        addPollutionZone(dimension, center, radius, lifetimeTicks, damagePerSecond, null);
+    }
+
+    public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks,
+                                        float damagePerSecond, @Nullable UUID sourceUuid) {
+        addPollutionZone(dimension, center, radius, lifetimeTicks, damagePerSecond, sourceUuid, null);
+    }
+
+    public static void addPollutionZone(ResourceKey<Level> dimension, Vec3 center, double radius, int lifetimeTicks,
+                                        float damagePerSecond, @Nullable UUID sourceUuid, @Nullable UUID masterUuid) {
+        if (!pollutionZoneServiceAvailable) {
+            return;
+        }
+        try {
+            GillesPollutionZoneService.add(dimension, center, radius, lifetimeTicks, damagePerSecond, sourceUuid, masterUuid);
+        } catch (LinkageError ignored) {
+            pollutionZoneServiceAvailable = false;
+        }
+    }
+
+    public static void tickPollutionZones(ServerLevel level) {
+        if (!pollutionZoneServiceAvailable) {
+            return;
+        }
+        try {
+            GillesPollutionZoneService.tick(level);
+        } catch (LinkageError ignored) {
+            pollutionZoneServiceAvailable = false;
+        }
+    }
+
+    public static void shareSeaMonsterRetaliation(Entity harmedSeaMonster, LivingEntity attacker) {
+        if (!(harmedSeaMonster.level() instanceof ServerLevel level) || attacker == null || !attacker.isAlive()
+                || EntityUtils.isImmunePlayerTarget(attacker)) {
+            return;
+        }
+        UUID gillesUuid = null;
+        UUID hugeUuid = null;
+        if (harmedSeaMonster instanceof SeaMonsterEntity seaMonster) {
+            UUID controllerUuid = seaMonster.getControllerUuid();
+            if (controllerUuid == null) {
+                return;
+            }
+            Entity controller = level.getEntity(controllerUuid);
+            if (controller instanceof GillesDeRaisEntity gilles) {
+                gillesUuid = gilles.getUUID();
+                markGillesRetaliation(gilles, attacker);
+            } else if (controller instanceof HugeSeaMonsterEntity hugeSeaMonster) {
+                hugeUuid = hugeSeaMonster.getUUID();
+                gillesUuid = hugeSeaMonster.getSourceUuid();
+                if (!hugeSeaMonster.isAlliedTo(attacker)) {
+                    hugeSeaMonster.setTarget(attacker);
+                }
+                markSourceGillesRetaliation(level, gillesUuid, attacker);
+            } else {
+                gillesUuid = controllerUuid;
+            }
+        } else if (harmedSeaMonster instanceof HugeSeaMonsterEntity hugeSeaMonster) {
+            hugeUuid = hugeSeaMonster.getUUID();
+            gillesUuid = hugeSeaMonster.getSourceUuid();
+            if (!hugeSeaMonster.isAlliedTo(attacker)) {
+                hugeSeaMonster.setTarget(attacker);
+            }
+            markSourceGillesRetaliation(level, gillesUuid, attacker);
+        } else {
+            return;
+        }
+
+        UUID finalGillesUuid = gillesUuid;
+        UUID finalHugeUuid = hugeUuid;
+        AABB alertBox = harmedSeaMonster.getBoundingBox().inflate(40.0);
+        for (SeaMonsterEntity ally : level.getEntitiesOfClass(SeaMonsterEntity.class, alertBox,
+                seaMonster -> seaMonster.isAlive() && sameSeaMonsterSource(seaMonster, finalGillesUuid, finalHugeUuid))) {
+            if (!ally.isAlliedTo(attacker)) {
+                ally.setTarget(attacker);
+            }
+        }
+        if (finalGillesUuid != null) {
+            for (HugeSeaMonsterEntity ally : level.getEntitiesOfClass(HugeSeaMonsterEntity.class, alertBox,
+                    hugeSeaMonster -> hugeSeaMonster.isAlive() && finalGillesUuid.equals(hugeSeaMonster.getSourceUuid()))) {
+                if (!ally.isAlliedTo(attacker)) {
+                    ally.setTarget(attacker);
+                }
+            }
+        }
+    }
+
     public static net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult executeCombatAction(
             net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext context) {
         if (!(context.caster() instanceof GillesDeRaisEntity entity) || !(entity.level() instanceof ServerLevel)) {
             return net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult.NOT_HANDLED;
+        }
+        if (isSummonChanting(entity)) {
+            return net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult.SUCCESS;
         }
         LivingEntity target = context.target();
         if (!entity.hasUsableSpellbook() || !isValidTarget(entity, target)) {
@@ -128,6 +269,32 @@ public final class GillesDeRaisCombatHelper {
         }
     }
 
+    private static void markSourceGillesRetaliation(ServerLevel level, @Nullable UUID gillesUuid, LivingEntity attacker) {
+        if (gillesUuid == null) {
+            return;
+        }
+        Entity source = level.getEntity(gillesUuid);
+        if (source instanceof GillesDeRaisEntity gilles) {
+            markGillesRetaliation(gilles, attacker);
+        }
+    }
+
+    private static void markGillesRetaliation(GillesDeRaisEntity gilles, LivingEntity attacker) {
+        if (!isValidTarget(gilles, attacker)) {
+            return;
+        }
+        gilles.setLastHurtByMob(attacker);
+        if (!isSummonChanting(gilles)) {
+            gilles.setTarget(attacker);
+        }
+    }
+
+    private static boolean sameSeaMonsterSource(SeaMonsterEntity seaMonster, @Nullable UUID gillesUuid, @Nullable UUID hugeUuid) {
+        UUID controllerUuid = seaMonster.getControllerUuid();
+        return controllerUuid != null
+                && (controllerUuid.equals(gillesUuid) || controllerUuid.equals(hugeUuid));
+    }
+
     private static void regenerateBookMana(CompoundTag data, long now) {
         long last = data.getLong(TAG_LAST_BOOK_REGEN);
         if (last <= 0L) {
@@ -153,6 +320,9 @@ public final class GillesDeRaisCombatHelper {
     }
 
     private static void runSummonerStateMachine(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now) {
+        if (isSummonChanting(entity)) {
+            return;
+        }
         entity.setTarget(target);
         entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
 
@@ -267,12 +437,10 @@ public final class GillesDeRaisCombatHelper {
         if (now - data.getLong(TAG_LAST_SMALL_SUMMON) < cooldownTicks || countSeaMonsters(entity, false) >= 50) {
             return false;
         }
-        if (!spendBookMana(data, 50.0)) {
+        if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 50.0) {
             return false;
         }
-        data.putLong(TAG_LAST_SMALL_SUMMON, now);
-        spawnSeaMonster(entity, target, false);
-        return true;
+        return beginSummonChant(entity, target, data, now, CHANT_SMALL, SMALL_SUMMON_CHANT_TICKS, "summon");
     }
 
     private static boolean trySummonLarge(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now,
@@ -281,12 +449,10 @@ public final class GillesDeRaisCombatHelper {
             return false;
         }
         if (force || entity.distanceToSqr(target) < 8.0 * 8.0 || countSeaMonsters(entity, false) >= 8 || target.getHealth() > 120.0F) {
-            if (!spendBookMana(data, 200.0)) {
+            if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 200.0) {
                 return false;
             }
-            data.putLong(TAG_LAST_LARGE_SUMMON, now);
-            spawnSeaMonster(entity, target, true);
-            return true;
+            return beginSummonChant(entity, target, data, now, CHANT_LARGE, LARGE_SUMMON_CHANT_TICKS, "summon");
         }
         return false;
     }
@@ -295,13 +461,83 @@ public final class GillesDeRaisCombatHelper {
         if (!entity.isGiantSeaMonsterUnlocked() || now - data.getLong(TAG_LAST_HUGE_SUMMON) < 1200L || hasActiveHugeSeaMonster(entity, data)) {
             return false;
         }
-        if (!spendBookMana(data, 2000.0)) {
+        if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 2000.0) {
             return false;
         }
+        return beginSummonChant(entity, target, data, now, CHANT_HUGE, HUGE_SUMMON_CHANT_TICKS, "np");
+    }
+
+    private static boolean beginSummonChant(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now,
+                                            String kind, int durationTicks, String animationKey) {
+        if (isSummonChanting(entity) || !isValidTarget(entity, target)) {
+            return false;
+        }
+        data.putString(TAG_CHANT_KIND, kind);
+        data.putLong(TAG_CHANT_END, now + durationTicks);
+        data.putUUID(TAG_CHANT_TARGET, target.getUUID());
+        entity.getNavigation().stop();
+        entity.setTarget(null);
+        entity.setDeltaMovement(Vec3.ZERO);
+        entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+        entity.triggerNamedActionAnimation(animationKey);
+        if (CHANT_HUGE.equals(kind)) {
+            GillesVoiceHelper.tryPlayNp(entity);
+        } else {
+            GillesVoiceHelper.tryPlaySummon(entity);
+        }
+        return true;
+    }
+
+    private static void completeSummonChant(GillesDeRaisEntity entity, @Nullable LivingEntity target, CompoundTag data, long now) {
+        if (target == null || !isValidTarget(entity, target)) {
+            target = selectStrategicTarget(entity);
+        }
+        if (!isValidTarget(entity, target) || !entity.hasUsableSpellbook()) {
+            return;
+        }
+        switch (data.getString(TAG_CHANT_KIND)) {
+            case CHANT_SMALL -> {
+                if (countSeaMonsters(entity, false) < 50 && spendBookMana(data, 50.0)) {
+                    data.putLong(TAG_LAST_SMALL_SUMMON, now);
+                    spawnSeaMonster(entity, target, false);
+                }
+            }
+            case CHANT_LARGE -> {
+                if (countSeaMonsters(entity, true) < 5 && spendBookMana(data, 200.0)) {
+                    data.putLong(TAG_LAST_LARGE_SUMMON, now);
+                    spawnSeaMonster(entity, target, true);
+                }
+            }
+            case CHANT_HUGE -> {
+                if (!hasActiveHugeSeaMonster(entity, data) && spendBookMana(data, 2000.0)) {
+                    spawnHugeSeaMonster(entity, target, data, now);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private static void clearSummonChant(CompoundTag data) {
+        data.remove(TAG_CHANT_KIND);
+        data.remove(TAG_CHANT_END);
+        data.remove(TAG_CHANT_TARGET);
+    }
+
+    @Nullable
+    private static LivingEntity getChantTarget(ServerLevel level, CompoundTag data) {
+        if (!data.hasUUID(TAG_CHANT_TARGET)) {
+            return null;
+        }
+        Entity entity = level.getEntity(data.getUUID(TAG_CHANT_TARGET));
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
+    private static void spawnHugeSeaMonster(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now) {
         HugeSeaMonsterEntity huge = AddonEntities.GILLES_HUGE_SEA_MONSTER.get().create((ServerLevel) entity.level());
         if (huge == null) {
             data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + 2000.0));
-            return false;
+            return;
         }
         Vec3 offset = target.position().subtract(entity.position());
         if (offset.horizontalDistanceSqr() < 1.0E-4) {
@@ -320,11 +556,8 @@ public final class GillesDeRaisCombatHelper {
         entity.setTarget(null);
         data.putUUID(TAG_HUGE_UUID, huge.getUUID());
         data.putLong(TAG_LAST_HUGE_SUMMON, now);
-        entity.triggerNamedActionAnimation("np");
-        GillesVoiceHelper.tryPlayNp(entity);
         ((ServerLevel) entity.level()).sendParticles(ParticleTypes.SQUID_INK, huge.getX(), huge.getY() + 2.0, huge.getZ(),
                 120, 3.0, 1.4, 3.0, 0.08);
-        return true;
     }
 
     private static void spawnSeaMonster(GillesDeRaisEntity entity, LivingEntity target, boolean large) {
@@ -349,31 +582,50 @@ public final class GillesDeRaisCombatHelper {
         level.playSound(null, entity.blockPosition(), SoundEvents.EVOKER_PREPARE_SUMMON, SoundSource.HOSTILE, large ? 1.3F : 0.9F, large ? 0.65F : 0.85F);
         level.sendParticles(ParticleTypes.SQUID_INK, seaMonster.getX(), seaMonster.getY() + 0.7, seaMonster.getZ(),
                 large ? 30 : 14, 0.6, 0.5, 0.6, 0.05);
-        GillesVoiceHelper.tryPlaySummon(entity);
     }
 
     private static int countSeaMonsters(GillesDeRaisEntity entity, boolean large) {
         if (!(entity.level() instanceof ServerLevel level)) {
             return 0;
         }
+        CompoundTag data = entity.getPersistentData();
+        long now = level.getGameTime();
+        ensureCountCacheWindow(data, now);
+        if (large ? data.contains(TAG_COUNT_CACHE_LARGE) : data.contains(TAG_COUNT_CACHE_SMALL)) {
+            return large ? data.getInt(TAG_COUNT_CACHE_LARGE) : data.getInt(TAG_COUNT_CACHE_SMALL);
+        }
         UUID uuid = entity.getUUID();
-        return level.getEntitiesOfClass(SeaMonsterEntity.class, entity.getBoundingBox().inflate(96.0),
+        int count = level.getEntitiesOfClass(SeaMonsterEntity.class, entity.getBoundingBox().inflate(64.0),
                 seaMonster -> seaMonster.isAlive() && seaMonster.isLarge() == large && uuid.equals(seaMonster.getControllerUuid())).size();
+        if (large) {
+            data.putInt(TAG_COUNT_CACHE_LARGE, count);
+        } else {
+            data.putInt(TAG_COUNT_CACHE_SMALL, count);
+        }
+        return count;
     }
 
     private static boolean hasActiveHugeSeaMonster(GillesDeRaisEntity entity, CompoundTag data) {
         if (!(entity.level() instanceof ServerLevel level)) {
             return false;
         }
+        long now = level.getGameTime();
+        ensureCountCacheWindow(data, now);
+        if (data.contains(TAG_COUNT_CACHE_HUGE)) {
+            return data.getBoolean(TAG_COUNT_CACHE_HUGE);
+        }
         if (data.hasUUID(TAG_HUGE_UUID)) {
             Entity existing = level.getEntity(data.getUUID(TAG_HUGE_UUID));
             if (existing instanceof HugeSeaMonsterEntity huge && huge.isAlive()) {
+                data.putBoolean(TAG_COUNT_CACHE_HUGE, true);
                 return true;
             }
         }
         UUID uuid = entity.getUUID();
-        return !level.getEntitiesOfClass(HugeSeaMonsterEntity.class, entity.getBoundingBox().inflate(160.0),
+        boolean active = !level.getEntitiesOfClass(HugeSeaMonsterEntity.class, entity.getBoundingBox().inflate(96.0),
                 huge -> huge.isAlive() && uuid.equals(huge.getSourceUuid())).isEmpty();
+        data.putBoolean(TAG_COUNT_CACHE_HUGE, active);
+        return active;
     }
 
     private static void keepDistance(GillesDeRaisEntity entity, LivingEntity target, double retreatBlocks, long now, CompoundTag data) {
@@ -443,12 +695,34 @@ public final class GillesDeRaisCombatHelper {
     }
 
     private static int countNearbyEnemies(GillesDeRaisEntity entity, double radius) {
-        return entity.level().getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(radius),
+        if (!(entity.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        CompoundTag data = entity.getPersistentData();
+        long now = level.getGameTime();
+        ensureCountCacheWindow(data, now);
+        if (data.contains(TAG_COUNT_CACHE_NEARBY)) {
+            return data.getInt(TAG_COUNT_CACHE_NEARBY);
+        }
+        int count = level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(radius),
                 candidate -> isValidTarget(entity, candidate)).size();
+        data.putInt(TAG_COUNT_CACHE_NEARBY, count);
+        return count;
     }
 
     private static boolean isValidTarget(GillesDeRaisEntity entity, @Nullable LivingEntity target) {
         return target != null && target != entity && target.isAlive() && !target.isAlliedTo(entity)
                 && !EntityUtils.isImmunePlayerTarget(target);
+    }
+
+    private static void ensureCountCacheWindow(CompoundTag data, long now) {
+        if (data.getLong(TAG_COUNT_CACHE_TICK) == now) {
+            return;
+        }
+        data.putLong(TAG_COUNT_CACHE_TICK, now);
+        data.remove(TAG_COUNT_CACHE_SMALL);
+        data.remove(TAG_COUNT_CACHE_LARGE);
+        data.remove(TAG_COUNT_CACHE_NEARBY);
+        data.remove(TAG_COUNT_CACHE_HUGE);
     }
 }

@@ -330,7 +330,7 @@ public final class ManaBurstService {
          double y = player.getY() + player.getBbHeight() * 0.55;
          serverLevel.sendParticles(ParticleTypes.FLASH, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 34 + level * 8, 0.55, 0.65, 0.55, 0.12);
-         serverLevel.sendParticles(mode == 1 ? ParticleTypes.CRIT : ParticleTypes.FLAME, player.getX(), y, player.getZ(), 18 + level * 5, 0.45, 0.55, 0.45, 0.08);
+         serverLevel.sendParticles(mode == 1 ? ParticleTypes.CRIT : ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 18 + level * 5, 0.45, 0.55, 0.45, 0.08);
       }
       player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.85F, 1.0F + level * 0.08F);
    }
@@ -342,7 +342,7 @@ public final class ManaBurstService {
          if (mode == 1) {
             serverLevel.sendParticles(ParticleTypes.ENCHANTED_HIT, player.getX(), y, player.getZ(), 2 + level, 0.25, 0.25, 0.25, 0.02);
          } else {
-            serverLevel.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.15, player.getZ(), 2 + level, 0.22, 0.08, 0.22, 0.018);
+            serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 0.15, player.getZ(), 2 + level, 0.22, 0.08, 0.22, 0.018);
          }
       }
    }
@@ -374,7 +374,7 @@ public final class ManaBurstService {
          double distance = 0.16 + i * 0.22;
          Vec3 p = origin.add(direction.scale(distance));
          double spread = Math.max(0.035, 0.12 - i * 0.018);
-         level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 2 + levelRank, spread, spread * 0.7, spread, 0.04);
+         level.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 2 + levelRank, spread, spread * 0.7, spread, 0.04);
          if (i == steps - 1) {
             level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 1 + levelRank / 2, spread * 0.9, spread * 0.6, spread * 0.9, 0.026);
          }
@@ -392,7 +392,7 @@ public final class ManaBurstService {
          double spread = 0.08 + levelRank * 0.025;
          level.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 5 + levelRank, spread, spread, spread, 0.035);
          if (((int)(d * 10.0)) % 15 == 0) {
-            level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 3 + levelRank, spread * 1.4, spread * 1.4, spread * 1.4, 0.035);
+            level.sendParticles(ParticleTypes.END_ROD, p.x, p.y, p.z, 3 + levelRank, spread * 1.4, spread * 1.4, spread * 1.4, 0.035);
             level.sendParticles(ParticleTypes.CLOUD, p.x, p.y, p.z, 2 + levelRank / 2, spread * 1.8, spread * 1.2, spread * 1.8, 0.018);
          }
       }
@@ -443,7 +443,7 @@ public final class ManaBurstService {
       boolean destroyed = level.destroyBlock(pos, false, player);
       if (destroyed) {
          level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.16, 0.16, 0.16, 0.03);
-         level.sendParticles(ParticleTypes.FLAME, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.12, 0.12, 0.12, 0.035);
+         level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.12, 0.12, 0.12, 0.035);
       }
       return destroyed;
    }

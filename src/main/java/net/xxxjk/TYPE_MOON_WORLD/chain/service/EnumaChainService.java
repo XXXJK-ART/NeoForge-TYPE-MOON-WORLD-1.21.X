@@ -341,15 +341,17 @@ public final class EnumaChainService {
                 .thenComparingInt(HeavenChainEntity::enumaIndex))
             .orElseThrow();
         float aggregatedHealth = 0.0F;
+        int logicalChainCount = 0;
         for (HeavenChainEntity chain : survivingChains) {
             aggregatedHealth += Math.max(0.0F, chain.chainHealth());
+            logicalChainCount += chain.stackedChainCount();
         }
 
         List<Vec3> gateOrigins = new ArrayList<>(ChainConfig.ENUMA_CHAIN_COUNT);
         for (int index = 0; index < ChainConfig.ENUMA_CHAIN_COUNT; index++) {
             gateOrigins.add(resolveGatePosition(state.center, state.seed, index));
         }
-        bindingChain.setEnumaAggregatedHealth(aggregatedHealth, gateOrigins);
+        bindingChain.setEnumaAggregatedHealth(aggregatedHealth, logicalChainCount, gateOrigins);
         bindingChain.latchEnuma(hitPoint, minimumBoundUntil);
         BindingService.bind(level, owner, target, bindingChain, ChainConfig.ENUMA_MIN_BIND_TICKS);
 

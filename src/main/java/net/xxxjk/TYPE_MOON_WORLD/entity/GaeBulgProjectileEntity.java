@@ -51,8 +51,14 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Integer> SPLIT_INDEX = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
    private static final int SINGLE_HOMING_TICKS = 60;
+   private static final double ARMY_EXPLOSION_DISTANCE_SQR = 4.0D;
+   private static final double SPLIT_TRIGGER_DISTANCE = 5.0D;
+   private static final double SPLIT_IMPACT_DISTANCE_SQR = 9.0D;
+   private static final int SPLIT_COUNT = 10;
+   private static final double SPLIT_BURST_RADIUS = 18.0D;
    private int lifeTime = 0;
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -72,7 +78,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    public enum Mode {
       SINGLE(0),
-      ARMY(1);
+      ARMY(1),
+      SPLIT(2);
 
       private final int id;
 
@@ -85,7 +92,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
 
       public static Mode fromId(int id) {
-         return id == 1 ? ARMY : SINGLE;
+         return switch (id) {
+            case 1 -> ARMY;
+            case 2 -> SPLIT;
+            default -> SINGLE;
+         };
       }
    }
 
@@ -95,6 +106,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       builder.define(MODE, 0);
       builder.define(TARGET_ID, -1);
       builder.define(ARMY_DAMAGE, 200.0F);
+      builder.define(SPLIT_INDEX, 0);
    }
 
    public void setMode(Mode mode) {
@@ -106,11 +118,19 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setArmyDamage(float damage) {
-      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 500.0F));
+      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 100000.0F));
    }
 
    public float getArmyDamage() {
       return this.entityData.get(ARMY_DAMAGE);
+   }
+
+   public void setSplitIndex(int index) {
+      this.entityData.set(SPLIT_INDEX, Math.max(0, index));
+   }
+
+   public int getSplitIndex() {
+      return this.entityData.get(SPLIT_INDEX);
    }
 
    public void setTrackedTarget(LivingEntity target) {
@@ -124,7 +144,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    protected boolean canHitEntity(Entity entity) {
-      return entity != null && entity != this.getOwner() && !EntityUtils.isImmunePlayerTarget(entity) && super.canHitEntity(entity);
+      if (this.getMode() == Mode.ARMY || this.getMode() == Mode.SPLIT) {
+         return entity != null && entity == this.getTrackedTarget() && super.canHitEntity(entity);
+      }
+      LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
+      return entity instanceof LivingEntity living && isUsableTarget(living, owner) && super.canHitEntity(entity);
    }
 
    @Override
@@ -134,10 +158,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    public void tick() {
+      this.noPhysics = true;
+      this.setNoGravity(true);
       super.tick();
       this.recordTrailPoint();
       if (this.level().isClientSide()) {
-         if (this.getMode() == Mode.SINGLE && this.tickCount % 2 == 0) {
+         if (this.tickCount % 2 == 0) {
             this.level().addParticle(DEATH_THORN_TRAIL, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
             this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          }
@@ -146,6 +172,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (!(this.level() instanceof ServerLevel level)) return;
 
       this.lifeTime++;
+      LivingEntity target = this.resolveTrackedTarget(level);
       if (this.getMode() == Mode.SINGLE) {
          Vec3 motion = this.getDeltaMovement();
          Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.42) : Vec3.ZERO;
@@ -154,8 +181,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             level.sendParticles(DEATH_THORN_TRAIL, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0.0);
          }
       }
-      LivingEntity target = this.getTrackedTarget();
-      boolean canHome = this.getMode() != Mode.SINGLE || this.lifeTime <= SINGLE_HOMING_TICKS;
+      boolean armyMode = this.getMode() == Mode.ARMY;
+      boolean splitMode = this.getMode() == Mode.SPLIT;
+      boolean canHome = armyMode || splitMode || this.lifeTime <= SINGLE_HOMING_TICKS;
       if (!canHome) {
          this.setTrackedTarget(null);
          target = null;
@@ -163,46 +191,142 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          this.setTrackedTarget(null);
          target = acquireNearbyTarget(level);
       }
-      if (canHome && target != null && target.isAlive()) {
-         if (this.getMode() == Mode.SINGLE) {
-            this.steerToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0), 0.85, 0.4);
-            this.clearPathObstacles(2.4);
-         } else {
-            this.steerToward(target.position().add(0.0, target.getBbHeight() * 0.3, 0.0), 0.35, 0.18);
-         }
-         this.syncRotationToMotion();
 
-         if (this.distanceToSqr(target) <= 2.25) {
-            if (this.getMode() == Mode.SINGLE) {
-               this.resolveSingleTargetHit(target);
-            } else {
-               this.resolveArmyExplosion(this.position());
+      if (target != null && target.isAlive()) {
+         Vec3 targetPoint = this.targetPoint(target);
+         double distanceToTarget = this.distanceTo(target);
+         if (splitMode) {
+            this.steerToward(targetPoint, 5.2, 0.82);
+            this.syncRotationToMotion();
+            if (this.position().distanceToSqr(targetPoint) <= SPLIT_IMPACT_DISTANCE_SQR || this.lifeTime > 90) {
+               this.resolveSplitBurst(level);
+               return;
             }
-            return;
-         }
-      }
-
-      if ((this.getMode() == Mode.SINGLE && this.lifeTime > 120) || (this.getMode() == Mode.ARMY && this.lifeTime > 80)) {
-         if (this.getMode() == Mode.SINGLE && target != null && target.isAlive()) {
-            this.resolveSingleTargetHit(target);
-         } else if (this.getMode() == Mode.ARMY) {
-            this.resolveArmyExplosion(this.position());
+         } else if (armyMode) {
+            this.steerToward(targetPoint, 4.0, 0.72);
+            this.syncRotationToMotion();
+            if (distanceToTarget <= SPLIT_TRIGGER_DISTANCE) {
+               this.spawnSplitSpears(level, target);
+               this.discard();
+               return;
+            }
          } else {
+            this.steerToward(targetPoint, 2.45, 0.48);
+            this.syncRotationToMotion();
+            if (distanceToTarget <= 2.0D) {
+               this.resolveSingleTargetHit(target);
+               return;
+            }
+            if (this.lifeTime > 120) {
+               this.resolveSingleTargetHit(target);
+               return;
+            }
+         }
+      } else if (this.getMode() == Mode.SPLIT || this.getMode() == Mode.ARMY) {
+         if (this.lifeTime > 40) {
             this.discard();
          }
+      } else if (this.lifeTime > 120) {
+         this.discard();
       }
 
-      if (this.getMode() == Mode.SINGLE) {
+      if (this.getMode() == Mode.SINGLE || this.getMode() == Mode.SPLIT || this.getMode() == Mode.ARMY) {
          this.syncRotationToMotion();
       }
    }
 
+   private LivingEntity resolveTrackedTarget(ServerLevel level) {
+      LivingEntity target = this.getTrackedTarget();
+      if (isUsableTarget(target)) {
+         return target;
+      }
+      return acquireNearbyTarget(level);
+   }
+
+   private Vec3 targetPoint(LivingEntity target) {
+      Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+      return center;
+   }
+
+   private void spawnSplitSpears(ServerLevel level, LivingEntity target) {
+      LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
+      float splitDamage = this.getArmyDamage() / SPLIT_COUNT;
+      Vec3 origin = this.position();
+      for (int i = 0; i < SPLIT_COUNT; i++) {
+         GaeBulgProjectileEntity spear = owner != null
+            ? new GaeBulgProjectileEntity(level, owner)
+            : new GaeBulgProjectileEntity(ModEntities.GAE_BULG_PROJECTILE.get(), level);
+         spear.setItem(new ItemStack(ModItems.GAE_BULG.get()));
+         spear.setMode(Mode.SPLIT);
+         spear.setSplitIndex(i);
+         spear.setArmyDamage(splitDamage);
+         spear.setTrackedTarget(target);
+         spear.setPos(origin.x, origin.y, origin.z);
+         spear.noPhysics = true;
+         spear.setNoGravity(true);
+         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+         Vec3 dir = aim.subtract(spear.position());
+         if (dir.lengthSqr() < 1.0E-4) {
+            dir = this.getDeltaMovement().lengthSqr() > 1.0E-4 ? this.getDeltaMovement() : this.getLookAngle();
+         }
+         dir = dir.normalize();
+         spear.shoot(dir.x, dir.y, dir.z, 5.8F, 0.0F);
+         level.addFreshEntity(spear);
+      }
+      level.sendParticles(DEATH_THORN_TRAIL, origin.x, origin.y, origin.z, 46, 1.2, 1.0, 1.2, 0.06);
+      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0.15, 0.15, 0.15, 0.0);
+      level.playSound(null, BlockPos.containing(origin), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 1.8F, 0.52F);
+   }
+
+   private void resolveSplitBurst(ServerLevel level) {
+      Vec3 burstCenter = this.position();
+      LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
+      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      float damage = this.getArmyDamage();
+      Set<Integer> damaged = new HashSet<>();
+      AABB damageBox = new AABB(burstCenter, burstCenter).inflate(SPLIT_BURST_RADIUS);
+      for (LivingEntity living : level.getEntitiesOfClass(
+         LivingEntity.class,
+         damageBox,
+         e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
+      )) {
+         if (living.distanceToSqr(burstCenter) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
+            continue;
+         }
+         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
+         finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         if (!this.tryConsumeGodHandLife(living, finalDamage, false)) {
+            this.applyGuaranteedDamage(living, source, finalDamage);
+         }
+         Vec3 push = living.position().subtract(burstCenter).multiply(1.0, 0.0, 1.0);
+         if (push.lengthSqr() > 1.0E-4) {
+            push = push.normalize();
+            living.push(push.x * 1.0, 0.36, push.z * 1.0);
+            living.hurtMarked = true;
+         }
+      }
+
+      VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
+      this.spawnArmyExplosionShellEffects(level, burstCenter, SPLIT_BURST_RADIUS);
+      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.FLASH, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
+      level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 96, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, 0.16);
+      level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 72, SPLIT_BURST_RADIUS * 0.42, SPLIT_BURST_RADIUS * 0.24, SPLIT_BURST_RADIUS * 0.42, 0.05);
+      level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
+      this.breakLowHardnessTerrain(level, burstCenter, SPLIT_BURST_RADIUS, 0.0);
+      this.breakSphereTerrain(level, burstCenter, SPLIT_BURST_RADIUS);
+      this.discard();
+   }
+
    private boolean isUsableTarget(LivingEntity target) {
-      Entity ownerEntity = this.getOwner();
-      return target != null && target.isAlive() && target != ownerEntity
-         && (ownerEntity == null || !target.isAlliedTo(ownerEntity))
-         && (!(ownerEntity instanceof LivingEntity owner) || !ServantMasterTargeting.isContractMaster(owner, target))
-         && !EntityUtils.isImmunePlayerTarget(target);
+      return isUsableTarget(target, this.getOwner() instanceof LivingEntity living ? living : null);
+   }
+
+   private static boolean isUsableTarget(LivingEntity target, LivingEntity owner) {
+      return target != null && target.isAlive() && target != owner
+         && (owner == null || !target.isAlliedTo(owner))
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && (!(owner instanceof LivingEntity) || !ServantMasterTargeting.isContractMaster(owner, target));
    }
 
    private LivingEntity acquireNearbyTarget(ServerLevel level) {
@@ -260,8 +384,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (result.getEntity() instanceof LivingEntity living) {
          if (this.getMode() == Mode.SINGLE) {
             this.resolveSingleTargetHit(living);
-         } else {
-            this.resolveArmyExplosion(result.getLocation());
+         } else if (this.getMode() == Mode.ARMY) {
+            this.spawnSplitSpears((ServerLevel)this.level(), living);
+            this.discard();
+         } else if (this.getMode() == Mode.SPLIT) {
+            this.resolveSplitBurst((ServerLevel)this.level());
          }
       }
    }
@@ -274,21 +401,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
 
       if (result.getType() == HitResult.Type.BLOCK) {
-         if (this.getMode() == Mode.ARMY) {
-            this.resolveArmyExplosion(result.getLocation());
-         } else {
-            if (this.getTrackedTarget() != null && result instanceof BlockHitResult blockHit && this.tryDestroyBlock(blockHit.getBlockPos())) {
-               this.setPos(this.getX() + this.getDeltaMovement().x * 0.1, this.getY() + this.getDeltaMovement().y * 0.1, this.getZ() + this.getDeltaMovement().z * 0.1);
-               return;
-            }
-
-            LivingEntity target = this.getTrackedTarget();
-            if (target != null && target.isAlive()) {
-               this.nudgeAroundObstacle(target);
-               return;
-            }
-
-            this.discard();
+         if (this.getMode() == Mode.SINGLE || this.getMode() == Mode.ARMY || this.getMode() == Mode.SPLIT) {
+            return;
          }
       }
    }
@@ -522,6 +636,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       });
    }
 
+   private void breakSphereTerrain(ServerLevel level, Vec3 center, double radius) {
+      DeferredTerrainDestruction.ExpandingSphere terrain = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.ceil(radius), null);
+      terrain.advanceTo(radius);
+      terrain.seal();
+   }
+
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
@@ -593,5 +713,23 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(),
             4, 0.0, 0.0, 0.0, 0.0);
       }
+   }
+
+   @Override
+   public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      this.entityData.set(MODE, tag.getInt("Mode"));
+      this.entityData.set(TARGET_ID, tag.getInt("TargetId"));
+      this.entityData.set(ARMY_DAMAGE, tag.getFloat("ArmyDamage"));
+      this.entityData.set(SPLIT_INDEX, tag.getInt("SplitIndex"));
+   }
+
+   @Override
+   public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putInt("Mode", this.entityData.get(MODE));
+      tag.putInt("TargetId", this.entityData.get(TARGET_ID));
+      tag.putFloat("ArmyDamage", this.entityData.get(ARMY_DAMAGE));
+      tag.putInt("SplitIndex", this.entityData.get(SPLIT_INDEX));
    }
 }

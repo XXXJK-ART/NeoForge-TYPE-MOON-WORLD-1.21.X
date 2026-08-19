@@ -29,8 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 /** Server-authoritative toggle, spherical scan, and private target authorization. */
 public final class DetectionService {
-    public static final int DETECTION_RADIUS_CHUNKS = 6;
-    public static final double DETECTION_RADIUS = DETECTION_RADIUS_CHUNKS * 16.0D;
+    public static final double DETECTION_RADIUS = 25.0D;
     public static final double DETECTION_RADIUS_SQR = DETECTION_RADIUS * DETECTION_RADIUS;
     public static final int SCAN_INTERVAL_TICKS = 10;
     public static final int MAX_TARGETS = DetectionTargetSyncPayload.MAX_TARGETS;

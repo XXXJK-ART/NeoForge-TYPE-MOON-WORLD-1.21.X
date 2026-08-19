@@ -13,7 +13,7 @@ class CuChulainnCombatRulesTest {
          CuChulainnCombatRules.singleGaeBolgPlan(3.75));
       assertEquals(CuChulainnCombatRules.SingleGaeBolgPlan.CLOSE_FOR_MELEE,
          CuChulainnCombatRules.singleGaeBolgPlan(5.0));
-      assertEquals(CuChulainnCombatRules.SingleGaeBolgPlan.PROJECTILE,
+      assertEquals(CuChulainnCombatRules.SingleGaeBolgPlan.NONE,
          CuChulainnCombatRules.singleGaeBolgPlan(9.0));
       assertEquals(CuChulainnCombatRules.SingleGaeBolgPlan.NONE,
          CuChulainnCombatRules.singleGaeBolgPlan(12.1));

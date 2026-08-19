@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,6 +22,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.network.EnkiduDetectionHighlightMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.client.GeoRenderProvider;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -51,6 +54,19 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
 
    @Override public int getUseDuration(ItemStack stack, LivingEntity entity) { return 72000; }
    @Override public UseAnim getUseAnimation(ItemStack stack) { return UseAnim.BOW; }
+
+   @Override
+   public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      if (!(living instanceof ServerPlayer player) || !(level instanceof ServerLevel) || living.tickCount % 5 != 0) {
+         return;
+      }
+      Vec3 look = player.getLookAngle().normalize();
+      Vec3 origin = player.getEyePosition().add(look.scale(0.65));
+      LivingEntity target = ArashAimHelper.findAutoAimTarget(player, origin, look);
+      if (target != null) {
+         ModNetwork.sendToPlayer(player, new EnkiduDetectionHighlightMessage(List.of(target.getId()), 20));
+      }
+   }
 
    @Override
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {

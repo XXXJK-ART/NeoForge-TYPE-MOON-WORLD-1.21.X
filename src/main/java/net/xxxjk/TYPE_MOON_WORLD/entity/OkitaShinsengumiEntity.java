@@ -27,6 +27,9 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    private static final String TAG_TARGET = "OkitaShinsengumiTarget";
    private static final String TAG_EXPIRES = "OkitaShinsengumiExpires";
    private static final String TAG_NATURAL_TIMEOUT = "OkitaShinsengumiNaturalTimeout";
+   private static final double FOLLOW_STOP_DISTANCE_SQR = 3.0 * 3.0;
+   private static final double FOLLOW_START_DISTANCE_SQR = 5.0 * 5.0;
+   private static final double FOLLOW_URGENT_DISTANCE_SQR = 14.0 * 14.0;
    @Nullable private UUID ownerUuid;
    @Nullable private UUID targetUuid;
 
@@ -48,20 +51,11 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    }
 
    public void initializeForOkita(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target, long expiresAt) {
-      this.ownerUuid = owner.getUUID();
-      this.targetUuid = target == null ? null : target.getUUID();
-      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
-      if (target != null) {
-         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
-         this.setTarget(target);
-      }
-      this.getPersistentData().putLong(TAG_EXPIRES, expiresAt);
-      this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, false);
-      this.setSchool(KendoSchool.TENNEN);
-      this.setProficiency(90);
-      this.equipOkitaLoadout();
-      this.setHealth(this.getMaxHealth());
-      this.setPersistenceRequired();
+      this.initialize(owner, target, expiresAt);
+   }
+
+   public void initializeForOkitaCard(ServerPlayer owner, @Nullable LivingEntity target, long expiresAt) {
+      this.initialize(owner, target, expiresAt);
    }
 
    @Override
@@ -71,6 +65,7 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       this.setSchool(KendoSchool.TENNEN);
       this.setProficiency(90);
       this.equipOkitaLoadout();
+      this.clearPersonalName();
       return result;
    }
 
@@ -88,13 +83,13 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.targetUuid = data.getUUID(TAG_TARGET);
       }
       long expires = data.getLong(TAG_EXPIRES);
-      OkitaSoujiSaberEntity owner = this.getOwner(level);
+      LivingEntity owner = this.getOwner(level);
       if (expires > 0L && level.getGameTime() >= expires || owner == null || !owner.isAlive()) {
          data.putBoolean(TAG_NATURAL_TIMEOUT, true);
          this.discard();
          return;
       }
-      LivingEntity target = owner.getTarget();
+      LivingEntity target = owner instanceof OkitaSoujiSaberEntity okita ? okita.getTarget() : this.getTargetByUuid(level, this.targetUuid);
       if (!this.isValidAssignedTarget(owner, target)) {
          target = this.getTargetByUuid(level, this.targetUuid);
       }
@@ -103,10 +98,21 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          data.putUUID(TAG_TARGET, this.targetUuid);
          this.setTarget(target);
       } else {
+         this.targetUuid = null;
+         data.remove(TAG_TARGET);
          this.setTarget(null);
       }
       this.equipOkitaLoadout();
       super.customServerAiStep();
+      this.clearPersonalName();
+      if (this.getTarget() == null) {
+         this.followOwnerWhenIdle(owner);
+      }
+   }
+
+   @Override
+   public void ensureRandomName() {
+      this.clearPersonalName();
    }
 
    @Override
@@ -122,14 +128,14 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       if (!(this.level() instanceof ServerLevel level)) {
          return false;
       }
-      OkitaSoujiSaberEntity owner = this.getOwner(level);
+      LivingEntity owner = this.getOwner(level);
       if (owner == null) {
          return false;
       }
       if (other == owner || owner.isAlliedTo(other)) {
          return true;
       }
-      ServerPlayer master = owner.getEntityMaster();
+      ServerPlayer master = owner instanceof OkitaSoujiSaberEntity okitaOwner ? okitaOwner.getEntityMaster() : null;
       if (master != null && (other == master || master.isAlliedTo(other))) {
          return true;
       }
@@ -146,9 +152,11 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource source) {
       if (!this.getPersistentData().getBoolean(TAG_NATURAL_TIMEOUT) && this.level() instanceof ServerLevel level) {
-         OkitaSoujiSaberEntity owner = this.getOwner(level);
+         LivingEntity owner = this.getOwner(level);
          if (owner != null) {
-            owner.onShinsengumiKilled();
+            if (owner instanceof OkitaSoujiSaberEntity okita) {
+               okita.onShinsengumiKilled();
+            }
          }
       }
       super.die(source);
@@ -181,15 +189,16 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.getPersistentData().putUUID(TAG_TARGET, this.targetUuid);
       }
       this.equipOkitaLoadout();
+      this.clearPersonalName();
    }
 
    @Nullable
-   private OkitaSoujiSaberEntity getOwner(ServerLevel level) {
+   private LivingEntity getOwner(ServerLevel level) {
       if (this.ownerUuid == null) {
          return null;
       }
       Entity entity = level.getEntity(this.ownerUuid);
-      return entity instanceof OkitaSoujiSaberEntity okita ? okita : null;
+      return entity instanceof LivingEntity living ? living : null;
    }
 
    @Nullable
@@ -201,10 +210,30 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       return entity instanceof LivingEntity living ? living : null;
    }
 
-   private boolean isValidAssignedTarget(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target) {
+   private boolean isValidAssignedTarget(LivingEntity owner, @Nullable LivingEntity target) {
       return target != null && target.isAlive() && target != this && target != owner
          && !owner.isAlliedTo(target) && !this.isAlliedTo(target)
          && !EntityUtils.isImmunePlayerTarget(target);
+   }
+
+   private void followOwnerWhenIdle(LivingEntity owner) {
+      double distanceSqr = this.distanceToSqr(owner);
+      if (distanceSqr <= FOLLOW_STOP_DISTANCE_SQR) {
+         this.getNavigation().stop();
+         return;
+      }
+      if (distanceSqr < FOLLOW_START_DISTANCE_SQR && !this.getNavigation().isDone()) {
+         return;
+      }
+      double speed = distanceSqr >= FOLLOW_URGENT_DISTANCE_SQR ? 1.35 : 1.05;
+      this.getNavigation().moveTo(owner, speed);
+   }
+
+   private void clearPersonalName() {
+      if (!this.level().isClientSide()) {
+         this.setCustomName(null);
+         this.setCustomNameVisible(false);
+      }
    }
 
    private void equipOkitaLoadout() {
@@ -212,5 +241,41 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.KATANA.get()));
          this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
       }
+   }
+
+   public void assignOkitaCardTarget(ServerPlayer owner, @Nullable LivingEntity target) {
+      this.assignOkitaOwnerTarget(owner, target);
+   }
+
+   public void assignOkitaOwnerTarget(LivingEntity owner, @Nullable LivingEntity target) {
+      this.ownerUuid = owner.getUUID();
+      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
+      if (target != null && target.isAlive()) {
+         this.targetUuid = target.getUUID();
+         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
+         this.setTarget(target);
+      } else {
+         this.targetUuid = null;
+         this.getPersistentData().remove(TAG_TARGET);
+         this.setTarget(null);
+      }
+   }
+
+   private void initialize(LivingEntity owner, @Nullable LivingEntity target, long expiresAt) {
+      this.ownerUuid = owner.getUUID();
+      this.targetUuid = target == null ? null : target.getUUID();
+      this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
+      if (target != null) {
+         this.getPersistentData().putUUID(TAG_TARGET, target.getUUID());
+         this.setTarget(target);
+      }
+      this.getPersistentData().putLong(TAG_EXPIRES, expiresAt);
+      this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, false);
+      this.setSchool(KendoSchool.TENNEN);
+      this.setProficiency(90);
+      this.equipOkitaLoadout();
+      this.clearPersonalName();
+      this.setHealth(this.getMaxHealth());
+      this.setPersistenceRequired();
    }
 }

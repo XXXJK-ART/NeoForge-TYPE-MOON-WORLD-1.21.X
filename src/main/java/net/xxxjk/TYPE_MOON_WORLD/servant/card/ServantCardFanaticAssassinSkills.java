@@ -165,8 +165,6 @@ public final class ServantCardFanaticAssassinSkills {
       List<LivingEntity> targets = enemiesAround(player, 40.0);
       for (LivingEntity target : targets) {
          target.removeEffect(MobEffects.INVISIBILITY);
-         target.addEffect(new MobEffectInstance(MobEffects.GLOWING,
-            FanaticAssassinRules.NERVES_DURATION, 0, false, false, false));
       }
       List<Integer> ids = targets.stream().map(LivingEntity::getId).toList();
       ModNetwork.sendToPlayer(player,

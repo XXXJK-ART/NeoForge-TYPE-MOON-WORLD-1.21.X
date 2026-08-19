@@ -42,12 +42,14 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private static final double POINT_BLANK_DAMAGE_LENGTH = 3.0;
    private static final int DAMAGE_INTERVAL = 5;
    private static final int BLOCK_DESTROY_PHASE_TICKS = 5;
-   private static final float DAMAGE_PER_PULSE = 4000.0F / (150.0F / DAMAGE_INTERVAL);
+   private static final float DAMAGE_TOTAL = 4000.0F;
+   private static final float DAMAGE_PER_PULSE = DAMAGE_TOTAL / (150.0F / DAMAGE_INTERVAL);
    private static final float CRATER_DAMAGE = 180.0F;
    private static final double GOLDEN_LENGTH = 45.0;
    private static final double GOLDEN_HALF_WIDTH = 4.0;
    private static final double GOLDEN_HALF_HEIGHT = 2.5;
-   private static final float GOLDEN_DAMAGE_PER_PULSE = 300.0F / (30.0F / DAMAGE_INTERVAL);
+   private static final float GOLDEN_DAMAGE_TOTAL = 300.0F;
+   private static final float GOLDEN_DAMAGE_PER_PULSE = GOLDEN_DAMAGE_TOTAL / (30.0F / DAMAGE_INTERVAL);
    private UUID ownerUuid;
    private boolean craterQueued;
    private boolean clashing;
@@ -222,6 +224,11 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
 
    @Override
    public float clashPower() { return this.powerScale(); }
+
+   @Override
+   public float clashBaseDamage() {
+      return (this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_DAMAGE_TOTAL : DAMAGE_TOTAL) * this.powerScale();
+   }
 
    private double beamHalfHeight() {
       double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_HALF_HEIGHT : HALF_HEIGHT;

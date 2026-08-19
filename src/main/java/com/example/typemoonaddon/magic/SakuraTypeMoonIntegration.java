@@ -112,6 +112,7 @@ public final class SakuraTypeMoonIntegration {
 
     private static void initializeMaster(MasterProfileContext context, MasterVariant variant) {
         learn(context, IMAGINARY_STORAGE, 40.0D);
+        grantMasterCardAttributes(context.player());
         if (variant != MasterVariant.STAY_NIGHT) {
             learn(context, IMAGINARY_ABSORPTION, 60.0D);
             learn(context, SHADOW_MATERIALIZATION, 40.0D);
@@ -337,6 +338,10 @@ public final class SakuraTypeMoonIntegration {
         return true;
     }
 
+    public static boolean grantMasterCardAttributes(ServerPlayer player) {
+        return ensureImaginaryAttribute(player) && grantWaterAttribute(player);
+    }
+
     public static boolean assimilateCrestWorm(ServerPlayer player) {
         if (player == null) {
             return false;
@@ -413,47 +418,85 @@ public final class SakuraTypeMoonIntegration {
     }
 
     public static boolean isLearned(ServerPlayer player) {
-        return player != null && SakuraImaginaryStorageService.isLearned(player);
+        return player != null
+                && SakuraImaginaryStorageService.isLearned(player)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isAbsorptionLearned(ServerPlayer player) {
-        return player != null && SakuraImaginaryStorageService.isAbsorptionLearned(player);
+        return player != null
+                && SakuraImaginaryStorageService.isAbsorptionLearned(player)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isShadowMaterializationLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_MATERIALIZATION);
+        return player != null
+                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_MATERIALIZATION)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isBlackMudControlLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(BLACK_MUD_CONTROL);
+        return player != null
+                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(BLACK_MUD_CONTROL)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isSummonBlackMudLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SUMMON_BLACK_MUD);
+        return player != null
+                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SUMMON_BLACK_MUD)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isShadowBindingLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_BINDING);
+        return player != null
+                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_BINDING)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isShadowTransferLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_TRANSFER);
+        return player != null
+                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_TRANSFER)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isShadowArtLearned(ServerPlayer player) {
-        return player != null && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_ART);
+        if (player == null) {
+            return false;
+        }
+        ImaginarySpaceData data = player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+        return data.shadowArtUnlocked()
+                && data.grailErosionFull()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(SHADOW_ART)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isHeroicSpiritDevourerLearned(ServerPlayer player) {
         return player != null
                 && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
-                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(HEROIC_SPIRIT_DEVOURER);
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(HEROIC_SPIRIT_DEVOURER)
+                && hasImaginaryAttribute(player);
     }
 
     public static boolean isForbiddenMagicLearned(ServerPlayer player) {
-        return player != null
-                && player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).forbiddenMagicUnlocked()
-                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(FORBIDDEN_MAGIC);
+        if (player == null) {
+            return false;
+        }
+        ImaginarySpaceData data = player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
+        return data.forbiddenMagicUnlocked()
+                && !data.grailWormAscended()
+                && data.crestWormAssimilated()
+                && SakuraTypeMoonIntegration.registry().knowledge(player).isLearned(FORBIDDEN_MAGIC)
+                && hasImaginaryAttribute(player);
+    }
+
+    private static boolean hasImaginaryAttribute(ServerPlayer player) {
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        return vars.is_magus && vars.player_magic_attributes_imaginary_number;
     }
 
     public static boolean tryConsumeMana(ServerPlayer player, double amount) {

@@ -34,7 +34,12 @@ public final class ArcaneMobilityService {
    private static final String TAG_TOUKO_X = "TypeMoonToukoX";
    private static final String TAG_TOUKO_Y = "TypeMoonToukoY";
    private static final String TAG_TOUKO_Z = "TypeMoonToukoZ";
+   private static final String TAG_TOUKO_START_X = "TypeMoonToukoStartX";
+   private static final String TAG_TOUKO_START_Y = "TypeMoonToukoStartY";
+   private static final String TAG_TOUKO_START_Z = "TypeMoonToukoStartZ";
    private static final String TAG_TOUKO_TICKS = "TypeMoonToukoTicks";
+   private static final String TAG_TOUKO_DURATION = "TypeMoonToukoDuration";
+   private static final String TAG_TOUKO_ARC_HEIGHT = "TypeMoonToukoArcHeight";
    private static final String TAG_TOUKO_OWNER = "TypeMoonToukoOwner";
    private static final String TAG_FLIGHT_ACTIVE = "TypeMoonFlightActive";
    private static final String TAG_FLIGHT_TICKS = "TypeMoonFlightTicks";
@@ -142,11 +147,21 @@ public final class ArcaneMobilityService {
          return false;
       }
       CompoundTag data = caster.getPersistentData();
+      Vec3 start = toukoBodyCenter(caster);
+      double horizontalDistance = Math.sqrt((x - caster.getX()) * (x - caster.getX()) + (z - caster.getZ()) * (z - caster.getZ()));
+      double verticalDistance = Math.abs(y - caster.getY());
+      int duration = Mth.clamp((int)Math.ceil(Math.sqrt(horizontalDistance * horizontalDistance + verticalDistance * verticalDistance) / 3.15), 8, 360);
+      double arcHeight = Mth.clamp(horizontalDistance * 0.12 + verticalDistance * 0.25, 2.4, 28.0);
       data.putBoolean(TAG_TOUKO_ACTIVE, true);
       data.putDouble(TAG_TOUKO_X, x);
       data.putDouble(TAG_TOUKO_Y, y);
       data.putDouble(TAG_TOUKO_Z, z);
+      data.putDouble(TAG_TOUKO_START_X, start.x);
+      data.putDouble(TAG_TOUKO_START_Y, start.y);
+      data.putDouble(TAG_TOUKO_START_Z, start.z);
       data.putInt(TAG_TOUKO_TICKS, 0);
+      data.putInt(TAG_TOUKO_DURATION, duration);
+      data.putDouble(TAG_TOUKO_ARC_HEIGHT, arcHeight);
       data.putUUID(TAG_TOUKO_OWNER, caster.getUUID());
       if (caster instanceof Player player) {
          player.getAbilities().flying = false;
@@ -253,16 +268,29 @@ public final class ArcaneMobilityService {
          return;
       }
       Vec3 target = new Vec3(data.getDouble(TAG_TOUKO_X), data.getDouble(TAG_TOUKO_Y), data.getDouble(TAG_TOUKO_Z));
-      Vec3 current = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0);
-      Vec3 delta = target.subtract(current);
-      double distance = delta.length();
-      if (distance <= 0.75) {
+      Vec3 targetCenter = target.add(0.0, living.getBbHeight() * 0.5, 0.0);
+      Vec3 start = new Vec3(data.getDouble(TAG_TOUKO_START_X), data.getDouble(TAG_TOUKO_START_Y), data.getDouble(TAG_TOUKO_START_Z));
+      if (start.lengthSqr() <= 1.0E-6) {
+         start = toukoBodyCenter(living);
+         data.putDouble(TAG_TOUKO_START_X, start.x);
+         data.putDouble(TAG_TOUKO_START_Y, start.y);
+         data.putDouble(TAG_TOUKO_START_Z, start.z);
+      }
+      int ticks = Math.max(0, data.getInt(TAG_TOUKO_TICKS));
+      int duration = Math.max(1, data.getInt(TAG_TOUKO_DURATION));
+      double t0 = Mth.clamp(ticks / (double)duration, 0.0, 1.0);
+      double t1 = Mth.clamp((ticks + 1) / (double)duration, 0.0, 1.0);
+      Vec3 current = toukoBodyCenter(living);
+      Vec3 expectedCurrent = toukoParabola(start, targetCenter, data.getDouble(TAG_TOUKO_ARC_HEIGHT), t0);
+      if (current.distanceToSqr(expectedCurrent) > 4.0) {
+         current = expectedCurrent;
+      }
+      Vec3 next = toukoParabola(start, targetCenter, data.getDouble(TAG_TOUKO_ARC_HEIGHT), t1);
+      Vec3 step = next.subtract(current);
+      if (t0 >= 1.0 || current.distanceToSqr(targetCenter) <= 0.75 * 0.75) {
          finishTouko(living, true);
          return;
       }
-      double speed = 1.1 + Math.min(2.6, distance * 0.03);
-      Vec3 step = delta.normalize().scale(speed);
-      Vec3 next = current.add(step);
       HitResult blockHit = living.level().clip(new net.minecraft.world.level.ClipContext(
          current, next, net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, living
       ));
@@ -285,10 +313,24 @@ public final class ArcaneMobilityService {
       }
       living.setDeltaMovement(step);
       living.hurtMarked = true;
-      living.setPos(next.x, next.y - living.getBbHeight() * 0.5, next.z);
-      if (!living.level().noCollision(living, box)) {
+      Vec3 nextFeet = next.subtract(0.0, living.getBbHeight() * 0.5, 0.0);
+      AABB nextBox = living.getBoundingBox().move(nextFeet.subtract(living.position())).deflate(0.05);
+      if (!living.level().noCollision(living, nextBox)) {
          finishTouko(living, true);
+         return;
       }
+      living.setPos(nextFeet.x, nextFeet.y, nextFeet.z);
+      data.putInt(TAG_TOUKO_TICKS, ticks + 1);
+   }
+
+   private static Vec3 toukoBodyCenter(LivingEntity living) {
+      return living.position().add(0.0, living.getBbHeight() * 0.5, 0.0);
+   }
+
+   private static Vec3 toukoParabola(Vec3 start, Vec3 target, double arcHeight, double progress) {
+      double t = Mth.clamp(progress, 0.0, 1.0);
+      Vec3 base = start.lerp(target, t);
+      return base.add(0.0, Math.max(0.0, arcHeight) * 4.0 * t * (1.0 - t), 0.0);
    }
 
    private static void damageTouko(LivingEntity caster, Entity hit) {
@@ -318,7 +360,12 @@ public final class ArcaneMobilityService {
       living.getPersistentData().remove(TAG_TOUKO_X);
       living.getPersistentData().remove(TAG_TOUKO_Y);
       living.getPersistentData().remove(TAG_TOUKO_Z);
+      living.getPersistentData().remove(TAG_TOUKO_START_X);
+      living.getPersistentData().remove(TAG_TOUKO_START_Y);
+      living.getPersistentData().remove(TAG_TOUKO_START_Z);
       living.getPersistentData().remove(TAG_TOUKO_TICKS);
+      living.getPersistentData().remove(TAG_TOUKO_DURATION);
+      living.getPersistentData().remove(TAG_TOUKO_ARC_HEIGHT);
       living.getPersistentData().remove(TAG_TOUKO_OWNER);
    }
 

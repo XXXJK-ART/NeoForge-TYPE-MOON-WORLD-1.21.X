@@ -1,0 +1,15 @@
+{
+  "servant_id": "typemoonworld:okita_souji_saber",
+  "actions": [
+    {"slot": 0, "action": "typemoonworld:okita_shukuchi", "translation_key": "skill.typemoonworld.servant_card.okita_shukuchi"},
+    {"slot": 1, "action": "typemoonworld:okita_ichimonji", "translation_key": "skill.typemoonworld.servant_card.okita_ichimonji"},
+    {"slot": 2, "action": "typemoonworld:okita_kaifuu", "translation_key": "skill.typemoonworld.servant_card.okita_kaifuu"},
+    {"slot": 3, "action": "typemoonworld:okita_mind_eye", "translation_key": "skill.typemoonworld.servant_card.okita_mind_eye"},
+    {"slot": 4, "action": "typemoonworld:okita_oath_haori", "translation_key": "skill.typemoonworld.servant_card.okita_oath_haori"},
+    {"slot": 5, "action": "typemoonworld:okita_feigned_retreat", "translation_key": "skill.typemoonworld.servant_card.okita_feigned_retreat"},
+    {"slot": 6, "action": "typemoonworld:okita_stance_break", "translation_key": "skill.typemoonworld.servant_card.okita_stance_break"},
+    {"slot": 7, "action": "typemoonworld:okita_shinsengumi_command", "translation_key": "skill.typemoonworld.servant_card.okita_shinsengumi_command"},
+    {"slot": 8, "action": "typemoonworld:okita_mumyoudan_zuki", "translation_key": "skill.typemoonworld.servant_card.okita_mumyoudan_zuki"},
+    {"slot": 9, "action": "typemoonworld:okita_flag_of_sincerity", "translation_key": "skill.typemoonworld.servant_card.okita_flag_of_sincerity"}
+  ]
+}
