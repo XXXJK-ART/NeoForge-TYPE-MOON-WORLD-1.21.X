@@ -29,7 +29,7 @@
         "horizontal_force": 0.55,
         "vertical_force": 0.02,
         "approach_range": 8.0,
-        "damage_scale": 0.0,
+        "damage_scale": 0.7,
         "interrupt_resistance": 3
       }
     },

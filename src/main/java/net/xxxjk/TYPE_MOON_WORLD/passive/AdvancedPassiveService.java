@@ -132,9 +132,11 @@ public final class AdvancedPassiveService {
    }
 
    public static double effectiveMagicAnalysisProficiency(double stored, PassiveRank partitionedThoughtRank) {
+      stored = Math.max(0.0, Math.min(100.0, stored));
       int n = partitionN(partitionedThoughtRank);
       if (n <= 0) return stored;
-      return stored * (1.0 + n * 0.05);
+      double boosted = stored * (1.0 + n * 0.05);
+      return stored < 75.0 ? Math.min(74.99, boosted) : stored;
    }
 
    public static int lootingBonus(TypeMoonWorldModVariables.PlayerVariables vars) {

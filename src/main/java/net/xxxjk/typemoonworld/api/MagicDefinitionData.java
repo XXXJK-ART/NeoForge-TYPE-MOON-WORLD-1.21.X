@@ -5,6 +5,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JsonOps;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,7 +40,10 @@ public record MagicDefinitionData(
    private static final ResourceLocation INVALID_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "invalid");
    private static final ResourceLocation BASIC = ResourceLocation.fromNamespaceAndPath("typemoonworld", "basic");
    private static final ResourceLocation NONE = ResourceLocation.fromNamespaceAndPath("typemoonworld", "none");
-   public static final Codec<MagicDefinitionData> CODEC = Codec.STRING.xmap(MagicDefinitionData::fromJsonString, MagicDefinitionData::toJsonString);
+   public static final Codec<MagicDefinitionData> CODEC = Codec.PASSTHROUGH.comapFlatMap(
+      MagicDefinitionData::fromDynamic,
+      definition -> new Dynamic<>(JsonOps.INSTANCE, definition.toJson())
+   );
 
    public MagicDefinitionData {
       if (id == null) throw new IllegalArgumentException("id");
@@ -134,6 +140,21 @@ public record MagicDefinitionData(
          return defaults(INVALID_ID);
       }
       return fromJson(JsonParser.parseString(text).getAsJsonObject());
+   }
+
+   private static DataResult<MagicDefinitionData> fromDynamic(Dynamic<?> dynamic) {
+      try {
+         JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
+         if (json.isJsonObject()) {
+            return DataResult.success(fromJson(json.getAsJsonObject()));
+         }
+         if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
+            return DataResult.success(fromJsonString(json.getAsString()));
+         }
+         return DataResult.error(() -> "Expected magic definition object or JSON string");
+      } catch (Exception exception) {
+         return DataResult.error(exception::getMessage);
+      }
    }
 
    public static MagicDefinitionData fromJson(JsonObject json) {

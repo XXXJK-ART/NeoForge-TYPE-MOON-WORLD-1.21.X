@@ -90,7 +90,8 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
       }
       return switch (normalizedId) {
          case "oda_nobunaga" -> 0.800F;
-         case "artoria_pendragon", "okita_souji_saber" -> 0.811F;
+         case "artoria_pendragon" -> 0.811F;
+         case "okita_souji_saber" -> 0.811F;
          case "fanatic_assassin", "medea" -> 0.858F;
          case "nightingale" -> 0.868F;
          case "li_shuwen" -> 0.874F;

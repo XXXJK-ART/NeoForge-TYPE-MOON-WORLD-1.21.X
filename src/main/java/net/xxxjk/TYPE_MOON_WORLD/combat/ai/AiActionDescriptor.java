@@ -71,9 +71,38 @@ public record AiActionDescriptor(
       manaCost = Math.max(0.0, manaCost);
       staminaCost = Math.max(0.0, staminaCost);
       timing = timing == null ? new Timing(0, 1, 0) : timing;
-      threat = threat == null ? ThreatSpec.NONE : threat;
+      threat = normalizeThreat(tags, minimumRange, maximumRange, threat);
       terrainTier = terrainTier == null ? TerrainImpactProfile.Tier.NONE : terrainTier;
       maneuver = maneuver == null ? ManeuverSpec.NONE : maneuver;
+   }
+
+   private static ThreatSpec normalizeThreat(Set<Tag> tags, double minimumRange, double maximumRange, ThreatSpec threat) {
+      if (threat != null && threat.danger() > 0) return threat;
+      Set<Tag> safeTags = tags == null ? Set.of() : tags;
+      CombatThreat.Shape shape = threat == null ? CombatThreat.Shape.POINT : threat.shape();
+      double radius = threat == null ? 0.0 : threat.radius();
+      double length = threat == null ? 0.0 : threat.length();
+      if (shape == CombatThreat.Shape.POINT && radius <= 0.0 && length <= 0.0) {
+         if (safeTags.contains(Tag.AREA)) {
+            shape = CombatThreat.Shape.SPHERE;
+            radius = Math.max(2.0, Math.min(8.0, maximumRange));
+         } else if (safeTags.contains(Tag.PROJECTILE)) {
+            shape = CombatThreat.Shape.LINE;
+            radius = 1.0;
+            length = Math.max(maximumRange, minimumRange);
+         } else {
+            radius = Math.max(1.0, Math.min(3.0, maximumRange));
+         }
+      }
+      int danger = safeTags.contains(Tag.NOBLE_PHANTASM) ? 5
+         : safeTags.contains(Tag.FINISHER) ? 4
+         : safeTags.contains(Tag.CONTROL) || safeTags.contains(Tag.LAUNCHER) ? 3
+         : 2;
+      boolean blockable = threat == null || threat.blockable();
+      boolean dodgeable = threat == null || threat.dodgeable();
+      boolean interruptible = threat == null || threat.interruptible();
+      double collateralRadius = threat == null ? 0.0 : threat.collateralRadius();
+      return new ThreatSpec(shape, radius, length, danger, blockable, dodgeable, interruptible, collateralRadius);
    }
 
    public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON,

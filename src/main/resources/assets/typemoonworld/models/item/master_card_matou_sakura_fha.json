@@ -1,4 +1,4 @@
-﻿{
+{
   "parent": "typemoonworld:item/template/card_3d",
   "textures": {
     "front": "typemoonworld:item/card_faces_3d/master/matou_sakura_fha_card",
