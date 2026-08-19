@@ -362,7 +362,6 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.HOKUSHIN_MANUAL);
                         output.accept(ModItems.TENNEN_MANUAL);
                         output.accept(ModItems.SPARRING_INVITATION);
-                        output.accept(ModItems.SERVANT_CARD_GILLES_DE_RAIS_CASTER);
                         output.accept(ModItems.HOLY_SHROUD);
                         output.accept(ModItems.CLAW_OF_CHAOS);
                         output.accept(ModItems.DRAGON_FANG);
