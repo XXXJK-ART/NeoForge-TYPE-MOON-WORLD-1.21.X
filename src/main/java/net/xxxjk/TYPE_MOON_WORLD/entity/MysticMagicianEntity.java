@@ -1,12 +1,22 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.core.component.DataComponentPredicate;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,6 +39,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -39,10 +56,12 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicCastBridge;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianCombatController;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.Nullable;
 
-public class MysticMagicianEntity extends HumanNpcEntity {
+public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
    private static final EntityDataAccessor<Integer> SKIN_VARIANT = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_PERSONALITY = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> NPC_COMBAT_STYLE = SynchedEntityData.defineId(MysticMagicianEntity.class, EntityDataSerializers.INT);
@@ -72,6 +91,15 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    private static final String TAG_SWORD_TYPE = "TypeMoonMagicianSwordType";
    private static final String TAG_MAGICIAN_RANK = "TypeMoonMagicianRank";
    private static final String TAG_BRAND_COLOR = "TypeMoonMagicianBrandColor";
+   private static final String TAG_TRADE_KEYS = "TypeMoonMagicianTradeKeys";
+   private static final String[] TRADE_MAGIC_IDS = new String[]{
+      "detection", "aerial_stasis", "aerial_ascent", "magic_bullet", "reinforcement", "projection", "structural_analysis",
+      "healing_magic", "gander", "fire_magic", "water_magic", "wind_magic", "earth_magic", "binding_magic", "suggestion_magic",
+      "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array", "contract_magecraft", "touko_travel",
+      "spiritual_healing", "magic_analysis", "storage", "time_alter", "jewel_magic_shoot", "jewel_magic_release",
+      "jewel_machine_gun", "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "ruby_flame_sword",
+      "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "spiritron_cannon"
+   };
    public static final int SKIN_VARIANT_COUNT = 6;
    public static final int MELEE_POSE_NONE = 0;
    public static final int MELEE_POSE_PUNCH = 1;
@@ -92,6 +120,11 @@ public class MysticMagicianEntity extends HumanNpcEntity {
    };
    private MysticMagicianRank magicianRank;
    private MysticMagicianRank.BrandColor brandColor;
+   @Nullable
+   private Player tradingPlayer;
+   @Nullable
+   private MerchantOffers offers;
+   private final List<String> tradeKeys = new ArrayList<>();
    private static final String[] EUROPEAN_GIVEN_NAMES = new String[]{
       "Alexander",
       "Benjamin",
@@ -590,7 +623,7 @@ public class MysticMagicianEntity extends HumanNpcEntity {
          this.setCustomNameVisible(true);
       }
 
-      this.setCombatPersonality(NpcCombatPersonality.random(this.random));
+      this.setCombatPersonality(spawnType == MobSpawnType.CONVERSION ? NpcCombatPersonality.GOOD : NpcCombatPersonality.random(this.random));
       this.setCombatTemperament(NpcCombatTemperament.random(this.random));
       NpcMagicCastBridge.onSpawnInitialized(this);
       initializeMartialLoadout();
@@ -617,6 +650,11 @@ public class MysticMagicianEntity extends HumanNpcEntity {
       compound.putBoolean(TAG_DUAL_SWORD, getPersistentData().getBoolean(TAG_DUAL_SWORD));
       compound.putInt(TAG_SWORD_TYPE, getPersistentData().getInt(TAG_SWORD_TYPE));
       compound.putBoolean("TypeMoonMagicianRangedWeaponMode", isRangedWeaponMode());
+      ListTag tradeKeyTags = new ListTag();
+      for (String key : this.tradeKeys) {
+         tradeKeyTags.add(StringTag.valueOf(key));
+      }
+      compound.put(TAG_TRADE_KEYS, tradeKeyTags);
    }
 
    public void readAdditionalSaveData(CompoundTag compound) {
@@ -650,6 +688,223 @@ public class MysticMagicianEntity extends HumanNpcEntity {
          getPersistentData().putInt(TAG_SWORD_TYPE, compound.getInt(TAG_SWORD_TYPE));
          setRangedWeaponMode(compound.getBoolean("TypeMoonMagicianRangedWeaponMode"));
       }
+      this.tradeKeys.clear();
+      if (compound.contains(TAG_TRADE_KEYS, Tag.TAG_LIST)) {
+         ListTag tradeKeyTags = compound.getList(TAG_TRADE_KEYS, Tag.TAG_STRING);
+         for (int i = 0; i < tradeKeyTags.size(); i++) {
+            String key = tradeKeyTags.getString(i);
+            if (!key.isBlank() && !this.tradeKeys.contains(key)) {
+               this.tradeKeys.add(key);
+            }
+         }
+      }
+      this.offers = null;
+   }
+
+   @Override
+   public InteractionResult mobInteract(Player player, InteractionHand hand) {
+      if (player != null && !this.level().isClientSide() && !player.isSpectator() && this.canTradeWithPlayer(player)) {
+         this.setTradingPlayer(player);
+         MerchantOffers offers = this.getOffers();
+         if (!offers.isEmpty()) {
+            this.openTradingScreen(player, this.getDisplayName(), this.getMagicianTradeLevel());
+            return InteractionResult.CONSUME;
+         }
+      }
+      return super.mobInteract(player, hand);
+   }
+
+   @Override
+   public void setTradingPlayer(@Nullable Player tradingPlayer) {
+      this.tradingPlayer = tradingPlayer;
+   }
+
+   @Override
+   public Player getTradingPlayer() {
+      return this.tradingPlayer;
+   }
+
+   @Override
+   public MerchantOffers getOffers() {
+      if (this.level().isClientSide()) {
+         throw new IllegalStateException("Cannot load Mystic Magician offers on the client");
+      }
+      if (this.offers == null) {
+         this.offers = new MerchantOffers();
+         rebuildOffers();
+      }
+      ensureTradePool();
+      return this.offers;
+   }
+
+   @Override
+   public void overrideOffers(MerchantOffers offers) {
+      this.offers = offers == null ? new MerchantOffers() : offers;
+   }
+
+   @Override
+   public void notifyTrade(MerchantOffer offer) {
+      if (offer == null) {
+         return;
+      }
+      offer.increaseUses();
+      this.ambientSoundTime = -this.getAmbientSoundInterval();
+   }
+
+   @Override
+   public void notifyTradeUpdated(ItemStack stack) {
+      if (!this.level().isClientSide() && this.ambientSoundTime > -this.getAmbientSoundInterval() + 20) {
+         this.ambientSoundTime = -this.getAmbientSoundInterval();
+         this.playSound(stack.isEmpty() ? SoundEvents.VILLAGER_NO : SoundEvents.VILLAGER_YES, 0.8F, 1.0F);
+      }
+   }
+
+   @Override
+   public int getVillagerXp() {
+      return 0;
+   }
+
+   @Override
+   public void overrideXp(int xp) {
+   }
+
+   @Override
+   public boolean showProgressBar() {
+      return false;
+   }
+
+   @Override
+   public SoundEvent getNotifyTradeSound() {
+      return SoundEvents.VILLAGER_YES;
+   }
+
+   @Override
+   public boolean canRestock() {
+      return false;
+   }
+
+   @Override
+   public boolean isClientSide() {
+      return this.level().isClientSide();
+   }
+
+   private void rebuildOffers() {
+      this.offers.clear();
+      for (String key : this.tradeKeys) {
+         MerchantOffer offer = this.createOfferFromKey(key);
+         if (offer != null) {
+            this.offers.add(offer);
+         }
+      }
+   }
+
+   private void ensureTradePool() {
+      if (this.offers == null) {
+         this.offers = new MerchantOffers();
+      }
+      int desired = this.desiredTradeCount();
+      this.tradeKeys.removeIf(key -> !key.startsWith("page:") || this.createOfferFromKey(key) == null);
+      while (this.tradeKeys.size() > desired) {
+         this.tradeKeys.remove(this.tradeKeys.size() - 1);
+      }
+      while (this.tradeKeys.size() < desired) {
+         String key = this.createNextTradeKey();
+         if (key == null) {
+            break;
+         }
+         this.tradeKeys.add(key);
+         MerchantOffer offer = this.createOfferFromKey(key);
+         if (offer != null) {
+            this.offers.add(offer);
+         }
+      }
+      if (this.offers.size() != this.tradeKeys.size()) {
+         rebuildOffers();
+      }
+   }
+
+   private int desiredTradeCount() {
+      return switch (this.getMagicianRank()) {
+         case FRAME -> 2;
+         case UMNOS -> 3;
+         case ADEPT -> 4;
+         case FES, PRIDE -> 5;
+         case BRAND -> 6;
+         case GRAND -> 7;
+      };
+   }
+
+   private int getMagicianTradeLevel() {
+      return this.desiredTradeCount();
+   }
+
+   private boolean canTradeWithPlayer(Player player) {
+      return player != null && this.getCombatPersonality() == NpcCombatPersonality.GOOD;
+   }
+
+   private List<String> getTradeMagicPool() {
+      List<String> pool = new ArrayList<>();
+      TypeMoonWorldModVariables.PlayerVariables vars = this.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      List<String> learned = vars == null ? List.of() : vars.learned_magics;
+      List<String> source = learned.isEmpty() ? List.of(TRADE_MAGIC_IDS) : learned;
+      for (String magicId : source) {
+         if (this.isTradeMagicAvailable(magicId) && !pool.contains(magicId)) {
+            pool.add(magicId);
+         }
+      }
+      return pool;
+   }
+
+   private boolean isTradeMagicAvailable(String magicId) {
+      if (magicId == null || magicId.isBlank()) {
+         return false;
+      }
+      ResourceLocation itemId = ResourceLocation.fromNamespaceAndPath("typemoonworld", MagicLearningStrategy.pageItemPath(magicId));
+      return BuiltInRegistries.ITEM.get(itemId) != Items.AIR;
+   }
+
+   private String createNextTradeKey() {
+      List<String> candidates = this.buildPageTradeCandidates();
+      if (candidates.isEmpty()) {
+         return null;
+      }
+      return candidates.get(this.random.nextInt(candidates.size()));
+   }
+
+   private List<String> buildPageTradeCandidates() {
+      List<String> candidates = new ArrayList<>();
+      for (String magicId : this.getTradeMagicPool()) {
+         if (!this.tradeKeys.contains("page:" + magicId)) {
+            candidates.add("page:" + magicId);
+         }
+      }
+      return candidates;
+   }
+
+   private MerchantOffer createOfferFromKey(String key) {
+      if (key == null || key.isBlank()) {
+         return null;
+      }
+      if (key.startsWith("page:")) {
+         return this.createPageOffer(key.substring("page:".length()));
+      }
+      return null;
+   }
+
+   private MerchantOffer createPageOffer(String magicId) {
+      if (magicId == null || magicId.isBlank()) {
+         return null;
+      }
+      Item pageItem = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", MagicLearningStrategy.pageItemPath(magicId)));
+      if (pageItem == Items.AIR) {
+         return null;
+      }
+      int emeraldCost = Math.max(3, Math.min(64, 2 + (int)Math.ceil(MagicLearningStrategy.complexity(magicId) / 4.0)));
+      return new MerchantOffer(cost(new ItemStack(Items.EMERALD, emeraldCost)), new ItemStack(pageItem), 8, 2, 0.05F);
+   }
+
+   private static ItemCost cost(ItemStack stack) {
+      return new ItemCost(stack.getItemHolder(), stack.getCount(), DataComponentPredicate.EMPTY, stack);
    }
 
    protected void customServerAiStep() {

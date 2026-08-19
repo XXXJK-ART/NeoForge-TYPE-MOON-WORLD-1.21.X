@@ -40,6 +40,7 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing;
          case "baptism_rite" -> vars.proficiency_baptism_rite;
+         case "theology", "black_key_making", "iron_armor_action", "cremation_rite" -> vars.magic_proficiencies.getOrDefault(normalizeKey(id), 0.0);
          case "mana_burst" -> vars.magic_proficiencies.getOrDefault("mana_burst", 0.0);
          default -> vars.magic_proficiencies.getOrDefault(id, 0.0);
       };
@@ -93,9 +94,14 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter = value;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing = value;
          case "baptism_rite" -> vars.proficiency_baptism_rite = value;
+         case "theology", "black_key_making", "iron_armor_action", "cremation_rite" -> vars.magic_proficiencies.put(normalizeKey(id), value);
          case "mana_burst" -> vars.magic_proficiencies.put("mana_burst", value);
          default -> vars.magic_proficiencies.put(id, value);
       }
+   }
+
+   private static String normalizeKey(String id) {
+      return MagicLearningStrategy.normalizeDisplayId(id);
    }
 
    public static double add(Entity entity, String id, double baseGain) {

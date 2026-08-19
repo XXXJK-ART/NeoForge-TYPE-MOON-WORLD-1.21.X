@@ -105,6 +105,7 @@ public final class MagicAnalysisService {
       if (success) {
          if (!vars.learned_magics.contains(advanced.magicId)) {
             vars.learned_magics.add(advanced.magicId);
+            MagicLearningService.applyImmediateGrantBonuses(vars, advanced.magicId);
             MagicLearningService.awardAnalysisKnowledge(vars, advanced.magicId);
          }
          MagicProficiencyService.add(vars, "magic_analysis", Math.max(0.05, 1.0 - advanced.complexity / 100.0));

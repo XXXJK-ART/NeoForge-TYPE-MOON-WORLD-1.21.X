@@ -993,7 +993,10 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of(
+         "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
+         "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+      );
       private transient boolean fullSyncSnapshotSent = false;
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;

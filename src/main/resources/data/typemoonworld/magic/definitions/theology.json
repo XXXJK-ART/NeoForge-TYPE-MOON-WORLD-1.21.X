@@ -1,0 +1,19 @@
+{
+  "id": "typemoonworld:theology",
+  "name_key": "magic.typemoonworld.theology.name",
+  "category": "typemoonworld:church",
+  "school": "typemoonworld:church",
+  "complexity": 20,
+  "chant_segments": 1,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": true,
+  "wheel_selectable": false,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "knowledge_only": true,
+  "copyable": true,
+  "npc_global_cooldown": 0,
+  "npc_cooldown": 0
+}

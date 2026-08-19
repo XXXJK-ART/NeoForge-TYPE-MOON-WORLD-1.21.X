@@ -62,6 +62,9 @@ public class ModBlocks {
    public static final DeferredBlock<Block> CINNABAR_ORE = registerBlock(
       "cinnabar_ore", () -> new DropExperienceBlock(UniformInt.of(1, 3), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
    );
+   public static final DeferredBlock<Block> DEEPSLATE_CINNABAR_ORE = registerBlock(
+      "deepslate_cinnabar_ore", () -> new DropExperienceBlock(UniformInt.of(1, 3), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
+   );
    public static final DeferredBlock<Block> CINNABAR_BLOCK = registerBlock(
       "cinnabar_block", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK).strength(4.0F).requiresCorrectToolForDrops())
    );
@@ -77,6 +80,9 @@ public class ModBlocks {
    public static final DeferredBlock<Block> EMERALD_MINE = registerBlock(
       "emerald_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
    );
+   public static final DeferredBlock<Block> DEEPSLATE_EMERALD_MINE = registerBlock(
+      "deepslate_emerald_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
+   );
    public static final DeferredBlock<Block> RUBY_BLOCK = registerBlock(
       "ruby_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
    );
@@ -88,6 +94,9 @@ public class ModBlocks {
    );
    public static final DeferredBlock<Block> RUBY_MINE = registerBlock(
       "ruby_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> DEEPSLATE_RUBY_MINE = registerBlock(
+      "deepslate_ruby_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
    );
    public static final DeferredBlock<Block> SAPPHIRE_BLOCK = registerBlock(
       "sapphire_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
@@ -101,6 +110,9 @@ public class ModBlocks {
    public static final DeferredBlock<Block> SAPPHIRE_MINE = registerBlock(
       "sapphire_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
    );
+   public static final DeferredBlock<Block> DEEPSLATE_SAPPHIRE_MINE = registerBlock(
+      "deepslate_sapphire_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
+   );
    public static final DeferredBlock<Block> TOPAZ_BLOCK = registerBlock(
       "topaz_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
    );
@@ -112,6 +124,9 @@ public class ModBlocks {
    );
    public static final DeferredBlock<Block> TOPAZ_MINE = registerBlock(
       "topaz_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> DEEPSLATE_TOPAZ_MINE = registerBlock(
+      "deepslate_topaz_mine", () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
    );
    public static final DeferredBlock<Block> WHITE_GEMSTONE_BLOCK = registerBlock(
       "white_gemstone_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
@@ -126,6 +141,10 @@ public class ModBlocks {
       "white_gemstone_mine",
       () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
    );
+   public static final DeferredBlock<Block> DEEPSLATE_WHITE_GEMSTONE_MINE = registerBlock(
+      "deepslate_white_gemstone_mine",
+      () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
+   );
    public static final DeferredBlock<Block> CYAN_GEMSTONE_BLOCK = registerBlock(
       "cyan_gemstone_block", () -> new Block(Properties.of().strength(4.0F).requiresCorrectToolForDrops().sound(SoundType.AMETHYST).lightLevel(s -> 7))
    );
@@ -138,6 +157,10 @@ public class ModBlocks {
    public static final DeferredBlock<Block> CYAN_GEMSTONE_MINE = registerBlock(
       "cyan_gemstone_mine",
       () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.of().strength(3.0F).requiresCorrectToolForDrops().sound(SoundType.STONE))
+   );
+   public static final DeferredBlock<Block> DEEPSLATE_CYAN_GEMSTONE_MINE = registerBlock(
+      "deepslate_cyan_gemstone_mine",
+      () -> new DropExperienceBlock(UniformInt.of(2, 4), Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DEEPSLATE).strength(4.5F).requiresCorrectToolForDrops().sound(SoundType.DEEPSLATE))
    );
    public static final DeferredBlock<Block> GREEN_TRANSPARENT_BLOCK = registerBlock(
       "green_transparent_block",

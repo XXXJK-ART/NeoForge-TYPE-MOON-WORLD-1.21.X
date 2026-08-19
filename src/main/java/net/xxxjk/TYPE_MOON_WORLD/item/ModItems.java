@@ -816,14 +816,22 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "baptism_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_MAKING = ITEMS.register("magic_book_black_key_making",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, "theology", "black_key_making"));
+    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_MAKING = ITEMS.register("magic_page_black_key_making",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "black_key_making"));
+    public static final DeferredItem<Item> MAGIC_BOOK_THEOLOGY = ITEMS.register("magic_book_theology",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, true, (String)null, "theology"));
+    public static final DeferredItem<Item> MAGIC_PAGE_THEOLOGY = ITEMS.register("magic_page_theology",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "theology"));
+    public static final DeferredItem<Item> MAGIC_PAGE_IRON_ARMOR_ACTION = ITEMS.register("magic_page_iron_armor_action",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "iron_armor_action"));
+    public static final DeferredItem<Item> MAGIC_PAGE_CREMATION_RITE = ITEMS.register("magic_page_cremation_rite",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "cremation_rite"));
     public static final DeferredItem<Item> PARTITIONED_THOUGHT_FRAGMENT = ITEMS.register("partitioned_thought_fragment",
             () -> new PartitionedThoughtFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SELF_GEAS_SCROLL = ITEMS.register("self_geas_scroll",
             () -> new SelfGeasScrollItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
-    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
-    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",
-             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "black_key_fire_engraving"));
     public static final DeferredItem<Item> MAGIC_BOOK_STIGMA = ITEMS.register("magic_book_stigma",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "stigma"));
     public static final DeferredItem<Item> MAGIC_PAGE_STIGMA = ITEMS.register("magic_page_stigma",

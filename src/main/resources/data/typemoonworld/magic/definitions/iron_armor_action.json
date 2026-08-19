@@ -1,0 +1,21 @@
+{
+  "id": "typemoonworld:iron_armor_action",
+  "name_key": "magic.typemoonworld.iron_armor_action.name",
+  "category": "typemoonworld:church",
+  "school": "typemoonworld:church",
+  "complexity": 65,
+  "chant_segments": 3,
+  "mana_cost": 0.0,
+  "sustained_mana_cost": 0.0,
+  "cooldown_ticks": 6,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "knowledge_only": false,
+  "copyable": true,
+  "npc_global_cooldown": 0,
+  "npc_cooldown": 0,
+  "prerequisite_magic": "typemoonworld:theology",
+  "prerequisite_proficiency": 100.0
+}

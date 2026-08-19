@@ -64,8 +64,11 @@ public class TypeMoonCommands {
    private static final String EARTH_MAGIC_ID = "earth_magic";
    private static final String TIME_ALTER_MAGIC_ID = "time_alter";
    private static final String SPIRITUAL_HEALING_MAGIC_ID = "spiritual_healing";
+   private static final String THEOLOGY_MAGIC_ID = "theology";
+   private static final String BLACK_KEY_MAKING_MAGIC_ID = "black_key_making";
+   private static final String IRON_ARMOR_ACTION_MAGIC_ID = "iron_armor_action";
+   private static final String CREMATION_RITE_MAGIC_ID = "cremation_rite";
    private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
-   private static final String BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID = "black_key_fire_engraving";
    private static final String STIGMA_MAGIC_ID = "stigma";
    private static final String MANA_BURST_MAGIC_ID = "mana_burst";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
@@ -108,6 +111,10 @@ public class TypeMoonCommands {
       "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
+      THEOLOGY_MAGIC_ID,
+      BLACK_KEY_MAKING_MAGIC_ID,
+      IRON_ARMOR_ACTION_MAGIC_ID,
+      CREMATION_RITE_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
       MANA_BURST_MAGIC_ID,
       "bajiquan",
@@ -155,9 +162,12 @@ public class TypeMoonCommands {
       "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
+      THEOLOGY_MAGIC_ID,
+      BLACK_KEY_MAKING_MAGIC_ID,
+      IRON_ARMOR_ACTION_MAGIC_ID,
+      CREMATION_RITE_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
       MANA_BURST_MAGIC_ID,
-      BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
       STIGMA_MAGIC_ID,
       "absorption",
       "airflow_blade",
@@ -1406,6 +1416,12 @@ public class TypeMoonCommands {
                break;
             case "spiritual_healing":
                vars.proficiency_spiritual_healing = value;
+               break;
+            case THEOLOGY_MAGIC_ID:
+            case BLACK_KEY_MAKING_MAGIC_ID:
+            case IRON_ARMOR_ACTION_MAGIC_ID:
+            case CREMATION_RITE_MAGIC_ID:
+               MagicProficiencyService.set(vars, type, value);
                break;
             case "baptism_rite":
                vars.proficiency_baptism_rite = value;

@@ -23,6 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 
 public final class PassiveService {
    public static final String DIVINITY = "divinity";
@@ -40,7 +41,8 @@ public final class PassiveService {
       HIGH_SPEED_INCANTATION, HIGH_SPEED_THINKING, HIGH_SPEED_DIVINE_WORDS, PARTITIONED_THOUGHT, GOLDEN_RULE);
    private static final ResourceLocation DIVINITY_HEALTH_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_health");
    private static final ResourceLocation DIVINITY_ATTACK_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "passive_divinity_attack");
-   private static final String CLAIRVOYANCE_NIGHT_VISION_TAG = "TypeMoonPassiveClairvoyanceNightVision";
+   private static final int CLAIRVOYANCE_NIGHT_VISION_DURATION = 1200;
+   private static final int CLAIRVOYANCE_NIGHT_VISION_REFRESH_THRESHOLD = 600;
    private static final String EFFECTS_SUSPENDED_TAG = "TypeMoonPassiveEffectsSuspended";
 
    private PassiveService() {
@@ -101,6 +103,10 @@ public final class PassiveService {
 
    public static void tick(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (player.isSpectator()) {
+         clearClairvoyanceNightVision(player, false);
+         return;
+      }
       if (effectsSuppressed(vars)) {
          suspendEffects(player);
          return;
@@ -133,20 +139,20 @@ public final class PassiveService {
    private static void refreshClairvoyanceNightVision(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!has(vars, CLAIRVOYANCE)) return;
       MobEffectInstance current = player.getEffect(MobEffects.NIGHT_VISION);
-      if (current == null || current.getDuration() < 120) {
-         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 240, 0, true, false, false));
-         player.getPersistentData().putBoolean(CLAIRVOYANCE_NIGHT_VISION_TAG, true);
+      if (current == null || current.getDuration() < CLAIRVOYANCE_NIGHT_VISION_REFRESH_THRESHOLD) {
+         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, CLAIRVOYANCE_NIGHT_VISION_DURATION, 0, true, false, false));
+         player.getPersistentData().putBoolean(NightVisionEffectSource.PLAYER_CLAIRVOYANCE, true);
       }
    }
 
    private static void clearClairvoyanceNightVision(ServerPlayer player, boolean clearLegacyHiddenEffect) {
-      boolean managedEffect = player.getPersistentData().getBoolean(CLAIRVOYANCE_NIGHT_VISION_TAG);
+      boolean managedEffect = player.getPersistentData().getBoolean(NightVisionEffectSource.PLAYER_CLAIRVOYANCE);
       if (!managedEffect && !clearLegacyHiddenEffect) return;
       MobEffectInstance current = player.getEffect(MobEffects.NIGHT_VISION);
-      if (current != null && current.isAmbient() && !current.isVisible() && !current.showIcon()) {
+      if (current != null && !current.isVisible() && !current.showIcon() && current.getDuration() <= CLAIRVOYANCE_NIGHT_VISION_DURATION) {
          player.removeEffect(MobEffects.NIGHT_VISION);
       }
-      player.getPersistentData().remove(CLAIRVOYANCE_NIGHT_VISION_TAG);
+      player.getPersistentData().remove(NightVisionEffectSource.PLAYER_CLAIRVOYANCE);
    }
 
    public static void reconcileAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

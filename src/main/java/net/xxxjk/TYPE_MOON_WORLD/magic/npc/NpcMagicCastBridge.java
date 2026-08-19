@@ -80,6 +80,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
@@ -1531,7 +1532,7 @@ public final class NpcMagicCastBridge {
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH);
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY);
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT);
-         npc.removeEffect(MobEffects.NIGHT_VISION);
+         NightVisionEffectSource.clearHiddenIfTagged(npc, NightVisionEffectSource.NPC_REINFORCEMENT_SIGHT, 600);
          npc.removeEffect(MobEffects.DAMAGE_BOOST);
          npc.removeEffect(MobEffects.MOVEMENT_SPEED);
          npc.removeEffect(MobEffects.DAMAGE_RESISTANCE);
@@ -4867,6 +4868,7 @@ public final class NpcMagicCastBridge {
       caster.addEffect(effect);
       if (extraEffect != null) {
          caster.addEffect(extraEffect);
+         NightVisionEffectSource.mark(caster, NightVisionEffectSource.NPC_REINFORCEMENT_SIGHT);
       }
 
       TypeMoonWorldModVariables.ReinforcementData data = (TypeMoonWorldModVariables.ReinforcementData)caster.getData(

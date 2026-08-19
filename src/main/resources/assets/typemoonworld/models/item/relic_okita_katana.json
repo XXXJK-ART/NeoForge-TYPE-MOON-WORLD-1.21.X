@@ -1,6 +1,3 @@
 {
-  "parent": "builtin/entity",
-  "textures": {
-    "particle": "typemoonworld:item/kiku_ichimonji_norimune"
-  }
+  "parent": "typemoonworld:item/katana"
 }

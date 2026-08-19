@@ -19,7 +19,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_TALENT = "talent";
    public static final String CATEGORY_IMAGINARY = "imaginary";
    public static final String CATEGORY_SOLOMON = "solomon";
-   private static final Set<String> CHURCH_MAGICS = Set.of("baptism_rite", "black_key_fire_engraving", "stigma");
+   private static final Set<String> CHURCH_MAGICS = Set.of("theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma");
    private static final Set<String> IMAGINARY_MAGICS = Set.of(
       "absorption", "storage", "imaginary_displacement", "imaginary_dive", "imaginary_space"
    );
@@ -27,7 +27,7 @@ public final class MagicDisplayMetadata {
       "andrasias", "andrephius", "antores", "demon_god_gaze", "kimaris", "nega_summon", "orias", "storm", "zagan"
    );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
-      "baptism_rite", "black_key_fire_engraving", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+      "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
    );
 
    private MagicDisplayMetadata() {

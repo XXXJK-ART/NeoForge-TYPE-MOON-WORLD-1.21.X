@@ -1,10 +1,15 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -91,10 +96,34 @@ public class MagicScrollItem extends Item {
         return InteractionResultHolder.pass(stack);
     }
 
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        ItemStack stack = context.getItemInHand();
+        if (!isTheologyBook()) {
+            return super.useOn(context);
+        }
+        Level level = context.getLevel();
+        BlockState state = level.getBlockState(context.getClickedPos());
+        if (!state.is(Blocks.LECTERN)) {
+            return super.useOn(context);
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        return LecternBlock.tryPlaceBook(context.getPlayer(), level, context.getClickedPos(), state, stack)
+            ? InteractionResult.CONSUME
+            : InteractionResult.FAIL;
+    }
+
     private boolean isReusableBook() {
         var key = BuiltInRegistries.ITEM.getKey(this);
         String path = key == null ? "" : key.getPath();
         return path.startsWith("magic_book_") || path.startsWith("magic_scroll_") && !path.endsWith("_broken");
+    }
+
+    private boolean isTheologyBook() {
+        var key = BuiltInRegistries.ITEM.getKey(this);
+        return key != null && "magic_book_theology".equals(key.getPath());
     }
 
     @Override

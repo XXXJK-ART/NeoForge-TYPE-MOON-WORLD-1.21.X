@@ -47,6 +47,8 @@ public final class ArcaneMobilityService {
    private static final int MODE_NONE = 0;
    private static final int MODE_STASIS = 1;
    private static final int MODE_ASCENT = 2;
+   private static final double AERIAL_ASCENT_ACTIVATION_COST = 20.0;
+   private static final double FLIGHT_ACTIVATION_COST = 60.0;
 
    private ArcaneMobilityService() {
    }
@@ -101,9 +103,13 @@ public final class ArcaneMobilityService {
          data.putDouble(TAG_AERIAL_START_Y, target.getY());
          data.putDouble(TAG_AERIAL_MAX_HEIGHT, Math.min(5.0, 1.0 + proficiency / 25.0));
          data.putInt(TAG_AERIAL_TICKS, 0);
+         enterAerialStasis(target, data, caster);
          return true;
       }
       if (!isAirborne(target) && target != caster) {
+         return false;
+      }
+      if (!consumeActivationMana(caster, vars, AERIAL_ASCENT_ACTIVATION_COST)) {
          return false;
       }
       data.putInt(TAG_AERIAL_MODE, MODE_ASCENT);
@@ -128,6 +134,9 @@ public final class ArcaneMobilityService {
          clearFlight(player);
          return true;
       }
+      if (!consumeActivationMana(caster, vars, FLIGHT_ACTIVATION_COST)) {
+         return false;
+      }
       data.putBoolean(TAG_FLIGHT_ACTIVE, true);
       data.putInt(TAG_FLIGHT_TICKS, flightDurationTicks(vars, proficiency));
       player.getAbilities().mayfly = true;
@@ -138,6 +147,9 @@ public final class ArcaneMobilityService {
 
    public static boolean startToukoTravel(LivingEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency, CompoundTag payload) {
       if (caster == null || payload == null || !(payload.contains("x") && payload.contains("y") && payload.contains("z"))) {
+         if (caster instanceof Player player) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.touko_travel.not_configured"), true);
+         }
          return false;
       }
       double x = payload.getDouble("x");
@@ -187,15 +199,14 @@ public final class ArcaneMobilityService {
          return;
       }
       if (mode == MODE_STASIS) {
-         if (distanceToGround(living, 5) > 5) {
+         if (living.onGround() || living.isInWaterOrBubble() || living.isSwimming()) {
             clearAerial(living);
             return;
          }
-         if (living.horizontalCollision || living.getDeltaMovement().horizontalDistanceSqr() > 0.02) {
-            clearAerial(living);
-            return;
-         }
+         living.setNoGravity(true);
+         living.setDeltaMovement(0.0, Math.max(0.0, living.getDeltaMovement().y), 0.0);
          living.setDeltaMovement(0.0, 0.0, 0.0);
+         living.fallDistance = 0.0F;
          living.hurtMarked = true;
          return;
       }
@@ -204,7 +215,7 @@ public final class ArcaneMobilityService {
          double maxHeight = Math.max(1.0, data.getDouble(TAG_AERIAL_MAX_HEIGHT));
          double climbed = living.getY() - startY;
          if (climbed >= maxHeight) {
-            data.putInt(TAG_AERIAL_MODE, MODE_STASIS);
+            enterAerialStasis(living, data, resolveSustainedCaster(living));
             return;
          }
          if (living.horizontalCollision || living.getDeltaMovement().horizontalDistanceSqr() > 0.08) {
@@ -213,6 +224,7 @@ public final class ArcaneMobilityService {
          }
          double upward = 0.09 + maxHeight * 0.03;
          living.setDeltaMovement(living.getDeltaMovement().x, Math.max(living.getDeltaMovement().y, upward), living.getDeltaMovement().z);
+         living.setNoGravity(true);
          living.hurtMarked = true;
       }
    }
@@ -348,6 +360,7 @@ public final class ArcaneMobilityService {
    }
 
    private static void clearAerial(LivingEntity living) {
+      living.setNoGravity(false);
       living.getPersistentData().remove(TAG_AERIAL_MODE);
       living.getPersistentData().remove(TAG_AERIAL_START_Y);
       living.getPersistentData().remove(TAG_AERIAL_MAX_HEIGHT);
@@ -395,6 +408,20 @@ public final class ArcaneMobilityService {
       }
       vars.player_mana = Math.max(0.0, vars.player_mana - perTick);
       vars.syncMana(caster);
+      return true;
+   }
+
+   private static boolean consumeActivationMana(LivingEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, double cost) {
+      if (cost <= 1.0E-6) {
+         return true;
+      }
+      if (vars == null || vars.player_mana + 1.0E-6 < cost) {
+         return false;
+      }
+      vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+      if (caster != null) {
+         vars.syncMana(caster);
+      }
       return true;
    }
 
@@ -457,5 +484,18 @@ public final class ArcaneMobilityService {
          return 20 * 20;
       }
       return 80 + (int)Math.round(p * 3.0);
+   }
+
+   private static void enterAerialStasis(LivingEntity living, CompoundTag data, LivingEntity caster) {
+      data.putInt(TAG_AERIAL_MODE, MODE_STASIS);
+      data.putDouble(TAG_AERIAL_START_Y, living.getY());
+      data.putInt(TAG_AERIAL_TICKS, 0);
+      if (caster != null) {
+         data.putUUID(TAG_AERIAL_CASTER, caster.getUUID());
+      }
+      living.setNoGravity(true);
+      living.setDeltaMovement(Vec3.ZERO);
+      living.fallDistance = 0.0F;
+      living.hurtMarked = true;
    }
 }

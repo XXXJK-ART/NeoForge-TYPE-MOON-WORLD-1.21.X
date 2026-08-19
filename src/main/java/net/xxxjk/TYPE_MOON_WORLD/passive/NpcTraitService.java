@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.passive;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -15,16 +17,20 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanApprenticeEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
@@ -39,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.LivingDeadEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NightKinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.MysticMagicianRank;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -46,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 
 /** Rare one-time passive/talent seeding and runtime support for non-servant Type-Moon NPCs. */
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
@@ -53,7 +61,8 @@ public final class NpcTraitService {
    private static final String TAG_INIT = "TypeMoonNpcTraitsInitV1";
    private static final String TAG_KIND = "TypeMoonNpcTraitsKind";
    private static final String TAG_NEXT_MONSTROUS_STRENGTH = "TypeMoonNpcTalentMonstrousStrengthNext";
-   private static final String TAG_CLAIRVOYANCE_NIGHT_VISION = "TypeMoonNpcPassiveClairvoyanceNightVision";
+   private static final int CLAIRVOYANCE_NIGHT_VISION_DURATION = 1200;
+   private static final int CLAIRVOYANCE_NIGHT_VISION_REFRESH_THRESHOLD = 600;
 
    private static final String[] MAGIC_PASSIVES = new String[]{
       PassiveService.CLAIRVOYANCE,
@@ -99,6 +108,9 @@ public final class NpcTraitService {
 
    @SubscribeEvent
    public static void onEntityTick(EntityTickEvent.Post event) {
+      if (event.getEntity() instanceof Villager villager && tryConvertResearchVillager(villager)) {
+         return;
+      }
       if (!(event.getEntity() instanceof LivingEntity living) || living.level().isClientSide()) return;
       if (!isEligible(living)) return;
       ensureInitialized(living);
@@ -153,6 +165,41 @@ public final class NpcTraitService {
       if (entity == null || !isEligible(entity)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars != null && (!vars.passive_ranks.isEmpty() || !vars.talent_proficiencies.isEmpty());
+   }
+
+   private static boolean tryConvertResearchVillager(Villager villager) {
+      if (villager == null || villager.level().isClientSide() || villager.isBaby()) {
+         return false;
+      }
+      Optional<GlobalPos> jobSite = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
+      if (jobSite.isEmpty() || !(villager.level() instanceof ServerLevel serverLevel)) {
+         return false;
+      }
+      GlobalPos pos = jobSite.get();
+      if (pos.dimension() != serverLevel.dimension()
+         || !serverLevel.isLoaded(pos.pos())
+         || !serverLevel.getBlockState(pos.pos()).is(ModBlocks.MAGIC_RESEARCH_TABLE.get())) {
+         return false;
+      }
+
+      MysticMagicianEntity replacement = ModEntities.MYSTIC_MAGICIAN_FRAME.get().create(serverLevel);
+      if (replacement == null) {
+         return false;
+      }
+
+      replacement.moveTo(villager.getX(), villager.getY(), villager.getZ(), villager.getYRot(), villager.getXRot());
+      replacement.setYBodyRot(villager.yBodyRot);
+      replacement.setYHeadRot(villager.getYHeadRot());
+      replacement.setDeltaMovement(villager.getDeltaMovement());
+      replacement.setNoAi(villager.isNoAi());
+      replacement.setPersistenceRequired();
+      replacement.setCustomName(villager.getCustomName());
+      replacement.setCustomNameVisible(villager.isCustomNameVisible());
+      replacement.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(villager.blockPosition()), MobSpawnType.CONVERSION, null);
+      serverLevel.addFreshEntity(replacement);
+      villager.releasePoi(MemoryModuleType.JOB_SITE);
+      villager.discard();
+      return true;
    }
 
    private static boolean grantRandomPassive(TypeMoonWorldModVariables.PlayerVariables vars, RandomSource random, TraitProfile profile) {
@@ -220,9 +267,9 @@ public final class NpcTraitService {
 
       if (entity.tickCount % 80 == Math.floorMod(entity.getId(), 80) && PassiveService.has(vars, PassiveService.CLAIRVOYANCE)) {
          MobEffectInstance current = entity.getEffect(MobEffects.NIGHT_VISION);
-         if (current == null || current.getDuration() < 120) {
-            entity.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 240, 0, true, false, false));
-            entity.getPersistentData().putBoolean(TAG_CLAIRVOYANCE_NIGHT_VISION, true);
+         if (current == null || current.getDuration() < CLAIRVOYANCE_NIGHT_VISION_REFRESH_THRESHOLD) {
+            entity.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, CLAIRVOYANCE_NIGHT_VISION_DURATION, 0, true, false, false));
+            entity.getPersistentData().putBoolean(NightVisionEffectSource.NPC_CLAIRVOYANCE, true);
          }
       }
 

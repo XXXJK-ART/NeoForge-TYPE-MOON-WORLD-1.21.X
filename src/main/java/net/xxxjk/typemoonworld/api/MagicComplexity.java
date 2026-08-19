@@ -50,7 +50,7 @@ public enum MagicComplexity {
          case "binding_magic", "suggestion_magic", "gravity_magic", "reinforcement", "reinforcement_self",
             "reinforcement_other", "reinforcement_item", "topaz_reinforcement", "emerald_use" -> ONE_VERSE;
          case "healing_magic", "spiritual_healing", "ruby_flame_sword", "sapphire_winter_frost",
-            "emerald_winter_river", "cyan_wind", "baptism_rite", "black_key_fire_engraving" -> TWO_VERSE;
+            "emerald_winter_river", "cyan_wind", "baptism_rite" -> TWO_VERSE;
          case "projection", "structural_analysis", "time_alter", "jewel_random_shoot", "jewel_machine_gun",
             "gandr_machine_gun", "stigma" -> THREE_VERSE;
          case "unlimited_blade_works", "sword_barrel_full_open", "broken_phantasm" -> HIGH_THAUMATURGY;

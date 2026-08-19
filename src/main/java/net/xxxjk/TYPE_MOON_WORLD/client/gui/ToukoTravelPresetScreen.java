@@ -20,7 +20,10 @@ public final class ToukoTravelPresetScreen extends Screen {
    private static final int BOX_W = 260;
    private static final int BOX_H = 162;
    private final Screen parent;
-   private final Magical_attributes_Screen.MagicEntry entry;
+   private final String magicId;
+   private final String nameKey;
+   private final String sourceType;
+   private final String crestEntryId;
    private final int targetSlot;
    private final CompoundTag initialPayload;
    private EditBox xBox;
@@ -30,8 +33,22 @@ public final class ToukoTravelPresetScreen extends Screen {
    public ToukoTravelPresetScreen(Screen parent, Magical_attributes_Screen.MagicEntry entry, int targetSlot, CompoundTag initialPayload) {
       super(Component.translatable("gui.typemoonworld.touko_travel.title"));
       this.parent = parent;
-      this.entry = entry;
+      this.magicId = entry.id;
+      this.nameKey = entry.nameKey;
+      this.sourceType = entry.sourceType;
+      this.crestEntryId = entry.crestEntryId;
       this.targetSlot = targetSlot;
+      this.initialPayload = initialPayload == null ? new CompoundTag() : initialPayload.copy();
+   }
+
+   public ToukoTravelPresetScreen(Screen parent, TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry, CompoundTag initialPayload) {
+      super(Component.translatable("gui.typemoonworld.touko_travel.title"));
+      this.parent = parent;
+      this.magicId = entry.magicId == null ? "touko_travel" : entry.magicId;
+      this.nameKey = "magic.typemoonworld." + this.magicId + ".name";
+      this.sourceType = entry.sourceType == null ? "self" : entry.sourceType;
+      this.crestEntryId = entry.crestEntryId == null ? "" : entry.crestEntryId;
+      this.targetSlot = entry.slotIndex;
       this.initialPayload = initialPayload == null ? new CompoundTag() : initialPayload.copy();
    }
 
@@ -145,7 +162,7 @@ public final class ToukoTravelPresetScreen extends Screen {
    }
 
    private void save() {
-      if (this.minecraft == null || this.minecraft.player == null || this.entry == null) {
+      if (this.minecraft == null || this.minecraft.player == null || this.magicId == null || this.magicId.isEmpty()) {
          onClose();
          return;
       }
@@ -163,9 +180,9 @@ public final class ToukoTravelPresetScreen extends Screen {
       payload.putDouble("z", z);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int wheel = vars.active_wheel_index;
-      String displayName = Component.translatable(this.entry.nameKey).getString() + String.format(Locale.ROOT, " %.1f %.1f %.1f", x, y, z);
+      String displayName = Component.translatable(this.nameKey).getString() + String.format(Locale.ROOT, " %.1f %.1f %.1f", x, y, z);
       PacketDistributor.sendToServer(
-         new MagicWheelSlotEditMessage(0, wheel, this.targetSlot, -1, this.entry.sourceType, this.entry.id, payload, this.entry.crestEntryId, displayName),
+         new MagicWheelSlotEditMessage(0, wheel, this.targetSlot, -1, this.sourceType, this.magicId, payload, this.crestEntryId, displayName),
          new CustomPacketPayload[0]
       );
       onClose();

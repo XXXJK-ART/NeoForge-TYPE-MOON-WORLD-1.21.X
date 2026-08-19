@@ -24,8 +24,8 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public class SpiritronCannonBeamEntity extends Entity {
-   public static final int WINDUP_TICKS = 40;
-   public static final int DURATION_TICKS = 130;
+   public static final int WINDUP_TICKS = 200;
+   public static final int DURATION_TICKS = 320;
    private static final int DAMAGE_INTERVAL = 5;
    private static final int BLOCK_DESTROY_PHASE_TICKS = 5;
    private static final double LENGTH = 140.0;

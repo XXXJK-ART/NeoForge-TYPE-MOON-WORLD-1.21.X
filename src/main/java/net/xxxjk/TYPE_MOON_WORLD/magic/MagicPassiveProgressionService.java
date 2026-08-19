@@ -85,13 +85,13 @@ public final class MagicPassiveProgressionService {
       ids.add("flight_magic");
       ids.add("time_alter");
       ids.add("spiritual_healing");
-      ids.add("baptism_rite");
       double total = 0.0;
       Set<String> normalized = new HashSet<>();
       for (String id : ids) {
          String canonical = MagicLearningStrategy.normalizeDisplayId(id);
          if (canonical == null || canonical.isBlank()
             || TalentService.isTalent(canonical)
+            || MagicDisplayMetadata.isChurchMagic(canonical)
             || MagicDisplayMetadata.isMartialMagic(canonical)
             || !normalized.add(canonical)) {
             continue;

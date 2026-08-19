@@ -38,6 +38,7 @@ public final class MagicLearningService {
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!MagicLearningStrategy.materialAllowed(vars, id) || vars.learned_magics.contains(id)) return false;
       vars.learned_magics.add(id);
+      applyImmediateGrantBonuses(vars, id);
       awardAnalysisKnowledge(vars, id);
       if (MagicLearningStrategy.canAnalyze(id)) unlockAnalysisChance(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + id + ".name")), true);
@@ -62,5 +63,11 @@ public final class MagicLearningService {
       double current = MagicProficiencyService.get(vars, "magic_analysis");
       if (verses == 1 && current >= 20.0 || verses == 2 && current >= 30.0 || verses == 3 && current >= 50.0) return;
       MagicProficiencyService.add(vars, "magic_analysis", Math.max(0.5, MagicLearningStrategy.complexity(learnedId) / 12.0));
+   }
+
+   public static void applyImmediateGrantBonuses(TypeMoonWorldModVariables.PlayerVariables vars, String learnedId) {
+      if ("theology".equals(learnedId)) {
+         MagicProficiencyService.set(vars, "theology", 100.0);
+      }
    }
 }

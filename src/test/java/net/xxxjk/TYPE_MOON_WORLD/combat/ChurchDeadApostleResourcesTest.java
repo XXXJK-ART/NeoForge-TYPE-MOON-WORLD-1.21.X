@@ -199,11 +199,7 @@ class ChurchDeadApostleResourcesTest {
    }
 
    @Test void churchMagicDefinitionsMatchTheirKnowledgeBehavior() throws IOException {
-      JsonObject engraving = json("data/typemoonworld/magic/definitions/black_key_fire_engraving.json");
       JsonObject stigma = json("data/typemoonworld/magic/definitions/stigma.json");
-      assertEquals("typemoonworld:church", engraving.get("category").getAsString());
-      assertTrue(engraving.get("wheel_selectable").getAsBoolean());
-      assertFalse(engraving.get("knowledge_only").getAsBoolean());
       assertEquals("typemoonworld:church", stigma.get("category").getAsString());
       assertFalse(stigma.get("wheel_selectable").getAsBoolean());
       assertTrue(stigma.get("knowledge_only").getAsBoolean());

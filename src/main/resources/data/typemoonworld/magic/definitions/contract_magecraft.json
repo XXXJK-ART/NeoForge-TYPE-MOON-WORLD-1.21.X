@@ -12,7 +12,7 @@
   "wheel_selectable": false,
   "crest_allowed": false,
   "npc_allowed": true,
-  "knowledge_only": false,
+  "knowledge_only": true,
   "copyable": true,
   "npc_global_cooldown": 12,
   "npc_cooldown": 40

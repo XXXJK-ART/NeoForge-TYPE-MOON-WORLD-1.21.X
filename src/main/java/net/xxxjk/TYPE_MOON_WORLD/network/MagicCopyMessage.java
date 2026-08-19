@@ -10,9 +10,13 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicCopyingTableMenu;
 import org.jetbrains.annotations.NotNull;
 
-public record MagicCopyMessage(String magicId) implements CustomPacketPayload {
+public record MagicCopyMessage(String magicId, int force) implements CustomPacketPayload {
    public static final Type<MagicCopyMessage> TYPE=new Type<>(ResourceLocation.fromNamespaceAndPath("typemoonworld","magic_copy"));
-   public static final StreamCodec<RegistryFriendlyByteBuf,MagicCopyMessage> STREAM_CODEC=StreamCodec.of((b,m)->b.writeUtf(m.magicId==null?"":m.magicId,64),b->new MagicCopyMessage(b.readUtf(64)));
+   public static final StreamCodec<RegistryFriendlyByteBuf,MagicCopyMessage> STREAM_CODEC=StreamCodec.of((b,m)->{
+      b.writeUtf(m.magicId==null?"":m.magicId,64);
+      b.writeInt(m.force);
+   },b->new MagicCopyMessage(b.readUtf(64), b.readInt()));
+   public MagicCopyMessage(String magicId) { this(magicId, 0); }
    @Override @NotNull public Type<MagicCopyMessage> type(){return TYPE;}
-   public static void handleData(MagicCopyMessage m,IPayloadContext c){if(c.flow()==PacketFlow.SERVERBOUND)c.enqueueWork(()->{if(c.player() instanceof ServerPlayer p&&p.containerMenu instanceof MagicCopyingTableMenu menu&&m.magicId.matches("[a-z0-9_]+"))menu.tryCopy(p,m.magicId);});}
+   public static void handleData(MagicCopyMessage m,IPayloadContext c){if(c.flow()==PacketFlow.SERVERBOUND)c.enqueueWork(()->{if(c.player() instanceof ServerPlayer p&&p.containerMenu instanceof MagicCopyingTableMenu menu&&m.magicId.matches("[a-z0-9_]+"))menu.tryCopy(p,m.magicId,m.force);});}
 }

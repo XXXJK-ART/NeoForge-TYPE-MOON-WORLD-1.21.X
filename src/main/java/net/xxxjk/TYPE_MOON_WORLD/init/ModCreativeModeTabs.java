@@ -229,8 +229,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_SPIRITUAL_HEALING);
                         output.accept(ModItems.MAGIC_BOOK_BAPTISM_RITE);
                         output.accept(ModItems.MAGIC_PAGE_BAPTISM_RITE);
-                        output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING);
-                        output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING);
+                        output.accept(ModItems.MAGIC_BOOK_BLACK_KEY_MAKING);
+                        output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_MAKING);
+                        output.accept(ModItems.MAGIC_BOOK_THEOLOGY);
+                        output.accept(ModItems.MAGIC_PAGE_THEOLOGY);
+                        output.accept(ModItems.MAGIC_PAGE_IRON_ARMOR_ACTION);
+                        output.accept(ModItems.MAGIC_PAGE_CREMATION_RITE);
                         output.accept(ModItems.MAGIC_BOOK_STIGMA);
                         output.accept(ModItems.MAGIC_PAGE_STIGMA);
                         output.accept(ModItems.MAGIC_BOOK_ABSORPTION);
@@ -465,6 +469,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RAW_WHITE_GEMSTONE);
                         output.accept(ModItems.RAW_CYAN_GEMSTONE);
                         output.accept(ModBlocks.CINNABAR_ORE);
+                        output.accept(ModBlocks.DEEPSLATE_CINNABAR_ORE);
                         output.accept(ModBlocks.CINNABAR_BLOCK);
                         output.accept(ModItems.CINNABAR);
                         output.accept(ModItems.SULFUR);
@@ -541,31 +546,37 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.EMERALD_BLOCK);
                         output.accept(ModBlocks.EMERALD_BLOCK_HIGH);
                         output.accept(ModBlocks.EMERALD_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_EMERALD_MINE);
                         
                         output.accept(ModBlocks.RUBY_BLOCK_POOR);
                         output.accept(ModBlocks.RUBY_BLOCK);
                         output.accept(ModBlocks.RUBY_BLOCK_HIGH);
                         output.accept(ModBlocks.RUBY_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_RUBY_MINE);
                         
                         output.accept(ModBlocks.SAPPHIRE_BLOCK_POOR);
                         output.accept(ModBlocks.SAPPHIRE_BLOCK);
                         output.accept(ModBlocks.SAPPHIRE_BLOCK_HIGH);
                         output.accept(ModBlocks.SAPPHIRE_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_SAPPHIRE_MINE);
                         
                         output.accept(ModBlocks.TOPAZ_BLOCK_POOR);
                         output.accept(ModBlocks.TOPAZ_BLOCK);
                         output.accept(ModBlocks.TOPAZ_BLOCK_HIGH);
                         output.accept(ModBlocks.TOPAZ_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_TOPAZ_MINE);
                         
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK_POOR);
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK);
                         output.accept(ModBlocks.WHITE_GEMSTONE_BLOCK_HIGH);
                         output.accept(ModBlocks.WHITE_GEMSTONE_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_WHITE_GEMSTONE_MINE);
                         
                         output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK_POOR);
                         output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK);
                         output.accept(ModBlocks.CYAN_GEMSTONE_BLOCK_HIGH);
                         output.accept(ModBlocks.CYAN_GEMSTONE_MINE);
+                        output.accept(ModBlocks.DEEPSLATE_CYAN_GEMSTONE_MINE);
                         
                         output.accept(ModBlocks.GREEN_TRANSPARENT_BLOCK);
 

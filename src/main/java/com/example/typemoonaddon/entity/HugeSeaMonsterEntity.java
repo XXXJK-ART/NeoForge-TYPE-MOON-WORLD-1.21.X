@@ -50,12 +50,12 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final EntityDataAccessor<Boolean> DISSOLVING =
             SynchedEntityData.defineId(HugeSeaMonsterEntity.class, EntityDataSerializers.BOOLEAN);
     private static final int DISSOLVE_DURATION = 72;
-    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 32;
-    private static final int TARGET_REFRESH_INTERVAL = 200;
-    private static final int BOSS_ATTACK_INTERVAL = 120;
-    private static final int BROOD_SUMMON_INTERVAL = 600;
-    private static final int FOG_INTERVAL = 60;
-    private static final double HUGE_MOVEMENT_SPEED = 0.11;
+    private static final int ATTACK_TERRAIN_BREAK_LIMIT = 40;
+    private static final int TARGET_REFRESH_INTERVAL = 120;
+    private static final int BOSS_ATTACK_INTERVAL = 80;
+    private static final int BROOD_SUMMON_INTERVAL = 480;
+    private static final int FOG_INTERVAL = 45;
+    private static final double HUGE_MOVEMENT_SPEED = 0.14;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     @Nullable
     private UUID sourceUuid;
@@ -122,7 +122,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             this.setTarget(isValidTarget(revenge) ? revenge : this.findNearestTarget(48.0));
             target = this.getTarget();
         }
-        if (this.isValidTarget(target) && this.distanceToSqr(target) <= 56.0 * 56.0) {
+        if (this.isValidTarget(target) && this.distanceToSqr(target) <= 72.0 * 72.0) {
             this.getNavigation().stop();
             this.getLookControl().setLookAt(target, 20.0F, 20.0F);
             if (this.isStaggeredTick(BOSS_ATTACK_INTERVAL, 0)) {
@@ -241,6 +241,11 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     }
 
     @Override
+    public float getPickRadius() {
+        return 18.0F;
+    }
+
+    @Override
     public boolean isAlliedTo(Entity other) {
         return super.isAlliedTo(other) || this.isFriendly(other);
     }
@@ -318,20 +323,20 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         if (!level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 96.0)) {
             return;
         }
-        if (!this.isValidTarget(target) || this.distanceToSqr(target) > 56.0 * 56.0) {
+        if (!this.isValidTarget(target) || this.distanceToSqr(target) > 72.0 * 72.0) {
             return;
         }
         this.triggerAnim("action_controller", "slam");
         level.playSound(null, this.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1.6F, 0.55F);
-        this.breakTerrainAhead(level, 16.0, 10.0F, 12, ATTACK_TERRAIN_BREAK_LIMIT);
+        this.breakTerrainAhead(level, 20.0, 12.0F, 14, ATTACK_TERRAIN_BREAK_LIMIT);
         Vec3 center = target.position();
-        AABB box = new AABB(center.x - 8.0, center.y - 4.0, center.z - 8.0,
-                center.x + 8.0, center.y + 5.0, center.z + 8.0);
+        AABB box = new AABB(center.x - 11.0, center.y - 5.0, center.z - 11.0,
+                center.x + 11.0, center.y + 6.0, center.z + 11.0);
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
-                living -> this.isValidTarget(living) && living.distanceToSqr(center) <= 64.0)) {
+                living -> this.isValidTarget(living) && living.distanceToSqr(center) <= 121.0)) {
             living.invulnerableTime = 0;
-            living.hurt(this.damageSources().mobAttack(this), 36.0F);
-            living.push((living.getX() - this.getX()) * 0.22, 0.32, (living.getZ() - this.getZ()) * 0.22);
+            living.hurt(this.damageSources().mobAttack(this), 42.0F);
+            living.push((living.getX() - this.getX()) * 0.3, 0.38, (living.getZ() - this.getZ()) * 0.3);
             living.hurtMarked = true;
         }
         level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY() + 0.8, target.getZ(), 4, 2.0, 0.35, 2.0, 0.02);

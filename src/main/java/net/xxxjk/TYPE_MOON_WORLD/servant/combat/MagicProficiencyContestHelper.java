@@ -120,7 +120,8 @@ public final class MagicProficiencyContestHelper {
          case "earth_magic" -> vars.proficiency_earth_magic;
          case "time_alter" -> vars.proficiency_time_alter;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing;
-         case "baptism_rite", "black_key_fire_engraving", "stigma" -> vars.proficiency_baptism_rite;
+         case "baptism_rite", "stigma" -> vars.proficiency_baptism_rite;
+         case "theology", "black_key_making", "iron_armor_action", "cremation_rite" -> vars.magic_proficiencies.getOrDefault(magicId, 0.0);
          default -> 0.0;
       };
    }

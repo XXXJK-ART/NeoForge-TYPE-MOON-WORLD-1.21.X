@@ -7,7 +7,7 @@
   "chant_segments": 3,
   "mana_cost": 0.0,
   "sustained_mana_cost": 7.0,
-  "cooldown_ticks": 20,
+  "cooldown_ticks": 100,
   "learnable": true,
   "wheel_selectable": true,
   "crest_allowed": true,

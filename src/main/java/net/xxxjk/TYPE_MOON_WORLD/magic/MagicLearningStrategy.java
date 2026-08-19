@@ -47,9 +47,12 @@ public final class MagicLearningStrategy {
       Map.entry("flight_magic", new Rule(90, true, true, true, true, false, false)),
       Map.entry("spiritron_cannon", new Rule(90, true, true, true, true, false, false)),
       Map.entry("spiritual_healing", new Rule(50, true, true, true, true, false, false)),
-      Map.entry("baptism_rite", new Rule(65, true, true, true, true, false, false)),
-      Map.entry("black_key_fire_engraving", new Rule(60, true, true, true, true, false, false)),
-      Map.entry("stigma", new Rule(60, true, true, true, true, false, false))
+      Map.entry("theology", new Rule(20, false, true, true, true, false, false)),
+      Map.entry("black_key_making", new Rule(45, false, true, true, true, false, false)),
+      Map.entry("baptism_rite", new Rule(65, false, true, true, true, false, false)),
+      Map.entry("stigma", new Rule(60, false, true, true, true, false, false)),
+      Map.entry("iron_armor_action", new Rule(65, false, true, true, true, false, false)),
+      Map.entry("cremation_rite", new Rule(70, false, true, true, true, false, false))
       ,Map.entry("mana_burst", new Rule(65, false, true, false, false, false, false))
       ,Map.entry("reinforcement_self", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_other", new Rule(25, true, true, true, true, false, false))
@@ -88,7 +91,7 @@ public final class MagicLearningStrategy {
       ,Map.entry("storm", new Rule(72, true, true, true, false, false, false))
       ,Map.entry("zagan", new Rule(78, true, true, true, true, false, false))
    );
-   private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing", "baptism_rite", "black_key_fire_engraving", "stigma");
+   private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing");
    private static final Map<String, String> DISPLAY_ALIASES = Map.ofEntries(
       Map.entry("reinforcement_self", "reinforcement"),
       Map.entry("reinforcement_other", "reinforcement"),
@@ -136,10 +139,16 @@ public final class MagicLearningStrategy {
    public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null) return false;
       MagicDefinitionData definition = MagicDefinitionRegistry.get(id);
-      boolean prerequisiteMagicOk = definition == null || definition.prerequisiteMagic() == null
-         || isLearned(vars, definition.prerequisiteMagic().toString())
-            && MagicProficiencyService.get(vars, definition.prerequisiteMagic().toString()) >= definition.prerequisiteProficiency();
-      return prerequisiteMagicOk
+      boolean theologyPrerequisiteOk = !requiresTheology(id)
+         || isLearned(vars, "theology") && MagicProficiencyService.get(vars, "theology") >= 100.0;
+      String prerequisiteId = definition == null || definition.prerequisiteMagic() == null
+         ? null
+         : definition.prerequisiteMagic().getPath();
+      boolean prerequisiteMagicOk = prerequisiteId == null
+         || isLearned(vars, prerequisiteId)
+            && MagicProficiencyService.get(vars, prerequisiteId) >= definition.prerequisiteProficiency();
+      return theologyPrerequisiteOk
+         && prerequisiteMagicOk
          && (!requiresSword(id) || vars.player_magic_attributes_sword)
          && (!requiresImaginaryAttribute(id) || vars.player_magic_attributes_imaginary_number);
    }
@@ -169,6 +178,8 @@ public final class MagicLearningStrategy {
          case "touko_travel" -> "magic_page_touko_travel";
          case "flight_magic" -> "magic_page_flight_magic";
          case "spiritron_cannon" -> "magic_page_spiritron_cannon";
+         case "theology" -> "magic_page_theology";
+         case "black_key_making" -> "magic_page_black_key_making";
          case "typemoonworld:imaginary_absorption" -> "magic_page_imaginary_storage";
          case "typemoonworld:imaginary_absorption_evolved" -> "magic_page_imaginary_absorption";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
@@ -211,5 +222,13 @@ public final class MagicLearningStrategy {
       if (vars.learned_magics.contains(id)) return true;
       String primary = normalizeDisplayId(id);
       return vars.learned_magics.stream().anyMatch(learned -> primary.equals(normalizeDisplayId(learned)));
+   }
+
+   private static boolean requiresTheology(String id) {
+      return "black_key_making".equals(id)
+         || "baptism_rite".equals(id)
+         || "stigma".equals(id)
+         || "iron_armor_action".equals(id)
+         || "cremation_rite".equals(id);
    }
 }

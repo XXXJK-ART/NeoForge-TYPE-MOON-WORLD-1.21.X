@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.TYPE_MOON_WORLD.procedures.CastMagic;
 
 public record CastMagicMessage(int eventType, int pressedms) implements CustomPacketPayload {
@@ -72,6 +73,12 @@ public record CastMagicMessage(int eventType, int pressedms) implements CustomPa
                vars.magic_cooldown = 10.0;
                vars.syncMana(player);
             }
+            break;
+         case 3:
+            ElementalArrayService.beginCharge(player);
+            break;
+         case 4:
+            ElementalArrayService.releaseCharge(player, 0);
       }
    }
 }

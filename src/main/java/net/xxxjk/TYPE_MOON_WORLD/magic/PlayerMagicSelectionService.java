@@ -197,7 +197,6 @@ public final class PlayerMagicSelectionService {
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
-         || "touko_travel".equals(magicId)
          || isElementalMagic(magicId);
    }
 
@@ -220,10 +219,6 @@ public final class PlayerMagicSelectionService {
       } else if ("mana_burst".equals(magicId)) {
          payload.putInt("mana_burst_mode", 1);
          payload.putInt("mana_burst_level", 1);
-      } else if ("touko_travel".equals(magicId) && entity != null) {
-         payload.putDouble("x", entity.getX());
-         payload.putDouble("y", entity.getY());
-         payload.putDouble("z", entity.getZ());
       } else if (isElementalMagic(magicId)) {
          payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {

@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -61,6 +62,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import org.lwjgl.glfw.GLFW;
 
@@ -162,6 +164,8 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean machineGunReleaseStopArmed = false;
       private static boolean ganderCastKeyDown = false;
       private static long ganderCastPressStartMs = -1L;
+      private static boolean elementalArrayCastKeyDown = false;
+      private static long elementalArrayCastPressStartMs = -1L;
       private static int rightArmCastPoseTicks = 0;
       private static boolean machineGunPoseLatched = false;
       private static int machineGunPoseWarmupTicks = 0;
@@ -552,6 +556,19 @@ public class TypeMoonWorldModKeyMappings {
                            } else {
                               Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
                            }
+                        } else if ("touko_travel".equals(magicId)) {
+                           TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
+                           if (entry != null && !entry.isEmpty()) {
+                              if ("crest".equals(entry.sourceType)) {
+                                 player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
+                              } else {
+                                 Minecraft.getInstance().setScreen(new ToukoTravelPresetScreen(
+                                    Minecraft.getInstance().screen,
+                                    entry.copy(),
+                                    entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy()
+                                 ));
+                              }
+                           }
                         }
                      }
                   }
@@ -564,12 +581,25 @@ public class TypeMoonWorldModKeyMappings {
 
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
          String currentSelection = PlayerMagicSelectionService.getCurrentMagicId(vars);
+         if ("touko_travel".equals(currentSelection)) {
+            if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick() && vars.is_magus) {
+               triggerRightArmCastPose(vars);
+               triggerCast(player, 0, 0);
+            }
+            castPressStartMs = -1L;
+            castLongTriggered = false;
+            machineGunCastKeyDown = false;
+            ganderCastKeyDown = false;
+            elementalArrayCastKeyDown = false;
+            return;
+         }
          if (TalentService.isTalent(currentSelection) && TalentService.owns(vars, currentSelection)) {
             if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick()) triggerCast(player, 0, 0);
             castPressStartMs = -1L;
             castLongTriggered = false;
             machineGunCastKeyDown = false;
             ganderCastKeyDown = false;
+            elementalArrayCastKeyDown = false;
             return;
          }
          if (isClientBajiquanActive(player, vars)) {
@@ -624,6 +654,8 @@ public class TypeMoonWorldModKeyMappings {
                machineGunCastKeyDown = false;
                machineGunCastPressStartMs = -1L;
                machineGunReleaseStopArmed = false;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
             } else if (isJewelMachineGunSelected(vars)) {
                long now = System.currentTimeMillis();
                boolean fireDown = isFireInputDown(vars);
@@ -655,6 +687,26 @@ public class TypeMoonWorldModKeyMappings {
                machineGunCastKeyDown = fireDown;
                ganderCastKeyDown = false;
                ganderCastPressStartMs = -1L;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
+            } else if (ElementalArrayService.Kind.fromMagicId(currentSelection) != null) {
+               long now = System.currentTimeMillis();
+               boolean fireDown = TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown();
+               if (fireDown && !elementalArrayCastKeyDown && vars.is_magus) {
+                  elementalArrayCastKeyDown = true;
+                  elementalArrayCastPressStartMs = now;
+                  triggerCast(player, 3, 0);
+               } else if (!fireDown && elementalArrayCastKeyDown && vars.is_magus) {
+                  long holdMs = elementalArrayCastPressStartMs < 0L ? 0L : now - elementalArrayCastPressStartMs;
+                  triggerCast(player, 4, (int)Math.min(2147483647L, holdMs));
+                  elementalArrayCastPressStartMs = -1L;
+               }
+               elementalArrayCastKeyDown = fireDown;
+               machineGunCastKeyDown = false;
+               machineGunCastPressStartMs = -1L;
+               machineGunReleaseStopArmed = false;
+               ganderCastKeyDown = false;
+               ganderCastPressStartMs = -1L;
             } else {
                machineGunCastKeyDown = false;
                machineGunCastPressStartMs = -1L;
@@ -663,6 +715,8 @@ public class TypeMoonWorldModKeyMappings {
                machineGunPoseWarmupTicks = 0;
                machineGunPoseNoCooldownTicks = 0;
                ganderCastKeyDown = false;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
                ganderCastPressStartMs = -1L;
                if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick() && vars.is_magus) {
                   triggerRightArmCastPose(vars);
@@ -681,6 +735,8 @@ public class TypeMoonWorldModKeyMappings {
             machineGunPoseNoCooldownTicks = 0;
             ganderCastKeyDown = false;
             ganderCastPressStartMs = -1L;
+            elementalArrayCastKeyDown = false;
+            elementalArrayCastPressStartMs = -1L;
             long now = System.currentTimeMillis();
             if (TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown()) {
                if (castPressStartMs < 0L) {
@@ -861,6 +917,8 @@ public class TypeMoonWorldModKeyMappings {
          ganryuJumpDown = false;
          ganryuCrouchDown = false;
          ganryuUseDown = false;
+         elementalArrayCastKeyDown = false;
+         elementalArrayCastPressStartMs = -1L;
          kendoJumpDown = false;
          kendoCrouchDown = false;
          kendoUseDown = false;

@@ -247,8 +247,10 @@ public final class MasterCardProfile {
          });
          case "kotomine_kirei" -> new Profile(masterId, "kirei", 300.0, 5.0, 10, Attributes.NONE, vars -> {
             learnBajiquan(vars, 80.0);
-            learn(vars, "black_key_fire_engraving");
-            vars.magic_proficiencies.put("black_key_fire_engraving", 80.0);
+            setKnownMagic(vars, "theology", 100.0);
+            setKnownMagic(vars, "black_key_making", 100.0);
+            setKnownMagic(vars, "iron_armor_action", 100.0);
+            setKnownMagic(vars, "cremation_rite", 100.0);
             learn(vars, "baptism_rite");
             vars.proficiency_baptism_rite = Math.max(vars.proficiency_baptism_rite, 85.0);
             learn(vars, "spiritual_healing");
