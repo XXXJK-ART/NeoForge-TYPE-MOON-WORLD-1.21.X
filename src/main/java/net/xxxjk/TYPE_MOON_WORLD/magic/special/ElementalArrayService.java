@@ -40,7 +40,6 @@ public final class ElementalArrayService {
    private static final String TAG_SHIELD_ACTIVE = "TypeMoonElementalArrayShieldActive";
    private static final String TAG_SHIELD_HP = "TypeMoonElementalArrayShieldHp";
    private static final int CHARGE_TICKS = 100;
-   private static final int COOLDOWN_TICKS = 100;
    private static final float DAMAGE = 30.0F;
    private static final float SHIELD_HP = 500.0F;
    private static final double RANGE = 8.0;
@@ -56,7 +55,7 @@ public final class ElementalArrayService {
       ParticleTypes.LAVA,
       ParticleTypes.SMOKE,
       ParticleTypes.END_ROD,
-      ParticleTypes.FLASH
+      ParticleTypes.END_ROD
    );
    private static final ElementPalette WATER = new ElementPalette(
       new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.25F),
@@ -68,7 +67,7 @@ public final class ElementalArrayService {
       ParticleTypes.BUBBLE_POP,
       ParticleTypes.SPLASH,
       ParticleTypes.END_ROD,
-      ParticleTypes.FLASH
+      ParticleTypes.END_ROD
    );
    private static final ElementPalette WIND = new ElementPalette(
       new DustParticleOptions(new Vector3f(0.46F, 0.96F, 0.84F), 1.25F),
@@ -80,7 +79,7 @@ public final class ElementalArrayService {
       ParticleTypes.POOF,
       ParticleTypes.WAX_OFF,
       ParticleTypes.END_ROD,
-      ParticleTypes.FLASH
+      ParticleTypes.END_ROD
    );
    private static final ElementPalette EARTH = new ElementPalette(
       new DustParticleOptions(new Vector3f(0.60F, 0.44F, 0.24F), 1.25F),
@@ -92,7 +91,7 @@ public final class ElementalArrayService {
       ParticleTypes.POOF,
       ParticleTypes.SMOKE,
       ParticleTypes.END_ROD,
-      ParticleTypes.FLASH
+      ParticleTypes.END_ROD
    );
 
    private ElementalArrayService() {
@@ -122,10 +121,6 @@ public final class ElementalArrayService {
       return CHARGE_TICKS;
    }
 
-   public static int cooldownTicks() {
-      return COOLDOWN_TICKS;
-   }
-
    public static float shieldHp() {
       return SHIELD_HP;
    }
@@ -153,7 +148,7 @@ public final class ElementalArrayService {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       String magicId = PlayerMagicSelectionService.getCurrentMagicId(vars);
       Kind kind = Kind.fromMagicId(magicId);
-      if (kind == null || !vars.is_magus || !vars.is_magic_circuit_open || vars.magic_cooldown > 0.0) {
+      if (kind == null || !vars.is_magus || !vars.is_magic_circuit_open) {
          return false;
       }
       CompoundTag data = player.getPersistentData();
@@ -192,8 +187,6 @@ public final class ElementalArrayService {
       if (data.getInt(TAG_MODE) == 0) {
          releaseAttack(player, kind);
       }
-      double cooldown = MagicDefinitionRegistry.contains(magicId) ? MagicDefinitionRegistry.get(magicId).cooldownTicks() : 0.0;
-      vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
       MagicProficiencyService.add(vars, magicId, 0.18);
       vars.syncMana(player);
       clear(player);
@@ -219,7 +212,7 @@ public final class ElementalArrayService {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.is_magus || !vars.is_magic_circuit_open || vars.magic_cooldown > 0.0 || !PlayerMagicSelectionService.getCurrentMagicId(vars).equals(magicId)) {
+      if (!vars.is_magus || !vars.is_magic_circuit_open || !PlayerMagicSelectionService.getCurrentMagicId(vars).equals(magicId)) {
          clear(player);
          return;
       }
@@ -406,7 +399,6 @@ public final class ElementalArrayService {
             level.sendParticles(palette.releaseTertiary, center.x, center.y - 0.15, center.z, 2, spread * 0.35, 0.08, spread * 0.35, 0.0);
          }
       }
-      level.sendParticles(palette.finisher, player.getX(), player.getY() + 0.6, player.getZ(), 16, 0.4, 0.2, 0.4, 0.02);
    }
 
    private static void spawnArray(ServerLevel level, LivingEntity caster, Kind kind, float progress, boolean shieldMode) {
@@ -424,9 +416,6 @@ public final class ElementalArrayService {
       if (progress > 0.65F) {
          drawVerticalRing(level, center, right, up, radius * 0.68F, shieldMode ? palette.shieldSecondary : palette.secondary, 32);
          drawDiamond(level, center, right, up, radius * 0.88F, shieldMode ? palette.shieldPrimary : palette.finisher);
-      }
-      if (progress >= 1.0F) {
-         level.sendParticles(shieldMode ? palette.shieldPrimary : palette.finisher, center.x, center.y, center.z, 24, 0.35, 0.35, 0.35, 0.02);
       }
    }
 

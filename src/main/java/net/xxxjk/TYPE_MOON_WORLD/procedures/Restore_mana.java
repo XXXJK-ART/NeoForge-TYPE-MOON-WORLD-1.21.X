@@ -27,13 +27,12 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
-import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 @EventBusSubscriber
 public class Restore_mana {
+   private static final double MIN_NATURAL_REGEN_INTERVAL = 20.0;
    private static final double CRITICAL_MANA_THRESHOLD = 20.0;
    private static final double MAGIC_FRAGMENT_MANA = 10.0;
    private static final double SPIRIT_VEIN_BLOCK_MANA = 90.0;
@@ -88,10 +87,13 @@ public class Restore_mana {
             vars.player_mana = 0.0;
             vars.is_magic_circuit_open = false;
             vars.magic_circuit_open_timer = 0.0;
+            vars.current_mana_regen_multiplier = currentLeylineMultiplier(entity);
             syncManaIfDue(entity, vars, 20L);
             TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
             return;
          }
+         double leylineMultiplier = currentLeylineMultiplier(entity);
+         vars.current_mana_regen_multiplier = leylineMultiplier;
          if (vars.servant_card_transformed) {
             if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
                && vars.servant_card_mana < CRITICAL_MANA_THRESHOLD) {
@@ -105,20 +107,12 @@ public class Restore_mana {
          } else {
             double manaRegen = vars.player_mana_egenerated_every_moment;
             double regenInterval = vars.player_restore_magic_moment;
-            double regenMultiplier = 1.0;
             boolean syncImmediately = false;
-            if (vars.master_artificial_leyline_bonus_active) {
-               regenMultiplier = LeylineNoise.regenMultiplier(80);
-            }
-            if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && vars.master_active) {
-               regenMultiplier = Math.max(regenMultiplier, linkedCasterWorkshopLeylineMultiplier(serverPlayer, vars));
-            }
             if (entity instanceof net.minecraft.world.entity.LivingEntity living
                && living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
-               regenMultiplier *= 0.5;
+               leylineMultiplier *= 0.5;
             }
 
-            vars.current_mana_regen_multiplier = regenMultiplier;
             if (vars.is_magic_circuit_open) {
                regenInterval /= 2.0;
                if (regenInterval < 1.0) {
@@ -161,7 +155,8 @@ public class Restore_mana {
                   }
                }
             } else {
-               double effectiveRegen = manaRegen * regenMultiplier;
+            double effectiveRegen = manaRegen * leylineMultiplier;
+            regenInterval = Math.max(MIN_NATURAL_REGEN_INTERVAL, regenInterval * 4.0);
                vars.player_mana = Math.min(vars.player_mana + effectiveRegen, vars.player_max_mana);
             }
 
@@ -310,27 +305,11 @@ public class Restore_mana {
       }
    }
 
-   private static double linkedCasterWorkshopLeylineMultiplier(net.minecraft.server.level.ServerPlayer master, TypeMoonWorldModVariables.PlayerVariables masterVars) {
-      net.minecraft.server.level.ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, masterVars);
-      if (servant == null || !(servant.level() instanceof ServerLevel level)) {
-         return 1.0;
+   private static double currentLeylineMultiplier(Entity entity) {
+      if (entity instanceof net.minecraft.server.level.ServerPlayer player && player.level() instanceof ServerLevel serverLevel) {
+         return LeylineService.getRegenMultiplier(serverLevel, player.blockPosition());
       }
-      TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!servantVars.servant_card_transformed) {
-         return 1.0;
-      }
-      net.minecraft.nbt.CompoundTag data = servant.getPersistentData();
-      String id = servantVars.servant_card_id == null ? "" : servantVars.servant_card_id;
-      String prefix = switch (id) {
-         case "medea" -> "ServantCardMedeaWorkshop";
-         case "paracelsus" -> "ServantCardParacelsusWorkshop";
-         default -> "";
-      };
-      if (prefix.isEmpty() || !data.getBoolean(prefix + "Active")) {
-         return 1.0;
-      }
-      BlockPos workshop = BlockPos.containing(data.getDouble(prefix + "X"), data.getDouble(prefix + "Y"), data.getDouble(prefix + "Z"));
-      return LeylineService.getRegenMultiplier(level, workshop);
+      return 0.0;
    }
 
    private record SourceCandidate(int slot, double mana, ItemStack remainder) {

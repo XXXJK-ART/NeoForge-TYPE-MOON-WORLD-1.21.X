@@ -131,7 +131,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          true
       );
       double baseRegen = vars.player_mana_egenerated_every_moment;
-      double regenMultiplier = vars.current_mana_regen_multiplier <= 0.0 ? 1.0 : vars.current_mana_regen_multiplier;
+      double regenMultiplier = Math.max(0.0, vars.current_mana_regen_multiplier);
       List<Basic_information_Screen.ModifierReason> regenReasons = new ArrayList<>();
       double leylineDelta = baseRegen * regenMultiplier - baseRegen;
       if (Math.abs(leylineDelta) > 1.0E-4) {
@@ -144,9 +144,11 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       }
 
       double baseIntervalTicks = vars.player_restore_magic_moment;
+      double effectiveIntervalTicks = baseIntervalTicks;
       List<Basic_information_Screen.ModifierReason> intervalReasons = new ArrayList<>();
       if (vars.is_magic_circuit_open) {
          double halvedTicks = baseIntervalTicks / 2.0;
+         effectiveIntervalTicks = halvedTicks;
          double halvedDeltaSec = (halvedTicks - baseIntervalTicks) / 20.0;
          if (Math.abs(halvedDeltaSec) > 1.0E-4) {
             intervalReasons.add(
@@ -155,7 +157,7 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
          }
 
          if (halvedTicks < 1.0) {
-            double effectiveIntervalTicks = 1.0;
+            effectiveIntervalTicks = 1.0;
             double floorDeltaSec = (effectiveIntervalTicks - halvedTicks) / 20.0;
             if (Math.abs(floorDeltaSec) > 1.0E-4) {
                intervalReasons.add(
@@ -163,6 +165,11 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
                );
             }
          }
+      }
+      double effectivePerCycle = baseRegen * regenMultiplier;
+      double effectivePerSecond = effectivePerCycle;
+      if (effectiveIntervalTicks > 0.0) {
+         effectivePerSecond = effectivePerCycle * 20.0 / effectiveIntervalTicks;
       }
 
       float manaRatio = maxMana <= 0.0 ? 0.0F : (float)(currentMana / maxMana);
@@ -181,28 +188,52 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
       );
       this.drawStatWithModifiers(
          guiGraphics,
+         Component.translatable("gui.typemoonworld.basic_info.mana_concentration"),
+         regenMultiplier * 100.0,
+         List.of(),
+         startX,
+         108,
+         STAT_ROW_HOVER_WIDTH,
+         0,
+         "gui.typemoonworld.basic_info.unit.percent",
+         true
+      );
+      this.drawStatWithModifiers(
+         guiGraphics,
          Component.translatable("gui.typemoonworld.basic_info.regen_interval"),
          baseIntervalTicks / 20.0,
          intervalReasons,
          startX,
-         108,
+         117,
          STAT_ROW_HOVER_WIDTH,
          2,
          "gui.typemoonworld.basic_info.unit.second",
          false
       );
-      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.affinities"), startX, 135, GuiUtils.ARCANE_GOLD, false);
-      GuiUtils.renderSectionHeader(guiGraphics, startX, 135, 282, GuiUtils.ARCANE_GOLD);
+      this.drawStatWithModifiers(
+         guiGraphics,
+         Component.translatable("gui.typemoonworld.basic_info.mana_regen_per_second"),
+         effectivePerSecond,
+         List.of(),
+         startX,
+         126,
+         STAT_ROW_HOVER_WIDTH,
+         2,
+         "gui.typemoonworld.basic_info.unit.mana_per_second",
+         true
+      );
+      guiGraphics.drawString(this.font, Component.translatable("gui.typemoonworld.section.affinities"), startX, 153, GuiUtils.ARCANE_GOLD, false);
+      GuiUtils.renderSectionHeader(guiGraphics, startX, 153, 282, GuiUtils.ARCANE_GOLD);
       Component baseLabel = Component.translatable("gui.typemoonworld.basic_info.base_attributes");
-      guiGraphics.drawString(this.font, baseLabel, startX, 150, GuiUtils.ARCANE_TEXT_MUTED, false);
+      guiGraphics.drawString(this.font, baseLabel, startX, 168, GuiUtils.ARCANE_TEXT_MUTED, false);
       Component baseAttr = this.buildBaseAttributes(vars);
-      guiGraphics.fill(startX, 164, startX + 4, 168, GuiUtils.ARCANE_CYAN);
-      guiGraphics.drawWordWrap(this.font, baseAttr, startX + 9, 161, 273, GuiUtils.ARCANE_TEXT);
+      guiGraphics.fill(startX, 182, startX + 4, 186, GuiUtils.ARCANE_CYAN);
+      guiGraphics.drawWordWrap(this.font, baseAttr, startX + 9, 179, 273, GuiUtils.ARCANE_TEXT);
       Component extraLabel = Component.translatable("gui.typemoonworld.basic_info.extra_attributes");
-      guiGraphics.drawString(this.font, extraLabel, startX, 183, GuiUtils.ARCANE_TEXT_MUTED, false);
+      guiGraphics.drawString(this.font, extraLabel, startX, 201, GuiUtils.ARCANE_TEXT_MUTED, false);
       Component extraAttr = this.buildExtraAttributes(vars);
-      guiGraphics.fill(startX, 197, startX + 4, 201, GuiUtils.ARCANE_GOLD);
-      guiGraphics.drawWordWrap(this.font, extraAttr, startX + 9, 194, 273, GuiUtils.ARCANE_TEXT);
+      guiGraphics.fill(startX, 215, startX + 4, 219, GuiUtils.ARCANE_GOLD);
+      guiGraphics.drawWordWrap(this.font, extraAttr, startX + 9, 212, 273, GuiUtils.ARCANE_TEXT);
    }
 
    private void drawStatWithModifiers(

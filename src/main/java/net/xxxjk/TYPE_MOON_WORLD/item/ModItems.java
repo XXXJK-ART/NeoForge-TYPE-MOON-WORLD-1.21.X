@@ -118,11 +118,16 @@ public class ModItems {
                 .add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
                         new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_movement"),
-                                0.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
+                                0.1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                         net.minecraft.world.entity.EquipmentSlotGroup.HAND)
                 .add(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE,
                         new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_block_reach"),
+                                1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                        net.minecraft.world.entity.EquipmentSlotGroup.HAND)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_entity_reach"),
                                 1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                         net.minecraft.world.entity.EquipmentSlotGroup.HAND)
                 .build();
@@ -646,6 +651,8 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> BLOOD_BOTTLE = ITEMS.register("blood_bottle",
+            () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE)));
     public static final DeferredItem<Item> MERCURY_BOTTLE = ITEMS.register("mercury_bottle",
             () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE)));
     public static final DeferredItem<Item> MOLTEN_RUBY_BOTTLE = ITEMS.register("molten_ruby_bottle",
@@ -660,6 +667,8 @@ public class ModItems {
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.WHITE_GEMSTONE));
     public static final DeferredItem<Item> MOLTEN_CYAN_GEMSTONE_BOTTLE = ITEMS.register("molten_cyan_gemstone_bottle",
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.CYAN));
+    public static final DeferredItem<Item> GEM_SLAG = ITEMS.register("gem_slag",
+            () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> LARGE_RUBY = ITEMS.register("large_ruby",
             () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.RUBY));

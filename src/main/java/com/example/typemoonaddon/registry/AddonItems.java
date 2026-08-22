@@ -2,13 +2,16 @@ package com.example.typemoonaddon.registry;
 
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.item.CrestWormItem;
+import com.example.typemoonaddon.item.EngravedWormItem;
 import com.example.typemoonaddon.item.CursedArmorRenderItem;
 import com.example.typemoonaddon.item.HolyGrailFragmentItem;
 import com.example.typemoonaddon.item.ImaginaryPrimerItem;
 import com.example.typemoonaddon.item.PrelatisSpellbookItem;
 import com.example.typemoonaddon.item.SeaMonsterSpawnEggItem;
+import com.example.typemoonaddon.item.WormItem;
 import com.example.typemoonaddon.item.VoidRingRegaliaItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
@@ -55,9 +58,55 @@ public final class AddonItems {
                     TypeMoonAddon.id("imaginary_absorption_evolved").toString())
     );
 
+    public static final DeferredItem<Item> MAGIC_BOOK_SPIRIT_SUMMONING = ITEMS.register(
+            "magic_book_spirit_summoning",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D, null,
+                    "spirit_summoning")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_SPIRIT_SUMMONING = ITEMS.register(
+            "magic_page_spirit_summoning",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D, null,
+                    "spirit_summoning")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_WRAITH_SERVITUDE = ITEMS.register(
+            "magic_book_wraith_servitude",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "spirit_summoning", "wraith_servitude")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_WRAITH_SERVITUDE = ITEMS.register(
+            "magic_page_wraith_servitude",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "spirit_summoning", "wraith_servitude")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_EVIL_SPIRIT_SUMMONING = ITEMS.register(
+            "magic_book_evil_spirit_summoning",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.EPIC), 1.0D,
+                    "spirit_summoning", "evil_spirit_summoning")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_EVIL_SPIRIT_SUMMONING = ITEMS.register(
+            "magic_page_evil_spirit_summoning",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.EPIC), 0.15D,
+                    "spirit_summoning", "evil_spirit_summoning")
+    );
+
     public static final DeferredItem<Item> CREST_WORM = ITEMS.register(
             "crest_worm",
             () -> new CrestWormItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC))
+    );
+
+    public static final DeferredItem<Item> WORM = ITEMS.register(
+            "worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON))
+    );
+
+    public static final DeferredItem<Item> ENGRAVED_WORM = ITEMS.register(
+            "engraved_worm",
+            () -> new EngravedWormItem(new Item.Properties().rarity(Rarity.RARE))
+    );
+
+    public static final DeferredItem<Item> MANA_FURNACE = ITEMS.register(
+            "mana_furnace",
+            () -> new BlockItem(AddonBlocks.MANA_FURNACE.get(), new Item.Properties().rarity(Rarity.EPIC))
     );
 
     public static final DeferredItem<Item> HOLY_GRAIL_FRAGMENT = ITEMS.register(
@@ -101,6 +150,14 @@ public final class AddonItems {
             () -> new MasterCardItem(
                     new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
                     TypeMoonAddon.id("matou_sakura_fha").toString()
+            )
+    );
+
+    public static final DeferredItem<MasterCardItem> MASTER_CARD_MATOU_KARIYA = ITEMS.register(
+            "master_card_matou_kariya",
+            () -> new MasterCardItem(
+                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
+                    TypeMoonAddon.id("matou_kariya").toString()
             )
     );
 

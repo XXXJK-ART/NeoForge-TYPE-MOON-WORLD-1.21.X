@@ -29,6 +29,8 @@ public final class ArcaneMobilityService {
    private static final String TAG_AERIAL_START_Y = "TypeMoonAerialStartY";
    private static final String TAG_AERIAL_MAX_HEIGHT = "TypeMoonAerialMaxHeight";
    private static final String TAG_AERIAL_TICKS = "TypeMoonAerialTicks";
+   private static final String TAG_AERIAL_LAST_X = "TypeMoonAerialLastX";
+   private static final String TAG_AERIAL_LAST_Z = "TypeMoonAerialLastZ";
    private static final String TAG_AERIAL_CASTER = "TypeMoonAerialCaster";
    private static final String TAG_TOUKO_ACTIVE = "TypeMoonToukoActive";
    private static final String TAG_TOUKO_X = "TypeMoonToukoX";
@@ -82,8 +84,9 @@ public final class ArcaneMobilityService {
       }
       data.putInt(TAG_AERIAL_MODE, MODE_STASIS);
       data.putDouble(TAG_AERIAL_START_Y, target.getY());
-      data.putDouble(TAG_AERIAL_MAX_HEIGHT, Math.min(5.0, 1.0 + proficiency / 25.0));
       data.putInt(TAG_AERIAL_TICKS, 0);
+      data.putDouble(TAG_AERIAL_LAST_X, target.getX());
+      data.putDouble(TAG_AERIAL_LAST_Z, target.getZ());
       if (caster != null) {
          data.putUUID(TAG_AERIAL_CASTER, caster.getUUID());
       }
@@ -101,7 +104,6 @@ public final class ArcaneMobilityService {
       if (mode == MODE_ASCENT) {
          data.putInt(TAG_AERIAL_MODE, MODE_STASIS);
          data.putDouble(TAG_AERIAL_START_Y, target.getY());
-         data.putDouble(TAG_AERIAL_MAX_HEIGHT, Math.min(5.0, 1.0 + proficiency / 25.0));
          data.putInt(TAG_AERIAL_TICKS, 0);
          enterAerialStasis(target, data, caster);
          return true;
@@ -114,8 +116,9 @@ public final class ArcaneMobilityService {
       }
       data.putInt(TAG_AERIAL_MODE, MODE_ASCENT);
       data.putDouble(TAG_AERIAL_START_Y, target.getY());
-      data.putDouble(TAG_AERIAL_MAX_HEIGHT, Math.min(5.0, 1.0 + proficiency / 20.0));
       data.putInt(TAG_AERIAL_TICKS, 0);
+      data.putDouble(TAG_AERIAL_LAST_X, target.getX());
+      data.putDouble(TAG_AERIAL_LAST_Z, target.getZ());
       if (caster != null) {
          data.putUUID(TAG_AERIAL_CASTER, caster.getUUID());
       }
@@ -203,29 +206,31 @@ public final class ArcaneMobilityService {
             clearAerial(living);
             return;
          }
-         living.setNoGravity(true);
-         living.setDeltaMovement(0.0, Math.max(0.0, living.getDeltaMovement().y), 0.0);
-         living.setDeltaMovement(0.0, 0.0, 0.0);
-         living.fallDistance = 0.0F;
-         living.hurtMarked = true;
-         return;
-      }
-      if (mode == MODE_ASCENT) {
-         double startY = data.getDouble(TAG_AERIAL_START_Y);
-         double maxHeight = Math.max(1.0, data.getDouble(TAG_AERIAL_MAX_HEIGHT));
-         double climbed = living.getY() - startY;
-         if (climbed >= maxHeight) {
-            enterAerialStasis(living, data, resolveSustainedCaster(living));
-            return;
-         }
-         if (living.horizontalCollision || living.getDeltaMovement().horizontalDistanceSqr() > 0.08) {
+         if (horizontalPositionChanged(living, data)
+            || Math.abs(living.xxa) > 0.05F || Math.abs(living.zza) > 0.05F
+            || living.getDeltaMovement().horizontalDistanceSqr() > 0.0004) {
             clearAerial(living);
             return;
          }
-         double upward = 0.09 + maxHeight * 0.03;
+         living.setNoGravity(true);
+         living.setDeltaMovement(0.0, 0.0, 0.0);
+         living.fallDistance = 0.0F;
+         living.hurtMarked = true;
+         rememberHorizontalPosition(living, data);
+         return;
+      }
+      if (mode == MODE_ASCENT) {
+         if (horizontalPositionChanged(living, data)
+            || Math.abs(living.xxa) > 0.05F || Math.abs(living.zza) > 0.05F
+            || living.horizontalCollision || living.getDeltaMovement().horizontalDistanceSqr() > 0.08) {
+            clearAerial(living);
+            return;
+         }
+         double upward = 0.16;
          living.setDeltaMovement(living.getDeltaMovement().x, Math.max(living.getDeltaMovement().y, upward), living.getDeltaMovement().z);
          living.setNoGravity(true);
          living.hurtMarked = true;
+         rememberHorizontalPosition(living, data);
       }
    }
 
@@ -365,6 +370,8 @@ public final class ArcaneMobilityService {
       living.getPersistentData().remove(TAG_AERIAL_START_Y);
       living.getPersistentData().remove(TAG_AERIAL_MAX_HEIGHT);
       living.getPersistentData().remove(TAG_AERIAL_TICKS);
+      living.getPersistentData().remove(TAG_AERIAL_LAST_X);
+      living.getPersistentData().remove(TAG_AERIAL_LAST_Z);
       living.getPersistentData().remove(TAG_AERIAL_CASTER);
    }
 
@@ -490,6 +497,8 @@ public final class ArcaneMobilityService {
       data.putInt(TAG_AERIAL_MODE, MODE_STASIS);
       data.putDouble(TAG_AERIAL_START_Y, living.getY());
       data.putInt(TAG_AERIAL_TICKS, 0);
+      data.putDouble(TAG_AERIAL_LAST_X, living.getX());
+      data.putDouble(TAG_AERIAL_LAST_Z, living.getZ());
       if (caster != null) {
          data.putUUID(TAG_AERIAL_CASTER, caster.getUUID());
       }
@@ -497,5 +506,20 @@ public final class ArcaneMobilityService {
       living.setDeltaMovement(Vec3.ZERO);
       living.fallDistance = 0.0F;
       living.hurtMarked = true;
+   }
+
+   private static boolean horizontalPositionChanged(LivingEntity living, CompoundTag data) {
+      if (!data.contains(TAG_AERIAL_LAST_X) || !data.contains(TAG_AERIAL_LAST_Z)) {
+         rememberHorizontalPosition(living, data);
+         return false;
+      }
+      double dx = living.getX() - data.getDouble(TAG_AERIAL_LAST_X);
+      double dz = living.getZ() - data.getDouble(TAG_AERIAL_LAST_Z);
+      return dx * dx + dz * dz > 1.0E-6;
+   }
+
+   private static void rememberHorizontalPosition(LivingEntity living, CompoundTag data) {
+      data.putDouble(TAG_AERIAL_LAST_X, living.getX());
+      data.putDouble(TAG_AERIAL_LAST_Z, living.getZ());
    }
 }

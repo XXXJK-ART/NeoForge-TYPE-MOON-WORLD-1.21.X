@@ -216,12 +216,6 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     @Override
     protected void positionRider(Entity passenger, MoveFunction callback) {
         callback.accept(passenger, this.getX(), this.getY() + this.getBbHeight() * 0.18, this.getZ());
-        passenger.setYRot(this.getYRot());
-        if (passenger instanceof LivingEntity living) {
-            living.setYBodyRot(this.getYRot());
-            living.setYHeadRot(this.getYRot());
-            living.setXRot(0.0F);
-        }
     }
 
     @Override

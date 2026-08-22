@@ -473,6 +473,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModBlocks.CINNABAR_BLOCK);
                         output.accept(ModItems.CINNABAR);
                         output.accept(ModItems.SULFUR);
+                        output.accept(ModItems.BLOOD_BOTTLE);
                         output.accept(ModItems.MERCURY_BOTTLE);
                         output.accept(ModItems.MOLTEN_RUBY_BOTTLE);
                         output.accept(ModItems.MOLTEN_SAPPHIRE_BOTTLE);

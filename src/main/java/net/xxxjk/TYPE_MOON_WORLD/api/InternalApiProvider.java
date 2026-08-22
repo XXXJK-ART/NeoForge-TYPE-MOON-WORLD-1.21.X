@@ -343,7 +343,17 @@ public final class InternalApiProvider implements ApiProvider {
          IMagicExecutor adapter = context -> {
             LivingEntity caster = context.asPlayer();
             if (caster == null && context.entity() instanceof LivingEntity living) caster = living;
-            var result = executor.execute(new MagicCastContext(caster, null, context.entity().level(), context.magicId(), new net.minecraft.nbt.CompoundTag(), context.crestCast(), 0.0));
+            double proficiency = context.vars() == null ? 0.0D
+               : context.vars().magic_proficiencies.getOrDefault(context.magicId(), 0.0D);
+            var result = executor.execute(new MagicCastContext(
+               caster,
+               null,
+               context.entity().level(),
+               context.magicId(),
+               context.payload() == null ? new net.minecraft.nbt.CompoundTag() : context.payload().copy(),
+               context.crestCast(),
+               proficiency
+            ));
             if (result == null || !result.handled()) return net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult.NOT_HANDLED;
             return new net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult(result.handled(), result.success(), result.resourceCost(), result.cooldownTicks());
          };

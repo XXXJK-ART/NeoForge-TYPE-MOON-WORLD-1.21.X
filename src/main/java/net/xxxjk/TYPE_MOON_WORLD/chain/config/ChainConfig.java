@@ -33,9 +33,10 @@ public final class ChainConfig {
     public static final int ENUMA_BINDING_DISSOLVE_END_ROD_PARTICLES = 2;
     public static final int ENUMA_RENDER_LINK_CAP = 96;
     public static final double CHAIN_HEAD_CONNECTION_OFFSET = 0.40D;
-    public static final int ENUMA_CHAIN_COUNT = 60;
-    public static final int MAX_FUSED_CHAIN_COUNT = ENUMA_CHAIN_COUNT;
-    public static final float ENUMA_AGGREGATED_MAX_HEALTH = CHAIN_MAX_HEALTH * ENUMA_CHAIN_COUNT;
+    public static final float ENUMA_CHAIN_MAX_HEALTH = 50.0F;
+    public static final int ENUMA_CHAIN_COUNT = 10;
+    public static final int MAX_FUSED_CHAIN_COUNT = Math.max(ENUMA_CHAIN_COUNT, CHAIN_COUNT);
+    public static final float ENUMA_AGGREGATED_MAX_HEALTH = ENUMA_CHAIN_MAX_HEALTH * ENUMA_CHAIN_COUNT;
     public static final int ENUMA_WINDUP_TICKS = 200;
     public static final int ENUMA_ASCENT_TICKS = 36;
     public static final int ENUMA_BIND_CONNECTION_TICKS = 12;

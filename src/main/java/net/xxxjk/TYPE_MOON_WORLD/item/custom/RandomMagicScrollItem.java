@@ -83,7 +83,7 @@ public class RandomMagicScrollItem extends Item {
             String magicToLearn = unlearnedMagics.get(0);
             
             if (MagicLearningStrategy.materialAllowed(vars, magicToLearn)) {
-                MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble());
+                MagicLearningService.advanceFromMaterial(serverPlayer, magicToLearn, 0.15D);
             } else {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
             }

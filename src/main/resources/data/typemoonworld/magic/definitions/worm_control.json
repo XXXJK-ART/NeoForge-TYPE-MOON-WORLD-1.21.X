@@ -1,0 +1,12 @@
+{
+  "name_key": "magic.typemoonworld.worm_control.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "mana_cost": 4.0,
+  "cooldown_ticks": 4,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": true,
+  "knowledge_only": false
+}

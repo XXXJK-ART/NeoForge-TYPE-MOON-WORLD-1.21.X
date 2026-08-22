@@ -117,7 +117,7 @@ public final class PlayerNoblePhantasmHelper {
    private static final double CHARGE_MANA_PER_TICK = 10.0;
    private static final double GAE_BULG_ARMY_BASE_MANA = CHARGE_MANA_PER_TICK * 30.0;
    private static final float GAE_BULG_ARMY_BASE_DAMAGE = 500.0F;
-   private static final float GAE_BULG_ARMY_MAX_DAMAGE = 100000.0F;
+   private static final float GAE_BULG_ARMY_MAX_DAMAGE = 1000.0F;
 
    private PlayerNoblePhantasmHelper() {
    }

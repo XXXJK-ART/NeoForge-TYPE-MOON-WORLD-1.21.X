@@ -66,5 +66,6 @@ public class MagicStaffItem extends Item implements GeoItem {
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable(this.getDescriptionId(stack) + ".desc").withStyle(ChatFormatting.GRAY));
+      tooltip.add(Component.translatable("tooltip.typemoonworld.staff.reach_speed").withStyle(ChatFormatting.AQUA));
    }
 }

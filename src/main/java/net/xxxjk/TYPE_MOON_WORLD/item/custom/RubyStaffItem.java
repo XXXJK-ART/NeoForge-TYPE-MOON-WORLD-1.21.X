@@ -87,6 +87,7 @@ public class RubyStaffItem extends SwordItem implements GeoItem {
    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
       super.appendHoverText(stack, context, tooltip, flag);
       tooltip.add(Component.translatable("item.typemoonworld.ruby_staff.desc").withStyle(ChatFormatting.RED));
+      tooltip.add(Component.translatable("tooltip.typemoonworld.staff.reach_speed").withStyle(ChatFormatting.AQUA));
    }
 
    @Override
@@ -118,9 +119,6 @@ public class RubyStaffItem extends SwordItem implements GeoItem {
          return;
       }
       int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
-      if (useTicks % 5 == 0 || useTicks == CHARGE_TICKS) {
-         ElementalArrayService.spawnChargeArray(player, ElementalArrayService.Kind.FIRE, Math.min(1.0F, useTicks / (float)CHARGE_TICKS), mode(player) == MODE_SHIELD);
-      }
       if (mode(player) == MODE_SHIELD && useTicks >= CHARGE_TICKS) {
          activateShield(player, serverLevel);
       }
@@ -134,10 +132,7 @@ public class RubyStaffItem extends SwordItem implements GeoItem {
       int useTicks = this.getUseDuration(stack, living) - timeLeft;
       int mode = mode(player);
       boolean charged = useTicks >= CHARGE_TICKS;
-      if (mode == MODE_FIRE && charged) {
-         ElementalArrayService.releaseAttack(player, ElementalArrayService.Kind.FIRE);
-         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
-      } else if (mode == MODE_SHIELD && charged) {
+      if (mode == MODE_SHIELD && charged) {
          player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
       }
       clearUseState(player);

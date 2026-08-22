@@ -1,11 +1,14 @@
 package com.example.typemoonaddon.entity;
 
 import com.example.typemoonaddon.magic.SakuraBlackMudHuntService;
+import com.example.typemoonaddon.magic.BlackShadowNightService;
 import com.example.typemoonaddon.magic.SakuraSummonBlackMudService;
 import com.example.typemoonaddon.config.GameplayConfig;
 import java.util.Arrays;
 import java.util.UUID;
 import javax.annotation.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -16,10 +19,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public class SakuraBlackShadowEntity extends Monster {
@@ -46,6 +51,8 @@ public class SakuraBlackShadowEntity extends Monster {
 
     @Nullable
     private UUID ownerId;
+    @Nullable
+    private UUID nightMissionTarget;
     private final int[] shadowArtRecoveryTicks = new int[RIBBON_COUNT];
     private double actionMana = 200.0D;
 
@@ -81,6 +88,11 @@ public class SakuraBlackShadowEntity extends Monster {
         ServerPlayer owner = owner(level);
         if (owner == null || owner.isSpectator() || owner.isDeadOrDying()) {
             discard();
+            return;
+        }
+        if (hasNightMission()) {
+            LivingEntity missionTarget = getNightMissionTarget();
+            setTarget(canAttack(missionTarget) ? missionTarget : null);
             return;
         }
         LivingEntity huntTarget = SakuraBlackMudHuntService.targetFor(this);
@@ -145,6 +157,7 @@ public class SakuraBlackShadowEntity extends Monster {
     @Override
     public void remove(RemovalReason reason) {
         if (!level().isClientSide()) {
+            BlackShadowNightService.shadowKilled(this);
             SakuraSummonBlackMudService.blackShadowRemoved(this);
         }
         super.remove(reason);
@@ -191,6 +204,65 @@ public class SakuraBlackShadowEntity extends Monster {
         if (player != null && player.getUUID().equals(ownerId)) {
             discard();
         }
+    }
+
+    public void beginNightMission(LivingEntity target) {
+        nightMissionTarget = target == null ? null : target.getUUID();
+        if (target != null) {
+            setTarget(target);
+        }
+        setPersistenceRequired();
+    }
+
+    public void endNightMission() {
+        nightMissionTarget = null;
+        stopCombatAndMovement();
+    }
+
+    public boolean hasNightMission() {
+        return nightMissionTarget != null;
+    }
+
+    public boolean isNightMissionTarget(@Nullable LivingEntity target) {
+        return target != null && nightMissionTarget != null && nightMissionTarget.equals(target.getUUID());
+    }
+
+    public boolean canStartNightMissionAgainst(LivingEntity target) {
+        return canAttack(target);
+    }
+
+    public boolean teleportAround(
+            LivingEntity center,
+            double minimumRadius,
+            double maximumRadius,
+            int attempts
+    ) {
+        if (!(level() instanceof ServerLevel) || center == null || minimumRadius < 0.0D || maximumRadius < minimumRadius) {
+            return false;
+        }
+        double minimumDistanceSqr = minimumRadius * minimumRadius;
+        double maximumDistanceSqr = maximumRadius * maximumRadius;
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            double angle = random.nextDouble() * Mth.TWO_PI;
+            double radius = minimumRadius + random.nextDouble() * (maximumRadius - minimumRadius);
+            Vec3 candidate = findGroundPosition(
+                    center.getX() + Math.cos(angle) * radius,
+                    center.getZ() + Math.sin(angle) * radius,
+                    center.getY()
+            );
+            if (candidate == null) {
+                continue;
+            }
+            double distanceSqr = candidate.distanceToSqr(center.position());
+            if (distanceSqr < minimumDistanceSqr || distanceSqr > maximumDistanceSqr) {
+                continue;
+            }
+            teleportTo(candidate.x, candidate.y, candidate.z);
+            getNavigation().stop();
+            setDeltaMovement(Vec3.ZERO);
+            return true;
+        }
+        return false;
     }
 
     public void rewardOwnerManaFromDamage(double amount) {
@@ -256,5 +328,56 @@ public class SakuraBlackShadowEntity extends Monster {
 
     public void moveNear(Vec3 destination) {
         getNavigation().moveTo(destination.x, destination.y, destination.z, 0.9D);
+    }
+
+    @Nullable
+    private LivingEntity getNightMissionTarget() {
+        if (nightMissionTarget == null || !(level() instanceof ServerLevel level)) {
+            return null;
+        }
+        Entity entity = level.getEntity(nightMissionTarget);
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
+    private void stopCombatAndMovement() {
+        setTarget(null);
+        getNavigation().stop();
+        setDeltaMovement(Vec3.ZERO);
+    }
+
+    @Nullable
+    private Vec3 findGroundPosition(double x, double z, double referenceY) {
+        if (!(level() instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        for (int offset = 3; offset >= -4; offset--) {
+            int y = Mth.floor(referenceY) + offset;
+            cursor.set(x, y, z);
+            if (!serverLevel.isInWorldBounds(cursor)) {
+                continue;
+            }
+            if (!serverLevel.getBlockState(cursor).canBeReplaced() || serverLevel.getBlockState(cursor.below()).canBeReplaced()) {
+                continue;
+            }
+            if (!serverLevel.noCollision(this, getBoundingBox().move(x - getX(), y - getY(), z - getZ()))) {
+                continue;
+            }
+            if (isUnsafeSupport(serverLevel, cursor)) {
+                continue;
+            }
+            return new Vec3(x, y, z);
+        }
+        return null;
+    }
+
+    private static boolean isUnsafeSupport(ServerLevel level, BlockPos pos) {
+        var state = level.getBlockState(pos.below());
+        return state.is(Blocks.LAVA)
+                || state.is(Blocks.FIRE)
+                || state.is(Blocks.SOUL_FIRE)
+                || state.is(Blocks.MAGMA_BLOCK)
+                || state.is(Blocks.CACTUS)
+                || state.is(Blocks.SWEET_BERRY_BUSH);
     }
 }

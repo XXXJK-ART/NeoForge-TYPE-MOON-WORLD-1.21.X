@@ -48,6 +48,7 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
+import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -96,6 +97,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    NeonButton imagebutton_magical_attributes;
    NeonButton imagebutton_magical_properties;
    NeonButton imagebutton_passives;
+   NeonButton engravedWormButton;
    NeonButton tabSelfKnowledge;
    NeonButton tabCrestKnowledge;
    NeonButton filterButton;
@@ -554,6 +556,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          this.bodyTrainingButtons.add(add);
       }
 
+      this.engravedWormButton = new NeonButton(
+         this.leftPos + 122,
+         this.topPos + 107,
+         88,
+         14,
+         Component.translatable("gui.typemoonworld.body_modification.engraved_worms"),
+         e -> PacketDistributor.sendToServer(new OpenEngravedWormMenuPayload(0), new CustomPacketPayload[0]),
+         GuiUtils.ARCANE_CREST
+      ).setArcaneStyle(true);
+      this.addRenderableWidget(this.engravedWormButton);
+
       for (int i = 0; i < 10; i++) {
          int wheel = i;
          NeonButton wheelBtn = new NeonButton(
@@ -612,6 +625,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          Button button = this.bodyTrainingButtons.get(i);
          button.visible = bodyVisible;
          button.active = bodyVisible && bodyVars.body_training_points > 0 && bodyLevels[i] < BodyTrainingService.MAX_STAT_POINTS;
+      }
+      if (this.engravedWormButton != null) {
+         this.engravedWormButton.visible = bodyVisible;
+         this.engravedWormButton.active = bodyVisible;
       }
 
       if (this.imagebutton_magical_attributes != null) {

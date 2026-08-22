@@ -377,6 +377,8 @@ public class CommonEvents {
             TalentService.tick(serverPlayer);
             PassiveService.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
+            com.example.typemoonaddon.magic.SummoningMagicIntegration.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem.tick(serverPlayer);

@@ -7,10 +7,12 @@ import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
+import com.example.typemoonaddon.magic.ManaFurnaceService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.neoforged.neoforge.common.NeoForge;
@@ -48,16 +50,19 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      boolean fullSyncNeeded = PlayerMagicSelectionService.prepareCurrentSelection(entity, vars);
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
       if (entry == null || entry.isEmpty()) {
          displayClientMessage(entity, "message.typemoonworld.magic.no_magic_selected");
-         if (fullSyncNeeded) {
-            vars.syncPlayerVariables(entity);
-         }
-
          return;
       }
+
+      if (requiresConfiguration(entry) && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
+         return;
+      }
+
+      boolean fullSyncNeeded = PlayerMagicSelectionService.prepareCurrentSelection(entity, vars);
+      entry = PlayerMagicSelectionService.getCurrentEntry(vars);
 
       if (!vars.isWheelSlotEntryCastable(entry)) {
          displayClientMessage(entity, "message.typemoonworld.magic.not_learned");
@@ -81,18 +86,20 @@ public final class PlayerMagicCastService {
          displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
          return;
       }
-      if (vars.magic_cooldown > 0.0) return;
+       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId)) return;
+       boolean infiniteMana = entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+          && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
 
-      var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
-      if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {
-         displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
-         return;
-      }
-      double dynamicCost = dynamicDefinition != null ? adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost()) : 0.0;
-      if (dynamicDefinition != null && vars.player_mana < dynamicCost) {
-         displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
-         return;
-      }
+       var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
+       if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {
+          displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
+          return;
+       }
+       double dynamicCost = dynamicDefinition != null ? adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost()) : 0.0;
+       if (dynamicDefinition != null && !infiniteMana && vars.player_mana < dynamicCost) {
+          displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
+          return;
+       }
 
       // Bajiquan uses its server-owned input state machine and never enters a magic executor.
       if ("bajiquan".equals(entry.magicId) || "ganryu".equals(entry.magicId)
@@ -136,13 +143,13 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      if (result.manaCost() > 0.0) {
-         double cost = adjustedWheelCost(entity, vars, entry, result.manaCost());
-         vars.player_mana = Math.max(0.0, vars.player_mana - cost);
-      } else if (dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
-         double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
-         vars.player_mana = Math.max(0.0, vars.player_mana - cost);
-      }
+       if (!infiniteMana && result.manaCost() > 0.0) {
+          double cost = adjustedWheelCost(entity, vars, entry, result.manaCost());
+          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+       } else if (!infiniteMana && dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
+          double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
+          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+       }
 
       applyPostCastState(entity, vars, entry.magicId);
       fullSyncNeeded |= vars.recordCrestCastPractice(entity, entry.magicId);
@@ -155,6 +162,9 @@ public final class PlayerMagicCastService {
    }
 
    private static void applyPostCastState(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      if (isCooldownFreeElementalArray(magicId)) {
+         return;
+      }
       double cooldown = DEFAULT_COOLDOWN;
       if (MagicDefinitionRegistry.contains(magicId)) {
          cooldown = MagicDefinitionRegistry.get(magicId).cooldownTicks();
@@ -194,9 +204,24 @@ public final class PlayerMagicCastService {
             || magicId.startsWith("cyan"));
    }
 
+   private static boolean isCooldownFreeElementalArray(String magicId) {
+      return "flame_array".equals(magicId)
+         || "azure_water_array".equals(magicId)
+         || "gale_wind_array".equals(magicId)
+         || "rock_earth_array".equals(magicId);
+   }
+
    private static void displayClientMessage(Entity entity, String translationKey) {
       if (entity instanceof Player player && !player.level().isClientSide()) {
          player.displayClientMessage(Component.translatable(translationKey), true);
       }
+   }
+
+   private static boolean requiresConfiguration(TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry) {
+      if (entry == null || entry.magicId == null || entry.magicId.isEmpty()) {
+         return false;
+      }
+      ResourceLocation id = ResourceLocation.tryParse(entry.magicId);
+      return id != null && !ExtensionApiRegistry.controls(id).isEmpty();
    }
 }

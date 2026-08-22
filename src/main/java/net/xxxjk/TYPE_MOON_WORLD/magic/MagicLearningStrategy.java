@@ -90,6 +90,9 @@ public final class MagicLearningStrategy {
       ,Map.entry("storage", new Rule(60, true, true, true, true, false, false))
       ,Map.entry("storm", new Rule(72, true, true, true, false, false, false))
       ,Map.entry("zagan", new Rule(78, true, true, true, true, false, false))
+      ,Map.entry("spirit_summoning", new Rule(25, false, true, true, true, false, false))
+      ,Map.entry("wraith_servitude", new Rule(25, false, true, true, true, false, false))
+      ,Map.entry("evil_spirit_summoning", new Rule(35, false, true, true, true, false, false))
    );
    private static final Set<String> DEFAULT_ANALYZABLE = Set.of("projection", "structural_analysis", "reinforcement", "gravity_magic", "gander", "healing_magic", "magic_bullet", "suggestion_magic", "binding_magic", "fire_magic", "water_magic", "wind_magic", "earth_magic", "spiritual_healing");
    private static final Map<String, String> DISPLAY_ALIASES = Map.ofEntries(

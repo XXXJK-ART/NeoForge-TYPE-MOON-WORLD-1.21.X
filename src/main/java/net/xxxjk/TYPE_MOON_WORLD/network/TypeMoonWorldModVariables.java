@@ -241,9 +241,11 @@ public class TypeMoonWorldModVariables {
             clone.ubw_return_dimension = "minecraft:overworld";
          }
 
-         clone.learned_magics = new ArrayList<>(original.learned_magics);
-         clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
-         clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
+          clone.learned_magics = new ArrayList<>(original.learned_magics);
+          clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
+          clone.magic_learning_progress = new HashMap<>(original.magic_learning_progress);
+          clone.magic_learning_progress_last_gain_tick = new HashMap<>(original.magic_learning_progress_last_gain_tick);
+          clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
          clone.passive_ranks = new HashMap<>(original.passive_ranks);
          clone.martial_passive_last_threshold = original.martial_passive_last_threshold;
          clone.magic_passive_last_threshold = original.magic_passive_last_threshold;
@@ -1081,6 +1083,8 @@ public class TypeMoonWorldModVariables {
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
       public Map<String, Double> magic_proficiencies = new HashMap<>();
+      public Map<String, Double> magic_learning_progress = new HashMap<>();
+      public Map<String, Long> magic_learning_progress_last_gain_tick = new HashMap<>();
       public Map<String, Double> talent_proficiencies = new HashMap<>();
       public Map<String, PassiveRank> passive_ranks = new HashMap<>();
       public int martial_passive_last_threshold = 140;
@@ -2360,12 +2364,26 @@ public class TypeMoonWorldModVariables {
          }
 
          nbt.put("learned_magics", learnedList);
-         CompoundTag dynamicProficiency = new CompoundTag();
-         for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
-            dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
-         }
-         nbt.put("magic_proficiencies", dynamicProficiency);
-         TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
+          CompoundTag dynamicProficiency = new CompoundTag();
+          for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
+             dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
+          }
+          nbt.put("magic_proficiencies", dynamicProficiency);
+          CompoundTag learningProgress = new CompoundTag();
+          for (Map.Entry<String, Double> entry : this.magic_learning_progress.entrySet()) {
+             if (entry.getKey() != null && !entry.getKey().isBlank()) {
+                learningProgress.putDouble(entry.getKey(), Math.max(0.0D, entry.getValue()));
+             }
+          }
+          nbt.put("magic_learning_progress", learningProgress);
+          CompoundTag learningProgressTicks = new CompoundTag();
+          for (Map.Entry<String, Long> entry : this.magic_learning_progress_last_gain_tick.entrySet()) {
+             if (entry.getKey() != null && !entry.getKey().isBlank()) {
+                learningProgressTicks.putLong(entry.getKey(), entry.getValue() == null ? 0L : entry.getValue());
+             }
+          }
+          nbt.put("magic_learning_progress_last_gain_tick", learningProgressTicks);
+          TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
          if (!this.projection_selected_item.isEmpty()) {
             nbt.put("projection_selected_item", this.projection_selected_item.save(lookupProvider));
          }
@@ -2775,12 +2793,26 @@ public class TypeMoonWorldModVariables {
             }
          }
          this.magic_proficiencies.clear();
-         if (nbt.contains("magic_proficiencies", 10)) {
-            CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
-            for (String key : dynamicProficiency.getAllKeys()) {
-               this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
-            }
-         }
+          if (nbt.contains("magic_proficiencies", 10)) {
+             CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
+             for (String key : dynamicProficiency.getAllKeys()) {
+                this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
+             }
+          }
+          this.magic_learning_progress.clear();
+          if (nbt.contains("magic_learning_progress", 10)) {
+             CompoundTag learningProgress = nbt.getCompound("magic_learning_progress");
+             for (String key : learningProgress.getAllKeys()) {
+                this.magic_learning_progress.put(key, Math.max(0.0D, learningProgress.getDouble(key)));
+             }
+          }
+          this.magic_learning_progress_last_gain_tick.clear();
+          if (nbt.contains("magic_learning_progress_last_gain_tick", 10)) {
+             CompoundTag learningProgressTicks = nbt.getCompound("magic_learning_progress_last_gain_tick");
+             for (String key : learningProgressTicks.getAllKeys()) {
+                this.magic_learning_progress_last_gain_tick.put(key, learningProgressTicks.getLong(key));
+             }
+          }
          double totalMartial = this.bajiquan_proficiency + this.ganryu_proficiency + this.hokushin_proficiency + this.tennen_proficiency;
          this.martial_passive_last_threshold = TalentPassiveDataCodec.load(
             nbt, this.talent_proficiencies, this.passive_ranks, totalMartial);

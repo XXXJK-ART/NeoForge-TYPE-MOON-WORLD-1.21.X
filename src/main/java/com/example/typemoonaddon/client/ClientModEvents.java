@@ -14,6 +14,10 @@ import com.example.typemoonaddon.client.renderer.ShadowFamiliarRenderer;
 import com.example.typemoonaddon.client.renderer.ShadowPiercingRhoAiasRenderer;
 import com.example.typemoonaddon.client.renderer.SeaMonsterRenderer;
 import com.example.typemoonaddon.client.renderer.VoidRingRegaliaRenderer;
+import com.example.typemoonaddon.client.renderer.WormRenderer;
+import com.example.typemoonaddon.client.renderer.SummonedSpiritRenderer;
+import com.example.typemoonaddon.client.renderer.BoundaryMarkRenderer;
+import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonFluids;
 import com.example.typemoonaddon.registry.AddonItems;
@@ -37,6 +41,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -74,6 +79,10 @@ public final class ClientModEvents {
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER.get(), SeaMonsterRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER_SPIT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterRenderer::new);
+        event.registerEntityRenderer(AddonEntities.WORM.get(), WormRenderer::new);
+        event.registerEntityRenderer(AddonEntities.WRAITH.get(), context -> new SummonedSpiritRenderer<>(context, 0.32F));
+        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT.get(), context -> new SummonedSpiritRenderer<>(context, 0.5F));
+        event.registerEntityRenderer(AddonEntities.BOUNDARY_MARK.get(), BoundaryMarkRenderer::new);
     }
 
     @SubscribeEvent
@@ -160,6 +169,14 @@ public final class ClientModEvents {
                 return new Vector3f(0.025F, 0.0F, 0.005F);
             }
         }, AddonFluids.BLACK_MUD_TYPE.get());
+
+        for (var id : BoundaryMagicIntegration.boundaryMagicIds()) {
+            TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(id, context -> {
+                if (context instanceof net.minecraft.client.gui.screens.Screen screen) {
+                    net.minecraft.client.Minecraft.getInstance().setScreen(new BoundaryMagicOptionsScreen(screen));
+                }
+            });
+        }
     }
 
     @SubscribeEvent

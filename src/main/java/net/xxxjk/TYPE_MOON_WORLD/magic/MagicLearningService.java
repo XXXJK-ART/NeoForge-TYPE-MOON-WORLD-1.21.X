@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
@@ -45,6 +46,35 @@ public final class MagicLearningService {
       player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0F, 1.0F);
       vars.syncPlayerVariables(player);
       return true;
+   }
+
+   public static boolean grantFromProgress(ServerPlayer player, String id) {
+      if (player == null || id == null || id.isBlank() || TalentService.isTalent(id)) return false;
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!MagicLearningStrategy.learningRequirementsMet(vars, id)
+         || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, id)
+         || vars.learned_magics.contains(id)) {
+         return false;
+      }
+      vars.learned_magics.add(id);
+      MagicLearningProgressService.add(vars, id, MagicLearningProgressService.maxProgress(id), player.level().getGameTime());
+      applyImmediateGrantBonuses(vars, id);
+      awardAnalysisKnowledge(vars, id);
+      if (MagicLearningStrategy.canAnalyze(id)) unlockAnalysisChance(player, vars);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned",
+         Component.translatable("magic.typemoonworld." + id + ".name")), true);
+      player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0F, 1.0F);
+      vars.syncPlayerVariables(player);
+      return true;
+   }
+
+   public static boolean advanceFromMaterial(ServerPlayer player, String id, double fraction) {
+      if (player == null || id == null || id.isBlank() || TalentService.isTalent(id)) return false;
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!MagicLearningStrategy.materialAllowed(vars, id) || vars.learned_magics.contains(id)) {
+         return false;
+      }
+      return MagicLearningProgressService.addFromSource(player, id, fraction);
    }
 
    public static void unlockAnalysisChance(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

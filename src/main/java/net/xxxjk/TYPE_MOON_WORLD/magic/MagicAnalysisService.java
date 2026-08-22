@@ -91,6 +91,9 @@ public final class MagicAnalysisService {
          player.causeFoodExhaustion(Math.max(0.01F, 0.015F * split));
       }
       AnalysisTask advanced = task.advance(AdvancedPassiveService.analysisWorkPerTick(vars));
+      double analysisProficiency = AdvancedPassiveService.effectiveMagicAnalysisProficiency(vars);
+      MagicLearningProgressService.addWithLearningCheck(player, advanced.magicId,
+         analysisProficiency * analysisProficiency * 0.1D);
       if (advanced.workDone < advanced.totalWork) {
          TASKS.put(player.getUUID(), advanced);
          if (player.tickCount % 5 == 0) {
@@ -100,19 +103,8 @@ public final class MagicAnalysisService {
          return;
       }
       TASKS.remove(player.getUUID());
-      double proficiency = AdvancedPassiveService.effectiveMagicAnalysisProficiency(vars);
-      boolean success = player.getRandom().nextDouble() <= MagicLearningStrategy.learningChance(advanced.magicId, proficiency);
-      if (success) {
-         if (!vars.learned_magics.contains(advanced.magicId)) {
-            vars.learned_magics.add(advanced.magicId);
-            MagicLearningService.applyImmediateGrantBonuses(vars, advanced.magicId);
-            MagicLearningService.awardAnalysisKnowledge(vars, advanced.magicId);
-         }
-         MagicProficiencyService.add(vars, "magic_analysis", Math.max(0.05, 1.0 - advanced.complexity / 100.0));
-         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.analysis_success", advanced.magicId), true);
-      } else {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.analysis_failed", advanced.magicId), true);
-      }
+      MagicProficiencyService.add(vars, "magic_analysis", Math.max(0.05, 1.0 - advanced.complexity / 100.0));
+      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.analysis_completed", advanced.magicId), true);
       vars.syncPlayerVariables(player);
    }
 

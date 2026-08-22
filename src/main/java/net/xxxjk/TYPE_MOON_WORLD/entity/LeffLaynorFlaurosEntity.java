@@ -28,6 +28,7 @@ public class LeffLaynorFlaurosEntity extends MysticMagicianEntity {
    public static final String TAG_IMAGINARY_DISPLACEMENT_ACTIVE = "TypeMoonLeffImaginaryDisplacementActive";
    public static final String TAG_IMAGINARY_DISPLACEMENT_COOLDOWN = "TypeMoonLeffImaginaryDisplacementCooldown";
    private static final String TAG_HEALTH_MIGRATED = "TypeMoonLeffHealthV2";
+   private boolean redirectingImaginaryDisplacementDamage;
 
    public LeffLaynorFlaurosEntity(EntityType<? extends net.minecraft.world.entity.PathfinderMob> type, Level level) {
       super(type, level);
@@ -61,15 +62,23 @@ public class LeffLaynorFlaurosEntity extends MysticMagicianEntity {
 
    @Override
    public boolean hurt(DamageSource source, float amount) {
+      if (this.redirectingImaginaryDisplacementDamage) {
+         return super.hurt(source, amount);
+      }
       if (!this.level().isClientSide() && this.getPersistentData().getInt(TAG_IMAGINARY_DISPLACEMENT_ACTIVE) > 0 && source != null && amount > 0.0F) {
          Entity attacker = source.getEntity();
          if (attacker == null) {
             attacker = source.getDirectEntity();
          }
          if (attacker instanceof net.minecraft.world.entity.LivingEntity living && living != this && living.isAlive()) {
-            living.invulnerableTime = 0;
-            living.hurt(this.damageSources().mobAttack(this), amount);
-            living.invulnerableTime = 0;
+            this.redirectingImaginaryDisplacementDamage = true;
+            try {
+               living.invulnerableTime = 0;
+               living.hurt(this.damageSources().mobAttack(this), amount);
+               living.invulnerableTime = 0;
+            } finally {
+               this.redirectingImaginaryDisplacementDamage = false;
+            }
          }
          if (this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.PORTAL, this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(), 36, 0.7, 0.8, 0.7, 0.08);

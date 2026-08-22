@@ -23,10 +23,10 @@ public class MedeaReinforcementCharmItem extends Item {
    private static final ResourceLocation SPEED_ID = id("medea_reinforcement_charm_speed");
    private static final ResourceLocation ARMOR_ID = id("medea_reinforcement_charm_armor");
    private static final ResourceLocation ATTACK_ID = id("medea_reinforcement_charm_attack");
-   private static final double C_MAX_HEALTH = 40.0;
-   private static final double C_MOVEMENT_SPEED = 0.13;
-   private static final double C_ARMOR = 12.0;
-   private static final double C_ATTACK_DAMAGE = 8.0;
+   private static final double C_MAX_HEALTH = 300.0;
+   private static final double C_MOVEMENT_SPEED = 0.28;
+   private static final double C_ARMOR = 9.0;
+   private static final double C_ATTACK_DAMAGE = 15.0;
 
    public MedeaReinforcementCharmItem(Properties properties) {
       super(properties);
@@ -43,7 +43,7 @@ public class MedeaReinforcementCharmItem extends Item {
          return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      boolean active = !vars.servant_card_transformed && hasCharm(player);
+      boolean active = hasCharm(player);
       if (!active) {
          removeAll(player);
          return;

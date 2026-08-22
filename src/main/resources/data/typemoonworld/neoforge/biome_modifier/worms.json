@@ -1,0 +1,12 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#typemoonworld:worm_spawns",
+  "spawners": [
+    {
+      "type": "typemoonworld:worm",
+      "weight": 8,
+      "minCount": 1,
+      "maxCount": 3
+    }
+  ]
+}

@@ -28,11 +28,13 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCardKeybindScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
@@ -51,7 +53,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
@@ -81,6 +82,7 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
+   public static final KeyMapping SERVANT_CARD_KEYBINDS = new KeyMapping("key.typemoonworld.servant_card.keybinds", GLFW.GLFW_KEY_O, KEY_CATEGORY);
    public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
       new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),
       new KeyMapping("key.typemoonworld.servant_card.slot1", GLFW.GLFW_KEY_KP_1, KEY_CATEGORY),
@@ -105,6 +107,7 @@ public class TypeMoonWorldModKeyMappings {
       event.register(CYCLE_MAGIC);
       event.register(MAGIC_MODE_SWITCH);
       event.register(MAGIC_WHEEL_SWITCH);
+      event.register(SERVANT_CARD_KEYBINDS);
       for (KeyMapping mapping : SERVANT_CARD_SKILL_KEYS) {
          event.register(mapping);
       }
@@ -121,7 +124,6 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isModeSwitchDown = false;
       private static boolean isWheelSwitchDown = false;
       private static final boolean[] numpadWheelDown = new boolean[10];
-      private static final boolean[] servantCardHoldDown = new boolean[10];
       private static boolean servantJumpDown = false;
       private static final long SERVANT_FLIGHT_DASH_TAP_WINDOW_MS = 280L;
       private static final int SERVANT_FLIGHT_DASH_FORWARD = 0;
@@ -321,8 +323,18 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
 
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+                  TypeMoonWorldModVariables.PLAYER_VARIABLES
+               );
+               if (ServantCardSkillInputController.handleScroll(player, vars, scrollDelta)) {
+                  event.setCanceled(true);
+                  return;
+               }
+            }
+
             if (TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
-               Player player = Minecraft.getInstance().player;
                if (player != null) {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -342,9 +354,9 @@ public class TypeMoonWorldModKeyMappings {
             }
 
             if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
-               Player player = Minecraft.getInstance().player;
-               if (player != null) {
-                  TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+               Player cyclePlayer = Minecraft.getInstance().player;
+               if (cyclePlayer != null) {
+                  TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)cyclePlayer.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
                   if ((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars)) {
@@ -424,6 +436,11 @@ public class TypeMoonWorldModKeyMappings {
                }
             }
             if (vars.servant_card_transformed) {
+               if (TypeMoonWorldModKeyMappings.SERVANT_CARD_KEYBINDS.consumeClick()) {
+                  Minecraft.getInstance().setScreen(new ServantCardKeybindScreen(vars.servant_card_id));
+                  clearServantCardInputState();
+                  return;
+               }
                handleServantCardControls(vars);
                return;
             }
@@ -821,20 +838,7 @@ public class TypeMoonWorldModKeyMappings {
          } else {
             clearPaleRiderInputState();
          }
-         for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
-            if (isHoldServantCardSkill(vars, slot)) {
-               boolean down = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].isDown();
-               if (down != servantCardHoldDown[slot]) {
-                  servantCardHoldDown[slot] = down;
-                  PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, down), new CustomPacketPayload[0]);
-               }
-            } else {
-               servantCardHoldDown[slot] = false;
-               while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].consumeClick()) {
-                  PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
-               }
-            }
-         }
+         ServantCardSkillInputController.tick(Minecraft.getInstance().player, vars);
 
          boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
          boolean sneakDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
@@ -934,9 +938,7 @@ public class TypeMoonWorldModKeyMappings {
          lastServantFlightVertical = Float.NaN;
          clearServantFlightDashState();
          clearPaleRiderInputState();
-         for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
-            servantCardHoldDown[slot] = false;
-         }
+         ServantCardSkillInputController.clear();
       }
 
       private static void clearServantFlightDashState() {
@@ -952,13 +954,6 @@ public class TypeMoonWorldModKeyMappings {
          lastPaleRiderVertical = Float.NaN;
          lastPaleRiderYaw = Float.NaN;
          lastPaleRiderPitch = Float.NaN;
-      }
-
-      private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
-         return ("emiya_archer".equals(vars.servant_card_id) && slot == 1)
-            || ("li_shuwen".equals(vars.servant_card_id) && slot == 2)
-            || ("arash".equals(vars.servant_card_id) && slot == 9)
-            || ("oda_nobunaga".equals(vars.servant_card_id) && (slot == 4 || slot == 8));
       }
 
       private static void handleMasterControls(boolean suppressScreens) {

@@ -75,22 +75,17 @@ public class MagicScrollItem extends Item {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
                 return InteractionResultHolder.fail(stack);
             }
-            // Books are reusable and use the normal complexity/proficiency formula.
-            if (MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble())) {
-                if (learnAllAtOnce) {
-                    for (String magicId : unlearnedMagics) {
-                        MagicLearningService.grantFromMaterial(serverPlayer, magicId);
+            MagicLearningService.advanceFromMaterial(serverPlayer, magicToLearn, 0.10D);
+            if (learnAllAtOnce) {
+                for (String magicId : unlearnedMagics) {
+                    if (!magicId.equals(magicToLearn)) {
+                        MagicLearningService.advanceFromMaterial(serverPlayer, magicId, 0.10D);
                     }
                 }
-                
-                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
-                else stack.shrink(1);
-                return InteractionResultHolder.consume(stack);
-            } else {
-                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
-                else stack.shrink(1);
-                return InteractionResultHolder.consume(stack);
             }
+            if (reusableBook) player.getCooldowns().addCooldown(this, 100);
+            else stack.shrink(1);
+            return InteractionResultHolder.consume(stack);
         }
         
         return InteractionResultHolder.pass(stack);

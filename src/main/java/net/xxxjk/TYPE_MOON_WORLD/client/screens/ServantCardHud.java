@@ -27,7 +27,8 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.HundredFacesClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
-import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardKeybindConfig;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCasterGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -409,6 +410,7 @@ public class ServantCardHud {
 
    private static void drawCooldownGrid(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
       int[] cooldowns = effectiveSkillCooldowns(minecraft, vars);
+      int selectedSlot = ServantCardSkillInputController.selectedSlot(vars);
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
@@ -420,15 +422,16 @@ public class ServantCardHud {
          Component label = empty
             ? Component.translatable("hud.typemoonworld.servant_card.none")
             : (ticks <= 0 ? Component.translatable(skillKey) : Component.literal(ticksToSeconds(ticks)));
-         Component text = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[i]
-            .getTranslatedKeyMessage()
-            .copy()
+         Component text = Component.literal(ServantCardKeybindConfig.keyName(ServantCardKeybindConfig.keyFor(vars.servant_card_id, i)))
             .append(":")
             .append(label);
          int color = empty ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
          float scale = 0.54F;
          int width = Math.min(142, Math.max(38, (int)(minecraft.font.width(text) * scale) + 5));
-         gui.fill(drawX - 1, drawY - 1, drawX + width, drawY + 6, 0x44000000);
+         gui.fill(drawX - 1, drawY - 1, drawX + width, drawY + 6, i == selectedSlot ? 0xAA2D7180 : 0x44000000);
+         if (i == selectedSlot) {
+            gui.fill(drawX - 1, drawY - 1, drawX + 1, drawY + 6, 0xFF35C6D0);
+         }
          drawScaledString(gui, minecraft, text, drawX + 1, drawY - 1, color, scale);
       }
    }
