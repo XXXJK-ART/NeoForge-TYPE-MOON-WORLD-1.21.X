@@ -18,6 +18,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
@@ -68,6 +69,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenServantCommandScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -250,7 +253,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    public boolean isBoundTo(ServerPlayer player) {
-      return player != null && player.getUUID().equals(masterUuid);
+      return player != null && player.getUUID().equals(getMasterUuid());
    }
 
    public void bindMaster(ServerPlayer master) {
@@ -292,6 +295,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return commandMode;
    }
 
+   public void setCommandMode(ServantCommandMode mode) {
+      commandMode = mode == null ? ServantCommandMode.FOLLOW : mode;
+      if (commandMode == ServantCommandMode.STAY) stayAnchor = blockPosition();
+   }
+
    public boolean hasMasterNoblePhantasmPermission() {
       return masterUuid == null || masterNoblePhantasmPermission;
    }
@@ -299,6 +307,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public boolean toggleMasterNoblePhantasmPermission() {
       masterNoblePhantasmPermission = !masterNoblePhantasmPermission;
       return masterNoblePhantasmPermission;
+   }
+
+   public void setMasterNoblePhantasmPermission(boolean permitted) {
+      masterNoblePhantasmPermission = permitted;
    }
 
    @Override
@@ -1593,6 +1605,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       return SocialDisposition.fromId(this.entityData.get(SOCIAL_DISPOSITION));
    }
 
+   public void setSocialDisposition(SocialDisposition disposition) {
+      this.entityData.set(SOCIAL_DISPOSITION, (disposition == null ? SocialDisposition.NORMAL : disposition).id());
+   }
+
    public CombatDisposition getCombatDisposition() {
       return CombatDisposition.fromId(this.entityData.get(COMBAT_DISPOSITION));
    }
@@ -1607,6 +1623,18 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public void setFavor(double favor) {
       this.entityData.set(FAVOR, (float) Math.min(100.0, Math.max(0.0, favor)));
+   }
+
+   @Override
+   protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+      ItemStack stack = player.getItemInHand(hand);
+      if (player.isShiftKeyDown() && stack.isEmpty() && getMasterUuid() != null && getMasterUuid().equals(player.getUUID())) {
+         if (player instanceof ServerPlayer serverPlayer) {
+            ModNetwork.sendToPlayer(serverPlayer, new OpenServantCommandScreenMessage(getId()));
+         }
+         return InteractionResult.sidedSuccess(level().isClientSide());
+      }
+      return super.mobInteract(player, hand);
    }
 
    public double getCurrentMp() {

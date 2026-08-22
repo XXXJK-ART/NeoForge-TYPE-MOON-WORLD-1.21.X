@@ -370,7 +370,8 @@ public class ServantCardHud {
    }
 
    private static int effectiveNpCooldown(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) {
+      if ("ushiwakamaru_rider".equals(vars.servant_card_id)
+         || "okita_souji_saber".equals(vars.servant_card_id)) {
          return effectiveSkillCooldowns(minecraft, vars)[9];
       }
       int syncedCooldown = effectiveRemainingTicks(minecraft, vars.servant_card_np_cooldown, vars.servant_card_np_cooldown_end);
@@ -416,7 +417,8 @@ public class ServantCardHud {
          int drawY = y + i * 8;
          int ticks = i == 9 && !"gilgamesh".equals(vars.servant_card_id)
             && !"gilgamesh_caster".equals(vars.servant_card_id)
-            && !"ushiwakamaru_rider".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
+            && !"ushiwakamaru_rider".equals(vars.servant_card_id)
+            && !"okita_souji_saber".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty

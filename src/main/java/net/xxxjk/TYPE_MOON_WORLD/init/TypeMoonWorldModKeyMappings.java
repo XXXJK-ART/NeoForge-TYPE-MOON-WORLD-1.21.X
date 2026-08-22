@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCardKeybindScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
@@ -58,6 +59,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
@@ -962,9 +964,25 @@ public class TypeMoonWorldModKeyMappings {
          }
          while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[0].consumeClick()) {
             if (!suppressScreens) {
-               Minecraft.getInstance().setScreen(new MasterCommandSpellScreen());
+               Minecraft mc = Minecraft.getInstance();
+               ServantEntity servant = getLocalBoundEntityServant(mc);
+               mc.setScreen(servant == null
+                  ? new MasterCommandSpellScreen()
+                  : new ServantCommandScreen(servant.getId()));
             }
          }
+      }
+
+      private static ServantEntity getLocalBoundEntityServant(Minecraft mc) {
+         if (mc.player == null || mc.level == null) return null;
+         TypeMoonWorldModVariables.PlayerVariables vars = mc.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars == null || !vars.master_active || vars.master_servant_uuid == null || vars.master_servant_uuid.isBlank()) return null;
+         return mc.level.getEntitiesOfClass(
+            ServantEntity.class,
+            mc.player.getBoundingBox().inflate(128.0),
+            servant -> servant.isAlive()
+               && vars.master_servant_uuid.equals(servant.getUUID().toString())
+         ).stream().findFirst().orElse(null);
       }
 
       private static boolean supportsCrouchAttack(String servantId) {

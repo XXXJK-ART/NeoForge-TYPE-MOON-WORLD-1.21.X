@@ -835,8 +835,16 @@ public class ModItems {
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "theology"));
     public static final DeferredItem<Item> MAGIC_PAGE_IRON_ARMOR_ACTION = ITEMS.register("magic_page_iron_armor_action",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "iron_armor_action"));
+    public static final DeferredItem<Item> MAGIC_BOOK_IRON_ARMOR_ACTION = ITEMS.register("magic_book_iron_armor_action",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, "theology", "iron_armor_action"));
     public static final DeferredItem<Item> MAGIC_PAGE_CREMATION_RITE = ITEMS.register("magic_page_cremation_rite",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "cremation_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_CREMATION_RITE = ITEMS.register("magic_book_cremation_rite",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, "theology", "cremation_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ENTITY_DISPLACEMENT = ITEMS.register("magic_book_entity_displacement",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "entity_displacement"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ENTITY_DISPLACEMENT = ITEMS.register("magic_page_entity_displacement",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "entity_displacement"));
     public static final DeferredItem<Item> PARTITIONED_THOUGHT_FRAGMENT = ITEMS.register("partitioned_thought_fragment",
             () -> new PartitionedThoughtFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SELF_GEAS_SCROLL = ITEMS.register("self_geas_scroll",

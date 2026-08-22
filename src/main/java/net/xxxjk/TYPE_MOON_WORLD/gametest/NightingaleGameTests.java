@@ -8,8 +8,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.PlayerTeam;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity;
@@ -87,6 +89,21 @@ public final class NightingaleGameTests {
          helper.assertTrue(!NightingaleSupportService.hasAngelCry(ally, now), "Angel's Cry remained active after 400 ticks");
          helper.succeed();
       });
+   }
+
+   @GameTest(batch = "nightingale", template = "ancient_temple", timeoutTicks = 40)
+   public static void angelCryIgnoresAlliedEntitiesWithoutAttackDamage(GameTestHelper helper) {
+      NightingaleEntity nightingale = nightingale(helper);
+      var cow = helper.spawn(EntityType.COW, new BlockPos(5, 8, 3));
+      cow.setNoAi(true);
+      PlayerTeam team = helper.getLevel().getScoreboard().addPlayerTeam("ngac" + nightingale.getId());
+      helper.getLevel().getScoreboard().addPlayerToTeam(nightingale.getScoreboardName(), team);
+      helper.getLevel().getScoreboard().addPlayerToTeam(cow.getScoreboardName(), team);
+
+      LivingEntity target = NightingaleSupportService.findAngelCryTarget(nightingale, helper.getLevel().getGameTime());
+
+      helper.assertTrue(target == nightingale, "Angel's Cry selected an ally without attack damage");
+      helper.succeed();
    }
 
    @GameTest(batch = "nightingale", template = "ancient_temple", timeoutTicks = 60)

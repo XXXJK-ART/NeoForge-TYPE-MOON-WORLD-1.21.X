@@ -77,6 +77,17 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_SPIRIT_SUMMONING);
             event.accept(AddonItems.MAGIC_PAGE_WRAITH_SERVITUDE);
             event.accept(AddonItems.MAGIC_PAGE_EVIL_SPIRIT_SUMMONING);
+            event.accept(AddonItems.MAGIC_PAGE_WORM_MAGIC);
+            event.accept(AddonItems.MAGIC_PAGE_WORM_CONTROL);
+            event.accept(AddonItems.MAGIC_PAGE_ENGRAVED_WORM_OPERATION);
+            event.accept(AddonItems.MAGIC_PAGE_BOUNDARY_ART);
+            event.accept(AddonItems.MAGIC_PAGE_SENSING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_WARNING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_DEFENSE_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_SUGGESTION_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_ANTI_MAGIC_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_GUARD_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.MAGIC_BOOKS_TAB.get()) {
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_STORAGE);
@@ -86,6 +97,28 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_BOOK_SPIRIT_SUMMONING);
             event.accept(AddonItems.MAGIC_BOOK_WRAITH_SERVITUDE);
             event.accept(AddonItems.MAGIC_BOOK_EVIL_SPIRIT_SUMMONING);
+            event.accept(AddonItems.MAGIC_BOOK_WORM_MAGIC);
+            event.accept(AddonItems.MAGIC_PAGE_WORM_MAGIC);
+            event.accept(AddonItems.MAGIC_BOOK_WORM_CONTROL);
+            event.accept(AddonItems.MAGIC_PAGE_WORM_CONTROL);
+            event.accept(AddonItems.MAGIC_BOOK_ENGRAVED_WORM_OPERATION);
+            event.accept(AddonItems.MAGIC_PAGE_ENGRAVED_WORM_OPERATION);
+            event.accept(AddonItems.MAGIC_BOOK_BOUNDARY_ART);
+            event.accept(AddonItems.MAGIC_PAGE_BOUNDARY_ART);
+            event.accept(AddonItems.MAGIC_BOOK_SENSING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_SENSING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_WARNING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_WARNING_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_DEFENSE_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_DEFENSE_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_SUGGESTION_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_SUGGESTION_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_ANTI_MAGIC_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_ANTI_MAGIC_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_GUARD_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_GUARD_BOUNDARY);
+            event.accept(AddonItems.MAGIC_BOOK_INTERFERENCE_BOUNDARY);
+            event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
             event.insertAfter(ModItems.KIKU_ICHIMONJI_NORIMUNE.toStack(), AddonItems.PRELATIS_SPELLBOOK.toStack(),

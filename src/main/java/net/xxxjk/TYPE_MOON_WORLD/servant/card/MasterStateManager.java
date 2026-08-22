@@ -24,6 +24,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanPursuitData;
 
 public final class MasterStateManager {
    public static final int MAX_COMMAND_SPELLS = 3;
@@ -277,6 +279,12 @@ public final class MasterStateManager {
          return false;
       }
       if (NeoForge.EVENT_BUS.post(new ServantContractEvent.Pre(master, servant)).isCanceled()) return false;
+      if (servant instanceof ShadowHassanEntity shadow
+         && master.level() instanceof ServerLevel level
+         && !ShadowHassanPursuitData.get(level.getServer()).bind(shadow, master)) {
+         master.displayClientMessage(Component.translatable("message.typemoonworld.master.contract_occupied"), true);
+         return false;
+      }
       vars.master_servant_uuid = servant.getUUID().toString();
       servant.bindMaster(master);
       MasterServantLinkService.establishEntityContract(master, vars, servant);
@@ -331,23 +339,30 @@ public final class MasterStateManager {
       if (action == 3) {
          return extractSingleCommandSpell(master, vars);
       }
-      ServerPlayer servant = MasterServantLinkService.getLinkedServant(master, vars);
+      LivingEntity servant = getBoundServantEntity(master, vars);
       if (servant == null) {
          vars.master_command_spell_pose_active = false;
          MasterVisualStateSync.broadcast(master, vars);
          master.displayClientMessage(Component.translatable("message.typemoonworld.master.no_servant"), true);
          return false;
       }
-      TypeMoonWorldModVariables.PlayerVariables servantVars = servant.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       boolean success = switch (action) {
          case 0 -> {
-            servantVars.servant_card_mana = Math.min(
-               servantVars.servant_card_max_mana,
-               servantVars.servant_card_mana + servantVars.servant_card_max_mana
-            );
-            ServantCardUnlimitedMode.clearCooldowns(servant);
-            servantVars.syncPlayerVariables(servant);
-            yield true;
+            if (servant instanceof ServerPlayer servantPlayer) {
+               TypeMoonWorldModVariables.PlayerVariables servantVars = servantPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               servantVars.servant_card_mana = Math.min(
+                  servantVars.servant_card_max_mana,
+                  servantVars.servant_card_mana + servantVars.servant_card_max_mana
+               );
+               ServantCardUnlimitedMode.clearCooldowns(servantPlayer);
+               servantVars.syncPlayerVariables(servantPlayer);
+               yield true;
+            }
+            if (servant instanceof ServantEntity servantEntity) {
+               servantEntity.setCurrentMp(servantEntity.getMaxMp());
+               yield true;
+            }
+            yield false;
          }
          case 1 -> {
             if (master.level() instanceof ServerLevel level) {
@@ -482,12 +497,12 @@ public final class MasterStateManager {
       return value == null || value.isBlank();
    }
 
-   private static Vec3 findSafeRecallDestination(ServerLevel level, ServerPlayer master, ServerPlayer servant) {
+   private static Vec3 findSafeRecallDestination(ServerLevel level, ServerPlayer master, LivingEntity servant) {
       Vec3 nearMaster = findNearbySafeRecallDestination(level, master, servant);
       return nearMaster == null ? master.position() : nearMaster;
    }
 
-   private static Vec3 findNearbySafeRecallDestination(ServerLevel level, ServerPlayer master, ServerPlayer servant) {
+   private static Vec3 findNearbySafeRecallDestination(ServerLevel level, ServerPlayer master, LivingEntity servant) {
       BlockPos center = master.blockPosition();
       Vec3 masterPos = master.position();
       Vec3 preferred = masterPos.add(master.getLookAngle().multiply(-1.4, 0.0, -1.4));
@@ -510,7 +525,7 @@ public final class MasterStateManager {
       return safeRecallCenter(level, servant, center);
    }
 
-   private static Vec3 safeRecallCenter(ServerLevel level, ServerPlayer servant, BlockPos feet) {
+   private static Vec3 safeRecallCenter(ServerLevel level, LivingEntity servant, BlockPos feet) {
       if (!level.getWorldBorder().isWithinBounds(feet)) return null;
       if (!isSafeRecallFeet(level, feet)) return null;
       Vec3 destination = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);

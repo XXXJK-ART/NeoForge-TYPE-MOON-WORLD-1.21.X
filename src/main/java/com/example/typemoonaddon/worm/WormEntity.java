@@ -4,10 +4,14 @@ import com.example.typemoonaddon.detection.DetectionService;
 import com.example.typemoonaddon.registry.AddonItems;
 import com.example.typemoonaddon.magic.WormMagicIntegration;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.DifficultyInstance;
@@ -31,6 +35,9 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.Vec3;
 
 public final class WormEntity extends PathfinderMob {
+    private static final EntityDataAccessor<Integer> DATA_VARIANT = SynchedEntityData.defineId(
+            WormEntity.class, EntityDataSerializers.INT);
+
     private WormType variant = WormType.SILVERFISH;
     private int guPower = WormType.SILVERFISH.defaultGu();
     @Nullable
@@ -75,7 +82,7 @@ public final class WormEntity extends PathfinderMob {
         goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.1D, true));
         goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8D));
         targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false,
-                entity -> entity != null && entity != getOwner()));
+                entity -> entity != null && entity != getOwner() && !isFriendlyWorm(entity)));
     }
 
     @Override
@@ -99,11 +106,14 @@ public final class WormEntity extends PathfinderMob {
         } else if (sharedVisionActive) {
             syncSharedVision();
         }
+        if (getTarget() instanceof WormEntity wormTarget && isFriendlyWorm(wormTarget)) {
+            setTarget(null);
+        }
         if (ownerId != null && tickCount % 10 == 0 && variant != WormType.DETECTION) {
             LivingEntity target = level.getEntitiesOfClass(
                             LivingEntity.class,
                             getBoundingBox().inflate(10.0D),
-                            entity -> entity != this && entity != getOwner() && entity.isAlive())
+                            entity -> entity != this && entity != getOwner() && entity.isAlive() && !isFriendlyWorm(entity))
                     .stream()
                     .min(Comparator.comparingDouble(this::distanceToSqr))
                     .orElse(null);
@@ -150,8 +160,14 @@ public final class WormEntity extends PathfinderMob {
     }
 
     @Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
+        builder.define(DATA_VARIANT, WormType.SILVERFISH.ordinal());
+    }
+
+    @Override
+    protected Component getTypeName() {
+        return Component.translatable("entity.typemoonworld.worm." + getVariant().id());
     }
 
     @Override
@@ -173,18 +189,19 @@ public final class WormEntity extends PathfinderMob {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        variant = WormType.byId(tag.getString(WormStackData.TYPE));
+        setVariant(WormType.byId(tag.getString(WormStackData.TYPE)));
         guPower = Math.max(1, tag.getInt(WormStackData.GU));
         ownerId = tag.hasUUID(WormStackData.OWNER) ? tag.getUUID(WormStackData.OWNER) : null;
         manuallyControlled = tag.getBoolean("Manual");
     }
 
     public WormType getVariant() {
-        return variant;
+        return bySyncedOrdinal(entityData.get(DATA_VARIANT));
     }
 
     public void setVariant(WormType variant) {
         this.variant = variant == null ? WormType.SILVERFISH : variant;
+        entityData.set(DATA_VARIANT, this.variant.ordinal());
         if (getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.variant == WormType.DETECTION ? 0.65D : 0.35D);
         }
@@ -251,5 +268,16 @@ public final class WormEntity extends PathfinderMob {
             sharedVisionActive = false;
             DetectionService.syncSharedVision(owner, this, false);
         }
+    }
+
+    private boolean isFriendlyWorm(@Nullable LivingEntity entity) {
+        return ownerId != null
+                && entity instanceof WormEntity worm
+                && Objects.equals(ownerId, worm.getOwnerId());
+    }
+
+    private static WormType bySyncedOrdinal(int ordinal) {
+        WormType[] values = WormType.values();
+        return ordinal >= 0 && ordinal < values.length ? values[ordinal] : WormType.SILVERFISH;
     }
 }

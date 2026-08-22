@@ -54,8 +54,8 @@ public final class ServantCardNightingaleSkills {
       long now = player.level().getGameTime();
       LivingEntity looked = findLookTarget(player, NightingaleRules.SUPPORT_RANGE);
       LivingEntity target = looked != null && NightingaleSupportService.isAlly(player, looked)
-         && !NightingaleSupportService.hasAngelCry(looked, now) ? looked : null;
-      if (target == null && !NightingaleSupportService.hasAngelCry(player, now)) target = player;
+         && NightingaleSupportService.canReceiveAngelCry(looked, now) ? looked : null;
+      if (target == null && NightingaleSupportService.canReceiveAngelCry(player, now)) target = player;
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.nightingale.no_buff_target"), true);
          return false;

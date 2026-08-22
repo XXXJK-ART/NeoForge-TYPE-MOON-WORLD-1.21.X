@@ -233,8 +233,12 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MAGIC_PAGE_BLACK_KEY_MAKING);
                         output.accept(ModItems.MAGIC_BOOK_THEOLOGY);
                         output.accept(ModItems.MAGIC_PAGE_THEOLOGY);
+                        output.accept(ModItems.MAGIC_BOOK_IRON_ARMOR_ACTION);
                         output.accept(ModItems.MAGIC_PAGE_IRON_ARMOR_ACTION);
+                        output.accept(ModItems.MAGIC_BOOK_CREMATION_RITE);
                         output.accept(ModItems.MAGIC_PAGE_CREMATION_RITE);
+                        output.accept(ModItems.MAGIC_BOOK_ENTITY_DISPLACEMENT);
+                        output.accept(ModItems.MAGIC_PAGE_ENTITY_DISPLACEMENT);
                         output.accept(ModItems.MAGIC_BOOK_STIGMA);
                         output.accept(ModItems.MAGIC_PAGE_STIGMA);
                         output.accept(ModItems.MAGIC_BOOK_ABSORPTION);

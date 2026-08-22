@@ -4,6 +4,7 @@ import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.client.model.BlackShadowModel;
 import com.example.typemoonaddon.client.model.ShadowFamiliarModel;
 import com.example.typemoonaddon.client.model.ShadowFamiliarOutlineModel;
+import com.example.typemoonaddon.client.model.WingedWormModel;
 import com.example.typemoonaddon.client.renderer.BlackMudCorruptionLayer;
 import com.example.typemoonaddon.client.renderer.BlackShadowRenderer;
 import com.example.typemoonaddon.client.renderer.CursedArmorLayer;
@@ -67,6 +68,7 @@ public final class ClientModEvents {
         event.registerLayerDefinition(BlackShadowModel.LAYER_LOCATION, BlackShadowModel::createBodyLayer);
         event.registerLayerDefinition(ShadowFamiliarModel.LAYER_LOCATION, ShadowFamiliarModel::createBodyLayer);
         event.registerLayerDefinition(ShadowFamiliarOutlineModel.LAYER_LOCATION, ShadowFamiliarOutlineModel::createBodyLayer);
+        event.registerLayerDefinition(WingedWormModel.LAYER_LOCATION, WingedWormModel::createBodyLayer);
     }
 
     @SubscribeEvent

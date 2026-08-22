@@ -66,7 +66,9 @@ public final class CommandSpellVisualClient {
       }
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft.player != null && minecraft.player.getId() == player.getId()) {
-         return localCommandSpellPoseActive || minecraft.screen instanceof net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
+         return localCommandSpellPoseActive
+            || minecraft.screen instanceof net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen
+            || minecraft.screen instanceof net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
       }
       State state = STATES.get(player.getUUID());
       return state != null && state.poseActive;

@@ -3,32 +3,36 @@ package com.example.typemoonaddon.client;
 import com.example.typemoonaddon.engravedworm.EngravedWormMenu;
 import com.example.typemoonaddon.engravedworm.EngravedWormPagePayload;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.GuiUtils;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.NeonButton;
 import org.jetbrains.annotations.NotNull;
 
 public final class EngravedWormScreen extends AbstractContainerScreen<EngravedWormMenu> {
-    private static final ResourceLocation BACKGROUND =
-            ResourceLocation.withDefaultNamespace("textures/gui/container/generic_54.png");
+    private static final int WINDOW_COLOR = GuiUtils.ARCANE_CREST;
 
     public EngravedWormScreen(EngravedWormMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageWidth = 176;
+        imageWidth = 192;
         imageHeight = 222;
     }
 
     @Override
     protected void init() {
         super.init();
-        addRenderableWidget(Button.builder(Component.literal("<"), button -> changePage(menu.getPage() - 1))
-                .bounds(leftPos + 6, topPos + 4, 18, 14).build());
-        addRenderableWidget(Button.builder(Component.literal(">"), button -> changePage(menu.getPage() + 1))
-                .bounds(leftPos + 28, topPos + 4, 18, 14).build());
+        int buttonY = topPos + 5;
+        addRenderableWidget(new NeonButton(leftPos + 6, buttonY, 18, 14, Component.literal("<"), b -> changePage(menu.getPage() - 1), GuiUtils.ARCANE_CREST)
+                .setArcaneStyle(true).setCompactStyle(true));
+        addRenderableWidget(new NeonButton(leftPos + 26, buttonY, 18, 14, Component.literal(">"), b -> changePage(menu.getPage() + 1), GuiUtils.ARCANE_CYAN)
+                .setArcaneStyle(true).setCompactStyle(true));
+        addRenderableWidget(new NeonButton(leftPos + 152, buttonY, 18, 14, Component.literal("<<"), b -> changePage(0), GuiUtils.ARCANE_GOLD)
+                .setArcaneStyle(true).setCompactStyle(true));
+        addRenderableWidget(new NeonButton(leftPos + 172, buttonY, 18, 14, Component.literal(">>"), b -> changePage(menu.getMaxPage()), GuiUtils.ARCANE_GOLD)
+                .setArcaneStyle(true).setCompactStyle(true));
     }
 
     private void changePage(int page) {
@@ -45,9 +49,24 @@ public final class EngravedWormScreen extends AbstractContainerScreen<EngravedWo
 
     @Override
     protected void renderBg(@NotNull GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(BACKGROUND, leftPos, topPos, 0, 0, imageWidth, 71);
-        graphics.blit(BACKGROUND, leftPos, topPos + 71, 0, 126, imageWidth, 96);
-        graphics.drawString(font, Component.literal("P" + (menu.getPage() + 1) + "/" + (menu.getMaxPage() + 1)),
-                leftPos + 54, topPos + 6, 0x404040, false);
+        GuiUtils.renderScreenBackdrop(graphics, width, height);
+        GuiUtils.renderArcaneWindow(graphics, leftPos, topPos, imageWidth, imageHeight, WINDOW_COLOR);
+        graphics.drawCenteredString(font, title, leftPos + imageWidth / 2, topPos + 7, GuiUtils.ARCANE_TEXT);
+        graphics.drawCenteredString(font, Component.literal("P" + (menu.getPage() + 1) + "/" + (menu.getMaxPage() + 1)),
+               leftPos + imageWidth / 2, topPos + 19, GuiUtils.ARCANE_TEXT_MUTED);
+        GuiUtils.renderSectionHeader(graphics, leftPos + 8, topPos + 32, imageWidth - 16, GuiUtils.ARCANE_CREST);
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 9; column++) {
+                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 18 + row * 18, 18, GuiUtils.ARCANE_CREST, false);
+            }
+        }
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 9; column++) {
+                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 130 + row * 18, 18, GuiUtils.ARCANE_CYAN, false);
+            }
+        }
+        for (int column = 0; column < 9; column++) {
+            GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 188, 18, GuiUtils.ARCANE_GOLD, false);
+        }
     }
 }

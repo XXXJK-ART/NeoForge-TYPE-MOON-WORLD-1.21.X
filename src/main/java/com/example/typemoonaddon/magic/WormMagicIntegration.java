@@ -252,7 +252,10 @@ public final class WormMagicIntegration {
         Vec3 look = player.getLookAngle().normalize();
         AABB search = player.getBoundingBox().expandTowards(look.scale(range)).inflate(2.0D);
         return player.level().getEntitiesOfClass(LivingEntity.class, search,
-                        candidate -> candidate != player && candidate.isAlive() && player.hasLineOfSight(candidate))
+                        candidate -> candidate != player
+                                && candidate.isAlive()
+                                && player.hasLineOfSight(candidate)
+                                && !isOwnedWorm(player, candidate))
                 .stream()
                 .filter(candidate -> {
                     Vec3 offset = candidate.getEyePosition().subtract(eye);
@@ -262,6 +265,10 @@ public final class WormMagicIntegration {
                 })
                 .min(Comparator.comparingDouble(player::distanceToSqr))
                 .orElse(null);
+    }
+
+    private static boolean isOwnedWorm(ServerPlayer player, LivingEntity candidate) {
+        return candidate instanceof WormEntity worm && player.getUUID().equals(worm.getOwnerId());
     }
 
     private record EnumPreset(String key, String defaultValue, Set<String> allowed) implements MagicPresetHandler {

@@ -97,6 +97,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterVisualStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenServantCommandScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCommandMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MedeaCraftSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MuramasaForgeSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
@@ -322,6 +324,8 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToServer(MasterCommandSpellMessage.TYPE, MasterCommandSpellMessage.STREAM_CODEC, MasterCommandSpellMessage::handleData);
       registrar.playToServer(MasterCommandSpellPoseMessage.TYPE, MasterCommandSpellPoseMessage.STREAM_CODEC, MasterCommandSpellPoseMessage::handleData);
+      registrar.playToServer(ServantCommandMessage.TYPE, ServantCommandMessage.STREAM_CODEC, ServantCommandMessage::handleData);
+      registrar.playToClient(OpenServantCommandScreenMessage.TYPE, OpenServantCommandScreenMessage.STREAM_CODEC, OpenServantCommandScreenMessage::handleData);
       registrar.playToServer(CustomCommandSpellMessage.TYPE, CustomCommandSpellMessage.STREAM_CODEC, CustomCommandSpellMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationPointMessage.TYPE, EnkiduTransfigurationPointMessage.STREAM_CODEC, EnkiduTransfigurationPointMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationSetMessage.TYPE, EnkiduTransfigurationSetMessage.STREAM_CODEC, EnkiduTransfigurationSetMessage::handleData);

@@ -9,6 +9,10 @@ public enum ServantCommandMode {
       return values()[(ordinal() + 1) % values().length];
    }
 
+   public static ServantCommandMode byOrdinal(int ordinal) {
+      return values()[Math.floorMod(ordinal, values().length)];
+   }
+
    public static ServantCommandMode byName(String value) {
       if (value == null) return FOLLOW;
       try { return valueOf(value); } catch (IllegalArgumentException ignored) { return FOLLOW; }

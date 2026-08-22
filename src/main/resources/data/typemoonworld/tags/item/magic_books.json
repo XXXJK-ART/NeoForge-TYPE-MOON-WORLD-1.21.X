@@ -46,8 +46,22 @@
     "typemoonworld:magic_book_touko_travel",
     "typemoonworld:magic_book_flight_magic",
     "typemoonworld:magic_book_spiritron_cannon",
+    "typemoonworld:magic_book_iron_armor_action",
+    "typemoonworld:magic_book_cremation_rite",
+    "typemoonworld:magic_book_entity_displacement",
     "typemoonworld:magic_book_spirit_summoning",
     "typemoonworld:magic_book_wraith_servitude",
-    "typemoonworld:magic_book_evil_spirit_summoning"
+    "typemoonworld:magic_book_evil_spirit_summoning",
+    "typemoonworld:magic_book_worm_magic",
+    "typemoonworld:magic_book_worm_control",
+    "typemoonworld:magic_book_engraved_worm_operation",
+    "typemoonworld:magic_book_boundary_art",
+    "typemoonworld:magic_book_sensing_boundary",
+    "typemoonworld:magic_book_warning_boundary",
+    "typemoonworld:magic_book_defense_boundary",
+    "typemoonworld:magic_book_suggestion_boundary",
+    "typemoonworld:magic_book_anti_magic_boundary",
+    "typemoonworld:magic_book_guard_boundary",
+    "typemoonworld:magic_book_interference_boundary"
   ]
 }

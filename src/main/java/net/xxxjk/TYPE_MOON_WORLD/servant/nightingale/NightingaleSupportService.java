@@ -77,8 +77,14 @@ public final class NightingaleSupportService {
 
    public static LivingEntity findAngelCryTarget(NightingaleEntity nightingale, long now) {
       return nightingale.level().getEntitiesOfClass(LivingEntity.class, nightingale.getBoundingBox().inflate(NightingaleRules.SUPPORT_RANGE),
-            entity -> entity.isAlive() && isAlly(nightingale, entity) && entity.getPersistentData().getLong(ANGEL_CRY_UNTIL) <= now)
+            entity -> isAlly(nightingale, entity) && canReceiveAngelCry(entity, now))
          .stream().max(Comparator.comparingDouble(entity -> entity.getAttributeValue(Attributes.ATTACK_DAMAGE))).orElse(nightingale);
+   }
+
+   public static boolean canReceiveAngelCry(LivingEntity entity, long now) {
+      return entity != null && entity.isAlive()
+         && entity.getPersistentData().getLong(ANGEL_CRY_UNTIL) <= now
+         && entity.getAttribute(Attributes.ATTACK_DAMAGE) != null;
    }
 
    public static void applyHealing(LivingEntity nightingale, LivingEntity target, float amount) {

@@ -58,6 +58,118 @@ public final class AddonItems {
                     TypeMoonAddon.id("imaginary_absorption_evolved").toString())
     );
 
+    public static final DeferredItem<Item> MAGIC_BOOK_WORM_MAGIC = ITEMS.register(
+            "magic_book_worm_magic",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D, null,
+                    "worm_magic")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_WORM_MAGIC = ITEMS.register(
+            "magic_page_worm_magic",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D, null,
+                    "worm_magic")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_WORM_CONTROL = ITEMS.register(
+            "magic_book_worm_control",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "worm_magic", "worm_control")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_WORM_CONTROL = ITEMS.register(
+            "magic_page_worm_control",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "worm_magic", "worm_control")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_ENGRAVED_WORM_OPERATION = ITEMS.register(
+            "magic_book_engraved_worm_operation",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.EPIC), 1.0D,
+                    "worm_magic", "engraved_worm_operation")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_ENGRAVED_WORM_OPERATION = ITEMS.register(
+            "magic_page_engraved_worm_operation",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.EPIC), 0.15D,
+                    "worm_magic", "engraved_worm_operation")
+    );
+
+    public static final DeferredItem<Item> MAGIC_BOOK_BOUNDARY_ART = ITEMS.register(
+            "magic_book_boundary_art",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D, null,
+                    "boundary_art")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_BOUNDARY_ART = ITEMS.register(
+            "magic_page_boundary_art",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D, null,
+                    "boundary_art")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_SENSING_BOUNDARY = ITEMS.register(
+            "magic_book_sensing_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "sensing_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_SENSING_BOUNDARY = ITEMS.register(
+            "magic_page_sensing_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "sensing_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_WARNING_BOUNDARY = ITEMS.register(
+            "magic_book_warning_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "warning_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_WARNING_BOUNDARY = ITEMS.register(
+            "magic_page_warning_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "warning_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_DEFENSE_BOUNDARY = ITEMS.register(
+            "magic_book_defense_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "defense_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_DEFENSE_BOUNDARY = ITEMS.register(
+            "magic_page_defense_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "defense_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_SUGGESTION_BOUNDARY = ITEMS.register(
+            "magic_book_suggestion_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "suggestion_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_SUGGESTION_BOUNDARY = ITEMS.register(
+            "magic_page_suggestion_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "suggestion_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_ANTI_MAGIC_BOUNDARY = ITEMS.register(
+            "magic_book_anti_magic_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "anti_magic_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_ANTI_MAGIC_BOUNDARY = ITEMS.register(
+            "magic_page_anti_magic_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "anti_magic_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_GUARD_BOUNDARY = ITEMS.register(
+            "magic_book_guard_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "guard_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_GUARD_BOUNDARY = ITEMS.register(
+            "magic_page_guard_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "guard_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_INTERFERENCE_BOUNDARY = ITEMS.register(
+            "magic_book_interference_boundary",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D,
+                    "boundary_art", "interference_boundary")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_INTERFERENCE_BOUNDARY = ITEMS.register(
+            "magic_page_interference_boundary",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.15D,
+                    "boundary_art", "interference_boundary")
+    );
+
     public static final DeferredItem<Item> MAGIC_BOOK_SPIRIT_SUMMONING = ITEMS.register(
             "magic_book_spirit_summoning",
             () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D, null,
