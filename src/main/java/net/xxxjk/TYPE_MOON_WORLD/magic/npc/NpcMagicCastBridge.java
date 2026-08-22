@@ -240,7 +240,11 @@ public final class NpcMagicCastBridge {
       "sapphire_winter_frost",
       "emerald_winter_river",
       "topaz_reinforcement",
-      "cyan_wind"
+      "cyan_wind",
+      "wraith_servitude",
+      "evil_spirit_summoning",
+      "worm_control",
+      "engraved_worm_operation"
    );
    private static final NpcMagicCastBridge.BehaviorProfile[][] BEHAVIOR_PROFILE_MATRIX = new NpcMagicCastBridge.BehaviorProfile[][]{
       {
@@ -1472,6 +1476,14 @@ public final class NpcMagicCastBridge {
             case "cyan_wind":
                ensureAdvancedJewelPrerequisites(vars, "cyan_throw");
                break;
+            case "worm_control":
+            case "engraved_worm_operation":
+               ensureLearned(vars, "worm_magic");
+               break;
+            case "wraith_servitude":
+            case "evil_spirit_summoning":
+               ensureLearned(vars, "spirit_summoning");
+               break;
          }
       }
    }
@@ -1729,6 +1741,10 @@ public final class NpcMagicCastBridge {
                   case "gravity_magic":
                   case "binding_magic":
                   case "suggestion_magic":
+                  case "worm_control":
+                  case "engraved_worm_operation":
+                  case "wraith_servitude":
+                  case "evil_spirit_summoning":
                   case "water_magic":
                   case "wind_magic":
                   case "earth_magic":

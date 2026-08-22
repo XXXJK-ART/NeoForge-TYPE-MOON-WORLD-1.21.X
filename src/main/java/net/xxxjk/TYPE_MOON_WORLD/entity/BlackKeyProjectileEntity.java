@@ -79,11 +79,6 @@ public class BlackKeyProjectileEntity extends ThrowableItemProjectile implements
          float base = isUndead(target) ? 22.0F : 11.0F;
          target.invulnerableTime = 0;
          target.hurt(damageSources().thrown(this, getOwner()), base);
-         if (BlackKeyItem.isFireEngraved(carried) && target.isAlive()) {
-            target.igniteForSeconds(4.0F);
-            target.invulnerableTime = 0;
-            target.hurt(target.damageSources().onFire(), isUndead(target) ? 10.0F : 5.0F);
-         }
          BlackKeyMiracleService.onProjectileHit(this, target, carried);
          BlackKeyItem.consumeSharedDurability(carried, 1);
          finish(carried);

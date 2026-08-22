@@ -50,7 +50,11 @@ public final class NpcMagicFilterService {
       "sapphire_winter_frost",
       "emerald_winter_river",
       "topaz_reinforcement",
-      "cyan_wind"
+      "cyan_wind",
+      "wraith_servitude",
+      "evil_spirit_summoning",
+      "worm_control",
+      "engraved_worm_operation"
    );
    private static final Set<String> HARD_EXCLUDED_MAGICS = Set.of(
       "unlimited_blade_works", "sword_barrel_full_open", "structural_analysis", "jewel_magic_shoot", "jewel_magic_release"

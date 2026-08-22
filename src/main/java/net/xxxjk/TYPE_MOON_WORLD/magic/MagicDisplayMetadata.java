@@ -19,7 +19,16 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_TALENT = "talent";
    public static final String CATEGORY_IMAGINARY = "imaginary";
    public static final String CATEGORY_SOLOMON = "solomon";
+   public static final String CATEGORY_SPAWN = "spawn";
+   public static final String CATEGORY_WORM = "worm";
+   public static final String CATEGORY_BOUNDARY = "boundary";
    private static final Set<String> CHURCH_MAGICS = Set.of("theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma");
+   private static final Set<String> SPAWN_MAGICS = Set.of("spirit_summoning", "wraith_servitude", "evil_spirit_summoning");
+   private static final Set<String> WORM_MAGICS = Set.of("worm_magic", "worm_control", "engraved_worm_operation");
+   private static final Set<String> BOUNDARY_MAGICS = Set.of(
+      "boundary_art", "sensing_boundary", "warning_boundary", "defense_boundary",
+      "suggestion_boundary", "anti_magic_boundary", "guard_boundary", "interference_boundary"
+   );
    private static final Set<String> IMAGINARY_MAGICS = Set.of(
       "absorption", "storage", "imaginary_displacement", "imaginary_dive", "imaginary_space"
    );
@@ -70,6 +79,12 @@ public final class MagicDisplayMetadata {
          return CATEGORY_IMAGINARY;
       } else if (isSolomonMagic(magicId)) {
          return CATEGORY_SOLOMON;
+      } else if (isSpawnMagic(magicId)) {
+         return CATEGORY_SPAWN;
+      } else if (isWormMagic(magicId)) {
+         return CATEGORY_WORM;
+      } else if (isBoundaryMagic(magicId)) {
+         return CATEGORY_BOUNDARY;
       } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
          || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
          return CATEGORY_JEWEL;
@@ -93,5 +108,17 @@ public final class MagicDisplayMetadata {
       } else {
          return CATEGORY_BASIC;
       }
+   }
+
+   private static boolean isSpawnMagic(String magicId) {
+      return magicId != null && SPAWN_MAGICS.contains(magicId);
+   }
+
+   private static boolean isWormMagic(String magicId) {
+      return magicId != null && WORM_MAGICS.contains(magicId);
+   }
+
+   private static boolean isBoundaryMagic(String magicId) {
+      return magicId != null && BOUNDARY_MAGICS.contains(magicId);
    }
 }

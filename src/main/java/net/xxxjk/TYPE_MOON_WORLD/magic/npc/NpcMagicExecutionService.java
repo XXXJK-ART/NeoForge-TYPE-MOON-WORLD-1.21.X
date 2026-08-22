@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
 import com.example.typemoonaddon.magic.EntityDisplacementService;
+import com.example.typemoonaddon.TypeMoonAddon;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,7 +22,7 @@ public final class NpcMagicExecutionService {
 
    public static boolean hasCastableMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       if (vars != null && magicId != null && !magicId.isEmpty()) {
-         var definition = MagicDefinitionRegistry.get(magicId);
+         var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed()) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          for (int slot = 0; slot < 12; slot++) {
@@ -60,8 +61,8 @@ public final class NpcMagicExecutionService {
       }
       // Addon executors are checked before the legacy compatibility table. This keeps
       // the NPC and player paths on the same callback implementation.
-      if (MagicDefinitionRegistry.contains(magicId)) {
-         var definition = MagicDefinitionRegistry.get(magicId);
+      if (definitionFor(magicId) != null) {
+         var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed() && !isLeffExclusiveNpcMagic(caster, magicId)) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
@@ -100,6 +101,14 @@ public final class NpcMagicExecutionService {
          postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
       }
       return success;
+   }
+
+   private static net.xxxjk.typemoonworld.api.MagicDefinitionData definitionFor(String magicId) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition == null && magicId != null && magicId.indexOf(':') < 0) {
+         definition = MagicDefinitionRegistry.get(TypeMoonAddon.MOD_ID + ":" + magicId);
+      }
+      return definition;
    }
 
    private static boolean isLeffExclusiveNpcMagic(MysticMagicianEntity caster, String magicId) {

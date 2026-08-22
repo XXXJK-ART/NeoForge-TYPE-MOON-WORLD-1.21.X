@@ -174,6 +174,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("magic_bullet", "magic.typemoonworld.magic_bullet.name", "basic", -3381556);
       this.addMagic("suggestion_magic", "magic.typemoonworld.suggestion_magic.name", "basic", -6737152);
       this.addMagic("binding_magic", "magic.typemoonworld.binding_magic.name", "basic", -1058372);
+      this.addMagic("worm_magic", "magic.typemoonworld.worm_magic.name", "worm", 0xFF7F6A4A);
+      this.addMagic("worm_control", "magic.typemoonworld.worm_control.name", "worm", 0xFF9A8160);
+      this.addMagic("engraved_worm_operation", "magic.typemoonworld.engraved_worm_operation.name", "worm", 0xFFB34D5A);
       this.addMagic("fire_magic", "magic.typemoonworld.fire_magic.name", "elemental", -3386880);
       this.addMagic("water_magic", "magic.typemoonworld.water_magic.name", "elemental", -10040065);
       this.addMagic("wind_magic", "magic.typemoonworld.wind_magic.name", "elemental", -6684775);
@@ -189,6 +192,21 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("touko_travel", "magic.typemoonworld.touko_travel.name", "special", -7701249);
       this.addMagic("flight_magic", "magic.typemoonworld.flight_magic.name", "special", -7701249);
       this.addMagic("spiritron_cannon", "magic.typemoonworld.spiritron_cannon.name", "special", -171);
+      this.addMagic("spirit_summoning", "magic.typemoonworld.spirit_summoning.name", "spawn", 0xFF8E8FA8);
+      this.addMagic("wraith_servitude", "magic.typemoonworld.wraith_servitude.name", "spawn", 0xFF7A7D92);
+      this.addMagic("evil_spirit_summoning", "magic.typemoonworld.evil_spirit_summoning.name", "spawn", 0xFF70516B);
+      this.addMagic("boundary_art", "magic.typemoonworld.boundary_art.name", "boundary", 0xFF57A6A8);
+      this.addMagic("sensing_boundary", "magic.typemoonworld.sensing_boundary.name", "boundary", 0xFF49A89A);
+      this.addMagic("warning_boundary", "magic.typemoonworld.warning_boundary.name", "boundary", 0xFFE2B84F);
+      this.addMagic("defense_boundary", "magic.typemoonworld.defense_boundary.name", "boundary", 0xFF4D8FD6);
+      this.addMagic("suggestion_boundary", "magic.typemoonworld.suggestion_boundary.name", "boundary", 0xFF9B6BD3);
+      this.addMagic("anti_magic_boundary", "magic.typemoonworld.anti_magic_boundary.name", "boundary", 0xFF6EC6D8);
+      this.addMagic("guard_boundary", "magic.typemoonworld.guard_boundary.name", "boundary", 0xFF69B66B);
+      this.addMagic("interference_boundary", "magic.typemoonworld.interference_boundary.name", "boundary", 0xFFD06A66);
+      this.addMagic("theology", "magic.typemoonworld.theology.name", "church", -865972);
+      this.addMagic("black_key_making", "magic.typemoonworld.black_key_making.name", "church", -865972);
+      this.addMagic("iron_armor_action", "magic.typemoonworld.iron_armor_action.name", "church", -865972);
+      this.addMagic("cremation_rite", "magic.typemoonworld.cremation_rite.name", "church", -865972);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
       this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "imaginary", -6697729);
@@ -226,7 +244,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private static boolean hasLearnedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      return vars != null && vars.hasLearnedSelfMagic(magicId);
+      return vars != null && MagicLearningStrategy.isLearned(vars, magicId);
    }
 
    private void rebuildSourceMagics() {
@@ -234,10 +252,26 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.ensureCrestSourceAvailability();
       List<Magical_attributes_Screen.MagicEntry> rebuilt = new ArrayList<>();
       if (this.magicSourceTab == MAGIC_SOURCE_SELF) {
+         Set<String> added = new HashSet<>();
          for (Magical_attributes_Screen.MagicEntry base : this.baseMagicCatalog) {
             if (hasLearnedMagic(vars, base.id)) {
                rebuilt.add(base.copy());
+               added.add(base.id);
             }
+         }
+
+         for (String displayMagicId : MagicLearningStrategy.displayMagicIds(vars.learned_magics)) {
+            if (displayMagicId == null || displayMagicId.isEmpty() || added.contains(displayMagicId)) {
+               continue;
+            }
+            Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(displayMagicId);
+            Magical_attributes_Screen.MagicEntry entry = base == null
+               ? new Magical_attributes_Screen.MagicEntry(
+                  displayMagicId, "magic.typemoonworld." + displayMagicId + ".name", this.resolveFallbackCategory(displayMagicId), -11557889
+               )
+               : base.copy();
+            rebuilt.add(entry);
+            added.add(displayMagicId);
          }
       } else {
          boolean hasValidCrest = vars.hasValidImplantedCrest();
@@ -345,6 +379,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.imaginary";
       } else if ("solomon".equals(category)) {
          return "gui.typemoonworld.category.solomon";
+      } else if ("spawn".equals(category)) {
+         return "gui.typemoonworld.category.spawn";
+      } else if ("worm".equals(category)) {
+         return "gui.typemoonworld.category.worm";
+      } else if ("boundary".equals(category)) {
+         return "gui.typemoonworld.category.boundary";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -364,7 +404,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.martial",
          "gui.typemoonworld.category.talent",
          "gui.typemoonworld.category.imaginary",
-         "gui.typemoonworld.category.solomon"
+         "gui.typemoonworld.category.solomon",
+         "gui.typemoonworld.category.spawn",
+         "gui.typemoonworld.category.worm",
+         "gui.typemoonworld.category.boundary"
       };
       int maxCategoryWidth = 0;
 
@@ -442,6 +485,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "imaginary";
       } else if ("imaginary".equals(current)) {
          return "solomon";
+      } else if ("solomon".equals(current)) {
+         return "spawn";
+      } else if ("spawn".equals(current)) {
+         return "worm";
+      } else if ("worm".equals(current)) {
+         return "boundary";
       } else {
          return "all";
       }
@@ -450,7 +499,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private String getNextCategory(String current) {
       String next = this.nextCategoryRaw(current);
 
-      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 16; safety++) {
+      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 20; safety++) {
          next = this.nextCategoryRaw(next);
       }
 

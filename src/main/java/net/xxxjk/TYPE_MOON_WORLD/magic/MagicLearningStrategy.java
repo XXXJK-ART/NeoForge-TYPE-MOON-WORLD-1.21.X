@@ -5,9 +5,11 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import com.example.typemoonaddon.TypeMoonAddon;
 import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 
 /** Central rules for magic complexity and acquisition. Values are intentionally stable for saves. */
@@ -94,7 +96,7 @@ public final class MagicLearningStrategy {
       ,Map.entry("wraith_servitude", new Rule(25, false, true, true, true, false, false))
       ,Map.entry("evil_spirit_summoning", new Rule(35, false, true, true, true, false, false))
       ,Map.entry("entity_displacement", new Rule(35, true, true, true, true, false, false))
-      ,Map.entry("worm_magic", new Rule(30, true, true, true, true, false, false))
+      ,Map.entry("worm_magic", new Rule(30, false, true, true, true, false, false))
       ,Map.entry("worm_control", new Rule(40, true, true, true, true, false, false))
       ,Map.entry("engraved_worm_operation", new Rule(55, true, true, true, true, false, false))
       ,Map.entry("boundary_art", new Rule(20, false, true, true, true, false, false))
@@ -224,7 +226,15 @@ public final class MagicLearningStrategy {
    /** Returns the primary magic represented by a branch entry for UI and proficiency display. */
    public static String normalizeDisplayId(String id) {
       if (id == null) return "";
-      return DISPLAY_ALIASES.getOrDefault(id, id);
+      String normalized = DISPLAY_ALIASES.getOrDefault(id, id);
+      if (normalized.indexOf(':') < 0) return normalized;
+      ResourceLocation parsed = ResourceLocation.tryParse(normalized);
+      if (parsed == null) return normalized;
+      String namespace = parsed.getNamespace();
+      if (net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID.equals(namespace) || TypeMoonAddon.MOD_ID.equals(namespace)) {
+         return parsed.getPath();
+      }
+      return normalized;
    }
 
    public static boolean isHiddenBranch(String id) {

@@ -196,8 +196,8 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          setCustomName(Component.literal(ChurchNameGenerator.generate(random, skin == 3)));
          setCustomNameVisible(true);
       }
-      int roll = random.nextInt(200);
-      entityData.set(WEAPON, roll < 60 ? WEAPON_BLACK_KEY : roll < 130 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
+      int roll = random.nextInt(100);
+      entityData.set(WEAPON, roll < 20 ? WEAPON_BLACK_KEY : roll < 55 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
       entityData.set(BAPTISM, random.nextBoolean());
       entityData.set(REINFORCEMENT, random.nextBoolean());
       entityData.set(SPIRITUAL_HEALING, random.nextBoolean());
@@ -260,7 +260,6 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
    private ItemStack createBlackKeyStack() {
       ItemStack stack = new ItemStack(ModItems.BLACK_KEY.get(), 1 + random.nextInt(3));
       BlackKeyItem.setExpanded(stack, true);
-      if (random.nextBoolean()) BlackKeyItem.setFireEngraved(stack, true);
       return stack;
    }
 

@@ -68,59 +68,61 @@ public final class SummoningMagicIntegration {
     }
 
     private static ExecutionResult castWraith(MagicCastContext context) {
-        ServerPlayer player = context.serverPlayer();
-        if (player == null || !hasPrelude(player)) {
+        LivingEntity caster = context.caster();
+        if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel level)
+                || !hasPrelude(caster)) {
             return ExecutionResult.FAILED;
         }
         String mode = normalizeMode(context.preset());
-        List<WraithEntity> spirits = ownedWraiths(player);
+        List<WraithEntity> spirits = ownedWraiths(caster);
         int cap = Math.max(1, Math.min(12, 1 + (int)(context.proficiency() / 10.0D)));
         if ("dismiss".equals(mode)) {
             spirits.forEach(LivingEntity::discard);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
         if (spirits.size() < cap) {
-            WraithEntity spirit = AddonEntities.WRAITH.get().create(player.serverLevel());
+            WraithEntity spirit = AddonEntities.WRAITH.get().create(level);
             if (spirit == null) return ExecutionResult.FAILED;
-            spirit.setOwner(player);
+            spirit.setOwner(caster);
             spirit.setCommandMode(modeToCommand(mode));
-            Vec3 spawn = player.position().add(player.getLookAngle().scale(1.5D)).add(0.0D, 0.6D, 0.0D);
-            spirit.moveTo(spawn.x, spawn.y, spawn.z, player.getYRot(), 0.0F);
-            player.serverLevel().addFreshEntity(spirit);
-            spirits = ownedWraiths(player);
+            Vec3 spawn = caster.position().add(caster.getLookAngle().scale(1.5D)).add(0.0D, 0.6D, 0.0D);
+            spirit.moveTo(spawn.x, spawn.y, spawn.z, caster.getYRot(), 0.0F);
+            level.addFreshEntity(spirit);
+            spirits = ownedWraiths(caster);
         }
-        applyCommand(spirits, player, mode, context.target());
+        applyCommand(spirits, caster, mode, context.target());
         return ExecutionResult.SUCCESS.withCost(25.0D).withCooldown(12);
     }
 
     private static ExecutionResult castEvilSpirit(MagicCastContext context) {
-        ServerPlayer player = context.serverPlayer();
-        if (player == null || !hasPrelude(player)) {
+        LivingEntity caster = context.caster();
+        if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel level)
+                || !hasPrelude(caster)) {
             return ExecutionResult.FAILED;
         }
         String mode = normalizeMode(context.preset());
-        List<EvilSpiritEntity> spirits = ownedEvilSpirits(player);
+        List<EvilSpiritEntity> spirits = ownedEvilSpirits(caster);
         if ("dismiss".equals(mode)) {
             spirits.forEach(LivingEntity::discard);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
         if (spirits.size() < 3) {
-            EvilSpiritEntity spirit = AddonEntities.EVIL_SPIRIT.get().create(player.serverLevel());
+            EvilSpiritEntity spirit = AddonEntities.EVIL_SPIRIT.get().create(level);
             if (spirit == null) return ExecutionResult.FAILED;
-            spirit.setOwner(player);
+            spirit.setOwner(caster);
             spirit.configure(context.proficiency());
             spirit.setCommandMode(modeToCommand(mode));
-            Vec3 spawn = player.position().add(player.getLookAngle().scale(2.0D)).add(0.0D, 0.8D, 0.0D);
-            spirit.moveTo(spawn.x, spawn.y, spawn.z, player.getYRot(), 0.0F);
-            player.serverLevel().addFreshEntity(spirit);
-            spirits = ownedEvilSpirits(player);
+            Vec3 spawn = caster.position().add(caster.getLookAngle().scale(2.0D)).add(0.0D, 0.8D, 0.0D);
+            spirit.moveTo(spawn.x, spawn.y, spawn.z, caster.getYRot(), 0.0F);
+            level.addFreshEntity(spirit);
+            spirits = ownedEvilSpirits(caster);
         }
-        applyCommand(spirits, player, mode, context.target());
+        applyCommand(spirits, caster, mode, context.target());
         return ExecutionResult.SUCCESS.withCost(80.0D).withCooldown(20);
     }
 
-    private static boolean hasPrelude(ServerPlayer player) {
-        return TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().knowledge(player).isLearned(PRELUDE);
+    private static boolean hasPrelude(LivingEntity caster) {
+        return TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().knowledge(caster).isLearned(PRELUDE);
     }
 
     private static String normalizeMode(CompoundTag preset) {
@@ -136,7 +138,7 @@ public final class SummoningMagicIntegration {
         };
     }
 
-    private static void applyCommand(List<? extends SummonedSpiritEntity> spirits, ServerPlayer player,
+    private static void applyCommand(List<? extends SummonedSpiritEntity> spirits, LivingEntity player,
                                      String mode, LivingEntity target) {
         int command = modeToCommand(mode);
         for (SummonedSpiritEntity spirit : spirits) {
@@ -148,7 +150,7 @@ public final class SummoningMagicIntegration {
         }
     }
 
-    private static LivingEntity findTarget(ServerPlayer player) {
+    private static LivingEntity findTarget(LivingEntity player) {
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getLookAngle().normalize();
         AABB box = player.getBoundingBox().expandTowards(look.scale(32.0D)).inflate(2.0D);
@@ -158,13 +160,19 @@ public final class SummoningMagicIntegration {
                 .min(java.util.Comparator.comparingDouble(player::distanceToSqr)).orElse(null);
     }
 
-    private static List<WraithEntity> ownedWraiths(ServerPlayer player) {
-        return player.serverLevel().getEntitiesOfClass(WraithEntity.class,
+    private static List<WraithEntity> ownedWraiths(LivingEntity player) {
+        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return List.of();
+        }
+        return level.getEntitiesOfClass(WraithEntity.class,
                 player.getBoundingBox().inflate(64.0D), spirit -> player.getUUID().equals(spirit.getOwnerId()));
     }
 
-    private static List<EvilSpiritEntity> ownedEvilSpirits(ServerPlayer player) {
-        return player.serverLevel().getEntitiesOfClass(EvilSpiritEntity.class,
+    private static List<EvilSpiritEntity> ownedEvilSpirits(LivingEntity player) {
+        if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return List.of();
+        }
+        return level.getEntitiesOfClass(EvilSpiritEntity.class,
                 player.getBoundingBox().inflate(64.0D), spirit -> player.getUUID().equals(spirit.getOwnerId()));
     }
 

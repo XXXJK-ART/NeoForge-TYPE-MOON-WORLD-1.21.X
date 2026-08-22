@@ -171,6 +171,9 @@ public final class InternalApiProvider implements ApiProvider {
    public static ExecutionResult executeNpc(LivingEntity caster, LivingEntity target, String magicId,
                                             net.minecraft.nbt.CompoundTag preset, double proficiency, long gameTick) {
       MagicExecutor executor = PUBLIC_MAGIC_EXECUTORS.get(magicId);
+      if (executor == null && magicId != null && magicId.indexOf(':') < 0) {
+         executor = PUBLIC_MAGIC_EXECUTORS.get("typemoonaddon:" + magicId);
+      }
       if (executor == null) return ExecutionResult.NOT_HANDLED;
       ResourceLocation id = ResourceLocation.tryParse(magicId);
       if (id == null) return ExecutionResult.NOT_HANDLED;
@@ -371,12 +374,17 @@ public final class InternalApiProvider implements ApiProvider {
          if (entity == null) throw new IllegalArgumentException("entity");
          var vars = entity.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
          return new MagicKnowledge() {
-             @Override public boolean isLearned(ResourceLocation magicId) { return magicId != null && vars.hasLearnedSelfMagic(magicId.toString()); }
+             @Override public boolean isLearned(ResourceLocation magicId) {
+                if (magicId == null) return false;
+                return vars.hasLearnedSelfMagic(magicId.toString())
+                   || vars.hasLearnedSelfMagic(magicId.getPath());
+             }
              @Override public boolean learn(ResourceLocation magicId) {
                 if (magicId == null
                    || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())
                    || !MagicDefinitionRegistry.contains(magicId.toString())
-                   || vars.learned_magics.contains(magicId.toString())) return false;
+                   || vars.learned_magics.contains(magicId.toString())
+                   || vars.learned_magics.contains(magicId.getPath())) return false;
                 vars.learned_magics.add(magicId.toString());
                 vars.syncPlayerVariables(entity);
                 return true;

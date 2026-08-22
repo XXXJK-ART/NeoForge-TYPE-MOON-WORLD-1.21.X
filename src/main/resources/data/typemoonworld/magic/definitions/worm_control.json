@@ -8,5 +8,6 @@
   "wheel_selectable": true,
   "crest_allowed": false,
   "npc_allowed": true,
-  "knowledge_only": false
+  "knowledge_only": false,
+  "prerequisite_magic": "typemoonworld:worm_magic"
 }

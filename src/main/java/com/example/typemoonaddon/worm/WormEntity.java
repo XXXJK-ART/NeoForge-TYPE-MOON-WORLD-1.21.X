@@ -236,7 +236,9 @@ public final class WormEntity extends PathfinderMob {
     public LivingEntity getOwner() {
         return ownerId == null || !(level() instanceof ServerLevel level)
                 ? null
-                : level.getServer().getPlayerList().getPlayer(ownerId);
+                : level.getEntity(ownerId) instanceof LivingEntity living
+                        ? living
+                        : level.getServer().getPlayerList().getPlayer(ownerId);
     }
 
     public boolean isManuallyControlled() {

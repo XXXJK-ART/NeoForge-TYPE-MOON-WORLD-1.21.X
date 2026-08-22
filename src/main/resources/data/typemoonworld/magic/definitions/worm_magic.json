@@ -5,8 +5,8 @@
   "mana_cost": 0.0,
   "cooldown_ticks": 0,
   "learnable": true,
-  "wheel_selectable": true,
+  "wheel_selectable": false,
   "crest_allowed": false,
-  "npc_allowed": true,
-  "knowledge_only": false
+  "npc_allowed": false,
+  "knowledge_only": true
 }

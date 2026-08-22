@@ -43,17 +43,19 @@ public final class WormMagicIntegration {
 
     public static void register() {
         AddonRegistrar addon = TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID);
-        boolean definitions = addon.magics().registerDefinition(definition(WORM_MAGIC, "magic.typemoonworld.worm_magic.name", 0.0D, 0))
-                & addon.magics().registerDefinition(definition(WORM_CONTROL, "magic.typemoonworld.worm_control.name", 4.0D, 4))
-                & addon.magics().registerDefinition(definition(ENGRAVED_WORM_OPERATION, "magic.typemoonworld.engraved_worm_operation.name", 8.0D, 10));
+        boolean definitions = addon.magics().registerDefinition(knowledgeDefinition(
+                        WORM_MAGIC, "magic.typemoonworld.worm_magic.name", 30))
+                & addon.magics().registerDefinition(operationDefinition(
+                        WORM_CONTROL, "magic.typemoonworld.worm_control.name", 40, 4.0D, 4))
+                & addon.magics().registerDefinition(operationDefinition(
+                        ENGRAVED_WORM_OPERATION, "magic.typemoonworld.engraved_worm_operation.name", 55, 8.0D, 10));
         boolean presets = addon.magics().registerPreset(WORM_CONTROL, enumPreset(CONTROL_MODE, "follow", CONTROL_MODES))
                 & addon.magics().registerPreset(ENGRAVED_WORM_OPERATION, enumPreset(OPERATION_MODE, "collapse", OPERATION_MODES));
         boolean controls = addon.client().registerControl(WORM_CONTROL,
                 new MagicOption(CONTROL_MODE, MagicOption.Kind.ENUM, "follow", 0, 0, List.of("follow", "attack", "recall", "free")))
                 & addon.client().registerControl(ENGRAVED_WORM_OPERATION,
                 new MagicOption(OPERATION_MODE, MagicOption.Kind.ENUM, "collapse", 0, 0, List.of("collapse", "immobilize", "shed", "overdraw")));
-        boolean executors = addon.magics().registerExecutor(WORM_MAGIC, WormMagicIntegration::castWormMagic)
-                & addon.magics().registerExecutor(WORM_CONTROL, WormMagicIntegration::castWormControl)
+        boolean executors = addon.magics().registerExecutor(WORM_CONTROL, WormMagicIntegration::castWormControl)
                 & addon.magics().registerExecutor(ENGRAVED_WORM_OPERATION, WormMagicIntegration::castEngravedWormOperation);
         if (!(definitions && presets && controls && executors)) {
             TypeMoonAddon.LOGGER.warn("Worm magic API registration contained duplicate or rejected entries");
@@ -129,34 +131,38 @@ public final class WormMagicIntegration {
         }
     }
 
-    private static MagicDefinitionData definition(ResourceLocation id, String key, double manaCost, int cooldown) {
-        return new MagicDefinitionData(id, key, TypeMoonAddon.id("special"), TypeMoonAddon.id("none"), manaCost,
-                cooldown, true, true, false, false, false, 0, 0);
+    private static MagicDefinitionData knowledgeDefinition(ResourceLocation id, String key, int complexity) {
+        return new MagicDefinitionData(id, key, TypeMoonAddon.id("special"), TypeMoonAddon.id("none"),
+                complexity, Math.max(1, (complexity + 19) / 20), 0.0D, 0.0D, 0,
+                true, false, false, false, true, true, 0, 0, null, 0.0D, List.of());
+    }
+
+    private static MagicDefinitionData operationDefinition(
+            ResourceLocation id, String key, int complexity, double manaCost, int cooldown) {
+        return new MagicDefinitionData(id, key, TypeMoonAddon.id("special"), TypeMoonAddon.id("none"),
+                complexity, Math.max(1, (complexity + 19) / 20), manaCost, 0.0D, cooldown,
+                true, true, false, true, false, true, 0, cooldown, WORM_MAGIC, 0.0D, List.of());
     }
 
     private static MagicPresetHandler enumPreset(String key, String defaultValue, Set<String> allowed) {
         return new EnumPreset(key, defaultValue, allowed);
     }
 
-    private static ExecutionResult castWormMagic(MagicCastContext context) {
-        return context.serverPlayer() == null ? ExecutionResult.FAILED : ExecutionResult.SUCCESS;
-    }
-
     private static ExecutionResult castWormControl(MagicCastContext context) {
-        ServerPlayer player = context.serverPlayer();
-        if (player == null) {
+        LivingEntity caster = context.caster();
+        if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel level)) {
             return ExecutionResult.FAILED;
         }
         String mode = context.preset().getString(CONTROL_MODE);
         if (!CONTROL_MODES.contains(mode)) {
             return ExecutionResult.FAILED;
         }
-        List<WormEntity> worms = player.serverLevel().getEntitiesOfClass(WormEntity.class,
-                player.getBoundingBox().inflate(64.0D), worm -> player.getUUID().equals(worm.getOwnerId()));
+        List<WormEntity> worms = level.getEntitiesOfClass(WormEntity.class,
+                caster.getBoundingBox().inflate(64.0D), worm -> caster.getUUID().equals(worm.getOwnerId()));
         if (worms.isEmpty()) {
             return ExecutionResult.FAILED;
         }
-        LivingEntity target = "attack".equals(mode) ? findTarget(player, 32.0D) : null;
+        LivingEntity target = "attack".equals(mode) ? findTarget(caster, 32.0D) : null;
         for (WormEntity worm : worms) {
             switch (mode) {
                 case "attack" -> {
@@ -166,7 +172,7 @@ public final class WormMagicIntegration {
                 case "recall" -> {
                     worm.setManuallyControlled(true);
                     worm.setTarget(null);
-                    worm.setPos(player.getX(), player.getEyeY() - 0.3D, player.getZ());
+                    worm.setPos(caster.getX(), caster.getEyeY() - 0.3D, caster.getZ());
                 }
                 case "free" -> {
                     worm.setManuallyControlled(false);
@@ -184,6 +190,9 @@ public final class WormMagicIntegration {
     private static ExecutionResult castEngravedWormOperation(MagicCastContext context) {
         ServerPlayer caster = context.serverPlayer();
         if (caster == null) {
+            return castNpcEngravedWormOperation(context);
+        }
+        if (caster.level().isClientSide()) {
             return ExecutionResult.FAILED;
         }
         String mode = context.preset().getString(OPERATION_MODE);
@@ -199,6 +208,46 @@ public final class WormMagicIntegration {
             case "immobilize" -> immobilize(caster, host);
             case "shed" -> shed(caster, host);
             case "overdraw" -> overdraw(caster);
+            default -> ExecutionResult.FAILED;
+        };
+    }
+
+    private static ExecutionResult castNpcEngravedWormOperation(MagicCastContext context) {
+        LivingEntity caster = context.caster();
+        if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel)
+                || !OPERATION_MODES.contains(context.preset().getString(OPERATION_MODE))) {
+            return ExecutionResult.FAILED;
+        }
+        String mode = context.preset().getString(OPERATION_MODE);
+        LivingEntity host = context.target() != null && context.target().isAlive()
+                ? context.target()
+                : findTarget(caster, 32.0D);
+        return switch (mode) {
+            case "collapse" -> {
+                if (host == null) yield ExecutionResult.FAILED;
+                host.getPersistentData().putLong(COLLAPSE_UNTIL, host.level().getGameTime() + 20L * 8L);
+                yield ExecutionResult.SUCCESS.withCost(12.0D).withCooldown(10);
+            }
+            case "immobilize" -> {
+                if (host == null) yield ExecutionResult.FAILED;
+                for (LivingEntity entity : host.level().getEntitiesOfClass(LivingEntity.class,
+                        host.getBoundingBox().inflate(4.0D), LivingEntity::isAlive)) {
+                    entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 8, 255, false, true, true), caster);
+                    entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 8, 0, false, true, true), caster);
+                    entity.setDeltaMovement(0.0D, entity.getDeltaMovement().y, 0.0D);
+                }
+                yield ExecutionResult.SUCCESS.withCost(16.0D).withCooldown(20);
+            }
+            case "overdraw" -> {
+                if (caster.getHealth() <= 2.0F) yield ExecutionResult.FAILED;
+                float healthCost = Math.min(caster.getHealth() - 1.0F, 6.0F);
+                caster.hurt(caster.damageSources().magic(), healthCost);
+                double gu = Math.max(51.0D, context.proficiency());
+                TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().mana(caster)
+                        .add(Math.max(1.0D, gu * healthCost * 0.5D));
+                yield ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
+            }
+            case "shed" -> ExecutionResult.FAILED;
             default -> ExecutionResult.FAILED;
         };
     }
@@ -247,15 +296,15 @@ public final class WormMagicIntegration {
         return target instanceof ServerPlayer serverPlayer ? serverPlayer : null;
     }
 
-    private static LivingEntity findTarget(ServerPlayer player, double range) {
-        Vec3 eye = player.getEyePosition();
-        Vec3 look = player.getLookAngle().normalize();
-        AABB search = player.getBoundingBox().expandTowards(look.scale(range)).inflate(2.0D);
-        return player.level().getEntitiesOfClass(LivingEntity.class, search,
-                        candidate -> candidate != player
+    private static LivingEntity findTarget(LivingEntity caster, double range) {
+        Vec3 eye = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle().normalize();
+        AABB search = caster.getBoundingBox().expandTowards(look.scale(range)).inflate(2.0D);
+        return caster.level().getEntitiesOfClass(LivingEntity.class, search,
+                        candidate -> candidate != caster
                                 && candidate.isAlive()
-                                && player.hasLineOfSight(candidate)
-                                && !isOwnedWorm(player, candidate))
+                                && caster.hasLineOfSight(candidate)
+                                && !isOwnedWorm(caster, candidate))
                 .stream()
                 .filter(candidate -> {
                     Vec3 offset = candidate.getEyePosition().subtract(eye);
@@ -263,12 +312,12 @@ public final class WormMagicIntegration {
                     return forward >= 0.0D && forward <= range
                             && offset.subtract(look.scale(forward)).lengthSqr() <= 2.25D;
                 })
-                .min(Comparator.comparingDouble(player::distanceToSqr))
+                .min(Comparator.comparingDouble(caster::distanceToSqr))
                 .orElse(null);
     }
 
-    private static boolean isOwnedWorm(ServerPlayer player, LivingEntity candidate) {
-        return candidate instanceof WormEntity worm && player.getUUID().equals(worm.getOwnerId());
+    private static boolean isOwnedWorm(LivingEntity caster, LivingEntity candidate) {
+        return candidate instanceof WormEntity worm && caster.getUUID().equals(worm.getOwnerId());
     }
 
     private record EnumPreset(String key, String defaultValue, Set<String> allowed) implements MagicPresetHandler {
