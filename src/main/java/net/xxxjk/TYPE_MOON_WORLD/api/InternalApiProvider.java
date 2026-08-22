@@ -170,13 +170,9 @@ public final class InternalApiProvider implements ApiProvider {
     * separate from the legacy context adapter so NPCs can receive target and preset data. */
    public static ExecutionResult executeNpc(LivingEntity caster, LivingEntity target, String magicId,
                                             net.minecraft.nbt.CompoundTag preset, double proficiency, long gameTick) {
-      MagicExecutor executor = PUBLIC_MAGIC_EXECUTORS.get(magicId);
-      if (executor == null && magicId != null && magicId.indexOf(':') < 0) {
-         executor = PUBLIC_MAGIC_EXECUTORS.get("typemoonaddon:" + magicId);
-      }
-      if (executor == null) return ExecutionResult.NOT_HANDLED;
-      ResourceLocation id = ResourceLocation.tryParse(magicId);
-      if (id == null) return ExecutionResult.NOT_HANDLED;
+      MagicExecutor executor = resolvePublicMagicExecutor(magicId);
+      ResourceLocation id = resolveMagicId(magicId);
+      if (executor == null || id == null) return ExecutionResult.NOT_HANDLED;
       if (caster == null || !MagicDefinitionRegistry.meetsAttributeRequirements(
             caster.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES), magicId)) {
          return ExecutionResult.FAILED;
@@ -195,6 +191,37 @@ public final class InternalApiProvider implements ApiProvider {
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Addon NPC magic executor failed: {}", magicId, ex);
          return ExecutionResult.FAILED;
       }
+   }
+
+   private static MagicExecutor resolvePublicMagicExecutor(String magicId) {
+      if (magicId == null || magicId.isBlank()) return null;
+      MagicExecutor executor = PUBLIC_MAGIC_EXECUTORS.get(magicId);
+      if (executor != null) return executor;
+      ResourceLocation parsed = ResourceLocation.tryParse(magicId);
+      if (parsed != null) {
+         executor = PUBLIC_MAGIC_EXECUTORS.get(parsed.toString());
+         if (executor != null) return executor;
+      } else {
+         executor = PUBLIC_MAGIC_EXECUTORS.get(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":" + magicId);
+         if (executor != null) return executor;
+      }
+      String path = parsed == null ? magicId : parsed.getPath();
+      MagicExecutor match = null;
+      for (Map.Entry<String, MagicExecutor> entry : PUBLIC_MAGIC_EXECUTORS.entrySet()) {
+         ResourceLocation id = ResourceLocation.tryParse(entry.getKey());
+         if (id != null && id.getPath().equals(path)) {
+            if (match != null) return null;
+            match = entry.getValue();
+         }
+      }
+      return match;
+   }
+
+   private static ResourceLocation resolveMagicId(String magicId) {
+      if (magicId == null || magicId.isBlank()) return null;
+      ResourceLocation parsed = ResourceLocation.tryParse(magicId);
+      if (parsed != null) return parsed;
+      return ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, magicId);
    }
 
    private static String normalizeNamespace(String modId) {

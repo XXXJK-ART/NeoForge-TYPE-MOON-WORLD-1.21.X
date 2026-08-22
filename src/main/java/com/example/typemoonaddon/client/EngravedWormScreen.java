@@ -57,7 +57,7 @@ public final class EngravedWormScreen extends AbstractContainerScreen<EngravedWo
         GuiUtils.renderSectionHeader(graphics, leftPos + 8, topPos + 32, imageWidth - 16, GuiUtils.ARCANE_CREST);
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 18 + row * 18, 18, GuiUtils.ARCANE_CREST, false);
+                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 44 + row * 18, 18, GuiUtils.ARCANE_CREST, false);
             }
         }
         for (int row = 0; row < 3; row++) {

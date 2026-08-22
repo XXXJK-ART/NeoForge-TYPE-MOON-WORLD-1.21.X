@@ -40,7 +40,8 @@ public final class MagicModularRegistry implements IMagicRegistry {
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(context.vars(), context.magicId())) {
             return MagicExecutionResult.FAILED;
          }
-         MagicModularRegistry.RegisteredMagic registered = REGISTRY.get(context.magicId());
+         String registeredId = resolveRegisteredId(context.magicId());
+         MagicModularRegistry.RegisteredMagic registered = registeredId == null ? null : REGISTRY.get(registeredId);
          if (registered != null && registered.executor != null) {
             try {
                MagicExecutionResult result = registered.executor.execute(context);
@@ -108,6 +109,42 @@ public final class MagicModularRegistry implements IMagicRegistry {
 
    private static boolean isValidMagicId(String magicId) {
       return magicId != null && !magicId.isEmpty() && (magicId.matches("[a-z0-9_]+") || ResourceLocation.tryParse(magicId) != null);
+   }
+
+   /**
+    * Wheel entries historically store short paths while addon registrations use
+    * public ResourceLocation strings. Resolve both forms without changing the
+    * id exposed to the executor callback.
+    */
+   private static String resolveRegisteredId(String magicId) {
+      if (magicId == null || magicId.isEmpty()) {
+         return null;
+      }
+      if (REGISTRY.containsKey(magicId)) {
+         return magicId;
+      }
+      ResourceLocation parsed = ResourceLocation.tryParse(magicId);
+      if (parsed != null && REGISTRY.containsKey(parsed.toString())) {
+         return parsed.toString();
+      }
+      if (parsed == null) {
+         String namespaced = TYPE_MOON_WORLD.MOD_ID + ":" + magicId;
+         if (REGISTRY.containsKey(namespaced)) {
+            return namespaced;
+         }
+      }
+      String path = parsed == null ? magicId : parsed.getPath();
+      String match = null;
+      for (String registered : REGISTRY.keySet()) {
+         ResourceLocation id = ResourceLocation.tryParse(registered);
+         if (id != null && id.getPath().equals(path)) {
+            if (match != null) {
+               return null;
+            }
+            match = registered;
+         }
+      }
+      return match;
    }
 
    private static void loadAddonEntrypoints() {

@@ -278,6 +278,18 @@ public final class WormEntity extends PathfinderMob {
                 && Objects.equals(ownerId, worm.getOwnerId());
     }
 
+    @Override
+    public boolean isAlliedTo(net.minecraft.world.entity.Entity other) {
+        if (super.isAlliedTo(other)) {
+            return true;
+        }
+        if (other instanceof WormEntity worm && ownerId != null
+                && Objects.equals(ownerId, worm.getOwnerId())) {
+            return true;
+        }
+        return other != null && ownerId != null && ownerId.equals(other.getUUID());
+    }
+
     private static WormType bySyncedOrdinal(int ordinal) {
         WormType[] values = WormType.values();
         return ordinal >= 0 && ordinal < values.length ? values[ordinal] : WormType.SILVERFISH;

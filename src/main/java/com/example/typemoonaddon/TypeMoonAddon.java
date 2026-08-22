@@ -72,6 +72,7 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.CREST_WORM);
             event.accept(AddonItems.WORM);
             event.accept(AddonItems.ENGRAVED_WORM);
+            event.accept(AddonItems.MANA_FURNACE);
             event.accept(AddonItems.HOLY_GRAIL_FRAGMENT);
             event.accept(AddonItems.VOID_RING_REGALIA);
             event.accept(AddonItems.MAGIC_PAGE_SPIRIT_SUMMONING);

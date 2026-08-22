@@ -3,7 +3,6 @@ package com.example.typemoonaddon.block;
 import com.example.typemoonaddon.block.entity.WormWarehouseBlockEntity;
 import com.example.typemoonaddon.worm.WormWarehouseService;
 import com.mojang.serialization.MapCodec;
-import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
@@ -50,7 +49,7 @@ public final class WormWarehouseBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return state.getValue(CONTROLLER) ? new WormWarehouseBlockEntity(pos, state) : null;
     }
 
@@ -97,8 +96,7 @@ public final class WormWarehouseBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide) {
             return null;
         }
@@ -108,7 +106,7 @@ public final class WormWarehouseBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         return defaultBlockState().setValue(CONTROLLER, false);
     }
 

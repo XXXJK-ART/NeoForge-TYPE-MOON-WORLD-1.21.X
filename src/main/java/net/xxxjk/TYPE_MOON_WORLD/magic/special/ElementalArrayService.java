@@ -295,8 +295,23 @@ public final class ElementalArrayService {
 
    public static void releaseAttack(ServerPlayer player, Kind kind) {
       if (player.level() instanceof ServerLevel level) {
-         releaseAttack(level, player, kind);
+         releaseAttack(level, player, kind, null);
       }
+   }
+
+   /** Instantaneous NPC cast used by the magician AI. */
+   public static boolean castNpcArray(LivingEntity caster, LivingEntity explicitTarget, Kind kind, CompoundTag payload) {
+      if (caster == null || kind == null || !(caster.level() instanceof ServerLevel level) || !caster.isAlive()) {
+         return false;
+      }
+      boolean shieldMode = payload != null && payload.getInt("element_mode") == 1;
+      if (shieldMode) {
+         spawnShieldArray(level, caster, kind, 1.0F);
+         caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 4, false, true, true));
+      } else {
+         releaseAttack(level, caster, kind, explicitTarget);
+      }
+      return true;
    }
 
    public static void spawnShieldHit(ServerPlayer player, Kind kind, float remainingShield) {
@@ -340,14 +355,15 @@ public final class ElementalArrayService {
       return true;
    }
 
-   private static void releaseAttack(ServerLevel level, ServerPlayer player, Kind kind) {
+   private static void releaseAttack(ServerLevel level, LivingEntity player, Kind kind, LivingEntity explicitTarget) {
       Vec3 dir = player.getLookAngle().normalize();
       Vec3 start = player.getEyePosition().add(dir.scale(0.7));
       Set<Integer> damaged = new HashSet<>();
       playReleaseSound(level, player, kind);
       spawnReleaseBurst(level, player, kind, start, dir);
       AABB area = player.getBoundingBox().inflate(RANGE, 3.0, RANGE).move(dir.scale(RANGE * 0.45));
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isValidTarget(player, e))) {
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
+            e -> isValidTarget(player, e) && (explicitTarget == null || e == explicitTarget))) {
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
          Vec3 toTarget = center.subtract(start);
          double along = toTarget.dot(dir);
@@ -387,7 +403,7 @@ public final class ElementalArrayService {
       target.hurtMarked = true;
    }
 
-   private static void spawnReleaseBurst(ServerLevel level, ServerPlayer player, Kind kind, Vec3 start, Vec3 dir) {
+   private static void spawnReleaseBurst(ServerLevel level, LivingEntity player, Kind kind, Vec3 start, Vec3 dir) {
       ElementPalette palette = palette(kind);
       for (int i = 0; i <= 16; i++) {
          double along = RANGE * i / 16.0;
@@ -419,7 +435,7 @@ public final class ElementalArrayService {
       }
    }
 
-   private static void spawnShieldArray(ServerLevel level, ServerPlayer player, Kind kind, float strength) {
+   private static void spawnShieldArray(ServerLevel level, LivingEntity player, Kind kind, float strength) {
       ElementPalette palette = palette(kind);
       Vec3 forward = player.getLookAngle().normalize();
       Vec3 up = new Vec3(0.0, 1.0, 0.0);
@@ -446,7 +462,7 @@ public final class ElementalArrayService {
       level.playSound(null, player.blockPosition(), remainingShield > 0.0F ? SoundEvents.SHIELD_BLOCK : SoundEvents.GLASS_BREAK, SoundSource.PLAYERS, 0.9F, remainingShield > 0.0F ? 1.2F : 0.7F);
    }
 
-   private static void playReleaseSound(ServerLevel level, ServerPlayer player, Kind kind) {
+   private static void playReleaseSound(ServerLevel level, LivingEntity player, Kind kind) {
       SoundEvent sound = switch (kind) {
          case FIRE -> SoundEvents.BLAZE_SHOOT;
          case WATER -> SoundEvents.BUCKET_FILL;
@@ -456,7 +472,7 @@ public final class ElementalArrayService {
       level.playSound(null, player.blockPosition(), sound, SoundSource.PLAYERS, 1.05F, 0.78F);
    }
 
-   private static boolean isValidTarget(ServerPlayer player, LivingEntity entity) {
+   private static boolean isValidTarget(LivingEntity player, LivingEntity entity) {
       return entity != null && entity.isAlive() && entity != player && !player.isAlliedTo(entity)
          && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity);
    }

@@ -222,6 +222,15 @@ public final class PlayerMagicCastService {
          return false;
       }
       ResourceLocation id = ResourceLocation.tryParse(entry.magicId);
-      return id != null && !ExtensionApiRegistry.controls(id).isEmpty();
+      if (id != null && !ExtensionApiRegistry.controls(id).isEmpty()) {
+         return true;
+      }
+      // Wheel entries historically store short paths. ResourceLocation.tryParse("worm_control")
+      // resolves to the default namespace, so resolve the project's namespace explicitly.
+      if (entry.magicId.indexOf(':') < 0) {
+         id = ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, entry.magicId);
+         return !ExtensionApiRegistry.controls(id).isEmpty();
+      }
+      return false;
    }
 }

@@ -197,7 +197,7 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          setCustomNameVisible(true);
       }
       int roll = random.nextInt(100);
-      entityData.set(WEAPON, roll < 20 ? WEAPON_BLACK_KEY : roll < 55 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
+      entityData.set(WEAPON, roll < 15 ? WEAPON_BLACK_KEY : roll < 30 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
       entityData.set(BAPTISM, random.nextBoolean());
       entityData.set(REINFORCEMENT, random.nextBoolean());
       entityData.set(SPIRITUAL_HEALING, random.nextBoolean());

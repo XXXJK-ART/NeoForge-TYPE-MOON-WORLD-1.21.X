@@ -241,12 +241,20 @@ public final class MagicLearningStrategy {
       return id != null && DISPLAY_ALIASES.containsKey(id);
    }
 
+   public static boolean isRemovedMagic(String id) {
+      if (id == null || id.isBlank()) return false;
+      String normalized = normalizeDisplayId(id);
+      return "black_key_fire_engraving".equals(normalized)
+         || "typemoonworld:black_key_fire_engraving".equals(id)
+         || "typemoonaddon:black_key_fire_engraving".equals(id);
+   }
+
    /** De-duplicates learned IDs while retaining the first primary entry for display. */
    public static List<String> displayMagicIds(Collection<String> ids) {
       if (ids == null || ids.isEmpty()) return List.of();
       LinkedHashSet<String> result = new LinkedHashSet<>();
       for (String id : ids) {
-         if (id == null || id.isBlank()) continue;
+         if (id == null || id.isBlank() || isRemovedMagic(id)) continue;
          result.add(normalizeDisplayId(id));
       }
       return List.copyOf(result);

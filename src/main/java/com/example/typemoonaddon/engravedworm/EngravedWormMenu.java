@@ -30,7 +30,7 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
     private void buildSlots(Inventory inventory) {
         for (int slot = 0; slot < EngravedWormService.PAGE_SIZE; slot++) {
             int localSlot = slot;
-            addSlot(new Slot(inventory, -1, 8 + (slot % 9) * 18, 18 + (slot / 9) * 18) {
+            addSlot(new Slot(inventory, -1, 8 + (slot % 9) * 18, 44 + (slot / 9) * 18) {
                 @Override
                 public ItemStack getItem() {
                     return owner instanceof ServerPlayer player

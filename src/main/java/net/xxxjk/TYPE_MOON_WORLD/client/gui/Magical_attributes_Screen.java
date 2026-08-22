@@ -244,7 +244,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private static boolean hasLearnedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      return vars != null && MagicLearningStrategy.isLearned(vars, magicId);
+      return vars != null
+         && !MagicLearningStrategy.isRemovedMagic(magicId)
+         && MagicLearningStrategy.isLearned(vars, magicId);
    }
 
    private void rebuildSourceMagics() {
@@ -280,7 +282,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (crestEntry != null && crestEntry.magicId != null && !crestEntry.magicId.isEmpty()) {
                String displayMagicId = normalizeMagicIdForDisplay(crestEntry.magicId);
                Magical_attributes_Screen.MagicEntry basex = this.magicCatalogById.get(displayMagicId);
-               if (!shouldHideCrestMagic(displayMagicId, basex)) {
+               if (!MagicLearningStrategy.isRemovedMagic(displayMagicId) && !shouldHideCrestMagic(displayMagicId, basex)) {
                   Magical_attributes_Screen.MagicEntry entry = basex == null
                      ? new Magical_attributes_Screen.MagicEntry(
                         displayMagicId, "key.typemoonworld.magic." + displayMagicId + ".short", this.resolveFallbackCategory(displayMagicId), -1811878

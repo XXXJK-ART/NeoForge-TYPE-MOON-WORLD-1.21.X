@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
@@ -90,6 +91,9 @@ public final class NpcMagicExecutionService {
          case "water_magic" -> NpcMagicCastBridge.castWaterMagic(caster, target, vars, payload, effectiveProficiency);
          case "wind_magic" -> NpcMagicCastBridge.castWindMagic(caster, target, vars, payload, effectiveProficiency);
          case "earth_magic" -> NpcMagicCastBridge.castEarthMagic(caster, target, vars, payload, effectiveProficiency);
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" ->
+               ElementalArrayService.castNpcArray(caster, target,
+                     ElementalArrayService.Kind.fromMagicId(magicId), payload);
          case "ruby_flame_sword" -> NpcMagicCastBridge.castRubyFlameSword(caster, target, vars, effectiveProficiency);
          case "sapphire_winter_frost" -> NpcMagicCastBridge.castSapphireWinterFrost(caster, target, vars, effectiveProficiency);
          case "emerald_winter_river" -> NpcMagicCastBridge.castEmeraldWinterRiver(caster, target, vars, effectiveProficiency);
@@ -163,6 +167,7 @@ public final class NpcMagicExecutionService {
          case "binding_magic" -> 14;
          case "fire_magic" -> 14;
          case "water_magic", "wind_magic", "earth_magic" -> 16;
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> 24;
          case "ruby_flame_sword", "cyan_wind" -> 18;
          case "topaz_reinforcement" -> 20;
          case "sapphire_winter_frost", "emerald_winter_river" -> 24;
@@ -199,6 +204,7 @@ public final class NpcMagicExecutionService {
          case "water_magic" -> 42;
          case "wind_magic" -> 44;
          case "earth_magic" -> 48;
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> 80;
          case "ruby_flame_sword" -> 180;
          case "sapphire_winter_frost" -> 320;
          case "emerald_winter_river" -> 340;

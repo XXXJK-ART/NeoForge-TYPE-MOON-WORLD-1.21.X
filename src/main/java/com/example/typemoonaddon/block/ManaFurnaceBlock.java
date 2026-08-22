@@ -4,7 +4,6 @@ import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.block.entity.ManaFurnaceBlockEntity;
 import com.example.typemoonaddon.block.entity.AddonBlockEntities;
 import com.mojang.serialization.MapCodec;
-import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -70,7 +69,7 @@ public final class ManaFurnaceBlock extends BaseEntityBlock {
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new ManaFurnaceBlockEntity(pos, state);
     }
 
@@ -80,11 +79,10 @@ public final class ManaFurnaceBlock extends BaseEntityBlock {
     }
 
     @Override
-    @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            @NotNull Level level,
-            @NotNull BlockState state,
-            @NotNull BlockEntityType<T> type
+            Level level,
+            BlockState state,
+            BlockEntityType<T> type
     ) {
         if (level.isClientSide()) {
             return null;

@@ -175,7 +175,9 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
             positions = INSTANCES.get(level) == null ? Set.of() : Set.copyOf(INSTANCES.get(level));
         }
         for (BlockPos position : positions) {
-            if (position.distSqr(player.blockPosition()) <= (RANGE + 2.0D) * (RANGE + 2.0D)
+            if (Math.abs(position.getX() + 0.5D - player.getX()) <= RANGE
+                    && Math.abs(position.getY() + 0.5D - player.getY()) <= RANGE
+                    && Math.abs(position.getZ() + 0.5D - player.getZ()) <= RANGE
                     && level.getBlockEntity(position) instanceof ManaFurnaceBlockEntity furnace
                     && furnace.canSupply(player)) {
                     result.add(furnace);

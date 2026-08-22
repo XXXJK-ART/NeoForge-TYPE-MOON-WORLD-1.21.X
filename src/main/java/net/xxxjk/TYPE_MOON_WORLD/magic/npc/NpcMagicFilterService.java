@@ -46,6 +46,10 @@ public final class NpcMagicFilterService {
       "water_magic",
       "wind_magic",
       "earth_magic",
+      "flame_array",
+      "azure_water_array",
+      "gale_wind_array",
+      "rock_earth_array",
       "ruby_flame_sword",
       "sapphire_winter_frost",
       "emerald_winter_river",
@@ -121,6 +125,10 @@ public final class NpcMagicFilterService {
             case "water_magic":
             case "wind_magic":
             case "earth_magic":
+            case "flame_array":
+            case "azure_water_array":
+            case "gale_wind_array":
+            case "rock_earth_array":
                payload.putInt("element_mode", random.nextInt(4) == 0 ? 1 : 0);
                return payload;
             default:
@@ -179,6 +187,10 @@ public final class NpcMagicFilterService {
             case "water_magic":
             case "wind_magic":
             case "earth_magic":
+            case "flame_array":
+            case "azure_water_array":
+            case "gale_wind_array":
+            case "rock_earth_array":
                CompoundTag oute = new CompoundTag();
                oute.putInt("element_mode", Mth.clamp(source.contains("element_mode") ? source.getInt("element_mode") : 0, 0, 1));
                return oute;
