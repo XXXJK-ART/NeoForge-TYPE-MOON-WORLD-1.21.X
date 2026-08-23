@@ -52,7 +52,7 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       TypeMoonWorldModVariables.PlayerVariables vars = this.minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       this.entry = vars.getCurrentRuntimeWheelEntry();
       if (this.entry == null || this.entry.magicId == null || this.entry.magicId.isEmpty()
-            || BoundaryMagicIntegration.boundaryMagicIds().stream().noneMatch(id -> id.toString().equals(this.entry.magicId))) {
+            || !BoundaryMagicIntegration.isBoundaryMagicId(this.entry.magicId)) {
          this.onClose();
          return;
       }
@@ -66,12 +66,12 @@ public final class BoundaryMagicOptionsScreen extends Screen {
 
       int left = this.width / 2 - WINDOW_WIDTH / 2;
       int top = this.height / 2 - WINDOW_HEIGHT / 2;
-      this.sideBox = new EditBox(this.font, left + 22, top + 48, 82, 20, Component.literal("side"));
+      this.sideBox = new EditBox(this.font, left + 22, top + 48, 40, 20, Component.literal("side"));
       this.sideBox.setMaxLength(3);
       this.sideBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,3}"));
       this.sideBox.setValue(Integer.toString(Math.max(10, Math.min(100, preset.contains(BoundaryMagicIntegration.SIDE)
             ? preset.getInt(BoundaryMagicIntegration.SIDE) : 10))));
-      this.complexityBox = new EditBox(this.font, left + 68, top + 48, 48, 20, Component.literal("complexity"));
+      this.complexityBox = new EditBox(this.font, left + 72, top + 48, 44, 20, Component.literal("complexity"));
       this.complexityBox.setMaxLength(3);
       this.complexityBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,3}"));
       this.complexityBox.setValue(Integer.toString(Math.max(1, Math.min(100, preset.contains(BoundaryMagicIntegration.COMPLEXITY)
@@ -238,8 +238,7 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.blacklist"), left + 22, top + 120, GuiUtils.ARCANE_TEXT_MUTED, false);
       graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.uuid"), left + 22, top + 136, GuiUtils.ARCANE_TEXT_MUTED, false);
       graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets"), left + 230, top + 120, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, powerLabel(), left + 84, top + 84, GuiUtils.ARCANE_TEXT, false);
-      graphics.drawString(this.font, Component.literal(this.selectedMode), left + 22, top + 226, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, selectedModeLabel(), left + 22, top + 226, GuiUtils.ARCANE_TEXT_MUTED, false);
       graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets_hint"), left + 230, top + 136, GuiUtils.ARCANE_TEXT_MUTED, false);
       int listY = top + 226;
       int shown = 0;
@@ -247,10 +246,28 @@ public final class BoundaryMagicOptionsScreen extends Screen {
          if (shown >= 2) {
             break;
          }
-         graphics.drawString(this.font, target.label, left + 230, listY + shown * 18, GuiUtils.ARCANE_TEXT, false);
+         graphics.drawString(this.font, clampText(target.label.getString(), 122), left + 230,
+               listY + shown * 18, GuiUtils.ARCANE_TEXT, false);
          shown++;
       }
       super.render(graphics, mouseX, mouseY, partialTick);
+   }
+
+   private Component selectedModeLabel() {
+      String key = "magic.option.typemoonworld.boundary_blacklist." + this.selectedMode;
+      Component translated = Component.translatable(key);
+      return translated.getString().equals(key) ? Component.literal(this.selectedMode) : translated;
+   }
+
+   private String clampText(String text, int maxWidth) {
+      if (this.font.width(text) <= maxWidth) {
+         return text;
+      }
+      String suffix = "...";
+      while (!text.isEmpty() && this.font.width(text + suffix) > maxWidth) {
+         text = text.substring(0, text.length() - 1);
+      }
+      return text + suffix;
    }
 
    @Override

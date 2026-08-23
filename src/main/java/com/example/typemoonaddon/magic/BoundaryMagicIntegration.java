@@ -360,6 +360,15 @@ public final class BoundaryMagicIntegration {
         return BOUNDARY_MAGIC_IDS;
     }
 
+    public static boolean isBoundaryMagicId(String rawId) {
+        if (rawId == null || rawId.isBlank()) {
+            return false;
+        }
+        ResourceLocation parsed = ResourceLocation.tryParse(rawId);
+        String path = parsed == null ? rawId : parsed.getPath();
+        return BOUNDARY_MAGIC_IDS.stream().anyMatch(id -> id.getPath().equals(path));
+    }
+
     private static boolean hasKnowledge(ServerPlayer player, ResourceLocation id) {
         return TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().knowledge(player).isLearned(id);
     }

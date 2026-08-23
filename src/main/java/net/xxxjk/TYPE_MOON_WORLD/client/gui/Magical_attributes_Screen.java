@@ -1479,7 +1479,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "ganryu" -> vars.ganryu_proficiency;
          case "hokushin_ittoryu" -> vars.hokushin_proficiency;
          case "tennen_rishin_ryu" -> vars.tennen_proficiency;
-         default -> -1.0;
+         default -> MagicProficiencyService.get(vars, normalized);
       };
    }
 

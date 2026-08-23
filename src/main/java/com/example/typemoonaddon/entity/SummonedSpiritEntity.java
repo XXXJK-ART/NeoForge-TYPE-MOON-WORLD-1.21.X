@@ -45,7 +45,12 @@ public abstract class SummonedSpiritEntity extends Monster {
         }
         LivingEntity owner = getOwner(serverLevel);
         if (owner == null || !owner.isAlive()) {
-            discard();
+            if (requiresOwner()) {
+                discard();
+            } else {
+                setTarget(null);
+                setDeltaMovement(Vec3.ZERO);
+            }
             return;
         }
         if (attackCooldown > 0) {
@@ -90,6 +95,10 @@ public abstract class SummonedSpiritEntity extends Monster {
     protected abstract double getMoveSpeed();
     protected abstract double getFollowDistance();
     protected abstract float getSpiritDamage();
+
+    protected boolean requiresOwner() {
+        return true;
+    }
 
     protected void performSpiritAttack(LivingEntity target) {
         DamageSource source = damageSources().mobAttack(this);

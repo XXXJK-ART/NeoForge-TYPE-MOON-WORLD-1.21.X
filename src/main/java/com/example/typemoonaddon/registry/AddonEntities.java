@@ -143,6 +143,15 @@ public final class AddonEntities {
                     .updateInterval(1)
                     .build("evil_spirit"));
 
+    public static final DeferredHolder<EntityType<?>, EntityType<EvilSpiritEntity>> EVIL_SPIRIT_SMALL =
+            ENTITIES.register("evil_spirit_small", () -> EntityType.Builder
+                    .of(EvilSpiritEntity::new, MobCategory.MONSTER)
+                    .sized(0.65F, 0.95F)
+                    .eyeHeight(0.7F)
+                    .clientTrackingRange(32)
+                    .updateInterval(1)
+                    .build("evil_spirit_small"));
+
     public static final DeferredHolder<EntityType<?>, EntityType<BoundaryMarkEntity>> BOUNDARY_MARK =
             ENTITIES.register("boundary_mark", () -> EntityType.Builder
                     .<BoundaryMarkEntity>of(BoundaryMarkEntity::new, MobCategory.MISC)
@@ -167,6 +176,7 @@ public final class AddonEntities {
         event.put(WORM.get(), WormEntity.createAttributes().build());
         event.put(WRAITH.get(), WraithEntity.createAttributes().build());
         event.put(EVIL_SPIRIT.get(), EvilSpiritEntity.createAttributes().build());
+        event.put(EVIL_SPIRIT_SMALL.get(), EvilSpiritEntity.createSmallAttributes().build());
     }
 
     public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {

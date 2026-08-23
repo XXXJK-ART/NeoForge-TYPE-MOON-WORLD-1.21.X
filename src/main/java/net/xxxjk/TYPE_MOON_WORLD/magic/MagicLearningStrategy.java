@@ -118,7 +118,10 @@ public final class MagicLearningStrategy {
       Map.entry("gandr_machine_gun", "gander")
    );
 
-   private static Rule rule(String id) { return RULES.getOrDefault(id, new Rule(50, true, false, false, false, false, false)); }
+   private static Rule rule(String id) {
+      String normalized = normalizeDisplayId(id);
+      return RULES.getOrDefault(normalized, new Rule(50, true, false, false, false, false, false));
+   }
    public static int complexity(String id) { return rule(id).complexity(); }
    public static int verses(String id) { int c = complexity(id); return c <= 20 ? 1 : c <= 40 ? 2 : c <= 60 ? 3 : c <= 80 ? 4 : 5; }
    public static double learningChance(String id, double analysisProficiency) {
@@ -155,6 +158,7 @@ public final class MagicLearningStrategy {
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
    public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null) return false;
+      id = normalizeDisplayId(id);
       MagicDefinitionData definition = MagicDefinitionRegistry.get(id);
       boolean theologyPrerequisiteOk = !requiresTheology(id)
          || isLearned(vars, "theology") && MagicProficiencyService.get(vars, "theology") >= 100.0;
@@ -268,6 +272,7 @@ public final class MagicLearningStrategy {
    }
 
    private static boolean requiresTheology(String id) {
+      id = normalizeDisplayId(id);
       return "black_key_making".equals(id)
          || "baptism_rite".equals(id)
          || "stigma".equals(id)
@@ -276,6 +281,7 @@ public final class MagicLearningStrategy {
    }
 
    private static boolean isBoundaryMagic(String id) {
+      id = normalizeDisplayId(id);
       return "sensing_boundary".equals(id)
          || "warning_boundary".equals(id)
          || "defense_boundary".equals(id)

@@ -136,7 +136,7 @@ public final class TypeMoonAddon {
             event.insertAfter(sakuraFha, AddonItems.MASTER_CARD_MATOU_KARIYA.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(AddonItems.CURSED_ARMOR_RENDER);
         }
-        if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get() || event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+        if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);
             event.accept(AddonItems.GILLES_SEA_MONSTER_SPAWN_EGG);
             event.accept(AddonItems.GILLES_LARGE_SEA_MONSTER_SPAWN_EGG);

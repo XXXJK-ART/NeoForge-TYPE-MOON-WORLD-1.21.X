@@ -60,7 +60,10 @@ public final class BlackKeyMiracleService {
             "message.typemoonworld.magic.cremation_rite.enabled",
             "message.typemoonworld.magic.cremation_rite.disabled");
       }
-      return detonateCremationRite(context.entity(), context.vars())
+      if (!(context.entity() instanceof LivingEntity living)) {
+         return MagicExecutionResult.FAILED;
+      }
+      return detonateCremationRite(living)
          ? MagicExecutionResult.SUCCESS
          : MagicExecutionResult.FAILED;
    }
@@ -157,9 +160,9 @@ public final class BlackKeyMiracleService {
       return MagicExecutionResult.SUCCESS;
    }
 
-   private static boolean detonateCremationRite(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!(entity instanceof LivingEntity caster) || !(caster.level() instanceof ServerLevel level) || vars == null) return false;
-      double proficiency = MagicProficiencyService.get(vars, CREMATION_RITE);
+   public static boolean detonateCremationRite(LivingEntity caster) {
+      if (caster == null || !(caster.level() instanceof ServerLevel level)) return false;
+      double proficiency = proficiency(caster, CREMATION_RITE);
       double manaCost = 18.0 + proficiency * 0.15;
       if (caster instanceof ServerPlayer player && !ManaHelper.consumeManaStrict(player, manaCost, false)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
@@ -168,7 +171,8 @@ public final class BlackKeyMiracleService {
       double scanRadius = 16.0 + proficiency * 0.16;
       int detonated = 0;
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(scanRadius),
-         living -> living.isAlive() && living.hasEffect(ModMobEffects.CREMATION_RITE))) {
+         living -> living != caster && living.isAlive() && !caster.isAlliedTo(living)
+            && living.hasEffect(ModMobEffects.CREMATION_RITE))) {
          MobEffectInstance effect = target.getEffect(ModMobEffects.CREMATION_RITE);
          if (effect == null) continue;
          int layers = effect.getAmplifier() + 1;
@@ -185,7 +189,7 @@ public final class BlackKeyMiracleService {
          level.playSound(null, caster.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.85F, 0.9F);
          return true;
       }
-      if (entity instanceof Player player) {
+      if (caster instanceof Player player) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.cremation_rite.no_targets"), true);
       }
       return false;

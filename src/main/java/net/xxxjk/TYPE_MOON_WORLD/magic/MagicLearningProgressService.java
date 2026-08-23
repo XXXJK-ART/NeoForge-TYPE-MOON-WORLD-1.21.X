@@ -29,6 +29,7 @@ public final class MagicLearningProgressService {
       if (vars == null || magicId == null || magicId.isBlank()) {
          return 0.0D;
       }
+      magicId = MagicLearningStrategy.normalizeDisplayId(magicId);
       return Math.max(0.0D, progressMap(vars).getOrDefault(magicId, 0.0D));
    }
 
@@ -40,6 +41,7 @@ public final class MagicLearningProgressService {
       if (vars == null || magicId == null || magicId.isBlank() || amount <= 0.0D) {
          return get(vars, magicId);
       }
+      magicId = MagicLearningStrategy.normalizeDisplayId(magicId);
       double current = get(vars, magicId);
       double next = Math.min(maxProgress(magicId), current + effectiveGain(current, amount));
       vars.magic_learning_progress.put(magicId, next);
@@ -52,8 +54,9 @@ public final class MagicLearningProgressService {
       if (player == null || magicId == null || magicId.isBlank() || amount <= 0.0D) {
          return player == null ? 0.0D : get(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), magicId);
       }
+      magicId = MagicLearningStrategy.normalizeDisplayId(magicId);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.learned_magics.contains(magicId)) {
+      if (MagicLearningStrategy.isLearned(vars, magicId)) {
          return get(vars, magicId);
       }
       double beforePercent = percent(vars, magicId);
@@ -70,8 +73,9 @@ public final class MagicLearningProgressService {
       if (player == null || magicId == null || magicId.isBlank()) {
          return false;
       }
+      magicId = MagicLearningStrategy.normalizeDisplayId(magicId);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.learned_magics.contains(magicId)) {
+      if (MagicLearningStrategy.isLearned(vars, magicId)) {
          return false;
       }
       addWithLearningCheck(player, magicId, maxProgress(magicId) * Math.max(0.0D, fraction));
@@ -80,6 +84,7 @@ public final class MagicLearningProgressService {
    }
 
    public static double addFraction(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, double fraction, long gameTick) {
+      magicId = MagicLearningStrategy.normalizeDisplayId(magicId);
       return add(vars, magicId, maxProgress(magicId) * Math.max(0.0D, fraction), gameTick);
    }
 

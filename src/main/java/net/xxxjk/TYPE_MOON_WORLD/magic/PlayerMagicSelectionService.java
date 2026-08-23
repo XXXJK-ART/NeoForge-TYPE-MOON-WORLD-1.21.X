@@ -5,6 +5,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 
 public final class PlayerMagicSelectionService {
    private PlayerMagicSelectionService() {
@@ -29,12 +31,7 @@ public final class PlayerMagicSelectionService {
          return;
       }
 
-      CompoundTag payload = normalizePresetPayload(entry.magicId, entry.presetPayload);
-      if (payload.isEmpty() && supportsRuntimePreset(entry.magicId)) {
-         payload = buildPresetFromCurrentVars(entity, vars, entry.magicId);
-      }
-
-      entry.presetPayload = payload;
+      entry.presetPayload = normalizePresetPayload(entry.magicId, entry.presetPayload);
    }
 
    public static void applyCurrentSelectionPreset(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -97,8 +94,12 @@ public final class PlayerMagicSelectionService {
       }
 
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry updated = entry.copy();
-      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
       CompoundTag currentPayload = updated.presetPayload == null ? new CompoundTag() : updated.presetPayload.copy();
+      if (currentPayload.isEmpty()) {
+         return false;
+      }
+
+      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
       if (nextPayload.equals(currentPayload)) {
          return false;
       }
@@ -125,6 +126,10 @@ public final class PlayerMagicSelectionService {
 
    public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
       CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
+      if (normalized.isEmpty()) {
+         return normalized;
+      }
+
       net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.CompoundResult external =
          net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.normalize(magicId, normalized);
       if (external.handler() != null) {
@@ -187,6 +192,16 @@ public final class PlayerMagicSelectionService {
       }
 
       return normalized;
+   }
+
+   public static boolean requiresPresetConfiguration(String magicId) {
+      if (magicId == null || magicId.isBlank()) {
+         return false;
+      }
+      return supportsRuntimePreset(magicId)
+         || "touko_travel".equals(magicId)
+         || !ExtensionApiRegistry.controlsFor(magicId).isEmpty()
+         || MagicPresetRegistry.hasHandler(magicId);
    }
 
    private static boolean supportsRuntimePreset(String magicId) {

@@ -6,10 +6,10 @@
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "archer", "male", "human", "sapient", "chaotic", "good", "divine", "ea_special"],
   "parameters": {
-    "endurance": "B", "endurance_plus": false,
+    "endurance": "C", "endurance_plus": false,
     "strength": "B", "strength_plus": false,
-    "agility": "B", "agility_plus": false,
-    "magic": "A", "magic_plus": false,
+    "agility": "C", "agility_plus": false,
+    "magic": "B", "magic_plus": false,
     "luck": "A", "luck_plus": false
   },
   "model": {

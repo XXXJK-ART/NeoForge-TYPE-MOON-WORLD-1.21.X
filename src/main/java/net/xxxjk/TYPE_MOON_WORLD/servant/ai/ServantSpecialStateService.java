@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.BaobhanSithServantSkills;
 
 /** Advances servant-specific passive and already-started states before AI arbitration. */
 public final class ServantSpecialStateService {
@@ -31,6 +32,8 @@ public final class ServantSpecialStateService {
          || entity.isSpiritualDissolving()) return;
       if (entity instanceof ArtoriaPendragonEntity artoria) {
          ArtoriaPendragonCombatHelper.tickPersistentState(artoria);
+      } else if (BaobhanSithServantSkills.isBaobhanSith(entity)) {
+         BaobhanSithServantSkills.tickPersistentCurses(entity);
       } else if (entity instanceof CasterGilgameshEntity casterGilgamesh) {
          CasterGilgameshCombatHelper.tickPersistentState(casterGilgamesh);
       } else if (entity instanceof GilgameshEntity gilgamesh) {

@@ -15,6 +15,18 @@ public final class MagicPresetRegistry {
       if (FROZEN.get() || id == null || handler == null) return false;
       return HANDLERS.putIfAbsent(id.toString(), handler) == null;
    }
+   public static boolean hasHandler(String id) {
+      if (id == null || id.isBlank()) return false;
+      if (HANDLERS.containsKey(id)) return true;
+      ResourceLocation parsed = ResourceLocation.tryParse(id);
+      if (parsed == null) return false;
+      if (HANDLERS.containsKey(parsed.toString())) return true;
+      for (String key : HANDLERS.keySet()) {
+         ResourceLocation candidate = ResourceLocation.tryParse(key);
+         if (candidate != null && candidate.getPath().equals(parsed.getPath())) return true;
+      }
+      return false;
+   }
    public static CompoundResult normalize(String id, net.minecraft.nbt.CompoundTag payload) {
       MagicPresetHandler handler = HANDLERS.get(id);
       net.minecraft.nbt.CompoundTag incoming = payload == null ? new net.minecraft.nbt.CompoundTag() : payload.copy();

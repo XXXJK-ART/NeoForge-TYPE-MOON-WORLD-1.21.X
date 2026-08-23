@@ -7,12 +7,13 @@ import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import com.example.typemoonaddon.magic.ManaFurnaceService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
-import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.neoforged.neoforge.common.NeoForge;
@@ -56,7 +57,8 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      if (requiresConfiguration(entry) && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
+      if (PlayerMagicSelectionService.requiresPresetConfiguration(entry.magicId)
+         && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
          displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
          return;
       }
@@ -105,7 +107,7 @@ public final class PlayerMagicCastService {
       if ("bajiquan".equals(entry.magicId) || "ganryu".equals(entry.magicId)
          || "hokushin_ittoryu".equals(entry.magicId) || "tennen_rishin_ryu".equals(entry.magicId)) return;
 
-      ResourceLocation publicMagicId = ResourceLocation.tryParse(entry.magicId);
+      ResourceLocation publicMagicId = resolveMagicId(entry.magicId);
       MagicCastContext publicContext = new MagicCastContext(
          entity instanceof LivingEntity living ? living : null,
          null,
@@ -113,7 +115,7 @@ public final class PlayerMagicCastService {
          entry.magicId,
          entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy(),
          "crest".equals(entry.sourceType),
-         vars.magic_proficiencies.getOrDefault(entry.magicId, 0.0));
+         MagicProficiencyService.get(vars, entry.magicId));
       if (publicMagicId != null && NeoForge.EVENT_BUS.post(new MagicCastEvent.Pre(publicMagicId, publicContext)).isCanceled()) {
          return;
       }
@@ -149,8 +151,9 @@ public final class PlayerMagicCastService {
        } else if (!infiniteMana && dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
           double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
           vars.player_mana = Math.max(0.0, vars.player_mana - cost);
-       }
+      }
 
+      addAddonProficiency(vars, entry.magicId);
       applyPostCastState(entity, vars, entry.magicId);
       fullSyncNeeded |= vars.recordCrestCastPractice(entity, entry.magicId);
       if (fullSyncNeeded) {
@@ -217,20 +220,24 @@ public final class PlayerMagicCastService {
       }
    }
 
-   private static boolean requiresConfiguration(TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry) {
-      if (entry == null || entry.magicId == null || entry.magicId.isEmpty()) {
-         return false;
+   private static ResourceLocation resolveMagicId(String rawId) {
+      if (rawId == null || rawId.isBlank()) return null;
+      var definition = MagicDefinitionRegistry.get(rawId);
+      return definition != null ? definition.id() : ResourceLocation.tryParse(rawId);
+   }
+
+   private static void addAddonProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String rawId) {
+      String id = MagicLearningStrategy.normalizeDisplayId(rawId);
+      double gain = switch (id) {
+         case "worm_control", "engraved_worm_operation",
+              "wraith_servitude", "evil_spirit_summoning",
+              "sensing_boundary", "warning_boundary", "defense_boundary",
+              "suggestion_boundary", "anti_magic_boundary", "guard_boundary",
+              "interference_boundary" -> 0.15D;
+         default -> 0.0D;
+      };
+      if (gain > 0.0D) {
+         MagicProficiencyService.add(vars, id, gain);
       }
-      ResourceLocation id = ResourceLocation.tryParse(entry.magicId);
-      if (id != null && !ExtensionApiRegistry.controls(id).isEmpty()) {
-         return true;
-      }
-      // Wheel entries historically store short paths. ResourceLocation.tryParse("worm_control")
-      // resolves to the default namespace, so resolve the project's namespace explicitly.
-      if (entry.magicId.indexOf(':') < 0) {
-         id = ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, entry.magicId);
-         return !ExtensionApiRegistry.controls(id).isEmpty();
-      }
-      return false;
    }
 }

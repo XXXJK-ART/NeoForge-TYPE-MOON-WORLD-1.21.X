@@ -95,9 +95,11 @@ public final class PlayerNoblePhantasmHelper {
    private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 10;
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 40;
    private static final int GAE_BULG_LOCK_TICKS = 1200;
-   private static final int GAE_BULG_MELEE_PURSUIT_TICKS = 200;
+   private static final int GAE_BULG_MELEE_PURSUIT_TICKS = 40;
    private static final double GAE_BULG_MELEE_LOCK_RANGE = 4.0;
    private static final double GAE_BULG_MELEE_HIT_DISTANCE = 4.0;
+   private static final double GAE_BULG_MELEE_PURSUIT_START_SPEED = 2.05;
+   private static final double GAE_BULG_MELEE_PURSUIT_END_SPEED = 0.35;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
@@ -488,7 +490,11 @@ public final class PlayerNoblePhantasmHelper {
          return;
       }
       Vec3 direction = toTarget.normalize();
-      double speed = Math.max(1.75, player.getDeltaMovement().length() + 0.18);
+      long pursuitDuration = Math.max(1L, GAE_BULG_MELEE_PURSUIT_TICKS);
+      double elapsed = pursuitDuration - Math.max(0L, until - level.getGameTime());
+      double progress = Mth.clamp(elapsed / pursuitDuration, 0.0, 1.0);
+      double speed = GAE_BULG_MELEE_PURSUIT_START_SPEED
+         + (GAE_BULG_MELEE_PURSUIT_END_SPEED - GAE_BULG_MELEE_PURSUIT_START_SPEED) * progress;
       Vec3 velocity = player.getDeltaMovement().scale(0.25).add(direction.scale(speed));
       player.setDeltaMovement(velocity.x, Mth.clamp(velocity.y, -0.25, 0.72), velocity.z);
       player.hurtMarked = true;

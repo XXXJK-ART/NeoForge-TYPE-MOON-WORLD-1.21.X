@@ -28,7 +28,9 @@ public final class SummoningMagicIntegration {
     public static final ResourceLocation WRAITH_SERVITUDE = TypeMoonAddon.id("wraith_servitude");
     public static final ResourceLocation EVIL_SPIRIT_SUMMONING = TypeMoonAddon.id("evil_spirit_summoning");
     private static final String MODE = "summoning_mode";
+    private static final String SUMMON_SIZE = "summon_size";
     private static final Set<String> MODES = Set.of("follow", "wander", "attack", "dismiss");
+    private static final Set<String> SUMMON_SIZES = Set.of("large", "small");
 
     private SummoningMagicIntegration() {
     }
@@ -39,11 +41,11 @@ public final class SummoningMagicIntegration {
                 & addon.magics().registerDefinition(definition(WRAITH_SERVITUDE, 25, true, true, true, PRELUDE))
                 & addon.magics().registerDefinition(definition(EVIL_SPIRIT_SUMMONING, 35, true, true, true, PRELUDE));
         boolean presets = addon.magics().registerPreset(WRAITH_SERVITUDE, preset())
-                & addon.magics().registerPreset(EVIL_SPIRIT_SUMMONING, preset());
+                & addon.magics().registerPreset(EVIL_SPIRIT_SUMMONING, evilSpiritPreset());
         boolean controls = addon.client().registerControl(WRAITH_SERVITUDE,
                 new MagicOption(MODE, MagicOption.Kind.ENUM, "follow", 0, 0, List.copyOf(MODES)))
                 & addon.client().registerControl(EVIL_SPIRIT_SUMMONING,
-                new MagicOption(MODE, MagicOption.Kind.ENUM, "follow", 0, 0, List.copyOf(MODES)));
+                new MagicOption(SUMMON_SIZE, MagicOption.Kind.ENUM, "large", 0, 0, List.copyOf(SUMMON_SIZES)));
         boolean executors = addon.magics().registerExecutor(WRAITH_SERVITUDE, SummoningMagicIntegration::castWraith)
                 & addon.magics().registerExecutor(EVIL_SPIRIT_SUMMONING, SummoningMagicIntegration::castEvilSpirit);
         if (!(definitions && presets && controls && executors)) {
@@ -74,21 +76,26 @@ public final class SummoningMagicIntegration {
             return ExecutionResult.FAILED;
         }
         String mode = normalizeMode(context.preset());
-        List<WraithEntity> spirits = ownedWraiths(caster);
+        List<SummonedSpiritEntity> spirits = controllableSpirits(caster);
+        for (SummonedSpiritEntity spirit : spirits) {
+            if (spirit.getOwnerId() == null) {
+                spirit.setOwner(caster);
+            }
+        }
+        if (spirits.isEmpty()) {
+            if (caster instanceof ServerPlayer player) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                        "message.typemoonworld.wraith_servitude.no_target"), true);
+            }
+            return ExecutionResult.FAILED;
+        }
         int cap = Math.max(1, Math.min(12, 1 + (int)(context.proficiency() / 10.0D)));
         if ("dismiss".equals(mode)) {
             spirits.forEach(LivingEntity::discard);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
-        if (spirits.size() < cap) {
-            WraithEntity spirit = AddonEntities.WRAITH.get().create(level);
-            if (spirit == null) return ExecutionResult.FAILED;
-            spirit.setOwner(caster);
-            spirit.setCommandMode(modeToCommand(mode));
-            Vec3 spawn = caster.position().add(caster.getLookAngle().scale(1.5D)).add(0.0D, 0.6D, 0.0D);
-            spirit.moveTo(spawn.x, spawn.y, spawn.z, caster.getYRot(), 0.0F);
-            level.addFreshEntity(spirit);
-            spirits = ownedWraiths(caster);
+        if (spirits.size() > cap) {
+            spirits = spirits.subList(0, cap);
         }
         applyCommand(spirits, caster, mode, context.target());
         return ExecutionResult.SUCCESS.withCost(25.0D).withCooldown(12);
@@ -100,24 +107,20 @@ public final class SummoningMagicIntegration {
                 || !hasPrelude(caster)) {
             return ExecutionResult.FAILED;
         }
-        String mode = normalizeMode(context.preset());
         List<EvilSpiritEntity> spirits = ownedEvilSpirits(caster);
-        if ("dismiss".equals(mode)) {
-            spirits.forEach(LivingEntity::discard);
-            return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
-        }
         if (spirits.size() < 3) {
-            EvilSpiritEntity spirit = AddonEntities.EVIL_SPIRIT.get().create(level);
+            String size = normalizeSummonSize(context.preset());
+            EvilSpiritEntity spirit = ("small".equals(size)
+                    ? AddonEntities.EVIL_SPIRIT_SMALL.get()
+                    : AddonEntities.EVIL_SPIRIT.get()).create(level);
             if (spirit == null) return ExecutionResult.FAILED;
             spirit.setOwner(caster);
             spirit.configure(context.proficiency());
-            spirit.setCommandMode(modeToCommand(mode));
+            spirit.setCommandMode(SummonedSpiritEntity.MODE_ATTACK);
             Vec3 spawn = caster.position().add(caster.getLookAngle().scale(2.0D)).add(0.0D, 0.8D, 0.0D);
             spirit.moveTo(spawn.x, spawn.y, spawn.z, caster.getYRot(), 0.0F);
             level.addFreshEntity(spirit);
-            spirits = ownedEvilSpirits(caster);
         }
-        applyCommand(spirits, caster, mode, context.target());
         return ExecutionResult.SUCCESS.withCost(80.0D).withCooldown(20);
     }
 
@@ -128,6 +131,11 @@ public final class SummoningMagicIntegration {
     private static String normalizeMode(CompoundTag preset) {
         String mode = preset == null ? "follow" : preset.getString(MODE);
         return MODES.contains(mode) ? mode : "follow";
+    }
+
+    private static String normalizeSummonSize(CompoundTag preset) {
+        String size = preset == null ? "large" : preset.getString(SUMMON_SIZE);
+        return SUMMON_SIZES.contains(size) ? size : "large";
     }
 
     private static int modeToCommand(String mode) {
@@ -160,12 +168,14 @@ public final class SummoningMagicIntegration {
                 .min(java.util.Comparator.comparingDouble(player::distanceToSqr)).orElse(null);
     }
 
-    private static List<WraithEntity> ownedWraiths(LivingEntity player) {
+    private static List<SummonedSpiritEntity> controllableSpirits(LivingEntity player) {
         if (!(player.level() instanceof net.minecraft.server.level.ServerLevel level)) {
             return List.of();
         }
-        return level.getEntitiesOfClass(WraithEntity.class,
-                player.getBoundingBox().inflate(64.0D), spirit -> player.getUUID().equals(spirit.getOwnerId()));
+        return level.getEntitiesOfClass(SummonedSpiritEntity.class,
+                player.getBoundingBox().inflate(64.0D), spirit ->
+                        (spirit instanceof WraithEntity || spirit instanceof EvilSpiritEntity)
+                                && (spirit.getOwnerId() == null || player.getUUID().equals(spirit.getOwnerId())));
     }
 
     private static List<EvilSpiritEntity> ownedEvilSpirits(LivingEntity player) {
@@ -191,6 +201,18 @@ public final class SummoningMagicIntegration {
                 CompoundTag output = new CompoundTag();
                 String mode = input == null ? "follow" : input.getString(MODE);
                 output.putString(MODE, MODES.contains(mode) ? mode : "follow");
+                return output;
+            }
+        };
+    }
+
+    private static MagicPresetHandler evilSpiritPreset() {
+        return new MagicPresetHandler() {
+            @Override
+            public CompoundTag normalize(CompoundTag input) {
+                CompoundTag output = new CompoundTag();
+                String size = input == null ? "large" : input.getString(SUMMON_SIZE);
+                output.putString(SUMMON_SIZE, SUMMON_SIZES.contains(size) ? size : "large");
                 return output;
             }
         };

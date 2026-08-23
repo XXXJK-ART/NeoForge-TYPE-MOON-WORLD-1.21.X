@@ -179,9 +179,9 @@ public class MagicModeSwitcherScreen extends Screen {
          if (player != null) {
             var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             var entry = vars.getCurrentRuntimeWheelEntry();
-            ResourceLocation id = entry == null ? null : ResourceLocation.tryParse(entry.magicId);
+            ResourceLocation id = entry == null ? null : ExtensionApiRegistry.resolveControlId(entry.magicId);
             if (id != null) {
-               var extension = ClientExtensionRegistryImpl.get(id);
+               var extension = ClientExtensionRegistryImpl.getFor(entry.magicId);
                if (extension != null) { extension.open(this); return; }
                var controls = ExtensionApiRegistry.controls(id);
                if (!controls.isEmpty()) { mc.setScreen(new GenericMagicOptionsScreen(this, id, controls)); }

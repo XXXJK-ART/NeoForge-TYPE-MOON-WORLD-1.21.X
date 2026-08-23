@@ -374,7 +374,7 @@ public final class InternalApiProvider implements ApiProvider {
             LivingEntity caster = context.asPlayer();
             if (caster == null && context.entity() instanceof LivingEntity living) caster = living;
             double proficiency = context.vars() == null ? 0.0D
-               : context.vars().magic_proficiencies.getOrDefault(context.magicId(), 0.0D);
+               : net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(context.vars(), context.magicId());
             var result = executor.execute(new MagicCastContext(
                caster,
                null,
@@ -421,11 +421,11 @@ public final class InternalApiProvider implements ApiProvider {
                 if (net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) {
                    return net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.proficiency(vars, magicId.toString());
                 }
-                return vars.magic_proficiencies.getOrDefault(magicId.toString(), 0.0);
+                return net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(vars, magicId.toString());
              }
              @Override public void setProficiency(ResourceLocation magicId, double value) {
                 if (magicId == null || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) return;
-                vars.magic_proficiencies.put(magicId.toString(), Math.max(0.0, Math.min(100.0, value)));
+                net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.set(vars, magicId.toString(), value);
                vars.syncPlayerVariables(entity);
             }
          };

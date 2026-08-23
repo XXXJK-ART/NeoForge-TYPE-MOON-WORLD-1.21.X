@@ -95,4 +95,29 @@ public final class ExtensionApiRegistry {
       }
    }
    public static List<MagicOption> controls(ResourceLocation id) { return id == null ? List.of() : CONTROLS.getOrDefault(id.toString(), List.of()); }
+
+   /**
+    * Resolves both namespaced IDs and legacy wheel entries that only store a
+    * magic path, including paths registered by addon namespaces.
+    */
+   public static ResourceLocation resolveControlId(String rawId) {
+      if (rawId == null || rawId.isBlank()) return null;
+      ResourceLocation direct = ResourceLocation.tryParse(rawId);
+      if (direct != null && !controls(direct).isEmpty()) return direct;
+      String path = direct == null ? rawId : direct.getPath();
+      synchronized (CONTROLS) {
+         for (String key : CONTROLS.keySet()) {
+            ResourceLocation candidate = ResourceLocation.tryParse(key);
+            if (candidate != null && candidate.getPath().equals(path) && !controls(candidate).isEmpty()) {
+               return candidate;
+            }
+         }
+      }
+      return direct;
+   }
+
+   public static List<MagicOption> controlsFor(String rawId) {
+      ResourceLocation resolved = resolveControlId(rawId);
+      return controls(resolved);
+   }
 }

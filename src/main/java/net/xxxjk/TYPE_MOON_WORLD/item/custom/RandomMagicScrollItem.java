@@ -68,7 +68,7 @@ public class RandomMagicScrollItem extends Item {
             
             List<String> unlearnedMagics = new ArrayList<>();
             for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
+                if (!MagicLearningStrategy.isLearned(vars, magic)) {
                     unlearnedMagics.add(magic);
                 }
             }
@@ -83,7 +83,19 @@ public class RandomMagicScrollItem extends Item {
             String magicToLearn = unlearnedMagics.get(0);
             
             if (MagicLearningStrategy.materialAllowed(vars, magicToLearn)) {
-                MagicLearningService.advanceFromMaterial(serverPlayer, magicToLearn, 0.15D);
+                MagicLearningService.MaterialAdvanceResult result =
+                    MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicToLearn, 0.15D);
+                if (!result.accepted()) {
+                    serverPlayer.displayClientMessage(Component.translatable(
+                        MagicLearningStrategy.isLearned(vars, magicToLearn)
+                            ? "message.typemoonworld.scroll.already_learned"
+                            : "message.typemoonworld.magic.learning_restricted"), true);
+                } else if (!result.completed()) {
+                    serverPlayer.displayClientMessage(Component.translatable(
+                        "message.typemoonworld.scroll.progress",
+                        Component.translatable("magic.typemoonworld." + MagicLearningStrategy.normalizeDisplayId(magicToLearn) + ".name"),
+                        String.format(java.util.Locale.ROOT, "%.1f", result.afterPercent())), true);
+                }
             } else {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
             }

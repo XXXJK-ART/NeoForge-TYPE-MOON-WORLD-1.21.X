@@ -25,4 +25,5 @@ public final class WraithEntity extends SummonedSpiritEntity {
     @Override protected double getMoveSpeed() { return 0.38D; }
     @Override protected double getFollowDistance() { return 8.0D; }
     @Override protected float getSpiritDamage() { return 5.0F; }
+    @Override protected boolean requiresOwner() { return false; }
 }

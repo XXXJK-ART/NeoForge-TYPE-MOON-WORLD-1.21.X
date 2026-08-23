@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -105,16 +106,30 @@ public class ServantCardKeybindScreen extends Screen {
          if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             this.listeningSlot = -1;
          } else if (keyCode == GLFW.GLFW_KEY_BACKSPACE || keyCode == GLFW.GLFW_KEY_DELETE) {
-            ServantCardKeybindConfig.setKey(this.servantId, this.listeningSlot, GLFW.GLFW_KEY_UNKNOWN);
+            ServantCardKeybindConfig.setKey(this.servantId, this.listeningSlot, InputConstants.UNKNOWN);
             this.listeningSlot = -1;
-         } else if (keyCode != GLFW.GLFW_KEY_UNKNOWN && !ServantCardKeybindConfig.isReservedKey(keyCode)) {
-            ServantCardKeybindConfig.setKey(this.servantId, this.listeningSlot, keyCode);
-            this.listeningSlot = -1;
+         } else if (keyCode != GLFW.GLFW_KEY_UNKNOWN) {
+            InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+            if (!ServantCardKeybindConfig.isReservedKey(key)) {
+               ServantCardKeybindConfig.setKey(this.servantId, this.listeningSlot, key);
+               this.listeningSlot = -1;
+            }
          }
          this.refreshButtons();
          return true;
       }
       return super.keyPressed(keyCode, scanCode, modifiers);
+   }
+
+   @Override
+   public boolean mouseClicked(double mouseX, double mouseY, int button) {
+      if (this.listeningSlot >= 0) {
+         ServantCardKeybindConfig.setKey(this.servantId, this.listeningSlot, InputConstants.Type.MOUSE.getOrCreate(button));
+         this.listeningSlot = -1;
+         this.refreshButtons();
+         return true;
+      }
+      return super.mouseClicked(mouseX, mouseY, button);
    }
 
    private Component keyButtonLabel(int slot) {

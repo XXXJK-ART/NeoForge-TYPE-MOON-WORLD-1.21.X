@@ -227,8 +227,9 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       boolean theology = random.nextFloat() < 0.55F;
       entityData.set(THEOLOGY, theology);
       entityData.set(BLACK_KEY_MAKING, theology && random.nextFloat() < 0.70F);
-      entityData.set(IRON_ARMOR_ACTION, theology && random.nextFloat() < 0.35F);
-      entityData.set(CREMATION_RITE, theology && random.nextFloat() < 0.30F);
+      boolean blackKeyWeapon = getWeaponType() == WEAPON_BLACK_KEY;
+      entityData.set(IRON_ARMOR_ACTION, theology && blackKeyWeapon && random.nextFloat() < 0.35F);
+      entityData.set(CREMATION_RITE, theology && blackKeyWeapon && random.nextFloat() < 0.30F);
       getPersistentData().putInt("ChurchTheologyProficiency", theology ? 100 : random.nextInt(51));
       getPersistentData().putInt("ChurchBlackKeyMakingProficiency", random.nextInt(101));
       getPersistentData().putInt("ChurchIronArmorActionProficiency", random.nextInt(101));
@@ -280,7 +281,9 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          return;
       }
       LivingEntity target = getTarget();
-      if (magicCooldown <= 0 && hasHealingMagic() && tryCastHealingMagic()) {
+      if (magicCooldown <= 0 && hasCremationRite() && tryDetonateCremationRite(target)) {
+         magicCooldown = 100;
+      } else if (magicCooldown <= 0 && hasHealingMagic() && tryCastHealingMagic()) {
          magicCooldown = 90;
       } else if (magicCooldown <= 0 && hasSpiritualHealing() && getHealth() < getMaxHealth() * 0.55F) {
          heal(4.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.04F);
@@ -298,6 +301,13 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
             magicCooldown = 80;
          }
       }
+   }
+
+   private boolean tryDetonateCremationRite(LivingEntity target) {
+      if (getWeaponType() != WEAPON_BLACK_KEY || target == null || !target.isAlive()
+         || !target.hasEffect(ModMobEffects.CREMATION_RITE) || !hasLineOfSight(target)) return false;
+      swing(InteractionHand.OFF_HAND, true);
+      return BlackKeyMiracleService.detonateCremationRite(this);
    }
 
    private static boolean isDeadApostleTarget(LivingEntity target) {

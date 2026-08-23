@@ -15,4 +15,17 @@ public final class ClientExtensionRegistryImpl {
       return !FROZEN.get() && EXTENSIONS.putIfAbsent(id.toString(), extension) == null;
    }
    public static MagicOptionsExtension get(ResourceLocation id) { return id == null ? null : EXTENSIONS.get(id.toString()); }
+
+   public static MagicOptionsExtension getFor(String rawId) {
+      if (rawId == null || rawId.isBlank()) return null;
+      ResourceLocation direct = ResourceLocation.tryParse(rawId);
+      MagicOptionsExtension extension = get(direct);
+      if (extension != null) return extension;
+      String path = direct == null ? rawId : direct.getPath();
+      for (Map.Entry<String, MagicOptionsExtension> entry : EXTENSIONS.entrySet()) {
+         ResourceLocation candidate = ResourceLocation.tryParse(entry.getKey());
+         if (candidate != null && candidate.getPath().equals(path)) return entry.getValue();
+      }
+      return null;
+   }
 }

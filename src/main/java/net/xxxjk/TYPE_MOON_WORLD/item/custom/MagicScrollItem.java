@@ -46,7 +46,10 @@ public class MagicScrollItem extends Item {
         
         boolean reusableBook = isReusableBook();
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            if (reusableBook && player.getCooldowns().isOnCooldown(this)) return InteractionResultHolder.fail(stack);
+            if (reusableBook && player.getCooldowns().isOnCooldown(this)) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.cooldown"), true);
+                return InteractionResultHolder.fail(stack);
+            }
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Check Requirement
@@ -60,7 +63,7 @@ public class MagicScrollItem extends Item {
             
             java.util.List<String> unlearnedMagics = new java.util.ArrayList<>();
             for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
+                if (!MagicLearningStrategy.isLearned(vars, magic)) {
                     unlearnedMagics.add(magic);
                 }
             }
@@ -75,11 +78,13 @@ public class MagicScrollItem extends Item {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
                 return InteractionResultHolder.fail(stack);
             }
-            MagicLearningService.advanceFromMaterial(serverPlayer, magicToLearn, 0.10D);
+            reportProgress(serverPlayer, magicToLearn,
+                MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicToLearn, 0.10D));
             if (learnAllAtOnce) {
                 for (String magicId : unlearnedMagics) {
                     if (!magicId.equals(magicToLearn)) {
-                        MagicLearningService.advanceFromMaterial(serverPlayer, magicId, 0.10D);
+                        reportProgress(serverPlayer, magicId,
+                            MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicId, 0.10D));
                     }
                 }
             }
@@ -89,6 +94,16 @@ public class MagicScrollItem extends Item {
         }
         
         return InteractionResultHolder.pass(stack);
+    }
+
+    private static void reportProgress(ServerPlayer player, String magicId, MagicLearningService.MaterialAdvanceResult result) {
+        if (result == null || !result.accepted() || result.completed()) {
+            return;
+        }
+        player.displayClientMessage(Component.translatable(
+            "message.typemoonworld.scroll.progress",
+            Component.translatable("magic.typemoonworld." + MagicLearningStrategy.normalizeDisplayId(magicId) + ".name"),
+            String.format(java.util.Locale.ROOT, "%.1f", result.afterPercent())), true);
     }
 
     @Override

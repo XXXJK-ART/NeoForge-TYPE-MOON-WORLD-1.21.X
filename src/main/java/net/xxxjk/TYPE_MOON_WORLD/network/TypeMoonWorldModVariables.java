@@ -3458,7 +3458,8 @@ public class TypeMoonWorldModVariables {
       double earth_magic,
       double time_alter,
       double spiritual_healing,
-      double baptism_rite
+      double baptism_rite,
+      CompoundTag dynamic_proficiencies
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ProficiencySyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "proficiency_sync")
@@ -3486,30 +3487,39 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.time_alter);
             buffer.writeDouble(message.spiritual_healing);
             buffer.writeDouble(message.baptism_rite);
+            buffer.writeNbt(message.dynamic_proficiencies == null ? new CompoundTag() : message.dynamic_proficiencies);
          },
-         buffer -> new TypeMoonWorldModVariables.ProficiencySyncMessage(
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble()
-         )
+         buffer -> {
+            double structuralAnalysis = buffer.readDouble();
+            double magicAnalysis = buffer.readDouble();
+            double projection = buffer.readDouble();
+            double jewelMagicShoot = buffer.readDouble();
+            double jewelMagicRelease = buffer.readDouble();
+            double unlimitedBladeWorks = buffer.readDouble();
+            double swordBarrelFullOpen = buffer.readDouble();
+            double gravityMagic = buffer.readDouble();
+            double gander = buffer.readDouble();
+            double reinforcement = buffer.readDouble();
+            double healingMagic = buffer.readDouble();
+            double magicBullet = buffer.readDouble();
+            double suggestionMagic = buffer.readDouble();
+            double bindingMagic = buffer.readDouble();
+            double fireMagic = buffer.readDouble();
+            double waterMagic = buffer.readDouble();
+            double windMagic = buffer.readDouble();
+            double earthMagic = buffer.readDouble();
+            double timeAlter = buffer.readDouble();
+            double spiritualHealing = buffer.readDouble();
+            double baptismRite = buffer.readDouble();
+            CompoundTag dynamic = buffer.readNbt();
+            return new TypeMoonWorldModVariables.ProficiencySyncMessage(
+               structuralAnalysis, magicAnalysis, projection, jewelMagicShoot, jewelMagicRelease,
+               unlimitedBladeWorks, swordBarrelFullOpen, gravityMagic, gander, reinforcement,
+               healingMagic, magicBullet, suggestionMagic, bindingMagic, fireMagic, waterMagic,
+               windMagic, earthMagic, timeAlter, spiritualHealing, baptismRite,
+               dynamic == null ? new CompoundTag() : dynamic
+            );
+         }
       );
 
       public ProficiencySyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -3534,8 +3544,21 @@ public class TypeMoonWorldModVariables {
             vars.proficiency_earth_magic,
             vars.proficiency_time_alter,
             vars.proficiency_spiritual_healing,
-            vars.proficiency_baptism_rite
+            vars.proficiency_baptism_rite,
+            dynamicProficiencyTag(vars)
          );
+      }
+
+      private static CompoundTag dynamicProficiencyTag(TypeMoonWorldModVariables.PlayerVariables vars) {
+         CompoundTag tag = new CompoundTag();
+         if (vars != null && vars.magic_proficiencies != null) {
+            for (Map.Entry<String, Double> entry : vars.magic_proficiencies.entrySet()) {
+               if (entry.getKey() != null && entry.getValue() != null && Double.isFinite(entry.getValue())) {
+                  tag.putDouble(entry.getKey(), Math.max(0.0D, Math.min(100.0D, entry.getValue())));
+               }
+            }
+         }
+         return tag;
       }
 
       @NotNull
@@ -3570,6 +3593,13 @@ public class TypeMoonWorldModVariables {
                   vars.proficiency_time_alter = message.time_alter;
                   vars.proficiency_spiritual_healing = message.spiritual_healing;
                   vars.proficiency_baptism_rite = message.baptism_rite;
+                  vars.magic_proficiencies.clear();
+                  if (message.dynamic_proficiencies != null) {
+                     for (String key : message.dynamic_proficiencies.getAllKeys()) {
+                        vars.magic_proficiencies.put(key, Math.max(0.0D, Math.min(100.0D,
+                           message.dynamic_proficiencies.getDouble(key))));
+                     }
+                  }
                }
             );
          }

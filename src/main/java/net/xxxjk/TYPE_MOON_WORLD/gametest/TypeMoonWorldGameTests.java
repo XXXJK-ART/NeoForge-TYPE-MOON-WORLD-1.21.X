@@ -517,11 +517,20 @@ public final class TypeMoonWorldGameTests {
       servant.saveWithoutId(saved);
       helper.assertTrue(saved.hasUUID("EntityMaster") && saved.getUUID("EntityMaster").equals(master.getUUID()),
          "entity master UUID was not persisted");
-      servant.cycleCommandMode();
+      helper.assertTrue(servant.getCommandMode() == net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode.FOLLOW,
+         "entity servant did not start in FOLLOW mode");
+      helper.assertTrue(servant.cycleCommandMode() == net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode.GUARD,
+         "entity servant could not switch to GUARD mode");
+      helper.assertTrue(servant.getCommandMode() == net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode.GUARD,
+         "GUARD mode was not retained");
       var attacker = helper.spawn(EntityType.ZOMBIE, new BlockPos(5, 2, 2));
       master.setLastHurtByMob(attacker);
       net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController.tick(servant);
       helper.assertTrue(servant.getTarget() == attacker, "GUARD did not prioritize the master's attacker");
+      helper.assertTrue(servant.cycleCommandMode() == net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode.STAY,
+         "entity servant could not switch to STAY mode");
+      helper.assertTrue(servant.getCommandMode() == net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode.STAY,
+         "STAY mode was not retained");
       helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager.unbindEntityServant(master, servant),
          "entity servant unbind failed");
       helper.succeed();

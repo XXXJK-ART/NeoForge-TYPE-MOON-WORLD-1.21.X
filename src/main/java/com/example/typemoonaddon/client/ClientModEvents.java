@@ -16,7 +16,7 @@ import com.example.typemoonaddon.client.renderer.ShadowPiercingRhoAiasRenderer;
 import com.example.typemoonaddon.client.renderer.SeaMonsterRenderer;
 import com.example.typemoonaddon.client.renderer.VoidRingRegaliaRenderer;
 import com.example.typemoonaddon.client.renderer.WormRenderer;
-import com.example.typemoonaddon.client.renderer.SummonedSpiritRenderer;
+import com.example.typemoonaddon.client.renderer.SummonedSpiritParticleRenderer;
 import com.example.typemoonaddon.client.renderer.BoundaryMarkRenderer;
 import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.registry.AddonEntities;
@@ -82,8 +82,9 @@ public final class ClientModEvents {
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER_SPIT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterRenderer::new);
         event.registerEntityRenderer(AddonEntities.WORM.get(), WormRenderer::new);
-        event.registerEntityRenderer(AddonEntities.WRAITH.get(), context -> new SummonedSpiritRenderer<>(context, 0.32F));
-        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT.get(), context -> new SummonedSpiritRenderer<>(context, 0.5F));
+        event.registerEntityRenderer(AddonEntities.WRAITH.get(), SummonedSpiritParticleRenderer::new);
+        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT.get(), SummonedSpiritParticleRenderer::new);
+        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT_SMALL.get(), SummonedSpiritParticleRenderer::new);
         event.registerEntityRenderer(AddonEntities.BOUNDARY_MARK.get(), BoundaryMarkRenderer::new);
     }
 
@@ -174,9 +175,9 @@ public final class ClientModEvents {
 
         for (var id : BoundaryMagicIntegration.boundaryMagicIds()) {
             TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(id, context -> {
-                if (context instanceof net.minecraft.client.gui.screens.Screen screen) {
-                    net.minecraft.client.Minecraft.getInstance().setScreen(new BoundaryMagicOptionsScreen(screen));
-                }
+                net.minecraft.client.gui.screens.Screen parent = context instanceof net.minecraft.client.gui.screens.Screen screen
+                        ? screen : null;
+                net.minecraft.client.Minecraft.getInstance().setScreen(new BoundaryMagicOptionsScreen(parent));
             });
         }
     }

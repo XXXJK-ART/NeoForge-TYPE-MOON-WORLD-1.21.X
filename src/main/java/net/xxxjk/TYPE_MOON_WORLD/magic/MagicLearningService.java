@@ -12,6 +12,7 @@ public final class MagicLearningService {
    private MagicLearningService() {}
 
    public static boolean learnFromMaterial(ServerPlayer player, String id, double random) {
+      id = MagicLearningStrategy.normalizeDisplayId(id);
       if (TalentService.isTalent(id)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.talent.acquisition_restricted"), true);
          return false;
@@ -21,7 +22,10 @@ public final class MagicLearningService {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
          return false;
       }
-      if (vars.learned_magics.contains(id)) return false;
+      if (MagicLearningStrategy.isLearned(vars, id)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.already_learned"), true);
+         return false;
+      }
       double chance = MagicLearningStrategy.learningChance(id, MagicProficiencyService.get(vars, "magic_analysis"));
       boolean success = random < chance;
       if (success) {
@@ -35,9 +39,10 @@ public final class MagicLearningService {
 
    /** Grants another entry from a multi-magic teaching item after its shared roll succeeds. */
    public static boolean grantFromMaterial(ServerPlayer player, String id) {
+      id = MagicLearningStrategy.normalizeDisplayId(id);
       if (TalentService.isTalent(id)) return false;
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!MagicLearningStrategy.materialAllowed(vars, id) || vars.learned_magics.contains(id)) return false;
+      if (!MagicLearningStrategy.materialAllowed(vars, id) || MagicLearningStrategy.isLearned(vars, id)) return false;
       vars.learned_magics.add(id);
       applyImmediateGrantBonuses(vars, id);
       awardAnalysisKnowledge(vars, id);
@@ -50,10 +55,11 @@ public final class MagicLearningService {
 
    public static boolean grantFromProgress(ServerPlayer player, String id) {
       if (player == null || id == null || id.isBlank() || TalentService.isTalent(id)) return false;
+      id = MagicLearningStrategy.normalizeDisplayId(id);
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!MagicLearningStrategy.learningRequirementsMet(vars, id)
          || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, id)
-         || vars.learned_magics.contains(id)) {
+         || MagicLearningStrategy.isLearned(vars, id)) {
          return false;
       }
       vars.learned_magics.add(id);
@@ -69,13 +75,25 @@ public final class MagicLearningService {
    }
 
    public static boolean advanceFromMaterial(ServerPlayer player, String id, double fraction) {
-      if (player == null || id == null || id.isBlank() || TalentService.isTalent(id)) return false;
-      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!MagicLearningStrategy.materialAllowed(vars, id) || vars.learned_magics.contains(id)) {
-         return false;
-      }
-      return MagicLearningProgressService.addFromSource(player, id, fraction);
+      return advanceFromMaterialWithResult(player, id, fraction).accepted();
    }
+
+   public static MaterialAdvanceResult advanceFromMaterialWithResult(ServerPlayer player, String id, double fraction) {
+      if (player == null || id == null || id.isBlank() || TalentService.isTalent(id)) {
+         return new MaterialAdvanceResult(false, false, 0.0D, 0.0D);
+      }
+      id = MagicLearningStrategy.normalizeDisplayId(id);
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      double before = MagicLearningProgressService.percent(vars, id);
+      if (!MagicLearningStrategy.materialAllowed(vars, id) || MagicLearningStrategy.isLearned(vars, id)) {
+         return new MaterialAdvanceResult(false, MagicLearningStrategy.isLearned(vars, id), before, before);
+      }
+      MagicLearningProgressService.addFromSource(player, id, fraction);
+      double after = MagicLearningProgressService.percent(vars, id);
+      return new MaterialAdvanceResult(true, MagicLearningStrategy.isLearned(vars, id), before, after);
+   }
+
+   public record MaterialAdvanceResult(boolean accepted, boolean completed, double beforePercent, double afterPercent) {}
 
    public static void unlockAnalysisChance(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (vars.learned_magics.contains("magic_analysis")) return;

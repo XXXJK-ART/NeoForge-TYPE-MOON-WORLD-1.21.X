@@ -201,7 +201,7 @@ public final class ServantCardBaobhanSithSkills {
    }
 
    public static boolean performBloodSpike(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 18.0, 1.2);
+      LivingEntity target = findCurseTarget(player, 18.0, 1.2);
       if (target == null) {
          return noTarget(player);
       }
@@ -216,7 +216,7 @@ public final class ServantCardBaobhanSithSkills {
    }
 
    public static boolean performBloodThorns(ServerPlayer player) {
-      LivingEntity primary = findLookTarget(player, 22.0, 1.6);
+      LivingEntity primary = findCurseTarget(player, 22.0, 1.6);
       if (primary == null || !(player.level() instanceof ServerLevel level)) {
          return noTarget(player);
       }
@@ -240,7 +240,7 @@ public final class ServantCardBaobhanSithSkills {
    }
 
    public static boolean performCurseVolley(ServerPlayer player) {
-      LivingEntity target = findLookTarget(player, 38.0, 1.6);
+      LivingEntity target = findCurseTarget(player, 38.0, 1.6);
       if (target == null || !(player.level() instanceof ServerLevel level)) {
          return noTarget(player);
       }
@@ -494,6 +494,14 @@ public final class ServantCardBaobhanSithSkills {
    private static LivingEntity findLookTarget(ServerPlayer player, double range, double inflate) {
       LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(player, range, inflate);
       return target != null && validTarget(player, target) ? target : null;
+   }
+
+   private static LivingEntity findCurseTarget(ServerPlayer player, double range, double inflate) {
+      LivingEntity selected = BaobhanSithCurseService.selectedTarget(player);
+      if (selected != null && validTarget(player, selected)) {
+         return selected;
+      }
+      return findLookTarget(player, range, inflate);
    }
 
    private static boolean validTarget(ServerPlayer player, LivingEntity target) {

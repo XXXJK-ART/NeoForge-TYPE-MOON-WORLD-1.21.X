@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
@@ -107,6 +108,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private String servantId;
    private static final EntityDataAccessor<String> SERVANT_ID = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.STRING
+   );
+   private static final EntityDataAccessor<Integer> COMMAND_MODE = SynchedEntityData.defineId(
+      ServantEntity.class, EntityDataSerializers.INT
    );
    private static final EntityDataAccessor<Integer> OBEDIENCE_AXIS = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.INT
@@ -222,6 +226,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       super.defineSynchedData(builder);
       // 濡傛灉鏈夊緟浼犻€掔殑 servantId锛堟潵鑷埛鎬泲锛夛紝浼樺厛浣跨敤瀹?
       builder.define(SERVANT_ID, "");
+      builder.define(COMMAND_MODE, ServantCommandMode.FOLLOW.ordinal());
       builder.define(OBEDIENCE_AXIS, ObedienceAxis.COOPERATIVE.id());
       builder.define(PRINCIPLE_AXIS, PrincipleAxis.NEUTRAL.id());
       builder.define(SOCIAL_DISPOSITION, SocialDisposition.NORMAL.id());
@@ -248,8 +253,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    @Nullable
    public ServerPlayer getEntityMaster() {
-      if (masterUuid == null || !(level() instanceof ServerLevel serverLevel)) return null;
-      return serverLevel.getServer().getPlayerList().getPlayer(masterUuid);
+      UUID ownerUuid = getMasterUuid();
+      if (ownerUuid == null || !(level() instanceof ServerLevel serverLevel)) return null;
+      return serverLevel.getServer().getPlayerList().getPlayer(ownerUuid);
    }
 
    public boolean isBoundTo(ServerPlayer player) {
@@ -258,7 +264,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public void bindMaster(ServerPlayer master) {
       this.masterUuid = master.getUUID();
-      this.commandMode = ServantCommandMode.FOLLOW;
+      setCommandMode(ServantCommandMode.FOLLOW);
       this.stayAnchor = blockPosition();
       this.masterNoblePhantasmPermission = false;
       setPersistenceRequired();
@@ -276,13 +282,13 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.masterUuid = null;
       this.contractId = "";
       net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.clearContractTags(this);
-      this.commandMode = ServantCommandMode.FOLLOW;
+      setCommandMode(ServantCommandMode.FOLLOW);
       this.stayAnchor = blockPosition();
       this.masterNoblePhantasmPermission = false;
    }
 
    public ServantCommandMode getCommandMode() {
-      return commandMode;
+      return ServantCommandMode.byOrdinal(this.entityData.get(COMMAND_MODE));
    }
 
    public BlockPos getStayAnchor() {
@@ -290,13 +296,14 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    public ServantCommandMode cycleCommandMode() {
-      commandMode = commandMode.next();
-      if (commandMode == ServantCommandMode.STAY) stayAnchor = blockPosition();
-      return commandMode;
+      ServantCommandMode next = getCommandMode().next();
+      setCommandMode(next);
+      return next;
    }
 
    public void setCommandMode(ServantCommandMode mode) {
       commandMode = mode == null ? ServantCommandMode.FOLLOW : mode;
+      this.entityData.set(COMMAND_MODE, commandMode.ordinal());
       if (commandMode == ServantCommandMode.STAY) stayAnchor = blockPosition();
    }
 
@@ -319,7 +326,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       ServerPlayer master = getEntityMaster();
       if (master == null) return false;
       if (other == master || master.isAlliedTo(other)) return true;
-      return other instanceof ServantEntity servant && master.getUUID().equals(servant.masterUuid);
+      return other instanceof ServantEntity servant && master.getUUID().equals(servant.getMasterUuid());
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -357,6 +364,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.releaseSpiritualLock();
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
+      if (!this.level().isClientSide) {
+         this.tickPassiveManaRegeneration();
+      }
       if (!this.level().isClientSide && this.tickCount == 1) {
          this.equipNpcServantCardArmor(true);
       } else if (!this.level().isClientSide && this.tickCount % 40 == 0
@@ -637,6 +647,24 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
             inCombat ? 2 : 3, 0.22, 0.25, 0.22, 0.0);
       }
+   }
+
+   private void tickPassiveManaRegeneration() {
+      if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
+         return;
+      }
+
+      double maxMp = this.getMaxMp();
+      if (maxMp <= 0.0 || this.getCurrentMp() >= maxMp) {
+         return;
+      }
+
+      double regenPerSecond = ServantCardManaService.regenPerSecondFor(this.getServantId());
+      if (!Double.isFinite(regenPerSecond) || regenPerSecond <= 0.0) {
+         return;
+      }
+
+      this.setCurrentMp(Math.min(maxMp, this.getCurrentMp() + regenPerSecond / 20.0));
    }
 
    public boolean wasTacticalAiHandledThisTick() {
@@ -1497,7 +1525,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       tag.putDouble("CurrentMp", this.getCurrentMp());
       if (masterUuid != null) tag.putUUID("EntityMaster", masterUuid);
       if (!contractId.isBlank()) tag.putString("EntityContractId", contractId);
-      tag.putString("EntityCommandMode", commandMode.name());
+      tag.putString("EntityCommandMode", getCommandMode().name());
       tag.putLong("EntityStayAnchor", stayAnchor.asLong());
       tag.putBoolean("EntityNpPermission", masterNoblePhantasmPermission);
    }
@@ -1516,7 +1544,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.entityData.set(CURRENT_MP, (float) tag.getDouble("CurrentMp"));
       this.masterUuid = tag.hasUUID("EntityMaster") ? tag.getUUID("EntityMaster") : null;
       this.contractId = tag.getString("EntityContractId");
-      this.commandMode = ServantCommandMode.byName(tag.getString("EntityCommandMode"));
+      this.setCommandMode(ServantCommandMode.byName(tag.getString("EntityCommandMode")));
       this.stayAnchor = tag.contains("EntityStayAnchor") ? BlockPos.of(tag.getLong("EntityStayAnchor")) : blockPosition();
       this.masterNoblePhantasmPermission = tag.getBoolean("EntityNpPermission");
       this.cachedDefinition = null;

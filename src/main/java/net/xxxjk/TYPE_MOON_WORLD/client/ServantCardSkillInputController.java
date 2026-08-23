@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
 import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.InputConstants.Key;
+import com.mojang.blaze3d.platform.InputConstants.Type;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -21,7 +24,7 @@ public final class ServantCardSkillInputController {
    }
 
    public static boolean handleScroll(Player player, TypeMoonWorldModVariables.PlayerVariables vars, double scrollDelta) {
-      if (player == null || vars == null || !vars.servant_card_transformed || !TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
+      if (player == null || vars == null || !vars.servant_card_transformed || !TypeMoonWorldModKeyMappings.MAGIC_WHEEL_SWITCH.isDown()) {
          return false;
       }
       ensureSelection(vars);
@@ -46,7 +49,7 @@ public final class ServantCardSkillInputController {
       long window = Minecraft.getInstance().getWindow().getWindow();
       boolean anyDirectSkillDown = false;
       for (int slot = 0; slot < ServantCardKeybindConfig.SLOT_COUNT; slot++) {
-         int key = ServantCardKeybindConfig.keyFor(vars.servant_card_id, slot);
+         Key key = ServantCardKeybindConfig.keyFor(vars.servant_card_id, slot);
          boolean down = ServantCardKeybindConfig.isKeyDown(window, key);
          anyDirectSkillDown |= down;
          boolean hold = isHoldSkill(vars.servant_card_id, slot);
@@ -79,6 +82,35 @@ public final class ServantCardSkillInputController {
          PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
          selectedHoldDown = false;
       }
+   }
+
+   public static boolean handleMouseButton(Player player, TypeMoonWorldModVariables.PlayerVariables vars, int button, int action) {
+      if (player == null || vars == null || !vars.servant_card_transformed) {
+         return false;
+      }
+      Key mouseKey = Type.MOUSE.getOrCreate(button);
+      boolean pressed = action == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+      boolean released = action == org.lwjgl.glfw.GLFW.GLFW_RELEASE;
+      if (!pressed && !released) {
+         return false;
+      }
+      boolean handled = false;
+      for (int slot = 0; slot < ServantCardKeybindConfig.SLOT_COUNT; slot++) {
+         if (!ServantCardKeybindConfig.keyFor(vars.servant_card_id, slot).equals(mouseKey)) {
+            continue;
+         }
+         handled = true;
+         if (pressed && !SLOT_DOWN[slot]) {
+            SLOT_DOWN[slot] = true;
+            sendSkillPressed(vars.servant_card_id, slot);
+         } else if (released) {
+            SLOT_DOWN[slot] = false;
+            if (isForcedHoldSkill(vars.servant_card_id, slot)) {
+               PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, false), new CustomPacketPayload[0]);
+            }
+         }
+      }
+      return handled;
    }
 
    public static int selectedSlot(TypeMoonWorldModVariables.PlayerVariables vars) {

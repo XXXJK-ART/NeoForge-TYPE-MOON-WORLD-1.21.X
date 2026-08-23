@@ -23,6 +23,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
+import net.neoforged.neoforge.client.event.InputEvent.MouseButton;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -32,11 +33,14 @@ import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.GenericMagicOptionsScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCardKeybindScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.api.ClientExtensionRegistryImpl;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -297,6 +301,18 @@ public class TypeMoonWorldModKeyMappings {
             && "oda_nobunaga".equals(vars.servant_card_id)
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+         }
+      }
+
+      @SubscribeEvent
+      public static void onServantCardMouseButton(MouseButton.Pre event) {
+         Minecraft minecraft = Minecraft.getInstance();
+         if (minecraft.screen != null || minecraft.player == null) {
+            return;
+         }
+         TypeMoonWorldModVariables.PlayerVariables vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (ServantCardSkillInputController.handleMouseButton(minecraft.player, vars, event.getButton(), event.getAction())) {
+            event.setCanceled(true);
          }
       }
 
@@ -566,29 +582,7 @@ public class TypeMoonWorldModKeyMappings {
                      int index = vars.current_magic_index;
                      if (index >= 0 && index < vars.selected_magics.size()) {
                         String magicId = vars.selected_magics.get(index);
-                        if ("projection".equals(magicId)
-                           || "structural_analysis".equals(magicId)
-                           || "unlimited_blade_works".equals(magicId)
-                           || "broken_phantasm".equals(magicId)) {
-                           if (vars.isCurrentSelectionFromCrest(magicId)) {
-                              player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
-                           } else {
-                              Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
-                           }
-                        } else if ("touko_travel".equals(magicId)) {
-                           TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
-                           if (entry != null && !entry.isEmpty()) {
-                              if ("crest".equals(entry.sourceType)) {
-                                 player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
-                              } else {
-                                 Minecraft.getInstance().setScreen(new ToukoTravelPresetScreen(
-                                    Minecraft.getInstance().screen,
-                                    entry.copy(),
-                                    entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy()
-                                 ));
-                              }
-                           }
-                        }
+                        openCurrentMagicPreset(player, vars, magicId);
                      }
                   }
                }
@@ -596,6 +590,49 @@ public class TypeMoonWorldModKeyMappings {
                isTabDown = false;
             }
          }
+      }
+
+      /** Opens the Tab preset editor for both built-in and addon magic. */
+      private static boolean openCurrentMagicPreset(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+         if (player == null || vars == null || magicId == null || magicId.isBlank()) {
+            return false;
+         }
+         if (vars.isCurrentSelectionFromCrest(magicId)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
+            return true;
+         }
+
+         if ("projection".equals(magicId)
+            || "structural_analysis".equals(magicId)
+            || "unlimited_blade_works".equals(magicId)
+            || "broken_phantasm".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
+            return true;
+         }
+
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
+         if ("touko_travel".equals(magicId) && entry != null && !entry.isEmpty()) {
+            Minecraft.getInstance().setScreen(new ToukoTravelPresetScreen(
+               Minecraft.getInstance().screen,
+               entry.copy(),
+               entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy()
+            ));
+            return true;
+         }
+
+         var extension = ClientExtensionRegistryImpl.getFor(magicId);
+         if (extension != null) {
+            extension.open(Minecraft.getInstance().screen);
+            return true;
+         }
+
+         var resolvedId = ExtensionApiRegistry.resolveControlId(magicId);
+         var controls = ExtensionApiRegistry.controls(resolvedId);
+         if (!controls.isEmpty()) {
+            Minecraft.getInstance().setScreen(new GenericMagicOptionsScreen(Minecraft.getInstance().screen, resolvedId, controls));
+            return true;
+         }
+         return false;
       }
 
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {

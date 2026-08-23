@@ -19,6 +19,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BaobhanSithHarpItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithCurseService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.IServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantCombatActionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionResult;
@@ -109,6 +110,12 @@ public final class BaobhanSithServantSkills {
       }
    }
 
+   public static void tickPersistentCurses(ServantEntity servant) {
+      if (servant != null && isBaobhanSith(servant)) {
+         BaobhanSithCurseService.tickTrackedCurses(servant);
+      }
+   }
+
    private static ServantExecutionResult tickBaobhanSith(ServantLifecycleContext context) {
       if (!(context.entity() instanceof ServantEntity servant) || !isBaobhanSith(servant)) {
          return ServantExecutionResult.NOT_HANDLED;
@@ -131,9 +138,9 @@ public final class BaobhanSithServantSkills {
          }
       }
 
+      BaobhanSithCurseService.tickTrackedCurses(servant);
       LivingEntity target = context.target();
       if (target != null && target.isAlive()) {
-         tickTargetCurses(servant, target, now);
          ServantExecutionResult aiResult = runCurseWeaverAi(context, servant, target, now);
          if (aiResult.handled()) {
             return aiResult;
@@ -168,7 +175,7 @@ public final class BaobhanSithServantSkills {
       boolean pressured = distance <= 7.0 || countNearbyEnemies(level, servant, 6.5) >= 2 || isSunlit(servant);
 
       ServantExecutionResult result = ServantExecutionResult.NOT_HANDLED;
-      if (mediums > 0 && layers >= 5 && servant.getCurrentMp() >= 50.0 && distance <= 64.0) {
+       if (mediums > 0 && layers >= 5 && servant.getCurrentMp() >= 50.0) {
          result = castFetchFailnaughtAction(actionContext(context, target, NP_FETCH_FAILNAUGHT, distance, lineOfSight));
       } else if (servant.getHealth() <= servant.getMaxHealth() * 0.48F && distance <= 4.5) {
          result = castNightFeast(actionContext(context, target, ACTION_NIGHT_FEAST, distance, lineOfSight));
@@ -186,14 +193,14 @@ public final class BaobhanSithServantSkills {
          result = castFingertipDance(actionContext(context, target, ACTION_FINGERTIP_DANCE, distance, lineOfSight));
       } else if (distance <= 4.0 && layers >= 2) {
          result = castFairyVampirism(actionContext(context, target, ACTION_FAIRY_VAMPIRISM, distance, lineOfSight));
-      } else if (lineOfSight && distance >= 10.0 && distance <= 34.0 && layers <= 3 && servant.getCurrentMp() >= 14.0) {
-         result = castCurseVolley(actionContext(context, target, ACTION_CURSE_VOLLEY, distance, true));
-      } else if (lineOfSight && distance >= 4.0 && distance <= 18.0 && layers < 5 && servant.getCurrentMp() >= 6.0) {
-         result = castBloodSpike(actionContext(context, target, ACTION_BLOOD_SPIKE, distance, true));
-      } else if (lineOfSight && distance >= 6.0 && distance <= 42.0 && layers < 5) {
-         result = castCurseShot(actionContext(context, target, ACTION_CURSE_SHOT, distance, true));
-      } else if (lineOfSight && distance >= 10.0 && distance <= 42.0 && servant.getCurrentMp() > servant.getMaxMp() * 0.7) {
-         result = castCurseShot(actionContext(context, target, ACTION_CURSE_SHOT, distance, true));
+       } else if (lineOfSight && layers <= 3 && servant.getCurrentMp() >= 14.0) {
+          result = castCurseVolley(actionContext(context, target, ACTION_CURSE_VOLLEY, distance, true));
+       } else if (lineOfSight && layers < 5 && servant.getCurrentMp() >= 6.0) {
+          result = castBloodSpike(actionContext(context, target, ACTION_BLOOD_SPIKE, distance, true));
+       } else if (lineOfSight && layers < 5) {
+          result = castCurseShot(actionContext(context, target, ACTION_CURSE_SHOT, distance, true));
+       } else if (lineOfSight && servant.getCurrentMp() > servant.getMaxMp() * 0.7) {
+          result = castCurseShot(actionContext(context, target, ACTION_CURSE_SHOT, distance, true));
       }
 
       return result.handled() ? result : ServantExecutionResult.NOT_HANDLED;
@@ -281,7 +288,7 @@ public final class BaobhanSithServantSkills {
    }
 
    private static ServantExecutionResult castCurseShot(ServantCombatActionContext context) {
-      ServantEntity servant = validatedServant(context, 4.0, 42.0, 4.0);
+      ServantEntity servant = validatedCurseServant(context, 4.0);
       if (servant == null || !context.hasLineOfSight()) {
          return ServantExecutionResult.NOT_HANDLED;
       }
@@ -302,7 +309,7 @@ public final class BaobhanSithServantSkills {
    }
 
    private static ServantExecutionResult castBloodSpike(ServantCombatActionContext context) {
-      ServantEntity servant = validatedServant(context, 3.0, 18.0, 6.0);
+      ServantEntity servant = validatedCurseServant(context, 6.0);
       if (servant == null || !context.hasLineOfSight()
          || !ready(servant.getPersistentData(), TAG_LAST_BLOOD_SPIKE, context.gameTick(), 120L)) {
          return ServantExecutionResult.NOT_HANDLED;
@@ -328,7 +335,7 @@ public final class BaobhanSithServantSkills {
    }
 
    private static ServantExecutionResult castBloodThorns(ServantCombatActionContext context) {
-      ServantEntity servant = validatedServant(context, 2.0, 22.0, 12.0);
+      ServantEntity servant = validatedCurseServant(context, 12.0);
       if (servant == null || !ready(servant.getPersistentData(), TAG_LAST_BLOOD_THORNS, context.gameTick(), 220L)) {
          return ServantExecutionResult.NOT_HANDLED;
       }
@@ -357,7 +364,7 @@ public final class BaobhanSithServantSkills {
    }
 
    private static ServantExecutionResult castCurseVolley(ServantCombatActionContext context) {
-      ServantEntity servant = validatedServant(context, 10.0, 38.0, 14.0);
+      ServantEntity servant = validatedCurseServant(context, 14.0);
       if (servant == null || !context.hasLineOfSight()
          || !ready(servant.getPersistentData(), TAG_LAST_CURSE_VOLLEY, context.gameTick(), 180L)) {
          return ServantExecutionResult.NOT_HANDLED;
@@ -478,7 +485,7 @@ public final class BaobhanSithServantSkills {
 
    private static ServantExecutionResult castFetchFailnaughtAction(ServantCombatActionContext context) {
       if (!(context.caster() instanceof ServantEntity servant) || !isBaobhanSith(servant)
-         || context.target() == null || !context.target().isAlive() || context.distance() > 64.0
+         || context.target() == null || !context.target().isAlive()
          || servant.getHealth() > servant.getMaxHealth() * 0.7F && totalCurseLayers(servant, context.target()) < 5
          || !ready(servant.getPersistentData(), TAG_LAST_FETCH_FAILNAUGHT, context.gameTick(), 600L)) {
          return ServantExecutionResult.NOT_HANDLED;
@@ -545,11 +552,24 @@ public final class BaobhanSithServantSkills {
       return servant;
    }
 
+   private static ServantEntity validatedCurseServant(ServantCombatActionContext context, double mpCost) {
+      if (!(context.caster() instanceof ServantEntity servant) || !isBaobhanSith(servant)) {
+         return null;
+      }
+      LivingEntity target = context.target();
+      if (target == null || !target.isAlive() || servant.getCurrentMp() < mpCost
+         || ServantCombatSystem.cannotAct(servant) || ServantCombatSystem.skillsSuppressed(servant)
+         || servant.isPerformingAction() || !EntityUtils.isValidCombatTarget(servant, target)) {
+         return null;
+      }
+      return servant;
+   }
+
    private static boolean ready(CompoundTag data, String tag, long now, long cooldownTicks) {
       return now - data.getLong(tag) >= cooldownTicks;
    }
 
-   private static boolean isBaobhanSith(ServantEntity servant) {
+   public static boolean isBaobhanSith(ServantEntity servant) {
       if (servant == null) {
          return false;
       }
@@ -624,6 +644,9 @@ public final class BaobhanSithServantSkills {
          curseTag.putLong(TAG_BURST_UNTIL, now + 200L);
       }
       saveTargetCurses(owner, target, curseTag);
+      CompoundTag tracked = owner.getPersistentData().getCompound(BaobhanSithCurseService.TAG_CURSE_TARGETS);
+      tracked.put(target.getUUID().toString(), new CompoundTag());
+      owner.getPersistentData().put(BaobhanSithCurseService.TAG_CURSE_TARGETS, tracked);
       if (owner instanceof ServantEntity servant) {
          CompoundTag data = servant.getPersistentData();
          data.putInt(TAG_MANA_STACKS, Math.min(10, data.getInt(TAG_MANA_STACKS) + 1));
@@ -653,6 +676,9 @@ public final class BaobhanSithServantSkills {
    }
 
    private static void triggerBurst(LivingEntity owner, LivingEntity target) {
+      CompoundTag tracked = owner.getPersistentData().getCompound(BaobhanSithCurseService.TAG_CURSE_TARGETS);
+      tracked.put(target.getUUID().toString(), new CompoundTag());
+      owner.getPersistentData().put(BaobhanSithCurseService.TAG_CURSE_TARGETS, tracked);
       CompoundTag curseTag = targetCurses(owner, target);
       curseTag.putLong(TAG_BURST_UNTIL, owner.level().getGameTime() + 200L);
       saveTargetCurses(owner, target, curseTag);
