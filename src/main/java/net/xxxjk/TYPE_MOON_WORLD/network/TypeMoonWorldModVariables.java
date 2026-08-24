@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
@@ -241,9 +242,11 @@ public class TypeMoonWorldModVariables {
             clone.ubw_return_dimension = "minecraft:overworld";
          }
 
-         clone.learned_magics = new ArrayList<>(original.learned_magics);
-         clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
-         clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
+          clone.learned_magics = new ArrayList<>(original.learned_magics);
+          clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
+          clone.magic_learning_progress = new HashMap<>(original.magic_learning_progress);
+          clone.magic_learning_progress_last_gain_tick = new HashMap<>(original.magic_learning_progress_last_gain_tick);
+          clone.talent_proficiencies = new HashMap<>(original.talent_proficiencies);
          clone.passive_ranks = new HashMap<>(original.passive_ranks);
          clone.martial_passive_last_threshold = original.martial_passive_last_threshold;
          clone.magic_passive_last_threshold = original.magic_passive_last_threshold;
@@ -993,7 +996,10 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of("unlimited_blade_works", "sword_barrel_full_open", "baptism_rite", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu");
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of(
+         "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
+         "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+      );
       private transient boolean fullSyncSnapshotSent = false;
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;
@@ -1078,6 +1084,8 @@ public class TypeMoonWorldModVariables {
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
       public Map<String, Double> magic_proficiencies = new HashMap<>();
+      public Map<String, Double> magic_learning_progress = new HashMap<>();
+      public Map<String, Long> magic_learning_progress_last_gain_tick = new HashMap<>();
       public Map<String, Double> talent_proficiencies = new HashMap<>();
       public Map<String, PassiveRank> passive_ranks = new HashMap<>();
       public int martial_passive_last_threshold = 140;
@@ -1323,6 +1331,10 @@ public class TypeMoonWorldModVariables {
          return id != null && !id.isEmpty() ? id : UUID.randomUUID().toString();
       }
 
+      private static double sanitizeCrestProficiency(double proficiency) {
+         return Math.max(0.0, Math.min(100.0, proficiency));
+      }
+
       private static boolean isKnownMagicId(String magicId) {
          return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
       }
@@ -1440,6 +1452,7 @@ public class TypeMoonWorldModVariables {
             if (crestEntry.presetPayload == null) {
                crestEntry.presetPayload = new CompoundTag();
             }
+            crestEntry.proficiency = sanitizeCrestProficiency(crestEntry.proficiency);
 
             if ("plunder".equals(crestEntry.sourceKind)) {
                crestEntry.presetPayload = normalizePlunderPresetPayload(crestEntry);
@@ -1698,6 +1711,24 @@ public class TypeMoonWorldModVariables {
          }
       }
 
+      public double getCrestEntryEffectiveProficiency(String crestEntryId, String magicId) {
+         TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry = this.getCrestEntryById(crestEntryId);
+         if (crestEntry == null || !crestEntry.active || !Objects.equals(crestEntry.magicId, magicId)) {
+            return 0.0;
+         } else if ("plunder".equals(crestEntry.sourceKind)) {
+            return Math.max(crestEntry.proficiency, MagicProficiencyService.get(this, magicId));
+         } else {
+            return this.hasLearnedSelfMagic(magicId) ? MagicProficiencyService.get(this, magicId) : 0.0;
+         }
+      }
+
+      public double getEffectiveCurrentMagicProficiency(String magicId) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry current = this.getCurrentRuntimeWheelEntry();
+         return current != null && "crest".equals(current.sourceType) && Objects.equals(current.magicId, magicId)
+            ? this.getCrestEntryEffectiveProficiency(current.crestEntryId, magicId)
+            : MagicProficiencyService.get(this, magicId);
+      }
+
       public boolean canCastCurrentSelectionViaCrest(String magicId) {
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry current = this.getCurrentRuntimeWheelEntry();
          if (current != null && "crest".equals(current.sourceType) && this.isWheelSlotEntryCastable(current) && Objects.equals(current.magicId, magicId)) {
@@ -1787,6 +1818,12 @@ public class TypeMoonWorldModVariables {
       }
 
       public boolean addPlunderCrestEntry(String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName) {
+         return this.addPlunderCrestEntry(magicId, presetPayload, originOwnerUuid, originOwnerType, originOwnerName, 0.0);
+      }
+
+      public boolean addPlunderCrestEntry(
+         String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName, double originProficiency
+      ) {
          this.ensureMagicSystemInitialized();
          if (!isKnownMagicId(magicId) || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId)) {
             return false;
@@ -1799,6 +1836,7 @@ public class TypeMoonWorldModVariables {
             entry.originOwnerUuid = originOwnerUuid == null ? "" : originOwnerUuid.toString();
             entry.originOwnerType = originOwnerType != null && !originOwnerType.isEmpty() ? originOwnerType : "npc";
             entry.originOwnerName = originOwnerName == null ? "" : originOwnerName;
+            entry.proficiency = sanitizeCrestProficiency(originProficiency);
             entry.active = true;
             int before = this.crest_entries == null ? 0 : this.crest_entries.size();
             List<TypeMoonWorldModVariables.PlayerVariables.CrestEntry> incoming = new ArrayList<>();
@@ -1811,8 +1849,15 @@ public class TypeMoonWorldModVariables {
       public boolean addProjectionPlunderCrestEntry(
          Provider lookupProvider, ItemStack projectionItem, String projectionStructureId, UUID originOwnerUuid, String originOwnerType, String originOwnerName
       ) {
+         return this.addProjectionPlunderCrestEntry(lookupProvider, projectionItem, projectionStructureId, originOwnerUuid, originOwnerType, originOwnerName, 0.0);
+      }
+
+      public boolean addProjectionPlunderCrestEntry(
+         Provider lookupProvider, ItemStack projectionItem, String projectionStructureId, UUID originOwnerUuid, String originOwnerType, String originOwnerName,
+         double originProficiency
+      ) {
          CompoundTag payload = buildProjectionPlunderPresetPayload(lookupProvider, projectionItem, projectionStructureId);
-         return this.addPlunderCrestEntry("projection", payload, originOwnerUuid, originOwnerType, originOwnerName);
+         return this.addPlunderCrestEntry("projection", payload, originOwnerUuid, originOwnerType, originOwnerName, originProficiency);
       }
 
       public void syncSelfCrestEntriesFromKnowledge() {
@@ -1991,7 +2036,10 @@ public class TypeMoonWorldModVariables {
                      + copy.sourceKind
                      + "|"
                      + copy.originOwnerUuid;
-                  merged.putIfAbsent(key, copy);
+                  TypeMoonWorldModVariables.PlayerVariables.CrestEntry mergedEntry = merged.putIfAbsent(key, copy);
+                  if (mergedEntry != null) {
+                     mergedEntry.proficiency = Math.max(mergedEntry.proficiency, copy.proficiency);
+                  }
                }
             }
 
@@ -2006,7 +2054,10 @@ public class TypeMoonWorldModVariables {
                      + normalized.sourceKind
                      + "|"
                      + normalized.originOwnerUuid;
-                  merged.putIfAbsent(key, normalized);
+                  TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing = merged.putIfAbsent(key, normalized);
+                  if (existing != null) {
+                     existing.proficiency = Math.max(existing.proficiency, normalized.proficiency);
+                  }
                }
             }
 
@@ -2357,12 +2408,26 @@ public class TypeMoonWorldModVariables {
          }
 
          nbt.put("learned_magics", learnedList);
-         CompoundTag dynamicProficiency = new CompoundTag();
-         for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
-            dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
-         }
-         nbt.put("magic_proficiencies", dynamicProficiency);
-         TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
+          CompoundTag dynamicProficiency = new CompoundTag();
+          for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
+             dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
+          }
+          nbt.put("magic_proficiencies", dynamicProficiency);
+          CompoundTag learningProgress = new CompoundTag();
+          for (Map.Entry<String, Double> entry : this.magic_learning_progress.entrySet()) {
+             if (entry.getKey() != null && !entry.getKey().isBlank()) {
+                learningProgress.putDouble(entry.getKey(), Math.max(0.0D, entry.getValue()));
+             }
+          }
+          nbt.put("magic_learning_progress", learningProgress);
+          CompoundTag learningProgressTicks = new CompoundTag();
+          for (Map.Entry<String, Long> entry : this.magic_learning_progress_last_gain_tick.entrySet()) {
+             if (entry.getKey() != null && !entry.getKey().isBlank()) {
+                learningProgressTicks.putLong(entry.getKey(), entry.getValue() == null ? 0L : entry.getValue());
+             }
+          }
+          nbt.put("magic_learning_progress_last_gain_tick", learningProgressTicks);
+          TalentPassiveDataCodec.save(nbt, this.talent_proficiencies, this.passive_ranks, this.martial_passive_last_threshold, this.magic_passive_last_threshold);
          if (!this.projection_selected_item.isEmpty()) {
             nbt.put("projection_selected_item", this.projection_selected_item.save(lookupProvider));
          }
@@ -2772,12 +2837,26 @@ public class TypeMoonWorldModVariables {
             }
          }
          this.magic_proficiencies.clear();
-         if (nbt.contains("magic_proficiencies", 10)) {
-            CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
-            for (String key : dynamicProficiency.getAllKeys()) {
-               this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
-            }
-         }
+          if (nbt.contains("magic_proficiencies", 10)) {
+             CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
+             for (String key : dynamicProficiency.getAllKeys()) {
+                this.magic_proficiencies.put(key, Math.max(0.0, Math.min(100.0, dynamicProficiency.getDouble(key))));
+             }
+          }
+          this.magic_learning_progress.clear();
+          if (nbt.contains("magic_learning_progress", 10)) {
+             CompoundTag learningProgress = nbt.getCompound("magic_learning_progress");
+             for (String key : learningProgress.getAllKeys()) {
+                this.magic_learning_progress.put(key, Math.max(0.0D, learningProgress.getDouble(key)));
+             }
+          }
+          this.magic_learning_progress_last_gain_tick.clear();
+          if (nbt.contains("magic_learning_progress_last_gain_tick", 10)) {
+             CompoundTag learningProgressTicks = nbt.getCompound("magic_learning_progress_last_gain_tick");
+             for (String key : learningProgressTicks.getAllKeys()) {
+                this.magic_learning_progress_last_gain_tick.put(key, learningProgressTicks.getLong(key));
+             }
+          }
          double totalMartial = this.bajiquan_proficiency + this.ganryu_proficiency + this.hokushin_proficiency + this.tennen_proficiency;
          this.martial_passive_last_threshold = TalentPassiveDataCodec.load(
             nbt, this.talent_proficiencies, this.passive_ranks, totalMartial);
@@ -3112,6 +3191,7 @@ public class TypeMoonWorldModVariables {
          public String originOwnerUuid = "";
          public String originOwnerType = "npc";
          public String originOwnerName = "";
+         public double proficiency = 0.0;
          public boolean active = true;
 
          public TypeMoonWorldModVariables.PlayerVariables.CrestEntry copy() {
@@ -3123,6 +3203,7 @@ public class TypeMoonWorldModVariables {
             copy.originOwnerUuid = this.originOwnerUuid == null ? "" : this.originOwnerUuid;
             copy.originOwnerType = this.originOwnerType == null ? "npc" : this.originOwnerType;
             copy.originOwnerName = this.originOwnerName == null ? "" : this.originOwnerName;
+            copy.proficiency = sanitizeCrestProficiency(this.proficiency);
             copy.active = this.active;
             return copy;
          }
@@ -3136,6 +3217,7 @@ public class TypeMoonWorldModVariables {
             tag.putString("origin_owner_uuid", this.originOwnerUuid == null ? "" : this.originOwnerUuid);
             tag.putString("origin_owner_type", this.originOwnerType == null ? "npc" : this.originOwnerType);
             tag.putString("origin_owner_name", this.originOwnerName == null ? "" : this.originOwnerName);
+            tag.putDouble("proficiency", sanitizeCrestProficiency(this.proficiency));
             tag.putBoolean("active", this.active);
             return tag;
          }
@@ -3149,6 +3231,7 @@ public class TypeMoonWorldModVariables {
             entry.originOwnerUuid = tag.contains("origin_owner_uuid") ? tag.getString("origin_owner_uuid") : "";
             entry.originOwnerType = tag.contains("origin_owner_type") ? tag.getString("origin_owner_type") : "npc";
             entry.originOwnerName = tag.contains("origin_owner_name") ? tag.getString("origin_owner_name") : "";
+            entry.proficiency = tag.contains("proficiency") ? sanitizeCrestProficiency(tag.getDouble("proficiency")) : 0.0;
             entry.active = !tag.contains("active") || tag.getBoolean("active");
             return entry;
          }
@@ -3423,7 +3506,8 @@ public class TypeMoonWorldModVariables {
       double earth_magic,
       double time_alter,
       double spiritual_healing,
-      double baptism_rite
+      double baptism_rite,
+      CompoundTag dynamic_proficiencies
    ) implements CustomPacketPayload {
       public static final Type<TypeMoonWorldModVariables.ProficiencySyncMessage> TYPE = new Type<>(
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "proficiency_sync")
@@ -3451,30 +3535,39 @@ public class TypeMoonWorldModVariables {
             buffer.writeDouble(message.time_alter);
             buffer.writeDouble(message.spiritual_healing);
             buffer.writeDouble(message.baptism_rite);
+            buffer.writeNbt(message.dynamic_proficiencies == null ? new CompoundTag() : message.dynamic_proficiencies);
          },
-         buffer -> new TypeMoonWorldModVariables.ProficiencySyncMessage(
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble(),
-            buffer.readDouble()
-         )
+         buffer -> {
+            double structuralAnalysis = buffer.readDouble();
+            double magicAnalysis = buffer.readDouble();
+            double projection = buffer.readDouble();
+            double jewelMagicShoot = buffer.readDouble();
+            double jewelMagicRelease = buffer.readDouble();
+            double unlimitedBladeWorks = buffer.readDouble();
+            double swordBarrelFullOpen = buffer.readDouble();
+            double gravityMagic = buffer.readDouble();
+            double gander = buffer.readDouble();
+            double reinforcement = buffer.readDouble();
+            double healingMagic = buffer.readDouble();
+            double magicBullet = buffer.readDouble();
+            double suggestionMagic = buffer.readDouble();
+            double bindingMagic = buffer.readDouble();
+            double fireMagic = buffer.readDouble();
+            double waterMagic = buffer.readDouble();
+            double windMagic = buffer.readDouble();
+            double earthMagic = buffer.readDouble();
+            double timeAlter = buffer.readDouble();
+            double spiritualHealing = buffer.readDouble();
+            double baptismRite = buffer.readDouble();
+            CompoundTag dynamic = buffer.readNbt();
+            return new TypeMoonWorldModVariables.ProficiencySyncMessage(
+               structuralAnalysis, magicAnalysis, projection, jewelMagicShoot, jewelMagicRelease,
+               unlimitedBladeWorks, swordBarrelFullOpen, gravityMagic, gander, reinforcement,
+               healingMagic, magicBullet, suggestionMagic, bindingMagic, fireMagic, waterMagic,
+               windMagic, earthMagic, timeAlter, spiritualHealing, baptismRite,
+               dynamic == null ? new CompoundTag() : dynamic
+            );
+         }
       );
 
       public ProficiencySyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -3499,8 +3592,21 @@ public class TypeMoonWorldModVariables {
             vars.proficiency_earth_magic,
             vars.proficiency_time_alter,
             vars.proficiency_spiritual_healing,
-            vars.proficiency_baptism_rite
+            vars.proficiency_baptism_rite,
+            dynamicProficiencyTag(vars)
          );
+      }
+
+      private static CompoundTag dynamicProficiencyTag(TypeMoonWorldModVariables.PlayerVariables vars) {
+         CompoundTag tag = new CompoundTag();
+         if (vars != null && vars.magic_proficiencies != null) {
+            for (Map.Entry<String, Double> entry : vars.magic_proficiencies.entrySet()) {
+               if (entry.getKey() != null && entry.getValue() != null && Double.isFinite(entry.getValue())) {
+                  tag.putDouble(entry.getKey(), Math.max(0.0D, Math.min(100.0D, entry.getValue())));
+               }
+            }
+         }
+         return tag;
       }
 
       @NotNull
@@ -3535,6 +3641,13 @@ public class TypeMoonWorldModVariables {
                   vars.proficiency_time_alter = message.time_alter;
                   vars.proficiency_spiritual_healing = message.spiritual_healing;
                   vars.proficiency_baptism_rite = message.baptism_rite;
+                  vars.magic_proficiencies.clear();
+                  if (message.dynamic_proficiencies != null) {
+                     for (String key : message.dynamic_proficiencies.getAllKeys()) {
+                        vars.magic_proficiencies.put(key, Math.max(0.0D, Math.min(100.0D,
+                           message.dynamic_proficiencies.getDouble(key))));
+                     }
+                  }
                }
             );
          }

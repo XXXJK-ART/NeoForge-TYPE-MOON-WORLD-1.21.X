@@ -34,7 +34,7 @@ public final class MagicHealing {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.isCurrentSelectionFromCrest("healing_magic") ? 100.0 : vars.proficiency_healing_magic;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency("healing_magic");
       boolean selfTarget = vars.healing_magic_target == 0;
       LivingEntity target = selfTarget ? player : BasicMagecraftHelper.rayTarget(player, targetRange(proficiency));
       if (target == null || EntityUtils.isImmunePlayerTarget(target) || (!selfTarget && !canHealOther(player, target, proficiency))) {

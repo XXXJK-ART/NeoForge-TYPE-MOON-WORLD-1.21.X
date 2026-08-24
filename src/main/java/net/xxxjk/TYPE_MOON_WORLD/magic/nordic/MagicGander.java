@@ -175,7 +175,7 @@ public final class MagicGander {
    }
 
    private static double getEffectiveGanderProficiency(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return vars.isCurrentSelectionFromCrest("gander") ? 100.0 : vars.proficiency_gander;
+      return vars.getEffectiveCurrentMagicProficiency("gander");
    }
 
    private static int getMaxChargeSeconds(double proficiency) {

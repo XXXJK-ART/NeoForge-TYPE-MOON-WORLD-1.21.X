@@ -13,6 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
@@ -39,6 +41,21 @@ public class RandomMagicScrollItem extends Item {
         
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (stack.is(ModItems.MAGIC_PAGE_THEOLOGY.get()) && MagicLearningStrategy.isLearned(vars, "black_key_making")) {
+                ItemStack blackKey = new ItemStack(ModItems.BLACK_KEY.get());
+                BlackKeyItem.setExpanded(blackKey, false);
+                if (stack.getCount() == 1) {
+                    player.setItemInHand(usedHand, blackKey);
+                } else {
+                    stack.shrink(1);
+                    if (!player.getInventory().add(blackKey)) {
+                        player.drop(blackKey, false);
+                    }
+                }
+                level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.7F, 1.25F);
+                player.displayClientMessage(Component.translatable("message.typemoonworld.black_key.created"), true);
+                return InteractionResultHolder.consume(player.getItemInHand(usedHand));
+            }
             
             // Check Requirement
             if (requiredMagic != null && !requiredMagic.isEmpty()) {
@@ -51,7 +68,7 @@ public class RandomMagicScrollItem extends Item {
             
             List<String> unlearnedMagics = new ArrayList<>();
             for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
+                if (!MagicLearningStrategy.isLearned(vars, magic)) {
                     unlearnedMagics.add(magic);
                 }
             }
@@ -66,7 +83,19 @@ public class RandomMagicScrollItem extends Item {
             String magicToLearn = unlearnedMagics.get(0);
             
             if (MagicLearningStrategy.materialAllowed(vars, magicToLearn)) {
-                MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble());
+                MagicLearningService.MaterialAdvanceResult result =
+                    MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicToLearn, 0.15D);
+                if (!result.accepted()) {
+                    serverPlayer.displayClientMessage(Component.translatable(
+                        MagicLearningStrategy.isLearned(vars, magicToLearn)
+                            ? "message.typemoonworld.scroll.already_learned"
+                            : "message.typemoonworld.magic.learning_restricted"), true);
+                } else if (!result.completed()) {
+                    serverPlayer.displayClientMessage(Component.translatable(
+                        "message.typemoonworld.scroll.progress",
+                        Component.translatable("magic.typemoonworld." + MagicLearningStrategy.normalizeDisplayId(magicToLearn) + ".name"),
+                        String.format(java.util.Locale.ROOT, "%.1f", result.afterPercent())), true);
+                }
             } else {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
             }

@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:staff",
+    "typemoonworld:ruby_staff",
+    "typemoonworld:sapphire_staff",
+    "typemoonworld:emerald_staff",
+    "typemoonworld:cyan_staff",
+    "typemoonworld:topaz_staff"
+  ]
+}

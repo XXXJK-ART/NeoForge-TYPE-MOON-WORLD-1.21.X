@@ -15,6 +15,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.SurfaceRules;
@@ -97,6 +99,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.Magical_attributes_Button_Message;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterVisualStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OpenServantCommandScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCommandMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MedeaCraftSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MuramasaForgeSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
@@ -207,7 +211,6 @@ public class TYPE_MOON_WORLD {
             CardActionRegistry.freeze();
             MagicDefinitionRegistry.freeze();
             MagicPresetRegistry.freeze();
-            ClientExtensionRegistryImpl.freeze();
             GemApiRegistry.freeze();
             MasterProfileApiRegistry.freeze();
             ExtensionApiRegistry.freeze();
@@ -237,6 +240,10 @@ public class TYPE_MOON_WORLD {
    }
 
    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+      if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+         event.remove(ModItems.GILGAMESH_SPAWN_EGG.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+         event.remove(ModItems.GILGAMESH_CASTER_SPAWN_EGG.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+      }
    }
 
    public static <T extends CustomPacketPayload> void addNetworkMessage(
@@ -322,6 +329,8 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantMasterContractMessage.TYPE, ServantMasterContractMessage.STREAM_CODEC, ServantMasterContractMessage::handleData);
       registrar.playToServer(MasterCommandSpellMessage.TYPE, MasterCommandSpellMessage.STREAM_CODEC, MasterCommandSpellMessage::handleData);
       registrar.playToServer(MasterCommandSpellPoseMessage.TYPE, MasterCommandSpellPoseMessage.STREAM_CODEC, MasterCommandSpellPoseMessage::handleData);
+      registrar.playToServer(ServantCommandMessage.TYPE, ServantCommandMessage.STREAM_CODEC, ServantCommandMessage::handleData);
+      registrar.playToClient(OpenServantCommandScreenMessage.TYPE, OpenServantCommandScreenMessage.STREAM_CODEC, OpenServantCommandScreenMessage::handleData);
       registrar.playToServer(CustomCommandSpellMessage.TYPE, CustomCommandSpellMessage.STREAM_CODEC, CustomCommandSpellMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationPointMessage.TYPE, EnkiduTransfigurationPointMessage.STREAM_CODEC, EnkiduTransfigurationPointMessage::handleData);
       registrar.playToServer(EnkiduTransfigurationSetMessage.TYPE, EnkiduTransfigurationSetMessage.STREAM_CODEC, EnkiduTransfigurationSetMessage::handleData);

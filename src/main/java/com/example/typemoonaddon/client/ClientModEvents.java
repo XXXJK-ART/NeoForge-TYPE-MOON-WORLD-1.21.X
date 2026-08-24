@@ -4,6 +4,7 @@ import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.client.model.BlackShadowModel;
 import com.example.typemoonaddon.client.model.ShadowFamiliarModel;
 import com.example.typemoonaddon.client.model.ShadowFamiliarOutlineModel;
+import com.example.typemoonaddon.client.model.WingedWormModel;
 import com.example.typemoonaddon.client.renderer.BlackMudCorruptionLayer;
 import com.example.typemoonaddon.client.renderer.BlackShadowRenderer;
 import com.example.typemoonaddon.client.renderer.CursedArmorLayer;
@@ -14,6 +15,10 @@ import com.example.typemoonaddon.client.renderer.ShadowFamiliarRenderer;
 import com.example.typemoonaddon.client.renderer.ShadowPiercingRhoAiasRenderer;
 import com.example.typemoonaddon.client.renderer.SeaMonsterRenderer;
 import com.example.typemoonaddon.client.renderer.VoidRingRegaliaRenderer;
+import com.example.typemoonaddon.client.renderer.WormRenderer;
+import com.example.typemoonaddon.client.renderer.SummonedSpiritParticleRenderer;
+import com.example.typemoonaddon.client.renderer.BoundaryMarkRenderer;
+import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonFluids;
 import com.example.typemoonaddon.registry.AddonItems;
@@ -24,6 +29,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,6 +42,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
@@ -61,6 +68,7 @@ public final class ClientModEvents {
         event.registerLayerDefinition(BlackShadowModel.LAYER_LOCATION, BlackShadowModel::createBodyLayer);
         event.registerLayerDefinition(ShadowFamiliarModel.LAYER_LOCATION, ShadowFamiliarModel::createBodyLayer);
         event.registerLayerDefinition(ShadowFamiliarOutlineModel.LAYER_LOCATION, ShadowFamiliarOutlineModel::createBodyLayer);
+        event.registerLayerDefinition(WingedWormModel.LAYER_LOCATION, WingedWormModel::createBodyLayer);
     }
 
     @SubscribeEvent
@@ -71,7 +79,13 @@ public final class ClientModEvents {
         event.registerEntityRenderer(AddonEntities.SHADOW_PIERCING_RHO_AIAS.get(), ShadowPiercingRhoAiasRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_DE_RAIS_CASTER.get(), GillesDeRaisRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER.get(), SeaMonsterRenderer::new);
+        event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER_SPIT.get(), ThrownItemRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterRenderer::new);
+        event.registerEntityRenderer(AddonEntities.WORM.get(), WormRenderer::new);
+        event.registerEntityRenderer(AddonEntities.WRAITH.get(), SummonedSpiritParticleRenderer::new);
+        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT.get(), SummonedSpiritParticleRenderer::new);
+        event.registerEntityRenderer(AddonEntities.EVIL_SPIRIT_SMALL.get(), SummonedSpiritParticleRenderer::new);
+        event.registerEntityRenderer(AddonEntities.BOUNDARY_MARK.get(), BoundaryMarkRenderer::new);
     }
 
     @SubscribeEvent
@@ -158,6 +172,14 @@ public final class ClientModEvents {
                 return new Vector3f(0.025F, 0.0F, 0.005F);
             }
         }, AddonFluids.BLACK_MUD_TYPE.get());
+
+        for (var id : BoundaryMagicIntegration.boundaryMagicIds()) {
+            TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(id, context -> {
+                net.minecraft.client.gui.screens.Screen parent = context instanceof net.minecraft.client.gui.screens.Screen screen
+                        ? screen : null;
+                net.minecraft.client.Minecraft.getInstance().setScreen(new BoundaryMagicOptionsScreen(parent));
+            });
+        }
     }
 
     @SubscribeEvent

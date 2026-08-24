@@ -1,1 +1,1 @@
-{"type":"minecraft:crafting_shaped","category":"misc","pattern":["SSS","F F","F F"],"key":{"S":{"tag":"minecraft:wooden_slabs"},"F":{"tag":"minecraft:wooden_fences"}},"result":{"id":"typemoonworld:magic_copying_table","count":1}}
+{"type":"minecraft:crafting_shaped","category":"misc","pattern":["MM","PP","PP"],"key":{"P":{"tag":"minecraft:planks"},"M":{"tag":"typemoonworld:magic_pages"}},"result":{"id":"typemoonworld:magic_copying_table","count":1}}

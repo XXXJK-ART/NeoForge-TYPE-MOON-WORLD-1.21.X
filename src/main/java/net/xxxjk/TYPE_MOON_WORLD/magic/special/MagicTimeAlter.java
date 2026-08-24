@@ -28,7 +28,7 @@ public final class MagicTimeAlter {
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       boolean fromCrest = vars.isCurrentSelectionFromCrest(MAGIC_ID);
-      double proficiency = fromCrest ? 100.0 : vars.proficiency_time_alter;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency(MAGIC_ID);
       CompoundTag preset = fromCrest ? vars.getCurrentCrestPresetPayload() : new CompoundTag();
       int configuredMode = fromCrest && preset.contains("time_alter_mode") ? preset.getInt("time_alter_mode") : vars.time_alter_mode;
       int mode = configuredMode == MODE_STAGNATE ? MODE_STAGNATE : MODE_ACCEL;

@@ -48,6 +48,7 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
+import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -96,6 +97,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    NeonButton imagebutton_magical_attributes;
    NeonButton imagebutton_magical_properties;
    NeonButton imagebutton_passives;
+   NeonButton engravedWormButton;
    NeonButton tabSelfKnowledge;
    NeonButton tabCrestKnowledge;
    NeonButton filterButton;
@@ -172,6 +174,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("magic_bullet", "magic.typemoonworld.magic_bullet.name", "basic", -3381556);
       this.addMagic("suggestion_magic", "magic.typemoonworld.suggestion_magic.name", "basic", -6737152);
       this.addMagic("binding_magic", "magic.typemoonworld.binding_magic.name", "basic", -1058372);
+      this.addMagic("worm_magic", "magic.typemoonworld.worm_magic.name", "worm", 0xFF7F6A4A);
+      this.addMagic("worm_control", "magic.typemoonworld.worm_control.name", "worm", 0xFF9A8160);
+      this.addMagic("engraved_worm_operation", "magic.typemoonworld.engraved_worm_operation.name", "worm", 0xFFB34D5A);
       this.addMagic("fire_magic", "magic.typemoonworld.fire_magic.name", "elemental", -3386880);
       this.addMagic("water_magic", "magic.typemoonworld.water_magic.name", "elemental", -10040065);
       this.addMagic("wind_magic", "magic.typemoonworld.wind_magic.name", "elemental", -6684775);
@@ -187,8 +192,22 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("touko_travel", "magic.typemoonworld.touko_travel.name", "special", -7701249);
       this.addMagic("flight_magic", "magic.typemoonworld.flight_magic.name", "special", -7701249);
       this.addMagic("spiritron_cannon", "magic.typemoonworld.spiritron_cannon.name", "special", -171);
+      this.addMagic("spirit_summoning", "magic.typemoonworld.spirit_summoning.name", "spawn", 0xFF8E8FA8);
+      this.addMagic("wraith_servitude", "magic.typemoonworld.wraith_servitude.name", "spawn", 0xFF7A7D92);
+      this.addMagic("evil_spirit_summoning", "magic.typemoonworld.evil_spirit_summoning.name", "spawn", 0xFF70516B);
+      this.addMagic("boundary_art", "magic.typemoonworld.boundary_art.name", "boundary", 0xFF57A6A8);
+      this.addMagic("sensing_boundary", "magic.typemoonworld.sensing_boundary.name", "boundary", 0xFF49A89A);
+      this.addMagic("warning_boundary", "magic.typemoonworld.warning_boundary.name", "boundary", 0xFFE2B84F);
+      this.addMagic("defense_boundary", "magic.typemoonworld.defense_boundary.name", "boundary", 0xFF4D8FD6);
+      this.addMagic("suggestion_boundary", "magic.typemoonworld.suggestion_boundary.name", "boundary", 0xFF9B6BD3);
+      this.addMagic("anti_magic_boundary", "magic.typemoonworld.anti_magic_boundary.name", "boundary", 0xFF6EC6D8);
+      this.addMagic("guard_boundary", "magic.typemoonworld.guard_boundary.name", "boundary", 0xFF69B66B);
+      this.addMagic("interference_boundary", "magic.typemoonworld.interference_boundary.name", "boundary", 0xFFD06A66);
+      this.addMagic("theology", "magic.typemoonworld.theology.name", "church", -865972);
+      this.addMagic("black_key_making", "magic.typemoonworld.black_key_making.name", "church", -865972);
+      this.addMagic("iron_armor_action", "magic.typemoonworld.iron_armor_action.name", "church", -865972);
+      this.addMagic("cremation_rite", "magic.typemoonworld.cremation_rite.name", "church", -865972);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
-      this.addMagic("black_key_fire_engraving", "key.typemoonworld.magic.black_key_fire_engraving.short", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
       this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "imaginary", -6697729);
       this.addMagic("airflow_blade", "key.typemoonworld.magic.airflow_blade.short", "elemental", -6684775);
@@ -225,7 +244,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private static boolean hasLearnedMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      return vars != null && vars.hasLearnedSelfMagic(magicId);
+      return vars != null
+         && !MagicLearningStrategy.isRemovedMagic(magicId)
+         && MagicLearningStrategy.isLearned(vars, magicId);
    }
 
    private void rebuildSourceMagics() {
@@ -233,10 +254,26 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.ensureCrestSourceAvailability();
       List<Magical_attributes_Screen.MagicEntry> rebuilt = new ArrayList<>();
       if (this.magicSourceTab == MAGIC_SOURCE_SELF) {
+         Set<String> added = new HashSet<>();
          for (Magical_attributes_Screen.MagicEntry base : this.baseMagicCatalog) {
             if (hasLearnedMagic(vars, base.id)) {
                rebuilt.add(base.copy());
+               added.add(base.id);
             }
+         }
+
+         for (String displayMagicId : MagicLearningStrategy.displayMagicIds(vars.learned_magics)) {
+            if (displayMagicId == null || displayMagicId.isEmpty() || added.contains(displayMagicId)) {
+               continue;
+            }
+            Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(displayMagicId);
+            Magical_attributes_Screen.MagicEntry entry = base == null
+               ? new Magical_attributes_Screen.MagicEntry(
+                  displayMagicId, "magic.typemoonworld." + displayMagicId + ".name", this.resolveFallbackCategory(displayMagicId), -11557889
+               )
+               : base.copy();
+            rebuilt.add(entry);
+            added.add(displayMagicId);
          }
       } else {
          boolean hasValidCrest = vars.hasValidImplantedCrest();
@@ -245,7 +282,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (crestEntry != null && crestEntry.magicId != null && !crestEntry.magicId.isEmpty()) {
                String displayMagicId = normalizeMagicIdForDisplay(crestEntry.magicId);
                Magical_attributes_Screen.MagicEntry basex = this.magicCatalogById.get(displayMagicId);
-               if (!shouldHideCrestMagic(displayMagicId, basex)) {
+               if (!MagicLearningStrategy.isRemovedMagic(displayMagicId) && !shouldHideCrestMagic(displayMagicId, basex)) {
                   Magical_attributes_Screen.MagicEntry entry = basex == null
                      ? new Magical_attributes_Screen.MagicEntry(
                         displayMagicId, "key.typemoonworld.magic." + displayMagicId + ".short", this.resolveFallbackCategory(displayMagicId), -1811878
@@ -254,11 +291,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                   entry.sourceType = "crest";
                   entry.crestEntryId = crestEntry.entryId;
                   entry.crestSourceKind = crestEntry.sourceKind == null ? "self" : crestEntry.sourceKind;
-                  if ("plunder".equals(entry.crestSourceKind)) {
-                     entry.presetPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
-                  } else {
-                     entry.presetPayload = new CompoundTag();
-                  }
+                  entry.presetPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
 
                   entry.originName = crestEntry.originOwnerName == null ? "" : crestEntry.originOwnerName;
                   entry.active = hasValidCrest && crestEntry.active;
@@ -344,6 +377,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.imaginary";
       } else if ("solomon".equals(category)) {
          return "gui.typemoonworld.category.solomon";
+      } else if ("spawn".equals(category)) {
+         return "gui.typemoonworld.category.spawn";
+      } else if ("worm".equals(category)) {
+         return "gui.typemoonworld.category.worm";
+      } else if ("boundary".equals(category)) {
+         return "gui.typemoonworld.category.boundary";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -363,7 +402,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.martial",
          "gui.typemoonworld.category.talent",
          "gui.typemoonworld.category.imaginary",
-         "gui.typemoonworld.category.solomon"
+         "gui.typemoonworld.category.solomon",
+         "gui.typemoonworld.category.spawn",
+         "gui.typemoonworld.category.worm",
+         "gui.typemoonworld.category.boundary"
       };
       int maxCategoryWidth = 0;
 
@@ -441,6 +483,12 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "imaginary";
       } else if ("imaginary".equals(current)) {
          return "solomon";
+      } else if ("solomon".equals(current)) {
+         return "spawn";
+      } else if ("spawn".equals(current)) {
+         return "worm";
+      } else if ("worm".equals(current)) {
+         return "boundary";
       } else {
          return "all";
       }
@@ -449,7 +497,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private String getNextCategory(String current) {
       String next = this.nextCategoryRaw(current);
 
-      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 16; safety++) {
+      for (int safety = 0; !"all".equals(next) && !this.isCategoryUnlocked(next) && safety < 20; safety++) {
          next = this.nextCategoryRaw(next);
       }
 
@@ -555,6 +603,17 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          this.bodyTrainingButtons.add(add);
       }
 
+      this.engravedWormButton = new NeonButton(
+         this.leftPos + 122,
+         this.topPos + 107,
+         88,
+         14,
+         Component.translatable("gui.typemoonworld.body_modification.engraved_worms"),
+         e -> PacketDistributor.sendToServer(new OpenEngravedWormMenuPayload(0), new CustomPacketPayload[0]),
+         GuiUtils.ARCANE_CREST
+      ).setArcaneStyle(true);
+      this.addRenderableWidget(this.engravedWormButton);
+
       for (int i = 0; i < 10; i++) {
          int wheel = i;
          NeonButton wheelBtn = new NeonButton(
@@ -613,6 +672,10 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          Button button = this.bodyTrainingButtons.get(i);
          button.visible = bodyVisible;
          button.active = bodyVisible && bodyVars.body_training_points > 0 && bodyLevels[i] < BodyTrainingService.MAX_STAT_POINTS;
+      }
+      if (this.engravedWormButton != null) {
+         this.engravedWormButton.visible = bodyVisible;
+         this.engravedWormButton.active = bodyVisible;
       }
 
       if (this.imagebutton_magical_attributes != null) {
@@ -1318,6 +1381,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                ? Component.translatable("gui.typemoonworld.mode.other").getString()
                : Component.translatable("gui.typemoonworld.mode.self").getString();
             lines.add(Component.literal(" - " + targetName).withStyle(ChatFormatting.YELLOW));
+         } else if (isImaginaryStorageMagic(magicId)) {
+            String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+            lines.add(Component.literal(" - " + Component.translatable(imaginaryModeLabelKey(magicId, mode)).getString()).withStyle(ChatFormatting.YELLOW));
          } else if ("touko_travel".equals(magicId)) {
             if (payload.contains("x") && payload.contains("y") && payload.contains("z")) {
                lines.add(
@@ -1377,7 +1443,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private double getMagicProficiency(Magical_attributes_Screen.MagicEntry entry) {
-      return entry != null && "crest".equals(entry.sourceType) ? 100.0 : this.getMagicProficiency(entry == null ? "" : entry.id);
+      return entry != null && "crest".equals(entry.sourceType)
+         ? this.getVars().getCrestEntryEffectiveProficiency(entry.crestEntryId, entry.id)
+         : this.getMagicProficiency(entry == null ? "" : entry.id);
    }
 
    private double getMagicProficiency(String magicId) {
@@ -1412,7 +1480,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "ganryu" -> vars.ganryu_proficiency;
          case "hokushin_ittoryu" -> vars.hokushin_proficiency;
          case "tennen_rishin_ryu" -> vars.tennen_proficiency;
-         default -> -1.0;
+         default -> MagicProficiencyService.get(vars, normalized);
       };
    }
 
@@ -1420,6 +1488,28 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       return !"reinforcement_self".equals(magicId) && !"reinforcement_other".equals(magicId) && !"reinforcement_item".equals(magicId)
          ? magicId
          : "reinforcement";
+   }
+
+   private static boolean isImaginaryStorageMagic(String magicId) {
+      String path = magicPath(magicId);
+      return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+   }
+
+   private static String imaginaryModeLabelKey(String magicId, String mode) {
+      if ("protection".equals(mode)) {
+         return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+      }
+      return "imaginary_absorption_evolved".equals(magicPath(magicId))
+         ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+         : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
+   }
+
+   private static String magicPath(String magicId) {
+      if (magicId == null) {
+         return "";
+      }
+      int split = magicId.indexOf(':');
+      return split >= 0 ? magicId.substring(split + 1) : magicId;
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
@@ -1603,7 +1693,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                   if ("crest".equals(this.draggingEntry.sourceType) && payload.isEmpty() && this.isMultiOptionMagic(this.draggingEntry.id)) {
                      if ("plunder".equals(this.draggingEntry.crestSourceKind)) {
                         payload = this.resolvePlunderLockedPayload(this.draggingEntry, payload);
-                     } else {
+                     } else if (!PlayerMagicSelectionService.requiresPresetConfiguration(this.draggingEntry.id)) {
                         payload = this.buildDefaultPresetPayloadFromCurrent(this.draggingEntry.id);
                      }
                   }
@@ -1884,6 +1974,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             ? Component.translatable("gui.typemoonworld.overlay.element.mode.utility.short").getString()
             : Component.translatable("gui.typemoonworld.overlay.element.mode.attack.short").getString();
          return base + " " + modeName;
+      } else if (isImaginaryStorageMagic(entry.id)) {
+         String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+         return base + " " + Component.translatable(imaginaryModeLabelKey(entry.id, mode)).getString();
       } else {
          if ("projection".equals(entry.id)) {
             if (payload.contains("projection_structure_id")) {
@@ -1912,26 +2005,22 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
          || "touko_travel".equals(magicId)
+         || isImaginaryStorageMagic(magicId)
          || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
    private boolean shouldOpenPresetDialog(Magical_attributes_Screen.MagicEntry entry, CompoundTag payload) {
-      if ("touko_travel".equals(entry.id) && !"plunder".equals(entry.crestSourceKind)) {
-         return payload == null || payload.isEmpty();
-      } else if (!"crest".equals(entry.sourceType)) {
+      if (!"crest".equals(entry.sourceType)) {
          return false;
       } else if ("plunder".equals(entry.crestSourceKind)) {
          return false;
       } else {
-         return !this.isMultiOptionMagic(entry.id) ? false : payload == null || payload.isEmpty();
+         return PlayerMagicSelectionService.requiresPresetConfiguration(entry.id) && this.getInitialPresetStage(entry.id) != null
+            && (payload == null || payload.isEmpty());
       }
    }
 
    private void openPresetDialog(Magical_attributes_Screen.MagicEntry entry, int targetSlot) {
-      if ("touko_travel".equals(entry.id)) {
-         this.minecraft.setScreen(new ToukoTravelPresetScreen(this, entry.copy(), targetSlot, this.buildDefaultPresetPayloadFromCurrent(entry.id)));
-         return;
-      }
       String stageId = this.getInitialPresetStage(entry.id);
       if (stageId == null) {
          this.sendSetWheelSlot(targetSlot, entry, this.buildDefaultPresetPayloadFromCurrent(entry.id));
@@ -1948,7 +2037,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "healing_magic" -> "healing_target";
          case "time_alter" -> "time_alter_mode";
          case "mana_burst" -> "mana_burst_mode";
-         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> "element_mode";
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic",
+              "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> "element_mode";
          case "projection" -> "projection_source";
          default -> null;
       };
@@ -2205,12 +2295,6 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          CompoundTag payload = new CompoundTag();
          payload.putInt("mana_burst_mode", 1);
          payload.putInt("mana_burst_level", Math.max(1, Math.min(5, 1 + (int)(MagicProficiencyService.get(vars, "mana_burst") / 20.0))));
-         return payload;
-      } else if ("touko_travel".equals(magicId)) {
-         CompoundTag payload = new CompoundTag();
-         payload.putDouble("x", this.entity.getX());
-         payload.putDouble("y", this.entity.getY());
-         payload.putDouble("z", this.entity.getZ());
          return payload;
       } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
          CompoundTag payload = new CompoundTag();

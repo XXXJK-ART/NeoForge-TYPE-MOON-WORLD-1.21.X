@@ -716,7 +716,7 @@ public final class GemEngravingService {
       projectile.setNoGravity(true);
       projectile.setChargeSeconds(GANDER_MAX_CHARGE_SECONDS);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      projectile.setMagicSource("gander", vars.isCurrentSelectionFromCrest("gander") ? 100.0 : vars.proficiency_gander);
+      projectile.setMagicSource("gander", vars.getEffectiveCurrentMagicProficiency("gander"));
       projectile.setVisualScale(MagicGander.getVisualScaleForChargeSeconds(GANDER_MAX_CHARGE_SECONDS));
       ItemStack visualGem = gemStack.copy();
       visualGem.setCount(1);

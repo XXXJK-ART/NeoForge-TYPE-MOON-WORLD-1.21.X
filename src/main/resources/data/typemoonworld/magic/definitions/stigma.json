@@ -8,5 +8,7 @@
   "wheel_selectable": false,
   "crest_allowed": false,
   "npc_allowed": true,
-  "knowledge_only": true
+  "knowledge_only": true,
+  "prerequisite_magic": "typemoonworld:theology",
+  "prerequisite_proficiency": 100.0
 }

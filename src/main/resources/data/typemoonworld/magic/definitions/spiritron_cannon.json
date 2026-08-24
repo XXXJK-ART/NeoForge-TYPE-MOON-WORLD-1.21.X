@@ -4,7 +4,7 @@
   "category": "typemoonworld:special",
   "school": "typemoonworld:none",
   "complexity": 90,
-  "chant_segments": 5,
+  "chant_segments": 16,
   "mana_cost": 500.0,
   "sustained_mana_cost": 0.0,
   "cooldown_ticks": 220,

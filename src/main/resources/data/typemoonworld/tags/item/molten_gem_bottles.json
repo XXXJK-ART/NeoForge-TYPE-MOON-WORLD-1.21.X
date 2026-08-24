@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:molten_ruby_bottle",
+    "typemoonworld:molten_sapphire_bottle",
+    "typemoonworld:molten_emerald_bottle",
+    "typemoonworld:molten_topaz_bottle",
+    "typemoonworld:molten_white_gemstone_bottle",
+    "typemoonworld:molten_cyan_gemstone_bottle"
+  ]
+}

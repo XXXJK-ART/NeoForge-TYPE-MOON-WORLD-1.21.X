@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.magic;
 
 import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.config.GameplayConfig;
 import com.example.typemoonaddon.data.ImaginarySpaceData;
 import com.example.typemoonaddon.entity.SakuraBlackShadowEntity;
 import com.example.typemoonaddon.entity.SakuraShadowArtRibbonEntity;
@@ -38,21 +39,21 @@ import org.joml.Vector3f;
 
 public final class SakuraShadowArtService {
     public static final ResourceKey<DamageType> DAMAGE_TYPE = ResourceKey.create(Registries.DAMAGE_TYPE, TypeMoonAddon.id("shadow_art"));
-    private static final int RIBBON_COUNT = 10;
-    private static final double ROOT_RADIUS = 1.15D;
+    private static final int RIBBON_COUNT = GameplayConfig.SHADOW_ART_RIBBON_COUNT;
+    private static final double ROOT_RADIUS = GameplayConfig.SHADOW_ART_ROOT_RADIUS;
     private static final double IDLE_RADIUS = 2.6D;
-    private static final double MAX_LENGTH = 24.0D;
-    private static final double ATTACK_RADIUS = 18.0D;
-    private static final double PROJECTILE_SCAN_RADIUS = 12.0D;
-    private static final double PROJECTILE_HIT_RADIUS_SQR = 2.0D * 2.0D;
-    private static final int ATTACK_COOLDOWN_TICKS = 20;
-    private static final int STRIKE_TICKS = 6;
-    private static final int RETRACT_TICKS = 12;
-    private static final int TARGET_SCAN_TICKS = 10;
-    private static final int HOLD_RIBBON_COUNT = 3;
-    private static final int LIFT_TICKS = 16;
-    private static final float ATTACK_DAMAGE = 8.0F;
-    private static final double MANA_PER_RIBBON_SECOND = 1.0D;
+    private static final double MAX_LENGTH = GameplayConfig.SHADOW_ART_MAX_LENGTH;
+    private static final double ATTACK_RADIUS = GameplayConfig.SHADOW_ART_ATTACK_RADIUS;
+    private static final double PROJECTILE_SCAN_RADIUS = GameplayConfig.SHADOW_ART_PROJECTILE_SCAN_RADIUS;
+    private static final double PROJECTILE_HIT_RADIUS_SQR = GameplayConfig.SHADOW_ART_PROJECTILE_HIT_RADIUS_SQR;
+    private static final int ATTACK_COOLDOWN_TICKS = GameplayConfig.SHADOW_ART_ATTACK_COOLDOWN_TICKS;
+    private static final int STRIKE_TICKS = GameplayConfig.SHADOW_ART_STRIKE_TICKS;
+    private static final int RETRACT_TICKS = GameplayConfig.SHADOW_ART_RETRACT_TICKS;
+    private static final int TARGET_SCAN_TICKS = GameplayConfig.SHADOW_ART_TARGET_SCAN_TICKS;
+    private static final int HOLD_RIBBON_COUNT = GameplayConfig.SHADOW_ART_HOLD_RIBBON_COUNT;
+    private static final int LIFT_TICKS = GameplayConfig.SHADOW_ART_LIFT_TICKS;
+    private static final float ATTACK_DAMAGE = GameplayConfig.SHADOW_ART_ATTACK_DAMAGE;
+    private static final double MANA_PER_RIBBON_SECOND = GameplayConfig.SHADOW_ART_MANA_PER_RIBBON_SECOND;
     private static final DustParticleOptions SHADOW_RED_DUST = new DustParticleOptions(new Vector3f(0.48F, 0.015F, 0.025F), 0.75F);
     private static final Map<HoldKey, Integer> TARGET_HOLD_TICKS = new HashMap<>();
     private static final Map<HoldKey, Vec3> TARGET_LIFT_ORIGINS = new HashMap<>();

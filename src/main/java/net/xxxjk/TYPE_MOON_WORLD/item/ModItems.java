@@ -118,11 +118,16 @@ public class ModItems {
                 .add(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED,
                         new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_movement"),
-                                0.2, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
+                                0.1, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                         net.minecraft.world.entity.EquipmentSlotGroup.HAND)
                 .add(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE,
                         new net.minecraft.world.entity.ai.attributes.AttributeModifier(
                                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_block_reach"),
+                                1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                        net.minecraft.world.entity.EquipmentSlotGroup.HAND)
+                .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
+                        new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, name + "_entity_reach"),
                                 1.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                         net.minecraft.world.entity.EquipmentSlotGroup.HAND)
                 .build();
@@ -302,6 +307,7 @@ public class ModItems {
     public static final DeferredItem<Item> MASTER_CARD_WAVER = registerMasterCard("waver");
     public static final DeferredItem<Item> MASTER_CARD_TOHSAKA_TOKIOMI = registerMasterCard("tohsaka_tokiomi");
     public static final DeferredItem<Item> MASTER_CARD_LEFF_LAYNOR_FLAUROS = registerMasterCard("leff_laynor_flauros");
+    public static final DeferredItem<Item> MASTER_CARD_URYU_RYUNOSUKE = registerMasterCard("uryu_ryunosuke");
 
     public static final DeferredItem<Item> RELIC_APOCALYPSE = registerSummoningRelic("relic_apocalypse");
     public static final DeferredItem<Item> RELIC_APOCALYPSE_PAGE = registerSummoningRelic("relic_apocalypse_page");
@@ -645,6 +651,8 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> BLOOD_BOTTLE = ITEMS.register("blood_bottle",
+            () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE)));
     public static final DeferredItem<Item> MERCURY_BOTTLE = ITEMS.register("mercury_bottle",
             () -> new Item(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE)));
     public static final DeferredItem<Item> MOLTEN_RUBY_BOTTLE = ITEMS.register("molten_ruby_bottle",
@@ -659,8 +667,8 @@ public class ModItems {
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.WHITE_GEMSTONE));
     public static final DeferredItem<Item> MOLTEN_CYAN_GEMSTONE_BOTTLE = ITEMS.register("molten_cyan_gemstone_bottle",
             () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.CYAN));
-    public static final DeferredItem<Item> MOLTEN_BLACK_SHARD_BOTTLE = ITEMS.register("molten_black_shard_bottle",
-            () -> new MoltenGemBottleItem(new Item.Properties().craftRemainder(Items.GLASS_BOTTLE), GemType.BLACK_SHARD));
+    public static final DeferredItem<Item> GEM_SLAG = ITEMS.register("gem_slag",
+            () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<Item> LARGE_RUBY = ITEMS.register("large_ruby",
             () -> new LargeGemItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), GemType.RUBY));
@@ -817,14 +825,30 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_PAGE_BAPTISM_RITE = ITEMS.register("magic_page_baptism_rite",
              () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "baptism_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_MAKING = ITEMS.register("magic_book_black_key_making",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, false, "theology", "black_key_making"));
+    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_MAKING = ITEMS.register("magic_page_black_key_making",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "black_key_making"));
+    public static final DeferredItem<Item> MAGIC_BOOK_THEOLOGY = ITEMS.register("magic_book_theology",
+            () -> new MagicScrollItem(new Item.Properties().stacksTo(1), 1.0, true, (String)null, "theology"));
+    public static final DeferredItem<Item> MAGIC_PAGE_THEOLOGY = ITEMS.register("magic_page_theology",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "theology"));
+    public static final DeferredItem<Item> MAGIC_PAGE_IRON_ARMOR_ACTION = ITEMS.register("magic_page_iron_armor_action",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "iron_armor_action"));
+    public static final DeferredItem<Item> MAGIC_BOOK_IRON_ARMOR_ACTION = ITEMS.register("magic_book_iron_armor_action",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, "theology", "iron_armor_action"));
+    public static final DeferredItem<Item> MAGIC_PAGE_CREMATION_RITE = ITEMS.register("magic_page_cremation_rite",
+             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.45, "theology", "cremation_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_CREMATION_RITE = ITEMS.register("magic_book_cremation_rite",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, "theology", "cremation_rite"));
+    public static final DeferredItem<Item> MAGIC_BOOK_ENTITY_DISPLACEMENT = ITEMS.register("magic_book_entity_displacement",
+            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "entity_displacement"));
+    public static final DeferredItem<Item> MAGIC_PAGE_ENTITY_DISPLACEMENT = ITEMS.register("magic_page_entity_displacement",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "entity_displacement"));
     public static final DeferredItem<Item> PARTITIONED_THOUGHT_FRAGMENT = ITEMS.register("partitioned_thought_fragment",
             () -> new PartitionedThoughtFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
     public static final DeferredItem<Item> SELF_GEAS_SCROLL = ITEMS.register("self_geas_scroll",
             () -> new SelfGeasScrollItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE)));
-    public static final DeferredItem<Item> MAGIC_BOOK_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_book_black_key_fire_engraving",
-            () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "black_key_fire_engraving"));
-    public static final DeferredItem<Item> MAGIC_PAGE_BLACK_KEY_FIRE_ENGRAVING = ITEMS.register("magic_page_black_key_fire_engraving",
-             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null, "black_key_fire_engraving"));
     public static final DeferredItem<Item> MAGIC_BOOK_STIGMA = ITEMS.register("magic_book_stigma",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 1.0, (String)null, "stigma"));
     public static final DeferredItem<Item> MAGIC_PAGE_STIGMA = ITEMS.register("magic_page_stigma",

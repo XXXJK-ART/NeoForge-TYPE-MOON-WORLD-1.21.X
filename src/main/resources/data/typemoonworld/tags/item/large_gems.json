@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:large_ruby",
+    "typemoonworld:large_sapphire",
+    "typemoonworld:large_emerald",
+    "typemoonworld:large_cyan_gemstone",
+    "typemoonworld:large_topaz"
+  ]
+}

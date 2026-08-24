@@ -51,7 +51,20 @@ public final class MagicDefinitionRegistry {
       if (data != null || id.indexOf(':') >= 0) return data;
       String namespaced = net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":" + id;
       data = dataDefinitions.get(namespaced);
-      return data != null ? data : PROGRAMMATIC.get(namespaced);
+      if (data != null) return data;
+      data = PROGRAMMATIC.get(namespaced);
+      if (data != null) return data;
+
+      // Legacy wheel entries store paths while addon definitions are namespaced.
+      // Resolve a short path only when it identifies exactly one registered definition.
+      MagicDefinitionData match = null;
+      for (MagicDefinitionData candidate : all().values()) {
+         if (candidate.id().getPath().equals(id)) {
+            if (match != null) return null;
+            match = candidate;
+         }
+      }
+      return match;
    }
 
    public static boolean contains(String id) { return get(id) != null; }

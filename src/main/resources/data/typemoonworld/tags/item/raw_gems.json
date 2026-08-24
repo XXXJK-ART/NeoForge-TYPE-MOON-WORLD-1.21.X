@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:raw_ruby",
+    "typemoonworld:raw_sapphire",
+    "typemoonworld:raw_emerald",
+    "typemoonworld:raw_cyan_gemstone",
+    "typemoonworld:raw_topaz",
+    "typemoonworld:raw_white_gemstone"
+  ]
+}

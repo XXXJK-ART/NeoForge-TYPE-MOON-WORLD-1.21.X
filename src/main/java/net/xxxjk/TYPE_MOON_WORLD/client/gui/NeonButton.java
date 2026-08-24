@@ -61,9 +61,24 @@ public class NeonButton extends Button {
          guiGraphics.fill(this.getX() + this.width - 1, this.getY() + this.height - len, this.getX() + this.width, this.getY() + this.height, this.hoverColor);
       }
 
-      guiGraphics.drawCenteredString(
-         Minecraft.getInstance().font, this.getMessage(), this.getX() + this.width / 2, this.getY() + (this.height - 8) / 2, textColor
-      );
+      this.drawCenteredFittedString(guiGraphics, textColor);
+   }
+
+   private void drawCenteredFittedString(GuiGraphics guiGraphics, int textColor) {
+      var font = Minecraft.getInstance().font;
+      int maxWidth = Math.max(12, this.width - 8);
+      int textWidth = font.width(this.getMessage());
+      float scale = textWidth <= maxWidth ? 1.0F : Math.max(0.62F, (float)maxWidth / textWidth);
+      if (scale >= 0.999F) {
+         guiGraphics.drawCenteredString(font, this.getMessage(), this.getX() + this.width / 2,
+            this.getY() + (this.height - 8) / 2, textColor);
+         return;
+      }
+      guiGraphics.pose().pushPose();
+      guiGraphics.pose().translate(this.getX() + this.width / 2.0F, this.getY() + this.height / 2.0F, 0.0F);
+      guiGraphics.pose().scale(scale, scale, 1.0F);
+      guiGraphics.drawCenteredString(font, this.getMessage(), 0, -4, textColor);
+      guiGraphics.pose().popPose();
    }
 
    private void renderArcaneWidget(GuiGraphics guiGraphics) {

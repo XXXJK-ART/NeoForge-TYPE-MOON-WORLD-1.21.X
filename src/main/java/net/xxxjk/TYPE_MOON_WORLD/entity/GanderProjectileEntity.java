@@ -324,7 +324,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
             Vec3 anchor = MagicGander.getChargeAnchor(livingOwner);
             return this.position().distanceToSqr(anchor) > PREVIEW_MAX_ANCHOR_DISTANCE_SQR;
          }
-      } else if (this.tickCount > PROJECTILE_MAX_LIFETIME_TICKS) {
+      } else if (!isUnlimitedCurseProjectile() && this.tickCount > PROJECTILE_MAX_LIFETIME_TICKS) {
          return true;
       } else {
          if (owner != null) {
@@ -332,7 +332,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                return true;
             }
 
-            if (this.distanceToSqr(owner) > PROJECTILE_MAX_OWNER_DISTANCE_SQR) {
+            if (!isUnlimitedCurseProjectile() && this.distanceToSqr(owner) > PROJECTILE_MAX_OWNER_DISTANCE_SQR) {
                return true;
             }
          }
@@ -341,6 +341,10 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
             ? !this.level().getWorldBorder().isWithinBounds(this.blockPosition())
             : true;
       }
+   }
+
+   private boolean isUnlimitedCurseProjectile() {
+      return "baobhan_sith_curse".equals(this.sourceMagicId);
    }
 
    public void addAdditionalSaveData(CompoundTag tag) {

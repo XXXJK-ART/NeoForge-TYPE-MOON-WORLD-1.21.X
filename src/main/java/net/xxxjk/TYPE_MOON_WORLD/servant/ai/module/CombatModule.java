@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTargetingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
@@ -514,7 +515,8 @@ public final class CombatModule implements ServantAiModule {
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && context.gameTick() % 34 == 0) {
                entity.triggerAttackSwing();
-               boolean hit = entity.doBasicHurtTarget(sharedTarget);
+               boolean hit = ServantTrueSweepService.tryNpcSweep(entity, sharedTarget, context.gameTick())
+                  || entity.doBasicHurtTarget(sharedTarget);
                ServantCombatTempoService.recordContact(entity, sharedTarget,
                   hit ? ServantCombatTempoService.ContactType.DAMAGE
                      : ServantCombatTempoService.ContactType.BLOCKED, context.gameTick());
@@ -1080,7 +1082,8 @@ public final class CombatModule implements ServantAiModule {
          ServantNavigationHelper.stopIfMoving(entity);
          entity.getLookControl().setLookAt(target, 65.0F, 55.0F);
          entity.faceToward(target.position());
-         boolean hit = entity.doBasicHurtTarget(target);
+         boolean hit = ServantTrueSweepService.tryNpcSweep(entity, target, tick)
+            || entity.doBasicHurtTarget(target);
          ServantCombatTempoService.recordContact(entity, target,
             hit ? ServantCombatTempoService.ContactType.DAMAGE
                : ServantCombatTempoService.ContactType.BLOCKED, tick);

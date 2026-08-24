@@ -7,9 +7,11 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SplittableRandom;
+import java.util.Set;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,6 +25,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.magic.AddonMagicRegistration;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
@@ -31,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -64,8 +69,11 @@ public class TypeMoonCommands {
    private static final String EARTH_MAGIC_ID = "earth_magic";
    private static final String TIME_ALTER_MAGIC_ID = "time_alter";
    private static final String SPIRITUAL_HEALING_MAGIC_ID = "spiritual_healing";
+   private static final String THEOLOGY_MAGIC_ID = "theology";
+   private static final String BLACK_KEY_MAKING_MAGIC_ID = "black_key_making";
+   private static final String IRON_ARMOR_ACTION_MAGIC_ID = "iron_armor_action";
+   private static final String CREMATION_RITE_MAGIC_ID = "cremation_rite";
    private static final String BAPTISM_RITE_MAGIC_ID = "baptism_rite";
-   private static final String BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID = "black_key_fire_engraving";
    private static final String STIGMA_MAGIC_ID = "stigma";
    private static final String MANA_BURST_MAGIC_ID = "mana_burst";
    private static final int DEFAULT_DISTRIBUTION_SAMPLES = 200000;
@@ -106,9 +114,29 @@ public class TypeMoonCommands {
       "touko_travel",
       "flight_magic",
       "spiritron_cannon",
+      "spirit_summoning",
+      "wraith_servitude",
+      "evil_spirit_summoning",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
+      THEOLOGY_MAGIC_ID,
+      BLACK_KEY_MAKING_MAGIC_ID,
+      IRON_ARMOR_ACTION_MAGIC_ID,
+      CREMATION_RITE_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
+      STIGMA_MAGIC_ID,
+      "entity_displacement",
+      "worm_magic",
+      "worm_control",
+      "engraved_worm_operation",
+      "boundary_art",
+      "sensing_boundary",
+      "warning_boundary",
+      "defense_boundary",
+      "suggestion_boundary",
+      "anti_magic_boundary",
+      "guard_boundary",
+      "interference_boundary",
       MANA_BURST_MAGIC_ID,
       "bajiquan",
       "ganryu",
@@ -155,9 +183,12 @@ public class TypeMoonCommands {
       "spiritron_cannon",
       TIME_ALTER_MAGIC_ID,
       SPIRITUAL_HEALING_MAGIC_ID,
+      THEOLOGY_MAGIC_ID,
+      BLACK_KEY_MAKING_MAGIC_ID,
+      IRON_ARMOR_ACTION_MAGIC_ID,
+      CREMATION_RITE_MAGIC_ID,
       BAPTISM_RITE_MAGIC_ID,
       MANA_BURST_MAGIC_ID,
-      BLACK_KEY_FIRE_ENGRAVING_MAGIC_ID,
       STIGMA_MAGIC_ID,
       "absorption",
       "airflow_blade",
@@ -171,6 +202,20 @@ public class TypeMoonCommands {
       "imaginary_space",
       "kimaris",
       "nega_summon",
+      "worm_magic",
+      "worm_control",
+      "engraved_worm_operation",
+      "boundary_art",
+      "sensing_boundary",
+      "warning_boundary",
+      "defense_boundary",
+      "suggestion_boundary",
+      "anti_magic_boundary",
+      "guard_boundary",
+      "interference_boundary",
+      "spirit_summoning",
+      "wraith_servitude",
+      "evil_spirit_summoning",
       "orias",
       "storage",
       "storm",
@@ -190,6 +235,39 @@ public class TypeMoonCommands {
       KendoCombatService.HOKUSHIN_ID,
       KendoCombatService.TENNEN_ID
    };
+
+   private static Set<String> allMagicIds() {
+      LinkedHashSet<String> ids = new LinkedHashSet<>();
+      for (String magicId : ALL_MAGICS) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank()) {
+            ids.add(normalized);
+         }
+      }
+      for (String magicId : AddonMagicRegistration.registeredMagicIds()) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank()) {
+            ids.add(normalized);
+         }
+      }
+      return ids;
+   }
+
+   private static String normalizeMagicId(String raw) {
+      if (raw == null) {
+         return null;
+      }
+      String value = raw.trim();
+      if (value.isEmpty() || value.indexOf(':') < 0) {
+         return value;
+      }
+
+      ResourceLocation id = ResourceLocation.tryParse(value.toLowerCase(Locale.ROOT));
+      if (id == null || !TypeMoonAddon.MOD_ID.equals(id.getNamespace())) {
+         return value;
+      }
+      return id.getPath();
+   }
 
    @SuppressWarnings({"unchecked", "rawtypes"})
    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -342,7 +420,7 @@ public class TypeMoonCommands {
                                        Commands.literal("learn")
                                           .then(
                                              Commands.argument("magic_id", StringArgumentType.word())
-                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(allMagicIds(), builder))
                                                 .executes(ctx -> learnMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))
                                           )
                                     ))
@@ -350,11 +428,48 @@ public class TypeMoonCommands {
                                     Commands.literal("forget")
                                        .then(
                                           Commands.argument("magic_id", StringArgumentType.word())
-                                             .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ALL_MAGICS, builder))
+                                              .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(allMagicIds(), builder))
                                              .executes(ctx -> forgetMagic(ctx, StringArgumentType.getString(ctx, "magic_id")))
                                        )
                                  ))
-                              .then(Commands.literal("learn_all").executes(TypeMoonCommands::learnAllMagics)))
+                              .then(
+                                 Commands.literal("progress")
+                                    .then(
+                                       Commands.literal("get")
+                                          .then(
+                                             Commands.argument("magic_id", StringArgumentType.word())
+                                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(allMagicIds(), builder))
+                                                .executes(ctx -> getMagicLearningProgress(ctx, StringArgumentType.getString(ctx, "magic_id")))
+                                          )
+                                    )
+                                    .then(
+                                       Commands.literal("set")
+                                          .then(
+                                             Commands.argument("magic_id", StringArgumentType.word())
+                                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(allMagicIds(), builder))
+                                                .then(
+                                                   Commands.argument("value", DoubleArgumentType.doubleArg(0.0))
+                                                      .executes(ctx -> setMagicLearningProgress(ctx,
+                                                         StringArgumentType.getString(ctx, "magic_id"),
+                                                         DoubleArgumentType.getDouble(ctx, "value")))
+                                                )
+                                          )
+                                    )
+                                    .then(
+                                       Commands.literal("add")
+                                          .then(
+                                             Commands.argument("magic_id", StringArgumentType.word())
+                                              .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(allMagicIds(), builder))
+                                                .then(
+                                                   Commands.argument("value", DoubleArgumentType.doubleArg(0.0))
+                                                      .executes(ctx -> addMagicLearningProgress(ctx,
+                                                         StringArgumentType.getString(ctx, "magic_id"),
+                                                         DoubleArgumentType.getDouble(ctx, "value")))
+                                                )
+                                          )
+                                    )
+                              )
+                           .then(Commands.literal("learn_all").executes(TypeMoonCommands::learnAllMagics)))
                            .then(Commands.literal("forget_all").executes(TypeMoonCommands::forgetAllMagics))
                      ))
                   .then(
@@ -757,6 +872,7 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc shiki clear | health <value>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon npc favor merlin|shiki <-5..5>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon progress king grant | revoke"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic progress get|set|add <magic_id> <value>"), false);
       ((CommandSourceStack)ctx.getSource())
          .sendSuccess(() -> Component.literal("/typemoon world leyline here | chunk <x> <z> | verify_distribution [samples]"), false);
       ((CommandSourceStack)ctx.getSource())
@@ -770,8 +886,8 @@ public class TypeMoonCommands {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          vars.player_mana = 0.0;
          vars.player_max_mana = 100.0;
-         vars.player_mana_egenerated_every_moment = 5.0;
-         vars.player_restore_magic_moment = 1.0;
+         vars.player_mana_egenerated_every_moment = 0.5;
+         vars.player_restore_magic_moment = 40.0;
          vars.player_magic_attributes_earth = false;
          vars.player_magic_attributes_water = false;
          vars.player_magic_attributes_fire = false;
@@ -822,6 +938,8 @@ public class TypeMoonCommands {
          vars.body_resistance = 0;
          vars.body_technique = 0;
          vars.learned_magics.clear();
+         vars.magic_learning_progress.clear();
+         vars.magic_learning_progress_last_gain_tick.clear();
          vars.has_unlimited_blade_works = false;
          vars.talent_proficiencies.clear();
          vars.passive_ranks.clear();
@@ -947,7 +1065,7 @@ public class TypeMoonCommands {
          vars.body_resistance = BodyTrainingService.MAX_STAT_POINTS;
          vars.body_technique = BodyTrainingService.MAX_STAT_POINTS;
 
-         for (String m : ALL_MAGICS) {
+         for (String m : allMagicIds()) {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
             }
@@ -1116,6 +1234,7 @@ public class TypeMoonCommands {
             }
          } else if (vars.learned_magics.contains(magicId)) {
             vars.learned_magics.remove(magicId);
+            MagicLearningProgressService.reset(vars, magicId);
             vars.syncPlayerVariables(player);
             ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Forgot magic: " + magicId), true);
          } else {
@@ -1137,7 +1256,7 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
-         for (String m : ALL_MAGICS) {
+         for (String m : allMagicIds()) {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
             }
@@ -1156,10 +1275,65 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          vars.learned_magics.clear();
+         vars.magic_learning_progress.clear();
+         vars.magic_learning_progress_last_gain_tick.clear();
          vars.syncPlayerVariables(player);
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Forgot all magics"), true);
          return 1;
       } catch (Exception var3) {
+         return 0;
+      }
+   }
+
+   private static int getMagicLearningProgress(CommandContext<CommandSourceStack> ctx, String magicId) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double current = MagicLearningProgressService.get(vars, magicId);
+         double max = MagicLearningProgressService.maxProgress(magicId);
+         double percent = current / max * 100.0D;
+         ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+            "%s learning progress: %.2f/%.2f (%.2f%%)", magicId, current, max, percent)), false);
+         return 1;
+      } catch (Exception exception) {
+         ctx.getSource().sendFailure(Component.literal("Unable to read magic learning progress: " + exception.getMessage()));
+         return 0;
+      }
+   }
+
+   private static int setMagicLearningProgress(CommandContext<CommandSourceStack> ctx, String magicId, double value) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double max = MagicLearningProgressService.maxProgress(magicId);
+         double next = Math.min(max, Math.max(0.0D, value));
+         vars.magic_learning_progress.put(magicId, next);
+         vars.magic_learning_progress_last_gain_tick.put(magicId, player.level().getGameTime());
+         if (next >= max) {
+            MagicLearningProgressService.completeIfReady(player, vars, magicId);
+         }
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+            "Set %s learning progress to %.2f/%.2f", magicId, next, max)), true);
+         return 1;
+      } catch (Exception exception) {
+         ctx.getSource().sendFailure(Component.literal("Unable to set magic learning progress: " + exception.getMessage()));
+         return 0;
+      }
+   }
+
+   private static int addMagicLearningProgress(CommandContext<CommandSourceStack> ctx, String magicId, double value) {
+      try {
+         ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double next = MagicLearningProgressService.addWithLearningCheck(player, magicId, value);
+         vars.syncPlayerVariables(player);
+         ctx.getSource().sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
+            "Added learning progress to %s; current value %.2f/%.2f", magicId, next,
+            MagicLearningProgressService.maxProgress(magicId))), true);
+         return 1;
+      } catch (Exception exception) {
+         ctx.getSource().sendFailure(Component.literal("Unable to add magic learning progress: " + exception.getMessage()));
          return 0;
       }
    }
@@ -1406,6 +1580,12 @@ public class TypeMoonCommands {
                break;
             case "spiritual_healing":
                vars.proficiency_spiritual_healing = value;
+               break;
+            case THEOLOGY_MAGIC_ID:
+            case BLACK_KEY_MAKING_MAGIC_ID:
+            case IRON_ARMOR_ACTION_MAGIC_ID:
+            case CREMATION_RITE_MAGIC_ID:
+               MagicProficiencyService.set(vars, type, value);
                break;
             case "baptism_rite":
                vars.proficiency_baptism_rite = value;

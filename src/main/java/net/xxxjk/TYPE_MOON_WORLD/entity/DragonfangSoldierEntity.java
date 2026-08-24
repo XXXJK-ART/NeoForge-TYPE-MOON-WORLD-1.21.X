@@ -26,6 +26,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -38,6 +39,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaWorkshopHelper;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -211,6 +213,9 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       if (other instanceof DragonfangSoldierEntity dragonfang && this.summonerUuid != null) {
          return this.summonerUuid.equals(dragonfang.summonerUuid);
       }
+      if (other instanceof LivingEntity living && this.isMedeaIdentityTarget(living)) {
+         return true;
+      }
       return other instanceof MedeaEntity medea && this.summonerUuid != null && this.summonerUuid.equals(medea.getUUID());
    }
 
@@ -236,6 +241,9 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    @Override
    public void performRangedAttack(LivingEntity target, float velocity) {
+      if (!isValidHostile(target)) {
+         return;
+      }
       this.triggerAnim("action_controller", "bow_shot");
       ItemStack projectileStack = this.getProjectile(this.getMainHandItem());
       if (projectileStack.isEmpty()) {
@@ -254,6 +262,9 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      if (!(target instanceof LivingEntity living) || !isValidHostile(living)) {
+         return false;
+      }
       boolean success = super.doHurtTarget(target);
       if (success) {
          this.swing(InteractionHand.MAIN_HAND);
@@ -290,7 +301,13 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
    }
 
    private boolean isValidHostile(@Nullable LivingEntity target) {
-      return target != null && target.isAlive() && !target.isAlliedTo(this) && !EntityUtils.isImmunePlayerTarget(target);
+      return target != null
+         && target != this
+         && target.isAlive()
+         && !isMedeaIdentityTarget(target)
+         && !target.isAlliedTo(this)
+         && !this.isAlliedTo(target)
+         && !EntityUtils.isImmunePlayerTarget(target);
    }
 
    @Nullable
@@ -299,7 +316,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       return this.level().getEntitiesOfClass(
          LivingEntity.class,
          guardBox,
-         candidate -> candidate != this && candidate.isAlive() && !candidate.isAlliedTo(this) && !EntityUtils.isImmunePlayerTarget(candidate)
+         candidate -> isValidHostile(candidate)
       ).stream().findFirst().orElse(null);
    }
 
@@ -349,6 +366,28 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       if (entity instanceof DragonfangSoldierEntity dragonfang) {
          return this.summonerUuid != null && this.summonerUuid.equals(dragonfang.summonerUuid);
       }
+      if (entity instanceof LivingEntity living && this.isMedeaIdentityTarget(living)) {
+         return true;
+      }
       return entity instanceof MedeaEntity medea && this.summonerUuid != null && this.summonerUuid.equals(medea.getUUID());
+   }
+
+   private boolean isMedeaIdentityTarget(LivingEntity target) {
+      LivingEntity owner = this.getSummoner();
+      if (owner instanceof MedeaEntity && isMedeaCardPlayer(target)) {
+         return true;
+      }
+      if (isMedeaCardPlayer(owner) && target instanceof MedeaEntity) {
+         return true;
+      }
+      return false;
+   }
+
+   private static boolean isMedeaCardPlayer(Entity entity) {
+      if (!(entity instanceof ServerPlayer player)) {
+         return false;
+      }
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "medea".equals(vars.servant_card_id);
    }
 }

@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -77,7 +78,7 @@ public final class ServantCardGilgameshSkills {
       }
       player.getPersistentData().remove(KEY);
       GilgameshDivineShield.clear(player);
-      player.removeEffect(MobEffects.NIGHT_VISION);
+      NightVisionEffectSource.clearHiddenIfTagged(player, NightVisionEffectSource.GILGAMESH_CARD, 300);
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.NONE, 0.0F, 0.0F);
       player.getPersistentData().remove("ClairvoyanceActive");
       if (player.getAttribute(Attributes.KNOCKBACK_RESISTANCE) != null) player.getAttribute(Attributes.KNOCKBACK_RESISTANCE).removeModifier(CHARISMA_KNOCKBACK_ID);
@@ -89,7 +90,10 @@ public final class ServantCardGilgameshSkills {
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!vars.servant_card_transformed || !"gilgamesh".equals(vars.servant_card_id)) return;
       MobEffectInstance nightVision = player.getEffect(MobEffects.NIGHT_VISION);
-      if (nightVision == null || nightVision.getDuration() < 220) player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, false, false, false));
+      if (nightVision == null || nightVision.getDuration() < 220) {
+         player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, false, false, false));
+         NightVisionEffectSource.mark(player, NightVisionEffectSource.GILGAMESH_CARD);
+      }
       MagicResistanceHelper.setMagicResistance(player, MagicResistanceRank.A, MagicResistanceHelper.damageReductionForRank(MagicResistanceRank.A), 0.75F);
       long now = player.level().getGameTime();
       GilgameshDivineShield.tick(player);

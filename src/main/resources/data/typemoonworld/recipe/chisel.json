@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "  I",
+    " I ",
     " S ",
     "   "
   ],
   "key": {
     "I": {
-      "item": "minecraft:iron_nugget"
+      "item": "minecraft:lapis_lazuli"
     },
     "S": {
       "item": "minecraft:stick"

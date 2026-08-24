@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 public final class SakuraPollutionService {
     private static final float BLACK_MUD_PROGRESS_PER_SECOND = 0.035F;
     private static final float SERVANT_KILL_PROGRESS = 0.25F;
+    public static final float CORRUPTION_PRIORITY_HEALTH_THRESHOLD = 100.0F;
     private static final String LAST_EROSION_CONTROLLER_TAG = "TypeMoonAddonLastErosionController";
     private static final String LAST_EROSION_DAMAGE_TICK_TAG = "TypeMoonAddonLastErosionDamageTick";
     private static final long EROSION_KILL_CREDIT_TICKS = 20L * 15L;
@@ -43,6 +44,35 @@ public final class SakuraPollutionService {
 
     public static boolean isFullyCorrupted(LivingEntity target) {
         return target != null && target.getData(AddonAttachments.POLLUTION.get()).fullyCorrupted();
+    }
+
+    public static boolean canBecomeFullyCorrupted(LivingEntity target) {
+        return target != null
+                && !isServantLike(target)
+                && !isFullyCorrupted(target)
+                && !SakuraBlackMudService.isImmune(target);
+    }
+
+    public static boolean isUnpollutableServantOrCardUser(LivingEntity target) {
+        return target != null
+                && isServantLike(target)
+                && !isFullyCorrupted(target)
+                && !canBecomeFullyCorrupted(target);
+    }
+
+    public static boolean shouldPrioritizeCorruption(LivingEntity target) {
+        return target != null
+                && target.isAlive()
+                && target.getHealth() < CORRUPTION_PRIORITY_HEALTH_THRESHOLD
+                && canBecomeFullyCorrupted(target);
+    }
+
+    public static float limitDamageForCorruptionPriority(LivingEntity target, float requestedDamage) {
+        if (target == null || requestedDamage <= 0.0F || !canBecomeFullyCorrupted(target)) {
+            return Math.max(0.0F, requestedDamage);
+        }
+        float protectedHealth = Math.nextDown(CORRUPTION_PRIORITY_HEALTH_THRESHOLD);
+        return Math.min(requestedDamage, Math.max(0.0F, target.getHealth() - protectedHealth));
     }
 
     public static boolean blocksCommandSpell(LivingEntity target) {

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "controller=false": [
+      { "model": "typemoonworld:block/worm_warehouse" }
+    ],
+    "controller=true": [
+      { "model": "typemoonworld:block/worm_warehouse" }
+    ]
+  }
+}

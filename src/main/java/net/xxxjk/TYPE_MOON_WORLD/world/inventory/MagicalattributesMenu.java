@@ -113,10 +113,10 @@ public class MagicalattributesMenu extends AbstractContainerMenu implements Supp
                if (!implanted.isEmpty() && implanted.getItem() instanceof MagicCrestItem) {
                   MagicalattributesMenu.this.syncingCrestSlot = true;
 
-                  try {
-                     vars.mergeImplantedCrestEntries(TypeMoonWorldModVariables.PlayerVariables.readCrestEntriesFromStack(implanted));
-                     vars.syncSelfCrestEntriesFromKnowledge();
-                     TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(implanted, vars.crest_entries);
+                     try {
+                        vars.mergeImplantedCrestEntries(TypeMoonWorldModVariables.PlayerVariables.readCrestEntriesFromStack(implanted));
+                        vars.syncSelfCrestEntriesFromKnowledge();
+                        TypeMoonWorldModVariables.PlayerVariables.writeCrestEntriesToStack(implanted, vars.crest_entries);
                      vars.pruneInvalidCrestWheelReferences();
                      vars.rebuildSelectedMagicsFromActiveWheel();
                      vars.syncPlayerVariables(MagicalattributesMenu.this.entity);

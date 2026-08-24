@@ -23,16 +23,24 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent.Post;
 import net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered;
+import net.neoforged.neoforge.client.event.InputEvent.MouseButton;
 import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicRadialMenuScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicWheelSwitchScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.GenericMagicOptionsScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MasterCommandSpellScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCardKeybindScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.api.ClientExtensionRegistryImpl;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralProjectionPlacementClient;
 import net.xxxjk.TYPE_MOON_WORLD.network.Basic_information_gui_Message;
@@ -50,17 +58,18 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MysticEyesToggleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
-import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import org.lwjgl.glfw.GLFW;
 
@@ -79,6 +88,7 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
+   public static final KeyMapping SERVANT_CARD_KEYBINDS = new KeyMapping("key.typemoonworld.servant_card.keybinds", GLFW.GLFW_KEY_O, KEY_CATEGORY);
    public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
       new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),
       new KeyMapping("key.typemoonworld.servant_card.slot1", GLFW.GLFW_KEY_KP_1, KEY_CATEGORY),
@@ -103,6 +113,7 @@ public class TypeMoonWorldModKeyMappings {
       event.register(CYCLE_MAGIC);
       event.register(MAGIC_MODE_SWITCH);
       event.register(MAGIC_WHEEL_SWITCH);
+      event.register(SERVANT_CARD_KEYBINDS);
       for (KeyMapping mapping : SERVANT_CARD_SKILL_KEYS) {
          event.register(mapping);
       }
@@ -119,7 +130,6 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isModeSwitchDown = false;
       private static boolean isWheelSwitchDown = false;
       private static final boolean[] numpadWheelDown = new boolean[10];
-      private static final boolean[] servantCardHoldDown = new boolean[10];
       private static boolean servantJumpDown = false;
       private static final long SERVANT_FLIGHT_DASH_TAP_WINDOW_MS = 280L;
       private static final int SERVANT_FLIGHT_DASH_FORWARD = 0;
@@ -162,6 +172,8 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean machineGunReleaseStopArmed = false;
       private static boolean ganderCastKeyDown = false;
       private static long ganderCastPressStartMs = -1L;
+      private static boolean elementalArrayCastKeyDown = false;
+      private static long elementalArrayCastPressStartMs = -1L;
       private static int rightArmCastPoseTicks = 0;
       private static boolean machineGunPoseLatched = false;
       private static int machineGunPoseWarmupTicks = 0;
@@ -265,30 +277,46 @@ public class TypeMoonWorldModKeyMappings {
          if (!event.isAttack()) {
             return;
          }
-         if (isClientDiarmuidDualWieldActive(player, vars)
-            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            player.swing(InteractionHand.OFF_HAND);
-            event.setCanceled(true);
-            event.setSwingHand(false);
-            return;
-         }
-         if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            event.setCanceled(true);
-            event.setSwingHand(true);
-            return;
-         }
+         boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
          if (player.isCrouching() && vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
             event.setCanceled(true);
             event.setSwingHand(true);
             return;
          }
+         if (vars.servant_card_transformed && !blockTarget) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            if (isClientDiarmuidDualWieldActive(player, vars)) {
+               player.swing(InteractionHand.OFF_HAND);
+               event.setSwingHand(false);
+               event.setCanceled(true);
+            }
+            return;
+         }
+         if (isClientDiarmuidDualWieldActive(player, vars)
+            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
+            player.swing(InteractionHand.OFF_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+         }
          if (vars.servant_card_transformed
             && "oda_nobunaga".equals(vars.servant_card_id)
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+         }
+      }
+
+      @SubscribeEvent
+      public static void onServantCardMouseButton(MouseButton.Pre event) {
+         Minecraft minecraft = Minecraft.getInstance();
+         if (minecraft.screen != null || minecraft.player == null) {
+            return;
+         }
+         TypeMoonWorldModVariables.PlayerVariables vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (ServantCardSkillInputController.handleMouseButton(minecraft.player, vars, event.getButton(), event.getAction())) {
+            event.setCanceled(true);
          }
       }
 
@@ -317,8 +345,18 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
 
+            Player player = Minecraft.getInstance().player;
+            if (player != null) {
+               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+                  TypeMoonWorldModVariables.PLAYER_VARIABLES
+               );
+               if (ServantCardSkillInputController.handleScroll(player, vars, scrollDelta)) {
+                  event.setCanceled(true);
+                  return;
+               }
+            }
+
             if (TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH.isDown()) {
-               Player player = Minecraft.getInstance().player;
                if (player != null) {
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
@@ -338,9 +376,9 @@ public class TypeMoonWorldModKeyMappings {
             }
 
             if (TypeMoonWorldModKeyMappings.CYCLE_MAGIC.isDown()) {
-               Player player = Minecraft.getInstance().player;
-               if (player != null) {
-                  TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
+               Player cyclePlayer = Minecraft.getInstance().player;
+               if (cyclePlayer != null) {
+                  TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)cyclePlayer.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
                   if ((vars.is_magus && vars.is_magic_circuit_open) || TalentService.hasAny(vars)) {
@@ -420,6 +458,11 @@ public class TypeMoonWorldModKeyMappings {
                }
             }
             if (vars.servant_card_transformed) {
+               if (TypeMoonWorldModKeyMappings.SERVANT_CARD_KEYBINDS.consumeClick()) {
+                  Minecraft.getInstance().setScreen(new ServantCardKeybindScreen(vars.servant_card_id));
+                  clearServantCardInputState();
+                  return;
+               }
                handleServantCardControls(vars);
                return;
             }
@@ -543,16 +586,7 @@ public class TypeMoonWorldModKeyMappings {
                      int index = vars.current_magic_index;
                      if (index >= 0 && index < vars.selected_magics.size()) {
                         String magicId = vars.selected_magics.get(index);
-                        if ("projection".equals(magicId)
-                           || "structural_analysis".equals(magicId)
-                           || "unlimited_blade_works".equals(magicId)
-                           || "broken_phantasm".equals(magicId)) {
-                           if (vars.isCurrentSelectionFromCrest(magicId)) {
-                              player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
-                           } else {
-                              Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
-                           }
-                        }
+                        openCurrentMagicPreset(player, vars, magicId);
                      }
                   }
                }
@@ -562,14 +596,70 @@ public class TypeMoonWorldModKeyMappings {
          }
       }
 
+      /** Opens the Tab preset editor for both built-in and addon magic. */
+      private static boolean openCurrentMagicPreset(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+         if (player == null || vars == null || magicId == null || magicId.isBlank()) {
+            return false;
+         }
+         if (vars.isCurrentSelectionFromCrest(magicId)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
+            return true;
+         }
+
+         if ("projection".equals(magicId)
+            || "structural_analysis".equals(magicId)
+            || "unlimited_blade_works".equals(magicId)
+            || "broken_phantasm".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
+            return true;
+         }
+
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
+         if ("touko_travel".equals(magicId) && entry != null && !entry.isEmpty()) {
+            Minecraft.getInstance().setScreen(new ToukoTravelPresetScreen(
+               Minecraft.getInstance().screen,
+               entry.copy(),
+               entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy()
+            ));
+            return true;
+         }
+
+         var extension = ClientExtensionRegistryImpl.getFor(magicId);
+         if (extension != null) {
+            extension.open(Minecraft.getInstance().screen);
+            return true;
+         }
+
+         var resolvedId = ExtensionApiRegistry.resolveControlId(magicId);
+         var controls = ExtensionApiRegistry.controls(resolvedId);
+         if (!controls.isEmpty()) {
+            Minecraft.getInstance().setScreen(new GenericMagicOptionsScreen(Minecraft.getInstance().screen, resolvedId, controls));
+            return true;
+         }
+         return false;
+      }
+
       private static void handleCastKey(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
          String currentSelection = PlayerMagicSelectionService.getCurrentMagicId(vars);
+         if ("touko_travel".equals(currentSelection)) {
+            if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick() && vars.is_magus) {
+               triggerRightArmCastPose(vars);
+               triggerCast(player, 0, 0);
+            }
+            castPressStartMs = -1L;
+            castLongTriggered = false;
+            machineGunCastKeyDown = false;
+            ganderCastKeyDown = false;
+            elementalArrayCastKeyDown = false;
+            return;
+         }
          if (TalentService.isTalent(currentSelection) && TalentService.owns(vars, currentSelection)) {
             if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick()) triggerCast(player, 0, 0);
             castPressStartMs = -1L;
             castLongTriggered = false;
             machineGunCastKeyDown = false;
             ganderCastKeyDown = false;
+            elementalArrayCastKeyDown = false;
             return;
          }
          if (isClientBajiquanActive(player, vars)) {
@@ -624,6 +714,8 @@ public class TypeMoonWorldModKeyMappings {
                machineGunCastKeyDown = false;
                machineGunCastPressStartMs = -1L;
                machineGunReleaseStopArmed = false;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
             } else if (isJewelMachineGunSelected(vars)) {
                long now = System.currentTimeMillis();
                boolean fireDown = isFireInputDown(vars);
@@ -655,6 +747,26 @@ public class TypeMoonWorldModKeyMappings {
                machineGunCastKeyDown = fireDown;
                ganderCastKeyDown = false;
                ganderCastPressStartMs = -1L;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
+            } else if (ElementalArrayService.Kind.fromMagicId(currentSelection) != null) {
+               long now = System.currentTimeMillis();
+               boolean fireDown = TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown();
+               if (fireDown && !elementalArrayCastKeyDown && vars.is_magus) {
+                  elementalArrayCastKeyDown = true;
+                  elementalArrayCastPressStartMs = now;
+                  triggerCast(player, 3, 0);
+               } else if (!fireDown && elementalArrayCastKeyDown && vars.is_magus) {
+                  long holdMs = elementalArrayCastPressStartMs < 0L ? 0L : now - elementalArrayCastPressStartMs;
+                  triggerCast(player, 4, (int)Math.min(2147483647L, holdMs));
+                  elementalArrayCastPressStartMs = -1L;
+               }
+               elementalArrayCastKeyDown = fireDown;
+               machineGunCastKeyDown = false;
+               machineGunCastPressStartMs = -1L;
+               machineGunReleaseStopArmed = false;
+               ganderCastKeyDown = false;
+               ganderCastPressStartMs = -1L;
             } else {
                machineGunCastKeyDown = false;
                machineGunCastPressStartMs = -1L;
@@ -663,6 +775,8 @@ public class TypeMoonWorldModKeyMappings {
                machineGunPoseWarmupTicks = 0;
                machineGunPoseNoCooldownTicks = 0;
                ganderCastKeyDown = false;
+               elementalArrayCastKeyDown = false;
+               elementalArrayCastPressStartMs = -1L;
                ganderCastPressStartMs = -1L;
                if (TypeMoonWorldModKeyMappings.CAST_MAGIC.consumeClick() && vars.is_magus) {
                   triggerRightArmCastPose(vars);
@@ -681,6 +795,8 @@ public class TypeMoonWorldModKeyMappings {
             machineGunPoseNoCooldownTicks = 0;
             ganderCastKeyDown = false;
             ganderCastPressStartMs = -1L;
+            elementalArrayCastKeyDown = false;
+            elementalArrayCastPressStartMs = -1L;
             long now = System.currentTimeMillis();
             if (TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown()) {
                if (castPressStartMs < 0L) {
@@ -765,20 +881,7 @@ public class TypeMoonWorldModKeyMappings {
          } else {
             clearPaleRiderInputState();
          }
-         for (int slot = 0; slot < TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS.length; slot++) {
-            if (isHoldServantCardSkill(vars, slot)) {
-               boolean down = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].isDown();
-               if (down != servantCardHoldDown[slot]) {
-                  servantCardHoldDown[slot] = down;
-                  PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, down), new CustomPacketPayload[0]);
-               }
-            } else {
-               servantCardHoldDown[slot] = false;
-               while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].consumeClick()) {
-                  PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
-               }
-            }
-         }
+         ServantCardSkillInputController.tick(Minecraft.getInstance().player, vars);
 
          boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
          boolean sneakDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
@@ -861,6 +964,8 @@ public class TypeMoonWorldModKeyMappings {
          ganryuJumpDown = false;
          ganryuCrouchDown = false;
          ganryuUseDown = false;
+         elementalArrayCastKeyDown = false;
+         elementalArrayCastPressStartMs = -1L;
          kendoJumpDown = false;
          kendoCrouchDown = false;
          kendoUseDown = false;
@@ -876,9 +981,7 @@ public class TypeMoonWorldModKeyMappings {
          lastServantFlightVertical = Float.NaN;
          clearServantFlightDashState();
          clearPaleRiderInputState();
-         for (int slot = 0; slot < servantCardHoldDown.length; slot++) {
-            servantCardHoldDown[slot] = false;
-         }
+         ServantCardSkillInputController.clear();
       }
 
       private static void clearServantFlightDashState() {
@@ -896,22 +999,31 @@ public class TypeMoonWorldModKeyMappings {
          lastPaleRiderPitch = Float.NaN;
       }
 
-      private static boolean isHoldServantCardSkill(TypeMoonWorldModVariables.PlayerVariables vars, int slot) {
-         return ("emiya_archer".equals(vars.servant_card_id) && slot == 1)
-            || ("li_shuwen".equals(vars.servant_card_id) && slot == 2)
-            || ("arash".equals(vars.servant_card_id) && slot == 9)
-            || ("oda_nobunaga".equals(vars.servant_card_id) && (slot == 4 || slot == 8));
-      }
-
       private static void handleMasterControls(boolean suppressScreens) {
          if (Minecraft.getInstance().screen != null) {
             return;
          }
          while (TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[0].consumeClick()) {
             if (!suppressScreens) {
-               Minecraft.getInstance().setScreen(new MasterCommandSpellScreen());
+               Minecraft mc = Minecraft.getInstance();
+               ServantEntity servant = getLocalBoundEntityServant(mc);
+               mc.setScreen(servant == null
+                  ? new MasterCommandSpellScreen()
+                  : new ServantCommandScreen(servant.getId()));
             }
          }
+      }
+
+      private static ServantEntity getLocalBoundEntityServant(Minecraft mc) {
+         if (mc.player == null || mc.level == null) return null;
+         TypeMoonWorldModVariables.PlayerVariables vars = mc.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars == null || !vars.master_active || vars.master_servant_uuid == null || vars.master_servant_uuid.isBlank()) return null;
+         return mc.level.getEntitiesOfClass(
+            ServantEntity.class,
+            mc.player.getBoundingBox().inflate(128.0),
+            servant -> servant.isAlive()
+               && vars.master_servant_uuid.equals(servant.getUUID().toString())
+         ).stream().findFirst().orElse(null);
       }
 
       private static boolean supportsCrouchAttack(String servantId) {
@@ -1142,6 +1254,9 @@ public class TypeMoonWorldModKeyMappings {
                return "";
             } else {
                String var4 = entry.magicId;
+               if (isImaginaryStorageMagic(var4)) {
+                  return buildImaginaryHint(var4, payload);
+               }
 
                return switch (var4) {
                   case "reinforcement" -> buildReinforcementHint(payload);
@@ -1218,6 +1333,33 @@ public class TypeMoonWorldModKeyMappings {
             default -> "gui.typemoonworld.mode.mana_burst.body";
          };
          return Component.translatable(modeKey).getString() + " L" + level;
+      }
+
+      private static String buildImaginaryHint(String magicId, CompoundTag payload) {
+         String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+         return Component.translatable(imaginaryModeLabelKey(magicId, mode)).getString();
+      }
+
+      private static boolean isImaginaryStorageMagic(String magicId) {
+         String path = magicPath(magicId);
+         return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+      }
+
+      private static String imaginaryModeLabelKey(String magicId, String mode) {
+         if ("protection".equals(mode)) {
+            return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+         }
+         return "imaginary_absorption_evolved".equals(magicPath(magicId))
+            ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+            : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
+      }
+
+      private static String magicPath(String magicId) {
+         if (magicId == null) {
+            return "";
+         }
+         int split = magicId.indexOf(':');
+         return split >= 0 ? magicId.substring(split + 1) : magicId;
       }
 
       private static String buildProjectionHint(CompoundTag payload, TypeMoonWorldModVariables.PlayerVariables vars, Player player) {

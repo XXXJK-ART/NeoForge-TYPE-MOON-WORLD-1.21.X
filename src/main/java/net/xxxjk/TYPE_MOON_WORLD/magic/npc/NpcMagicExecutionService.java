@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
 import com.example.typemoonaddon.magic.EntityDisplacementService;
+import com.example.typemoonaddon.TypeMoonAddon;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
@@ -21,7 +23,7 @@ public final class NpcMagicExecutionService {
 
    public static boolean hasCastableMagic(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       if (vars != null && magicId != null && !magicId.isEmpty()) {
-         var definition = MagicDefinitionRegistry.get(magicId);
+         var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed()) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          for (int slot = 0; slot < 12; slot++) {
@@ -60,8 +62,8 @@ public final class NpcMagicExecutionService {
       }
       // Addon executors are checked before the legacy compatibility table. This keeps
       // the NPC and player paths on the same callback implementation.
-      if (MagicDefinitionRegistry.contains(magicId)) {
-         var definition = MagicDefinitionRegistry.get(magicId);
+      if (definitionFor(magicId) != null) {
+         var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed() && !isLeffExclusiveNpcMagic(caster, magicId)) return false;
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
@@ -89,6 +91,9 @@ public final class NpcMagicExecutionService {
          case "water_magic" -> NpcMagicCastBridge.castWaterMagic(caster, target, vars, payload, effectiveProficiency);
          case "wind_magic" -> NpcMagicCastBridge.castWindMagic(caster, target, vars, payload, effectiveProficiency);
          case "earth_magic" -> NpcMagicCastBridge.castEarthMagic(caster, target, vars, payload, effectiveProficiency);
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" ->
+               ElementalArrayService.castNpcArray(caster, target,
+                     ElementalArrayService.Kind.fromMagicId(magicId), payload);
          case "ruby_flame_sword" -> NpcMagicCastBridge.castRubyFlameSword(caster, target, vars, effectiveProficiency);
          case "sapphire_winter_frost" -> NpcMagicCastBridge.castSapphireWinterFrost(caster, target, vars, effectiveProficiency);
          case "emerald_winter_river" -> NpcMagicCastBridge.castEmeraldWinterRiver(caster, target, vars, effectiveProficiency);
@@ -100,6 +105,14 @@ public final class NpcMagicExecutionService {
          postNpcLegacyMagicCast(caster, target, magicId, payload, effectiveProficiency);
       }
       return success;
+   }
+
+   private static net.xxxjk.typemoonworld.api.MagicDefinitionData definitionFor(String magicId) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition == null && magicId != null && magicId.indexOf(':') < 0) {
+         definition = MagicDefinitionRegistry.get(TypeMoonAddon.MOD_ID + ":" + magicId);
+      }
+      return definition;
    }
 
    private static boolean isLeffExclusiveNpcMagic(MysticMagicianEntity caster, String magicId) {
@@ -154,6 +167,7 @@ public final class NpcMagicExecutionService {
          case "binding_magic" -> 14;
          case "fire_magic" -> 14;
          case "water_magic", "wind_magic", "earth_magic" -> 16;
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> 24;
          case "ruby_flame_sword", "cyan_wind" -> 18;
          case "topaz_reinforcement" -> 20;
          case "sapphire_winter_frost", "emerald_winter_river" -> 24;
@@ -190,6 +204,7 @@ public final class NpcMagicExecutionService {
          case "water_magic" -> 42;
          case "wind_magic" -> 44;
          case "earth_magic" -> 48;
+         case "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> 80;
          case "ruby_flame_sword" -> 180;
          case "sapphire_winter_frost" -> 320;
          case "emerald_winter_river" -> 340;

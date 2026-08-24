@@ -33,7 +33,9 @@ public class ServantMasterContractItem extends Item {
                   "message.typemoonworld.entity_servant.command." + mode.name().toLowerCase()), true);
                return InteractionResult.SUCCESS;
             }
-            return MasterStateManager.bindEntityServant(actor, servant) ? InteractionResult.SUCCESS : InteractionResult.FAIL;
+            boolean success = MasterStateManager.bindEntityServant(actor, servant);
+            if (success && !actor.getAbilities().instabuild) stack.shrink(1);
+            return success ? InteractionResult.SUCCESS : InteractionResult.FAIL;
          }
          if (target instanceof ServerPlayer other) {
             boolean success = MasterStateManager.bindByContract(actor, other);

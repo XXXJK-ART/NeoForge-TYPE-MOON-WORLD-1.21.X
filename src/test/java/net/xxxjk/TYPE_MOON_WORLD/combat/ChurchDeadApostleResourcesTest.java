@@ -130,6 +130,21 @@ class ChurchDeadApostleResourcesTest {
       assertTrue(executor.contains("healthRatio < selectedRatio"));
    }
 
+   @Test void blackKeyMiraclesAreRandomizedForBlackKeyExecutorsAndActuallyUsed() throws IOException {
+      String executor = Files.readString(JAVA_SOURCES.resolve(
+         "net/xxxjk/TYPE_MOON_WORLD/entity/church/ChurchExecutorEntity.java"));
+      assertTrue(executor.contains("boolean blackKeyWeapon = getWeaponType() == WEAPON_BLACK_KEY"));
+      assertTrue(executor.contains("entityData.set(IRON_ARMOR_ACTION, theology && blackKeyWeapon"));
+      assertTrue(executor.contains("entityData.set(CREMATION_RITE, theology && blackKeyWeapon"));
+      assertTrue(executor.contains("tryDetonateCremationRite(target)"));
+      assertTrue(executor.contains("BlackKeyMiracleService.detonateCremationRite(this)"));
+
+      String projectile = Files.readString(JAVA_SOURCES.resolve(
+         "net/xxxjk/TYPE_MOON_WORLD/entity/BlackKeyProjectileEntity.java"));
+      assertTrue(projectile.contains("BlackKeyMiracleService.onProjectileHit(this, target, carried)"));
+      assertTrue(projectile.contains("BlackKeyMiracleService.tryTriggerIronArmorAction(getOwner())"));
+   }
+
    @Test void blackKeyHasAllSixVisualStatesAndAssets() throws IOException {
       JsonObject animations = json("assets/typemoonworld/animations/black_key.animation.json")
          .getAsJsonObject("animations");
@@ -195,15 +210,32 @@ class ChurchDeadApostleResourcesTest {
 
    @Test void deadApostlesAreTaggedAsUndead() throws IOException {
       String tag = Files.readString(RESOURCES.resolve("data/minecraft/tags/entity_type/undead.json"));
-      for (String id : Set.of("the_dead", "ghoul", "living_dead", "night_kin")) assertTrue(tag.contains("typemoonworld:" + id));
+      for (String id : Set.of("the_dead", "ghoul", "living_dead", "night_kin", "wraith")) assertTrue(tag.contains("typemoonworld:" + id));
+   }
+
+   @Test void spiritSummoningKeepsWraithControlSeparateFromConfiguredEvilSpiritSummoning() throws IOException {
+      String summoning = Files.readString(JAVA_SOURCES.resolve(
+         "com/example/typemoonaddon/magic/SummoningMagicIntegration.java"));
+      String entities = Files.readString(JAVA_SOURCES.resolve(
+         "com/example/typemoonaddon/registry/AddonEntities.java"));
+      String renderer = Files.readString(JAVA_SOURCES.resolve(
+         "com/example/typemoonaddon/client/renderer/SummonedSpiritParticleRenderer.java"));
+      String clientEvents = Files.readString(JAVA_SOURCES.resolve(
+         "com/example/typemoonaddon/client/ClientModEvents.java"));
+      assertTrue(summoning.contains("SUMMON_SIZE"));
+      assertTrue(summoning.contains("EVIL_SPIRIT_SMALL"));
+      assertTrue(summoning.contains("registerControl(EVIL_SPIRIT_SUMMONING"));
+      assertTrue(summoning.contains("getEntitiesOfClass(SummonedSpiritEntity.class"));
+      assertTrue(summoning.contains("spirit instanceof WraithEntity || spirit instanceof EvilSpiritEntity"));
+      assertTrue(entities.contains("register(\"evil_spirit_small\""));
+      assertTrue(renderer.contains("ParticleTypes.SOUL"));
+      assertTrue(renderer.contains("ParticleTypes.SOUL_FIRE_FLAME"));
+      assertTrue(clientEvents.contains("SummonedSpiritParticleRenderer"));
+      assertFalse(clientEvents.contains("SummonedSpiritRenderer"));
    }
 
    @Test void churchMagicDefinitionsMatchTheirKnowledgeBehavior() throws IOException {
-      JsonObject engraving = json("data/typemoonworld/magic/definitions/black_key_fire_engraving.json");
       JsonObject stigma = json("data/typemoonworld/magic/definitions/stigma.json");
-      assertEquals("typemoonworld:church", engraving.get("category").getAsString());
-      assertTrue(engraving.get("wheel_selectable").getAsBoolean());
-      assertFalse(engraving.get("knowledge_only").getAsBoolean());
       assertEquals("typemoonworld:church", stigma.get("category").getAsString());
       assertFalse(stigma.get("wheel_selectable").getAsBoolean());
       assertTrue(stigma.get("knowledge_only").getAsBoolean());

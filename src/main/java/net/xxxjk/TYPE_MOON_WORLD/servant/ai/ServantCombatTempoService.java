@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiControl;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiIntent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -149,7 +150,8 @@ public final class ServantCombatTempoService {
          servant.setDeltaMovement(motion.x * 0.28, motion.y, motion.z * 0.28);
          servant.hasImpulse = true;
       }
-      boolean hit = servant.doBasicHurtTarget(target);
+      boolean sweep = ServantTrueSweepService.tryNpcSweep(servant, target, now);
+      boolean hit = sweep || servant.doBasicHurtTarget(target);
       servant.triggerBasicAttackAnimation();
       recordContact(servant, target, hit ? ContactType.DAMAGE : ContactType.BLOCKED, now);
       return true;

@@ -6,6 +6,7 @@ import com.example.typemoonaddon.network.AddonNetwork;
 import com.example.typemoonaddon.network.DetectionEyeStatePayload;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload.TargetMarker;
+import com.example.typemoonaddon.worm.WormEntity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -118,6 +119,13 @@ public final class DetectionService {
         if (data.isActive()) {
             sendEyeStateTo(observer, caster, true);
         }
+    }
+
+    public static void syncSharedVision(ServerPlayer observer, WormEntity worm, boolean active) {
+        if (observer == null || worm == null || observer.serverLevel() != worm.level()) {
+            return;
+        }
+        sendEyeStateTo(observer, worm, active);
     }
 
     public static void clearAll(MinecraftServer server) {
@@ -285,6 +293,11 @@ public final class DetectionService {
     }
 
     private static void sendEyeStateTo(ServerPlayer observer, ServerPlayer caster, boolean active) {
+        AddonNetwork.sendToPlayer(observer, new DetectionEyeStatePayload(
+                caster.getId(), active, active ? EYE_STATE_TTL_TICKS : 0));
+    }
+
+    private static void sendEyeStateTo(ServerPlayer observer, LivingEntity caster, boolean active) {
         AddonNetwork.sendToPlayer(observer, new DetectionEyeStatePayload(
                 caster.getId(), active, active ? EYE_STATE_TTL_TICKS : 0));
     }

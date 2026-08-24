@@ -79,6 +79,7 @@ public final class ServantCombatSystem {
    private static final String TAG_COMBAT_CONTROL_START = TAG_PREFIX + "ControlStartTick";
    private static final String TAG_LAST_LAUNCH_TICK = TAG_PREFIX + "LastLaunchTick";
    private static final String TAG_LAST_KNOCKBACK_TICK = TAG_PREFIX + "LastKnockbackTick";
+   private static final String TAG_SPRINT_RAMP_TICKS = TAG_PREFIX + "SprintRampTicks";
    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_combat_speed");
    private static final ResourceLocation HARD_TANK_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_np_hardtank_attack");
    private static final int OUT_OF_COMBAT_RESET_TICKS = 100;
@@ -447,9 +448,20 @@ public final class ServantCombatSystem {
          speed.removeModifier(SPEED_ID);
          return;
       }
-      double targetSpeed = data.getLong(TAG_LAST_COMBAT_TICK) > 0 && now - data.getLong(TAG_LAST_COMBAT_TICK) < OUT_OF_COMBAT_RESET_TICKS
-         ? ServantCombatFormulas.combatMovementSpeed(effectiveParams(entity, definition))
-         : ServantCombatFormulas.OUT_OF_COMBAT_SPEED;
+      ServantParams params = effectiveParams(entity, definition);
+      boolean inCombat = data.getLong(TAG_LAST_COMBAT_TICK) > 0 && now - data.getLong(TAG_LAST_COMBAT_TICK) < OUT_OF_COMBAT_RESET_TICKS;
+      LivingEntity target = entity.getTarget();
+      boolean running = inCombat && (entity.isSprinting()
+         || target != null && target.isAlive() && !entity.getNavigation().isDone()
+         || entity.getDeltaMovement().horizontalDistanceSqr() > 0.0004);
+      int runningTicks = running ? Math.min(40, data.getInt(TAG_SPRINT_RAMP_TICKS) + 1) : 0;
+      if (runningTicks > 0) {
+         data.putInt(TAG_SPRINT_RAMP_TICKS, runningTicks);
+      } else {
+         data.remove(TAG_SPRINT_RAMP_TICKS);
+      }
+      double maxSpeed = inCombat ? ServantCombatFormulas.combatMovementSpeed(params) : ServantCombatFormulas.OUT_OF_COMBAT_SPEED;
+      double targetSpeed = ServantCombatFormulas.rampedMovementSpeed(params, runningTicks, maxSpeed);
       double base = speed.getBaseValue();
       updateAttributeModifier(speed, SPEED_ID, targetSpeed - base, AttributeModifier.Operation.ADD_VALUE);
    }
@@ -472,6 +484,7 @@ public final class ServantCombatSystem {
       data.remove(TAG_COMBAT_CONTROL_START);
       data.remove(TAG_LAST_LAUNCH_TICK);
       data.remove(TAG_LAST_KNOCKBACK_TICK);
+      data.remove(TAG_SPRINT_RAMP_TICKS);
       AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
       if (speed != null) {
          if (entity instanceof HundredFacesHassanEntity || entity instanceof HundredFacesHassanPersonaEntity) {
@@ -608,6 +621,10 @@ public final class ServantCombatSystem {
          || getPhase(servant) == ServantCombatPhase.DECISIVE
          || emiya;
       if (agility < 3 && !urgent) {
+         return false;
+      }
+      double chance = ServantCombatFormulas.baseDodgeChance(params, urgent) + (emiya ? 0.12 : 0.0);
+      if (servant.getRandom().nextDouble() > Math.min(0.92, chance)) {
          return false;
       }
       servant.setCurrentMp(servant.getCurrentMp() - dodgeCost);

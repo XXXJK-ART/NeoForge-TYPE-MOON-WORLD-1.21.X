@@ -8,7 +8,7 @@ import software.bernie.geckolib.model.GeoModel;
 public class MagicStaffModel extends GeoModel<MagicStaffItem> {
    @Override
    public ResourceLocation getModelResource(MagicStaffItem object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/ruby_staff.geo.json");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "geo/magic_staff.geo.json");
    }
 
    @Override

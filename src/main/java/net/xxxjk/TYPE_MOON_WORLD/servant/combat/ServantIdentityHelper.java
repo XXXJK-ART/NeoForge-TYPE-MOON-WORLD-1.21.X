@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.tags.EntityTypeTags;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -82,6 +83,9 @@ public final class ServantIdentityHelper {
       if (trait == ServantTraitTag.DIVINE && entity instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (!PassiveService.effectsSuppressed(vars) && PassiveService.has(vars, PassiveService.DIVINITY)) return true;
+      }
+      if (trait == ServantTraitTag.UNDEAD && entity != null && entity.getType().is(EntityTypeTags.UNDEAD)) {
+         return true;
       }
       return trait != null && traitsOf(entity).contains(trait);
    }

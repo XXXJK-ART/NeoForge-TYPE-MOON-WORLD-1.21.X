@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicBinding;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.church.BaptismRiteEventHandler;
+import net.xxxjk.TYPE_MOON_WORLD.magic.church.BlackKeyMiracleService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.church.MagicBaptismRite;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import org.jetbrains.annotations.Nullable;
@@ -71,10 +72,15 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
    private static final EntityDataAccessor<Boolean> BINDING_MAGIC = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Boolean> SUGGESTION_MAGIC = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Boolean> HEALING_MAGIC = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> THEOLOGY = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> BLACK_KEY_MAKING = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> IRON_ARMOR_ACTION = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> CREMATION_RITE = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> RANGED_POSE_TICKS = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> BAPTISM_CHANT_TICKS = SynchedEntityData.defineId(ChurchExecutorEntity.class, EntityDataSerializers.INT);
    private static final double PACK_COORDINATION_RANGE = 18.0;
    private static final String BASIC_MAGIC_ROSTER_VERSION = "ChurchBasicMagicRosterV1";
+   private static final String MIRACLE_ROSTER_VERSION = "ChurchMiracleRosterV1";
    private static final String SKIN_ROSTER_VERSION = "ChurchSkinRosterV2";
    private int magicCooldown;
    private boolean fireBlackKeyFromOffhand;
@@ -95,6 +101,8 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       builder.define(STIGMA, false); builder.define(BAPTISM, false);
       builder.define(REINFORCEMENT, false); builder.define(SPIRITUAL_HEALING, false);
       builder.define(BINDING_MAGIC, false); builder.define(SUGGESTION_MAGIC, false); builder.define(HEALING_MAGIC, false);
+      builder.define(THEOLOGY, false); builder.define(BLACK_KEY_MAKING, false);
+      builder.define(IRON_ARMOR_ACTION, false); builder.define(CREMATION_RITE, false);
       builder.define(RANGED_POSE_TICKS, 0);
       builder.define(BAPTISM_CHANT_TICKS, 0);
    }
@@ -128,6 +136,10 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
    public boolean hasBindingMagic() { return entityData.get(BINDING_MAGIC); }
    public boolean hasSuggestionMagic() { return entityData.get(SUGGESTION_MAGIC); }
    public boolean hasHealingMagic() { return entityData.get(HEALING_MAGIC); }
+   public boolean hasTheology() { return entityData.get(THEOLOGY); }
+   public boolean hasBlackKeyMaking() { return entityData.get(BLACK_KEY_MAKING); }
+   public boolean hasIronArmorAction() { return entityData.get(IRON_ARMOR_ACTION); }
+   public boolean hasCremationRite() { return entityData.get(CREMATION_RITE); }
    public boolean isBaptismChanting() { return entityData.get(BAPTISM_CHANT_TICKS) > 0; }
    public boolean isCrossbowAiming() { return getWeaponType() == WEAPON_CROSSBOW && entityData.get(RANGED_POSE_TICKS) > 0; }
 
@@ -184,8 +196,8 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          setCustomName(Component.literal(ChurchNameGenerator.generate(random, skin == 3)));
          setCustomNameVisible(true);
       }
-      int roll = random.nextInt(200);
-      entityData.set(WEAPON, roll < 95 ? WEAPON_BLACK_KEY : roll < 190 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
+      int roll = random.nextInt(100);
+      entityData.set(WEAPON, roll < 15 ? WEAPON_BLACK_KEY : roll < 30 ? WEAPON_CROSSBOW : WEAPON_PISTOL);
       entityData.set(BAPTISM, random.nextBoolean());
       entityData.set(REINFORCEMENT, random.nextBoolean());
       entityData.set(SPIRITUAL_HEALING, random.nextBoolean());
@@ -195,6 +207,7 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       getPersistentData().putInt("ChurchSpiritualHealingProficiency", random.nextInt(101));
       getPersistentData().putInt("ChurchStigmaProficiency", random.nextInt(101));
       rollBasicMagics();
+      rollMiracles();
       equipWeapon();
       if (spawnType != MobSpawnType.NATURAL && spawnType != MobSpawnType.CHUNK_GENERATION) setPersistenceRequired();
       return data;
@@ -208,6 +221,20 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       getPersistentData().putInt("ChurchSuggestionProficiency", random.nextInt(101));
       getPersistentData().putInt("ChurchHealingProficiency", random.nextInt(101));
       getPersistentData().putBoolean(BASIC_MAGIC_ROSTER_VERSION, true);
+   }
+
+   private void rollMiracles() {
+      boolean theology = random.nextFloat() < 0.55F;
+      entityData.set(THEOLOGY, theology);
+      entityData.set(BLACK_KEY_MAKING, theology && random.nextFloat() < 0.70F);
+      boolean blackKeyWeapon = getWeaponType() == WEAPON_BLACK_KEY;
+      entityData.set(IRON_ARMOR_ACTION, theology && blackKeyWeapon && random.nextFloat() < 0.35F);
+      entityData.set(CREMATION_RITE, theology && blackKeyWeapon && random.nextFloat() < 0.30F);
+      getPersistentData().putInt("ChurchTheologyProficiency", theology ? 100 : random.nextInt(51));
+      getPersistentData().putInt("ChurchBlackKeyMakingProficiency", random.nextInt(101));
+      getPersistentData().putInt("ChurchIronArmorActionProficiency", random.nextInt(101));
+      getPersistentData().putInt("ChurchCremationRiteProficiency", random.nextInt(101));
+      getPersistentData().putBoolean(MIRACLE_ROSTER_VERSION, true);
    }
 
    private void equipWeapon() {
@@ -234,7 +261,6 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
    private ItemStack createBlackKeyStack() {
       ItemStack stack = new ItemStack(ModItems.BLACK_KEY.get(), 1 + random.nextInt(3));
       BlackKeyItem.setExpanded(stack, true);
-      if (random.nextBoolean()) BlackKeyItem.setFireEngraved(stack, true);
       return stack;
    }
 
@@ -244,6 +270,7 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       if (!tactical) super.customServerAiStep();
       NpcScaleHelper.ensureRandomScale(this);
       if (!getPersistentData().getBoolean(BASIC_MAGIC_ROSTER_VERSION)) rollBasicMagics();
+      if (!getPersistentData().getBoolean(MIRACLE_ROSTER_VERSION)) rollMiracles();
       if (!tactical && tickCount % 8 == 0) coordinatePackTargets();
       int poseTicks = entityData.get(RANGED_POSE_TICKS);
       if (poseTicks > 0) entityData.set(RANGED_POSE_TICKS, poseTicks - 1);
@@ -254,7 +281,9 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          return;
       }
       LivingEntity target = getTarget();
-      if (magicCooldown <= 0 && hasHealingMagic() && tryCastHealingMagic()) {
+      if (magicCooldown <= 0 && hasCremationRite() && tryDetonateCremationRite(target)) {
+         magicCooldown = 100;
+      } else if (magicCooldown <= 0 && hasHealingMagic() && tryCastHealingMagic()) {
          magicCooldown = 90;
       } else if (magicCooldown <= 0 && hasSpiritualHealing() && getHealth() < getMaxHealth() * 0.55F) {
          heal(4.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.04F);
@@ -272,6 +301,13 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
             magicCooldown = 80;
          }
       }
+   }
+
+   private boolean tryDetonateCremationRite(LivingEntity target) {
+      if (getWeaponType() != WEAPON_BLACK_KEY || target == null || !target.isAlive()
+         || !target.hasEffect(ModMobEffects.CREMATION_RITE) || !hasLineOfSight(target)) return false;
+      swing(InteractionHand.OFF_HAND, true);
+      return BlackKeyMiracleService.detonateCremationRite(this);
    }
 
    private static boolean isDeadApostleTarget(LivingEntity target) {
@@ -450,6 +486,8 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       tag.putBoolean("ChurchReinforcement", hasReinforcement()); tag.putBoolean("ChurchSpiritualHealing", hasSpiritualHealing());
       tag.putBoolean("ChurchBindingMagic", hasBindingMagic()); tag.putBoolean("ChurchSuggestionMagic", hasSuggestionMagic());
       tag.putBoolean("ChurchHealingMagic", hasHealingMagic());
+      tag.putBoolean("ChurchTheology", hasTheology()); tag.putBoolean("ChurchBlackKeyMaking", hasBlackKeyMaking());
+      tag.putBoolean("ChurchIronArmorAction", hasIronArmorAction()); tag.putBoolean("ChurchCremationRite", hasCremationRite());
       tag.putInt("ChurchBaptismChantTicks", entityData.get(BAPTISM_CHANT_TICKS));
       if (baptismTargetId != null) tag.putUUID("ChurchBaptismTarget", baptismTargetId);
    }
@@ -464,8 +502,20 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
       entityData.set(REINFORCEMENT, tag.getBoolean("ChurchReinforcement")); entityData.set(SPIRITUAL_HEALING, tag.getBoolean("ChurchSpiritualHealing"));
       entityData.set(BINDING_MAGIC, tag.getBoolean("ChurchBindingMagic")); entityData.set(SUGGESTION_MAGIC, tag.getBoolean("ChurchSuggestionMagic"));
       entityData.set(HEALING_MAGIC, tag.getBoolean("ChurchHealingMagic"));
+      entityData.set(THEOLOGY, tag.getBoolean("ChurchTheology")); entityData.set(BLACK_KEY_MAKING, tag.getBoolean("ChurchBlackKeyMaking"));
+      entityData.set(IRON_ARMOR_ACTION, tag.getBoolean("ChurchIronArmorAction")); entityData.set(CREMATION_RITE, tag.getBoolean("ChurchCremationRite"));
       entityData.set(BAPTISM_CHANT_TICKS, Math.max(0, tag.getInt("ChurchBaptismChantTicks")));
       baptismTargetId = tag.hasUUID("ChurchBaptismTarget") ? tag.getUUID("ChurchBaptismTarget") : null;
+   }
+
+   public double getMiracleProficiency(String magicId) {
+      return switch (magicId) {
+         case BlackKeyMiracleService.THEOLOGY -> getPersistentData().getInt("ChurchTheologyProficiency");
+         case BlackKeyMiracleService.BLACK_KEY_MAKING -> getPersistentData().getInt("ChurchBlackKeyMakingProficiency");
+         case BlackKeyMiracleService.IRON_ARMOR_ACTION -> getPersistentData().getInt("ChurchIronArmorActionProficiency");
+         case BlackKeyMiracleService.CREMATION_RITE -> getPersistentData().getInt("ChurchCremationRiteProficiency");
+         default -> 0.0;
+      };
    }
 
    private static final class ChurchPackRegroupGoal extends Goal {

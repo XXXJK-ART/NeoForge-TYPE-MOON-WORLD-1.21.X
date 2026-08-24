@@ -15,9 +15,11 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.GilgameshVaultScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.HundredFacesScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.PaleRiderScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
 import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public class ClientPacketHandler {
    public static void openProjectionGui() {
@@ -125,6 +127,15 @@ public class ClientPacketHandler {
       if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) return;
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) mc.setScreen(new HundredFacesScreen(kind, targets));
+   }
+
+   public static void openServantCommandScreen(int entityId) {
+      if (ReplayUiSuppressor.shouldSuppressTypeMoonScreens()) return;
+      Minecraft mc = Minecraft.getInstance();
+      if (mc.player != null && mc.level != null
+         && mc.level.getEntity(entityId) instanceof ServantEntity) {
+         mc.setScreen(new ServantCommandScreen(entityId));
+      }
    }
 
    public static void handleMasterVisualState(UUID playerId, boolean masterActive, int commandSpells, String style, boolean poseActive) {

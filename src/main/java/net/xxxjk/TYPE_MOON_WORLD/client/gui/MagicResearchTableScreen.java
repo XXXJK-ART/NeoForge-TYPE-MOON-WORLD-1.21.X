@@ -63,7 +63,7 @@ public class MagicResearchTableScreen extends AbstractContainerScreen<MagicResea
       boolean available = !magics.isEmpty();
       previousButton.active = available && magics.size() > 1;
       nextButton.active = previousButton.active;
-      researchButton.active = available;
+      researchButton.active = available && !menu.isResearching();
    }
 
    @Override
@@ -96,9 +96,20 @@ public class MagicResearchTableScreen extends AbstractContainerScreen<MagicResea
          g.drawCenteredString(font, Component.translatable("magic.typemoonworld." + id + ".name"), 122, 58, magicColor);
          g.drawCenteredString(font, Component.literal(String.format("%.1f%%", proficiency)), 122, 72, GuiUtils.ARCANE_TEXT_MUTED);
          GuiUtils.renderProgressBar(g, 80, 84, 84, 6, (float)proficiency / 100.0F, magicColor);
-         g.drawString(font, Component.literal("C " + MagicLearningStrategy.complexity(id)), 186, 58, GuiUtils.ARCANE_TEXT_MUTED, false);
-         g.drawString(font, Component.literal("M " + (int)Math.ceil(MagicLearningStrategy.researchManaCost(id, proficiency))), 186, 72, GuiUtils.ARCANE_CYAN, false);
-         g.drawString(font, Component.literal("T " + MagicLearningStrategy.researchTicks(id, proficiency)), 186, 86, GuiUtils.ARCANE_TEXT_MUTED, false);
+         if (menu.isResearching()) {
+            int total = Math.max(1, menu.researchTotalTicks());
+            int remaining = Math.max(0, Math.min(total, menu.researchRemainingTicks()));
+            float progress = 1.0F - (float)remaining / total;
+            int seconds = (int)Math.ceil(remaining / 20.0F);
+            g.drawString(font, Component.translatable("gui.typemoonworld.magic_research_table.status.working"), 186, 54, GuiUtils.ARCANE_VALID, false);
+            GuiUtils.renderProgressBar(g, 186, 68, 56, 6, progress, GuiUtils.ARCANE_VALID);
+            g.drawString(font, Component.literal(String.format("%.0f%%", progress * 100.0F)), 186, 79, GuiUtils.ARCANE_TEXT_MUTED, false);
+            g.drawString(font, Component.literal(seconds + "s"), 220, 79, GuiUtils.ARCANE_CYAN, false);
+         } else {
+            g.drawString(font, Component.literal("C " + MagicLearningStrategy.complexity(id)), 186, 58, GuiUtils.ARCANE_TEXT_MUTED, false);
+            g.drawString(font, Component.literal("M " + (int)Math.ceil(MagicLearningStrategy.researchManaCost(id, proficiency))), 186, 72, GuiUtils.ARCANE_CYAN, false);
+            g.drawString(font, Component.literal("T " + MagicLearningStrategy.researchTicks(id, proficiency)), 186, 86, GuiUtils.ARCANE_TEXT_MUTED, false);
+         }
       } else {
          g.drawCenteredString(font, Component.translatable("gui.typemoonworld.magic_research_table.empty"), 122, 68, GuiUtils.ARCANE_TEXT_MUTED);
       }
@@ -108,6 +119,7 @@ public class MagicResearchTableScreen extends AbstractContainerScreen<MagicResea
    @Override
    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
       renderBackground(g, mouseX, mouseY, partialTick);
+      updateButtons();
       super.render(g, mouseX, mouseY, partialTick);
       renderSlotMarkers(g);
       renderTooltip(g, mouseX, mouseY);

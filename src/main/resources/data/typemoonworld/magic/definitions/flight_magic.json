@@ -6,7 +6,7 @@
   "complexity": 90,
   "chant_segments": 4,
   "mana_cost": 0.0,
-  "sustained_mana_cost": 12.0,
+  "sustained_mana_cost": 60.0,
   "cooldown_ticks": 20,
   "learnable": true,
   "wheel_selectable": true,

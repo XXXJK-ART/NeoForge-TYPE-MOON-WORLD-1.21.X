@@ -170,10 +170,9 @@ public final class InternalApiProvider implements ApiProvider {
     * separate from the legacy context adapter so NPCs can receive target and preset data. */
    public static ExecutionResult executeNpc(LivingEntity caster, LivingEntity target, String magicId,
                                             net.minecraft.nbt.CompoundTag preset, double proficiency, long gameTick) {
-      MagicExecutor executor = PUBLIC_MAGIC_EXECUTORS.get(magicId);
-      if (executor == null) return ExecutionResult.NOT_HANDLED;
-      ResourceLocation id = ResourceLocation.tryParse(magicId);
-      if (id == null) return ExecutionResult.NOT_HANDLED;
+      MagicExecutor executor = resolvePublicMagicExecutor(magicId);
+      ResourceLocation id = resolveMagicId(magicId);
+      if (executor == null || id == null) return ExecutionResult.NOT_HANDLED;
       if (caster == null || !MagicDefinitionRegistry.meetsAttributeRequirements(
             caster.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES), magicId)) {
          return ExecutionResult.FAILED;
@@ -192,6 +191,37 @@ public final class InternalApiProvider implements ApiProvider {
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Addon NPC magic executor failed: {}", magicId, ex);
          return ExecutionResult.FAILED;
       }
+   }
+
+   private static MagicExecutor resolvePublicMagicExecutor(String magicId) {
+      if (magicId == null || magicId.isBlank()) return null;
+      MagicExecutor executor = PUBLIC_MAGIC_EXECUTORS.get(magicId);
+      if (executor != null) return executor;
+      ResourceLocation parsed = ResourceLocation.tryParse(magicId);
+      if (parsed != null) {
+         executor = PUBLIC_MAGIC_EXECUTORS.get(parsed.toString());
+         if (executor != null) return executor;
+      } else {
+         executor = PUBLIC_MAGIC_EXECUTORS.get(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":" + magicId);
+         if (executor != null) return executor;
+      }
+      String path = parsed == null ? magicId : parsed.getPath();
+      MagicExecutor match = null;
+      for (Map.Entry<String, MagicExecutor> entry : PUBLIC_MAGIC_EXECUTORS.entrySet()) {
+         ResourceLocation id = ResourceLocation.tryParse(entry.getKey());
+         if (id != null && id.getPath().equals(path)) {
+            if (match != null) return null;
+            match = entry.getValue();
+         }
+      }
+      return match;
+   }
+
+   private static ResourceLocation resolveMagicId(String magicId) {
+      if (magicId == null || magicId.isBlank()) return null;
+      ResourceLocation parsed = ResourceLocation.tryParse(magicId);
+      if (parsed != null) return parsed;
+      return ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, magicId);
    }
 
    private static String normalizeNamespace(String modId) {
@@ -343,7 +373,17 @@ public final class InternalApiProvider implements ApiProvider {
          IMagicExecutor adapter = context -> {
             LivingEntity caster = context.asPlayer();
             if (caster == null && context.entity() instanceof LivingEntity living) caster = living;
-            var result = executor.execute(new MagicCastContext(caster, null, context.entity().level(), context.magicId(), new net.minecraft.nbt.CompoundTag(), context.crestCast(), 0.0));
+            double proficiency = context.vars() == null ? 0.0D
+               : net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(context.vars(), context.magicId());
+            var result = executor.execute(new MagicCastContext(
+               caster,
+               null,
+               context.entity().level(),
+               context.magicId(),
+               context.payload() == null ? new net.minecraft.nbt.CompoundTag() : context.payload().copy(),
+               context.crestCast(),
+               proficiency
+            ));
             if (result == null || !result.handled()) return net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult.NOT_HANDLED;
             return new net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult(result.handled(), result.success(), result.resourceCost(), result.cooldownTicks());
          };
@@ -361,12 +401,17 @@ public final class InternalApiProvider implements ApiProvider {
          if (entity == null) throw new IllegalArgumentException("entity");
          var vars = entity.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
          return new MagicKnowledge() {
-             @Override public boolean isLearned(ResourceLocation magicId) { return magicId != null && vars.hasLearnedSelfMagic(magicId.toString()); }
+             @Override public boolean isLearned(ResourceLocation magicId) {
+                if (magicId == null) return false;
+                return vars.hasLearnedSelfMagic(magicId.toString())
+                   || vars.hasLearnedSelfMagic(magicId.getPath());
+             }
              @Override public boolean learn(ResourceLocation magicId) {
                 if (magicId == null
                    || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())
                    || !MagicDefinitionRegistry.contains(magicId.toString())
-                   || vars.learned_magics.contains(magicId.toString())) return false;
+                   || vars.learned_magics.contains(magicId.toString())
+                   || vars.learned_magics.contains(magicId.getPath())) return false;
                 vars.learned_magics.add(magicId.toString());
                 vars.syncPlayerVariables(entity);
                 return true;
@@ -376,11 +421,11 @@ public final class InternalApiProvider implements ApiProvider {
                 if (net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) {
                    return net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.proficiency(vars, magicId.toString());
                 }
-                return vars.magic_proficiencies.getOrDefault(magicId.toString(), 0.0);
+                return net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.get(vars, magicId.toString());
              }
              @Override public void setProficiency(ResourceLocation magicId, double value) {
                 if (magicId == null || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) return;
-                vars.magic_proficiencies.put(magicId.toString(), Math.max(0.0, Math.min(100.0, value)));
+                net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.set(vars, magicId.toString(), value);
                vars.syncPlayerVariables(entity);
             }
          };

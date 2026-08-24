@@ -7,19 +7,19 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 
 public final class MercurySwordMagicAmplifier {
    private static final int ELEMENT_FIRE = 0;
-   public static final float DAMAGE_MULTIPLIER = 1.25F;
-   public static final float RUBY_FOCUS_DAMAGE_MULTIPLIER = 1.18F;
-   public static final float RUBY_FOCUS_FIRE_DAMAGE_MULTIPLIER = 1.15F;
-   public static final float DURATION_MULTIPLIER = 1.2F;
-   public static final double RADIUS_FLAT_BONUS = 1.5;
-   public static final double RADIUS_MAX_MULTIPLIER = 1.25;
-   public static final double COOLDOWN_MULTIPLIER = 0.85;
-   public static final double SAPPHIRE_MANA_MULTIPLIER = 0.85;
-   public static final double CYAN_RANGE_MULTIPLIER = 1.2;
-   public static final double CYAN_RANGE_FLAT_BONUS = 2.0;
-   public static final double CYAN_COOLDOWN_MULTIPLIER = 0.85;
-   public static final double EMERALD_DEFENSE_MULTIPLIER = 1.2;
-   public static final double TOPAZ_TERRAIN_MULTIPLIER = 1.2;
+   public static final float DAMAGE_MULTIPLIER = 1.5F;
+   public static final float RUBY_FOCUS_DAMAGE_MULTIPLIER = 1.3F;
+   public static final float RUBY_FOCUS_FIRE_DAMAGE_MULTIPLIER = 1.25F;
+   public static final float DURATION_MULTIPLIER = 1.4F;
+   public static final double RADIUS_FLAT_BONUS = 2.5;
+   public static final double RADIUS_MAX_MULTIPLIER = 1.5;
+   public static final double COOLDOWN_MULTIPLIER = 0.75;
+   public static final double SAPPHIRE_MANA_MULTIPLIER = 0.65;
+   public static final double CYAN_RANGE_MULTIPLIER = 1.5;
+   public static final double CYAN_RANGE_FLAT_BONUS = 3.0;
+   public static final double CYAN_COOLDOWN_MULTIPLIER = 0.7;
+   public static final double EMERALD_DEFENSE_MULTIPLIER = 1.5;
+   public static final double TOPAZ_TERRAIN_MULTIPLIER = 1.5;
 
    private MercurySwordMagicAmplifier() {
    }
@@ -28,7 +28,8 @@ public final class MercurySwordMagicAmplifier {
       if (entity == null) {
          return false;
       }
-      return isMercurySword(entity.getMainHandItem()) || isMercurySword(entity.getOffhandItem());
+      return isMercurySword(entity.getMainHandItem()) || isMercurySword(entity.getOffhandItem())
+         || isStaff(entity.getMainHandItem()) || isStaff(entity.getOffhandItem());
    }
 
    public static boolean isMercurySword(ItemStack stack) {
@@ -37,6 +38,13 @@ public final class MercurySwordMagicAmplifier {
 
    public static boolean isRubyStaff(ItemStack stack) {
       return stack != null && !stack.isEmpty() && stack.is(ModItems.RUBY_STAFF.get());
+   }
+
+   private static boolean isStaff(ItemStack stack) {
+      return stack != null && !stack.isEmpty()
+         && (stack.is(ModItems.STAFF.get()) || stack.is(ModItems.RUBY_STAFF.get())
+            || stack.is(ModItems.SAPPHIRE_STAFF.get()) || stack.is(ModItems.EMERALD_STAFF.get())
+            || stack.is(ModItems.CYAN_STAFF.get()) || stack.is(ModItems.TOPAZ_STAFF.get()));
    }
 
    public static boolean isHoldingRubyStaff(LivingEntity entity) {

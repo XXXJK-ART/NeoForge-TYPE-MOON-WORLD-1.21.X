@@ -175,9 +175,8 @@ class ArashResourcesTest {
       assertTrue(controller.contains("WorldBorderLength"));
       assertTrue(controller.contains("WorldBorder"));
       assertTrue(controller.contains("sealAt(profile.length())"));
-      String controls = Files.readString(JAVA.resolve("init/TypeMoonWorldModKeyMappings.java"));
       String manager = Files.readString(JAVA.resolve("servant/card/ServantCardTransformManager.java"));
-      assertTrue(controls.contains("\"arash\".equals(vars.servant_card_id) && slot == 9"));
+      assertTrue(manager.contains("\"arash\".equals(vars.servant_card_id) && slot == 9"));
       assertTrue(manager.contains("ServantCardArashSkills.requestPlayerStellaRelease(player)"));
       String cardSkills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       assertTrue(cardSkills.contains("player.setPos(anchorX, anchorY, anchorZ)"));

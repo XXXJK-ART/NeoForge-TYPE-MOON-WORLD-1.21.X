@@ -12,6 +12,7 @@ import net.minecraft.world.phys.HitResult.Type;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
@@ -72,6 +73,7 @@ public class MagicReinforcementOther {
 
                if (extraEffect != null) {
                   livingTarget.addEffect(extraEffect);
+                  NightVisionEffectSource.mark(livingTarget, NightVisionEffectSource.REINFORCEMENT_OTHER_SIGHT);
                }
 
                TypeMoonWorldModVariables.ReinforcementData targetData = (TypeMoonWorldModVariables.ReinforcementData)livingTarget.getData(

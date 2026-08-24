@@ -26,7 +26,8 @@ public final class GenericMagicOptionsScreen extends Screen {
    private TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry;
 
    public GenericMagicOptionsScreen(Screen parent, ResourceLocation magicId, List<MagicOption> options) {
-      super(Component.translatable("gui.typemoonworld.magic_options", magicId.toString()));
+      super(Component.translatable("gui.typemoonworld.magic_options",
+         Component.translatable("magic.typemoonworld." + magicId.getPath() + ".name")));
       this.parent = parent; this.magicId = magicId; this.options = List.copyOf(options);
    }
 
@@ -64,7 +65,20 @@ public final class GenericMagicOptionsScreen extends Screen {
          default -> tag.getString(option.key());
       };
    }
-   private Component label(MagicOption option, String value) { return Component.translatable("magic.option." + magicId.getNamespace() + "." + option.key()).append(": " + value); }
+   private Component label(MagicOption option, String value) {
+      return Component.translatable("magic.option." + magicId.getNamespace() + "." + option.key())
+         .append(": ")
+         .append(Component.literal(translatedValue(option, value)));
+   }
+
+   private String translatedValue(MagicOption option, String value) {
+      if (value == null || value.isEmpty()) {
+         return "";
+      }
+      String key = "magic.option." + magicId.getNamespace() + "." + option.key() + "." + value;
+      Component translated = Component.translatable(key);
+      return translated.getString().equals(key) ? value : translated.getString();
+   }
    private void cycle(MagicOption option, Button button) {
       String old = values.getOrDefault(option.key(), option.defaultValue()); String next;
       if (option.kind() == MagicOption.Kind.BOOLEAN) next = Boolean.toString(!Boolean.parseBoolean(old));
@@ -75,7 +89,7 @@ public final class GenericMagicOptionsScreen extends Screen {
       values.put(option.key(), next); button.setMessage(label(option, next));
    }
    private void save() {
-      if (entry == null || !magicId.toString().equals(entry.magicId)) { onClose(); return; }
+      if (entry == null || !sameMagicPath(entry.magicId, magicId)) { onClose(); return; }
       CompoundTag tag = entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy();
       for (MagicOption option : options) {
          String value = edits.containsKey(option.key()) ? edits.get(option.key()).getValue() : values.getOrDefault(option.key(), option.defaultValue());
@@ -88,6 +102,12 @@ public final class GenericMagicOptionsScreen extends Screen {
       PacketDistributor.sendToServer(new MagicWheelSlotEditMessage(MagicWheelSlotEditMessage.ACTION_SET, entry.wheelIndex, entry.slotIndex, -1,
          entry.sourceType, entry.magicId, tag, entry.crestEntryId, entry.displayNameCache), new CustomPacketPayload[0]);
       onClose();
+   }
+
+   private static boolean sameMagicPath(String raw, ResourceLocation resolved) {
+      if (raw == null || resolved == null) return false;
+      ResourceLocation parsed = ResourceLocation.tryParse(raw);
+      return resolved.toString().equals(raw) || resolved.getPath().equals(parsed == null ? raw : parsed.getPath());
    }
    @Override public void onClose() { if (minecraft != null) minecraft.setScreen(null); }
    @Override public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -106,8 +126,23 @@ public final class GenericMagicOptionsScreen extends Screen {
       graphics.drawCenteredString(font, title, width / 2, Math.max(26, formY - 23), GuiUtils.ARCANE_TEXT);
       int y = formY;
       for (MagicOption option : options) {
-         graphics.drawString(font, Component.literal(option.key()), width / 2 - 158, y + 6, GuiUtils.ARCANE_TEXT_MUTED, false);
+         String optionLabel = Component.translatable("magic.option." + magicId.getNamespace() + "." + option.key()).getString();
+         if (optionLabel.startsWith("magic.option.")) {
+            optionLabel = option.key();
+         }
+         graphics.drawString(font, clampText(optionLabel, 142), width / 2 - 158, y + 6, GuiUtils.ARCANE_TEXT_MUTED, false);
          y += 26;
       }
+   }
+
+   private String clampText(String text, int maxWidth) {
+      if (font.width(text) <= maxWidth) {
+         return text;
+      }
+      String ellipsis = "...";
+      while (!text.isEmpty() && font.width(text + ellipsis) > maxWidth) {
+         text = text.substring(0, text.length() - 1);
+      }
+      return text + ellipsis;
    }
 }

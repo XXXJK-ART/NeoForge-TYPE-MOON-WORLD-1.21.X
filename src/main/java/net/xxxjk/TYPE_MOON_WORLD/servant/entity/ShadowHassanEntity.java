@@ -57,6 +57,18 @@ public final class ShadowHassanEntity extends ServantEntity {
    }
 
    @Override
+   public void bindMaster(ServerPlayer master) {
+      super.bindMaster(master);
+      this.masterUuid = master.getUUID();
+   }
+
+   @Override
+   public void unbindMaster() {
+      super.unbindMaster();
+      this.masterUuid = null;
+   }
+
+   @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(PRESENCE_CONCEALED, false);

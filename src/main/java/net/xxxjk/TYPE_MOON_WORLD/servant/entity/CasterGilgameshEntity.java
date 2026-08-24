@@ -76,10 +76,11 @@ public final class CasterGilgameshEntity extends ServantEntity {
    public static AttributeSupplier.Builder createAttributes() {
       return PathfinderMob.createMobAttributes()
          .add(Attributes.MAX_HEALTH, 200.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.28)
-         .add(Attributes.STEP_HEIGHT, 3.0)
-         .add(Attributes.ATTACK_DAMAGE, 15.0)
-         .add(Attributes.ARMOR, 6.0)
+          .add(Attributes.MOVEMENT_SPEED, 0.28)
+          .add(Attributes.STEP_HEIGHT, 3.0)
+          .add(Attributes.ATTACK_DAMAGE, 15.0)
+          .add(Attributes.ATTACK_SPEED, 4.0)
+          .add(Attributes.ARMOR, 6.0)
          .add(Attributes.ARMOR_TOUGHNESS, 0.0)
          .add(Attributes.FOLLOW_RANGE, 96.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 1.0);

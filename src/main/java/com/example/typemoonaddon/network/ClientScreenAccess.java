@@ -17,6 +17,14 @@ final class ClientScreenAccess {
         invoke("openShadowTransfer", OpenShadowTransferPayload.class, payload);
     }
 
+    static void openBoundaryImmunity(OpenBoundaryImmunityPayload payload) {
+        invoke("openBoundaryImmunity", OpenBoundaryImmunityPayload.class, payload);
+    }
+
+    static void openDetectionWormControl(OpenDetectionWormControlPayload payload) {
+        invoke("openDetectionWormControl", OpenDetectionWormControlPayload.class, payload);
+    }
+
     private static void invoke(String methodName, Class<?> payloadType, Object payload) {
         try {
             Class<?> helper = Class.forName(CLIENT_HELPER_CLASS);

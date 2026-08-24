@@ -305,15 +305,26 @@ public final class GillesDeRaisCombatHelper {
         if (elapsedSeconds <= 0L) {
             return;
         }
-        double restored = elapsedSeconds * 5.0;
+        double restored = elapsedSeconds * 20.0;
         data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + restored));
         data.putLong(TAG_LAST_BOOK_REGEN, last + elapsedSeconds * 20L);
     }
 
-    private static boolean spendBookMana(CompoundTag data, double amount) {
+    private static boolean canAffordBookMana(GillesDeRaisEntity entity, CompoundTag data, double amount) {
+        return data.getDouble(TAG_BOOK_MANA) + Math.max(0.0, entity.getCurrentMp()) + 1.0E-6 >= amount;
+    }
+
+    private static boolean spendBookMana(GillesDeRaisEntity entity, CompoundTag data, double amount) {
         double current = data.getDouble(TAG_BOOK_MANA);
-        if (current + 1.0E-6 < amount) {
+        double available = current + Math.max(0.0, entity.getCurrentMp());
+        if (available + 1.0E-6 < amount) {
             return false;
+        }
+        if (current + 1.0E-6 < amount) {
+            double refill = amount - current;
+            entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - refill));
+            current += refill;
+            data.putDouble(TAG_BOOK_MANA, current);
         }
         data.putDouble(TAG_BOOK_MANA, current - amount);
         return true;
@@ -437,7 +448,7 @@ public final class GillesDeRaisCombatHelper {
         if (now - data.getLong(TAG_LAST_SMALL_SUMMON) < cooldownTicks || countSeaMonsters(entity, false) >= 50) {
             return false;
         }
-        if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 50.0) {
+        if (!canAffordBookMana(entity, data, 50.0)) {
             return false;
         }
         return beginSummonChant(entity, target, data, now, CHANT_SMALL, SMALL_SUMMON_CHANT_TICKS, "summon");
@@ -449,7 +460,7 @@ public final class GillesDeRaisCombatHelper {
             return false;
         }
         if (force || entity.distanceToSqr(target) < 8.0 * 8.0 || countSeaMonsters(entity, false) >= 8 || target.getHealth() > 120.0F) {
-            if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 200.0) {
+            if (!canAffordBookMana(entity, data, 200.0)) {
                 return false;
             }
             return beginSummonChant(entity, target, data, now, CHANT_LARGE, LARGE_SUMMON_CHANT_TICKS, "summon");
@@ -461,7 +472,7 @@ public final class GillesDeRaisCombatHelper {
         if (!entity.isGiantSeaMonsterUnlocked() || now - data.getLong(TAG_LAST_HUGE_SUMMON) < 1200L || hasActiveHugeSeaMonster(entity, data)) {
             return false;
         }
-        if (data.getDouble(TAG_BOOK_MANA) + 1.0E-6 < 2000.0) {
+        if (!canAffordBookMana(entity, data, 2000.0)) {
             return false;
         }
         return beginSummonChant(entity, target, data, now, CHANT_HUGE, HUGE_SUMMON_CHANT_TICKS, "np");
@@ -497,19 +508,19 @@ public final class GillesDeRaisCombatHelper {
         }
         switch (data.getString(TAG_CHANT_KIND)) {
             case CHANT_SMALL -> {
-                if (countSeaMonsters(entity, false) < 50 && spendBookMana(data, 50.0)) {
+                if (countSeaMonsters(entity, false) < 50 && spendBookMana(entity, data, 50.0)) {
                     data.putLong(TAG_LAST_SMALL_SUMMON, now);
                     spawnSeaMonster(entity, target, false);
                 }
             }
             case CHANT_LARGE -> {
-                if (countSeaMonsters(entity, true) < 5 && spendBookMana(data, 200.0)) {
+                if (countSeaMonsters(entity, true) < 5 && spendBookMana(entity, data, 200.0)) {
                     data.putLong(TAG_LAST_LARGE_SUMMON, now);
                     spawnSeaMonster(entity, target, true);
                 }
             }
             case CHANT_HUGE -> {
-                if (!hasActiveHugeSeaMonster(entity, data) && spendBookMana(data, 2000.0)) {
+                if (!hasActiveHugeSeaMonster(entity, data) && spendBookMana(entity, data, 2000.0)) {
                     spawnHugeSeaMonster(entity, target, data, now);
                 }
             }

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic;
 
+import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -95,6 +96,19 @@ class MagicLearningSystemTest {
       assertEquals(55.0, MagicProficiencyService.calculateValue("projection", 50.0, 10.0), 1.0E-9);
       assertEquals(77.5, MagicProficiencyService.calculateValue("projection", 75.0, 10.0), 1.0E-9);
       assertEquals(91.0, MagicProficiencyService.calculateValue("projection", 90.0, 10.0), 1.0E-9);
+   }
+
+   @Test
+   void onlyPresetMagicsRequireTabConfiguration() {
+      for (String id : new String[]{
+         "reinforcement", "gravity_magic", "gandr_machine_gun", "projection",
+         "healing_magic", "time_alter", "mana_burst", "fire_magic", "touko_travel"
+      }) {
+         assertTrue(PlayerMagicSelectionService.requiresPresetConfiguration(id), id);
+      }
+
+      assertFalse(PlayerMagicSelectionService.requiresPresetConfiguration("magic_bullet"));
+      assertTrue(PlayerMagicSelectionService.normalizePresetPayload("projection", new CompoundTag()).isEmpty());
    }
 
    @Test

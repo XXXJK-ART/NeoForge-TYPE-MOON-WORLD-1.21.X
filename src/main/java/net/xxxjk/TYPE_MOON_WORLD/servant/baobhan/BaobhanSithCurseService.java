@@ -1,8 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.baobhan;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -22,6 +24,7 @@ public final class BaobhanSithCurseService {
    public static final String TAG_CURSES = TAG_PREFIX + "Curses";
    public static final String TAG_PANEL_SELECTED = TAG_PREFIX + "PanelSelected";
    public static final String TAG_PANEL_LAST_TRIGGER = TAG_PREFIX + "PanelLastTrigger";
+   public static final String TAG_CURSE_TARGETS = TAG_PREFIX + "CurseTargets";
    public static final String TAG_LAST_TICK = TAG_PREFIX + "LastTick";
    public static final String TAG_IMMUNE_UNTIL = "ImmuneUntil";
    public static final String TAG_BURST_UNTIL = "BurstUntil";
@@ -129,6 +132,7 @@ public final class BaobhanSithCurseService {
       }
       String key = normalizeCurse(curse);
       trackTarget(owner, target);
+      trackCurseTarget(owner, target);
       curseTag.putInt(key, Math.min(5, curseTag.getInt(key) + amount));
       curseTag.putInt(TAG_CURSE_LAYERS, Math.min(20, curseTag.getInt(TAG_CURSE_LAYERS) + amount));
       curseTag.putFloat(TAG_STRENGTH_SCALE, Math.max(0.2F, Math.min(1.0F, strengthScale)));
@@ -161,6 +165,10 @@ public final class BaobhanSithCurseService {
    }
 
    public static void tickOwnerCurses(ServerPlayer owner) {
+      tickTrackedCurses(owner);
+   }
+
+   public static void tickTrackedCurses(LivingEntity owner) {
       if (owner == null || !(owner.level() instanceof ServerLevel)) {
          return;
       }
@@ -169,11 +177,11 @@ public final class BaobhanSithCurseService {
          return;
       }
       owner.getPersistentData().putLong(TAG_LAST_TICK + "Owner", now);
-      for (Snapshot snapshot : snapshots(owner)) {
-         LivingEntity target = findCursedTarget(owner, snapshot.uuid());
-         if (target != null) {
-            tickTargetCurses(owner, target, now);
-         }
+      for (UUID uuid : curseTargetUuids(owner)) {
+          LivingEntity target = findCursedTarget(owner, uuid);
+          if (target != null) {
+             tickTargetCurses(owner, target, now);
+          }
       }
    }
 
@@ -255,6 +263,7 @@ public final class BaobhanSithCurseService {
    }
 
    public static void triggerBurst(LivingEntity owner, LivingEntity target) {
+      trackCurseTarget(owner, target);
       CompoundTag curseTag = targetCurses(owner, target);
       curseTag.putLong(TAG_BURST_UNTIL, owner.level().getGameTime() + 200L);
       saveTargetCurses(owner, target, curseTag);
@@ -276,11 +285,8 @@ public final class BaobhanSithCurseService {
       }
       CompoundTag mediumRoot = owner.getPersistentData().getCompound(TAG_MEDIUMS);
       List<Snapshot> result = new ArrayList<>();
-      for (String key : mediumRoot.getAllKeys()) {
-         UUID uuid = parseUuid(key);
-         if (uuid == null) {
-            continue;
-         }
+      for (UUID uuid : curseTargetUuids(owner)) {
+         String key = uuid.toString();
          LivingEntity target = findCursedTarget(owner, uuid);
          if (target == null) {
             continue;
@@ -316,11 +322,38 @@ public final class BaobhanSithCurseService {
       return result;
    }
 
-   public static LivingEntity findCursedTarget(ServerPlayer owner, UUID uuid) {
-      if (owner == null || uuid == null || owner.server == null) {
-         return null;
+   private static Set<UUID> curseTargetUuids(LivingEntity owner) {
+      Set<UUID> result = new LinkedHashSet<>();
+      if (owner == null) {
+         return result;
       }
-      for (ServerLevel level : owner.server.getAllLevels()) {
+      CompoundTag mediumRoot = owner.getPersistentData().getCompound(TAG_MEDIUMS);
+      for (String key : mediumRoot.getAllKeys()) {
+         UUID uuid = parseUuid(key);
+         if (uuid != null) {
+            result.add(uuid);
+         }
+      }
+      CompoundTag curseRoot = owner.getPersistentData().getCompound(TAG_CURSE_TARGETS);
+      for (String key : curseRoot.getAllKeys()) {
+         UUID uuid = parseUuid(key);
+         if (uuid != null) {
+            result.add(uuid);
+         }
+      }
+      return result;
+   }
+
+   public static LivingEntity findCursedTarget(ServerPlayer owner, UUID uuid) {
+      return findCursedTarget((LivingEntity) owner, uuid);
+   }
+
+   public static LivingEntity findCursedTarget(LivingEntity owner, UUID uuid) {
+      if (owner == null || uuid == null || !(owner.level() instanceof ServerLevel ownerLevel)
+         || ownerLevel.getServer() == null) {
+          return null;
+      }
+      for (ServerLevel level : ownerLevel.getServer().getAllLevels()) {
          if (level.getEntity(uuid) instanceof LivingEntity living && living.isAlive()) {
             return living;
          }
@@ -404,6 +437,12 @@ public final class BaobhanSithCurseService {
          root.put(key, new CompoundTag());
          owner.getPersistentData().put(TAG_MEDIUMS, root);
       }
+   }
+
+   private static void trackCurseTarget(LivingEntity owner, LivingEntity target) {
+      CompoundTag root = owner.getPersistentData().getCompound(TAG_CURSE_TARGETS);
+      root.put(target.getUUID().toString(), new CompoundTag());
+      owner.getPersistentData().put(TAG_CURSE_TARGETS, root);
    }
 
    private static CompoundTag readTargetCurses(LivingEntity owner, LivingEntity target) {

@@ -1,0 +1,24 @@
+{
+  "pools": [
+    {
+      "rolls": 2,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_page_iron_armor_action",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_page_cremation_rite",
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "typemoonworld:magic_page_theology",
+          "weight": 2
+        }
+      ]
+    }
+  ]
+}

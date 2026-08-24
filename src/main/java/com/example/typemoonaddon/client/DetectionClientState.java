@@ -3,6 +3,8 @@ package com.example.typemoonaddon.client;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload;
 import com.example.typemoonaddon.network.DetectionTargetSyncPayload.TargetMarker;
+import com.example.typemoonaddon.worm.WormEntity;
+import com.example.typemoonaddon.worm.WormType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.HashMap;
@@ -44,6 +46,8 @@ public final class DetectionClientState {
     private static int clientTick;
     private static boolean privateActive;
     private static int localHeartbeatUntil;
+    private static int sharedVisionEntityId = -1;
+    private static int sharedVisionUntil;
     private static int guiPulseStart;
     private static int guiPulseEnd;
     private static boolean guiClosing;
@@ -100,12 +104,22 @@ public final class DetectionClientState {
                 EYE_VISUALS.remove(entityId);
                 return;
             }
+            if (entity instanceof WormEntity worm && worm.getVariant() == WormType.DETECTION) {
+                startSharedVision(minecraft, entityId, ttlTicks);
+            }
             if (existing == null || existing.isFading(clientTick)) {
                 EYE_VISUALS.put(entityId, new EyeVisual(entityUuid, clientTick, clientTick + Math.max(1, ttlTicks)));
             } else if (!existing.matches(entityUuid)) {
                 EYE_VISUALS.put(entityId, new EyeVisual(entityUuid, clientTick, clientTick + Math.max(1, ttlTicks)));
             } else {
                 existing.refresh(clientTick + Math.max(1, ttlTicks));
+            }
+        } else if (sharedVisionEntityId == entityId) {
+            stopSharedVision(minecraft, entityId);
+            if (existing != null && (entityUuid == null || existing.matches(entityUuid))) {
+                existing.fadeOut(clientTick);
+            } else {
+                EYE_VISUALS.remove(entityId);
             }
         } else if (existing != null && (entityUuid == null || existing.matches(entityUuid))) {
             existing.fadeOut(clientTick);
@@ -120,6 +134,7 @@ public final class DetectionClientState {
                 boolean wasActive = privateActive;
                 privateActive = false;
                 clearTargets(minecraft.level);
+                stopSharedVision(minecraft, entityId);
                 if (wasActive) {
                     startGuiPulse(true);
                 } else {
@@ -134,6 +149,7 @@ public final class DetectionClientState {
         clientTick++;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != trackedLevel) {
+            stopSharedVision(minecraft, sharedVisionEntityId);
             clearTargets(trackedLevel);
             TARGETS.clear();
             EYE_VISUALS.clear();
@@ -141,11 +157,15 @@ public final class DetectionClientState {
             trackedLevel = minecraft.level;
         }
         if (minecraft.level == null || minecraft.player == null) {
+            stopSharedVision(minecraft, sharedVisionEntityId);
             return;
         }
         if (privateActive && clientTick > localHeartbeatUntil) {
             privateActive = false;
             clearTargets(minecraft.level);
+        }
+        if (sharedVisionEntityId >= 0 && clientTick > sharedVisionUntil) {
+            stopSharedVision(minecraft, sharedVisionEntityId);
         }
 
         EYE_VISUALS.entrySet().removeIf(entry -> {
@@ -161,6 +181,15 @@ public final class DetectionClientState {
             }
             return visual.finished(clientTick);
         });
+
+        if (sharedVisionEntityId >= 0) {
+            Entity entity = minecraft.level.getEntity(sharedVisionEntityId);
+            if (entity == null || entity.isRemoved() || !entity.isAlive()) {
+                stopSharedVision(minecraft, sharedVisionEntityId);
+            } else if (minecraft.getCameraEntity() != entity) {
+                minecraft.setCameraEntity(entity);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -541,6 +570,37 @@ public final class DetectionClientState {
 
     private static void clearTargets(ClientLevel level) {
         TARGETS.clear();
+    }
+
+    private static boolean isSharedVisionEntity(Minecraft minecraft, int entityId) {
+        if (minecraft.level == null || entityId <= 0) {
+            return false;
+        }
+        Entity entity = minecraft.level.getEntity(entityId);
+        return entity instanceof WormEntity worm && worm.getVariant() == WormType.DETECTION;
+    }
+
+    private static void startSharedVision(Minecraft minecraft, int entityId, int ttlTicks) {
+        if (!isSharedVisionEntity(minecraft, entityId)) {
+            return;
+        }
+        sharedVisionEntityId = entityId;
+        sharedVisionUntil = clientTick + Math.max(1, ttlTicks);
+        Entity entity = minecraft.level.getEntity(entityId);
+        if (entity != null && !entity.isRemoved()) {
+            minecraft.setCameraEntity(entity);
+        }
+    }
+
+    private static void stopSharedVision(Minecraft minecraft, int entityId) {
+        if (sharedVisionEntityId != entityId) {
+            return;
+        }
+        sharedVisionEntityId = -1;
+        sharedVisionUntil = 0;
+        if (minecraft.player != null && minecraft.getCameraEntity() != minecraft.player) {
+            minecraft.setCameraEntity(minecraft.player);
+        }
     }
 
     private static int targetOutlineColor(byte category) {

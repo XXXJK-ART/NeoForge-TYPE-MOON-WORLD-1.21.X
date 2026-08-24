@@ -146,8 +146,7 @@ public final class LeylineNoise {
 
    public static double regenMultiplier(int concentration) {
       int c = clampInt(concentration, 0, 100);
-      double unit = c / 100.0;
-      return 1.0 + 9.0 * Math.pow(unit, 2.0);
+      return c / 100.0;
    }
 
    private static double blendWithRiver(double base, double riverMask, long seed, int chunkX, int chunkZ) {

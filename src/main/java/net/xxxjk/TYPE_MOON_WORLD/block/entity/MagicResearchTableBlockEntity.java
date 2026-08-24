@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 import java.util.UUID;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicResearchTableMenu;
@@ -31,27 +32,30 @@ public class MagicResearchTableBlockEntity extends BlockEntity implements MenuPr
    public MagicResearchTableBlockEntity(BlockPos pos, BlockState state) { super((BlockEntityType)ModBlockEntities.MAGIC_RESEARCH_TABLE.get(), pos, state); }
    public ItemStackHandler getItems() { return items; }
    public boolean isRunning() { return remainingTicks > 0; }
+   public int getRemainingTicks() { return remainingTicks; }
+   public int getTotalTicks() { return totalTicks; }
    public boolean start(String magicId, UUID playerId, int ticks) { if (isRunning()) return false; researchMagicId=magicId; researcher=playerId; remainingTicks=totalTicks=Math.max(1,ticks); setChanged(); return true; }
    public static void tick(Level level, BlockPos pos, BlockState state, MagicResearchTableBlockEntity be) {
       if (level.isClientSide || !be.isRunning()) return;
+      if (!(level instanceof ServerLevel server) || be.researcher == null) return;
+      ServerPlayer player=server.getServer().getPlayerList().getPlayer(be.researcher);
+      if (!be.isResearcherUsingTable(player)) return;
       if (--be.remainingTicks > 0) { if (be.remainingTicks % 20 == 0) be.setChanged(); return; }
-      if (level instanceof ServerLevel server && be.researcher != null) {
-         ServerPlayer player=server.getServer().getPlayerList().getPlayer(be.researcher);
-         if (player != null) {
-            var vars=player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if ("magic_analysis".equals(be.researchMagicId)) {
-               ItemStack out;
-               if (player.getRandom().nextDouble() < .10) out=new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_WASTE_PAPER.get());
-               else {
-                  java.util.List<net.minecraft.world.item.Item> pages=net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().filter(item->{var key=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);return "typemoonworld".equals(key.getNamespace())&&MagicLearningStrategy.isConcretePagePath(key.getPath());}).toList();
-                  out=pages.isEmpty()?new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_PAGE_PROJECTION.get()):new ItemStack(pages.get(player.getRandom().nextInt(pages.size())));
-               }
-               if(!player.addItem(out)) player.drop(out,false);
-            } else net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars,be.researchMagicId,Math.max(.1,5.0-net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy.complexity(be.researchMagicId)*.03));
-            vars.syncPlayerVariables(player);
+      var vars=player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if ("magic_analysis".equals(be.researchMagicId)) {
+         ItemStack out;
+         if (player.getRandom().nextDouble() < .10) out=new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_WASTE_PAPER.get());
+         else {
+            java.util.List<net.minecraft.world.item.Item> pages=net.minecraft.core.registries.BuiltInRegistries.ITEM.stream().filter(item->{var key=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);return "typemoonworld".equals(key.getNamespace())&&MagicLearningStrategy.isConcretePagePath(key.getPath());}).toList();
+            out=pages.isEmpty()?new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_PAGE_PROJECTION.get()):new ItemStack(pages.get(player.getRandom().nextInt(pages.size())));
          }
-      }
+         if(!player.addItem(out)) player.drop(out,false);
+      } else net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars,be.researchMagicId,Math.max(.1,5.0-net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy.complexity(be.researchMagicId)*.03));
+      vars.syncPlayerVariables(player);
       be.researchMagicId=""; be.researcher=null; be.totalTicks=0; be.setChanged();
+   }
+   private boolean isResearcherUsingTable(ServerPlayer player) {
+      return player != null && player.isAlive() && player.containerMenu instanceof MagicResearchTableMenu menu && menu.isFor(this) && player.distanceToSqr(Vec3.atCenterOf(worldPosition)) <= 64.0D;
    }
    @Override protected void saveAdditional(@NotNull CompoundTag tag, @NotNull Provider provider) { super.saveAdditional(tag, provider); tag.put("Items", items.serializeNBT(provider)); tag.putString("ResearchMagic",researchMagicId); if(researcher!=null)tag.putUUID("Researcher",researcher); tag.putInt("Remaining",remainingTicks);tag.putInt("Total",totalTicks); }
    @Override protected void loadAdditional(@NotNull CompoundTag tag, @NotNull Provider provider) { super.loadAdditional(tag, provider); if (tag.contains("Items")) items.deserializeNBT(provider, tag.getCompound("Items")); researchMagicId=tag.getString("ResearchMagic"); researcher=tag.hasUUID("Researcher")?tag.getUUID("Researcher"):null;remainingTicks=tag.getInt("Remaining");totalTicks=tag.getInt("Total"); }

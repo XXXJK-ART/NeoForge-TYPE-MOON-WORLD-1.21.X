@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticCircuitDisruptionEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticToxinEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.FanaticWoundedEffect;
 import net.xxxjk.TYPE_MOON_WORLD.effect.MonstrousStrengthEffect;
+import net.xxxjk.TYPE_MOON_WORLD.effect.CremationRiteEffect;
 
 public class ModMobEffects {
    public static final DeferredRegister<MobEffect> MOB_EFFECTS = DeferredRegister.create(Registries.MOB_EFFECT, "typemoonworld");
@@ -69,6 +70,9 @@ public class ModMobEffects {
    );
    public static final DeferredHolder<MobEffect, MobEffect> FANATIC_TOXIN = MOB_EFFECTS.register(
       "fanatic_toxin", FanaticToxinEffect::new
+   );
+   public static final DeferredHolder<MobEffect, MobEffect> CREMATION_RITE = MOB_EFFECTS.register(
+      "cremation_rite", CremationRiteEffect::new
    );
    public static final DeferredHolder<MobEffect, MobEffect> REINFORCEMENT_SELF_STRENGTH = MOB_EFFECTS.register(
       "reinforcement_self_strength",

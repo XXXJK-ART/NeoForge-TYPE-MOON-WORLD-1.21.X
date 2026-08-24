@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ONO",
+    "NSN",
+    "ONO"
+  ],
+  "key": {
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "N": {
+      "item": "minecraft:nether_star"
+    },
+    "S": {
+      "item": "typemoonworld:spirit_vein_block"
+    }
+  },
+  "result": {
+    "id": "typemoonworld:mana_furnace",
+    "count": 1
+  }
+}

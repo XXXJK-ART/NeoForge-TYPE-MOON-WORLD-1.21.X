@@ -41,6 +41,23 @@ public final class PaleRiderEntity extends ServantEntity {
    }
 
    @Override
+   public void bindMaster(net.minecraft.server.level.ServerPlayer master) {
+      super.bindMaster(master);
+      this.masterUuid = master.getUUID();
+   }
+
+   @Override
+   public void unbindMaster() {
+      super.unbindMaster();
+      this.masterUuid = null;
+   }
+
+   @Override
+   public UUID getMasterUuid() {
+      return this.masterUuid;
+   }
+
+   @Override
    public net.minecraft.world.entity.SpawnGroupData finalizeSpawn(
       net.minecraft.world.level.ServerLevelAccessor level,
       net.minecraft.world.DifficultyInstance difficulty,

@@ -18,7 +18,8 @@ public final class MagicProficiencyService {
 
    public static double getRaw(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null || id == null) return 0.0;
-      return switch (MagicLearningStrategy.normalizeDisplayId(id)) {
+      String normalized = MagicLearningStrategy.normalizeDisplayId(id);
+      return switch (normalized) {
          case "magic_analysis" -> vars.proficiency_magic_analysis;
          case "structural_analysis" -> vars.proficiency_structural_analysis;
          case "projection" -> vars.proficiency_projection;
@@ -40,8 +41,10 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing;
          case "baptism_rite" -> vars.proficiency_baptism_rite;
+         case "theology", "black_key_making", "iron_armor_action", "cremation_rite" -> vars.magic_proficiencies.getOrDefault(normalized, 0.0);
          case "mana_burst" -> vars.magic_proficiencies.getOrDefault("mana_burst", 0.0);
-         default -> vars.magic_proficiencies.getOrDefault(id, 0.0);
+         default -> vars.magic_proficiencies.getOrDefault(normalized,
+               vars.magic_proficiencies.getOrDefault(id, 0.0));
       };
    }
 
@@ -71,7 +74,8 @@ public final class MagicProficiencyService {
    private static void setInternal(TypeMoonWorldModVariables.PlayerVariables vars, String id, double value) {
       if (TalentService.isTalent(id)) return;
       value = Math.max(0.0, Math.min(100.0, Math.round(value * 100.0) / 100.0));
-      switch (MagicLearningStrategy.normalizeDisplayId(id)) {
+      String normalized = MagicLearningStrategy.normalizeDisplayId(id);
+      switch (normalized) {
          case "magic_analysis" -> vars.proficiency_magic_analysis = value;
          case "structural_analysis" -> vars.proficiency_structural_analysis = value;
          case "projection" -> vars.proficiency_projection = value;
@@ -93,8 +97,9 @@ public final class MagicProficiencyService {
          case "time_alter" -> vars.proficiency_time_alter = value;
          case "spiritual_healing" -> vars.proficiency_spiritual_healing = value;
          case "baptism_rite" -> vars.proficiency_baptism_rite = value;
+         case "theology", "black_key_making", "iron_armor_action", "cremation_rite" -> vars.magic_proficiencies.put(normalized, value);
          case "mana_burst" -> vars.magic_proficiencies.put("mana_burst", value);
-         default -> vars.magic_proficiencies.put(id, value);
+         default -> vars.magic_proficiencies.put(normalized, value);
       }
    }
 

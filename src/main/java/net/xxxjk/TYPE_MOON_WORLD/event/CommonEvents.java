@@ -377,6 +377,8 @@ public class CommonEvents {
             TalentService.tick(serverPlayer);
             PassiveService.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
+            net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
+            com.example.typemoonaddon.magic.SummoningMagicIntegration.tick(serverPlayer);
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem.tick(serverPlayer);
@@ -400,11 +402,7 @@ public class CommonEvents {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.MedeaSpecialContractService.tick(serverPlayer);
          }
 
-         if (player.isSpectator()) {
-            if (!player.getActiveEffects().isEmpty()) {
-               player.removeAllEffects();
-            }
-         } else {
+         if (!player.isSpectator()) {
             ItemStack mainHand = player.getMainHandItem();
             if (mainHand.getItem() instanceof TempleStoneSwordAxeItem) {
                boolean skipDebuff = player instanceof LivingEntity le

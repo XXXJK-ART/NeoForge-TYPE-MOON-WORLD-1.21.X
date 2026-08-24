@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.mixin;
 
 import com.example.typemoonaddon.magic.MatouSakuraMasterProfile;
+import com.example.typemoonaddon.magic.MatouKariyaMasterProfile;
 import com.example.typemoonaddon.registry.AddonItems;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +25,17 @@ public abstract class MasterCardProfileMixin {
         }
     }
 
+    @Inject(method = "restoreOriginalState", at = @At("HEAD"), remap = false)
+    private static void typemoonaddon$restoreKariyaState(
+        ServerPlayer player,
+        TypeMoonWorldModVariables.PlayerVariables variables,
+        CallbackInfoReturnable<Boolean> callback
+    ) {
+        if (MatouKariyaMasterProfile.is(variables.master_card_id)) {
+            MatouKariyaMasterProfile.restore(player);
+        }
+    }
+
     @Inject(method = "createCardStack", at = @At("HEAD"), cancellable = true, remap = false)
     private static void typemoonaddon$restoreSakuraCard(
         String masterId,
@@ -31,6 +43,9 @@ public abstract class MasterCardProfileMixin {
     ) {
         MatouSakuraMasterProfile.Variant variant = MatouSakuraMasterProfile.variant(masterId);
         if (variant == null) {
+            if (MatouKariyaMasterProfile.is(masterId)) {
+                callback.setReturnValue(new ItemStack(AddonItems.MASTER_CARD_MATOU_KARIYA.get()));
+            }
             return;
         }
         callback.setReturnValue(new ItemStack(switch (variant) {

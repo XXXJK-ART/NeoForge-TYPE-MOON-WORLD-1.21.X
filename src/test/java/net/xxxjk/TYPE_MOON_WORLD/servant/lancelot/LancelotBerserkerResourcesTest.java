@@ -81,7 +81,7 @@ class LancelotBerserkerResourcesTest {
 
       assertTrue(entities.contains("\"lancelot_berserker\""));
       assertTrue(renderer.contains("HumanoidServantRenderer<>(context, \"lancelot_berserker\")"));
-      assertTrue(factory.contains("LancelotBerserkerEntity.SERVANT_KEY"));
+      assertTrue(factory.contains("case \"lancelot_berserker\" -> ModEntities.LANCELOT_BERSERKER.get().create(level)"));
       assertTrue(items.contains("AROUNDIGHT"));
       assertTrue(items.contains("LANCELOT_IRON_ROD"));
       assertTrue(items.contains("SERVANT_CARD_LANCELOT_BERSERKER = registerServantCard(\"lancelot_berserker\")"));

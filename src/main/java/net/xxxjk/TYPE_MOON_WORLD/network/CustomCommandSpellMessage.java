@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.CommandSpellContext;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
@@ -31,7 +31,8 @@ public record CustomCommandSpellMessage(ResourceLocation id, int spellIndex) imp
             || !ServerPacketRateLimiter.allow(player, "custom_command_spell", 5)) return;
          var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (!vars.master_active || vars.master_command_spells <= 0) return;
-         var servant = MasterServantLinkService.getLinkedServant(player, vars);
+         var servant = MasterStateManager.getBoundServantEntity(player, vars);
+         if (servant == null || !servant.isAlive()) return;
          CommandSpellContext spellContext = new CommandSpellContext(player, servant, message.spellIndex, player.level().getGameTime());
          var pre = NeoForge.EVENT_BUS.post(new CommandSpellEvent.Pre(message.id, spellContext));
          if (pre.isCanceled()) return;

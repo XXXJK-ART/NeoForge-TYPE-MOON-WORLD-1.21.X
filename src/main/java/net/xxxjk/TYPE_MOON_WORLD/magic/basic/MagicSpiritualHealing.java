@@ -48,7 +48,7 @@ public final class MagicSpiritualHealing {
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       boolean crestCast = vars.isCurrentSelectionFromCrest(MAGIC_ID);
-      double proficiency = crestCast ? 100.0 : vars.proficiency_spiritual_healing;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency(MAGIC_ID);
       if (proficiency < 25.0) {
          return senseSpirits(player, vars, crestCast);
       }

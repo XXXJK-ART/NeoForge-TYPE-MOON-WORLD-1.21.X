@@ -1,0 +1,12 @@
+{
+  "name_key": "magic.typemoonworld.defense_boundary.name",
+  "category": "typemoonworld:boundary",
+  "school": "typemoonworld:boundary",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 20,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": true,
+  "npc_allowed": false,
+  "knowledge_only": false
+}

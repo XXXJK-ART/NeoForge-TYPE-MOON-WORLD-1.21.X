@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BlackKeyItem;
+import net.xxxjk.TYPE_MOON_WORLD.magic.church.BlackKeyMiracleService;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -78,11 +79,7 @@ public class BlackKeyProjectileEntity extends ThrowableItemProjectile implements
          float base = isUndead(target) ? 22.0F : 11.0F;
          target.invulnerableTime = 0;
          target.hurt(damageSources().thrown(this, getOwner()), base);
-         if (BlackKeyItem.isFireEngraved(carried) && target.isAlive()) {
-            target.igniteForSeconds(4.0F);
-            target.invulnerableTime = 0;
-            target.hurt(target.damageSources().onFire(), isUndead(target) ? 10.0F : 5.0F);
-         }
+         BlackKeyMiracleService.onProjectileHit(this, target, carried);
          BlackKeyItem.consumeSharedDurability(carried, 1);
          finish(carried);
       }
@@ -93,18 +90,17 @@ public class BlackKeyProjectileEntity extends ThrowableItemProjectile implements
       super.onHitBlock(result);
       if (level().isClientSide || isRemoved()) return;
 
-      BlockPos pos = result.getBlockPos();
-      BlockState state = level().getBlockState(pos);
-      float hardness = state.getDestroySpeed(level(), pos);
-      boolean protectedBlock = state.is(Blocks.BEDROCK) || state.is(Blocks.END_PORTAL_FRAME);
-      boolean canBreak = !state.isAir() && ChurchDeadApostleRules.blackKeyCanBreakBlock(hardness, state.hasBlockEntity(), protectedBlock);
-      if (!canBreak || !level().destroyBlock(pos, true, getOwner())) {
+      boolean enhanced = BlackKeyMiracleService.tryTriggerIronArmorAction(getOwner());
+      int radius = enhanced ? BlackKeyMiracleService.blockBreakRadius(getOwner()) : 0;
+      int brokenThisHit = breakImpactBlocks(result.getBlockPos(), radius);
+      if (brokenThisHit <= 0) {
          finish(getItem().copyWithCount(1));
          return;
       }
 
-      brokenBlocks++;
-      if (brokenBlocks >= ChurchDeadApostleRules.BLACK_KEY_MAX_BROKEN_BLOCKS) {
+      brokenBlocks += brokenThisHit;
+      int maxBroken = enhanced ? BlackKeyMiracleService.maxBrokenBlocks(getOwner()) : ChurchDeadApostleRules.BLACK_KEY_MAX_BROKEN_BLOCKS;
+      if (brokenBlocks >= maxBroken) {
          finish(getItem().copyWithCount(1));
          return;
       }
@@ -114,6 +110,26 @@ public class BlackKeyProjectileEntity extends ThrowableItemProjectile implements
          Vec3 throughBlock = result.getLocation().add(motion.normalize().scale(0.2));
          setPos(throughBlock.x, throughBlock.y, throughBlock.z);
       }
+   }
+
+   private int breakImpactBlocks(BlockPos center, int radius) {
+      int maxBroken = radius > 0 ? BlackKeyMiracleService.maxBrokenBlocks(getOwner()) : ChurchDeadApostleRules.BLACK_KEY_MAX_BROKEN_BLOCKS;
+      int remaining = Math.max(0, maxBroken - brokenBlocks);
+      int broken = 0;
+      for (BlockPos pos : BlockPos.betweenClosed(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius))) {
+         if (broken >= remaining) break;
+         BlockPos immutable = pos.immutable();
+         BlockState state = level().getBlockState(immutable);
+         if (radius <= 0) {
+            float hardness = state.getDestroySpeed(level(), immutable);
+            boolean protectedBlock = state.is(Blocks.BEDROCK) || state.is(Blocks.END_PORTAL_FRAME);
+            if (state.isAir() || !ChurchDeadApostleRules.blackKeyCanBreakBlock(hardness, state.hasBlockEntity(), protectedBlock)) continue;
+         } else if (!BlackKeyMiracleService.canBreakBlock(level(), immutable, state, getOwner())) {
+            continue;
+         }
+         if (level().destroyBlock(immutable, true, getOwner())) broken++;
+      }
+      return broken;
    }
 
    private void finish(ItemStack stack) {

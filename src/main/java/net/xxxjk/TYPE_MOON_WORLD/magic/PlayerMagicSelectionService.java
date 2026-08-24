@@ -5,6 +5,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 
 public final class PlayerMagicSelectionService {
    private PlayerMagicSelectionService() {
@@ -29,12 +31,7 @@ public final class PlayerMagicSelectionService {
          return;
       }
 
-      CompoundTag payload = normalizePresetPayload(entry.magicId, entry.presetPayload);
-      if (payload.isEmpty() && supportsRuntimePreset(entry.magicId)) {
-         payload = buildPresetFromCurrentVars(entity, vars, entry.magicId);
-      }
-
-      entry.presetPayload = payload;
+      entry.presetPayload = normalizePresetPayload(entry.magicId, entry.presetPayload);
    }
 
    public static void applyCurrentSelectionPreset(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -97,8 +94,12 @@ public final class PlayerMagicSelectionService {
       }
 
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry updated = entry.copy();
-      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
       CompoundTag currentPayload = updated.presetPayload == null ? new CompoundTag() : updated.presetPayload.copy();
+      if (currentPayload.isEmpty()) {
+         return false;
+      }
+
+      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
       if (nextPayload.equals(currentPayload)) {
          return false;
       }
@@ -125,6 +126,10 @@ public final class PlayerMagicSelectionService {
 
    public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
       CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
+      if (normalized.isEmpty()) {
+         return normalized;
+      }
+
       net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.CompoundResult external =
          net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.normalize(magicId, normalized);
       if (external.handler() != null) {
@@ -189,6 +194,16 @@ public final class PlayerMagicSelectionService {
       return normalized;
    }
 
+   public static boolean requiresPresetConfiguration(String magicId) {
+      if (magicId == null || magicId.isBlank()) {
+         return false;
+      }
+      return supportsRuntimePreset(magicId)
+         || "touko_travel".equals(magicId)
+         || !ExtensionApiRegistry.controlsFor(magicId).isEmpty()
+         || MagicPresetRegistry.hasHandler(magicId);
+   }
+
    private static boolean supportsRuntimePreset(String magicId) {
       return "reinforcement".equals(magicId)
          || "gravity_magic".equals(magicId)
@@ -197,7 +212,6 @@ public final class PlayerMagicSelectionService {
          || "healing_magic".equals(magicId)
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
-         || "touko_travel".equals(magicId)
          || isElementalMagic(magicId);
    }
 
@@ -220,10 +234,6 @@ public final class PlayerMagicSelectionService {
       } else if ("mana_burst".equals(magicId)) {
          payload.putInt("mana_burst_mode", 1);
          payload.putInt("mana_burst_level", 1);
-      } else if ("touko_travel".equals(magicId) && entity != null) {
-         payload.putDouble("x", entity.getX());
-         payload.putDouble("y", entity.getY());
-         payload.putDouble("z", entity.getZ());
       } else if (isElementalMagic(magicId)) {
          payload.putInt("element_mode", clamp(getElementMode(vars, magicId), 0, 1));
       } else if ("projection".equals(magicId)) {
@@ -308,7 +318,11 @@ public final class PlayerMagicSelectionService {
       return "fire_magic".equals(magicId)
          || "water_magic".equals(magicId)
          || "wind_magic".equals(magicId)
-         || "earth_magic".equals(magicId);
+         || "earth_magic".equals(magicId)
+         || "flame_array".equals(magicId)
+         || "azure_water_array".equals(magicId)
+         || "gale_wind_array".equals(magicId)
+         || "rock_earth_array".equals(magicId);
    }
 
    public static int getElementMode(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
@@ -316,10 +330,10 @@ public final class PlayerMagicSelectionService {
          return 0;
       }
       return switch (magicId) {
-         case "fire_magic" -> vars.fire_magic_mode;
-         case "water_magic" -> vars.water_magic_mode;
-         case "wind_magic" -> vars.wind_magic_mode;
-         case "earth_magic" -> vars.earth_magic_mode;
+         case "fire_magic", "flame_array" -> vars.fire_magic_mode;
+         case "water_magic", "azure_water_array" -> vars.water_magic_mode;
+         case "wind_magic", "gale_wind_array" -> vars.wind_magic_mode;
+         case "earth_magic", "rock_earth_array" -> vars.earth_magic_mode;
          default -> 0;
       };
    }
@@ -330,10 +344,10 @@ public final class PlayerMagicSelectionService {
       }
       int clamped = clamp(mode, 0, 1);
       switch (magicId) {
-         case "fire_magic" -> vars.fire_magic_mode = clamped;
-         case "water_magic" -> vars.water_magic_mode = clamped;
-         case "wind_magic" -> vars.wind_magic_mode = clamped;
-         case "earth_magic" -> vars.earth_magic_mode = clamped;
+         case "fire_magic", "flame_array" -> vars.fire_magic_mode = clamped;
+         case "water_magic", "azure_water_array" -> vars.water_magic_mode = clamped;
+         case "wind_magic", "gale_wind_array" -> vars.wind_magic_mode = clamped;
+         case "earth_magic", "rock_earth_array" -> vars.earth_magic_mode = clamped;
       }
    }
 }

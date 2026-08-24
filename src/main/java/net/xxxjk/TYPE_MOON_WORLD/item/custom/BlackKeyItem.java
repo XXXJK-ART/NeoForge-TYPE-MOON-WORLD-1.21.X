@@ -32,7 +32,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class BlackKeyItem extends Item implements GeoItem {
    private static final String EXPANDED = "BlackKeyExpanded";
    private static final String DURABILITY = "BlackKeyDurability";
-   private static final String FIRE_ENGRAVED = "BlackKeyFireEngraved";
    public static final int MAX_DURABILITY = 100;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -50,19 +49,11 @@ public class BlackKeyItem extends Item implements GeoItem {
       return Math.clamp(value, 0, MAX_DURABILITY);
    }
 
-   public static boolean isFireEngraved(ItemStack stack) {
-      return data(stack).getBoolean(FIRE_ENGRAVED);
-   }
-
    public static void setExpanded(ItemStack stack, boolean expanded) {
       mutate(stack, tag -> {
          tag.putBoolean(EXPANDED, expanded);
          if (!tag.contains(DURABILITY)) tag.putInt(DURABILITY, MAX_DURABILITY);
       });
-   }
-
-   public static void setFireEngraved(ItemStack stack, boolean fireEngraved) {
-      mutate(stack, tag -> tag.putBoolean(FIRE_ENGRAVED, fireEngraved));
    }
 
    public static void consumeSharedDurability(ItemStack stack, int amount) {
@@ -80,14 +71,6 @@ public class BlackKeyItem extends Item implements GeoItem {
 
    public static float meleeDamage(ItemStack stack) {
       return net.xxxjk.TYPE_MOON_WORLD.combat.ChurchDeadApostleRules.blackKeyMeleeDamage(isExpanded(stack), stack.getCount());
-   }
-
-   public static boolean engraveWithFire(ServerPlayer player, ItemStack stack) {
-      if (!(stack.getItem() instanceof BlackKeyItem) || isFireEngraved(stack)) return false;
-      if (!ManaHelper.consumeManaStrict(player, 20.0, false)) return false;
-      setFireEngraved(stack, true);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.black_key.fire_engraved"), true);
-      return true;
    }
 
    @Override
@@ -134,18 +117,13 @@ public class BlackKeyItem extends Item implements GeoItem {
    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
       if (!attacker.level().isClientSide && isExpanded(stack)) {
          consumeSharedDurability(stack, Math.clamp(stack.getCount(), 1, 3));
-         if (isFireEngraved(stack) && target.isAlive()) {
-            target.igniteForSeconds(4.0F);
-            target.invulnerableTime = 0;
-            target.hurt(target.damageSources().onFire(), BlackKeyProjectileEntity.isUndead(target) ? 10.0F : 5.0F);
-         }
       }
       return true;
    }
 
    @Override
    public boolean isFoil(ItemStack stack) {
-      return isFireEngraved(stack);
+      return false;
    }
 
    @Override

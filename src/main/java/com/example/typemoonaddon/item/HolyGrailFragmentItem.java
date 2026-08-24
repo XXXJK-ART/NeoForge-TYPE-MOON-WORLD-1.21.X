@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.item;
 
 import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
+import com.example.typemoonaddon.magic.SakuraRuleBreakerDispelService;
 import com.example.typemoonaddon.registry.AddonAttachments;
 import com.example.typemoonaddon.registry.AddonItems;
 import net.minecraft.core.particles.ParticleTypes;
@@ -44,6 +45,7 @@ public final class HolyGrailFragmentItem extends Item {
             serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.holy_grail.requires_imaginary"), true);
             return InteractionResultHolder.fail(used);
         }
+        SakuraRuleBreakerDispelService.capturePreGrailState(serverPlayer);
         if (!SakuraTypeMoonIntegration.performHolyGrailRitual(serverPlayer)) {
             serverPlayer.displayClientMessage(Component.translatable(
                     data.grailWormAscended()

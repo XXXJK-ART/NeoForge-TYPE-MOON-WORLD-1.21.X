@@ -1,9 +1,12 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
-import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -59,7 +62,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final double SPLIT_IMPACT_DISTANCE_SQR = 9.0D;
    private static final int SPLIT_COUNT = 10;
    private static final double SPLIT_BURST_RADIUS = 18.0D;
+   private static final float DEATH_FLIGHT_DAMAGE_CAP = 1000.0F;
+   private static final long DEATH_FLIGHT_DAMAGE_BUDGET_TTL = 200L;
+   private static final Map<UUID, DeathFlightDamageBudget> DEATH_FLIGHT_DAMAGE_BUDGETS = new HashMap<>();
    private int lifeTime = 0;
+   private UUID deathFlightCastId;
    public final List<Vec3> tracePos = new ArrayList<>();
 
    public GaeBulgProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -118,7 +125,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void setArmyDamage(float damage) {
-      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 200.0F, 100000.0F));
+      this.entityData.set(ARMY_DAMAGE, Mth.clamp(damage, 0.0F, DEATH_FLIGHT_DAMAGE_CAP));
    }
 
    public float getArmyDamage() {
@@ -131,6 +138,17 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    public int getSplitIndex() {
       return this.entityData.get(SPLIT_INDEX);
+   }
+
+   private UUID getOrCreateDeathFlightCastId() {
+      if (this.deathFlightCastId == null) {
+         this.deathFlightCastId = UUID.randomUUID();
+      }
+      return this.deathFlightCastId;
+   }
+
+   private void setDeathFlightCastId(UUID deathFlightCastId) {
+      this.deathFlightCastId = deathFlightCastId;
    }
 
    public void setTrackedTarget(LivingEntity target) {
@@ -251,6 +269,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private void spawnSplitSpears(ServerLevel level, LivingEntity target) {
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       float splitDamage = this.getArmyDamage() / SPLIT_COUNT;
+      UUID deathFlightCastId = this.getOrCreateDeathFlightCastId();
       Vec3 origin = this.position();
       for (int i = 0; i < SPLIT_COUNT; i++) {
          GaeBulgProjectileEntity spear = owner != null
@@ -260,6 +279,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          spear.setMode(Mode.SPLIT);
          spear.setSplitIndex(i);
          spear.setArmyDamage(splitDamage);
+         spear.setDeathFlightCastId(deathFlightCastId);
          spear.setTrackedTarget(target);
          spear.setPos(origin.x, origin.y, origin.z);
          spear.noPhysics = true;
@@ -295,6 +315,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          }
          float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
+         if (finalDamage <= 0.0F) {
+            continue;
+         }
          if (!this.tryConsumeGodHandLife(living, finalDamage, false)) {
             this.applyGuaranteedDamage(living, source, finalDamage);
          }
@@ -606,6 +630,10 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
          float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, armyDamage);
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
+         finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
+         if (finalDamage <= 0.0F) {
+            continue;
+         }
          if (this.tryConsumeGodHandLife(living, finalDamage, false)) {
             continue;
          }
@@ -618,6 +646,27 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             living.hurtMarked = true;
          }
       }
+   }
+
+   private float consumeDeathFlightDamageBudget(ServerLevel level, LivingEntity target, float requestedDamage) {
+      if (requestedDamage <= 0.0F) {
+         return 0.0F;
+      }
+
+      long gameTime = level.getGameTime();
+      DEATH_FLIGHT_DAMAGE_BUDGETS.entrySet().removeIf(entry -> entry.getValue().expiresAt < gameTime);
+      DeathFlightDamageBudget budget = DEATH_FLIGHT_DAMAGE_BUDGETS.computeIfAbsent(
+         this.getOrCreateDeathFlightCastId(),
+         ignored -> new DeathFlightDamageBudget(gameTime + DEATH_FLIGHT_DAMAGE_BUDGET_TTL)
+      );
+      budget.expiresAt = gameTime + DEATH_FLIGHT_DAMAGE_BUDGET_TTL;
+
+      float usedDamage = budget.damageByTarget.getOrDefault(target.getUUID(), 0.0F);
+      float permittedDamage = Math.min(requestedDamage, Math.max(0.0F, DEATH_FLIGHT_DAMAGE_CAP - usedDamage));
+      if (permittedDamage > 0.0F) {
+         budget.damageByTarget.put(target.getUUID(), usedDamage + permittedDamage);
+      }
+      return permittedDamage;
    }
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
@@ -720,8 +769,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       super.readAdditionalSaveData(tag);
       this.entityData.set(MODE, tag.getInt("Mode"));
       this.entityData.set(TARGET_ID, tag.getInt("TargetId"));
-      this.entityData.set(ARMY_DAMAGE, tag.getFloat("ArmyDamage"));
+      this.setArmyDamage(tag.getFloat("ArmyDamage"));
       this.entityData.set(SPLIT_INDEX, tag.getInt("SplitIndex"));
+      this.deathFlightCastId = tag.hasUUID("DeathFlightCastId") ? tag.getUUID("DeathFlightCastId") : null;
    }
 
    @Override
@@ -731,5 +781,17 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       tag.putInt("TargetId", this.entityData.get(TARGET_ID));
       tag.putFloat("ArmyDamage", this.entityData.get(ARMY_DAMAGE));
       tag.putInt("SplitIndex", this.entityData.get(SPLIT_INDEX));
+      if (this.deathFlightCastId != null) {
+         tag.putUUID("DeathFlightCastId", this.deathFlightCastId);
+      }
+   }
+
+   private static final class DeathFlightDamageBudget {
+      private long expiresAt;
+      private final Map<UUID, Float> damageByTarget = new HashMap<>();
+
+      private DeathFlightDamageBudget(long expiresAt) {
+         this.expiresAt = expiresAt;
+      }
    }
 }

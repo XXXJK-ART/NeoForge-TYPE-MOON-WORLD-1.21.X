@@ -26,7 +26,7 @@ public final class ElementalMagicHelper {
          return 0.0;
       }
       if (vars.isCurrentSelectionFromCrest(magicId)) {
-         return 100.0;
+         return vars.getEffectiveCurrentMagicProficiency(magicId);
       }
       return switch (magicId) {
          case "fire_magic" -> vars.proficiency_fire_magic;

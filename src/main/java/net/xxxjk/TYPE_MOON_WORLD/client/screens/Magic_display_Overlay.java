@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.screens;
 
+import com.example.typemoonaddon.data.ImaginarySpaceData;
+import com.example.typemoonaddon.registry.AddonAttachments;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
@@ -14,6 +16,7 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.GuiUtils;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicUiColors;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 
@@ -169,22 +172,13 @@ public class Magic_display_Overlay {
                         magicColor = 0xFFF8F3E7;
                     } else if ("baptism_rite".equals(magicId)) {
                         magicColor = 0xFFFFD24A;
-                    } else if ("fire_magic".equals(magicId)
-                            || "water_magic".equals(magicId)
-                            || "wind_magic".equals(magicId)
-                            || "earth_magic".equals(magicId)) {
-                        int mode = switch (magicId) {
-                            case "fire_magic" -> vars.fire_magic_mode;
-                            case "water_magic" -> vars.water_magic_mode;
-                            case "wind_magic" -> vars.wind_magic_mode;
-                            case "earth_magic" -> vars.earth_magic_mode;
-                            default -> 0;
-                        };
+                    } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
+                        int mode = PlayerMagicSelectionService.getElementMode(vars, magicId);
                         magicColor = switch (magicId) {
-                            case "fire_magic" -> 0xFFFF6633;
-                            case "water_magic" -> 0xFF66CCFF;
-                            case "wind_magic" -> 0xFF99FFCC;
-                            case "earth_magic" -> 0xFFCCAA66;
+                            case "fire_magic", "flame_array" -> 0xFFFF6633;
+                            case "water_magic", "azure_water_array" -> 0xFF66CCFF;
+                            case "wind_magic", "gale_wind_array" -> 0xFF99FFCC;
+                            case "earth_magic", "rock_earth_array" -> 0xFFCCAA66;
                             default -> 0xFFFFFFFF;
                         };
                         magicName = Component.translatable(
@@ -193,6 +187,14 @@ public class Magic_display_Overlay {
                                 Component.translatable(mode == 1
                                         ? "gui.typemoonworld.overlay.element.mode.utility.short"
                                         : "gui.typemoonworld.overlay.element.mode.attack.short")
+                        );
+                    } else if (isImaginaryStorageMagic(magicId)) {
+                        magicColor = 0xFF66DDAA;
+                        String mode = currentImaginaryMode(entity, vars, magicId);
+                        magicName = Component.translatable(
+                                "gui.typemoonworld.overlay.imaginary.format",
+                                Component.translatable(translationKey),
+                                Component.translatable(imaginaryModeLabelKey(magicId, mode))
                         );
                     } else if ("jewel_random_shoot".equals(magicId)) {
                         magicColor = 0xFFEAEAEA;
@@ -282,5 +284,41 @@ public class Magic_display_Overlay {
             RenderSystem.disableBlend();
             RenderSystem.setShaderColor(1, 1, 1, 1);
         }
+    }
+
+    private static boolean isImaginaryStorageMagic(String magicId) {
+        String path = magicPath(magicId);
+        return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+    }
+
+    private static String currentImaginaryMode(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+        TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getCurrentRuntimeWheelEntry();
+        if (entry != null && sameMagicPath(entry.magicId, magicId) && entry.presetPayload != null && entry.presetPayload.contains("imaginary_mode")) {
+            return entry.presetPayload.getString("imaginary_mode");
+        }
+
+        ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+        return data.magicMode() == ImaginarySpaceData.MagicMode.PROTECTION ? "protection" : "storage";
+    }
+
+    private static String imaginaryModeLabelKey(String magicId, String mode) {
+        if ("protection".equals(mode)) {
+            return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+        }
+        return "imaginary_absorption_evolved".equals(magicPath(magicId))
+                ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+                : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
+    }
+
+    private static boolean sameMagicPath(String left, String right) {
+        return magicPath(left).equals(magicPath(right));
+    }
+
+    private static String magicPath(String magicId) {
+        if (magicId == null) {
+            return "";
+        }
+        int split = magicId.indexOf(':');
+        return split >= 0 ? magicId.substring(split + 1) : magicId;
     }
 }

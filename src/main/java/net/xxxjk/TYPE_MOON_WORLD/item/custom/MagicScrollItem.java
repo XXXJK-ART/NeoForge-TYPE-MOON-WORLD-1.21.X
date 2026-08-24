@@ -1,10 +1,15 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -41,7 +46,10 @@ public class MagicScrollItem extends Item {
         
         boolean reusableBook = isReusableBook();
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            if (reusableBook && player.getCooldowns().isOnCooldown(this)) return InteractionResultHolder.fail(stack);
+            if (reusableBook && player.getCooldowns().isOnCooldown(this)) {
+                player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.cooldown"), true);
+                return InteractionResultHolder.fail(stack);
+            }
             TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
             
             // Check Requirement
@@ -55,7 +63,7 @@ public class MagicScrollItem extends Item {
             
             java.util.List<String> unlearnedMagics = new java.util.ArrayList<>();
             for (String magic : magicsToLearn) {
-                if (!vars.learned_magics.contains(magic)) {
+                if (!MagicLearningStrategy.isLearned(vars, magic)) {
                     unlearnedMagics.add(magic);
                 }
             }
@@ -70,31 +78,62 @@ public class MagicScrollItem extends Item {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learning_restricted"), true);
                 return InteractionResultHolder.fail(stack);
             }
-            // Books are reusable and use the normal complexity/proficiency formula.
-            if (MagicLearningService.learnFromMaterial(serverPlayer, magicToLearn, player.getRandom().nextDouble())) {
-                if (learnAllAtOnce) {
-                    for (String magicId : unlearnedMagics) {
-                        MagicLearningService.grantFromMaterial(serverPlayer, magicId);
+            reportProgress(serverPlayer, magicToLearn,
+                MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicToLearn, 0.10D));
+            if (learnAllAtOnce) {
+                for (String magicId : unlearnedMagics) {
+                    if (!magicId.equals(magicToLearn)) {
+                        reportProgress(serverPlayer, magicId,
+                            MagicLearningService.advanceFromMaterialWithResult(serverPlayer, magicId, 0.10D));
                     }
                 }
-                
-                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
-                else stack.shrink(1);
-                return InteractionResultHolder.consume(stack);
-            } else {
-                if (reusableBook) player.getCooldowns().addCooldown(this, 100);
-                else stack.shrink(1);
-                return InteractionResultHolder.consume(stack);
             }
+            if (reusableBook) player.getCooldowns().addCooldown(this, 100);
+            else stack.shrink(1);
+            return InteractionResultHolder.consume(stack);
         }
         
         return InteractionResultHolder.pass(stack);
+    }
+
+    private static void reportProgress(ServerPlayer player, String magicId, MagicLearningService.MaterialAdvanceResult result) {
+        if (result == null || !result.accepted() || result.completed()) {
+            return;
+        }
+        player.displayClientMessage(Component.translatable(
+            "message.typemoonworld.scroll.progress",
+            Component.translatable("magic.typemoonworld." + MagicLearningStrategy.normalizeDisplayId(magicId) + ".name"),
+            String.format(java.util.Locale.ROOT, "%.1f", result.afterPercent())), true);
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        ItemStack stack = context.getItemInHand();
+        if (!isTheologyBook()) {
+            return super.useOn(context);
+        }
+        Level level = context.getLevel();
+        BlockState state = level.getBlockState(context.getClickedPos());
+        if (!state.is(Blocks.LECTERN)) {
+            return super.useOn(context);
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        return LecternBlock.tryPlaceBook(context.getPlayer(), level, context.getClickedPos(), state, stack)
+            ? InteractionResult.CONSUME
+            : InteractionResult.FAIL;
     }
 
     private boolean isReusableBook() {
         var key = BuiltInRegistries.ITEM.getKey(this);
         String path = key == null ? "" : key.getPath();
         return path.startsWith("magic_book_") || path.startsWith("magic_scroll_") && !path.endsWith("_broken");
+    }
+
+    private boolean isTheologyBook() {
+        var key = BuiltInRegistries.ITEM.getKey(this);
+        return key != null && "magic_book_theology".equals(key.getPath());
     }
 
     @Override

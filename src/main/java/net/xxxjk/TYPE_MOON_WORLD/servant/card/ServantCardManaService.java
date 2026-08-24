@@ -14,8 +14,10 @@ import net.xxxjk.TYPE_MOON_WORLD.block.entity.ArtificialLeylineBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import com.example.typemoonaddon.magic.ManaFurnaceService;
 
 public final class ServantCardManaService {
+   private static final double SERVANT_CARD_REGEN_MULTIPLIER = 0.5;
    public record ManaSnapshot(double servantMana, ServerPlayer master, double masterMana) {
    }
 
@@ -30,10 +32,10 @@ public final class ServantCardManaService {
    public static double regenPerSecondFor(String servantId) {
       ServantDefinition definition = ServantDataRegistry.get(servantId);
       if (definition == null) {
-         return 4.0;
+         return 4.0 * SERVANT_CARD_REGEN_MULTIPLIER;
       }
       ServantParams params = definition.parameters();
-      return params.manaPool() / fullRegenSeconds(params);
+      return params.manaPool() / fullRegenSeconds(params) * SERVANT_CARD_REGEN_MULTIPLIER;
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -54,7 +56,9 @@ public final class ServantCardManaService {
                * Math.max(0.0, 1.0 - MasterServantLinkService.distanceDecay(player, vars, master));
          } else {
             TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            linkedRegen = masterVars.player_mana_egenerated_every_moment * MasterServantLinkService.linkedRegenMultiplier(player, vars);
+            linkedRegen = masterVars.player_mana_egenerated_every_moment
+               * MasterServantLinkService.linkedRegenMultiplier(player, vars)
+               * SERVANT_CARD_REGEN_MULTIPLIER;
          }
       }
       expectedRegen = passiveRegenForContractState(vars.servant_card_contract_state,
@@ -111,6 +115,9 @@ public final class ServantCardManaService {
       if (player == null || vars == null) {
          return 0.0;
       }
+      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+         return Double.MAX_VALUE;
+      }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return Double.MAX_VALUE;
       }
@@ -126,6 +133,9 @@ public final class ServantCardManaService {
    public static double consumeUpTo(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (player == null || vars == null || amount <= 0.0) {
          return 0.0;
+      }
+      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+         return amount;
       }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return amount;
@@ -173,6 +183,9 @@ public final class ServantCardManaService {
       if (amount <= 0.0) {
          return true;
       }
+      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+         return true;
+      }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return true;
       }
@@ -208,6 +221,7 @@ public final class ServantCardManaService {
 
    public static boolean consumeOwnMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (amount <= 0.0) return true;
+      if (ManaFurnaceService.hasInfiniteSupply(player)) return true;
       if (vars.servant_card_mana + 1.0E-6 < amount) return false;
       vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
       vars.syncMana(player);

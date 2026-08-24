@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.block.entity.ModBlockEntities;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.IonioiHetairoiDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BloodstainEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
@@ -358,6 +359,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.GRAVITY_FIELD_SHELL_EFFECT.get(), GravityFieldShellRenderer::new);
       event.registerEntityRenderer(ModEntities.EXPANDING_RING_EFFECT.get(), ExpandingRingEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.PROJECTION_CIRCUIT_EFFECT.get(), ProjectionCircuitEffectRenderer::new);
+      event.registerEntityRenderer(ModEntities.BLOODSTAIN_EFFECT.get(), BloodstainEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.UBW_CHANT_RIPPLE.get(), UbwChantRippleRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);

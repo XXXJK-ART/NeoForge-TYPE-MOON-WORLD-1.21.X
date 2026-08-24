@@ -88,6 +88,7 @@ public final class ImaginaryModeScreen extends Screen {
         }
         CompoundTag preset = entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy();
         preset.putString(SakuraTypeMoonIntegration.MODE_PRESET_KEY, selectedMode.serializedName());
+        String displayName = buildDisplayName();
         PacketDistributor.sendToServer(new SetImaginaryModePayload(selectedMode.ordinal()));
         PacketDistributor.sendToServer(new MagicWheelSlotEditMessage(
                 MagicWheelSlotEditMessage.ACTION_SET,
@@ -98,9 +99,24 @@ public final class ImaginaryModeScreen extends Screen {
                 entry.magicId,
                 preset,
                 entry.crestEntryId,
-                entry.displayNameCache
+                displayName
         ));
         onClose();
+    }
+
+    private String buildDisplayName() {
+        String name = Component.translatable("magic.typemoonworld." + entry.magicId + ".name").getString();
+        String mode = Component.translatable(imaginaryModeLabelKey()).getString();
+        return name + " " + mode;
+    }
+
+    private String imaginaryModeLabelKey() {
+        if (selectedMode == ImaginarySpaceData.MagicMode.PROTECTION) {
+            return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+        }
+        return "imaginary_absorption_evolved".equals(magicPath(entry.magicId))
+                ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+                : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
     }
 
     private boolean validEntry() {
@@ -118,6 +134,14 @@ public final class ImaginaryModeScreen extends Screen {
         }
         String expectedPath = expected.contains(":") ? expected.substring(expected.indexOf(':') + 1) : expected;
         return actual.equals(expected) || actual.equals(expectedPath);
+    }
+
+    private static String magicPath(String magicId) {
+        if (magicId == null) {
+            return "";
+        }
+        int split = magicId.indexOf(':');
+        return split >= 0 ? magicId.substring(split + 1) : magicId;
     }
 
     @Override

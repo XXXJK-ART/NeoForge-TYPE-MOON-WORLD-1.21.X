@@ -10,6 +10,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.BloodstainEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BlackKeyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
@@ -484,6 +485,14 @@ public class ModEntities {
          .clientTrackingRange(12)
          .updateInterval(20)
          .build("projection_circuit_effect")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<BloodstainEffectEntity>> BLOODSTAIN_EFFECT = ENTITY_TYPES.register(
+      "bloodstain_effect",
+      () -> Builder.<BloodstainEffectEntity>of((entityType, level) -> new BloodstainEffectEntity(entityType, level), MobCategory.MISC)
+         .sized(2.0F, 0.1F)
+         .clientTrackingRange(16)
+         .updateInterval(20)
+         .build("bloodstain_effect")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<UbwChantRippleEntity>> UBW_CHANT_RIPPLE = ENTITY_TYPES.register(
       "ubw_chant_ripple",

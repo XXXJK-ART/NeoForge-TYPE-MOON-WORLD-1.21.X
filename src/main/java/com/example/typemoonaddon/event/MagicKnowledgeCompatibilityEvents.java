@@ -46,6 +46,7 @@ public final class MagicKnowledgeCompatibilityEvents {
 
         boolean changed = normalizeLearnedMagics(vars);
         changed |= normalizeProficiencies(vars);
+        changed |= normalizeLearningProgress(vars);
         changed |= normalizeWheelEntries(vars);
         changed |= normalizeCrestEntries(vars);
 
@@ -123,6 +124,35 @@ public final class MagicKnowledgeCompatibilityEvents {
                 entry.magicId = normalized;
                 changed = true;
             }
+        }
+        return changed;
+    }
+
+    private static boolean normalizeLearningProgress(TypeMoonWorldModVariables.PlayerVariables vars) {
+        if (vars.magic_learning_progress == null || vars.magic_learning_progress.isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        Map<String, Double> progress = new HashMap<>();
+        Map<String, Long> lastGain = new HashMap<>();
+        for (Map.Entry<String, Double> entry : vars.magic_learning_progress.entrySet()) {
+            String key = canonicalSelfMagicId(entry.getKey());
+            if (key == null || key.isEmpty()) {
+                changed = true;
+                continue;
+            }
+            progress.merge(key, entry.getValue() == null ? 0.0D : Math.max(0.0D, entry.getValue()), Math::max);
+            if (!key.equals(entry.getKey())) changed = true;
+            if (vars.magic_learning_progress_last_gain_tick.containsKey(entry.getKey())) {
+                lastGain.merge(key, vars.magic_learning_progress_last_gain_tick.get(entry.getKey()), Math::max);
+            }
+        }
+        changed |= !progress.equals(vars.magic_learning_progress);
+        if (changed) {
+            vars.magic_learning_progress.clear();
+            vars.magic_learning_progress.putAll(progress);
+            vars.magic_learning_progress_last_gain_tick.clear();
+            vars.magic_learning_progress_last_gain_tick.putAll(lastGain);
         }
         return changed;
     }

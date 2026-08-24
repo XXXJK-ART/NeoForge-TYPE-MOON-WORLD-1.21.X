@@ -131,22 +131,7 @@
                                       },
                                       {
                                           "weight":  5,
-                                          "name":  "typemoonworld:magic_page_black_key_fire_engraving",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
-                                          "name":  "typemoonworld:magic_page_stigma",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
                                           "name":  "typemoonworld:magic_page_storage",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
-                                          "name":  "typemoonworld:magic_page_baptism_rite",
                                           "type":  "minecraft:item"
                                       },
                                       {
@@ -302,22 +287,7 @@
                                       },
                                       {
                                           "weight":  5,
-                                          "name":  "typemoonworld:magic_book_black_key_fire_engraving",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
-                                          "name":  "typemoonworld:magic_book_stigma",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
                                           "name":  "typemoonworld:magic_book_storage",
-                                          "type":  "minecraft:item"
-                                      },
-                                      {
-                                          "weight":  5,
-                                          "name":  "typemoonworld:magic_book_baptism_rite",
                                           "type":  "minecraft:item"
                                       },
                                       {

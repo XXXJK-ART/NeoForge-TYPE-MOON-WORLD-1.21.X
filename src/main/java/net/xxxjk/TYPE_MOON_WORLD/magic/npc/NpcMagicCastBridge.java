@@ -4,6 +4,7 @@ import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
 import com.example.typemoonaddon.detection.DetectionService;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService.CastStatus;
+import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,6 +81,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
@@ -239,7 +241,11 @@ public final class NpcMagicCastBridge {
       "sapphire_winter_frost",
       "emerald_winter_river",
       "topaz_reinforcement",
-      "cyan_wind"
+      "cyan_wind",
+      "wraith_servitude",
+      "evil_spirit_summoning",
+      "worm_control",
+      "engraved_worm_operation"
    );
    private static final NpcMagicCastBridge.BehaviorProfile[][] BEHAVIOR_PROFILE_MATRIX = new NpcMagicCastBridge.BehaviorProfile[][]{
       {
@@ -623,6 +629,12 @@ public final class NpcMagicCastBridge {
       MagicProficiencyService.set(vars, magicId, proficiency);
    }
 
+   private static double crestProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      return vars == null || magicId == null || magicId.isEmpty()
+         ? 0.0
+         : Math.max(0.0, Math.min(100.0, MagicProficiencyService.get(vars, magicId)));
+   }
+
    private static double leffFixedProficiency(String magicId) {
       return switch (magicId) {
          case "aerial_stasis", "aerial_ascent" -> 100.0;
@@ -685,8 +697,15 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean addTohsakaRinCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      double proficiency = crestProficiency(vars, magicId);
       for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
-         if (existing != null && magicId.equals(existing.magicId) && "tohsaka_rin".equals(existing.originOwnerType)) return false;
+         if (existing != null && magicId.equals(existing.magicId) && "tohsaka_rin".equals(existing.originOwnerType)) {
+            if (proficiency > existing.proficiency) {
+               existing.proficiency = proficiency;
+               return true;
+            }
+            return false;
+         }
       }
       TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
       entry.entryId = UUID.randomUUID().toString();
@@ -696,6 +715,7 @@ public final class NpcMagicCastBridge {
       entry.originOwnerUuid = npc.getUUID().toString();
       entry.originOwnerType = "tohsaka_rin";
       entry.originOwnerName = npc.getName().getString();
+      entry.proficiency = proficiency;
       entry.active = true;
       vars.crest_entries.add(entry);
       return true;
@@ -725,8 +745,15 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean addLeffCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      double proficiency = Math.max(leffFixedProficiency(magicId), crestProficiency(vars, magicId));
       for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
-         if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) return false;
+         if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) {
+            if (proficiency > existing.proficiency) {
+               existing.proficiency = proficiency;
+               return true;
+            }
+            return false;
+         }
       }
       TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
       entry.entryId = "leff_laynor_flauros:" + magicId;
@@ -736,6 +763,7 @@ public final class NpcMagicCastBridge {
       entry.originOwnerUuid = npc.getUUID().toString();
       entry.originOwnerType = "leff_laynor_flauros";
       entry.originOwnerName = npc.getName().getString();
+      entry.proficiency = proficiency;
       entry.active = true;
       vars.crest_entries.add(entry);
       return true;
@@ -1287,6 +1315,7 @@ public final class NpcMagicCastBridge {
                   crestEntry.originOwnerUuid = npc.getUUID().toString();
                   crestEntry.originOwnerType = "npc";
                   crestEntry.originOwnerName = npc.getName().getString();
+                  crestEntry.proficiency = crestProficiency(vars, magicId);
                   crestEntry.active = true;
                   vars.crest_entries.add(crestEntry);
                   ensurePrerequisites(vars, magicId);
@@ -1471,6 +1500,14 @@ public final class NpcMagicCastBridge {
             case "cyan_wind":
                ensureAdvancedJewelPrerequisites(vars, "cyan_throw");
                break;
+            case "worm_control":
+            case "engraved_worm_operation":
+               ensureLearned(vars, "worm_magic");
+               break;
+            case "wraith_servitude":
+            case "evil_spirit_summoning":
+               ensureLearned(vars, "spirit_summoning");
+               break;
          }
       }
    }
@@ -1500,6 +1537,7 @@ public final class NpcMagicCastBridge {
          }
 
          double regenPerTick = vars.player_mana_egenerated_every_moment * var9 / interval;
+         regenPerTick = BoundaryMagicIntegration.adjustNaturalManaRegen(npc, regenPerTick);
          if (vars.player_mana < vars.player_max_mana) {
             vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + regenPerTick);
          }
@@ -1531,7 +1569,7 @@ public final class NpcMagicCastBridge {
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_STRENGTH);
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_AGILITY);
          npc.removeEffect(ModMobEffects.REINFORCEMENT_SELF_SIGHT);
-         npc.removeEffect(MobEffects.NIGHT_VISION);
+         NightVisionEffectSource.clearHiddenIfTagged(npc, NightVisionEffectSource.NPC_REINFORCEMENT_SIGHT, 600);
          npc.removeEffect(MobEffects.DAMAGE_BOOST);
          npc.removeEffect(MobEffects.MOVEMENT_SPEED);
          npc.removeEffect(MobEffects.DAMAGE_RESISTANCE);
@@ -1728,6 +1766,10 @@ public final class NpcMagicCastBridge {
                   case "gravity_magic":
                   case "binding_magic":
                   case "suggestion_magic":
+                  case "worm_control":
+                  case "engraved_worm_operation":
+                  case "wraith_servitude":
+                  case "evil_spirit_summoning":
                   case "water_magic":
                   case "wind_magic":
                   case "earth_magic":
@@ -4867,6 +4909,7 @@ public final class NpcMagicCastBridge {
       caster.addEffect(effect);
       if (extraEffect != null) {
          caster.addEffect(extraEffect);
+         NightVisionEffectSource.mark(caster, NightVisionEffectSource.NPC_REINFORCEMENT_SIGHT);
       }
 
       TypeMoonWorldModVariables.ReinforcementData data = (TypeMoonWorldModVariables.ReinforcementData)caster.getData(

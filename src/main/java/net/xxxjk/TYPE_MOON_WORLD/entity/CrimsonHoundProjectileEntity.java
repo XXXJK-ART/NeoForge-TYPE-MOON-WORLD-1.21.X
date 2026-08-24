@@ -23,7 +23,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(CrimsonHoundProjectileEntity.class, EntityDataSerializers.INT);
-   private static final float DIRECT_HIT_DAMAGE = 36.0F;
+   private static final float DIRECT_HIT_DAMAGE = 1000.0F;
    private static final float BROKEN_PHANTASM_SCALE = 0.55F;
 
    public CrimsonHoundProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {

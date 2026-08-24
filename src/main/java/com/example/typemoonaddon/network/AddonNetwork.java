@@ -2,8 +2,16 @@ package com.example.typemoonaddon.network;
 
 import com.example.typemoonaddon.client.ClientEffects;
 import com.example.typemoonaddon.client.ClientNightShadowCamera;
+import com.example.typemoonaddon.network.OpenBoundaryImmunityPayload;
+import com.example.typemoonaddon.network.OpenDetectionWormControlPayload;
+import com.example.typemoonaddon.magic.SakuraImaginaryStorageService;
 import com.example.typemoonaddon.magic.SakuraShadowMaterializationService;
 import com.example.typemoonaddon.shadowlogic.network.ShadowBindingEffectPayload;
+import com.example.typemoonaddon.network.SetBoundaryImmunityPayload;
+import com.example.typemoonaddon.network.SetDetectionWormControlPayload;
+import com.example.typemoonaddon.network.WormWarehousePageMessage;
+import com.example.typemoonaddon.engravedworm.EngravedWormPagePayload;
+import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
 import com.example.typemoonaddon.storage.StorageService;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -243,6 +251,41 @@ public final class AddonNetwork {
                 OpenShadowTransferPayload.STREAM_CODEC,
                 OpenShadowTransferPayload::handle
         );
+        registrar.playToClient(
+                OpenBoundaryImmunityPayload.TYPE,
+                OpenBoundaryImmunityPayload.STREAM_CODEC,
+                OpenBoundaryImmunityPayload::handle
+        );
+        registrar.playToClient(
+                OpenDetectionWormControlPayload.TYPE,
+                OpenDetectionWormControlPayload.STREAM_CODEC,
+                OpenDetectionWormControlPayload::handle
+        );
+        registrar.playToServer(
+                SetBoundaryImmunityPayload.TYPE,
+                SetBoundaryImmunityPayload.STREAM_CODEC,
+                SetBoundaryImmunityPayload::handle
+        );
+        registrar.playToServer(
+                SetDetectionWormControlPayload.TYPE,
+                SetDetectionWormControlPayload.STREAM_CODEC,
+                SetDetectionWormControlPayload::handle
+        );
+        registrar.playToServer(
+                WormWarehousePageMessage.TYPE,
+                WormWarehousePageMessage.STREAM_CODEC,
+                WormWarehousePageMessage::handle
+        );
+        registrar.playToServer(
+                OpenEngravedWormMenuPayload.TYPE,
+                OpenEngravedWormMenuPayload.STREAM_CODEC,
+                OpenEngravedWormMenuPayload::handle
+        );
+        registrar.playToServer(
+                EngravedWormPagePayload.TYPE,
+                EngravedWormPagePayload.STREAM_CODEC,
+                EngravedWormPagePayload::handle
+        );
     }
 
     private static void handleOpenSpace(OpenSpacePayload message, IPayloadContext context) {
@@ -252,9 +295,8 @@ public final class AddonNetwork {
     }
 
     private static void handleBlockAbsorptionHold(BlockAbsorptionHoldPayload message, IPayloadContext context) {
-        if (context.flow() == PacketFlow.SERVERBOUND) {
-            context.enqueueWork(() -> {
-            });
+        if (context.flow() == PacketFlow.SERVERBOUND && context.player() instanceof ServerPlayer player) {
+            context.enqueueWork(() -> SakuraImaginaryStorageService.updateBlockCastHeld(player, message.held()));
         }
     }
 

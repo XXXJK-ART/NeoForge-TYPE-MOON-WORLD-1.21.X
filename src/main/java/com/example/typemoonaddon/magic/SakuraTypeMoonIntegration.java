@@ -6,6 +6,8 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.typemoonworld.api.AddonRegistrar;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
@@ -146,7 +148,7 @@ public final class SakuraTypeMoonIntegration {
                 & registry.registerDefinition(definition(SHADOW_BINDING, "magic.typemoonworld.shadow_binding.name", 50.0D, 20))
                 & registry.registerDefinition(definition(SHADOW_TRANSFER, "magic.typemoonworld.shadow_transfer.name", 0.0D, 0))
                 & registry.registerDefinition(definition(HEROIC_SPIRIT_DEVOURER, "magic.typemoonworld.heroic_spirit_devourer.name", 0.0D, 40))
-                & registry.registerDefinition(definition(FORBIDDEN_MAGIC, "magic.typemoonworld.forbidden_magic.name", 900.0D, 0))
+                & registry.registerDefinition(definition(FORBIDDEN_MAGIC, "magic.typemoonworld.forbidden_magic.name", 0.0D, 0))
                 & registry.registerDefinition(definition(SHADOW_ART, "magic.typemoonworld.shadow_art.name", 0.0D, 0));
     }
 
@@ -405,11 +407,11 @@ public final class SakuraTypeMoonIntegration {
             return false;
         }
         player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).unlockForbiddenMagic();
-        return ensureKnowledge(player, FORBIDDEN_MAGIC);
+        return SakuraRuleBreakerDispelService.unlockForbiddenMagicKnowledge(player);
     }
 
     public static boolean ensureShadowArtKnowledge(ServerPlayer player) {
-        return ensureKnowledge(player, SHADOW_ART);
+        return SakuraRuleBreakerDispelService.unlockShadowArtKnowledge(player);
     }
 
     private static boolean ensureKnowledge(ServerPlayer player, ResourceLocation id) {
@@ -494,6 +496,49 @@ public final class SakuraTypeMoonIntegration {
                 && hasImaginaryAttribute(player);
     }
 
+    public static float imaginaryDamage(ServerPlayer caster, LivingEntity target, float baseDamage) {
+        if (caster == null || target == null || baseDamage <= 0.0F) {
+            return 0.0F;
+        }
+        return caster.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).grailWormAscended()
+                && ServantIdentityHelper.isServantLike(target)
+                ? baseDamage * com.example.typemoonaddon.config.GameplayConfig.GRAIL_SERVANT_DAMAGE_MULTIPLIER
+                : baseDamage;
+    }
+
+    public static double currentMana(LivingEntity entity) {
+        return entity == null ? 0.0D : registry().mana(entity).current();
+    }
+
+    public static double restoreMana(LivingEntity entity, double amount) {
+        if (entity == null || amount <= 0.0D) {
+            return 0.0D;
+        }
+        var mana = registry().mana(entity);
+        double restored = Math.min(amount, Math.max(0.0D, mana.maximum() - mana.current()));
+        if (restored > 0.0D) {
+            mana.add(restored);
+        }
+        return restored;
+    }
+
+    public static double transferMana(LivingEntity source, LivingEntity recipient, double maximumAmount) {
+        if (source == null || recipient == null || source == recipient || maximumAmount <= 0.0D) {
+            return 0.0D;
+        }
+        var sourceMana = registry().mana(source);
+        var recipientMana = registry().mana(recipient);
+        double amount = Math.min(
+                maximumAmount,
+                Math.min(sourceMana.current(), recipientMana.maximum() - recipientMana.current())
+        );
+        if (amount <= 0.0D || !sourceMana.tryConsume(amount)) {
+            return 0.0D;
+        }
+        recipientMana.add(amount);
+        return amount;
+    }
+
     private static boolean hasImaginaryAttribute(ServerPlayer player) {
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         return vars.is_magus && vars.player_magic_attributes_imaginary_number;
@@ -505,7 +550,7 @@ public final class SakuraTypeMoonIntegration {
 
     public static void refundMana(ServerPlayer player, double amount) {
         if (player != null) {
-            SakuraImaginaryStorageService.refundMana(player, amount);
+            restoreMana(player, amount);
         }
     }
 

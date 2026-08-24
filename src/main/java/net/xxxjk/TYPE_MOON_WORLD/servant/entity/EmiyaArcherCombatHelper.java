@@ -174,6 +174,8 @@ public final class EmiyaArcherCombatHelper {
    public static final int TWIN_REPEL_COOLDOWN = 3 * 20;
    public static final int CHASING_THRUST_COOLDOWN = 4 * 20;
    public static final int PROJECTION_IMPACT_COOLDOWN = 6 * 20;
+   private static final double CRIMSON_HOUND_MP_COST = 300.0;
+   private static final double PSEUDO_SPIRAL_SWORD_MP_COST = 500.0;
    public static final int OVEREDGE_CLEAVE_COOLDOWN = 5 * 20;
    public static final int BLADE_RUPTURE_COOLDOWN = 7 * 20;
    public static final int AERIAL_PURSUIT_COOLDOWN = 5 * 20;
@@ -296,11 +298,11 @@ public final class EmiyaArcherCombatHelper {
             shootIronSword(entity, level, target, now);
             return;
          }
-         if (normalOrDecisive && shouldUseCrimsonHound(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_CRIMSON_TICK), phasedCooldown(CRIMSON_COOLDOWN, phase)) && entity.getCurrentMp() >= 20.0) {
+         if (normalOrDecisive && shouldUseCrimsonHound(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_CRIMSON_TICK), phasedCooldown(CRIMSON_COOLDOWN, phase)) && entity.getCurrentMp() >= CRIMSON_HOUND_MP_COST) {
             castCrimsonHound(entity, level, target, now);
             return;
          }
-         if (decisive && shouldUsePseudoSpiralSword(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, phase)) && entity.getCurrentMp() >= 25.0) {
+         if (decisive && shouldUsePseudoSpiralSword(entity, target, now, phase) && canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, phase)) && entity.getCurrentMp() >= PSEUDO_SPIRAL_SWORD_MP_COST) {
             castPseudoSpiralSword(entity, level, target, now);
             return;
          }
@@ -1613,10 +1615,11 @@ public final class EmiyaArcherCombatHelper {
          return false;
       }
 
-      boolean canSpiral = entity.getCurrentMp() >= 25.0
+      boolean canSpiral = entity.getCurrentMp() >= PSEUDO_SPIRAL_SWORD_MP_COST
          && canUse(now, data.getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, phase))
          && shouldUsePseudoSpiralSword(entity, target, now, phase);
       boolean canCrimson = canUse(now, data.getLong(LAST_CRIMSON_TICK), phasedCooldown(CRIMSON_COOLDOWN, phase))
+         && entity.getCurrentMp() >= CRIMSON_HOUND_MP_COST
          && shouldUseCrimsonHound(entity, target, now, phase);
       if (!canSpiral && !canCrimson) {
          return false;
@@ -1666,7 +1669,7 @@ public final class EmiyaArcherCombatHelper {
       if (!canUse(now, entity.getPersistentData().getLong(LAST_SPIRAL_TICK), phasedCooldown(SPIRAL_COOLDOWN, ServantCombatPhase.DECISIVE))) {
          return false;
       }
-      if (entity.getCurrentMp() < 30.0) {
+      if (entity.getCurrentMp() < PSEUDO_SPIRAL_SWORD_MP_COST) {
          return false;
       }
       LivingEntity target = findClairvoyanceTarget(entity, level);
@@ -2323,7 +2326,7 @@ public final class EmiyaArcherCombatHelper {
 
    private static void castCrimsonHound(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
       entity.getPersistentData().putLong(LAST_CRIMSON_TICK, now);
-      entity.setCurrentMp(entity.getCurrentMp() - 20.0);
+      entity.setCurrentMp(entity.getCurrentMp() - CRIMSON_HOUND_MP_COST);
       ServantVoiceHelper.tryPlayProjection(entity);
       equipBow(entity, new ItemStack(ModItems.CRIMSON_HOUND.get()));
       entity.triggerNamedActionAnimation("bow_shot");
@@ -2340,7 +2343,7 @@ public final class EmiyaArcherCombatHelper {
 
    private static void castPseudoSpiralSword(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
       entity.getPersistentData().putLong(LAST_SPIRAL_TICK, now);
-      entity.setCurrentMp(entity.getCurrentMp() - 25.0);
+      entity.setCurrentMp(entity.getCurrentMp() - PSEUDO_SPIRAL_SWORD_MP_COST);
       ServantVoiceHelper.tryPlayEmiyaSpiral(entity);
       equipBow(entity, new ItemStack(ModItems.PSEUDO_SPIRAL_SWORD.get()));
       entity.triggerNamedActionAnimation("bow_shot");

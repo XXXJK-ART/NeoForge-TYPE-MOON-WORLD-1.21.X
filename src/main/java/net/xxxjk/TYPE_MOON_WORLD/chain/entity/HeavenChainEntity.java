@@ -185,6 +185,9 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         setPos(gateOrigin);
         previousServerPosition = gateOrigin;
         setDeltaMovement(Vec3.ZERO);
+        entityData.set(STACKED_CHAIN_COUNT, 1);
+        entityData.set(DURABILITY_CAP, ChainConfig.ENUMA_CHAIN_MAX_HEALTH);
+        entityData.set(HEALTH, ChainConfig.ENUMA_CHAIN_MAX_HEALTH);
         setState(ChainState.LAUNCHING);
     }
 
@@ -262,7 +265,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
             return;
         }
         int clamped = clampStackedChainCount(logicalChainCount);
-        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        float maximumHealth = ChainConfig.ENUMA_CHAIN_MAX_HEALTH * clamped;
         float aggregated = Mth.clamp(health, 0.0F, maximumHealth);
         entityData.set(STACKED_CHAIN_COUNT, clamped);
         entityData.set(DURABILITY_CAP, maximumHealth);
@@ -895,15 +898,19 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
             entityData.set(OWNER_UUID, Optional.of(tag.getUUID("Owner")));
         }
         entityData.set(OWNER_ID, tag.getInt("OwnerId"));
+        boolean savedEnumaChain = tag.getBoolean("EnumaChain");
+        float perChainHealth = savedEnumaChain ? ChainConfig.ENUMA_CHAIN_MAX_HEALTH : ChainConfig.CHAIN_MAX_HEALTH;
         float maximumHealth = tag.contains("ChainMaxHealth", Tag.TAG_FLOAT)
             ? tag.getFloat("ChainMaxHealth")
-            : ChainConfig.CHAIN_MAX_HEALTH;
+            : perChainHealth;
         int stackedCount = tag.contains("StackedChainCount", Tag.TAG_INT)
             ? tag.getInt("StackedChainCount")
-            : (int)Math.ceil(Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH) / ChainConfig.CHAIN_MAX_HEALTH);
+            : (int)Math.ceil(Math.max(maximumHealth, perChainHealth) / perChainHealth);
         stackedCount = clampStackedChainCount(stackedCount);
-        maximumHealth = Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH * stackedCount);
-        maximumHealth = Mth.clamp(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH);
+        maximumHealth = Math.max(maximumHealth, perChainHealth * stackedCount);
+        maximumHealth = savedEnumaChain
+            ? Mth.clamp(maximumHealth, perChainHealth, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH)
+            : Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH);
         entityData.set(STACKED_CHAIN_COUNT, stackedCount);
         entityData.set(DURABILITY_CAP, maximumHealth);
         float savedHealth = tag.contains("ChainHealth", Tag.TAG_FLOAT) ? tag.getFloat("ChainHealth") : maximumHealth;

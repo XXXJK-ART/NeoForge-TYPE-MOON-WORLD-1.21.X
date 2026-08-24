@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,6 +22,7 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
    private NeonButton previousButton;
    private NeonButton nextButton;
    private NeonButton copyButton;
+   private EditBox forceBox;
 
    public MagicCopyingTableScreen(MagicCopyingTableMenu menu, Inventory inventory, Component title) {
       super(menu, inventory, title);
@@ -35,13 +37,21 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
       var vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       magics.addAll(MagicLearningStrategy.displayMagicIds(vars.learned_magics).stream()
          .filter(MagicLearningStrategy::canCopy).sorted().toList());
+      if (MagicLearningStrategy.isLearned(vars, "contract_magecraft")) {
+         magics.add(MagicCopyingTableMenu.SELF_GEAS_COPY_ID);
+      }
       cursor = 0;
       previousButton = arcaneButton(leftPos + 78, topPos + 42, 22, 18, Component.literal("<"), b -> cycle(-1), GuiUtils.ARCANE_CYAN);
       nextButton = arcaneButton(leftPos + 154, topPos + 42, 22, 18, Component.literal(">"), b -> cycle(1), GuiUtils.ARCANE_CYAN);
       copyButton = arcaneButton(leftPos + 184, topPos + 92, 62, 20,
          Component.translatable("gui.typemoonworld.magic_copying_table.copy"), b -> sendCopy(), GuiUtils.ARCANE_GOLD);
+      forceBox = new EditBox(this.font, leftPos + 186, topPos + 66, 56, 18, Component.translatable("gui.typemoonworld.magic_copying_table.force"));
+      forceBox.setMaxLength(3);
+      forceBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,3}"));
+      forceBox.setValue(String.valueOf(maxSelfGeasForce(vars)));
       addRenderableWidget(previousButton);
       addRenderableWidget(nextButton);
+      addRenderableWidget(forceBox);
       addRenderableWidget(copyButton);
       updateButtons();
    }
@@ -56,7 +66,15 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
    }
 
    private void sendCopy() {
-      if (!magics.isEmpty()) PacketDistributor.sendToServer(new MagicCopyMessage(magics.get(cursor)));
+      if (magics.isEmpty()) {
+         return;
+      }
+      String id = magics.get(cursor);
+      if (MagicCopyingTableMenu.SELF_GEAS_COPY_ID.equals(id)) {
+         PacketDistributor.sendToServer(new MagicCopyMessage(id, readForce()));
+      } else {
+         PacketDistributor.sendToServer(new MagicCopyMessage(id));
+      }
    }
 
    private void updateButtons() {
@@ -64,6 +82,11 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
       previousButton.active = available && magics.size() > 1;
       nextButton.active = previousButton.active;
       copyButton.active = available;
+      if (forceBox != null) {
+         boolean selfGeas = available && MagicCopyingTableMenu.SELF_GEAS_COPY_ID.equals(magics.get(cursor));
+         forceBox.visible = selfGeas;
+         forceBox.active = selfGeas;
+      }
    }
 
    @Override
@@ -92,17 +115,44 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
       if (!magics.isEmpty()) {
          String id = magics.get(cursor);
          var vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         double proficiency = MagicProficiencyService.get(vars, id);
+         boolean selfGeas = MagicCopyingTableMenu.SELF_GEAS_COPY_ID.equals(id);
+         double proficiency = MagicProficiencyService.get(vars, selfGeas ? "contract_magecraft" : id);
          int magicColor = MagicUiColors.colorFor(id, false);
-         g.drawCenteredString(font, Component.translatable("magic.typemoonworld." + id + ".name"), 122, 58, magicColor);
+         g.drawCenteredString(font, displayName(id), 122, 58, magicColor);
          g.drawCenteredString(font, Component.literal(String.format("%.1f%%", proficiency)), 122, 72, GuiUtils.ARCANE_TEXT_MUTED);
          GuiUtils.renderProgressBar(g, 80, 84, 84, 6, (float)proficiency / 100.0F, magicColor);
-         g.drawString(font, Component.literal("P " + (int)Math.ceil(MagicProficiencyService.get(vars, id))), 186, 58, magicColor, false);
-         g.drawString(font, Component.translatable("gui.typemoonworld.magic_copying_table.status.ready"), 186, 72, GuiUtils.ARCANE_TEXT_MUTED, false);
+         if (selfGeas) {
+            g.drawString(font, Component.translatable("gui.typemoonworld.magic_copying_table.force"), 186, 58, magicColor, false);
+            g.drawString(font, Component.literal("Max " + maxSelfGeasForce(vars)), 186, 68, GuiUtils.ARCANE_TEXT_MUTED, false);
+         } else {
+            g.drawString(font, Component.literal("P " + (int)Math.ceil(proficiency)), 186, 58, magicColor, false);
+            g.drawString(font, Component.translatable("gui.typemoonworld.magic_copying_table.status.ready"), 186, 72, GuiUtils.ARCANE_TEXT_MUTED, false);
+         }
       } else {
          g.drawCenteredString(font, Component.translatable("gui.typemoonworld.magic_copying_table.empty"), 122, 68, GuiUtils.ARCANE_TEXT_MUTED);
       }
       g.drawString(font, playerInventoryTitle, 12, 124, GuiUtils.ARCANE_TEXT_MUTED, false);
+   }
+
+   private static Component displayName(String magicId) {
+      if (MagicCopyingTableMenu.SELF_GEAS_COPY_ID.equals(magicId)) {
+         return Component.translatable("item.typemoonworld.self_geas_scroll");
+      }
+      return Component.translatable("magic.typemoonworld." + magicId + ".name");
+   }
+
+   private int readForce() {
+      try {
+         int value = Integer.parseInt(forceBox == null || forceBox.getValue().isEmpty() ? "0" : forceBox.getValue());
+         var vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return Math.max(0, Math.min(maxSelfGeasForce(vars), value));
+      } catch (NumberFormatException ignored) {
+         return 0;
+      }
+   }
+
+   private static int maxSelfGeasForce(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return Math.max(0, Math.min(100, (int)Math.floor(MagicProficiencyService.get(vars, "contract_magecraft"))));
    }
 
    @Override

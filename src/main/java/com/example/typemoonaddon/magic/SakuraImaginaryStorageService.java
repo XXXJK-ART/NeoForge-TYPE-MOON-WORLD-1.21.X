@@ -1,13 +1,23 @@
 package com.example.typemoonaddon.magic;
 
+import com.example.typemoonaddon.config.GameplayConfig;
 import com.example.typemoonaddon.data.ImaginarySpaceData;
 import com.example.typemoonaddon.registry.AddonAttachments;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,9 +25,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 
 public final class SakuraImaginaryStorageService {
+    private static final Map<UUID, PendingBlock> PENDING_BLOCKS = new HashMap<>();
+    private static final Map<UUID, Long> BLOCK_CAST_HELD_UNTIL = new HashMap<>();
+
     private SakuraImaginaryStorageService() {
     }
 
@@ -92,7 +104,37 @@ public final class SakuraImaginaryStorageService {
         }
     }
 
+    public static void updateBlockCastHeld(ServerPlayer player, boolean held) {
+        if (!held) {
+            BLOCK_CAST_HELD_UNTIL.remove(player.getUUID());
+            return;
+        }
+        ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+        if (validCaster(player)
+                && data.magicMode() == ImaginarySpaceData.MagicMode.STORAGE
+                && (!data.protectionActive() || data.crestWormAssimilated())) {
+            BLOCK_CAST_HELD_UNTIL.put(player.getUUID(), player.serverLevel().getGameTime() + 4L);
+        }
+    }
+
+    public static void tick(MinecraftServer server) {
+        tickPendingBlocks(server);
+    }
+
+    public static void playerUnavailable(ServerPlayer player) {
+        PENDING_BLOCKS.remove(player.getUUID());
+        BLOCK_CAST_HELD_UNTIL.remove(player.getUUID());
+    }
+
+    public static void serverStopping() {
+        PENDING_BLOCKS.clear();
+        BLOCK_CAST_HELD_UNTIL.clear();
+    }
+
     private static boolean storeFromTarget(ServerPlayer player, ImaginarySpaceData data) {
+        if (PENDING_BLOCKS.containsKey(player.getUUID())) {
+            return true;
+        }
         InteractionHand hand = absorbableHand(player);
         if (hand != null) {
             return absorbStack(player, data, player.getItemInHand(hand), hand);
@@ -105,7 +147,7 @@ public final class SakuraImaginaryStorageService {
 
         BlockHitResult hit = rayTraceBlock(player);
         if (hit != null) {
-            return absorbBlock(player, data, hit.getBlockPos());
+            return beginBlockAbsorption(player, data, hit.getBlockPos());
         }
 
         player.displayClientMessage(Component.translatable("message.typemoonworld.no_storage_target"), true);
@@ -113,6 +155,9 @@ public final class SakuraImaginaryStorageService {
     }
 
     private static boolean absorbFromTarget(ServerPlayer player, ImaginarySpaceData data) {
+        if (SakuraImaginaryShadowService.hasLivingTarget(player)) {
+            return SakuraImaginaryShadowService.castFromAbsorption(player);
+        }
         return storeFromTarget(player, data);
     }
 
@@ -151,7 +196,11 @@ public final class SakuraImaginaryStorageService {
         return true;
     }
 
-    private static boolean absorbBlock(ServerPlayer player, ImaginarySpaceData data, net.minecraft.core.BlockPos pos) {
+    private static boolean beginBlockAbsorption(ServerPlayer player, ImaginarySpaceData data, BlockPos pos) {
+        if (isBlockPending(player.serverLevel().dimension(), pos)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.cannot_absorb_block"), true);
+            return false;
+        }
         BlockState state = player.serverLevel().getBlockState(pos);
         ItemStack result = state.isAir() ? ItemStack.EMPTY : state.getBlock().asItem().getDefaultInstance();
         if (result.isEmpty()) {
@@ -168,24 +217,91 @@ public final class SakuraImaginaryStorageService {
             return false;
         }
         double cost = ProjectionManaCostService.cost(result);
-        if (!tryConsumeMana(player, cost)) {
+        if (SakuraTypeMoonIntegration.currentMana(player) < cost) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
             return false;
         }
-        if (!player.serverLevel().removeBlock(pos, false)) {
+        long now = player.serverLevel().getGameTime();
+        PENDING_BLOCKS.put(player.getUUID(), new PendingBlock(
+                player.getUUID(),
+                player.serverLevel().dimension(),
+                pos.immutable(),
+                state,
+                result.copy(),
+                now + GameplayConfig.BLOCK_ABSORPTION_TICKS
+        ));
+        BLOCK_CAST_HELD_UNTIL.put(player.getUUID(), now + 4L);
+        player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorption_started"), true);
+        return true;
+    }
+
+    private static void tickPendingBlocks(MinecraftServer server) {
+        Iterator<PendingBlock> iterator = PENDING_BLOCKS.values().iterator();
+        while (iterator.hasNext()) {
+            PendingBlock pending = iterator.next();
+            ServerLevel level = server.getLevel(pending.dimension());
+            ServerPlayer player = server.getPlayerList().getPlayer(pending.casterId());
+            if (level == null || player == null || !validCaster(player) || !blockCastHeld(player)
+                    || player.level() != level || !stillAimingAt(player, pending.pos())) {
+                iterator.remove();
+                if (player != null) {
+                    player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorption_canceled"), true);
+                }
+                continue;
+            }
+
+            BlockState state = level.getBlockState(pending.pos());
+            ItemStack result = state.isAir() ? ItemStack.EMPTY : state.getBlock().asItem().getDefaultInstance();
+            if (!state.equals(pending.snapshot())
+                    || !ItemStack.matches(result, pending.result())
+                    || level.getBlockEntity(pending.pos()) != null
+                    || result.isEmpty()) {
+                iterator.remove();
+                player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorption_canceled"), true);
+                continue;
+            }
+
+            if (level.getGameTime() < pending.finishTick()) {
+                continue;
+            }
+
+            ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+            if (!data.canFit(result)) {
+                iterator.remove();
+                player.displayClientMessage(Component.translatable("message.typemoonworld.space_full"), true);
+                continue;
+            }
+            double cost = ProjectionManaCostService.cost(result);
+            if (!tryConsumeMana(player, cost)) {
+                iterator.remove();
+                player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
+                continue;
+            }
+            if (!removeBlock(player, level, pending, state, result, cost)) {
+                iterator.remove();
+                continue;
+            }
+
+            iterator.remove();
+            AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
+            addProficiency(player, GameplayConfig.PROFICIENCY_GAIN_PER_PRACTICE);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorbed"), true);
+        }
+    }
+
+    private static boolean removeBlock(ServerPlayer player, ServerLevel level, PendingBlock pending, BlockState state, ItemStack result, double cost) {
+        ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+        if (!level.removeBlock(pending.pos(), false)) {
             refundMana(player, cost);
             player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorption_canceled"), true);
             return false;
         }
         if (!data.insert(result).isEmpty()) {
             refundMana(player, cost);
-            player.serverLevel().setBlock(pos, state, 3);
+            level.setBlock(pending.pos(), state, 3);
             player.displayClientMessage(Component.translatable("message.typemoonworld.space_full"), true);
             return false;
         }
-        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
-        addProficiency(player, 0.2D);
-        player.displayClientMessage(Component.translatable("message.typemoonworld.block_absorbed"), true);
         return true;
     }
 
@@ -247,6 +363,20 @@ public final class SakuraImaginaryStorageService {
         return hit.getType() == HitResult.Type.BLOCK ? hit : null;
     }
 
+    private static boolean stillAimingAt(ServerPlayer player, BlockPos expected) {
+        BlockHitResult hit = rayTraceBlock(player);
+        return hit != null && hit.getBlockPos().equals(expected);
+    }
+
+    private static boolean isBlockPending(ResourceKey<Level> dimension, BlockPos pos) {
+        return PENDING_BLOCKS.values().stream()
+                .anyMatch(pending -> pending.dimension().equals(dimension) && pending.pos().equals(pos));
+    }
+
+    private static boolean blockCastHeld(ServerPlayer player) {
+        return player.serverLevel().getGameTime() <= BLOCK_CAST_HELD_UNTIL.getOrDefault(player.getUUID(), Long.MIN_VALUE);
+    }
+
     private static boolean validCaster(ServerPlayer player) {
         return player != null && player.isAlive() && !player.isSpectator();
     }
@@ -255,5 +385,15 @@ public final class SakuraImaginaryStorageService {
         return player.getData(AddonAttachments.IMAGINARY_SPACE.get()).crestWormAssimilated()
                 ? SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION
                 : SakuraTypeMoonIntegration.IMAGINARY_STORAGE;
+    }
+
+    private record PendingBlock(
+            UUID casterId,
+            ResourceKey<Level> dimension,
+            BlockPos pos,
+            BlockState snapshot,
+            ItemStack result,
+            long finishTick
+    ) {
     }
 }

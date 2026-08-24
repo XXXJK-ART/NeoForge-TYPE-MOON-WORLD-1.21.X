@@ -17,22 +17,23 @@ public final class SummoningRelicRegistry {
 
    static {
       map("avalon", "artoria_pendragon");
-      map("relic_round_table_fragment", "gawain");
+      map("relic_round_table_fragment", "gawain", "lancelot_berserker");
       map("relic_bronze_mirror", "medusa");
-      map("relic_old_man_mask", "cursed_arm_hassan", "shadow_hassan", "hundred_faces_hassan");
+      map("relic_old_man_mask", "cursed_arm_hassan", "shadow_hassan", "hundred_faces_hassan", "fanatic_assassin");
       map("relic_hajiquan_manual", "li_shuwen");
-      map("relic_first_snake_skin", "gilgamesh");
+      map("relic_first_snake_skin", "gilgamesh_caster");
       map("relic_tsubura_ship_plank", "ushiwakamaru_rider");
       map("relic_bizen_tsuba", "sasaki_kojiro");
       map("relic_bandage", "nightingale");
       map("relic_philosophers_stone", "paracelsus");
       map("relic_golden_fleece", "medea");
       map("relic_ato_cradle", "zhao_yun_rider");
-      map("relic_gilgamesh_ash_urn", "gilgamesh");
+      map("relic_gilgamesh_ash_urn", "gilles_de_rais_caster");
       map("relic_baobhan_sith_heels", "baobhan_sith");
       map("relic_diarmuid_yellow_rose_tip", "diarmuid_ua_duibhne");
       map("relic_iskandar_cloak_fragment", "iskandar");
       map("relic_okita_katana", "okita_souji_saber");
+      map("redsword", "senko_muramasa");
       map("relic_apocalypse", "pale_rider");
       map("relic_apocalypse_page", "pale_rider");
       map("gem_necklace", "emiya_archer");
