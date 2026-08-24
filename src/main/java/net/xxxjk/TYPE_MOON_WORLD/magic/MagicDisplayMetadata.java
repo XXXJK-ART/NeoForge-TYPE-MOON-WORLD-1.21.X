@@ -43,35 +43,39 @@ public final class MagicDisplayMetadata {
    }
 
    public static boolean isChurchMagic(String magicId) {
-      return magicId != null && CHURCH_MAGICS.contains(magicId);
+      return CHURCH_MAGICS.contains(magicPath(magicId));
    }
 
    public static boolean isMartialMagic(String magicId) {
-      return "bajiquan".equals(magicId) || "ganryu".equals(magicId) || "hokushin_ittoryu".equals(magicId) || "tennen_rishin_ryu".equals(magicId);
+      String path = magicPath(magicId);
+      return "bajiquan".equals(path) || "ganryu".equals(path) || "hokushin_ittoryu".equals(path) || "tennen_rishin_ryu".equals(path);
    }
 
    public static boolean isTalent(String magicId) {
-      return TalentService.isTalent(magicId);
+      return TalentService.isTalent(magicPath(magicId));
    }
 
    public static boolean isImaginaryMagic(String magicId) {
-      return magicId != null && IMAGINARY_MAGICS.contains(magicId);
+      return IMAGINARY_MAGICS.contains(magicPath(magicId));
    }
 
    public static boolean isSolomonMagic(String magicId) {
-      return magicId != null && SOLOMON_MAGICS.contains(magicId);
+      return SOLOMON_MAGICS.contains(magicPath(magicId));
    }
 
    public static boolean canEnterMagicCrest(String magicId) {
-      return magicId != null && !isTalent(magicId) && !CREST_FORBIDDEN_MAGICS.contains(magicId) && MagicDefinitionRegistry.isCrestAllowed(magicId);
+      String path = magicPath(magicId);
+      return !path.isEmpty() && !isTalent(path) && !CREST_FORBIDDEN_MAGICS.contains(path) && MagicDefinitionRegistry.isCrestAllowed(magicId);
    }
 
    public static boolean isSpecialMagic(String magicId) {
-      return "time_alter".equals(magicId) || "baptism_rite".equals(magicId);
+      String path = magicPath(magicId);
+      return "time_alter".equals(path) || "baptism_rite".equals(path);
    }
 
    public static String categoryOf(String magicId) {
-      if (magicId == null || magicId.isEmpty()) {
+      String path = magicPath(magicId);
+      if (path.isEmpty()) {
          return CATEGORY_OTHER;
       } else if (isTalent(magicId)) {
          return CATEGORY_TALENT;
@@ -85,23 +89,23 @@ public final class MagicDisplayMetadata {
          return CATEGORY_WORM;
       } else if (isBoundaryMagic(magicId)) {
          return CATEGORY_BOUNDARY;
-      } else if (magicId.startsWith("jewel_") || magicId.startsWith("ruby") || magicId.startsWith("sapphire")
-         || magicId.startsWith("emerald") || magicId.startsWith("topaz") || magicId.startsWith("cyan")) {
+      } else if (path.startsWith("jewel_") || path.startsWith("ruby") || path.startsWith("sapphire")
+         || path.startsWith("emerald") || path.startsWith("topaz") || path.startsWith("cyan")) {
          return CATEGORY_JEWEL;
-      } else if ("projection".equals(magicId) || "structural_analysis".equals(magicId) || "broken_phantasm".equals(magicId)
-         || "ubw_sword_control".equals(magicId)) {
+      } else if ("projection".equals(path) || "structural_analysis".equals(path) || "broken_phantasm".equals(path)
+         || "ubw_sword_control".equals(path)) {
          return CATEGORY_UBW;
-      } else if ("gander".equals(magicId) || "gandr_machine_gun".equals(magicId)) {
+      } else if ("gander".equals(path) || "gandr_machine_gun".equals(path)) {
          return CATEGORY_NORDIC;
-      } else if ("fire_magic".equals(magicId) || "water_magic".equals(magicId) || "wind_magic".equals(magicId) || "earth_magic".equals(magicId)) {
+      } else if ("fire_magic".equals(path) || "water_magic".equals(path) || "wind_magic".equals(path) || "earth_magic".equals(path)) {
          return CATEGORY_ELEMENTAL;
       } else if (isChurchMagic(magicId)) {
          return CATEGORY_CHURCH;
       } else if (isMartialMagic(magicId)) {
          return CATEGORY_MARTIAL;
-      } else if ("time_alter".equals(magicId)) {
+      } else if ("time_alter".equals(path)) {
          return CATEGORY_SPECIAL;
-      } else if (PlayerMagicSelectionService.isElementalMagic(magicId)) {
+      } else if (PlayerMagicSelectionService.isElementalMagic(path)) {
          return CATEGORY_ELEMENTAL;
       } else if (MagicDefinitionRegistry.contains(magicId)) {
          return MagicDefinitionRegistry.get(magicId).category().getPath();
@@ -111,14 +115,22 @@ public final class MagicDisplayMetadata {
    }
 
    private static boolean isSpawnMagic(String magicId) {
-      return magicId != null && SPAWN_MAGICS.contains(magicId);
+      return SPAWN_MAGICS.contains(magicPath(magicId));
    }
 
    private static boolean isWormMagic(String magicId) {
-      return magicId != null && WORM_MAGICS.contains(magicId);
+      return WORM_MAGICS.contains(magicPath(magicId));
    }
 
    private static boolean isBoundaryMagic(String magicId) {
-      return magicId != null && BOUNDARY_MAGICS.contains(magicId);
+      return BOUNDARY_MAGICS.contains(magicPath(magicId));
+   }
+
+   private static String magicPath(String magicId) {
+      if (magicId == null) {
+         return "";
+      }
+      int split = magicId.indexOf(':');
+      return split >= 0 ? magicId.substring(split + 1) : magicId;
    }
 }

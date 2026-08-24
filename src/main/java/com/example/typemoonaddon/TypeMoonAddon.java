@@ -72,7 +72,6 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.CREST_WORM);
             event.accept(AddonItems.WORM);
             event.accept(AddonItems.ENGRAVED_WORM);
-            event.accept(AddonItems.MANA_FURNACE);
             event.accept(AddonItems.HOLY_GRAIL_FRAGMENT);
             event.accept(AddonItems.VOID_RING_REGALIA);
             event.accept(AddonItems.MAGIC_PAGE_SPIRIT_SUMMONING);
@@ -123,6 +122,8 @@ public final class TypeMoonAddon {
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
             event.insertAfter(ModItems.KIKU_ICHIMONJI_NORIMUNE.toStack(), AddonItems.PRELATIS_SPELLBOOK.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.insertAfter(AddonItems.PRELATIS_SPELLBOOK.toStack(), AddonItems.MANA_FURNACE.toStack(),
                 CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {

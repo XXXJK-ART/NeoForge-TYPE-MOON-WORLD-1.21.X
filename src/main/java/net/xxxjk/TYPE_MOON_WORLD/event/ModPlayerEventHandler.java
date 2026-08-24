@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardBaobhanSithSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardZhaoYunSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLancelotBerserkerSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 
@@ -219,13 +220,18 @@ public class ModPlayerEventHandler {
          return;
       }
       if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof LivingEntity target) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         ServantTrueSweepService.triggerPlayerAttack(player, vars);
+         if (ServantTrueSweepService.wasPlayerSweepTriggeredThisTick(player)) {
+            event.setCanceled(true);
+            return;
+         }
          ItemStack stack = player.getMainHandItem();
          if (stack.getItem() instanceof BizenNagamitsuItem && PlayerNoblePhantasmHelper.triggerTsubameOnHit(player, stack, target)) {
             event.setCanceled(true);
             return;
          }
          triggerArtoriaManaBurstTerrainBreak(player, target);
-         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection.isProtectedMaster(player, target)) {
             event.setCanceled(true);
             return;

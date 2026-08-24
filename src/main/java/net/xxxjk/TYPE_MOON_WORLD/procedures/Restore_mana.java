@@ -156,6 +156,9 @@ public class Restore_mana {
                }
             } else {
             double effectiveRegen = manaRegen * leylineMultiplier;
+            if (entity instanceof LivingEntity living) {
+               effectiveRegen = com.example.typemoonaddon.magic.BoundaryMagicIntegration.adjustNaturalManaRegen(living, effectiveRegen);
+            }
             regenInterval = Math.max(MIN_NATURAL_REGEN_INTERVAL, regenInterval * 4.0);
                vars.player_mana = Math.min(vars.player_mana + effectiveRegen, vars.player_max_mana);
             }

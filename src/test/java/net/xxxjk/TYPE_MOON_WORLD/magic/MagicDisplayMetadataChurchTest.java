@@ -17,6 +17,22 @@ class MagicDisplayMetadataChurchTest {
    }
 
    @Test
+   void namespacedChurchMagicsCannotEnterMagicCrest() {
+      for (String id : new String[]{
+         "typemoonworld:theology",
+         "typemoonworld:black_key_making",
+         "typemoonworld:iron_armor_action",
+         "typemoonworld:cremation_rite",
+         "typemoonworld:baptism_rite",
+         "typemoonworld:stigma"
+      }) {
+         assertTrue(MagicDisplayMetadata.isChurchMagic(id));
+         assertEquals(MagicDisplayMetadata.CATEGORY_CHURCH, MagicDisplayMetadata.categoryOf(id));
+         assertFalse(MagicDisplayMetadata.canEnterMagicCrest(id));
+      }
+   }
+
+   @Test
    void manaBurstCanEnterMagicCrest() {
       assertTrue(MagicDisplayMetadata.canEnterMagicCrest("mana_burst"));
    }

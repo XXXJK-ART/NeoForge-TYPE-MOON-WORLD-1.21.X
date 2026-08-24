@@ -25,19 +25,31 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MagicWheelSlotEditMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class BoundaryMagicOptionsScreen extends Screen {
-   private static final int WINDOW_WIDTH = 360;
-   private static final int WINDOW_HEIGHT = 320;
+   private static final int WINDOW_WIDTH = 420;
+   private static final int WINDOW_HEIGHT = 326;
+   private static final int PANEL_TOP = 38;
+   private static final int PANEL_GAP = 10;
+   private static final int BASIC_PANEL_WIDTH = 128;
+   private static final int BLACKLIST_PANEL_WIDTH = 250;
+   private static final int TOP_PANEL_HEIGHT = 136;
+   private static final int TARGET_PANEL_TOP = 180;
+   private static final int TARGET_PANEL_HEIGHT = 92;
+   private static final int ACTION_BUTTON_TOP = 274;
+   private static final int BUTTON_HEIGHT = 18;
 
    private final Screen parent;
    private TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry;
    private EditBox sideBox;
-   private EditBox complexityBox;
    private EditBox uuidBox;
    private NeonButton powerButton;
+   private NeonButton shapeButton;
+   private NeonButton debuffButton;
    private final Map<String, NeonButton> modeButtons = new LinkedHashMap<>();
    private final List<SelectableTarget> targets = new ArrayList<>();
    private String selectedMode = "none";
    private int selectedPower = 1;
+   private String selectedShape = "sphere";
+   private String selectedDebuff = "nausea";
 
    public BoundaryMagicOptionsScreen(Screen parent) {
       super(Component.translatable("gui.typemoonworld.boundary_options.title"));
@@ -63,62 +75,88 @@ public final class BoundaryMagicOptionsScreen extends Screen {
             : "none";
       this.selectedPower = Math.max(1, Math.min(5, preset.contains(BoundaryMagicIntegration.POWER)
             ? preset.getInt(BoundaryMagicIntegration.POWER) : 1));
+      this.selectedShape = normalizeShape(preset.contains(BoundaryMagicIntegration.SHAPE)
+            ? preset.getString(BoundaryMagicIntegration.SHAPE) : "sphere");
+      this.selectedDebuff = preset.contains(BoundaryMagicIntegration.INTERFERENCE_EFFECT)
+            ? normalizeDebuff(preset.getString(BoundaryMagicIntegration.INTERFERENCE_EFFECT)) : "nausea";
 
       int left = this.width / 2 - WINDOW_WIDTH / 2;
       int top = this.height / 2 - WINDOW_HEIGHT / 2;
-      this.sideBox = new EditBox(this.font, left + 22, top + 48, 40, 20, Component.literal("side"));
+      int basicX = left + 16;
+      int blacklistX = basicX + BASIC_PANEL_WIDTH + PANEL_GAP;
+      int targetX = left + 16;
+      int targetY = top + TARGET_PANEL_TOP;
+
+      this.sideBox = new EditBox(this.font, basicX + 12, top + 70, 42, 18, Component.literal("side"));
       this.sideBox.setMaxLength(3);
       this.sideBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,3}"));
       this.sideBox.setValue(Integer.toString(Math.max(10, Math.min(100, preset.contains(BoundaryMagicIntegration.SIDE)
             ? preset.getInt(BoundaryMagicIntegration.SIDE) : 10))));
-      this.complexityBox = new EditBox(this.font, left + 72, top + 48, 44, 20, Component.literal("complexity"));
-      this.complexityBox.setMaxLength(3);
-      this.complexityBox.setFilter(value -> value.isEmpty() || value.matches("[0-9]{0,3}"));
-      this.complexityBox.setValue(Integer.toString(Math.max(1, Math.min(100, preset.contains(BoundaryMagicIntegration.COMPLEXITY)
-            ? preset.getInt(BoundaryMagicIntegration.COMPLEXITY) : 10))));
-      this.uuidBox = new EditBox(this.font, left + 22, top + 150, 188, 20, Component.literal("uuid"));
+      this.sideBox.setTextColor(GuiUtils.ARCANE_TEXT);
+      this.uuidBox = new EditBox(this.font, targetX + 12, targetY + 30, 236, 18, Component.literal("uuid"));
       this.uuidBox.setMaxLength(36);
       this.uuidBox.setFilter(value -> value.isEmpty() || value.matches("[0-9a-fA-F-]{0,36}"));
       this.uuidBox.setValue(preset.contains(BoundaryMagicIntegration.BLACKLIST_UUID)
             ? preset.getString(BoundaryMagicIntegration.BLACKLIST_UUID) : "");
+      this.uuidBox.setTextColor(GuiUtils.ARCANE_TEXT);
       this.addRenderableWidget(this.sideBox);
-      this.addRenderableWidget(this.complexityBox);
       this.addRenderableWidget(this.uuidBox);
 
-      int buttonY = top + 46;
-      int buttonX = left + 120;
-      addModeButton("none", buttonX, buttonY, Component.translatable("magic.option.typemoonworld.boundary_blacklist.none"));
-      addModeButton("all_players", buttonX + 76, buttonY, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_players"));
-      addModeButton("specific_player", buttonX + 152, buttonY, Component.translatable("magic.option.typemoonworld.boundary_blacklist.specific_player"));
-      addModeButton("non_players", buttonX, buttonY + 24, Component.translatable("magic.option.typemoonworld.boundary_blacklist.non_players"));
-      addModeButton("all_living", buttonX + 76, buttonY + 24, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_living"));
-      addModeButton("specific_entity", buttonX + 152, buttonY + 24, Component.translatable("magic.option.typemoonworld.boundary_blacklist.specific_entity"));
-      addModeButton("hostile", buttonX, buttonY + 48, Component.translatable("magic.option.typemoonworld.boundary_blacklist.hostile"));
-      addModeButton("all_aggro_targets", buttonX + 76, buttonY + 48, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_aggro_targets"));
+      int modeX = blacklistX + 12;
+      int modeY = top + 62;
+      int modeW = 111;
+      int modeGap = 8;
+      int row = 21;
+      addModeButton("none", modeX, modeY, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.none"));
+      addModeButton("all_players", modeX + modeW + modeGap, modeY, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_players"));
+      addModeButton("specific_player", modeX, modeY + row, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.specific_player"));
+      addModeButton("non_players", modeX + modeW + modeGap, modeY + row, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.non_players"));
+      addModeButton("all_living", modeX, modeY + row * 2, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_living"));
+      addModeButton("specific_entity", modeX + modeW + modeGap, modeY + row * 2, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.specific_entity"));
+      addModeButton("hostile", modeX, modeY + row * 3, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.hostile"));
+      addModeButton("all_aggro_targets", modeX + modeW + modeGap, modeY + row * 3, modeW, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_aggro_targets"));
 
-      this.powerButton = new NeonButton(left + 84, top + 78, 96, 20, powerLabel(), b -> {
+      this.powerButton = new NeonButton(basicX + 12, top + 112, 102, BUTTON_HEIGHT, powerLabel(), b -> {
          selectedPower = selectedPower >= 5 ? 1 : selectedPower + 1;
          refreshPowerButton();
       }, GuiUtils.ARCANE_CYAN).setArcaneStyle(true).setCompactStyle(true);
       addRenderableWidget(this.powerButton);
 
-      addRenderableWidget(new NeonButton(left + 230, top + 150, 96, 20, Component.translatable("gui.typemoonworld.boundary_options.pick_player"), b -> pickTarget(true), GuiUtils.ARCANE_CYAN)
+      this.shapeButton = new NeonButton(basicX + 12, top + 132, 102, BUTTON_HEIGHT, shapeLabel(), b -> {
+         selectedShape = "sphere".equals(selectedShape) ? "hemisphere" : "sphere";
+         refreshShapeButton();
+      }, GuiUtils.ARCANE_CREST).setArcaneStyle(true).setCompactStyle(true);
+      addRenderableWidget(this.shapeButton);
+
+      this.debuffButton = new NeonButton(basicX + 12, top + 153, 102, BUTTON_HEIGHT, debuffLabel(), b -> {
+         selectedDebuff = switch (selectedDebuff) {
+            case "nausea" -> "blindness";
+            case "blindness" -> "darkness";
+            default -> "nausea";
+         };
+         refreshDebuffButton();
+      }, GuiUtils.ARCANE_CREST).setArcaneStyle(true).setCompactStyle(true);
+      this.debuffButton.visible = isInterferenceMagic();
+      addRenderableWidget(this.debuffButton);
+
+      int targetButtonX = targetX + 264;
+      addRenderableWidget(new NeonButton(targetButtonX, targetY + 22, 104, BUTTON_HEIGHT, Component.translatable("gui.typemoonworld.boundary_options.pick_player"), b -> pickTarget(true), GuiUtils.ARCANE_CYAN)
             .setArcaneStyle(true).setCompactStyle(true));
-      addRenderableWidget(new NeonButton(left + 230, top + 174, 96, 20, Component.translatable("gui.typemoonworld.boundary_options.pick_entity"), b -> pickTarget(false), GuiUtils.ARCANE_CYAN)
+      addRenderableWidget(new NeonButton(targetButtonX, targetY + 43, 104, BUTTON_HEIGHT, Component.translatable("gui.typemoonworld.boundary_options.pick_entity"), b -> pickTarget(false), GuiUtils.ARCANE_CYAN)
             .setArcaneStyle(true).setCompactStyle(true));
-      addRenderableWidget(new NeonButton(left + 230, top + 198, 96, 20, Component.translatable("gui.typemoonworld.boundary_options.clear_uuid"), b -> this.uuidBox.setValue(""), GuiUtils.ARCANE_DANGER)
+      addRenderableWidget(new NeonButton(targetButtonX, targetY + 64, 104, BUTTON_HEIGHT, Component.translatable("gui.typemoonworld.boundary_options.clear_uuid"), b -> this.uuidBox.setValue(""), GuiUtils.ARCANE_DANGER)
             .setArcaneStyle(true).setCompactStyle(true));
 
       refreshTargets();
-      addRenderableWidget(new NeonButton(left + 56, top + 278, 96, 22, Component.translatable("gui.done"), this::save, GuiUtils.ARCANE_VALID)
+      addRenderableWidget(new NeonButton(left + 104, top + ACTION_BUTTON_TOP, 96, 20, Component.translatable("gui.done"), this::save, GuiUtils.ARCANE_VALID)
             .setArcaneStyle(true).setCompactStyle(true));
-      addRenderableWidget(new NeonButton(left + 208, top + 278, 96, 22, Component.translatable("gui.cancel"), b -> this.onClose(), GuiUtils.ARCANE_DANGER)
+      addRenderableWidget(new NeonButton(left + 220, top + ACTION_BUTTON_TOP, 96, 20, Component.translatable("gui.cancel"), b -> this.onClose(), GuiUtils.ARCANE_DANGER)
             .setArcaneStyle(true).setCompactStyle(true));
       updateModeButtons();
    }
 
-   private void addModeButton(String mode, int x, int y, Component label) {
-      NeonButton button = new NeonButton(x, y, 72, 20, label, b -> {
+   private void addModeButton(String mode, int x, int y, int width, Component label) {
+      NeonButton button = new NeonButton(x, y, width, BUTTON_HEIGHT, label, b -> {
          this.selectedMode = mode;
          updateModeButtons();
       }, GuiUtils.ARCANE_GOLD).setArcaneStyle(true).setCompactStyle(true);
@@ -136,8 +174,28 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       }
    }
 
+   private void refreshDebuffButton() {
+      if (this.debuffButton != null) {
+         this.debuffButton.setMessage(debuffLabel());
+      }
+   }
+
+   private void refreshShapeButton() {
+      if (this.shapeButton != null) {
+         this.shapeButton.setMessage(shapeLabel());
+      }
+   }
+
    private Component powerLabel() {
       return Component.translatable("gui.typemoonworld.boundary_options.power", this.selectedPower);
+   }
+
+   private Component debuffLabel() {
+      return Component.translatable("gui.typemoonworld.boundary_options.debuff." + this.selectedDebuff);
+   }
+
+   private Component shapeLabel() {
+      return Component.translatable("gui.typemoonworld.boundary_options.shape." + this.selectedShape);
    }
 
    private void refreshTargets() {
@@ -181,10 +239,14 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       }
       CompoundTag payload = this.entry.presetPayload == null ? new CompoundTag() : this.entry.presetPayload.copy();
       int side = parseInt(this.sideBox == null ? "10" : this.sideBox.getValue(), 10, 100, 10);
-      int complexity = parseInt(this.complexityBox == null ? "10" : this.complexityBox.getValue(), 1, 100, 10);
       payload.putInt(BoundaryMagicIntegration.SIDE, side);
-      payload.putInt(BoundaryMagicIntegration.COMPLEXITY, complexity);
       payload.putInt(BoundaryMagicIntegration.POWER, this.selectedPower);
+      payload.putString(BoundaryMagicIntegration.SHAPE, normalizeShape(this.selectedShape));
+      if (isInterferenceMagic()) {
+         payload.putString(BoundaryMagicIntegration.INTERFERENCE_EFFECT, normalizeDebuff(this.selectedDebuff));
+      } else {
+         payload.remove(BoundaryMagicIntegration.INTERFERENCE_EFFECT);
+      }
       payload.putString(BoundaryMagicIntegration.BLACKLIST, this.selectedMode);
       if ("specific_player".equals(this.selectedMode) || "specific_entity".equals(this.selectedMode)) {
          String raw = this.uuidBox == null ? "" : this.uuidBox.getValue().trim();
@@ -222,33 +284,69 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       GuiUtils.renderScreenBackdrop(graphics, this.width, this.height);
       int left = (this.width - WINDOW_WIDTH) / 2;
       int top = (this.height - WINDOW_HEIGHT) / 2;
+      int basicX = left + 16;
+      int blacklistX = basicX + BASIC_PANEL_WIDTH + PANEL_GAP;
+      int targetX = left + 16;
+      int targetY = top + TARGET_PANEL_TOP;
       GuiUtils.renderArcaneWindow(graphics, left, top, WINDOW_WIDTH, WINDOW_HEIGHT, GuiUtils.ARCANE_CYAN);
       graphics.drawCenteredString(this.font, this.title, this.width / 2, top + 9, GuiUtils.ARCANE_TEXT);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.side"), left + 22, top + 38, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.complexity"), left + 68, top + 38, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.power_label"), left + 84, top + 70, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.blacklist"), left + 22, top + 120, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.uuid"), left + 22, top + 136, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets"), left + 230, top + 120, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, selectedModeLabel(), left + 22, top + 226, GuiUtils.ARCANE_TEXT_MUTED, false);
-      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets_hint"), left + 230, top + 136, GuiUtils.ARCANE_TEXT_MUTED, false);
-      int listY = top + 226;
+
+      GuiUtils.renderArcanePanel(graphics, basicX, top + PANEL_TOP, BASIC_PANEL_WIDTH, TOP_PANEL_HEIGHT, GuiUtils.ARCANE_CYAN);
+      GuiUtils.renderArcanePanel(graphics, blacklistX, top + PANEL_TOP, BLACKLIST_PANEL_WIDTH, TOP_PANEL_HEIGHT, GuiUtils.ARCANE_GOLD);
+      GuiUtils.renderArcanePanel(graphics, targetX, targetY, WINDOW_WIDTH - 32, TARGET_PANEL_HEIGHT, GuiUtils.ARCANE_CREST);
+
+      drawPanelTitle(graphics, Component.translatable("gui.typemoonworld.boundary_options.parameters"), basicX + 10, top + 45, BASIC_PANEL_WIDTH - 20, GuiUtils.ARCANE_CYAN);
+      drawPanelTitle(graphics, Component.translatable("gui.typemoonworld.boundary_options.blacklist"), blacklistX + 10, top + 45, BLACKLIST_PANEL_WIDTH - 20, GuiUtils.ARCANE_GOLD);
+      drawPanelTitle(graphics, Component.translatable("gui.typemoonworld.boundary_options.targeting"), targetX + 10, targetY + 8, WINDOW_WIDTH - 52, GuiUtils.ARCANE_CREST);
+
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.side"), basicX + 12, top + 60, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.power_label"), basicX + 12, top + 100, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.shape"), basicX + 12, top + 122, GuiUtils.ARCANE_TEXT_MUTED, false);
+      if (isInterferenceMagic()) {
+         graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.debuff"), basicX + 12, top + 143, GuiUtils.ARCANE_TEXT_MUTED, false);
+      }
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.uuid"), targetX + 12, targetY + 20, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets"), targetX + 12, targetY + 55, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.selected", selectedModeLabel()), blacklistX + 12,
+            top + 131, GuiUtils.ARCANE_TEXT_MUTED, false);
+      graphics.drawString(this.font, Component.translatable("gui.typemoonworld.boundary_options.targets_hint"), targetX + 264, targetY + 10, GuiUtils.ARCANE_TEXT_MUTED, false);
+      int listY = targetY + 70;
       int shown = 0;
       for (SelectableTarget target : this.targets) {
          if (shown >= 2) {
             break;
          }
-         graphics.drawString(this.font, clampText(target.label.getString(), 122), left + 230,
-               listY + shown * 18, GuiUtils.ARCANE_TEXT, false);
+         graphics.drawString(this.font, clampText(target.label.getString(), 220), targetX + 12,
+               listY + shown * 10, GuiUtils.ARCANE_TEXT, false);
          shown++;
       }
       super.render(graphics, mouseX, mouseY, partialTick);
+   }
+
+   private void drawPanelTitle(GuiGraphics graphics, Component title, int x, int y, int width, int accentColor) {
+      GuiUtils.renderSectionHeader(graphics, x, y + 2, width, accentColor);
+      graphics.drawString(this.font, title, x, y, GuiUtils.ARCANE_TEXT, false);
    }
 
    private Component selectedModeLabel() {
       String key = "magic.option.typemoonworld.boundary_blacklist." + this.selectedMode;
       Component translated = Component.translatable(key);
       return translated.getString().equals(key) ? Component.literal(this.selectedMode) : translated;
+   }
+
+   private boolean isInterferenceMagic() {
+      return this.entry != null && this.entry.magicId != null && this.entry.magicId.endsWith("interference_boundary");
+   }
+
+   private static String normalizeDebuff(String value) {
+      return switch (value) {
+         case "blindness", "darkness" -> value;
+         default -> "nausea";
+      };
+   }
+
+   private static String normalizeShape(String value) {
+      return "hemisphere".equals(value) ? "hemisphere" : "sphere";
    }
 
    private String clampText(String text, int maxWidth) {

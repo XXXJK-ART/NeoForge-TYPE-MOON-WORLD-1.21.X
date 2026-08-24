@@ -16,6 +16,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -29,7 +30,6 @@ public final class ServantCardHeraclesSkills {
    private static final String HERACLES_FORCE_LANDING_IMPACT_TAG = "ServantCardHeraclesForceLandingImpact";
    private static final String HERACLES_LAST_SPRINT_COLLISION_BREAK_TAG = "ServantCardHeraclesLastSprintCollisionBreak";
    private static final double HERACLES_LANDING_IMPACT_MIN_DROP = 5.0;
-   private static final int HERACLES_BASIC_SWEEP_COOLDOWN_TICKS = 8;
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
    private static final String GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG = "GodHandHighDamageReviveUntil";
 
@@ -243,36 +243,11 @@ public final class ServantCardHeraclesSkills {
    }
 
    public static void performBasicSweep(ServerPlayer player) {
-      var weapon = player.getMainHandItem();
-      if (!weapon.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())
-         || !(player.level() instanceof ServerLevel level)
-         || player.getCooldowns().isOnCooldown(weapon.getItem())) {
+      if (player == null) {
          return;
       }
-      player.getCooldowns().addCooldown(weapon.getItem(), HERACLES_BASIC_SWEEP_COOLDOWN_TICKS);
-      Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
-      float damage = (float)player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
-      AABB area = player.getBoundingBox().inflate(4.2, 1.5, 4.2).move(look.scale(0.65));
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
-         entity -> entity != player && entity.isAlive() && !player.isAlliedTo(entity)
-            && !entity.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(entity)
-            && !ServantMasterProtection.isProtectedMaster(player, entity))) {
-         Vec3 offset = target.position().subtract(player.position());
-         if (offset.horizontalDistanceSqr() > 17.64 || !player.hasLineOfSight(target)) continue;
-         target.invulnerableTime = 0;
-         target.hurt(player.damageSources().playerAttack(player), damage);
-         target.invulnerableTime = 0;
-         Vec3 push = new Vec3(offset.x, 0.0, offset.z);
-         if (push.lengthSqr() > 1.0E-4) {
-            push = push.normalize();
-            target.push(push.x * 0.55, 0.1, push.z * 0.55);
-            target.hurtMarked = true;
-         }
-      }
-      Vec3 center = player.position().add(look.scale(1.8)).add(0.0, player.getBbHeight() * 0.55, 0.0);
-      level.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 5, 0.8, 0.35, 0.8, 0.0);
-      level.sendParticles(ParticleTypes.CRIT, center.x, center.y, center.z, 18, 1.25, 0.45, 1.25, 0.12);
-      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.25F, 0.62F);
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      ServantTrueSweepService.triggerPlayerAttack(player, vars);
    }
 
    public static void triggerHeraclesBlockAttack(ServerPlayer player, BlockPos pos) {

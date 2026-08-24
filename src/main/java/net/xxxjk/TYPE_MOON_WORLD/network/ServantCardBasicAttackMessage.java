@@ -52,7 +52,9 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
                if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) return;
                net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(player);
             }
-            if (vars.servant_card_transformed && !message.secondary && ServantTrueSweepService.tryPlayerSweep(player, vars)) {
+            boolean trueSweepTriggered = vars.servant_card_transformed && !message.secondary
+               && ServantTrueSweepService.triggerPlayerAttack(player, vars);
+            if (trueSweepTriggered) {
                return;
             } else if (vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id) && message.secondary) {
                ServantCardGilgameshSkills.performSingleVault(player);

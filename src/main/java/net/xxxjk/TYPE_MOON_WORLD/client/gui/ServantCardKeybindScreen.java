@@ -82,6 +82,11 @@ public class ServantCardKeybindScreen extends Screen {
    }
 
    @Override
+   public void renderBackground(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
+      // The screen draws its own opaque backdrop before rendering widgets.
+   }
+
+   @Override
    public void render(GuiGraphics gui, int mouseX, int mouseY, float partialTick) {
       int windowWidth = Math.min(WINDOW_WIDTH, this.width - 12);
       int windowHeight = Math.min(WINDOW_HEIGHT, this.height - 12);

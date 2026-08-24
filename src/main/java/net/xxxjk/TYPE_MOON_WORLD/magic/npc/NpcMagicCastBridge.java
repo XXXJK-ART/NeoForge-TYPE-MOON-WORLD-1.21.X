@@ -4,6 +4,7 @@ import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
 import com.example.typemoonaddon.detection.DetectionService;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService.CastStatus;
+import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1536,6 +1537,7 @@ public final class NpcMagicCastBridge {
          }
 
          double regenPerTick = vars.player_mana_egenerated_every_moment * var9 / interval;
+         regenPerTick = BoundaryMagicIntegration.adjustNaturalManaRegen(npc, regenPerTick);
          if (vars.player_mana < vars.player_max_mana) {
             vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + regenPerTick);
          }

@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
@@ -673,6 +674,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    /** Explicit basic-attack hook; special attacks should continue to use doHurtTarget directly. */
    public boolean doBasicHurtTarget(LivingEntity target) {
+      if (target == null || !(this.level() instanceof net.minecraft.server.level.ServerLevel)) {
+         return false;
+      }
+      if (ServantTrueSweepService.triggerNpcAttack(this, target, this.level().getGameTime())) {
+         return true;
+      }
       LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
       return resolvedTarget != null && this.doHurtTarget(resolvedTarget);
    }

@@ -137,7 +137,7 @@ class IskandarResourcesTest {
       assertTrue(client.contains("ModEntities.GORDIUS_WHEEL.get()"));
       assertTrue(client.contains("ModEntities.MACEDONIAN_SOLDIER.get()"));
       assertTrue(client.contains("ModEntities.MACEDONIAN_SPEAR_PROJECTILE.get()"));
-      assertTrue(factory.contains("IskandarEntity.SERVANT_KEY.equals(servantId.getPath())"));
+      assertTrue(factory.contains("case \"iskandar\" -> ModEntities.ISKANDAR.get().create(level)"));
 
       JsonObject sounds = json("assets/typemoonworld/sounds.json");
       for (String event : List.of("iskandar_voice_attack", "iskandar_voice_fail",

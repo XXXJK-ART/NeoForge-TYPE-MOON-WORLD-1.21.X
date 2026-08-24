@@ -277,30 +277,34 @@ public class TypeMoonWorldModKeyMappings {
          if (!event.isAttack()) {
             return;
          }
-         if (isClientDiarmuidDualWieldActive(player, vars)
-            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            player.swing(InteractionHand.OFF_HAND);
-            event.setCanceled(true);
-            event.setSwingHand(false);
-            return;
-         }
-         if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.TEMPLE_STONE_SWORD_AXE.get())) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            event.setCanceled(true);
-            event.setSwingHand(true);
-            return;
-         }
+         boolean blockTarget = minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK;
          if (player.isCrouching() && vars.servant_card_transformed && supportsCrouchAttack(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardActionMessage(-1), new CustomPacketPayload[0]);
             event.setCanceled(true);
             event.setSwingHand(true);
             return;
          }
+         if (vars.servant_card_transformed && !blockTarget) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            if (isClientDiarmuidDualWieldActive(player, vars)) {
+               player.swing(InteractionHand.OFF_HAND);
+               event.setSwingHand(false);
+               event.setCanceled(true);
+            }
+            return;
+         }
+         if (isClientDiarmuidDualWieldActive(player, vars)
+            && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
+            player.swing(InteractionHand.OFF_HAND);
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            return;
+         }
          if (vars.servant_card_transformed
             && "oda_nobunaga".equals(vars.servant_card_id)
             && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
          }
       }
 

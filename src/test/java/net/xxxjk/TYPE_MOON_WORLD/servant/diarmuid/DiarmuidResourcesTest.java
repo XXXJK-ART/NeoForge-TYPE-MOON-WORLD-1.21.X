@@ -76,7 +76,7 @@ class DiarmuidResourcesTest {
       assertTrue(creativeTabs.contains("SERVANT_CARD_DIARMUID_UA_DUIBHNE"));
       assertTrue(eventBus.contains("DIARMUID_UA_DUIBHNE"));
       assertTrue(renderer.contains("HumanoidServantRenderer<>(context, \"diarmuid_ua_duibhne\")"));
-      assertTrue(factory.contains("DiarmuidUaDuibhneEntity.SERVANT_KEY"));
+      assertTrue(factory.contains("case \"diarmuid_ua_duibhne\" -> ModEntities.DIARMUID_UA_DUIBHNE.get().create(level)"));
       assertTrue(entity.contains("super.customServerAiStep();"));
       assertTrue(entity.contains("DiarmuidCombatAi.tick(this, level)"));
       assertTrue(entity.contains("DiarmuidCombatAi.consumePreferredRedRose"));

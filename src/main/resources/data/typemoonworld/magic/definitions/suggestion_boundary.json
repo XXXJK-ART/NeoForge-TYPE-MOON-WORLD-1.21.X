@@ -1,7 +1,7 @@
 {
   "name_key": "magic.typemoonworld.suggestion_boundary.name",
-  "category": "typemoonworld:special",
-  "school": "typemoonworld:none",
+  "category": "typemoonworld:boundary",
+  "school": "typemoonworld:boundary",
   "mana_cost": 0.0,
   "cooldown_ticks": 20,
   "learnable": true,
