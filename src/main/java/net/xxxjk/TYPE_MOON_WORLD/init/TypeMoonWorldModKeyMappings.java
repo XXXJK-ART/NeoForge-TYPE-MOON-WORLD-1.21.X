@@ -1250,6 +1250,9 @@ public class TypeMoonWorldModKeyMappings {
                return "";
             } else {
                String var4 = entry.magicId;
+               if (isImaginaryStorageMagic(var4)) {
+                  return buildImaginaryHint(var4, payload);
+               }
 
                return switch (var4) {
                   case "reinforcement" -> buildReinforcementHint(payload);
@@ -1326,6 +1329,33 @@ public class TypeMoonWorldModKeyMappings {
             default -> "gui.typemoonworld.mode.mana_burst.body";
          };
          return Component.translatable(modeKey).getString() + " L" + level;
+      }
+
+      private static String buildImaginaryHint(String magicId, CompoundTag payload) {
+         String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+         return Component.translatable(imaginaryModeLabelKey(magicId, mode)).getString();
+      }
+
+      private static boolean isImaginaryStorageMagic(String magicId) {
+         String path = magicPath(magicId);
+         return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+      }
+
+      private static String imaginaryModeLabelKey(String magicId, String mode) {
+         if ("protection".equals(mode)) {
+            return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+         }
+         return "imaginary_absorption_evolved".equals(magicPath(magicId))
+            ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+            : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
+      }
+
+      private static String magicPath(String magicId) {
+         if (magicId == null) {
+            return "";
+         }
+         int split = magicId.indexOf(':');
+         return split >= 0 ? magicId.substring(split + 1) : magicId;
       }
 
       private static String buildProjectionHint(CompoundTag payload, TypeMoonWorldModVariables.PlayerVariables vars, Player player) {

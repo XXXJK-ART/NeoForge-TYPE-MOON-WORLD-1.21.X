@@ -8,12 +8,18 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public final class EngravedWormMenu extends AbstractContainerMenu {
+    public static final int GRID_X = 8;
+    public static final int WORM_GRID_Y = 52;
+    public static final int PLAYER_INV_Y = 182;
+    public static final int HOTBAR_Y = 240;
     private static final int PLAYER_START = EngravedWormService.PAGE_SIZE;
     private final Player owner;
+    private final SimpleContainer wormSlots = new SimpleContainer(EngravedWormService.PAGE_SIZE);
     private int page;
 
     public EngravedWormMenu(int containerId, Inventory inventory, RegistryFriendlyByteBuf buffer) {
@@ -25,30 +31,23 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
         this.owner = inventory.player;
         this.page = Math.max(0, page);
         buildSlots(inventory);
+        updateWormSlotsFromAttachment();
     }
 
     private void buildSlots(Inventory inventory) {
         for (int slot = 0; slot < EngravedWormService.PAGE_SIZE; slot++) {
             int localSlot = slot;
-            addSlot(new Slot(inventory, -1, 8 + (slot % 9) * 18, 44 + (slot / 9) * 18) {
-                @Override
-                public ItemStack getItem() {
-                    return owner instanceof ServerPlayer player
-                            ? player.getData(EngravedWormAttachments.INVENTORY.get()).get(getAbsoluteSlot())
-                            : ItemStack.EMPTY;
-                }
-
-                @Override
-                public boolean hasItem() {
-                    return !getItem().isEmpty();
-                }
-
+            addSlot(new Slot(wormSlots, slot, GRID_X + (slot % 9) * 18, WORM_GRID_Y + (slot / 9) * 18) {
                 @Override
                 public void set(@NotNull ItemStack stack) {
                     if (owner instanceof ServerPlayer player) {
-                        EngravedWormInventoryData data = player.getData(EngravedWormAttachments.INVENTORY.get());
-                        data.set(getAbsoluteSlot(), stack);
-                        EngravedWormService.recalculate(player);
+                        if (stack.isEmpty()) {
+                            EngravedWormService.remove(player, getAbsoluteSlot());
+                        } else if (stack.is(AddonItems.ENGRAVED_WORM.get()) && EngravedWormData.owner(stack) != null) {
+                            player.getData(EngravedWormAttachments.INVENTORY.get()).set(getAbsoluteSlot(), stack);
+                            EngravedWormService.recalculate(player);
+                        }
+                        updateWormSlotsFromAttachment();
                     }
                     setChanged();
                 }
@@ -59,13 +58,13 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
                         return ItemStack.EMPTY;
                     }
                     ItemStack removed = EngravedWormService.remove(player, getAbsoluteSlot());
+                    updateWormSlotsFromAttachment();
                     return removed.isEmpty() ? ItemStack.EMPTY : removed.copyWithCount(Math.min(amount, removed.getCount()));
                 }
 
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    return owner instanceof ServerPlayer player
-                            && stack.is(AddonItems.ENGRAVED_WORM.get())
+                    return stack.is(AddonItems.ENGRAVED_WORM.get())
                             && EngravedWormData.owner(stack) != null
                             && getItem().isEmpty();
                 }
@@ -73,9 +72,9 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
                 @Override
                 public boolean mayPickup(Player player) {
                     ItemStack stack = getItem();
-                    return player instanceof ServerPlayer serverPlayer
-                            && !stack.isEmpty()
-                            && EngravedWormData.isBoundTo(stack, serverPlayer.getUUID());
+                    return !stack.isEmpty()
+                            && (!(player instanceof ServerPlayer serverPlayer)
+                            || EngravedWormData.isBoundTo(stack, serverPlayer.getUUID()));
                 }
 
                 @Override
@@ -90,11 +89,11 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
         }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(inventory, column + row * 9 + 9, 8 + column * 18, 130 + row * 18));
+                addSlot(new Slot(inventory, column + row * 9 + 9, GRID_X + column * 18, PLAYER_INV_Y + row * 18));
             }
         }
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(inventory, column, 8 + column * 18, 188));
+            addSlot(new Slot(inventory, column, GRID_X + column * 18, HOTBAR_Y));
         }
     }
 
@@ -105,6 +104,8 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
     public void setPage(int page) {
         if (owner instanceof ServerPlayer player) {
             this.page = Math.max(0, Math.min(EngravedWormService.maxPage(player), page));
+            updateWormSlotsFromAttachment();
+            broadcastChanges();
         }
     }
 
@@ -137,6 +138,7 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
             if (target < 0 || !EngravedWormService.insert(serverPlayer, target, stack.copyWithCount(1))) {
                 return ItemStack.EMPTY;
             }
+            updateWormSlotsFromAttachment();
             stack.shrink(1);
         } else {
             return ItemStack.EMPTY;
@@ -157,5 +159,16 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
             }
         }
         return data.size();
+    }
+
+    private void updateWormSlotsFromAttachment() {
+        if (!(owner instanceof ServerPlayer player)) {
+            return;
+        }
+        EngravedWormInventoryData data = player.getData(EngravedWormAttachments.INVENTORY.get());
+        for (int slot = 0; slot < EngravedWormService.PAGE_SIZE; slot++) {
+            ItemStack stack = data.get(page * EngravedWormService.PAGE_SIZE + slot);
+            wormSlots.setItem(slot, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));
+        }
     }
 }

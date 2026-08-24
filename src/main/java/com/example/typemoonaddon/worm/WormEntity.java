@@ -95,7 +95,7 @@ public final class WormEntity extends PathfinderMob {
             clearFire();
         }
         if (variant == WormType.DETECTION) {
-            this.setNoGravity(true);
+            this.setNoGravity(manuallyControlled);
             syncSharedVision();
             if (!manuallyControlled && ownerId != null) {
                 ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
@@ -104,7 +104,10 @@ public final class WormEntity extends PathfinderMob {
                 }
             }
         } else if (sharedVisionActive) {
+            this.setNoGravity(false);
             syncSharedVision();
+        } else {
+            this.setNoGravity(false);
         }
         if (getTarget() instanceof WormEntity wormTarget && isFriendlyWorm(wormTarget)) {
             setTarget(null);
@@ -210,6 +213,9 @@ public final class WormEntity extends PathfinderMob {
         }
         if (getAttribute(Attributes.ATTACK_SPEED) != null) {
             getAttribute(Attributes.ATTACK_SPEED).setBaseValue(this.variant == WormType.WINGED ? 4.0D : 2.0D);
+        }
+        if (this.variant != WormType.DETECTION) {
+            this.setNoGravity(false);
         }
         syncSharedVision();
     }

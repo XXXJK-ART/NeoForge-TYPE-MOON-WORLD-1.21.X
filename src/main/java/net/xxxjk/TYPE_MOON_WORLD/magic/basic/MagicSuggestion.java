@@ -38,7 +38,7 @@ public final class MagicSuggestion {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.isCurrentSelectionFromCrest("suggestion_magic") ? 100.0 : vars.proficiency_suggestion_magic;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency("suggestion_magic");
       LivingEntity target = BasicMagecraftHelper.rayTarget(player, 16.0);
       if (target == null || target == player || EntityUtils.isImmunePlayerTarget(target)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.suggestion.no_target"), true);

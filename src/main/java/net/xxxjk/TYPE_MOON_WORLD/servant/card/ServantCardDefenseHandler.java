@@ -460,7 +460,7 @@ public final class ServantCardDefenseHandler {
       if (agility < 3 && !urgent) {
          return false;
       }
-      double chance = Math.min(0.82, 0.18 + agility * 0.12 + (urgent ? 0.18 : 0.0));
+      double chance = ServantCombatFormulas.baseDodgeChance(params, urgent);
       if ("emiya_archer".equals(vars.servant_card_id)) {
          chance += 0.12;
       }

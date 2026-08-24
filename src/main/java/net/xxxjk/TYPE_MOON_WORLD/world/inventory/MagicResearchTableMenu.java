@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
@@ -24,11 +25,24 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public class MagicResearchTableMenu extends AbstractContainerMenu {
-   private final MagicResearchTableBlockEntity blockEntity; private final ItemStackHandler items; private final ContainerLevelAccess access;
+   private final MagicResearchTableBlockEntity blockEntity; private final ItemStackHandler items; private final ContainerLevelAccess access; private final ContainerData data;
+   private int clientRemainingTicks; private int clientTotalTicks;
    public MagicResearchTableMenu(int id, Inventory inv, FriendlyByteBuf buf) { this(id, inv, resolve(inv.player.level(), buf)); }
    private MagicResearchTableMenu(int id, Inventory inv, MagicResearchTableBlockEntity be) { this(id,inv,be,be.getBlockPos()); }
    public MagicResearchTableMenu(int id, Inventory inv, MagicResearchTableBlockEntity be, BlockPos pos) {
       super((MenuType)TypeMoonWorldModMenus.MAGIC_RESEARCH_TABLE.get(), id); blockEntity=be; items=be.getItems(); access=ContainerLevelAccess.create(inv.player.level(),pos);
+      data = new ContainerData() {
+         @Override public int get(int index) {
+            if (!inv.player.level().isClientSide) return index == 0 ? blockEntity.getRemainingTicks() : blockEntity.getTotalTicks();
+            return index == 0 ? clientRemainingTicks : clientTotalTicks;
+         }
+         @Override public void set(int index, int value) {
+            if (index == 0) clientRemainingTicks = Math.max(0, value);
+            if (index == 1) clientTotalTicks = Math.max(0, value);
+         }
+         @Override public int getCount() { return 2; }
+      };
+      addDataSlots(data);
       addSlot(new SlotItemHandler(items,0,26,44) {
          @Override public boolean mayPlace(ItemStack stack) {
             if (stack.is(ModItems.UNKNOWN_MAGIC_PAGE.get())) return true;
@@ -41,6 +55,10 @@ public class MagicResearchTableMenu extends AbstractContainerMenu {
    }
    private static MagicResearchTableBlockEntity resolve(Level level,FriendlyByteBuf buf){ BlockPos p=buf==null?BlockPos.ZERO:buf.readBlockPos(); return level.getBlockEntity(p) instanceof MagicResearchTableBlockEntity be?be:new MagicResearchTableBlockEntity(p,ModBlocks.MAGIC_RESEARCH_TABLE.get().defaultBlockState()); }
    public boolean stillValid(Player p){ return stillValid(access,p,(Block)ModBlocks.MAGIC_RESEARCH_TABLE.get()); }
+   public boolean isFor(MagicResearchTableBlockEntity be) { return blockEntity == be; }
+   public boolean isResearching() { return data.get(0) > 0 && data.get(1) > 0; }
+   public int researchRemainingTicks() { return data.get(0); }
+   public int researchTotalTicks() { return data.get(1); }
    @Override public ItemStack quickMoveStack(Player player,int index){
       Slot slot=getSlot(index); if(!slot.hasItem()) return ItemStack.EMPTY;
       ItemStack source=slot.getItem(),copy=source.copy();

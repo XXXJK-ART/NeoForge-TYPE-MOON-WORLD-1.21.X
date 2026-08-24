@@ -628,6 +628,12 @@ public final class NpcMagicCastBridge {
       MagicProficiencyService.set(vars, magicId, proficiency);
    }
 
+   private static double crestProficiency(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      return vars == null || magicId == null || magicId.isEmpty()
+         ? 0.0
+         : Math.max(0.0, Math.min(100.0, MagicProficiencyService.get(vars, magicId)));
+   }
+
    private static double leffFixedProficiency(String magicId) {
       return switch (magicId) {
          case "aerial_stasis", "aerial_ascent" -> 100.0;
@@ -690,8 +696,15 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean addTohsakaRinCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      double proficiency = crestProficiency(vars, magicId);
       for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
-         if (existing != null && magicId.equals(existing.magicId) && "tohsaka_rin".equals(existing.originOwnerType)) return false;
+         if (existing != null && magicId.equals(existing.magicId) && "tohsaka_rin".equals(existing.originOwnerType)) {
+            if (proficiency > existing.proficiency) {
+               existing.proficiency = proficiency;
+               return true;
+            }
+            return false;
+         }
       }
       TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
       entry.entryId = UUID.randomUUID().toString();
@@ -701,6 +714,7 @@ public final class NpcMagicCastBridge {
       entry.originOwnerUuid = npc.getUUID().toString();
       entry.originOwnerType = "tohsaka_rin";
       entry.originOwnerName = npc.getName().getString();
+      entry.proficiency = proficiency;
       entry.active = true;
       vars.crest_entries.add(entry);
       return true;
@@ -730,8 +744,15 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean addLeffCrestEntry(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      double proficiency = Math.max(leffFixedProficiency(magicId), crestProficiency(vars, magicId));
       for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : vars.crest_entries) {
-         if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) return false;
+         if (existing != null && magicId.equals(existing.magicId) && "leff_laynor_flauros".equals(existing.originOwnerType)) {
+            if (proficiency > existing.proficiency) {
+               existing.proficiency = proficiency;
+               return true;
+            }
+            return false;
+         }
       }
       TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = new TypeMoonWorldModVariables.PlayerVariables.CrestEntry();
       entry.entryId = "leff_laynor_flauros:" + magicId;
@@ -741,6 +762,7 @@ public final class NpcMagicCastBridge {
       entry.originOwnerUuid = npc.getUUID().toString();
       entry.originOwnerType = "leff_laynor_flauros";
       entry.originOwnerName = npc.getName().getString();
+      entry.proficiency = proficiency;
       entry.active = true;
       vars.crest_entries.add(entry);
       return true;
@@ -1292,6 +1314,7 @@ public final class NpcMagicCastBridge {
                   crestEntry.originOwnerUuid = npc.getUUID().toString();
                   crestEntry.originOwnerType = "npc";
                   crestEntry.originOwnerName = npc.getName().getString();
+                  crestEntry.proficiency = crestProficiency(vars, magicId);
                   crestEntry.active = true;
                   vars.crest_entries.add(crestEntry);
                   ensurePrerequisites(vars, magicId);

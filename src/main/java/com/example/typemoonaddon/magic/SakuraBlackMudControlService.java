@@ -83,6 +83,16 @@ public final class SakuraBlackMudControlService {
         return true;
     }
 
+    public static void dismissForDispel(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        SakuraBlackMudHuntService.end(player);
+        player.getData(AddonAttachments.IMAGINARY_SPACE.get()).advanceShadowDismissalGeneration();
+        AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
+        dismissLoadedSummons(player);
+    }
+
     private static int dismissLoadedSummons(ServerPlayer player) {
         List<Entity> summons = new ArrayList<>();
         for (ServerLevel level : player.server.getAllLevels()) {

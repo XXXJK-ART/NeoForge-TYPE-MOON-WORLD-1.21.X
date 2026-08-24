@@ -72,10 +72,13 @@ public final class BaptismRiteEventHandler {
    public static void start(ServerPlayer player, UUID targetId, double proficiency, int chantTicks) {
       long now = player.level().getGameTime();
       player.getPersistentData().putLong(TAG_STARTED, now);
-      player.getPersistentData().putLong(TAG_UNTIL, now + Math.max(20, chantTicks));
+      player.getPersistentData().putLong(TAG_UNTIL, now + (chantTicks <= 0 ? 0 : Math.max(20, chantTicks)));
       player.getPersistentData().putString(TAG_TARGET, targetId == null ? "" : targetId.toString());
       player.getPersistentData().putDouble(TAG_PROFICIENCY, BasicMagecraftHelper.clampProficiency(proficiency));
       player.getPersistentData().putInt(TAG_LAST_LINE, -1);
+      if (chantTicks <= 0) {
+         finish(player);
+      }
    }
 
    @SubscribeEvent

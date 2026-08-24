@@ -398,6 +398,11 @@ public final class ArcaneMobilityService {
          player.getAbilities().flying = false;
          player.onUpdateAbilities();
       }
+      if (!player.isCreative() && !player.isSpectator()
+         && isAirborne(player)
+         && data.getInt(TAG_AERIAL_MODE) == MODE_NONE) {
+         enterAerialStasis(player, data, player);
+      }
    }
 
    private static boolean drainSustainedMana(LivingEntity stateCarrier, String magicId) {

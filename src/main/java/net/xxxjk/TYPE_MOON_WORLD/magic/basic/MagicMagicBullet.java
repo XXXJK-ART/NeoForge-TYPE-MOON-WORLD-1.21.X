@@ -26,7 +26,7 @@ public final class MagicMagicBullet {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.isCurrentSelectionFromCrest("magic_bullet") ? 100.0 : vars.proficiency_magic_bullet;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency("magic_bullet");
       double cost = 8.0 + proficiency * 0.06;
       if (!ManaHelper.consumeOneTimeMagicCost(player, cost)) {
          return false;

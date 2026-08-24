@@ -33,6 +33,8 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -48,6 +50,7 @@ public final class ServantCardTransformManager {
    private static final ResourceLocation MAX_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_max_health");
    private static final ResourceLocation ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_attack");
    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed");
+   private static final ResourceLocation SPEED_RAMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed_ramp");
    private static final ResourceLocation ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_armor");
    private static final ResourceLocation TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_toughness");
    private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_knockback_resistance");
@@ -57,6 +60,7 @@ public final class ServantCardTransformManager {
    private static final String BOUND_ITEM_TAG = "ServantCardBound";
    private static final String BOUND_WEAPON_TAG = "ServantCardWeapon";
    private static final String EMIYA_WEAPON_EXEMPT_TAG = "ServantCardEmiyaWeaponExempt";
+   private static final String SPRINT_RAMP_TICKS_TAG = "ServantCardSprintRampTicks";
    static final int SERVANT_CARD_DEFAULT_JUMP_CHARGES = ServantCardJumpRecoveryRules.DEFAULT_JUMP_CHARGES;
 
    private ServantCardTransformManager() {
@@ -287,6 +291,7 @@ public final class ServantCardTransformManager {
       ServantCardManaService.tick(player, vars);
       ServantCardHealthService.tick(player, vars);
       ServantCardFlightController.tick(player, vars);
+      tickMovementRamp(player, vars);
       ServantCardDefenseHandler.tick(player, vars);
       ServantCardTraitService.tick(player);
       tickCurrentServant(player, vars);
@@ -873,7 +878,7 @@ public final class ServantCardTransformManager {
       removeAttributes(player);
       addOrReplace(player.getAttribute(Attributes.MAX_HEALTH), MAX_HEALTH_ID, params.maxHealth() - player.getAttributeBaseValue(Attributes.MAX_HEALTH));
       addOrReplace(player.getAttribute(Attributes.ATTACK_DAMAGE), ATTACK_ID, params.attackDamage() - player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE));
-      addOrReplace(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, params.movementSpeed() - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
+      addOrReplace(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, ServantCombatFormulas.SERVANT_SPEED_E - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
       addOrReplace(player.getAttribute(Attributes.ARMOR), ARMOR_ID, params.armor());
       addOrReplace(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID, armorToughnessBonus(params));
       double knockbackResistance = "heracles".equals(servantId)
@@ -884,14 +889,38 @@ public final class ServantCardTransformManager {
       player.setHealth((float)Math.min(params.maxHealth(), Math.max(1.0, params.maxHealth())));
    }
 
+   private static void tickMovementRamp(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
+      ServantParams params = definition == null ? null : definition.parameters();
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (params == null || speed == null) {
+         player.getPersistentData().remove(SPRINT_RAMP_TICKS_TAG);
+         remove(speed, SPEED_RAMP_ID);
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      boolean running = player.isSprinting();
+      int runningTicks = running ? Math.min(40, data.getInt(SPRINT_RAMP_TICKS_TAG) + 1) : 0;
+      if (runningTicks > 0) {
+         data.putInt(SPRINT_RAMP_TICKS_TAG, runningTicks);
+      } else {
+         data.remove(SPRINT_RAMP_TICKS_TAG);
+      }
+      double targetSpeed = ServantCombatFormulas.rampedMovementSpeed(params, runningTicks, params.movementSpeed());
+      addOrReplaceTransient(speed, SPEED_RAMP_ID, targetSpeed - ServantCombatFormulas.SERVANT_SPEED_E);
+   }
+
    private static void removeAttributes(ServerPlayer player) {
       remove(player.getAttribute(Attributes.MAX_HEALTH), MAX_HEALTH_ID);
       remove(player.getAttribute(Attributes.ATTACK_DAMAGE), ATTACK_ID);
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID);
+      remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_RAMP_ID);
       remove(player.getAttribute(Attributes.ARMOR), ARMOR_ID);
       remove(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID);
       remove(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), KNOCKBACK_RESISTANCE_ID);
       remove(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID);
+      player.getPersistentData().remove(SPRINT_RAMP_TICKS_TAG);
+      ServantTrueSweepService.clearPlayer(player);
    }
 
    private static double armorToughnessBonus(ServantParams params) {
@@ -915,6 +944,18 @@ public final class ServantCardTransformManager {
       }
       attribute.removeModifier(id);
       attribute.addPermanentModifier(new AttributeModifier(id, value, AttributeModifier.Operation.ADD_VALUE));
+   }
+
+   private static void addOrReplaceTransient(AttributeInstance attribute, ResourceLocation id, double value) {
+      if (attribute == null) {
+         return;
+      }
+      AttributeModifier existing = attribute.getModifier(id);
+      if (existing != null && Math.abs(existing.amount() - value) < 1.0E-6) {
+         return;
+      }
+      attribute.removeModifier(id);
+      attribute.addTransientModifier(new AttributeModifier(id, value, AttributeModifier.Operation.ADD_VALUE));
    }
 
    private static void remove(AttributeInstance attribute, ResourceLocation id) {

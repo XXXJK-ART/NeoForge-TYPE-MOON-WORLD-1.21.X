@@ -20,14 +20,14 @@ class ServantCardBalanceFixesTest {
       assertEquals(800.0, params.maxHealth(), 0.001);
       assertEquals(40.0, params.attackDamage(), 0.001);
       assertEquals(0.32, params.movementSpeed(), 0.001);
-      assertEquals(24.0, params.armor(), 0.001);
+      assertEquals(12.0, params.armor(), 0.001);
       assertEquals(1000.0, params.manaPool(), 0.001);
       assertEquals(10.0, params.critRatePercent(), 0.001);
 
       assertEquals(2400.0, params.maxHealth() * 3.0, 0.001);
       assertEquals(120.0, params.attackDamage() * 3.0, 0.001);
       assertEquals(0.96, params.movementSpeed() * 3.0, 0.001);
-      assertEquals(72.0, params.armor() * 3.0, 0.001);
+      assertEquals(36.0, params.armor() * 3.0, 0.001);
    }
 
    @Test
@@ -78,7 +78,8 @@ class ServantCardBalanceFixesTest {
       assertTrue(entity.contains("setBaseValue(params.armor())"));
       assertTrue(card.contains("params.maxHealth() - player.getAttributeBaseValue(Attributes.MAX_HEALTH)"));
       assertTrue(card.contains("params.attackDamage() - player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE)"));
-      assertTrue(card.contains("params.movementSpeed() - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED)"));
+      assertTrue(card.contains("ServantCombatFormulas.SERVANT_SPEED_E - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED)"));
+      assertTrue(card.contains("ServantCombatFormulas.rampedMovementSpeed(params"));
       assertTrue(card.contains("addOrReplace(player.getAttribute(Attributes.ARMOR), ARMOR_ID, params.armor())"));
    }
 

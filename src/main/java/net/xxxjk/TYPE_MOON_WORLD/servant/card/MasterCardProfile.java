@@ -666,8 +666,26 @@ public final class MasterCardProfile {
       entry.originOwnerUuid = "";
       entry.originOwnerType = "master_card";
       entry.originOwnerName = masterId == null ? "" : masterId;
+      entry.proficiency = masterCrestProficiency(magicId, masterId);
       entry.active = true;
       entries.add(entry);
+   }
+
+   private static double masterCrestProficiency(String magicId, String masterId) {
+      if ("leff_laynor_flauros".equals(masterId)) {
+         return switch (magicId) {
+            case "aerial_stasis", "aerial_ascent" -> 100.0;
+            case "magic_analysis", "detection", "spiritron_cannon" -> 90.0;
+            case "airflow_blade", "imaginary_displacement", "imaginary_space" -> 85.0;
+            case "suggestion_magic", "reinforcement" -> 70.0;
+            default -> 0.0;
+         };
+      }
+      return switch (magicId) {
+         case "aerial_stasis", "aerial_ascent" -> 100.0;
+         case "suggestion_magic", "reinforcement", "healing_magic" -> 60.0;
+         default -> 0.0;
+      };
    }
 
    private static void grantLeffMasterMagicCrest(TypeMoonWorldModVariables.PlayerVariables vars) {

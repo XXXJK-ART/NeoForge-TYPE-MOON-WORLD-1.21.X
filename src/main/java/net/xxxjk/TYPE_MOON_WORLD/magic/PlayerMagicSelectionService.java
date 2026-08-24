@@ -318,7 +318,11 @@ public final class PlayerMagicSelectionService {
       return "fire_magic".equals(magicId)
          || "water_magic".equals(magicId)
          || "wind_magic".equals(magicId)
-         || "earth_magic".equals(magicId);
+         || "earth_magic".equals(magicId)
+         || "flame_array".equals(magicId)
+         || "azure_water_array".equals(magicId)
+         || "gale_wind_array".equals(magicId)
+         || "rock_earth_array".equals(magicId);
    }
 
    public static int getElementMode(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
@@ -326,10 +330,10 @@ public final class PlayerMagicSelectionService {
          return 0;
       }
       return switch (magicId) {
-         case "fire_magic" -> vars.fire_magic_mode;
-         case "water_magic" -> vars.water_magic_mode;
-         case "wind_magic" -> vars.wind_magic_mode;
-         case "earth_magic" -> vars.earth_magic_mode;
+         case "fire_magic", "flame_array" -> vars.fire_magic_mode;
+         case "water_magic", "azure_water_array" -> vars.water_magic_mode;
+         case "wind_magic", "gale_wind_array" -> vars.wind_magic_mode;
+         case "earth_magic", "rock_earth_array" -> vars.earth_magic_mode;
          default -> 0;
       };
    }
@@ -340,10 +344,10 @@ public final class PlayerMagicSelectionService {
       }
       int clamped = clamp(mode, 0, 1);
       switch (magicId) {
-         case "fire_magic" -> vars.fire_magic_mode = clamped;
-         case "water_magic" -> vars.water_magic_mode = clamped;
-         case "wind_magic" -> vars.wind_magic_mode = clamped;
-         case "earth_magic" -> vars.earth_magic_mode = clamped;
+         case "fire_magic", "flame_array" -> vars.fire_magic_mode = clamped;
+         case "water_magic", "azure_water_array" -> vars.water_magic_mode = clamped;
+         case "wind_magic", "gale_wind_array" -> vars.wind_magic_mode = clamped;
+         case "earth_magic", "rock_earth_array" -> vars.earth_magic_mode = clamped;
       }
    }
 }

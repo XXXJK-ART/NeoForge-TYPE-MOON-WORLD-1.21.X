@@ -26,7 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(PseudoSpiralSwordProjectileEntity.class, EntityDataSerializers.INT);
-   private static final float DIRECT_HIT_DAMAGE = 96.0F;
+   private static final float DIRECT_HIT_DAMAGE = 1500.0F;
    private final Set<Integer> hitIds = new HashSet<>();
 
    public PseudoSpiralSwordProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {

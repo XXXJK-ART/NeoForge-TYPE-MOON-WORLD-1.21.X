@@ -120,8 +120,11 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
          }
       }
       if (closest == null) return false;
-      closest.invulnerableTime = 0;
+      clearTargetIFrames(closest);
       closest.hurt(this.damageSources().thrown(this, this.getOwner()), this.entityData.get(DAMAGE));
+      if (this.getVariant() == RAIN) {
+         clearTargetIFrames(closest);
+      }
       impact(closest.position());
       return true;
    }
@@ -201,10 +204,18 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    protected void onHitEntity(EntityHitResult result) {
       super.onHitEntity(result);
       if (!this.level().isClientSide && result.getEntity() instanceof LivingEntity target) {
-         target.invulnerableTime = 0;
+         clearTargetIFrames(target);
          target.hurt(this.damageSources().thrown(this, this.getOwner()), this.entityData.get(DAMAGE));
+         if (this.getVariant() == RAIN) {
+            clearTargetIFrames(target);
+         }
          impact(this.position());
       }
+   }
+
+   private static void clearTargetIFrames(LivingEntity target) {
+      target.invulnerableTime = 0;
+      target.hurtTime = 0;
    }
 
    @Override

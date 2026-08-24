@@ -151,6 +151,12 @@ public record MagicWheelSlotEditMessage(
                if ("projection".equals(magicId)) {
                   entry.presetPayload = TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(entry.presetPayload);
                }
+               if (!"plunder".equals(crestEntry.sourceKind)
+                  && PlayerMagicSelectionService.requiresPresetConfiguration(magicId)
+                  && entry.presetPayload.isEmpty()) {
+                  player.displayClientMessage(Component.translatable("message.typemoonworld.magic.not_configured"), true);
+                  return;
+               }
             } else {
                if (!hasLearnedMagic(vars, magicId)) {
                   return;

@@ -64,7 +64,7 @@ class ShadowHassanRulesTest {
       assertEquals(300.0, params.maxHealth());
       assertEquals(10.0, params.attackDamage());
       assertEquals(0.28, params.movementSpeed());
-      assertEquals(9.0, params.armor());
+      assertEquals(4.5, params.armor());
       assertEquals(400.0, params.manaPool());
    }
 }

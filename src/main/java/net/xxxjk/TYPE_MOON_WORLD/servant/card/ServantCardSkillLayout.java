@@ -87,7 +87,7 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 220);
+            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 800);
             case 1 -> new ServantCardSkillAction("Self Modification", "self_mod", 28.0, 360);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
@@ -124,9 +124,9 @@ public final class ServantCardSkillLayout {
             case -1 -> new ServantCardSkillAction("Twin Flurry", "twin_flurry", 18.0, 20);
             case 0 -> new ServantCardSkillAction("Project Kanshou and Bakuya", "emiya_kb", 10.0, 20);
             case 1 -> new ServantCardSkillAction("Rho Aias", "rho_aias", 200.0, 300);
-            case 2 -> new ServantCardSkillAction("Pseudo Spiral Sword", "emiya_spiral", 120.0, 10);
-            case 3 -> new ServantCardSkillAction("Crimson Hound", "emiya_hound", 100.0, 80);
-            case 4 -> new ServantCardSkillAction("Projection Loadout Cycle", "emiya_cycle", 100.0, 20);
+            case 2 -> new ServantCardSkillAction("Pseudo Spiral Sword", "emiya_spiral", 500.0, 10);
+            case 3 -> new ServantCardSkillAction("Crimson Hound", "emiya_hound", 300.0, 80);
+            case 4 -> new ServantCardSkillAction("Projection Loadout Cycle", "emiya_cycle", 300.0, 20);
             case 5 -> new ServantCardSkillAction("Trace Opponent Weapon", "copy_weapon", 38.0, 360);
             case 6 -> new ServantCardSkillAction("Layered Projection", "emiya_layered_projection", 36.0, 240);
             case 7 -> new ServantCardSkillAction("Spherical Layered Projection", "emiya_spherical_projection", 45.0, 240);
@@ -141,7 +141,7 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction("Afterimage", "sasaki_afterimage", 15.0, 160);
             case 3 -> new ServantCardSkillAction("Mind's Eye (False)", "sasaki_mind_eye", 18.0, 240);
             case 4 -> new ServantCardSkillAction("Sweep", "sasaki_sweep", 12.0, 80);
-            case 5 -> new ServantCardSkillAction("Transparency", "sasaki_transparency", 20.0, 300);
+            case 5 -> new ServantCardSkillAction("Transparency", "sasaki_transparency", 20.0, 600);
             default -> null;
          };
          case "oda_nobunaga" -> switch (slot) {

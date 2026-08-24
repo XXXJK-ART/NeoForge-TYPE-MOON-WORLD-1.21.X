@@ -50,6 +50,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
@@ -1330,6 +1331,10 @@ public class TypeMoonWorldModVariables {
          return id != null && !id.isEmpty() ? id : UUID.randomUUID().toString();
       }
 
+      private static double sanitizeCrestProficiency(double proficiency) {
+         return Math.max(0.0, Math.min(100.0, proficiency));
+      }
+
       private static boolean isKnownMagicId(String magicId) {
          return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
       }
@@ -1447,6 +1452,7 @@ public class TypeMoonWorldModVariables {
             if (crestEntry.presetPayload == null) {
                crestEntry.presetPayload = new CompoundTag();
             }
+            crestEntry.proficiency = sanitizeCrestProficiency(crestEntry.proficiency);
 
             if ("plunder".equals(crestEntry.sourceKind)) {
                crestEntry.presetPayload = normalizePlunderPresetPayload(crestEntry);
@@ -1705,6 +1711,24 @@ public class TypeMoonWorldModVariables {
          }
       }
 
+      public double getCrestEntryEffectiveProficiency(String crestEntryId, String magicId) {
+         TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry = this.getCrestEntryById(crestEntryId);
+         if (crestEntry == null || !crestEntry.active || !Objects.equals(crestEntry.magicId, magicId)) {
+            return 0.0;
+         } else if ("plunder".equals(crestEntry.sourceKind)) {
+            return Math.max(crestEntry.proficiency, MagicProficiencyService.get(this, magicId));
+         } else {
+            return this.hasLearnedSelfMagic(magicId) ? MagicProficiencyService.get(this, magicId) : 0.0;
+         }
+      }
+
+      public double getEffectiveCurrentMagicProficiency(String magicId) {
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry current = this.getCurrentRuntimeWheelEntry();
+         return current != null && "crest".equals(current.sourceType) && Objects.equals(current.magicId, magicId)
+            ? this.getCrestEntryEffectiveProficiency(current.crestEntryId, magicId)
+            : MagicProficiencyService.get(this, magicId);
+      }
+
       public boolean canCastCurrentSelectionViaCrest(String magicId) {
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry current = this.getCurrentRuntimeWheelEntry();
          if (current != null && "crest".equals(current.sourceType) && this.isWheelSlotEntryCastable(current) && Objects.equals(current.magicId, magicId)) {
@@ -1794,6 +1818,12 @@ public class TypeMoonWorldModVariables {
       }
 
       public boolean addPlunderCrestEntry(String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName) {
+         return this.addPlunderCrestEntry(magicId, presetPayload, originOwnerUuid, originOwnerType, originOwnerName, 0.0);
+      }
+
+      public boolean addPlunderCrestEntry(
+         String magicId, CompoundTag presetPayload, UUID originOwnerUuid, String originOwnerType, String originOwnerName, double originProficiency
+      ) {
          this.ensureMagicSystemInitialized();
          if (!isKnownMagicId(magicId) || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId)) {
             return false;
@@ -1806,6 +1836,7 @@ public class TypeMoonWorldModVariables {
             entry.originOwnerUuid = originOwnerUuid == null ? "" : originOwnerUuid.toString();
             entry.originOwnerType = originOwnerType != null && !originOwnerType.isEmpty() ? originOwnerType : "npc";
             entry.originOwnerName = originOwnerName == null ? "" : originOwnerName;
+            entry.proficiency = sanitizeCrestProficiency(originProficiency);
             entry.active = true;
             int before = this.crest_entries == null ? 0 : this.crest_entries.size();
             List<TypeMoonWorldModVariables.PlayerVariables.CrestEntry> incoming = new ArrayList<>();
@@ -1818,8 +1849,15 @@ public class TypeMoonWorldModVariables {
       public boolean addProjectionPlunderCrestEntry(
          Provider lookupProvider, ItemStack projectionItem, String projectionStructureId, UUID originOwnerUuid, String originOwnerType, String originOwnerName
       ) {
+         return this.addProjectionPlunderCrestEntry(lookupProvider, projectionItem, projectionStructureId, originOwnerUuid, originOwnerType, originOwnerName, 0.0);
+      }
+
+      public boolean addProjectionPlunderCrestEntry(
+         Provider lookupProvider, ItemStack projectionItem, String projectionStructureId, UUID originOwnerUuid, String originOwnerType, String originOwnerName,
+         double originProficiency
+      ) {
          CompoundTag payload = buildProjectionPlunderPresetPayload(lookupProvider, projectionItem, projectionStructureId);
-         return this.addPlunderCrestEntry("projection", payload, originOwnerUuid, originOwnerType, originOwnerName);
+         return this.addPlunderCrestEntry("projection", payload, originOwnerUuid, originOwnerType, originOwnerName, originProficiency);
       }
 
       public void syncSelfCrestEntriesFromKnowledge() {
@@ -1998,7 +2036,10 @@ public class TypeMoonWorldModVariables {
                      + copy.sourceKind
                      + "|"
                      + copy.originOwnerUuid;
-                  merged.putIfAbsent(key, copy);
+                  TypeMoonWorldModVariables.PlayerVariables.CrestEntry mergedEntry = merged.putIfAbsent(key, copy);
+                  if (mergedEntry != null) {
+                     mergedEntry.proficiency = Math.max(mergedEntry.proficiency, copy.proficiency);
+                  }
                }
             }
 
@@ -2013,7 +2054,10 @@ public class TypeMoonWorldModVariables {
                      + normalized.sourceKind
                      + "|"
                      + normalized.originOwnerUuid;
-                  merged.putIfAbsent(key, normalized);
+                  TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing = merged.putIfAbsent(key, normalized);
+                  if (existing != null) {
+                     existing.proficiency = Math.max(existing.proficiency, normalized.proficiency);
+                  }
                }
             }
 
@@ -3147,6 +3191,7 @@ public class TypeMoonWorldModVariables {
          public String originOwnerUuid = "";
          public String originOwnerType = "npc";
          public String originOwnerName = "";
+         public double proficiency = 0.0;
          public boolean active = true;
 
          public TypeMoonWorldModVariables.PlayerVariables.CrestEntry copy() {
@@ -3158,6 +3203,7 @@ public class TypeMoonWorldModVariables {
             copy.originOwnerUuid = this.originOwnerUuid == null ? "" : this.originOwnerUuid;
             copy.originOwnerType = this.originOwnerType == null ? "npc" : this.originOwnerType;
             copy.originOwnerName = this.originOwnerName == null ? "" : this.originOwnerName;
+            copy.proficiency = sanitizeCrestProficiency(this.proficiency);
             copy.active = this.active;
             return copy;
          }
@@ -3171,6 +3217,7 @@ public class TypeMoonWorldModVariables {
             tag.putString("origin_owner_uuid", this.originOwnerUuid == null ? "" : this.originOwnerUuid);
             tag.putString("origin_owner_type", this.originOwnerType == null ? "npc" : this.originOwnerType);
             tag.putString("origin_owner_name", this.originOwnerName == null ? "" : this.originOwnerName);
+            tag.putDouble("proficiency", sanitizeCrestProficiency(this.proficiency));
             tag.putBoolean("active", this.active);
             return tag;
          }
@@ -3184,6 +3231,7 @@ public class TypeMoonWorldModVariables {
             entry.originOwnerUuid = tag.contains("origin_owner_uuid") ? tag.getString("origin_owner_uuid") : "";
             entry.originOwnerType = tag.contains("origin_owner_type") ? tag.getString("origin_owner_type") : "npc";
             entry.originOwnerName = tag.contains("origin_owner_name") ? tag.getString("origin_owner_name") : "";
+            entry.proficiency = tag.contains("proficiency") ? sanitizeCrestProficiency(tag.getDouble("proficiency")) : 0.0;
             entry.active = !tag.contains("active") || tag.getBoolean("active");
             return entry;
          }

@@ -32,7 +32,7 @@ public record ServantParams(
    }
 
    public double armor() {
-      return effectiveCoefficient(this.endurance, this.endurancePlus) * 0.3;
+      return effectiveCoefficient(this.endurance, this.endurancePlus) * 0.15;
    }
 
    public double manaPool() {

@@ -45,6 +45,7 @@ public final class ServantCardMedusaSkills {
    private static final ResourceLocation MEDUSA_MONSTER_STRENGTH_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_medusa_monster_strength_attack");
    private static final String MEDUSA_EYES_ACTIVE_TAG = "ServantCardMedusaEyesActive";
    private static final String MEDUSA_LAST_CYBELE_TICK_TAG = "ServantCardMedusaLastCybeleTick";
+   private static final String MEDUSA_NEXT_EYES_DRAIN_TICK_TAG = "ServantCardMedusaNextEyesDrainTick";
    private static final String MEDUSA_LAST_BLOODFORT_TICK_TAG = "ServantCardMedusaLastBloodfortTick";
    private static final String MEDUSA_BLOODFORT_UNTIL_TAG = "ServantCardMedusaBloodfortUntil";
    private static final String MEDUSA_BLOODFORT_RADIUS_TAG = "ServantCardMedusaBloodfortRadius";
@@ -73,6 +74,7 @@ public final class ServantCardMedusaSkills {
    private static final int MEDUSA_PEGASUS_COAST_TICKS = 14;
    private static final double MEDUSA_PEGASUS_MIN_FORWARD_SPEED = 0.75;
    private static final double MEDUSA_PEGASUS_MAX_FORWARD_SPEED = 3.2;
+   private static final double MEDUSA_MYSTIC_EYES_MP_PER_SECOND = 5.0;
    static final double MEDUSA_BLOODFORT_RADIUS = 25.0;
    private static final DustParticleOptions MEDUSA_BLOODFORT_PARTICLE = new DustParticleOptions(new Vector3f(0.95F, 0.22F, 0.35F), 1.1F);
    private static final DustParticleOptions MEDUSA_BLOODFORT_SIGIL_PARTICLE = new DustParticleOptions(new Vector3f(0.86F, 0.08F, 0.12F), 1.25F);
@@ -96,6 +98,9 @@ public final class ServantCardMedusaSkills {
          vars.syncPlayerVariables(player);
       }
       long now = player.level().getGameTime();
+      if (eyesActive && !tickMedusaMysticEyesManaDrain(player, vars, data, now)) {
+         eyesActive = false;
+      }
       if (eyesActive) {
          tickMedusaMysticEyes(player, now);
       }
@@ -123,6 +128,7 @@ public final class ServantCardMedusaSkills {
       }
       data.remove(MEDUSA_EYES_ACTIVE_TAG);
       data.remove(MEDUSA_LAST_CYBELE_TICK_TAG);
+      data.remove(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG);
       data.remove(MEDUSA_LAST_BLOODFORT_TICK_TAG);
       data.remove(MEDUSA_BLOODFORT_UNTIL_TAG);
       data.remove(MEDUSA_BLOODFORT_RADIUS_TAG);
@@ -431,6 +437,31 @@ public final class ServantCardMedusaSkills {
       return origin.add(aim.normalize().scale(MEDUSA_BELLEROPHON_CHARGE_DISTANCE));
    }
 
+   private static boolean tickMedusaMysticEyesManaDrain(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars,
+                                                        CompoundTag data, long now) {
+      if (!data.contains(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG)) {
+         data.putLong(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG, now + 20L);
+         return true;
+      }
+      if (now < data.getLong(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG)) {
+         return true;
+      }
+      data.putLong(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG, now + 20L);
+      if (ServantCardManaService.consume(player, vars, MEDUSA_MYSTIC_EYES_MP_PER_SECOND)) {
+         return true;
+      }
+      data.remove(MEDUSA_EYES_ACTIVE_TAG);
+      data.remove(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG);
+      vars.servant_card_medusa_mystic_eyes_active = false;
+      vars.syncPlayerVariables(player);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
+      if (player.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getEyeY(), player.getZ(), 10, 0.18, 0.12, 0.18, 0.02);
+         level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.55F, 1.45F);
+      }
+      return false;
+   }
+
    private static Vec3 computeMedusaPegasusVelocity(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
       CompoundTag data = player.getPersistentData();
       Vec3 aim;
@@ -620,6 +651,7 @@ public final class ServantCardMedusaSkills {
          vars.syncPlayerVariables(player);
       }
       data.remove(MEDUSA_LAST_CYBELE_TICK_TAG);
+      data.remove(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG);
    }
 
    private static void orientMedusaPegasus(ServerPlayer player, MedusaPegasusEntity pegasus, Vec3 desired) {
@@ -1000,6 +1032,11 @@ public final class ServantCardMedusaSkills {
       CompoundTag data = player.getPersistentData();
       boolean active = !data.getBoolean(MEDUSA_EYES_ACTIVE_TAG);
       data.putBoolean(MEDUSA_EYES_ACTIVE_TAG, active);
+      if (active) {
+         data.putLong(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG, player.level().getGameTime() + 20L);
+      } else {
+         data.remove(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG);
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.servant_card_medusa_mystic_eyes_active = active;
       vars.syncPlayerVariables(player);
@@ -1060,6 +1097,7 @@ public final class ServantCardMedusaSkills {
       }
       data.putLong(MEDUSA_BELLEROPHON_LAUNCH_TICK_TAG, level.getGameTime() + MEDUSA_BELLEROPHON_WINDUP_TICKS);
       data.putBoolean(MEDUSA_EYES_ACTIVE_TAG, true);
+      data.putLong(MEDUSA_NEXT_EYES_DRAIN_TICK_TAG, level.getGameTime() + 20L);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.servant_card_medusa_mystic_eyes_active = true;
       vars.syncPlayerVariables(player);

@@ -5,6 +5,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 
 public final class ServantCombatFormulas {
    public static final double OUT_OF_COMBAT_SPEED = 0.20;
+   public static final double SERVANT_SPEED_E = StatRank.E.toMovementSpeed();
+   public static final double SERVANT_SPEED_D = StatRank.D.toMovementSpeed();
+   private static final double BASE_DEFENSE_SCALE = 0.5;
+   private static final double BASE_EVASION_SCALE = 0.5;
+   private static final double BASE_POISE_SCALE = 0.5;
 
    private ServantCombatFormulas() {
    }
@@ -48,8 +53,26 @@ public final class ServantCombatFormulas {
       };
    }
 
+   public static double rampedMovementSpeed(ServantParams params, int runningTicks, double maxSpeed) {
+      double fastest = Math.max(SERVANT_SPEED_E, maxSpeed);
+      if (agilityStep(params) <= 0 || fastest <= SERVANT_SPEED_E + 1.0E-6) {
+         return SERVANT_SPEED_E;
+      }
+      int ticks = Math.max(0, Math.min(40, runningTicks));
+      double firstTarget = Math.min(SERVANT_SPEED_D, fastest);
+      if (ticks <= 20) {
+         return lerp(SERVANT_SPEED_E, firstTarget, ticks / 20.0);
+      }
+      return lerp(firstTarget, fastest, (ticks - 20) / 20.0);
+   }
+
    public static int dodgeInvulnerabilityTicks(ServantParams params) {
       return secondsToTicks((0.30 + agilityStep(params) * 0.02) * agilityMultiplier(params));
+   }
+
+   public static double baseDodgeChance(ServantParams params, boolean urgent) {
+      double chance = 0.18 + agilityStep(params) * 0.12 + (urgent ? 0.18 : 0.0);
+      return Math.min(0.82, chance) * BASE_EVASION_SCALE;
    }
 
    public static int perfectDodgeInvulnerabilityTicks(ServantParams params) {
@@ -69,15 +92,15 @@ public final class ServantCombatFormulas {
    }
 
    public static double staminaMax(ServantParams params) {
-      return 80.0 + enduranceStep(params) * 20.0;
+      return (80.0 + enduranceStep(params) * 20.0) * BASE_DEFENSE_SCALE;
    }
 
    public static double staminaRegenPerSecond(ServantParams params) {
-      return 8.0 + enduranceStep(params) * 2.0;
+      return (8.0 + enduranceStep(params) * 2.0) * BASE_DEFENSE_SCALE;
    }
 
    public static double blockReduction(ServantParams params) {
-      return Math.min(0.95, 0.65 + enduranceStep(params) * 0.02);
+      return Math.min(0.95, 0.65 + enduranceStep(params) * 0.02) * BASE_DEFENSE_SCALE;
    }
 
    public static int parryWindowTicks(ServantParams params) {
@@ -93,11 +116,11 @@ public final class ServantCombatFormulas {
    }
 
    public static double poiseMax(ServantParams params) {
-      return (80.0 + enduranceStep(params) * 20.0 + strengthStep(params) * 10.0) * toughnessMultiplier(params);
+      return (80.0 + enduranceStep(params) * 20.0 + strengthStep(params) * 10.0) * toughnessMultiplier(params) * BASE_POISE_SCALE;
    }
 
    public static double poiseRegenPerSecond(ServantParams params) {
-      return (5.0 + enduranceStep(params) * 2.0) * toughnessMultiplier(params);
+      return (5.0 + enduranceStep(params) * 2.0) * toughnessMultiplier(params) * BASE_POISE_SCALE;
    }
 
    public static double toughnessMultiplier(ServantParams params) {
@@ -138,5 +161,9 @@ public final class ServantCombatFormulas {
 
    private static int secondsToTicks(double seconds) {
       return Math.max(1, (int)Math.round(seconds * 20.0));
+   }
+
+   private static double lerp(double from, double to, double progress) {
+      return from + (to - from) * Math.max(0.0, Math.min(1.0, progress));
    }
 }

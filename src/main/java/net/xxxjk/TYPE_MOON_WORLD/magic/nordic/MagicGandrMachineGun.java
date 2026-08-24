@@ -417,7 +417,7 @@ public final class MagicGandrMachineGun {
    }
 
    private static double getEffectiveGanderProficiency(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return vars.isCurrentSelectionFromCrest("gandr_machine_gun") ? 100.0 : vars.proficiency_gander;
+      return vars.getEffectiveCurrentMagicProficiency("gandr_machine_gun");
    }
 
    private static float getProjectileScaleForCharge(int chargeSeconds) {

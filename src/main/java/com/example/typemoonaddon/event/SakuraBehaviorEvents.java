@@ -7,8 +7,12 @@ import com.example.typemoonaddon.magic.BlackShadowNightService;
 import com.example.typemoonaddon.magic.CursedArmorService;
 import com.example.typemoonaddon.magic.SakuraBlackMudHuntService;
 import com.example.typemoonaddon.magic.SakuraBlackMudService;
+import com.example.typemoonaddon.magic.SakuraForbiddenMagicService;
 import com.example.typemoonaddon.magic.SakuraGrailErosionService;
+import com.example.typemoonaddon.magic.SakuraImaginaryShadowService;
+import com.example.typemoonaddon.magic.SakuraImaginaryStorageService;
 import com.example.typemoonaddon.magic.SakuraPollutionService;
+import com.example.typemoonaddon.magic.SakuraRuleBreakerDispelService;
 import com.example.typemoonaddon.magic.SakuraShadowArtService;
 import com.example.typemoonaddon.magic.SakuraShadowBindingService;
 import com.example.typemoonaddon.magic.SakuraShadowMaterializationService;
@@ -56,7 +60,10 @@ public final class SakuraBehaviorEvents {
         SakuraShadowBindingService.tick(event.getServer());
         SakuraShadowTransferService.tick(event.getServer());
         SakuraShadowArtService.tick(event.getServer());
+        SakuraImaginaryStorageService.tick(event.getServer());
+        SakuraImaginaryShadowService.tick(event.getServer());
         SakuraGrailErosionService.tick(event.getServer());
+        SakuraForbiddenMagicService.tick(event.getServer());
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             CursedArmorService.tick(player);
         }
@@ -66,6 +73,9 @@ public final class SakuraBehaviorEvents {
     public static void onIncomingDamage(LivingIncomingDamageEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             SakuraShadowTransferService.interruptOnDamage(player);
+            if (SakuraRuleBreakerDispelService.dispelFromDamage(player, event.getSource())) {
+                return;
+            }
             var data = player.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get());
             float remaining = data.absorbProtectionDamage(event.getAmount());
             if (remaining <= 0.0F) {
@@ -106,6 +116,7 @@ public final class SakuraBehaviorEvents {
             BlackShadowNightService.entityLeavingLevel(blackShadow);
         }
         SakuraShadowBindingService.entityLeavingLevel(event.getEntity());
+        SakuraImaginaryShadowService.entityLeavingLevel(event.getEntity());
     }
 
     @SubscribeEvent
@@ -123,6 +134,9 @@ public final class SakuraBehaviorEvents {
             SakuraSummonBlackMudService.playerUnavailable(player);
             SakuraBlackMudHuntService.playerUnavailable(player);
             SakuraShadowArtService.playerUnavailable(player);
+            SakuraImaginaryStorageService.playerUnavailable(player);
+            SakuraImaginaryShadowService.playerUnavailable(player);
+            SakuraForbiddenMagicService.playerUnavailable(player);
             BlackShadowNightService.playerUnavailable(player);
         }
     }
@@ -135,6 +149,9 @@ public final class SakuraBehaviorEvents {
             SakuraSummonBlackMudService.playerUnavailable(player);
             SakuraBlackMudHuntService.playerUnavailable(player);
             SakuraShadowArtService.playerUnavailable(player);
+            SakuraImaginaryStorageService.playerUnavailable(player);
+            SakuraImaginaryShadowService.playerUnavailable(player);
+            SakuraForbiddenMagicService.playerChangedDimension(player);
             BlackShadowNightService.playerUnavailable(player);
             syncSakuraState(player);
         }
@@ -163,6 +180,9 @@ public final class SakuraBehaviorEvents {
         SakuraShadowBindingService.serverStopping(event.getServer());
         SakuraShadowTransferService.serverStopping();
         SakuraShadowArtService.serverStopping();
+        SakuraImaginaryStorageService.serverStopping();
+        SakuraImaginaryShadowService.serverStopping(event.getServer());
+        SakuraForbiddenMagicService.serverStopping(event.getServer());
     }
 
     private static void syncSakuraState(ServerPlayer player) {

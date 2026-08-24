@@ -163,15 +163,19 @@ public final class BoundaryMagicIntegration {
         BoundaryMarkEntity existing = findOwnedBoundary(player, type);
         if (existing != null && !player.isShiftKeyDown()) {
             deactivateBoundary(player.serverLevel(), existing.getBoundaryId());
+            player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.deactivated",
+                    Component.translatable("magic.typemoonworld." + type + ".name")), true);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
         HitResult rawHit = player.pick(64.0D, 0.0F, false);
         if (!(rawHit instanceof BlockHitResult hit) || hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.no_surface"), true);
             return ExecutionResult.FAILED;
         }
         BlockPos placement = hit.getBlockPos();
         if (!player.serverLevel().getEntitiesOfClass(BoundaryMarkEntity.class,
                 new AABB(placement).inflate(0.25D), BoundaryMarkEntity::isActive).isEmpty()) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.mark_occupied"), true);
             return ExecutionResult.FAILED;
         }
         if (player.isShiftKeyDown()) {
@@ -179,6 +183,7 @@ public final class BoundaryMagicIntegration {
                     hit.getDirection());
             carved.setComplexity(complexity);
             player.serverLevel().addFreshEntity(carved);
+            player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.mark_carved", complexity), true);
             return ExecutionResult.SUCCESS.withCost(1.0D).withCooldown(5);
         }
         List<BoundaryMarkEntity> available = availableMarks(player.serverLevel(), player.getUUID(), placement, required);
@@ -203,6 +208,8 @@ public final class BoundaryMagicIntegration {
             mark.setBlacklist(blacklist);
             mark.setBlacklistUuid(blacklistId);
         }
+        player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.activated",
+                Component.translatable("magic.typemoonworld." + type + ".name"), required), true);
         return ExecutionResult.SUCCESS.withCost(Math.max(10.0D, required * 0.05D)).withCooldown(20);
     }
 

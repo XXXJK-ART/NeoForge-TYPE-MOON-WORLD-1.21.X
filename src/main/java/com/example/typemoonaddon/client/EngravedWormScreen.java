@@ -18,20 +18,20 @@ public final class EngravedWormScreen extends AbstractContainerScreen<EngravedWo
     public EngravedWormScreen(EngravedWormMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         imageWidth = 192;
-        imageHeight = 222;
+        imageHeight = 272;
     }
 
     @Override
     protected void init() {
         super.init();
-        int buttonY = topPos + 5;
-        addRenderableWidget(new NeonButton(leftPos + 6, buttonY, 18, 14, Component.literal("<"), b -> changePage(menu.getPage() - 1), GuiUtils.ARCANE_CREST)
+        int buttonY = topPos + 24;
+        addRenderableWidget(new NeonButton(leftPos + 8, buttonY, 20, 14, Component.literal("<"), b -> changePage(menu.getPage() - 1), GuiUtils.ARCANE_CREST)
                 .setArcaneStyle(true).setCompactStyle(true));
-        addRenderableWidget(new NeonButton(leftPos + 26, buttonY, 18, 14, Component.literal(">"), b -> changePage(menu.getPage() + 1), GuiUtils.ARCANE_CYAN)
+        addRenderableWidget(new NeonButton(leftPos + 31, buttonY, 20, 14, Component.literal(">"), b -> changePage(menu.getPage() + 1), GuiUtils.ARCANE_CYAN)
                 .setArcaneStyle(true).setCompactStyle(true));
-        addRenderableWidget(new NeonButton(leftPos + 152, buttonY, 18, 14, Component.literal("<<"), b -> changePage(0), GuiUtils.ARCANE_GOLD)
+        addRenderableWidget(new NeonButton(leftPos + 141, buttonY, 23, 14, Component.literal("<<"), b -> changePage(0), GuiUtils.ARCANE_GOLD)
                 .setArcaneStyle(true).setCompactStyle(true));
-        addRenderableWidget(new NeonButton(leftPos + 172, buttonY, 18, 14, Component.literal(">>"), b -> changePage(menu.getMaxPage()), GuiUtils.ARCANE_GOLD)
+        addRenderableWidget(new NeonButton(leftPos + 166, buttonY, 23, 14, Component.literal(">>"), b -> changePage(menu.getMaxPage()), GuiUtils.ARCANE_GOLD)
                 .setArcaneStyle(true).setCompactStyle(true));
     }
 
@@ -53,20 +53,31 @@ public final class EngravedWormScreen extends AbstractContainerScreen<EngravedWo
         GuiUtils.renderArcaneWindow(graphics, leftPos, topPos, imageWidth, imageHeight, WINDOW_COLOR);
         graphics.drawCenteredString(font, title, leftPos + imageWidth / 2, topPos + 7, GuiUtils.ARCANE_TEXT);
         graphics.drawCenteredString(font, Component.literal("P" + (menu.getPage() + 1) + "/" + (menu.getMaxPage() + 1)),
-               leftPos + imageWidth / 2, topPos + 19, GuiUtils.ARCANE_TEXT_MUTED);
-        GuiUtils.renderSectionHeader(graphics, leftPos + 8, topPos + 32, imageWidth - 16, GuiUtils.ARCANE_CREST);
-        for (int row = 0; row < 3; row++) {
+               leftPos + imageWidth / 2, topPos + 27, GuiUtils.ARCANE_TEXT_MUTED);
+        GuiUtils.renderSectionHeader(graphics, leftPos + 8, topPos + 42, imageWidth - 16, GuiUtils.ARCANE_CREST);
+        for (int row = 0; row < 6; row++) {
             for (int column = 0; column < 9; column++) {
-                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 44 + row * 18, 18, GuiUtils.ARCANE_CREST, false);
+                GuiUtils.renderArcaneSlot(graphics, leftPos + EngravedWormMenu.GRID_X + column * 18,
+                        topPos + EngravedWormMenu.WORM_GRID_Y + row * 18, 18, GuiUtils.ARCANE_CREST, false);
             }
         }
+        graphics.drawString(font, playerInventoryTitle, leftPos + EngravedWormMenu.GRID_X,
+                topPos + EngravedWormMenu.PLAYER_INV_Y - 12, GuiUtils.ARCANE_TEXT_MUTED, false);
+        GuiUtils.renderSectionHeader(graphics, leftPos + 8, topPos + EngravedWormMenu.PLAYER_INV_Y - 20,
+                imageWidth - 16, GuiUtils.ARCANE_CYAN);
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 130 + row * 18, 18, GuiUtils.ARCANE_CYAN, false);
+                GuiUtils.renderArcaneSlot(graphics, leftPos + EngravedWormMenu.GRID_X + column * 18,
+                        topPos + EngravedWormMenu.PLAYER_INV_Y + row * 18, 18, GuiUtils.ARCANE_CYAN, false);
             }
         }
         for (int column = 0; column < 9; column++) {
-            GuiUtils.renderArcaneSlot(graphics, leftPos + 8 + column * 18, topPos + 188, 18, GuiUtils.ARCANE_GOLD, false);
+            GuiUtils.renderArcaneSlot(graphics, leftPos + EngravedWormMenu.GRID_X + column * 18,
+                    topPos + EngravedWormMenu.HOTBAR_Y, 18, GuiUtils.ARCANE_GOLD, false);
         }
+    }
+
+    @Override
+    protected void renderLabels(@NotNull GuiGraphics graphics, int mouseX, int mouseY) {
     }
 }

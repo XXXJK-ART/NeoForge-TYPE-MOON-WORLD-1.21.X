@@ -91,13 +91,16 @@ public final class SummoningMagicIntegration {
         }
         int cap = Math.max(1, Math.min(12, 1 + (int)(context.proficiency() / 10.0D)));
         if ("dismiss".equals(mode)) {
+            int count = spirits.size();
             spirits.forEach(LivingEntity::discard);
+            notifyCaster(caster, "message.typemoonworld.wraith_servitude.dismissed", count);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
         if (spirits.size() > cap) {
             spirits = spirits.subList(0, cap);
         }
         applyCommand(spirits, caster, mode, context.target());
+        notifyCaster(caster, "message.typemoonworld.wraith_servitude.commanded", spirits.size(), modeName(mode));
         return ExecutionResult.SUCCESS.withCost(25.0D).withCooldown(12);
     }
 
@@ -144,6 +147,17 @@ public final class SummoningMagicIntegration {
             case "attack" -> SummonedSpiritEntity.MODE_ATTACK;
             default -> SummonedSpiritEntity.MODE_FOLLOW;
         };
+    }
+
+    private static net.minecraft.network.chat.Component modeName(String mode) {
+        return net.minecraft.network.chat.Component.translatable(
+                "message.typemoonworld.wraith_servitude.mode." + (MODES.contains(mode) ? mode : "follow"));
+    }
+
+    private static void notifyCaster(LivingEntity caster, String key, Object... args) {
+        if (caster instanceof ServerPlayer player) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(key, args), true);
+        }
     }
 
     private static void applyCommand(List<? extends SummonedSpiritEntity> spirits, LivingEntity player,

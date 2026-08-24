@@ -4,6 +4,7 @@ import com.example.typemoonaddon.client.ClientEffects;
 import com.example.typemoonaddon.client.ClientNightShadowCamera;
 import com.example.typemoonaddon.network.OpenBoundaryImmunityPayload;
 import com.example.typemoonaddon.network.OpenDetectionWormControlPayload;
+import com.example.typemoonaddon.magic.SakuraImaginaryStorageService;
 import com.example.typemoonaddon.magic.SakuraShadowMaterializationService;
 import com.example.typemoonaddon.shadowlogic.network.ShadowBindingEffectPayload;
 import com.example.typemoonaddon.network.SetBoundaryImmunityPayload;
@@ -294,9 +295,8 @@ public final class AddonNetwork {
     }
 
     private static void handleBlockAbsorptionHold(BlockAbsorptionHoldPayload message, IPayloadContext context) {
-        if (context.flow() == PacketFlow.SERVERBOUND) {
-            context.enqueueWork(() -> {
-            });
+        if (context.flow() == PacketFlow.SERVERBOUND && context.player() instanceof ServerPlayer player) {
+            context.enqueueWork(() -> SakuraImaginaryStorageService.updateBlockCastHeld(player, message.held()));
         }
     }
 

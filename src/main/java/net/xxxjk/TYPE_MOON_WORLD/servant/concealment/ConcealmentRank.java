@@ -5,12 +5,12 @@ import java.util.Locale;
 /** Visibility leakage profile for ranked servant concealment. */
 public enum ConcealmentRank {
    NONE(0, 0, 0),
-   E(5, 30, 65),
-   D(4, 45, 85),
-   C(3, 60, 105),
-   B(2, 80, 130),
-   A_MINUS(2, 110, 170),
-   A(1, 140, 220),
+   E(40, 30, 65),
+   D(30, 45, 85),
+   C(20, 60, 105),
+   B(12, 80, 130),
+   A_MINUS(8, 110, 170),
+   A(4, 140, 220),
    A_PLUS(0, 0, 0),
    EX(0, 0, 0);
 

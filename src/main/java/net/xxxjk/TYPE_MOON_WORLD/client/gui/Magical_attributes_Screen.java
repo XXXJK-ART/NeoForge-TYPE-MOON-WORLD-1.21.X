@@ -291,11 +291,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                   entry.sourceType = "crest";
                   entry.crestEntryId = crestEntry.entryId;
                   entry.crestSourceKind = crestEntry.sourceKind == null ? "self" : crestEntry.sourceKind;
-                  if ("plunder".equals(entry.crestSourceKind)) {
-                     entry.presetPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
-                  } else {
-                     entry.presetPayload = new CompoundTag();
-                  }
+                  entry.presetPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
 
                   entry.originName = crestEntry.originOwnerName == null ? "" : crestEntry.originOwnerName;
                   entry.active = hasValidCrest && crestEntry.active;
@@ -1385,6 +1381,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                ? Component.translatable("gui.typemoonworld.mode.other").getString()
                : Component.translatable("gui.typemoonworld.mode.self").getString();
             lines.add(Component.literal(" - " + targetName).withStyle(ChatFormatting.YELLOW));
+         } else if (isImaginaryStorageMagic(magicId)) {
+            String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+            lines.add(Component.literal(" - " + Component.translatable(imaginaryModeLabelKey(magicId, mode)).getString()).withStyle(ChatFormatting.YELLOW));
          } else if ("touko_travel".equals(magicId)) {
             if (payload.contains("x") && payload.contains("y") && payload.contains("z")) {
                lines.add(
@@ -1444,7 +1443,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private double getMagicProficiency(Magical_attributes_Screen.MagicEntry entry) {
-      return entry != null && "crest".equals(entry.sourceType) ? 100.0 : this.getMagicProficiency(entry == null ? "" : entry.id);
+      return entry != null && "crest".equals(entry.sourceType)
+         ? this.getVars().getCrestEntryEffectiveProficiency(entry.crestEntryId, entry.id)
+         : this.getMagicProficiency(entry == null ? "" : entry.id);
    }
 
    private double getMagicProficiency(String magicId) {
@@ -1487,6 +1488,28 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       return !"reinforcement_self".equals(magicId) && !"reinforcement_other".equals(magicId) && !"reinforcement_item".equals(magicId)
          ? magicId
          : "reinforcement";
+   }
+
+   private static boolean isImaginaryStorageMagic(String magicId) {
+      String path = magicPath(magicId);
+      return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+   }
+
+   private static String imaginaryModeLabelKey(String magicId, String mode) {
+      if ("protection".equals(mode)) {
+         return "gui.typemoonworld.overlay.imaginary.mode.protection.short";
+      }
+      return "imaginary_absorption_evolved".equals(magicPath(magicId))
+         ? "gui.typemoonworld.overlay.imaginary.mode.absorption.short"
+         : "gui.typemoonworld.overlay.imaginary.mode.storage.short";
+   }
+
+   private static String magicPath(String magicId) {
+      if (magicId == null) {
+         return "";
+      }
+      int split = magicId.indexOf(':');
+      return split >= 0 ? magicId.substring(split + 1) : magicId;
    }
 
    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int gx, int gy) {
@@ -1670,7 +1693,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                   if ("crest".equals(this.draggingEntry.sourceType) && payload.isEmpty() && this.isMultiOptionMagic(this.draggingEntry.id)) {
                      if ("plunder".equals(this.draggingEntry.crestSourceKind)) {
                         payload = this.resolvePlunderLockedPayload(this.draggingEntry, payload);
-                     } else {
+                     } else if (!PlayerMagicSelectionService.requiresPresetConfiguration(this.draggingEntry.id)) {
                         payload = this.buildDefaultPresetPayloadFromCurrent(this.draggingEntry.id);
                      }
                   }
@@ -1951,6 +1974,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             ? Component.translatable("gui.typemoonworld.overlay.element.mode.utility.short").getString()
             : Component.translatable("gui.typemoonworld.overlay.element.mode.attack.short").getString();
          return base + " " + modeName;
+      } else if (isImaginaryStorageMagic(entry.id)) {
+         String mode = payload.contains("imaginary_mode") ? payload.getString("imaginary_mode") : "storage";
+         return base + " " + Component.translatable(imaginaryModeLabelKey(entry.id, mode)).getString();
       } else {
          if ("projection".equals(entry.id)) {
             if (payload.contains("projection_structure_id")) {
@@ -1979,6 +2005,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          || "time_alter".equals(magicId)
          || "mana_burst".equals(magicId)
          || "touko_travel".equals(magicId)
+         || isImaginaryStorageMagic(magicId)
          || PlayerMagicSelectionService.isElementalMagic(magicId);
    }
 
@@ -1988,7 +2015,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("plunder".equals(entry.crestSourceKind)) {
          return false;
       } else {
-         return !this.isMultiOptionMagic(entry.id) ? false : payload == null || payload.isEmpty();
+         return PlayerMagicSelectionService.requiresPresetConfiguration(entry.id) && this.getInitialPresetStage(entry.id) != null
+            && (payload == null || payload.isEmpty());
       }
    }
 
@@ -2009,7 +2037,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          case "healing_magic" -> "healing_target";
          case "time_alter" -> "time_alter_mode";
          case "mana_burst" -> "mana_burst_mode";
-         case "fire_magic", "water_magic", "wind_magic", "earth_magic" -> "element_mode";
+         case "fire_magic", "water_magic", "wind_magic", "earth_magic",
+              "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array" -> "element_mode";
          case "projection" -> "projection_source";
          default -> null;
       };

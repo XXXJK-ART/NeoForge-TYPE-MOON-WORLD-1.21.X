@@ -29,6 +29,7 @@ public final class WheelCastingModifierService {
    public static int adjustChantTicks(Player player, int baseTicks) {
       if (baseTicks <= 1 || player == null) return baseTicks;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.isCurrentSelectionFromCrest()) return 0;
       return Math.max(1, (int)Math.ceil(baseTicks * AdvancedPassiveService.chantMultiplier(vars)));
    }
 

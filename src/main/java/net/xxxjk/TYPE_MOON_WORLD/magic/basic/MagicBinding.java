@@ -32,7 +32,7 @@ public final class MagicBinding {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.isCurrentSelectionFromCrest("binding_magic") ? 100.0 : vars.proficiency_binding_magic;
+      double proficiency = vars.getEffectiveCurrentMagicProficiency("binding_magic");
       LivingEntity target = BasicMagecraftHelper.rayTarget(player, 14.0);
       if (target == null || target == player || EntityUtils.isImmunePlayerTarget(target)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.binding.no_target"), true);

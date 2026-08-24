@@ -6,6 +6,8 @@ import com.example.typemoonaddon.registry.AddonAttachments;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class TypeMoonClientModeBridge {
@@ -13,11 +15,19 @@ public final class TypeMoonClientModeBridge {
     }
 
     public static boolean isShadowMaterializationCastHeld() {
-        return false;
+        Player player = Minecraft.getInstance().player;
+        return player != null
+                && Minecraft.getInstance().screen == null
+                && TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown()
+                && isCurrentMagic(player, SakuraTypeMoonIntegration.SHADOW_MATERIALIZATION);
     }
 
     public static boolean isImaginaryStorageCastHeld() {
-        return false;
+        Player player = Minecraft.getInstance().player;
+        return player != null
+                && Minecraft.getInstance().screen == null
+                && TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown()
+                && isCurrentImaginaryStorage(player);
     }
 
     public static boolean shouldShowProtectionSuffix() {
@@ -28,15 +38,15 @@ public final class TypeMoonClientModeBridge {
     }
 
     private static boolean isCurrentImaginaryStorage(Player player) {
-        TypeMoonWorldModVariables.PlayerVariables variables = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = variables.getCurrentRuntimeWheelEntry();
-        if (entry == null) {
-            return false;
-        }
-        ResourceLocation expected = player.getData(AddonAttachments.IMAGINARY_SPACE.get()).crestWormAssimilated()
+        return isCurrentMagic(player, player.getData(AddonAttachments.IMAGINARY_SPACE.get()).crestWormAssimilated()
                 ? SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION
-                : SakuraTypeMoonIntegration.IMAGINARY_STORAGE;
-        return matchesMagicId(entry.magicId, expected);
+                : SakuraTypeMoonIntegration.IMAGINARY_STORAGE);
+    }
+
+    private static boolean isCurrentMagic(Player player, ResourceLocation expected) {
+        TypeMoonWorldModVariables.PlayerVariables variables = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        String current = PlayerMagicSelectionService.getCurrentMagicId(variables);
+        return matchesMagicId(current, expected);
     }
 
     private static boolean matchesMagicId(String actualId, ResourceLocation expectedId) {

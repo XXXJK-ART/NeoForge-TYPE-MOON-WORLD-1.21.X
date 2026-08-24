@@ -115,7 +115,7 @@ public final class PlayerMagicCastService {
          entry.magicId,
          entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy(),
          "crest".equals(entry.sourceType),
-         MagicProficiencyService.get(vars, entry.magicId));
+         vars.getEffectiveCurrentMagicProficiency(entry.magicId));
       if (publicMagicId != null && NeoForge.EVENT_BUS.post(new MagicCastEvent.Pre(publicMagicId, publicContext)).isCanceled()) {
          return;
       }

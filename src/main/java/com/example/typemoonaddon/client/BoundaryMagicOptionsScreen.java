@@ -96,15 +96,7 @@ public final class BoundaryMagicOptionsScreen extends Screen {
       addModeButton("hostile", buttonX, buttonY + 48, Component.translatable("magic.option.typemoonworld.boundary_blacklist.hostile"));
       addModeButton("all_aggro_targets", buttonX + 76, buttonY + 48, Component.translatable("magic.option.typemoonworld.boundary_blacklist.all_aggro_targets"));
 
-      addRenderableWidget(new NeonButton(left + 22, top + 78, 58, 20, Component.literal("-"), b -> {
-         selectedPower = Math.max(1, selectedPower - 1);
-         refreshPowerButton();
-      }, GuiUtils.ARCANE_GOLD).setArcaneStyle(true).setCompactStyle(true));
-      addRenderableWidget(new NeonButton(left + 162, top + 78, 58, 20, Component.literal("+"), b -> {
-         selectedPower = Math.min(5, selectedPower + 1);
-         refreshPowerButton();
-      }, GuiUtils.ARCANE_GOLD).setArcaneStyle(true).setCompactStyle(true));
-      this.powerButton = new NeonButton(left + 84, top + 78, 72, 20, powerLabel(), b -> {
+      this.powerButton = new NeonButton(left + 84, top + 78, 96, 20, powerLabel(), b -> {
          selectedPower = selectedPower >= 5 ? 1 : selectedPower + 1;
          refreshPowerButton();
       }, GuiUtils.ARCANE_CYAN).setArcaneStyle(true).setCompactStyle(true);

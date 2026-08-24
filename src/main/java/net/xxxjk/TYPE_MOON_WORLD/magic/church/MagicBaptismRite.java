@@ -40,7 +40,8 @@ public final class MagicBaptismRite {
       }
 
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double proficiency = vars.proficiency_baptism_rite;
+      boolean crestCast = vars.isCurrentSelectionFromCrest(MAGIC_ID);
+      double proficiency = vars.getEffectiveCurrentMagicProficiency(MAGIC_ID);
       LivingEntity target = EntityUtils.findAutoAimTarget(player, targetRange(proficiency), 55.0);
       if (target == null || EntityUtils.isImmunePlayerTarget(target) || !isValidRiteTarget(target)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.no_target"), true);
@@ -55,9 +56,13 @@ public final class MagicBaptismRite {
       UUID targetId = target.getUUID();
       int chantTicks = WheelCastingModifierService.adjustChantTicks(player, chantTicks(proficiency));
       BaptismRiteEventHandler.start(player, targetId, proficiency, chantTicks);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
-      net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "baptism_rite", 0.16);
-      vars.syncProficiency(player);
+      if (chantTicks > 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.baptism_rite.start", target.getDisplayName()), true);
+      }
+      if (!crestCast) {
+         net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "baptism_rite", 0.16);
+         vars.syncProficiency(player);
+      }
       return true;
    }
 
