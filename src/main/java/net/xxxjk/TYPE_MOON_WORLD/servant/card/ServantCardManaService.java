@@ -17,7 +17,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import com.example.typemoonaddon.magic.ManaFurnaceService;
 
 public final class ServantCardManaService {
-   private static final double SERVANT_CARD_REGEN_MULTIPLIER = 0.5;
+   private static final double SERVANT_CARD_REGEN_MULTIPLIER = 1.0;
+   public static final String NOBLE_PHANTASM_POWER_SCALE_TAG = "ServantCardNpPowerScale";
    public record ManaSnapshot(double servantMana, ServerPlayer master, double masterMana) {
    }
 
@@ -108,7 +109,34 @@ public final class ServantCardManaService {
    }
 
    public static boolean consumeNoblePhantasm(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
-      return consume(player, vars, amount, true, true);
+      if (player == null || vars == null || amount <= 0.0) {
+         return amount <= 0.0;
+      }
+      double multiplier = MasterServantLinkService.noblePhantasmCostMultiplier(player, vars);
+      if (!Double.isFinite(multiplier)) {
+         return false;
+      }
+      double effectiveCost = amount * multiplier;
+      double available = availableForConsume(player, vars);
+      if (available + 1.0E-6 < effectiveCost) {
+         clearNoblePhantasmPowerScale(player);
+         return false;
+      }
+      consumeUpTo(player, vars, effectiveCost);
+      player.getPersistentData().putDouble(NOBLE_PHANTASM_POWER_SCALE_TAG, 1.0);
+      return true;
+   }
+
+   public static double noblePhantasmPowerScale(ServerPlayer player) {
+      if (player == null) return 1.0;
+      double scale = player.getPersistentData().getDouble(NOBLE_PHANTASM_POWER_SCALE_TAG);
+      return Double.isFinite(scale) && scale > 0.0 ? Math.min(1.0, scale) : 1.0;
+   }
+
+   public static void clearNoblePhantasmPowerScale(ServerPlayer player) {
+      if (player != null) {
+         player.getPersistentData().remove(NOBLE_PHANTASM_POWER_SCALE_TAG);
+      }
    }
 
    public static double availableForConsume(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -169,6 +197,7 @@ public final class ServantCardManaService {
    }
 
    public static void restore(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ManaSnapshot snapshot) {
+      clearNoblePhantasmPowerScale(player);
       vars.servant_card_mana = snapshot.servantMana();
       vars.syncMana(player);
       ServerPlayer master = snapshot.master();

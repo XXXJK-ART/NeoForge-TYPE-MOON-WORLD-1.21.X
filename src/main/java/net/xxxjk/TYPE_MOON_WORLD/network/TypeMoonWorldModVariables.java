@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -51,6 +52,9 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
+import com.example.typemoonaddon.magic.SakuraMagicRules;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
@@ -996,10 +1000,7 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of(
-         "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
-         "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
-      );
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = createSelfCrestExcludedMagics();
       private transient boolean fullSyncSnapshotSent = false;
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;
@@ -1327,6 +1328,15 @@ public class TypeMoonWorldModVariables {
          return "plunder".equals(sourceKind) ? "plunder" : "self";
       }
 
+      private static Set<String> createSelfCrestExcludedMagics() {
+         java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(Set.of(
+            "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
+            "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+         ));
+         ids.addAll(SakuraMagicRules.SAKURA_MAGIC_IDS.stream().map(SakuraMagicRules::shortId).collect(Collectors.toSet()));
+         return Set.copyOf(ids);
+      }
+
       private static String ensureCrestEntryId(String id) {
          return id != null && !id.isEmpty() ? id : UUID.randomUUID().toString();
       }
@@ -1337,6 +1347,24 @@ public class TypeMoonWorldModVariables {
 
       private static boolean isKnownMagicId(String magicId) {
          return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
+      }
+
+      private static boolean magicIdMatches(String actual, String expected) {
+         if (actual == null || expected == null) {
+            return false;
+         }
+         if (actual.equals(expected)) {
+            return true;
+         }
+         return actual.equals(shortMagicId(expected)) || shortMagicId(actual).equals(expected);
+      }
+
+      private static String shortMagicId(String magicId) {
+         if (magicId == null) {
+            return "";
+         }
+         int split = magicId.indexOf(':');
+         return split >= 0 ? magicId.substring(split + 1) : magicId;
       }
 
       private static boolean isPresetOptionMagic(String magicId) {
@@ -1353,6 +1381,12 @@ public class TypeMoonWorldModVariables {
          return !"reinforcement_self".equals(magicId) && !"reinforcement_other".equals(magicId) && !"reinforcement_item".equals(magicId)
             ? magicId
             : "reinforcement";
+      }
+
+      private static boolean isBlockedCrestMagic(String magicId) {
+         return magicId == null || magicId.isBlank()
+            || !isKnownMagicId(magicId)
+            || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId);
       }
 
       private static int crestPresetSeed(TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry) {
@@ -1445,7 +1479,21 @@ public class TypeMoonWorldModVariables {
          if (crestEntry != null) {
             crestEntry.entryId = ensureCrestEntryId(crestEntry.entryId);
             crestEntry.sourceKind = sanitizeCrestSourceKind(crestEntry.sourceKind);
-            if (!net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(crestEntry.magicId)) {
+            String originalMagicId = crestEntry.magicId == null ? "" : crestEntry.magicId;
+            String canonicalMagicId = PlayerMagicSelectionService.canonicalRuntimeMagicId(originalMagicId);
+            if (!Objects.equals(crestEntry.magicId, canonicalMagicId)) {
+               crestEntry.magicId = canonicalMagicId;
+               CompoundTag migratedPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
+               if (!migratedPayload.contains("reinforcement_target")) {
+                  migratedPayload.putInt("reinforcement_target", switch (originalMagicId) {
+                     case "reinforcement_other" -> 1;
+                     case "reinforcement_item" -> 2;
+                     default -> 0;
+                  });
+               }
+               crestEntry.presetPayload = migratedPayload;
+            }
+            if (isBlockedCrestMagic(crestEntry.magicId)) {
                crestEntry.magicId = "";
                crestEntry.active = false;
             }
@@ -1517,6 +1565,17 @@ public class TypeMoonWorldModVariables {
             }
          }
 
+         for (TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry : this.magic_wheels) {
+            if (entry == null || !isKnownMagicId(entry.magicId)) {
+               if (entry != null) {
+                  entry.clear();
+               }
+            } else {
+               entry.sourceType = sanitizeSourceType(entry.sourceType);
+               PlayerMagicSelectionService.normalizeRuntimeWheelEntry(this, entry);
+            }
+         }
+
          this.active_wheel_index = Mth.clamp(this.active_wheel_index, 0, 9);
 
          for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry : this.crest_entries) {
@@ -1536,6 +1595,7 @@ public class TypeMoonWorldModVariables {
             normalized.wheelIndex = wheelIndex;
             normalized.slotIndex = slotIndex;
             normalized.sourceType = sanitizeSourceType(normalized.sourceType);
+            PlayerMagicSelectionService.normalizeRuntimeWheelEntry(this, normalized);
             if (!isKnownMagicId(normalized.magicId)) {
                normalized.clear();
             }
@@ -1573,6 +1633,47 @@ public class TypeMoonWorldModVariables {
                this.magic_wheels.set(wheelFlatIndex(wheel, slot), createEmptyWheelSlot(wheel, slot));
             }
          }
+      }
+
+      public boolean removeLearnedMagic(String magicId) {
+         return magicId != null && !magicId.isEmpty() && this.learned_magics.removeIf(magic -> magicIdMatches(magic, magicId));
+      }
+
+      public boolean replaceLearnedMagic(String fromMagicId, String toMagicId) {
+         if (fromMagicId == null || fromMagicId.isEmpty() || toMagicId == null || toMagicId.isEmpty()) {
+            return false;
+         }
+         boolean changed = this.learned_magics.removeIf(magic -> magicIdMatches(magic, fromMagicId));
+         if (!this.learned_magics.contains(toMagicId)) {
+            this.learned_magics.add(toMagicId);
+            changed = true;
+         }
+         return changed;
+      }
+
+      public boolean replaceWheelMagic(String fromMagicId, String toMagicId) {
+         if (fromMagicId == null || fromMagicId.isEmpty() || toMagicId == null || toMagicId.isEmpty()) {
+            return false;
+         }
+         this.ensureMagicSystemInitialized();
+         boolean changed = false;
+         for (TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry : this.magic_wheels) {
+            if (entry != null && magicIdMatches(entry.magicId, fromMagicId)) {
+               entry.magicId = toMagicId;
+               entry.presetPayload = entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy();
+               changed = true;
+            }
+         }
+         if (changed) {
+            this.rebuildSelectedMagicsFromActiveWheel();
+         }
+         return changed;
+      }
+
+      public boolean migrateMagicId(String fromMagicId, String toMagicId) {
+         boolean changed = this.replaceLearnedMagic(fromMagicId, toMagicId);
+         changed |= this.replaceWheelMagic(fromMagicId, toMagicId);
+         return changed;
       }
 
       public TypeMoonWorldModVariables.PlayerVariables.CrestEntry getCrestEntryById(String entryId) {
@@ -1870,14 +1971,14 @@ public class TypeMoonWorldModVariables {
                normalizeCrestEntry(entry);
                if ("self".equals(entry.sourceKind)) {
                   String canonicalMagicId = canonicalSelfKnowledgeMagicId(entry.magicId);
-                  if (isKnownMagicId(canonicalMagicId)) {
+                  if (!isBlockedCrestMagic(canonicalMagicId)) {
                      TypeMoonWorldModVariables.PlayerVariables.CrestEntry normalizedCopy = entry.copy();
                      normalizedCopy.magicId = canonicalMagicId;
                      existingSelfEntries.putIfAbsent(canonicalMagicId, normalizedCopy);
                   }
-               } else {
-                  updated.add(entry.copy());
-               }
+                } else if (!isBlockedCrestMagic(entry.magicId)) {
+                   updated.add(entry.copy());
+                }
             }
          }
 
@@ -1992,7 +2093,7 @@ public class TypeMoonWorldModVariables {
                      TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = TypeMoonWorldModVariables.PlayerVariables.CrestEntry.fromNBT(
                         listTag.getCompound(i)
                      );
-                     if (isKnownMagicId(entry.magicId)) {
+                     if (isKnownMagicId(entry.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(entry.magicId)) {
                         normalizeCrestEntry(entry);
                         entries.add(entry);
                      }
@@ -2010,7 +2111,7 @@ public class TypeMoonWorldModVariables {
             ListTag listTag = new ListTag();
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry : entries) {
-               if (entry != null && isKnownMagicId(entry.magicId)) {
+               if (entry != null && isKnownMagicId(entry.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(entry.magicId)) {
                   listTag.add(entry.serializeNBT());
                }
             }
@@ -2026,7 +2127,7 @@ public class TypeMoonWorldModVariables {
             Map<String, TypeMoonWorldModVariables.PlayerVariables.CrestEntry> merged = new LinkedHashMap<>();
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : this.crest_entries) {
-               if (existing != null && isKnownMagicId(existing.magicId)) {
+               if (existing != null && isKnownMagicId(existing.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(existing.magicId)) {
                   TypeMoonWorldModVariables.PlayerVariables.CrestEntry copy = existing.copy();
                   normalizeCrestEntry(copy);
                   String key = copy.magicId
@@ -2044,7 +2145,7 @@ public class TypeMoonWorldModVariables {
             }
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry incoming : incomingEntries) {
-               if (incoming != null && isKnownMagicId(incoming.magicId)) {
+               if (incoming != null && isKnownMagicId(incoming.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(incoming.magicId)) {
                   TypeMoonWorldModVariables.PlayerVariables.CrestEntry normalized = incoming.copy();
                   normalizeCrestEntry(normalized);
                   String key = normalized.magicId
@@ -2911,10 +3012,10 @@ public class TypeMoonWorldModVariables {
                TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry = TypeMoonWorldModVariables.PlayerVariables.CrestEntry.fromNBT(
                   crestList.getCompound(i)
                );
-               if (isKnownMagicId(crestEntry.magicId)) {
-                  normalizeCrestEntry(crestEntry);
-                  this.crest_entries.add(crestEntry);
-               }
+                if (!isBlockedCrestMagic(crestEntry.magicId)) {
+                   normalizeCrestEntry(crestEntry);
+                   this.crest_entries.add(crestEntry);
+                }
             }
          }
 
@@ -2923,7 +3024,7 @@ public class TypeMoonWorldModVariables {
             CompoundTag practiceTag = nbt.getCompound("crest_practice_count");
 
             for (String key : practiceTag.getAllKeys()) {
-               if (isKnownMagicId(key)) {
+               if (!isBlockedCrestMagic(key)) {
                   this.crest_practice_count.put(key, Math.max(0, practiceTag.getInt(key)));
                }
             }
@@ -2946,6 +3047,12 @@ public class TypeMoonWorldModVariables {
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
          MagicCircuitColorHelper.ensureColor(this);
+         if (entity instanceof ServerPlayer serverPlayer) {
+            SakuraTypeMoonIntegration.normalizeBlackSakuraLoadout(
+               serverPlayer,
+               serverPlayer.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get())
+            );
+         }
          if (this.player_magic_attributes_sword) {
             if (!this.learned_magics.contains("unlimited_blade_works")) {
                this.learned_magics.add("unlimited_blade_works");

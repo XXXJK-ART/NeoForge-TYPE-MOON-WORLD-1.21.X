@@ -127,7 +127,9 @@ public final class ClientGameEvents {
                 playerRenderer.getModel(),
                 Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true)
             );
-            if (event.getPlayer().getData(AddonAttachments.CURSED_ARMOR_VIEW.get()).state() == CursedArmorState.ACTIVE
+            CursedArmorState cursedState = event.getPlayer().getData(AddonAttachments.CURSED_ARMOR_VIEW.get()).state();
+            if (cursedState != CursedArmorState.NONE
+                && cursedState != CursedArmorState.REMOVED
                 && CursedArmorLayer.coversFirstPersonArm(event.getArm())) {
                 event.setCanceled(true);
             }

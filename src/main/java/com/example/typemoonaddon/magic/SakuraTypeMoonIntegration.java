@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import com.example.typemoonaddon.magic.MatouSakuraMasterProfile;
 import net.xxxjk.typemoonworld.api.AddonRegistrar;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
@@ -115,7 +116,7 @@ public final class SakuraTypeMoonIntegration {
     private static void initializeMaster(MasterProfileContext context, MasterVariant variant) {
         learn(context, IMAGINARY_STORAGE, 40.0D);
         grantMasterCardAttributes(context.player());
-        if (variant != MasterVariant.STAY_NIGHT) {
+        if (variant == MasterVariant.FHA) {
             learn(context, IMAGINARY_ABSORPTION, 60.0D);
             learn(context, SHADOW_MATERIALIZATION, 40.0D);
             learn(context, BLACK_MUD_CONTROL, 40.0D);
@@ -123,8 +124,6 @@ public final class SakuraTypeMoonIntegration {
             learn(context, SHADOW_BINDING, 40.0D);
             learn(context, SHADOW_TRANSFER, 40.0D);
             learn(context, HEROIC_SPIRIT_DEVOURER, 40.0D);
-        }
-        if (variant == MasterVariant.FHA) {
             learn(context, FORBIDDEN_MAGIC, 70.0D);
             learn(context, SHADOW_ART, 70.0D);
             context.player().getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get()).unlockForbiddenMagic();
@@ -370,13 +369,7 @@ public final class SakuraTypeMoonIntegration {
         boolean baseReady = data.crestWormAssimilated() || assimilateCrestWorm(player);
         boolean ready = baseReady
                 && ensureImaginaryAttribute(player)
-                && grantWaterAttribute(player)
-                && ensureKnowledge(player, SHADOW_MATERIALIZATION)
-                && ensureKnowledge(player, BLACK_MUD_CONTROL)
-                && ensureKnowledge(player, SUMMON_BLACK_MUD)
-                && ensureKnowledge(player, SHADOW_BINDING)
-                && ensureKnowledge(player, SHADOW_TRANSFER)
-                && ensureKnowledge(player, HEROIC_SPIRIT_DEVOURER);
+                && grantWaterAttribute(player);
         return ready && data.ascendGrailWorm();
     }
 
@@ -391,15 +384,49 @@ public final class SakuraTypeMoonIntegration {
         if (data.grailErosionFull() && data.shadowArtState() == ImaginarySpaceData.ShadowArtState.LOCKED) {
             data.unlockShadowArt();
         }
-        return ensureImaginaryAttribute(player)
-                && grantWaterAttribute(player)
-                && ensureKnowledge(player, SHADOW_MATERIALIZATION)
-                && ensureKnowledge(player, BLACK_MUD_CONTROL)
-                && ensureKnowledge(player, SUMMON_BLACK_MUD)
-                && ensureKnowledge(player, SHADOW_BINDING)
-                && ensureKnowledge(player, SHADOW_TRANSFER)
-                && ensureKnowledge(player, HEROIC_SPIRIT_DEVOURER)
-                && (!data.shadowArtUnlocked() || ensureKnowledge(player, SHADOW_ART));
+        normalizeBlackSakuraLoadout(player, data);
+        return ensureImaginaryAttribute(player) && grantWaterAttribute(player);
+    }
+
+    public static boolean isAlterBlackSakura(ServerPlayer player) {
+        if (player == null) {
+            return false;
+        }
+        return MatouSakuraMasterProfile.variant(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_card_id)
+                == MatouSakuraMasterProfile.Variant.ALTER;
+    }
+
+    public static boolean normalizeBlackSakuraLoadout(ServerPlayer player, ImaginarySpaceData data) {
+        if (player == null || data == null || !data.grailWormAscended() || !isAlterBlackSakura(player)) {
+            return false;
+        }
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        boolean full = data.grailErosionFull();
+        boolean changed = false;
+        if (full) {
+            changed |= ensureKnowledge(player, IMAGINARY_ABSORPTION);
+            changed |= ensureKnowledge(player, SHADOW_MATERIALIZATION);
+            changed |= ensureKnowledge(player, BLACK_MUD_CONTROL);
+            changed |= ensureKnowledge(player, SUMMON_BLACK_MUD);
+            changed |= ensureKnowledge(player, SHADOW_BINDING);
+            changed |= ensureKnowledge(player, SHADOW_TRANSFER);
+            changed |= ensureKnowledge(player, HEROIC_SPIRIT_DEVOURER);
+            changed |= ensureKnowledge(player, FORBIDDEN_MAGIC);
+            changed |= ensureKnowledge(player, SHADOW_ART);
+            changed |= vars.migrateMagicId(IMAGINARY_STORAGE.toString(), IMAGINARY_ABSORPTION.toString());
+        } else {
+            changed |= ensureKnowledge(player, IMAGINARY_STORAGE);
+            changed |= vars.migrateMagicId(IMAGINARY_ABSORPTION.toString(), IMAGINARY_STORAGE.toString());
+            changed |= vars.removeLearnedMagic(SHADOW_MATERIALIZATION.toString());
+            changed |= vars.removeLearnedMagic(BLACK_MUD_CONTROL.toString());
+            changed |= vars.removeLearnedMagic(SUMMON_BLACK_MUD.toString());
+            changed |= vars.removeLearnedMagic(SHADOW_BINDING.toString());
+            changed |= vars.removeLearnedMagic(SHADOW_TRANSFER.toString());
+            changed |= vars.removeLearnedMagic(HEROIC_SPIRIT_DEVOURER.toString());
+            changed |= vars.removeLearnedMagic(FORBIDDEN_MAGIC.toString());
+            changed |= vars.removeLearnedMagic(SHADOW_ART.toString());
+        }
+        return changed;
     }
 
     public static boolean ensureForbiddenMagicKnowledge(ServerPlayer player) {
@@ -421,7 +448,7 @@ public final class SakuraTypeMoonIntegration {
 
     public static boolean isLearned(ServerPlayer player) {
         return player != null
-                && SakuraImaginaryStorageService.isLearned(player)
+                && (SakuraImaginaryStorageService.isLearned(player) || SakuraImaginaryStorageService.isAbsorptionLearned(player))
                 && hasImaginaryAttribute(player);
     }
 

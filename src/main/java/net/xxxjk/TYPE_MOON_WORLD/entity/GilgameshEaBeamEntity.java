@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshDuelState;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
@@ -215,7 +216,9 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
 
    private void startBeam(ServerLevel level, LivingEntity owner, float scale) {
       this.beamStarted = true;
-      this.entityData.set(POWER, Math.max(0.35F, Math.min(1.0F, scale)));
+      double resourceScale = owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant
+         ? ServantNoblePhantasmResourceService.powerScale(servant) : 1.0;
+      this.entityData.set(POWER, Math.max(0.35F, Math.min(1.0F, scale * (float)resourceScale)));
       setStage(Stage.BEAM);
       updateDirectionFromOwner(owner);
       this.lastDamageDirection = this.direction;

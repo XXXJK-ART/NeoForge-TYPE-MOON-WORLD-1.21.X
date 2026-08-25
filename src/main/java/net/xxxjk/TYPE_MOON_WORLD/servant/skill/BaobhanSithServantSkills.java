@@ -505,7 +505,7 @@ public final class BaobhanSithServantSkills {
       ServantEntity servant = context.caster();
       LivingEntity target = context.target();
       if (servant == null || !isBaobhanSith(servant) || target == null || !target.isAlive()
-         || context.currentMp() < context.noblePhantasmDefinition().mpCost()) {
+         || context.currentMp() <= 0.0) {
          return ServantExecutionResult.NOT_HANDLED;
       }
       int mediumCount = Math.min(10, totalMediumCount(servant, target));
@@ -516,7 +516,7 @@ public final class BaobhanSithServantSkills {
       servant.triggerRuneCastAnimation(60);
       ServantVoiceHelper.tryPlayBaobhanSithNp(servant);
       boolean canBurst = totalCurseLayers(servant, target) >= 5;
-      float damage = mediumCount * 50.0F;
+      float damage = mediumCount * 50.0F * (float)context.powerScale();
       if (canBurst) {
          damage *= 2.0F;
       }

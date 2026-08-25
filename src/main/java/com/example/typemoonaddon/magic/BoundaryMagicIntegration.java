@@ -3,6 +3,7 @@ package com.example.typemoonaddon.magic;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.BoundaryMarkEntity;
 import com.example.typemoonaddon.network.AddonNetwork;
+import com.example.typemoonaddon.network.BoundaryImpactVisualPayload;
 import com.example.typemoonaddon.network.OpenBoundaryImmunityPayload;
 import java.util.Comparator;
 import java.util.ArrayList;
@@ -81,6 +82,7 @@ public final class BoundaryMagicIntegration {
             "suggestion_boundary", "anti_magic_boundary", "guard_boundary", "interference_boundary");
     private static final double BASE_MANA_PER_SECOND = 0.25D;
     private static final String TAG_LAST_DEFENSE_BLOCKED_TICK = "TypeMoonBoundaryDefenseBlockedTick";
+    private static final String TAG_LAST_DEFENSE_IMPACT_TICK = "TypeMoonBoundaryDefenseImpactTick";
     private static final Map<UUID, Set<UUID>> PRESENCE_MEMORY = new HashMap<>();
 
     private BoundaryMagicIntegration() {
@@ -188,6 +190,7 @@ public final class BoundaryMagicIntegration {
             entity.teleportTo(previous.x, previous.y, previous.z);
             entity.setDeltaMovement(0.0D, Math.min(0.0D, entity.getDeltaMovement().y), 0.0D);
             entity.hurtMarked = true;
+            playDefenseImpact(level, mark, previous.add(current).scale(0.5D));
             if (entity instanceof ServerPlayer player) {
                 notifyDefenseBlocked(player);
             }
@@ -736,6 +739,32 @@ public final class BoundaryMagicIntegration {
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.defense_blocked"), true);
             player.getPersistentData().putLong(TAG_LAST_DEFENSE_BLOCKED_TICK, now);
         }
+    }
+
+    private static void playDefenseImpact(ServerLevel level, BoundaryMarkEntity mark, Vec3 impact) {
+        if (level == null || mark == null || impact == null) {
+            return;
+        }
+        long now = level.getGameTime();
+        long last = mark.getPersistentData().getLong(TAG_LAST_DEFENSE_IMPACT_TICK);
+        if (last + 4L > now) {
+            return;
+        }
+        mark.getPersistentData().putLong(TAG_LAST_DEFENSE_IMPACT_TICK, now);
+        AddonNetwork.sendNear(level, impact.x, impact.y, impact.z, 24.0D,
+                new BoundaryImpactVisualPayload(impact.x, impact.y, impact.z, boundaryColor(mark.getBoundaryType())));
+    }
+
+    private static int boundaryColor(String type) {
+        return switch (type) {
+            case "warning_boundary" -> 0xFFE0B14C;
+            case "defense_boundary" -> 0xFF65B8FF;
+            case "suggestion_boundary" -> 0xFFB96BFF;
+            case "anti_magic_boundary" -> 0xFF5C7BFF;
+            case "guard_boundary" -> 0xFFF06B6B;
+            case "interference_boundary" -> 0xFF78F08A;
+            default -> 0xFFF0F0FF;
+        };
     }
 
     private static boolean isAggroTarget(LivingEntity entity) {

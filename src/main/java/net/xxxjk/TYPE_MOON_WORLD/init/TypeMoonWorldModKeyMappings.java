@@ -84,7 +84,7 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping LOSE_HEALTH_REGAIN_MANA = new KeyMapping("key.typemoonworld.lose_health_regain_mana", 88, "key.categories.typemoonworld");
    public static final KeyMapping BASIC_INFORMATION_GUI = new KeyMapping("key.typemoonworld.basic_information_gui", 82, "key.categories.typemoonworld");
    public static final KeyMapping MYSTIC_EYES_ACTIVATE = new KeyMapping("key.typemoonworld.mystic_eyes_activate", 86, "key.categories.typemoonworld");
-   public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", 258, "key.categories.typemoonworld");
+    public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", GLFW.GLFW_KEY_P, "key.categories.typemoonworld");
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
@@ -596,7 +596,7 @@ public class TypeMoonWorldModKeyMappings {
          }
       }
 
-      /** Opens the Tab preset editor for both built-in and addon magic. */
+      /** Opens the preset editor for both built-in and addon magic. */
       private static boolean openCurrentMagicPreset(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
          if (player == null || vars == null || magicId == null || magicId.isBlank()) {
             return false;

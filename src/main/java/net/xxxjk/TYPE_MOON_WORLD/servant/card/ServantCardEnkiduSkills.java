@@ -605,7 +605,9 @@ public final class ServantCardEnkiduSkills {
             coreTarget = findFlightHit(player, level);
          }
          if (coreTarget != null) {
-            applyNoDefenseDamageOverTicks(player, coreTarget, ENUMA_CORE_DAMAGE_TOTAL, Math.max(1, (int)(data.getLong(ENUMA_FINISH_TICK) - now)));
+            applyNoDefenseDamageOverTicks(player, coreTarget,
+               (float)(ENUMA_CORE_DAMAGE_TOTAL * ServantCardManaService.noblePhantasmPowerScale(player)),
+               Math.max(1, (int)(data.getLong(ENUMA_FINISH_TICK) - now)));
          }
       }
       if (data.getInt(ENUMA_STAGE) <= 1) {
@@ -713,9 +715,11 @@ public final class ServantCardEnkiduSkills {
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.2, impact.z, 38, 1.5, 0.75, 1.5, 0.1);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.0F, 1.45F);
       if (directTarget != null) {
-         applyNoDefenseDamageOverTicks(player, directTarget, ENUMA_CORE_DAMAGE_TOTAL, 20);
+         applyNoDefenseDamageOverTicks(player, directTarget,
+            (float)(ENUMA_CORE_DAMAGE_TOTAL * ServantCardManaService.noblePhantasmPowerScale(player)), 20);
       }
-      applyEnumaAreaDamage(player, level, impact, 7.0, 500.0F, directTarget);
+      applyEnumaAreaDamage(player, level, impact, 7.0,
+         (float)(500.0F * ServantCardManaService.noblePhantasmPowerScale(player)), directTarget);
       breakEnumaImpactTerrain(level, impact, 6.0);
       EnumaChainService.bindImpactTarget(player, directTarget);
    }
@@ -732,7 +736,8 @@ public final class ServantCardEnkiduSkills {
       level.sendParticles(ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, 280, radius * 0.48, radius * 0.42, radius * 0.48, 0.28);
       level.sendParticles(ParticleTypes.CLOUD, impact.x, impact.y + 0.05, impact.z, 260, radius * 0.58, radius * 0.26, radius * 0.58, 0.18);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 5.0F, 0.82F);
-      applyEnumaAreaDamage(player, level, impact, radius, 500.0F, directTarget);
+      applyEnumaAreaDamage(player, level, impact, radius,
+         (float)(500.0F * ServantCardManaService.noblePhantasmPowerScale(player)), directTarget);
       breakEnumaImpactTerrainInWaves(level, impact, radius);
       EnumaChainService.bindImpactTarget(player, directTarget);
    }

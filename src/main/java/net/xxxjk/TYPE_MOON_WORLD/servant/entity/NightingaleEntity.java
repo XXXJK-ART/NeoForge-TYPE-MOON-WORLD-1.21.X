@@ -21,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.NightingaleGunItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleSupportService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 
 public final class NightingaleEntity extends ServantEntity {
    public static final String SERVANT_KEY = "nightingale";
@@ -32,6 +33,7 @@ public final class NightingaleEntity extends ServantEntity {
    private static final double MELEE_MODE_RANGE = 6.0;
    private static final String LAST_NP = "NightingaleLastNp";
    private static final String NP_CAST_END = "NightingaleNpCastEnd";
+   private static final String NP_OVERDRAFT = "NightingaleNpOverdraft";
    private static final String COMBAT_OPENED = "NightingaleCombatOpened";
    private static final String LAST_INNOCENT_ATTACK_PREFIX = "NightingaleAggressor.";
 
@@ -199,8 +201,10 @@ public final class NightingaleEntity extends ServantEntity {
    }
 
    private boolean canUseNoblePhantasm(long now) {
-      return this.hasMasterNoblePhantasmPermission() && this.getCurrentMp() >= NightingaleRules.NOBLE_PHANTASM_COST
-         && cooldownReady(LAST_NP, now, NightingaleRules.NOBLE_PHANTASM_COOLDOWN);
+      return this.hasMasterNoblePhantasmPermission()
+         && ServantNoblePhantasmResourceService.canAttemptNpcCast(this, NightingaleRules.NOBLE_PHANTASM_COST)
+         && cooldownReady(LAST_NP, now, this.getPersistentData().getBoolean(NP_OVERDRAFT)
+            ? NightingaleRules.NOBLE_PHANTASM_COOLDOWN * 2 : NightingaleRules.NOBLE_PHANTASM_COOLDOWN);
    }
 
    private boolean cooldownReady(String key, long now, int cooldown) {
@@ -208,6 +212,13 @@ public final class NightingaleEntity extends ServantEntity {
    }
 
    private void startNoblePhantasm(long now) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(this, NightingaleRules.NOBLE_PHANTASM_COST);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(this)) {
+         return;
+      }
+      ServantNoblePhantasmResourceService.commitNpcCast(this, resource);
+      this.getPersistentData().putBoolean(NP_OVERDRAFT, resource.overdraft());
       this.getPersistentData().putLong(NP_CAST_END, now + NightingaleRules.NOBLE_PHANTASM_WINDUP);
       this.triggerNamedActionAnimation("noble_phantasm");
       ServantVoiceHelper.tryPlayNightingaleNp(this);
@@ -216,7 +227,6 @@ public final class NightingaleEntity extends ServantEntity {
    private void finishNoblePhantasm(ServerLevel level, long now) {
       this.getPersistentData().remove(NP_CAST_END);
       this.getPersistentData().putLong(LAST_NP, now);
-      this.setCurrentMp(this.getCurrentMp() - NightingaleRules.NOBLE_PHANTASM_COST);
       NightingaleSupportService.createSafetyCircle(this, level, this.position(), now);
    }
 

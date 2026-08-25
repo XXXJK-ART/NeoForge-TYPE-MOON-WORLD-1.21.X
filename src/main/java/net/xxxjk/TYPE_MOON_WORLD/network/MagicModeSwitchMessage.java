@@ -69,11 +69,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     }
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.target_selected", targetComp), true);
                     
-                    if ("reinforcement".equals(currentMagic)) {
-                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
-                    } else {
-                        vars.syncModeState(player);
-                    }
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 } else if (message.actionType == 3) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -107,11 +103,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.part_selected", feedbackComp), true);
                     }
                     
-                    if ("reinforcement".equals(currentMagic)) {
-                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
-                    } else {
-                        vars.syncModeState(player);
-                    }
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 } else if (message.actionType == 4) {
                     if (!isReinforcementMagic(currentMagic)) {
@@ -122,11 +114,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                     }
                     vars.reinforcement_level = Math.max(1, Math.min(5, message.value));
                     player.displayClientMessage(Component.translatable("message.typemoonworld.magic.reinforcement.level_selected", vars.reinforcement_level), true);
-                    if ("reinforcement".equals(currentMagic)) {
-                        PlayerMagicSelectionService.syncPresetMutation(player, vars);
-                    } else {
-                        vars.syncModeState(player);
-                    }
+                    PlayerMagicSelectionService.syncPresetMutation(player, vars);
                     return;
                 } else if (message.actionType == 5) {
                     // This is now handled in CastMagic when reinforcement_target == 3

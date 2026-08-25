@@ -13,7 +13,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
@@ -23,10 +22,9 @@ public final class CursedArmorService {
     public static boolean beginFormation(ServerPlayer player) {
         var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
         long now = player.server.overworld().getGameTime();
-        if (!data.grailErosionFull() || !data.beginCursedArmorFormation(now)) {
+        if (!SakuraTypeMoonIntegration.isAlterBlackSakura(player) || !data.grailErosionFull() || !data.beginCursedArmorFormation(now)) {
             return false;
         }
-        clearArmorSlots(player);
         sync(player);
         player.serverLevel().playSound(
             null,
@@ -61,7 +59,6 @@ public final class CursedArmorService {
         if (!data.cursedArmorPresent()) {
             return;
         }
-        clearArmorSlots(player);
         long now = player.server.overworld().getGameTime();
         long elapsed = Math.max(0L, now - data.cursedArmorStageStartTick());
         boolean changed = false;
@@ -109,9 +106,7 @@ public final class CursedArmorService {
     }
 
     public static void enforceArmorSlots(ServerPlayer player) {
-        if (player.getData(AddonAttachments.IMAGINARY_SPACE.get()).cursedArmorPresent()) {
-            clearArmorSlots(player);
-        }
+        // Pure overlay: keep the real armor slots intact.
     }
 
     public static float protectionProgress(ServerPlayer player) {
@@ -128,13 +123,6 @@ public final class CursedArmorService {
             case DISSOLVING -> 1.0F - transition;
             default -> 0.0F;
         };
-    }
-
-    private static void clearArmorSlots(ServerPlayer player) {
-        player.setItemSlot(EquipmentSlot.HEAD, net.minecraft.world.item.ItemStack.EMPTY);
-        player.setItemSlot(EquipmentSlot.CHEST, net.minecraft.world.item.ItemStack.EMPTY);
-        player.setItemSlot(EquipmentSlot.LEGS, net.minecraft.world.item.ItemStack.EMPTY);
-        player.setItemSlot(EquipmentSlot.FEET, net.minecraft.world.item.ItemStack.EMPTY);
     }
 
     private static LivingEntity rootLivingAttacker(DamageSource source) {

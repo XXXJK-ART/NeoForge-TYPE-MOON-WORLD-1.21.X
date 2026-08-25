@@ -60,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 
 public final class EnkiduCombatHelper {
    private static final int VOLLEY_EFFECT_STRIDE = 4;
@@ -120,6 +121,7 @@ public final class EnkiduCombatHelper {
    private static final String TAG_ENUMA_DIR_Y = "EnkiduEnumaDirY";
    private static final String TAG_ENUMA_DIR_Z = "EnkiduEnumaDirZ";
    private static final String TAG_ENUMA_DUEL_FINALE = "EnkiduEnumaGilgameshFinale";
+   private static final String TAG_ENUMA_POWER_SCALE = "EnkiduEnumaPowerScale";
    private static final String TAG_ENUMA_CORE_DAMAGE_STARTED = "EnkiduEnumaCoreDamageStarted";
    private static final float ENUMA_CORE_DAMAGE_TOTAL = 5000.0F;
    private static final String TAG_BOUND_UNTIL = "EnkiduBoundUntil";
@@ -223,9 +225,6 @@ public final class EnkiduCombatHelper {
          return;
       }
       if (tryBeginEnumaElish(entity, level, target, now, phase)) {
-         return;
-      }
-      if (tryChainOfHeaven(entity, level, target, now)) {
          return;
       }
       if (distance <= 5.0 && tryMeleeLunge(entity, level, target, now, phase, distance)) {
@@ -2102,9 +2101,12 @@ public final class EnkiduCombatHelper {
 
    private static boolean tryBeginEnumaElish(EnkiduEntity entity, ServerLevel level, LivingEntity target, long now, ServantCombatPhase phase, boolean forceCounter) {
       CompoundTag data = entity.getPersistentData();
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 150.0);
       if (data.getLong(TAG_ENUMA_RELEASE) > now
          || entity.distanceTo(target) > 32.0
-         || entity.getCurrentMp() < 150.0
+         || !resource.allowed()
+         || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
          || now - data.getLong(TAG_LAST_ENUMA) < ENUMA_COOLDOWN
          || (!forceCounter && phase != ServantCombatPhase.DECISIVE)) {
          return false;
@@ -2130,11 +2132,14 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_FLIGHT_UNTIL, now + ENUMA_WINDUP + ENUMA_RELEASE_VISUAL + 20L);
       data.remove(TAG_LAND_UNTIL);
       entity.setNoGravity(true);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 150.0));
+      data.putDouble(TAG_ENUMA_POWER_SCALE, resource.powerScale());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       entity.triggerNamedActionAnimation("enkidu_enuma_elish");
       ServantVoiceHelper.tryPlayEnkiduNp(entity);
       spawnEnumaWindupVanillaFx(level, entity.position());
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.6F, 0.85F);
+      // Chain of Heaven is an Enuma sub-stage, not a second NP.
+      ChainControlService.summonSkillBarrage(entity, target);
       EnumaChainService.beginNpcEnuma(entity);
       return true;
    }
@@ -2224,7 +2229,9 @@ public final class EnkiduCombatHelper {
       }
       if (!duelFinale && !data.getBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED) && now < finish) {
          data.putBoolean(TAG_ENUMA_CORE_DAMAGE_STARTED, true);
-         applyNoDefenseDamageOverTicks(entity, target, ENUMA_CORE_DAMAGE_TOTAL, Math.max(1, (int)(finish - now)));
+         applyNoDefenseDamageOverTicks(entity, target,
+            (float)ServantNoblePhantasmResourceService.scale(entity, ENUMA_CORE_DAMAGE_TOTAL),
+            Math.max(1, (int)(finish - now)));
       }
       if (duelFinale) GilgameshDuelState.markEnkiduRushStarted(entity, level, now);
       if (data.getBoolean(TAG_ENUMA_DAMAGE_DONE)) {
@@ -2408,7 +2415,8 @@ public final class EnkiduCombatHelper {
       level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 80, 1.7, 1.0, 1.7, 0.16);
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.2, impact.z, 38, 1.5, 0.75, 1.5, 0.1);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.0F, 1.45F);
-      applyEnumaAreaDamage(entity, level, impact, 7.0, 500.0F, directTarget);
+      applyEnumaAreaDamage(entity, level, impact, 7.0,
+         (float)ServantNoblePhantasmResourceService.scale(entity, 500.0F), directTarget);
       breakEnumaImpactTerrain(level, impact, 6.0, 260);
       EnumaChainService.bindImpactTarget(entity, directTarget);
    }
@@ -2427,7 +2435,8 @@ public final class EnkiduCombatHelper {
       level.sendParticles(ParticleTypes.LARGE_SMOKE, impact.x, impact.y + 0.2, impact.z, 220, radius * 0.52, radius * 0.34, radius * 0.52, 0.12);
       level.sendParticles(ParticleTypes.GUST, impact.x, impact.y + 0.1, impact.z, 180, radius * 0.62, 0.18, radius * 0.62, 0.16);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.5F, 0.82F);
-      applyEnumaAreaDamage(entity, level, impact, radius, 500.0F, directTarget);
+      applyEnumaAreaDamage(entity, level, impact, radius,
+         (float)ServantNoblePhantasmResourceService.scale(entity, 500.0F), directTarget);
       breakEnumaImpactTerrainInWaves(level, impact, radius);
       EnumaChainService.bindImpactTarget(entity, directTarget);
    }

@@ -51,6 +51,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 
@@ -272,7 +273,8 @@ public final class ServantCombatSystem {
 
    public static boolean skillsSuppressed(LivingEntity entity) {
       return entity instanceof ServantEntity servant
-         && servant.getPersistentData().getLong(TAG_SUPPRESSED_UNTIL) > servant.level().getGameTime();
+         && (servant.getPersistentData().getLong(TAG_SUPPRESSED_UNTIL) > servant.level().getGameTime()
+            || ServantNoblePhantasmResourceService.isOverdraftWeak(servant));
    }
 
    public static boolean isUntargetable(LivingEntity entity) {

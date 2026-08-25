@@ -22,30 +22,39 @@ public final class ServantNoblePhantasmExecutor {
          return ServantExecutionResult.FAILED;
       }
 
-      double currentMp = caster.getCurrentMp();
-      if (currentMp < npDef.mpCost()) {
+      ServantNoblePhantasmResourceService.CastDecision decision =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(caster, npDef.mpCost());
+      if (!decision.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(caster)) {
          return ServantExecutionResult.FAILED;
       }
+      double currentMp = caster.getCurrentMp();
 
       // Qinggang Sword is a servant-specific timed state rather than a
       // generic one-shot NP. Let Zhao Yun own its cooldown, MP deduction and
       // delayed-hit queue while still exposing it through the common executor.
       if (caster instanceof ZhaoYunRiderEntity zhaoYun && "qinggang_sword".equals(npDef.id())) {
-         return zhaoYun.startQinggangSword() ? ServantExecutionResult.SUCCESS : ServantExecutionResult.FAILED;
+         if (!zhaoYun.startAokoSword(decision)) {
+            return ServantExecutionResult.FAILED;
+         }
+         ServantNoblePhantasmResourceService.commitNpcCast(caster, decision);
+         return ServantExecutionResult.SUCCESS.withMpCost(decision.actualMpCost());
       }
 
       ServantExecutionResult addonResult = ServantAddonRegistry.executeNoblePhantasm(
-         new ServantNoblePhantasmContext(caster, target, caster.getDefinition(), npDef, overChargeLevel, currentMp)
+         new ServantNoblePhantasmContext(
+            caster, target, caster.getDefinition(), npDef, overChargeLevel, currentMp,
+            decision.powerScale(), decision.overdraft()
+         )
       );
       if (addonResult.handled()) {
-         if (addonResult.success() && addonResult.mpCost() > 0.0) {
-            caster.setCurrentMp(Math.max(0.0, currentMp - addonResult.mpCost()));
+         if (addonResult.success()) {
+            ServantNoblePhantasmResourceService.commitNpcCast(caster, decision);
          }
          return addonResult;
       }
 
-      caster.setCurrentMp(currentMp - npDef.mpCost());
+      ServantNoblePhantasmResourceService.commitNpcCast(caster, decision);
 
-      return ServantExecutionResult.SUCCESS.withMpCost(npDef.mpCost());
+      return ServantExecutionResult.SUCCESS.withMpCost(decision.actualMpCost());
    }
 }

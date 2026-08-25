@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.GawainSunlightRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -48,6 +49,8 @@ public final class GawainCombatHelper {
    private static final String TAG_GUTS_SOLAR = "GawainGutsSolar";
    private static final String TAG_RECOVERY_ACTIVE = "BattleContinuationRecoveryActive";
    private static final String TAG_LAST_GALLATIN = "GawainLastGallatin";
+   private static final String TAG_GALLATIN_POWER_SCALE = "GawainGallatinPowerScale";
+   private static final String TAG_GALLATIN_OVERDRAFT = "GawainGallatinOverdraft";
    private static final String TAG_GALLATIN_WINDUP_UNTIL = "GawainGallatinWindupUntil";
    private static final String TAG_GALLATIN_TARGET = "GawainGallatinTarget";
    private static final String TAG_LAST_GALLATIN_CHARGE_VFX = "GawainLastGallatinChargeVfx";
@@ -465,13 +468,19 @@ public final class GawainCombatHelper {
       boolean solar = hasSunBlessing(entity);
       double mpCost = solar ? 100.0 : 80.0;
       int cooldown = solar ? GALLATIN_SOLAR_COOLDOWN : GALLATIN_COOLDOWN;
-      if (entity.getCurrentMp() < mpCost || now - data.getLong(TAG_LAST_GALLATIN) < cooldown) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, mpCost);
+      int previousCooldown = data.getBoolean(TAG_GALLATIN_OVERDRAFT) ? cooldown * 2 : cooldown;
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || now - data.getLong(TAG_LAST_GALLATIN) < previousCooldown) {
          return false;
       }
       data.putLong(TAG_LAST_GALLATIN, now);
       data.putLong(TAG_GALLATIN_WINDUP_UNTIL, now + GALLATIN_WINDUP);
       data.putUUID(TAG_GALLATIN_TARGET, target.getUUID());
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - mpCost));
+      data.putDouble(TAG_GALLATIN_POWER_SCALE, resource.powerScale());
+      data.putBoolean(TAG_GALLATIN_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       entity.faceToward(target.position());
       entity.triggerNamedActionAnimation("gallatin_chant");
       ServantVoiceHelper.tryPlayGawainNp(entity);
@@ -497,7 +506,9 @@ public final class GawainCombatHelper {
       entity.triggerNamedActionAnimation("gallatin_release");
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin", entity, 3.0F);
       level.playSound(null, entity.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 2.2F, 0.62F);
-      performGallatinCone(entity, level, look, hasSunBlessing(entity) ? 3000.0F : 1000.0F);
+      float powerScale = (float)Math.max(0.2, Math.min(1.0, data.getDouble(TAG_GALLATIN_POWER_SCALE)));
+      performGallatinCone(entity, level, look,
+         (hasSunBlessing(entity) ? 3000.0F : 1000.0F) * powerScale);
    }
 
    private static LivingEntity getGallatinTarget(ServerLevel level, CompoundTag data, LivingEntity fallback) {

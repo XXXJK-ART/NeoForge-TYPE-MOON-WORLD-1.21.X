@@ -1,6 +1,5 @@
 package com.example.typemoonaddon.block.entity;
 
-import com.example.typemoonaddon.registry.AddonBlocks;
 import com.example.typemoonaddon.registry.AddonItems;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -18,7 +17,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
@@ -66,10 +64,11 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
     public static void tick(ServerLevel level, ManaFurnaceBlockEntity furnace) {
         if (furnace.bindingPlayer != null) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(furnace.bindingPlayer);
-            if (player == null || !player.isAlive() || !player.isShiftKeyDown()
+            if (player == null || !player.isAlive() || player.level() != level || !player.isShiftKeyDown()
                     || player.distanceToSqr(Vec3.atCenterOf(furnace.worldPosition)) > 36.0D) {
                 furnace.bindingPlayer = null;
                 furnace.bindProgress = 0;
+                furnace.setChanged();
             } else if (++furnace.bindProgress >= BIND_TICKS) {
                 furnace.owner = player.getUUID();
                 furnace.authorized.clear();
@@ -102,6 +101,16 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
         if (isBound() || player == null || player.isSpectator()) {
             return;
         }
+        if (bindingPlayer != null && !bindingPlayer.equals(player.getUUID())) {
+            player.displayClientMessage(Component.translatable(
+                    "message.typemoonworld.mana_furnace.binding_in_progress"), true);
+            return;
+        }
+        // A held right-click may call the block interaction repeatedly. Keep the
+        // same server-side session instead of restarting the three-second timer.
+        if (bindingPlayer != null) {
+            return;
+        }
         bindingPlayer = player.getUUID();
         bindProgress = 0;
         player.displayClientMessage(Component.translatable("message.typemoonworld.mana_furnace.binding"), true);
@@ -110,6 +119,21 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
 
     public void requestAuthorization(ServerPlayer player) {
         if (!isBound() || player == null || isOwner(player)) {
+            return;
+        }
+        if (authorized.contains(player.getUUID())) {
+            player.displayClientMessage(Component.translatable(
+                    "message.typemoonworld.mana_furnace.already_authorized"), true);
+            return;
+        }
+        if (pendingAuthorization != null) {
+            if (pendingAuthorization.equals(player.getUUID())) {
+                player.displayClientMessage(Component.translatable(
+                        "message.typemoonworld.mana_furnace.authorization_pending"), true);
+            } else {
+                player.displayClientMessage(Component.translatable(
+                        "message.typemoonworld.mana_furnace.authorization_busy"), true);
+            }
             return;
         }
         pendingAuthorization = player.getUUID();
@@ -154,8 +178,13 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
         if (!isOwner(player) || level == null) {
             return;
         }
-        level.setBlock(worldPosition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-        player.getInventory().add(new ItemStack(AddonItems.MANA_FURNACE.get()));
+        if (!level.setBlock(worldPosition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3)) {
+            return;
+        }
+        ItemStack stack = new ItemStack(AddonItems.MANA_FURNACE.get());
+        if (!player.addItem(stack)) {
+            player.drop(stack, false);
+        }
     }
 
     public void clearAuthorization(ServerLevel level) {
@@ -212,6 +241,9 @@ public final class ManaFurnaceBlockEntity extends BlockEntity {
         authorized.clear();
         for (int i = 0; i < Math.min(64, tag.getInt("AuthorizedCount")); i++) {
             if (tag.hasUUID("Authorized" + i)) authorized.add(tag.getUUID("Authorized" + i));
+        }
+        if (owner != null) {
+            authorized.add(owner);
         }
     }
 }

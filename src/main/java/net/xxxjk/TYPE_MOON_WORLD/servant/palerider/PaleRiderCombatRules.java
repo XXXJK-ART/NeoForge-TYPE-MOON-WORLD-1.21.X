@@ -22,6 +22,6 @@ public final class PaleRiderCombatRules {
    }
 
    public static float plagueSpecialAttackMultiplier(String servantId) {
-      return "enkidu".equals(servantId) ? 2.0F : 1.0F;
+      return "enkidu".equals(servantId) ? 4.0F : 1.0F;
    }
 }

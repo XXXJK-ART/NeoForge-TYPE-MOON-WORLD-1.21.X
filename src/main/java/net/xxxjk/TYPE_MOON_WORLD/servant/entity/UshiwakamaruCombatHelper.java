@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -35,6 +36,8 @@ public final class UshiwakamaruCombatHelper {
    private static final String TAG_LAST_USUMIDORI = "UshiwakamaruLastUsumidori";
    private static final String TAG_LAST_BENKEI = "UshiwakamaruLastBenkei";
    private static final String TAG_LAST_EIGHT_BOAT = "UshiwakamaruLastEightBoat";
+   private static final String TAG_EIGHT_BOAT_POWER_SCALE = "UshiwakamaruEightBoatPowerScale";
+   private static final String TAG_EIGHT_BOAT_OVERDRAFT = "UshiwakamaruEightBoatOverdraft";
    private static final String TAG_LAST_SPIDER_SLAYER = "UshiwakamaruLastSpiderSlayer";
    private static final String TAG_LAST_MOONLIT_STEP = "UshiwakamaruLastMoonlitStep";
    private static final String TAG_LAST_SWEEPING_THRUST = "UshiwakamaruLastSweepingThrust";
@@ -456,8 +459,12 @@ public final class UshiwakamaruCombatHelper {
 
    private static boolean tryEightBoatLeap(UshiwakamaruRiderEntity entity, ServerLevel level, LivingEntity target, double distance, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (data.getLong(TAG_EIGHT_BOAT_UNTIL) > now || entity.getCurrentMp() < 20.0
-         || !ready(data, TAG_LAST_EIGHT_BOAT, now, EIGHT_BOAT_COOLDOWN)) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 20.0);
+      int previousCooldown = data.getBoolean(TAG_EIGHT_BOAT_OVERDRAFT) ? EIGHT_BOAT_COOLDOWN * 2 : EIGHT_BOAT_COOLDOWN;
+      if (data.getLong(TAG_EIGHT_BOAT_UNTIL) > now || !resource.allowed()
+         || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || !ready(data, TAG_LAST_EIGHT_BOAT, now, previousCooldown)) {
          return false;
       }
       boolean lowHealth = entity.getHealth() <= entity.getMaxHealth() * 0.30F;
@@ -465,7 +472,9 @@ public final class UshiwakamaruCombatHelper {
       if (distance < 8.0 && !lowHealth && !obstructed) {
          return false;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 20.0);
+      data.putDouble(TAG_EIGHT_BOAT_POWER_SCALE, resource.powerScale());
+      data.putBoolean(TAG_EIGHT_BOAT_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       data.putLong(TAG_LAST_EIGHT_BOAT, now);
       data.putLong(TAG_EIGHT_BOAT_UNTIL, now + EIGHT_BOAT_DURATION);
       data.putLong(TAG_EIGHT_BOAT_NEXT_DASH, now);

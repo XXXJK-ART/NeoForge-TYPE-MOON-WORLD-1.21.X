@@ -257,6 +257,11 @@ public final class AddonNetwork {
                 OpenBoundaryImmunityPayload::handle
         );
         registrar.playToClient(
+                BoundaryImpactVisualPayload.TYPE,
+                BoundaryImpactVisualPayload.STREAM_CODEC,
+                BoundaryImpactVisualPayload::handle
+        );
+        registrar.playToClient(
                 OpenDetectionWormControlPayload.TYPE,
                 OpenDetectionWormControlPayload.STREAM_CODEC,
                 OpenDetectionWormControlPayload::handle

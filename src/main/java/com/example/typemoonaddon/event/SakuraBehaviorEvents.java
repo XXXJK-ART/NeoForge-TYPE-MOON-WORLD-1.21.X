@@ -198,7 +198,14 @@ public final class SakuraBehaviorEvents {
             }
         }
         SakuraGrailErosionService.ensureCrestWormExpelled(player);
-        CursedArmorService.beginFormation(player);
+        if (SakuraTypeMoonIntegration.isAlterBlackSakura(player) && data.grailWormAscended() && data.grailErosionFull()) {
+            CursedArmorService.beginFormation(player);
+        } else if (data.cursedArmorPresent()) {
+            CursedArmorService.beginDissolution(player);
+        }
         CursedArmorService.sync(player);
+        if (data.grailWormAscended() && SakuraTypeMoonIntegration.isAlterBlackSakura(player)) {
+            player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES).syncPlayerVariables(player);
+        }
     }
 }

@@ -69,6 +69,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
@@ -366,6 +367,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide) {
+         ServantNoblePhantasmResourceService.tick(this);
          this.tickPassiveManaRegeneration();
       }
       if (!this.level().isClientSide && this.tickCount == 1) {

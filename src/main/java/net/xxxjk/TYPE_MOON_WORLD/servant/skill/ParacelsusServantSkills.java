@@ -44,6 +44,7 @@ public final class ParacelsusServantSkills {
    private static final String TAG_LAST_ELEMENTAL_SPIRIT = "ParacelsusLastElementalSpiritTick";
    private static final String TAG_LAST_PHILOSOPHER_STONE = "ParacelsusLastPhilosopherStoneTick";
    private static final String TAG_LAST_NP = "ParacelsusLastNpTick";
+   private static final String TAG_LAST_NP_OVERDRAFT = "ParacelsusLastNpOverdraft";
    private static final String TAG_NP_CHANT_END = "ParacelsusNpChantEnd";
    private static final String TAG_NP_PENDING_TARGET = "ParacelsusNpPendingTarget";
    private static final String TAG_NP_PENDING_OVERCHARGE = "ParacelsusNpPendingOverCharge";
@@ -353,7 +354,8 @@ public final class ParacelsusServantSkills {
          return;
       }
       int overCharge = entity.getPersistentData().getInt(TAG_NP_PENDING_OVERCHARGE);
-      float damage = overCharge > 1 ? 1000.0F : 500.0F;
+      float damage = (overCharge > 1 ? 1000.0F : 500.0F)
+         * (float)ServantNoblePhantasmResourceService.powerScale(entity);
       entity.getPersistentData().putLong(TAG_SWORD_BUFF_UNTIL, now + NP_BUFF_DURATION);
       entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, NP_BUFF_DURATION, 1, false, false, true));
       entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, NP_BUFF_DURATION, 0, false, false, true));
@@ -982,15 +984,18 @@ public final class ParacelsusServantSkills {
       }
       long lastNp = entity.getPersistentData().getLong(TAG_LAST_NP);
       long chantEnd = entity.getPersistentData().getLong(TAG_NP_CHANT_END);
-      if (chantEnd > now || now - lastNp < NP_COOLDOWN || !combatActionReady(entity, now)
-         || context.currentMp() < context.noblePhantasmDefinition().mpCost()) {
+      int previousCooldown = entity.getPersistentData().getBoolean(TAG_LAST_NP_OVERDRAFT) ? NP_COOLDOWN * 2 : NP_COOLDOWN;
+      if (chantEnd > now || now - lastNp < previousCooldown
+         || !combatActionReady(entity, now) || context.powerScale() <= 0.0) {
          return ServantExecutionResult.FAILED;
       }
       entity.getPersistentData().putLong(TAG_LAST_NP, now);
+      entity.getPersistentData().putBoolean(TAG_LAST_NP_OVERDRAFT, context.overdraft());
       entity.getPersistentData().putLong(TAG_NP_CHANT_END, now + NP_CHANT_TICKS);
       entity.getPersistentData().putInt(TAG_NP_PENDING_TARGET, target.getId());
       entity.getPersistentData().putInt(TAG_NP_PENDING_OVERCHARGE, context.overChargeLevel());
-      entity.getPersistentData().putDouble(TAG_NP_RESERVED_MP, context.noblePhantasmDefinition().mpCost());
+      entity.getPersistentData().putDouble(TAG_NP_RESERVED_MP,
+         context.noblePhantasmDefinition().mpCost() * context.powerScale());
       Vec3 forward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       if (forward.lengthSqr() < 1.0E-4) {
          forward = entity.getLookAngle().multiply(1.0, 0.0, 1.0);

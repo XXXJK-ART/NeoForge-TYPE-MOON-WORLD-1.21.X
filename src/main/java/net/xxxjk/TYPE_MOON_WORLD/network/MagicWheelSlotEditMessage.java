@@ -110,7 +110,8 @@ public record MagicWheelSlotEditMessage(
    }
 
    private static void handleSet(Player player, TypeMoonWorldModVariables.PlayerVariables vars, MagicWheelSlotEditMessage message) {
-      String magicId = message.magicId == null ? "" : message.magicId;
+      String requestedMagicId = message.magicId == null ? "" : message.magicId;
+      String magicId = PlayerMagicSelectionService.canonicalRuntimeMagicId(requestedMagicId);
       if (MagicClassification.isKnownMagic(magicId)) {
          if (isKnowledgeOnlyMagic(magicId)) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
@@ -120,8 +121,9 @@ public record MagicWheelSlotEditMessage(
                message.wheelIndex, message.slotIndex
             );
             entry.sourceType = sourceType;
-            entry.magicId = magicId;
+            entry.magicId = requestedMagicId;
             entry.presetPayload = PlayerMagicSelectionService.normalizePresetPayload(magicId, message.presetPayload);
+            PlayerMagicSelectionService.normalizeRuntimeWheelEntry(vars, entry);
             if ("projection".equals(magicId)) {
                entry.presetPayload = TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(entry.presetPayload);
             }

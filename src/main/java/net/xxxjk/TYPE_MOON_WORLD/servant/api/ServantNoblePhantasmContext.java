@@ -11,6 +11,18 @@ public record ServantNoblePhantasmContext(
    ServantDefinition servantDefinition,
    ServantNoblePhantasmDefinition noblePhantasmDefinition,
    int overChargeLevel,
-   double currentMp
+   double currentMp,
+   double powerScale,
+   boolean overdraft
 ) {
+   public ServantNoblePhantasmContext(
+      ServantEntity caster,
+      LivingEntity target,
+      ServantDefinition servantDefinition,
+      ServantNoblePhantasmDefinition noblePhantasmDefinition,
+      int overChargeLevel,
+      double currentMp
+   ) {
+      this(caster, target, servantDefinition, noblePhantasmDefinition, overChargeLevel, currentMp, 1.0, false);
+   }
 }

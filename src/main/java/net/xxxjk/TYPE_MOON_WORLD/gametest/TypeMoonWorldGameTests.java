@@ -16,15 +16,26 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
+import com.example.typemoonaddon.config.GameplayConfig;
+import com.example.typemoonaddon.data.ImaginarySpaceData;
+import com.example.typemoonaddon.magic.CursedArmorService;
+import com.example.typemoonaddon.magic.MatouSakuraMasterProfile;
+import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
+import com.example.typemoonaddon.registry.AddonAttachments;
+import com.example.typemoonaddon.registry.AddonItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 
 @GameTestHolder("typemoonworld")
 @PrefixGameTestTemplate(false)
@@ -1055,11 +1066,11 @@ public final class TypeMoonWorldGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 60)
-   public static void heraclesCardPrimaryAttackDealsDamage(GameTestHelper helper) {
-      var player = helper.makeMockServerPlayerInLevel();
-      helper.assertTrue(TypeMoonWorldApi.servantForm(player).transform(
-         ResourceLocation.fromNamespaceAndPath("typemoonworld", "heracles")), "Heracles transform failed");
-      helper.assertTrue(player.getMainHandItem().is(ModItems.TEMPLE_STONE_SWORD_AXE.get()), "Heracles weapon was not equipped");
+    public static void heraclesCardPrimaryAttackDealsDamage(GameTestHelper helper) {
+       var player = helper.makeMockServerPlayerInLevel();
+       helper.assertTrue(TypeMoonWorldApi.servantForm(player).transform(
+          ResourceLocation.fromNamespaceAndPath("typemoonworld", "heracles")), "Heracles transform failed");
+       helper.assertTrue(player.getMainHandItem().is(ModItems.TEMPLE_STONE_SWORD_AXE.get()), "Heracles weapon was not equipped");
       BlockPos playerPos = helper.absolutePos(new BlockPos(1, 2, 2));
       player.teleportTo(playerPos.getX() + 0.5, playerPos.getY(), playerPos.getZ() + 0.5);
       player.setYRot(-90.0F);
@@ -1076,7 +1087,109 @@ public final class TypeMoonWorldGameTests {
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.performBasicSweep(player);
          helper.assertTrue(target.getHealth() == afterFirst,
             "Heracles primary sweep ignored its 8-tick cooldown");
-         helper.succeed();
-      });
-   }
+          helper.succeed();
+       });
+    }
+
+    @GameTest(template = "ancient_temple", timeoutTicks = 20)
+    public static void sakuraMagicCannotEnterCrest(GameTestHelper helper) {
+       helper.assertTrue(!MagicDisplayMetadata.canEnterMagicCrest(SakuraTypeMoonIntegration.IMAGINARY_STORAGE.toString()),
+          "Sakura base magic still enters crest");
+       helper.assertTrue(!MagicDisplayMetadata.canEnterMagicCrest(SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION.toString()),
+          "Sakura evolved magic still enters crest");
+       helper.assertTrue(!MagicDisplayMetadata.canEnterMagicCrest(SakuraTypeMoonIntegration.SHADOW_MATERIALIZATION.toString()),
+          "Sakura shadow magic still enters crest");
+       helper.assertTrue(!MagicDisplayMetadata.canEnterMagicCrest(SakuraTypeMoonIntegration.SHADOW_ART.toString()),
+          "Sakura black-art magic still enters crest");
+       helper.succeed();
+    }
+
+    @GameTest(template = "ancient_temple", timeoutTicks = 20)
+    public static void alterBlackSakuraMigratesBaseMagic(GameTestHelper helper) {
+       var player = helper.makeMockServerPlayerInLevel();
+       var data = prepareBlackSakuraState(player, MatouSakuraMasterProfile.Variant.ALTER);
+       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+       vars.learned_magics.add(SakuraTypeMoonIntegration.IMAGINARY_STORAGE.toString());
+       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slot = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(0, 0);
+       slot.sourceType = "self";
+       slot.magicId = SakuraTypeMoonIntegration.IMAGINARY_STORAGE.toString();
+       vars.setWheelSlotEntry(0, 0, slot);
+
+       helper.assertTrue(SakuraTypeMoonIntegration.normalizeBlackSakuraLoadout(player, data),
+          "ALTER Sakura loadout did not normalize");
+       helper.assertTrue(vars.learned_magics.contains(SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION.toString()),
+          "ALTER Sakura did not unlock evolved magic");
+       helper.assertTrue(!vars.learned_magics.contains(SakuraTypeMoonIntegration.IMAGINARY_STORAGE.toString()),
+          "ALTER Sakura kept the base magic alongside the evolved one");
+       helper.assertTrue(SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION.toString().equals(vars.getWheelSlotEntry(0, 0).magicId),
+          "ALTER Sakura wheel slot was not migrated to the evolved magic");
+       helper.succeed();
+    }
+
+    @GameTest(template = "ancient_temple", timeoutTicks = 20)
+    public static void blackSakuraOverlayFormsAndReleasesWithoutTouchingArmor(GameTestHelper helper) {
+       var player = helper.makeMockServerPlayerInLevel();
+       var data = prepareBlackSakuraState(player, MatouSakuraMasterProfile.Variant.ALTER);
+       player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+       player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+       player.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+       player.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+
+       helper.assertTrue(CursedArmorService.beginFormation(player), "Black Sakura armor did not begin forming");
+       helper.assertTrue(data.cursedArmorState() == ImaginarySpaceData.CursedArmorState.FORMING, "Black Sakura armor was not forming");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), "Helmet changed during formation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).is(Items.DIAMOND_CHESTPLATE), "Chestplate changed during formation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.LEGS).is(Items.DIAMOND_LEGGINGS), "Leggings changed during formation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.FEET).is(Items.DIAMOND_BOOTS), "Boots changed during formation");
+
+       helper.assertTrue(data.activateCursedArmor(), "Black Sakura armor did not become active");
+       helper.assertTrue(data.cursedArmorState() == ImaginarySpaceData.CursedArmorState.ACTIVE, "Black Sakura armor was not active");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), "Helmet changed after activation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).is(Items.DIAMOND_CHESTPLATE), "Chestplate changed after activation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.LEGS).is(Items.DIAMOND_LEGGINGS), "Leggings changed after activation");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.FEET).is(Items.DIAMOND_BOOTS), "Boots changed after activation");
+       helper.assertTrue(CursedArmorService.beginDissolution(player), "Black Sakura armor did not begin dissolving");
+       helper.assertTrue(data.cursedArmorState() == ImaginarySpaceData.CursedArmorState.DISSOLVING, "Black Sakura armor was not dissolving");
+       helper.assertTrue(data.finishCursedArmorDissolution(), "Black Sakura armor did not fully clear");
+       helper.assertTrue(data.cursedArmorState() == ImaginarySpaceData.CursedArmorState.REMOVED,
+          "Black Sakura armor did not end in the removed state");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), "Helmet changed after clear");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).is(Items.DIAMOND_CHESTPLATE), "Chestplate changed after clear");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.LEGS).is(Items.DIAMOND_LEGGINGS), "Leggings changed after clear");
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.FEET).is(Items.DIAMOND_BOOTS), "Boots changed after clear");
+       helper.succeed();
+    }
+
+    @GameTest(template = "ancient_temple", timeoutTicks = 20)
+    public static void fhaInitializesWithVoidRingAndNoBlackOverlay(GameTestHelper helper) {
+       var player = helper.makeMockServerPlayerInLevel();
+       MatouSakuraMasterProfile.initialize(player, MatouSakuraMasterProfile.Variant.FHA);
+       helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).is(AddonItems.VOID_RING_REGALIA.get()),
+          "FHA did not equip Void Ring regalia");
+       helper.assertTrue(!player.getData(AddonAttachments.IMAGINARY_SPACE.get()).cursedArmorPresent(),
+          "FHA unexpectedly spawned black Sakura armor");
+       helper.assertTrue(player.getData(AddonAttachments.IMAGINARY_SPACE.get()).cursedArmorState() == ImaginarySpaceData.CursedArmorState.REMOVED,
+          "FHA did not finish in the removed state");
+       helper.succeed();
+    }
+
+    private static ImaginarySpaceData prepareBlackSakuraState(ServerPlayer player, MatouSakuraMasterProfile.Variant variant) {
+       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+       vars.master_card_id = variant == MatouSakuraMasterProfile.Variant.ALTER
+          ? MatouSakuraMasterProfile.ALTER_ID.toString()
+          : MatouSakuraMasterProfile.ID.toString();
+       vars.master_card_active = true;
+       vars.master_active = true;
+       SakuraTypeMoonIntegration.grantMasterCardAttributes(player);
+
+       var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
+       data.unlock();
+       data.assimilateCrestWorm();
+       data.ascendGrailWorm();
+       data.increaseGrailErosion(1L);
+       data.increaseGrailErosion(1L);
+       data.increaseGrailErosion(1L);
+       data.completePendingGrailErosion(Long.MAX_VALUE);
+       return data;
+    }
 }

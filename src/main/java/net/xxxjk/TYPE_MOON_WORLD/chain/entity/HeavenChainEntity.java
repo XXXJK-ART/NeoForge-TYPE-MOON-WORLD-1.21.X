@@ -6,6 +6,8 @@ import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.TargetingMath;
 import net.xxxjk.TYPE_MOON_WORLD.chain.compat.TypeMoonBridge;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -264,8 +266,11 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         if (!isEnumaChain() || state() == ChainState.BROKEN) {
             return;
         }
-        int clamped = clampStackedChainCount(logicalChainCount);
-        float maximumHealth = ChainConfig.ENUMA_CHAIN_MAX_HEALTH * clamped;
+        int clamped = Mth.clamp(logicalChainCount, 1, ChainConfig.ENUMA_CHAIN_COUNT);
+        float maximumHealth = Math.min(
+            ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH,
+            ChainConfig.ENUMA_CHAIN_MAX_HEALTH * clamped
+        );
         float aggregated = Mth.clamp(health, 0.0F, maximumHealth);
         entityData.set(STACKED_CHAIN_COUNT, clamped);
         entityData.set(DURABILITY_CAP, maximumHealth);
@@ -797,9 +802,13 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
             return false;
         }
         Entity sourceOwner = source.getEntity() != null ? source.getEntity() : source.getDirectEntity();
-        if (sourceOwner instanceof LivingEntity attacker
-            && BindingService.isBoundByChain(attacker.getUUID(), getUUID())) {
-            amount = BindingService.scaleDamageFromBoundTarget(attacker, source, amount);
+        if (sourceOwner instanceof LivingEntity attacker) {
+            if (isEnumaChain() && !ServantIdentityHelper.hasTrait(attacker, ServantTraitTag.DIVINE)) {
+                amount *= 2.0F;
+            }
+            if (BindingService.isBoundByChain(attacker.getUUID(), getUUID())) {
+                amount = BindingService.scaleDamageFromBoundTarget(attacker, source, amount);
+            }
         }
         float remaining = Math.max(0.0F, chainHealth() - amount);
         entityData.set(HEALTH, remaining);
@@ -906,7 +915,9 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         int stackedCount = tag.contains("StackedChainCount", Tag.TAG_INT)
             ? tag.getInt("StackedChainCount")
             : (int)Math.ceil(Math.max(maximumHealth, perChainHealth) / perChainHealth);
-        stackedCount = clampStackedChainCount(stackedCount);
+        stackedCount = savedEnumaChain
+            ? Mth.clamp(stackedCount, 1, ChainConfig.ENUMA_CHAIN_COUNT)
+            : clampStackedChainCount(stackedCount);
         maximumHealth = Math.max(maximumHealth, perChainHealth * stackedCount);
         maximumHealth = savedEnumaChain
             ? Mth.clamp(maximumHealth, perChainHealth, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH)

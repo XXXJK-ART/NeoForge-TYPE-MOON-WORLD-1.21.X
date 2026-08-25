@@ -73,6 +73,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmExecutor;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
@@ -914,7 +915,7 @@ public final class CombatModule implements ServantAiModule {
 
       if (!gaeBolgWindingUp
          && canGaeBolg
-         && entity.getCurrentMp() >= 10
+         && ServantNoblePhantasmResourceService.canAttemptNpcCast(entity, 10.0)
          && ServantCombatSystem.canUseNoblePhantasm(entity)
          && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
          double targetHealthRatio = target.getHealth() / Math.max(1.0, target.getMaxHealth());
@@ -945,6 +946,7 @@ public final class CombatModule implements ServantAiModule {
       // single-target forms and only reconsider it at a low-frequency final window.
       if (!gaeBolgWindingUp
          && canGaeBolgArmy
+         && ServantNoblePhantasmResourceService.canAttemptNpcCast(entity, Math.max(1.0, entity.getMaxMp()))
          && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
          long lastArmyDecision = data.getLong("CuLastArmyGaeBolgDecisionTick");
          if (CuChulainnCombatRules.isArmyDecisionDue(tick, lastArmyDecision)) {
@@ -2263,7 +2265,12 @@ public final class CombatModule implements ServantAiModule {
 
    private void performGaeBolg(ServantEntity entity, LivingEntity target, boolean meleeMode) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      entity.setCurrentMp(entity.getCurrentMp() - 10.0);
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 10.0);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) {
+         return;
+      }
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       CuChulainnCombatHelper.markSingleGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
@@ -2276,11 +2283,14 @@ public final class CombatModule implements ServantAiModule {
 
    private void performGaeBolgArmy(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      double availableMp = Math.max(0.0, entity.getCurrentMp());
       double maxMp = Math.max(1.0, entity.getMaxMp());
-      float damageScale = (float)Math.min(1.0, availableMp / maxMp);
-      float armyDamage = 500.0F;
-      entity.setCurrentMp(0.0);
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, maxMp);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) {
+         return;
+      }
+      float armyDamage = 500.0F * (float)resource.powerScale();
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
