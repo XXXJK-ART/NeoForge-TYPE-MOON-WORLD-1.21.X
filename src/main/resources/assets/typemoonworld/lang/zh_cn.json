@@ -1515,7 +1515,7 @@
   "message.typemoonworld.andrasias.terrain_disabled": "地形破坏已关闭，本次仅执行冲击与地裂伤害。",
   "message.typemoonworld.andrephius.charging": "安德雷斐斯开始聚集雷云。",
   "message.typemoonworld.andrephius.insufficient_mana": "魔力不足，无法开始蓄力。",
-  "message.typemoonworld.andrephius.locked": "安德雷斐斯已锁定%s个目标。",
+  "message.typemoonworld.andrephius.locked": "安德雷斐斯在%s格半径内锁定了%s个目标。",
   "message.typemoonworld.andrephius.mana_depleted": "魔力耗尽，已注入：%s",
   "message.typemoonworld.andrephius.max_charge": "安德雷斐斯已完全蓄力。",
   "message.typemoonworld.andrephius.released": "安德雷斐斯已击中%s个目标。",

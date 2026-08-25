@@ -97,7 +97,10 @@ public final class ServantTargetingService {
 
    private static boolean isRetainable(ServantEntity servant, LivingEntity target) {
       return target.level() == servant.level()
-         && EntityUtils.isValidCombatTarget(servant, target)
+         && target.isAlive()
+         && target != servant
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !servant.isAlliedTo(target)
          && !ServantMasterTargeting.isContractMaster(servant, target)
          && servant.distanceToSqr(target) <= RETAIN_DISTANCE * RETAIN_DISTANCE;
    }

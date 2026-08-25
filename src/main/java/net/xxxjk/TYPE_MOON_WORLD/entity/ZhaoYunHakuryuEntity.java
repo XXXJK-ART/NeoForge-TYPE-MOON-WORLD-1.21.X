@@ -538,11 +538,19 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       if (skillOwnerUuid != null) {
          if (!(level() instanceof ServerLevel server)) return true;
          refreshSkillOwnerMaster(server);
-         return getPassengers().isEmpty() && skillOwnerUuid.equals(player.getUUID())
-            || getPassengers().size() == 1
-               && getPassengers().get(0).getUUID().equals(skillOwnerUuid)
-               && masterUuid != null
-               && masterUuid.equals(player.getUUID());
+         if (getPassengers().isEmpty() && skillOwnerUuid.equals(player.getUUID())) return true;
+         if (getPassengers().size() == 1 && getPassengers().get(0).getUUID().equals(skillOwnerUuid)) {
+            Entity ownerEntity = server.getEntity(skillOwnerUuid);
+            if (ownerEntity instanceof ServerPlayer owner) {
+               TypeMoonWorldModVariables.PlayerVariables ownerVars =
+                  owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               if (player.getUUID().toString().equals(ownerVars.servant_card_master_uuid)
+                  && player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_active) {
+                  return true;
+               }
+            }
+         }
+         return false;
       }
       return false;
    }

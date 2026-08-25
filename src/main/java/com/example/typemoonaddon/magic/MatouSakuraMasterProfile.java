@@ -2,10 +2,13 @@ package com.example.typemoonaddon.magic;
 
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.registry.AddonAttachments;
+import com.example.typemoonaddon.registry.AddonItems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 
 public final class MatouSakuraMasterProfile {
     public static final ResourceLocation ID = TypeMoonAddon.id("matou_sakura");
@@ -14,6 +17,8 @@ public final class MatouSakuraMasterProfile {
     private static final String PLAYER_PERSISTED = "PlayerPersisted";
     private static final String SNAPSHOT = "TypeMoonAddonMatouSakuraSnapshot";
     private static final String SNAPSHOT_ACTIVE = "TypeMoonAddonMatouSakuraSnapshotActive";
+    private static final String FHA_CHEST_SNAPSHOT = "TypeMoonAddonMatouSakuraFhaChestSnapshot";
+    private static final String FHA_CHEST_SNAPSHOT_ACTIVE = "TypeMoonAddonMatouSakuraFhaChestSnapshotActive";
 
     public static void initialize(ServerPlayer player, Variant variant) {
         var data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
@@ -32,6 +37,7 @@ public final class MatouSakuraMasterProfile {
             data.ascendGrailWorm();
         }
         if (variant == Variant.FHA) {
+            snapshotFhaChest(player, persisted);
             data.increaseGrailErosion(1L);
             data.increaseGrailErosion(1L);
             data.increaseGrailErosion(1L);
@@ -52,6 +58,9 @@ public final class MatouSakuraMasterProfile {
                     persisted.getCompound(SNAPSHOT)
             );
             AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);
+        }
+        if (persisted.getBoolean(FHA_CHEST_SNAPSHOT_ACTIVE)) {
+            restoreFhaChest(player, persisted);
         }
         persisted.remove(SNAPSHOT);
         persisted.remove(SNAPSHOT_ACTIVE);
@@ -74,6 +83,31 @@ public final class MatouSakuraMasterProfile {
 
     private static void savePersistedData(ServerPlayer player, CompoundTag persisted) {
         player.getPersistentData().put(PLAYER_PERSISTED, persisted);
+    }
+
+    private static void snapshotFhaChest(ServerPlayer player, CompoundTag persisted) {
+        if (persisted.getBoolean(FHA_CHEST_SNAPSHOT_ACTIVE)) {
+            return;
+        }
+        CompoundTag chestSnapshot = new CompoundTag();
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!chest.isEmpty()) {
+            chestSnapshot.put("Item", chest.save(player.registryAccess()));
+        }
+        persisted.put(FHA_CHEST_SNAPSHOT, chestSnapshot);
+        persisted.putBoolean(FHA_CHEST_SNAPSHOT_ACTIVE, true);
+        savePersistedData(player, persisted);
+    }
+
+    private static void restoreFhaChest(ServerPlayer player, CompoundTag persisted) {
+        CompoundTag chestSnapshot = persisted.getCompound(FHA_CHEST_SNAPSHOT);
+        ItemStack restored = chestSnapshot.contains("Item", Tag.TAG_COMPOUND)
+                ? ItemStack.parseOptional(player.registryAccess(), chestSnapshot.getCompound("Item"))
+                : ItemStack.EMPTY;
+        player.setItemSlot(EquipmentSlot.CHEST, restored);
+        persisted.remove(FHA_CHEST_SNAPSHOT);
+        persisted.remove(FHA_CHEST_SNAPSHOT_ACTIVE);
+        savePersistedData(player, persisted);
     }
 
     public enum Variant {

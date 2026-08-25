@@ -258,8 +258,10 @@ public final class ServantTacticalController {
       ServerPlayer master = entity.getEntityMaster();
       if (master == null || master.level() != entity.level() || !master.isAlive()) return;
       LivingEntity attacker = master.getLastHurtByMob();
+      boolean guarding = entity.getCommandMode() == ServantCommandMode.GUARD;
       if (attacker != null && attacker.isAlive() && !entity.isAlliedTo(attacker)
-         && master.tickCount - master.getLastHurtByMobTimestamp() <= 100 && entity.getTarget() != attacker) {
+         && (guarding || master.tickCount - master.getLastHurtByMobTimestamp() <= 100)
+         && entity.getTarget() != attacker) {
          brain.submit(AiIntent.of(MASTER_GUARD, AiIntent.PRIORITY_COMMAND, 100.0, 1, true,
             () -> entity.setTarget(attacker), AiControl.ATTACK, AiControl.LOOK));
          return;

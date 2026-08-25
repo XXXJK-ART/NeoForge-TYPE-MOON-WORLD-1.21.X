@@ -18,7 +18,13 @@ import com.example.typemoonaddon.client.renderer.VoidRingRegaliaRenderer;
 import com.example.typemoonaddon.client.renderer.WormRenderer;
 import com.example.typemoonaddon.client.renderer.SummonedSpiritParticleRenderer;
 import com.example.typemoonaddon.client.renderer.BoundaryMarkRenderer;
+import com.example.typemoonaddon.client.BlackMudControlScreen;
+import com.example.typemoonaddon.client.BlackMudSummonModeScreen;
+import com.example.typemoonaddon.client.ImaginaryModeScreen;
+import com.example.typemoonaddon.client.ShadowArtModeScreen;
 import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
+import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
+import com.example.typemoonaddon.network.RequestDevourerSelectionPayload;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonFluids;
 import com.example.typemoonaddon.registry.AddonItems;
@@ -42,6 +48,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -180,6 +187,22 @@ public final class ClientModEvents {
                 net.minecraft.client.Minecraft.getInstance().setScreen(new BoundaryMagicOptionsScreen(parent));
             });
         }
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.IMAGINARY_STORAGE,
+                context -> net.minecraft.client.Minecraft.getInstance().setScreen(new ImaginaryModeScreen()));
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.IMAGINARY_ABSORPTION,
+                context -> net.minecraft.client.Minecraft.getInstance().setScreen(new ImaginaryModeScreen()));
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.BLACK_MUD_CONTROL,
+                context -> net.minecraft.client.Minecraft.getInstance().setScreen(new BlackMudControlScreen()));
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.SUMMON_BLACK_MUD,
+                context -> net.minecraft.client.Minecraft.getInstance().setScreen(new BlackMudSummonModeScreen()));
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.SHADOW_ART,
+                context -> net.minecraft.client.Minecraft.getInstance().setScreen(new ShadowArtModeScreen()));
+        TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).client().registerMagicOptions(SakuraTypeMoonIntegration.HEROIC_SPIRIT_DEVOURER,
+                context -> {
+                    net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+                    minecraft.setScreen(null);
+                    PacketDistributor.sendToServer(RequestDevourerSelectionPayload.INSTANCE);
+                });
     }
 
     @SubscribeEvent

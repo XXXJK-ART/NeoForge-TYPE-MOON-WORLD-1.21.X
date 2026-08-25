@@ -209,7 +209,7 @@ public final class ServantCombatMotionService {
          && target.tickCount > data.getInt(LAUNCH_ENTITY_TICK);
       boolean likelyWallStop = target.horizontalCollision
          || previous.horizontalDistance() >= 0.45 && lostHorizontal >= 0.18;
-      BlockHitResult wallHit = completedMovementTick && likelyWallStop
+      BlockHitResult wallHit = completedMovementTick && (likelyWallStop || previous.horizontalDistance() >= 0.45)
          ? sweepWall(level, target, previousPosition, previous) : null;
       boolean wallImpact = wallHit != null && lostHorizontal >= 0.18;
       boolean groundImpact = target.onGround() && previous.y <= -0.42;

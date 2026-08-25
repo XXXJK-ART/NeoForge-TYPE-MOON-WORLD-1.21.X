@@ -547,6 +547,9 @@ public final class MasterServantLinkService {
       data.remove("BattleContinuationRecoveryActive");
       data.remove("EmiyaStyleBattleContinuationActive");
       servant.kill();
+      if (servant.isAlive()) {
+         servant.remove(Entity.RemovalReason.KILLED);
+      }
    }
 
    private static LinkInfo info(ServerPlayer servant, TypeMoonWorldModVariables.PlayerVariables servantVars, ServerPlayer master) {

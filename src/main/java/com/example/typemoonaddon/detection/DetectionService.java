@@ -107,8 +107,6 @@ public final class DetectionService {
             return;
         }
         player.getData(DetectionAttachments.PLAYER_STATE).deactivate();
-        sendTargetSync(player, false, Map.of());
-        sendEyeStateTo(player, player, false);
     }
 
     public static void syncEyeTo(ServerPlayer observer, ServerPlayer caster) {

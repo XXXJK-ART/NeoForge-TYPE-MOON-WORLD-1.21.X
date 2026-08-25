@@ -52,6 +52,7 @@ public final class ServantCardTransformManager {
    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed");
    private static final ResourceLocation SPEED_RAMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed_ramp");
    private static final ResourceLocation ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_armor");
+   private static final ResourceLocation NIGHTINGALE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_nightingale_armor");
    private static final ResourceLocation TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_toughness");
    private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_knockback_resistance");
    private static final ResourceLocation JUMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_jump");
@@ -880,6 +881,9 @@ public final class ServantCardTransformManager {
       addOrReplace(player.getAttribute(Attributes.ATTACK_DAMAGE), ATTACK_ID, params.attackDamage() - player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE));
       addOrReplace(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, ServantCombatFormulas.SERVANT_SPEED_E - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
       addOrReplace(player.getAttribute(Attributes.ARMOR), ARMOR_ID, params.armor());
+      if ("nightingale".equals(servantId)) {
+         addOrReplace(player.getAttribute(Attributes.ARMOR), NIGHTINGALE_ARMOR_ID, 15.0);
+      }
       addOrReplace(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID, armorToughnessBonus(params));
       double knockbackResistance = "heracles".equals(servantId)
          ? Math.max(0.0, 1.0 - player.getAttributeBaseValue(Attributes.KNOCKBACK_RESISTANCE))
@@ -916,6 +920,7 @@ public final class ServantCardTransformManager {
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID);
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_RAMP_ID);
       remove(player.getAttribute(Attributes.ARMOR), ARMOR_ID);
+      remove(player.getAttribute(Attributes.ARMOR), NIGHTINGALE_ARMOR_ID);
       remove(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID);
       remove(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), KNOCKBACK_RESISTANCE_ID);
       remove(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID);

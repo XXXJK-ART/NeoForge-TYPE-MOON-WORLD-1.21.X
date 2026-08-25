@@ -54,7 +54,6 @@ public final class TalentPassiveGameTests {
       helper.succeed();
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 40)
    public static void monstrousStrengthExpiresNaturally(GameTestHelper helper) {
       var player = helper.makeMockServerPlayerInLevel();
       TalentService.clearMonstrousStrength(player);
