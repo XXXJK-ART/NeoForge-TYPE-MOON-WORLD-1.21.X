@@ -132,6 +132,10 @@ public final class MasterStateManager {
    }
 
    private static boolean releaseMasterCardProfile(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      net.minecraft.resources.ResourceLocation releasedProfile = vars.master_card_id == null || vars.master_card_id.isBlank()
+         ? null : (vars.master_card_id.indexOf(':') >= 0
+            ? net.minecraft.resources.ResourceLocation.tryParse(vars.master_card_id)
+            : net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, vars.master_card_id));
       ServerPlayer boundServant = MasterServantLinkService.getLinkedServant(player, vars);
       if (boundServant != null) {
          MasterServantLinkService.onMasterLost(player, vars);
@@ -149,6 +153,10 @@ public final class MasterStateManager {
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.master_card.released"), true);
+      if (releasedProfile != null) {
+         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+            new net.xxxjk.typemoonworld.api.event.MasterProfileEvent.End(player, releasedProfile));
+      }
       return true;
    }
 

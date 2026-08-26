@@ -831,22 +831,8 @@ public final class ServantCardEnkiduSkills {
       target.setAbsorptionAmount(0.0F);
       EnkiduCombatHelper.markEnumaDamageBypass(target);
       target.invulnerableTime = 0;
-      float before = target.getHealth();
       target.hurt(player.damageSources().magic(), amount);
       target.invulnerableTime = 0;
-      // The normal damage event may have consumed a Twelve Trials life and
-      // restored the target. Do not apply the fixed-damage fallback on top of
-      // that revival.
-      if (target.getPersistentData().getBoolean("GodHandActive")) {
-         return;
-      }
-      float expected = before - amount;
-      if (target.isAlive() && target.getHealth() > expected) {
-         target.setHealth(Math.max(0.0F, expected));
-         if (target.getHealth() <= 0.0F) {
-            target.die(player.damageSources().magic());
-         }
-      }
    }
 
    private static void applyNoDefenseDamageOverTicks(ServerPlayer player, LivingEntity target, float totalAmount, int ticks) {

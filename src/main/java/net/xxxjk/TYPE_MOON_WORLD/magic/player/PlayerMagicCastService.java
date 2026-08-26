@@ -21,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
@@ -93,7 +94,7 @@ public final class PlayerMagicCastService {
           && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
 
        var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
-       if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {
+       if (!MagicDefinitionRegistry.meetsAttributeRequirements(entity instanceof LivingEntity living ? living : null, entry.magicId)) {
           displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
           return;
        }
@@ -108,6 +109,11 @@ public final class PlayerMagicCastService {
          || "hokushin_ittoryu".equals(entry.magicId) || "tennen_rishin_ryu".equals(entry.magicId)) return;
 
       ResourceLocation publicMagicId = resolveMagicId(entry.magicId);
+      if (publicMagicId != null && entity instanceof LivingEntity living
+         && !TypeMoonWorldApi.isMagicAvailable(living, publicMagicId)) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_learned");
+         return;
+      }
       MagicCastContext publicContext = new MagicCastContext(
          entity instanceof LivingEntity living ? living : null,
          null,

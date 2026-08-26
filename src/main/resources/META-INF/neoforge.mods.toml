@@ -111,6 +111,3 @@ description='''An MC mod of TYPE-MOON'''
 
 [[mixins]]
 config="typemoonworld.mixins.json"
-
-[[mixins]]
-config="typemoonworld.sakura.mixins.json"

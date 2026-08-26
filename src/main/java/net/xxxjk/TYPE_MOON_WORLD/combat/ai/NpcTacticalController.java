@@ -19,6 +19,7 @@ public final class NpcTacticalController {
 
    public static boolean tick(Mob entity) {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive() || !AiMigrationPolicy.isArbitrated(entity)) return false;
+      MountedCombatIntentService.tick(entity);
       EvasionMovementService.tickAirState(entity);
       long now = level.getGameTime();
       AiBrain brain = AiBrain.begin(entity);

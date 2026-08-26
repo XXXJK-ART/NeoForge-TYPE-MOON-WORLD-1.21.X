@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "typemoonworld:arash_stella_controller",
+    "typemoonworld:artoria_excalibur_beam",
+    "typemoonworld:chains_of_heaven_binding",
+    "typemoonworld:cyan_wind_field",
+    "typemoonworld:elemental_magic_field",
+    "typemoonworld:expanding_ring_effect",
+    "typemoonworld:gilgamesh_cross_slash",
+    "typemoonworld:gilgamesh_ea_beam",
+    "typemoonworld:gilgamesh_gate_projectile",
+    "typemoonworld:gravity_field_shell_effect",
+    "typemoonworld:gravity_shell_effect",
+    "typemoonworld:medea_beam_effect",
+    "typemoonworld:red_skeleton_hajun",
+    "typemoonworld:tsumukari_light_column_effect"
+  ]
+}

@@ -1165,7 +1165,7 @@ public class TypeMoonCommands {
          }
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) {
+          if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(player, magicId)) {
             ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Magic learning requirements not met: " + magicId));
             return 0;
          }

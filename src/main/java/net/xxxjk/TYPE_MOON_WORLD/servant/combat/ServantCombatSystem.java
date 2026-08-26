@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.MountedCombatIntentService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
@@ -92,6 +93,8 @@ public final class ServantCombatSystem {
       if (entity.level().isClientSide()) {
          return false;
       }
+
+      MountedCombatIntentService.tick(entity);
 
       if (EnkiduCombatHelper.isBoundByChainsOfHeaven(entity)) {
          entity.getNavigation().stop();

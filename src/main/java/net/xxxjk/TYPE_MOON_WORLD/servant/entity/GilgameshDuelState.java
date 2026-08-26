@@ -94,7 +94,7 @@ public final class GilgameshDuelState {
          return true;
       }
 
-      // Once the synchronized finale begins, Enkidu is free to perform its rush.
+      // Gilgamesh stays anchored while Enkidu performs the final release rush.
       lockGilgameshAnchor(gil, enkidu);
       if (now - data.getLong(FINALE_START) >= FINAL_TICK_AFTER_RELEASE) {
          abort(level, gil, enkidu);

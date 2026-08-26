@@ -28,6 +28,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
@@ -47,6 +48,8 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
 import org.jetbrains.annotations.NotNull;
@@ -950,7 +953,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry wheelEntry = vars.getWheelSlotEntry(activeWheel, slot);
          boolean empty = wheelEntry == null || wheelEntry.isEmpty();
          boolean crest = !empty && "crest".equals(wheelEntry.sourceType);
-         boolean castable = !empty && vars.isWheelSlotEntryCastable(wheelEntry);
+         boolean castable = !empty && vars.isWheelSlotEntryCastable(wheelEntry) && this.isMagicAvailable(wheelEntry.magicId);
          int magicColor = empty ? MagicUiColors.NORMAL : MagicUiColors.colorFor(wheelEntry.magicId, crest);
          int fillColor = GuiUtils.ARCANE_PANEL_ALT;
          int borderColor = GuiUtils.ARCANE_BORDER;
@@ -988,6 +991,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
              guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + WHEEL_SLOT_SIZE / 2, slotY + 15, GuiUtils.ARCANE_TEXT);
           }
        }
+    }
+
+   private boolean isMagicAvailable(String rawId) {
+      var definition = MagicDefinitionRegistry.get(rawId);
+      ResourceLocation id = definition == null ? ResourceLocation.tryParse(rawId) : definition.id();
+      Player player = Minecraft.getInstance().player;
+      return id == null || player == null || TypeMoonWorldApi.isMagicAvailable(player, id);
    }
 
    private int getCurrentSelectedRuntimeSlot(TypeMoonWorldModVariables.PlayerVariables vars) {

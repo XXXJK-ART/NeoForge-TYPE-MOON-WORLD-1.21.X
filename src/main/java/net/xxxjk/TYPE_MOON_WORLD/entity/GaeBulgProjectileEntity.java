@@ -695,14 +695,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
-      float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(source, damage);
       target.invulnerableTime = 0;
-      float desiredHealth = Math.max(0.0F, before - damage);
-      if (target.getHealth() > desiredHealth && target.getHealth() <= before) {
-         target.setHealth(desiredHealth);
-      }
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {
@@ -747,10 +742,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       target.invulnerableTime = 0;
       target.hurt(source, lethalDamage);
       target.invulnerableTime = 0;
-      if (target.isAlive()) {
-         target.setHealth(0.0F);
-         target.die(this.damageSources().genericKill());
-      }
    }
 
    private void spawnSingleTargetImpact(LivingEntity target) {

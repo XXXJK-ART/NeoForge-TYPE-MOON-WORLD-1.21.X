@@ -78,6 +78,34 @@ Built-in IDs are exposed by `MagicAttributes`: `EARTH`, `WATER`, `FIRE`, `WIND`,
 `NONE`, `IMAGINARY_NUMBER`, and `SWORD`. Datagen can emit the requirement through
 `MagicDefinitionBuilder.requireAttribute(...)`.
 
+An addon that owns an attribute can register its authoritative value without touching core
+attachments. The provider is read by both definition validation and `magicAttributes(...)`:
+
+```java
+addon.registerAttributeProvider(new MagicAttributeProvider() {
+    public boolean has(LivingEntity entity, ResourceLocation id) {
+        return id.equals(MagicAttributes.IMAGINARY_NUMBER) && ownsImaginaryState(entity);
+    }
+    public Set<ResourceLocation> attributes(LivingEntity entity) {
+        return has(entity, MagicAttributes.IMAGINARY_NUMBER)
+            ? Set.of(MagicAttributes.IMAGINARY_NUMBER) : Set.of();
+    }
+});
+```
+
+Addons with state-dependent skills can register one availability provider. The same gate is used
+by the core magic cast path and the generic magic screen, so a disabled skill cannot be invoked by
+an old wheel entry or a forged client request:
+
+```java
+addon.registerMagicAvailability(new MagicAvailabilityProvider() {
+    public Set<ResourceLocation> magicIds() { return Set.of(mySpell); }
+    public boolean isAvailable(LivingEntity entity, ResourceLocation id) {
+        return ownsStateAndFinishedGate(entity);
+    }
+});
+```
+
 `MagicCastEvent.Pre` is cancellable and `MagicCastEvent.Post` reports the result.
 `ServantSummonEvent`, `ServantContractEvent`, `ServantTransformEvent`, and
 `ServantActionEvent` provide equivalent lifecycle hooks. These events are posted on the
@@ -130,7 +158,8 @@ The generated master card goes through the same server-side snapshot, activation
 flow as built-in master cards.
 
 `MasterProfileEvent` and `BodyTrainingEvent` expose cancellable activation, XP award and stat
-allocation hooks on the NeoForge event bus.
+allocation hooks on the NeoForge event bus. `MasterProfileEvent.End` is posted after a profile is
+released, which lets addons restore temporary equipment and attachments.
 
 ## Extended execution APIs
 

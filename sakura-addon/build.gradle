@@ -1,0 +1,73 @@
+plugins {
+    id 'net.neoforged.gradle.userdev' version '7.1.+'
+    id 'eclipse'
+    id 'idea'
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+base {
+    archivesName = "${project.mod_id}-${project.minecraft_version}"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+    }
+}
+
+dependencies {
+    implementation "net.neoforged:neoforge:${project.neo_version}"
+
+    // Type Moon World is a compile-time API/reference only. It is supplied by the
+    // launcher at runtime and is never bundled or patched by this project.
+    compileOnly files(project.type_moon_world_jar)
+    implementation "software.bernie.geckolib:geckolib-neoforge-1.21.1:4.9.2"
+    runtimeOnly files(project.terrablender_jar)
+}
+
+sourceSets.main.java.srcDir 'src/shadowLogic/java'
+sourceSets.main.resources.srcDir 'src/generated/resources'
+
+tasks.named('processResources', ProcessResources).configure {
+    def replaceProperties = [
+        minecraft_version: minecraft_version,
+        neo_version: neo_version,
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_version: mod_version
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    manifest {
+        attributes([
+            'Specification-Title': project.mod_name,
+            'Specification-Vendor': 'typemoonaddon',
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'typemoonaddon'
+        ])
+    }
+}
+
+tasks.register('verifyTypeMoonReference') {
+    doLast {
+        def reference = file(project.type_moon_world_jar)
+        println "Type Moon World reference: ${reference} (exists=${reference.exists()})"
+        println "compileClasspath contains reference: ${sourceSets.main.compileClasspath.files.contains(reference)}"
+    }
+}

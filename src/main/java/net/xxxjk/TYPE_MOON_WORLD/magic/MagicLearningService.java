@@ -58,7 +58,7 @@ public final class MagicLearningService {
       id = MagicLearningStrategy.normalizeDisplayId(id);
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!MagicLearningStrategy.learningRequirementsMet(vars, id)
-         || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, id)
+         || !MagicDefinitionRegistry.meetsAttributeRequirements(player, id)
          || MagicLearningStrategy.isLearned(vars, id)) {
          return false;
       }

@@ -2200,10 +2200,13 @@ public final class EnkiduCombatHelper {
       entity.faceToward(targetPoint);
       if (now < release) {
          if (duelFinale) {
-            // The synchronized finale is a face-to-face stationary charge;
-            // the rush starts only on the shared release tick.
+            // Hold the horizontal origin, but rise into the same aerial charge
+            // used by the normal Enuma release. The rush begins after release.
             entity.setNoGravity(true);
-            entity.setDeltaMovement(Vec3.ZERO);
+            double progress = 1.0 - (double)(release - now) / Math.max(1.0, ENUMA_WINDUP);
+            double desiredY = data.getDouble(TAG_ENUMA_START_Y) + 13.0 + progress * 7.0;
+            double vertical = Mth.clamp((desiredY - entity.getY()) * 0.07, 0.03, 0.34);
+            entity.setDeltaMovement(0.0, vertical, 0.0);
             if (now % 4L == 0L) {
                emitEnumaDrillFx(level, entity, targetPoint, now, false);
             }
@@ -2384,7 +2387,13 @@ public final class EnkiduCombatHelper {
 
    private static boolean isEnumaActive(EnkiduEntity entity, long now) {
       CompoundTag data = entity.getPersistentData();
-      return data.getLong(TAG_ENUMA_RELEASE) > now || data.getLong(TAG_ENUMA_FINISH) > now;
+      // The release/finish timestamps cover the visual window only. Once the
+      // dive has reached its target, the ground-impact stage must still own
+      // movement until tickEnumaWindup clears the state.
+      return data.getLong(TAG_ENUMA_RELEASE) > 0L
+         || data.getLong(TAG_ENUMA_FINISH) > 0L
+         || data.getInt(TAG_ENUMA_STAGE) > 0
+         || data.getBoolean(TAG_ENUMA_DAMAGE_DONE);
    }
 
    private static void emitEnumaDrillFx(ServerLevel level, EnkiduEntity entity, Vec3 targetPoint, long now, boolean release) {
@@ -2537,20 +2546,8 @@ public final class EnkiduCombatHelper {
       target.setAbsorptionAmount(0.0F);
       markEnumaDamageBypass(target);
       target.invulnerableTime = 0;
-      float before = target.getHealth();
       target.hurt(entity.damageSources().magic(), amount);
       target.invulnerableTime = 0;
-      // Do not let the no-defense fallback overwrite a God Hand revival.
-      if (target.getPersistentData().getBoolean("GodHandActive")) {
-         return;
-      }
-      float expected = before - amount;
-      if (target.isAlive() && target.getHealth() > expected) {
-         target.setHealth(Math.max(0.0F, expected));
-         if (target.getHealth() <= 0.0F) {
-            target.die(entity.damageSources().magic());
-         }
-      }
    }
 
    private static void clearNegativeEffects(LivingEntity entity) {

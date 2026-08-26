@@ -32,6 +32,8 @@ import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 import net.xxxjk.typemoonworld.api.MagicKnowledge;
 import net.xxxjk.typemoonworld.api.ManaAccess;
 import net.xxxjk.typemoonworld.api.MagicAttributeAccess;
+import net.xxxjk.typemoonworld.api.MagicAttributeProvider;
+import net.xxxjk.typemoonworld.api.MagicAvailabilityProvider;
 import net.xxxjk.typemoonworld.api.NoblePhantasmExecutor;
 import net.xxxjk.typemoonworld.api.NoblePhantasmRegistry;
 import net.xxxjk.typemoonworld.api.ServantActionExecutor;
@@ -75,6 +77,23 @@ import net.minecraft.server.level.ServerPlayer;
 public final class InternalApiProvider implements ApiProvider {
    private static final Map<String, MagicExecutor> PUBLIC_MAGIC_EXECUTORS = new ConcurrentHashMap<>();
    private final Map<String, AddonRegistrar> addons = new ConcurrentHashMap<>();
+   private static final Map<String, MagicAttributeProvider> ATTRIBUTE_PROVIDERS = new ConcurrentHashMap<>();
+   private static final Map<String, MagicAvailabilityProvider> AVAILABILITY_PROVIDERS = new ConcurrentHashMap<>();
+
+   public static boolean registerAttributeProvider(String addonId, MagicAttributeProvider provider) {
+      if (addonId == null || provider == null) return false;
+      return ATTRIBUTE_PROVIDERS.putIfAbsent(addonId, provider) == null;
+   }
+
+   public static Map<String, MagicAttributeProvider> attributeProviders() {
+      return Map.copyOf(ATTRIBUTE_PROVIDERS);
+   }
+
+   public static boolean registerMagicAvailability(String addonId, MagicAvailabilityProvider provider) {
+      if (addonId == null || provider == null || provider.magicIds() == null
+         || provider.magicIds().stream().anyMatch(id -> id == null || !addonId.equals(id.getNamespace()))) return false;
+      return AVAILABILITY_PROVIDERS.putIfAbsent(addonId, provider) == null;
+   }
 
    @Override
    public AddonRegistrar addon(String modId) {
@@ -114,6 +133,17 @@ public final class InternalApiProvider implements ApiProvider {
    @Override
    public MagicAttributeAccess magicAttributes(LivingEntity entity) {
       return MagicAttributeService.access(entity);
+   }
+
+   @Override
+   public boolean isMagicAvailable(LivingEntity entity, ResourceLocation magicId) {
+      return registeredMagicAvailable(entity, magicId);
+   }
+
+   private static boolean registeredMagicAvailable(LivingEntity entity, ResourceLocation magicId) {
+      if (entity == null || magicId == null) return false;
+      MagicAvailabilityProvider provider = AVAILABILITY_PROVIDERS.get(magicId.getNamespace());
+      return provider == null || !provider.magicIds().contains(magicId) || provider.isAvailable(entity, magicId);
    }
 
    @Override
@@ -173,8 +203,8 @@ public final class InternalApiProvider implements ApiProvider {
       MagicExecutor executor = resolvePublicMagicExecutor(magicId);
       ResourceLocation id = resolveMagicId(magicId);
       if (executor == null || id == null) return ExecutionResult.NOT_HANDLED;
-      if (caster == null || !MagicDefinitionRegistry.meetsAttributeRequirements(
-            caster.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES), magicId)) {
+       if (caster == null || !MagicDefinitionRegistry.meetsAttributeRequirements(caster, magicId)
+          || !registeredMagicAvailable(caster, id)) {
          return ExecutionResult.FAILED;
       }
       var context = new net.xxxjk.typemoonworld.api.MagicCastContext(
@@ -288,6 +318,12 @@ public final class InternalApiProvider implements ApiProvider {
       @Override public net.xxxjk.typemoonworld.api.EffectsRegistry effects() { return this.effects; }
       @Override public net.xxxjk.typemoonworld.api.DamageTypeRegistry damageTypes() { return this.damageTypes; }
       @Override public net.xxxjk.typemoonworld.api.AiTacticsRegistry ai() { return this.ai; }
+      @Override public boolean registerAttributeProvider(MagicAttributeProvider provider) {
+         return InternalApiProvider.registerAttributeProvider(this.modId, provider);
+      }
+      @Override public boolean registerMagicAvailability(MagicAvailabilityProvider provider) {
+         return InternalApiProvider.registerMagicAvailability(this.modId, provider);
+      }
    }
 
    private static final class Servants implements ServantRegistry {

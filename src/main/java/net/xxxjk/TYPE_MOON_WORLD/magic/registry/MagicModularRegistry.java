@@ -37,7 +37,7 @@ public final class MagicModularRegistry implements IMagicRegistry {
 
    public static MagicExecutionResult execute(MagicExecutionContext context) {
       if (context != null && context.magicId() != null && !context.magicId().isEmpty()) {
-         if (!MagicDefinitionRegistry.meetsAttributeRequirements(context.vars(), context.magicId())) {
+         if (!MagicDefinitionRegistry.meetsAttributeRequirements(context.entity() instanceof net.minecraft.world.entity.LivingEntity living ? living : null, context.magicId())) {
             return MagicExecutionResult.FAILED;
          }
          String registeredId = resolveRegisteredId(context.magicId());

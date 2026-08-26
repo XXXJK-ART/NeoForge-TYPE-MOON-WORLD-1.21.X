@@ -53,8 +53,6 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
-import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
-import com.example.typemoonaddon.magic.SakuraMagicRules;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
@@ -1333,7 +1331,6 @@ public class TypeMoonWorldModVariables {
             "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
             "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
          ));
-         ids.addAll(SakuraMagicRules.SAKURA_MAGIC_IDS.stream().map(SakuraMagicRules::shortId).collect(Collectors.toSet()));
          return Set.copyOf(ids);
       }
 
@@ -3047,12 +3044,6 @@ public class TypeMoonWorldModVariables {
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
          MagicCircuitColorHelper.ensureColor(this);
-         if (entity instanceof ServerPlayer serverPlayer) {
-            SakuraTypeMoonIntegration.normalizeBlackSakuraLoadout(
-               serverPlayer,
-               serverPlayer.getData(com.example.typemoonaddon.registry.AddonAttachments.IMAGINARY_SPACE.get())
-            );
-         }
          if (this.player_magic_attributes_sword) {
             if (!this.learned_magics.contains("unlimited_blade_works")) {
                this.learned_magics.add("unlimited_blade_works");
