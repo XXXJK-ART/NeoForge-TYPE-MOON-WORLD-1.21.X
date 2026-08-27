@@ -3339,5 +3339,9 @@
   "subtitles.typemoonworld.zhao_yun.attack": "攻击",
   "subtitles.typemoonworld.zhao_yun.fail": "死亡",
   "subtitles.typemoonworld.zhao_yun.np": "宝具",
-  "subtitles.typemoonworld.zhao_yun.victory": "胜利"
+  "subtitles.typemoonworld.zhao_yun.victory": "胜利",
+  "item.typemoonworld.rune_learning": "卢恩知识碎片",
+  "magic.typemoonworld.rune_origin.name": "原初卢恩魔术",
+  "message.typemoonworld.rune.learned": "已学习卢恩：%s",
+  "message.typemoonworld.rune.cast_failed": "卢恩程序释放失败"
 }

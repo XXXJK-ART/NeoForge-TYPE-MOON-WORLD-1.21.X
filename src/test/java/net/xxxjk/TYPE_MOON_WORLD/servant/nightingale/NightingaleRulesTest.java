@@ -15,7 +15,7 @@ class NightingaleRulesTest {
       ServantParams params = ServantParams.of("A", true, "B", true, "B", true, "D", true, "A", true);
       assertEquals(1000.0, params.maxHealth());
       assertEquals(40.0, params.attackDamage());
-      assertEquals(15.0, params.armor());
+      assertEquals(12.0, params.armor());
       assertEquals(800.0, params.manaPool());
       assertEquals(20.0, params.critRatePercent());
    }

@@ -937,7 +937,7 @@ public final class ServantCardTransformManager {
    }
 
    private static double armorToughnessBonus(ServantParams params) {
-      return 0.0;
+      return ServantCombatFormulas.armorToughness(params);
    }
 
    private static double knockbackResistanceBonus(ServantParams params) {

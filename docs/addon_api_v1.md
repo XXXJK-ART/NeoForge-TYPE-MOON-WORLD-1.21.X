@@ -44,6 +44,15 @@ Action IDs, servant IDs and magic IDs must use the addon's namespace. Registrati
 after common setup has frozen the registries. Legacy bare IDs remain readable for built-in
 content and are not valid for new addon registrations.
 
+The knowledge facade also provides namespace-scoped batch presets. Both methods return the
+number of entries changed and are safe for addons that only need a simple learn/forget command:
+
+```java
+MagicKnowledge knowledge = addon.magics().knowledge(player);
+int learned = knowledge.learnAll();
+int forgotten = knowledge.forgetAll();
+```
+
 ## Resources
 
 Servant definitions use `data/<namespace>/servant/definitions`. Card slot bindings use

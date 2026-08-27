@@ -26,9 +26,15 @@ public enum StatRank {
 
    public int plusCoefficient() {
       if (this == A_PLUS_PLUS) {
+         // A++ is a single three-times rank, not A+ applied twice (four times).
          return this.coefficient;
       }
       return this.coefficient * 2;
+   }
+
+   /** Multiplier represented by this rank when it is used as a base parameter. */
+   public double parameterMultiplier() {
+      return this == A_PLUS_PLUS ? 3.0 : 1.0;
    }
 
    public String displayKey(boolean plus) {

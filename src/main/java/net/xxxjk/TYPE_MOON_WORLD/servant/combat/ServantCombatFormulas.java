@@ -7,9 +7,14 @@ public final class ServantCombatFormulas {
    public static final double OUT_OF_COMBAT_SPEED = 0.20;
    public static final double SERVANT_SPEED_E = StatRank.E.toMovementSpeed();
    public static final double SERVANT_SPEED_D = StatRank.D.toMovementSpeed();
-   private static final double BASE_DEFENSE_SCALE = 0.5;
-   private static final double BASE_EVASION_SCALE = 0.5;
-   private static final double BASE_POISE_SCALE = 0.5;
+   private static final double BASE_STAMINA = 60.0;
+   private static final double STAMINA_PER_STRENGTH_STEP = 8.0;
+   private static final double BASE_POISE = 56.0;
+   private static final double POISE_PER_ENDURANCE_STEP = 12.0;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_BASE = 0.8;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_PER_STEP = 0.3;
+   private static final double DEFENSE_RECOVERY_PER_SECOND = 6.0;
+   private static final double POISE_RECOVERY_PER_SECOND = 6.0;
 
    private ServantCombatFormulas() {
    }
@@ -21,13 +26,19 @@ public final class ServantCombatFormulas {
          case C -> 2;
          case B -> 3;
          case A -> 4;
-         case A_PLUS_PLUS -> 5;
+         // Keep A++ above A+ so the three-times rank remains distinguishable.
+         case A_PLUS_PLUS -> 6;
       };
-      return plus ? Math.min(5, base + 1) : base;
+      return plus ? (rank == StatRank.A_PLUS_PLUS ? base : Math.min(5, base + 1)) : base;
    }
 
    public static int strengthStep(ServantParams params) {
       return params == null ? 0 : rankStep(params.strength(), params.strengthPlus());
+   }
+
+   /** Defense is derived from Strength; keep the semantic name at call sites. */
+   public static int defenseStep(ServantParams params) {
+      return strengthStep(params);
    }
 
    public static int enduranceStep(ServantParams params) {
@@ -71,8 +82,9 @@ public final class ServantCombatFormulas {
    }
 
    public static double baseDodgeChance(ServantParams params, boolean urgent) {
-      double chance = 0.18 + agilityStep(params) * 0.12 + (urgent ? 0.18 : 0.0);
-      return Math.min(0.82, chance) * BASE_EVASION_SCALE;
+      // Agility is the only rank that changes the baseline dodge chance.
+      double chance = 0.12 + agilityStep(params) * 0.04 + (urgent ? 0.12 : 0.0);
+      return Math.min(0.75, chance);
    }
 
    public static int perfectDodgeInvulnerabilityTicks(ServantParams params) {
@@ -92,23 +104,23 @@ public final class ServantCombatFormulas {
    }
 
    public static double staminaMax(ServantParams params) {
-      return (80.0 + enduranceStep(params) * 20.0) * BASE_DEFENSE_SCALE;
+      return BASE_STAMINA + defenseStep(params) * STAMINA_PER_STRENGTH_STEP;
    }
 
    public static double staminaRegenPerSecond(ServantParams params) {
-      return (8.0 + enduranceStep(params) * 2.0) * BASE_DEFENSE_SCALE;
+      return DEFENSE_RECOVERY_PER_SECOND;
    }
 
    public static double blockReduction(ServantParams params) {
-      return Math.min(0.95, 0.65 + enduranceStep(params) * 0.02) * BASE_DEFENSE_SCALE;
+      return Math.min(0.46, 0.28 + defenseStep(params) * 0.025);
    }
 
    public static int parryWindowTicks(ServantParams params) {
-      return secondsToTicks(0.20 + enduranceStep(params) * 0.01);
+      return secondsToTicks(0.20 + defenseStep(params) * 0.01);
    }
 
    public static double blockStaminaCost(ServantParams params) {
-      return Math.max(5.0, 12.0 - enduranceStep(params));
+      return Math.max(5.0, 12.0 - defenseStep(params));
    }
 
    public static double parryStaminaCost(ServantParams params) {
@@ -116,11 +128,16 @@ public final class ServantCombatFormulas {
    }
 
    public static double poiseMax(ServantParams params) {
-      return (80.0 + enduranceStep(params) * 20.0 + strengthStep(params) * 10.0) * toughnessMultiplier(params) * BASE_POISE_SCALE;
+      return (BASE_POISE + enduranceStep(params) * POISE_PER_ENDURANCE_STEP) * toughnessMultiplier(params);
    }
 
    public static double poiseRegenPerSecond(ServantParams params) {
-      return (5.0 + enduranceStep(params) * 2.0) * toughnessMultiplier(params) * BASE_POISE_SCALE;
+      return POISE_RECOVERY_PER_SECOND * toughnessMultiplier(params);
+   }
+
+   /** Vanilla armor toughness used by both manifested servants and servant cards. */
+   public static double armorToughness(ServantParams params) {
+      return DEFENSE_ARMOR_TOUGHNESS_BASE + defenseStep(params) * DEFENSE_ARMOR_TOUGHNESS_PER_STEP;
    }
 
    public static double toughnessMultiplier(ServantParams params) {

@@ -54,7 +54,6 @@ public final class TypeMoonAddon {
         modEventBus.addListener(AddonNetwork::register);
         modEventBus.addListener(ModEntities::registerAttributes);
         modEventBus.addListener(this::commonSetup);
-        modEventBus.addListener(this::addCreativeTabContents);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ClientModEvents.register(modEventBus);
         }

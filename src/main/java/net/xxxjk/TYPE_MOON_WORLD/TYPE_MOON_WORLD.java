@@ -147,6 +147,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.RuneProgramMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
@@ -277,6 +278,7 @@ public class TYPE_MOON_WORLD {
       );
       registrar.playToServer(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
       registrar.playToServer(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
+      registrar.playToServer(RuneProgramMessage.TYPE, RuneProgramMessage.STREAM_CODEC, RuneProgramMessage::handleData);
       registrar.playToServer(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
       registrar.playToServer(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
       registrar.playToServer(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);

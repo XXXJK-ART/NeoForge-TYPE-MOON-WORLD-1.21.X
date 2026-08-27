@@ -59,6 +59,9 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
@@ -245,6 +248,10 @@ public class TypeMoonWorldModVariables {
          }
 
           clone.learned_magics = new ArrayList<>(original.learned_magics);
+          clone.rune_origin_unlocked = original.rune_origin_unlocked;
+          clone.learned_runes = new ArrayList<>(original.learned_runes);
+          clone.rune_programs = new ArrayList<>();
+          for (RuneProgram program : original.rune_programs) if (program != null) clone.rune_programs.add(program.copy());
           clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
           clone.magic_learning_progress = new HashMap<>(original.magic_learning_progress);
           clone.magic_learning_progress_last_gain_tick = new HashMap<>(original.magic_learning_progress_last_gain_tick);
@@ -1082,6 +1089,9 @@ public class TypeMoonWorldModVariables {
       public Map<String, Integer> crest_practice_count = new HashMap<>();
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
+      public boolean rune_origin_unlocked = false;
+      public List<String> learned_runes = new ArrayList<>();
+      public List<RuneProgram> rune_programs = new ArrayList<>();
       public Map<String, Double> magic_proficiencies = new HashMap<>();
       public Map<String, Double> magic_learning_progress = new HashMap<>();
       public Map<String, Long> magic_learning_progress_last_gain_tick = new HashMap<>();
@@ -1319,7 +1329,7 @@ public class TypeMoonWorldModVariables {
       }
 
       private static String sanitizeSourceType(String sourceType) {
-         return "crest".equals(sourceType) ? "crest" : "self";
+         return "crest".equals(sourceType) || "rune_program".equals(sourceType) ? sourceType : "self";
       }
 
       private static String sanitizeCrestSourceKind(String sourceKind) {
@@ -1343,7 +1353,8 @@ public class TypeMoonWorldModVariables {
       }
 
       private static boolean isKnownMagicId(String magicId) {
-         return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
+         return magicId != null && (RuneProgramService.isDynamicId(magicId) || RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId)
+            || TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
       }
 
       private static boolean magicIdMatches(String actual, String expected) {
@@ -1532,6 +1543,11 @@ public class TypeMoonWorldModVariables {
          if (this.magicCrestInventory == null) {
             this.magicCrestInventory = new ItemStackHandler(1);
          }
+         if (this.learned_runes == null) this.learned_runes = new ArrayList<>();
+         if (this.rune_programs == null) this.rune_programs = new ArrayList<>();
+         if (this.rune_programs.size() > RuneProgramService.MAX_PROGRAMS) {
+            this.rune_programs = new ArrayList<>(this.rune_programs.subList(0, RuneProgramService.MAX_PROGRAMS));
+         }
 
          int totalSlots = 120;
          if (this.magic_wheels.size() != totalSlots) {
@@ -1715,6 +1731,8 @@ public class TypeMoonWorldModVariables {
             return false;
          } else if (TalentService.isTalent(slotEntry.magicId)) {
             return !"crest".equals(slotEntry.sourceType) && TalentService.owns(this, slotEntry.magicId);
+         } else if ("rune_program".equals(slotEntry.sourceType)) {
+            return RuneProgramService.find(this, slotEntry.magicId) != null && RuneLearningService.hasOrigin(this);
          } else if (!"crest".equals(slotEntry.sourceType)) {
             return this.hasLearnedSelfMagic(slotEntry.magicId);
          } else if (!this.hasValidImplantedCrest()) {
@@ -1727,6 +1745,13 @@ public class TypeMoonWorldModVariables {
                return "plunder".equals(crestEntry.sourceKind) ? true : this.hasLearnedSelfMagic(slotEntry.magicId);
             }
          }
+      }
+
+      public void removeWheelReferences(String magicId) {
+         if (magicId == null) return;
+         ensureMagicSystemInitialized();
+         for (WheelSlotEntry entry : magic_wheels) if (entry != null && magicId.equals(entry.magicId)) entry.clear();
+         rebuildSelectedMagicsFromActiveWheel();
       }
 
       public void switchActiveWheel(int wheelIndex) {
@@ -2506,6 +2531,13 @@ public class TypeMoonWorldModVariables {
          }
 
          nbt.put("learned_magics", learnedList);
+         nbt.putBoolean("rune_origin_unlocked", this.rune_origin_unlocked);
+         ListTag learnedRunes = new ListTag();
+         for (String rune : this.learned_runes) if (rune != null && RuneLearningService.hasRune(this, rune)) learnedRunes.add(StringTag.valueOf(rune));
+         nbt.put("learned_runes", learnedRunes);
+         ListTag runePrograms = new ListTag();
+         for (RuneProgram program : this.rune_programs) if (program != null && RuneProgramService.validate(this, program).valid()) runePrograms.add(program.serializeNBT());
+         nbt.put("rune_programs", runePrograms);
           CompoundTag dynamicProficiency = new CompoundTag();
           for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
              dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
@@ -2932,6 +2964,20 @@ public class TypeMoonWorldModVariables {
 
             for (int i = 0; i < learnedList.size(); i++) {
                this.learned_magics.add(learnedList.getString(i));
+            }
+         }
+         this.rune_origin_unlocked = nbt.getBoolean("rune_origin_unlocked");
+         this.learned_runes.clear();
+         if (nbt.contains("learned_runes", 9)) {
+            ListTag runes = nbt.getList("learned_runes", 8);
+            for (int i = 0; i < runes.size(); i++) if (net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneRegistry.isKnown(runes.getString(i))) this.learned_runes.add(runes.getString(i));
+         }
+         this.rune_programs.clear();
+         if (nbt.contains("rune_programs", 9)) {
+            ListTag programs = nbt.getList("rune_programs", 10);
+            for (int i = 0; i < Math.min(RuneProgramService.MAX_PROGRAMS, programs.size()); i++) {
+               RuneProgram program = RuneProgram.fromNBT(programs.getCompound(i));
+               if (RuneProgramService.validate(this, program).valid()) this.rune_programs.add(program);
             }
          }
          this.magic_proficiencies.clear();

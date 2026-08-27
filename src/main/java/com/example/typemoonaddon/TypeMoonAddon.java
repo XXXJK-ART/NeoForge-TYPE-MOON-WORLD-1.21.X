@@ -126,7 +126,8 @@ public final class TypeMoonAddon {
                 CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
-            event.accept(AddonItems.MASTER_CARD_MATOU_KARIYA);
+            event.insertAfter(ModItems.MASTER_CARD_URYU_RYUNOSUKE.toStack(), AddonItems.MASTER_CARD_MATOU_KARIYA.toStack(),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);

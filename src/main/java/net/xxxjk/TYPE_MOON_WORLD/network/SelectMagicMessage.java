@@ -102,6 +102,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
    private static boolean isValidMagicId(String magicId) {
       return magicId != null && !magicId.isEmpty() && magicId.length() <= 64
          && (magicId.matches("[a-z0-9_]+") || net.minecraft.resources.ResourceLocation.tryParse(magicId) != null)
-         && MagicClassification.isKnownMagic(magicId) && MagicDefinitionRegistry.isWheelSelectable(magicId);
+         && (net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId)
+            || (MagicClassification.isKnownMagic(magicId) && MagicDefinitionRegistry.isWheelSelectable(magicId)));
    }
 }

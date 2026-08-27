@@ -25,6 +25,8 @@ import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramExecutor;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -55,6 +57,13 @@ public final class PlayerMagicCastService {
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = PlayerMagicSelectionService.getCurrentEntry(vars);
       if (entry == null || entry.isEmpty()) {
          displayClientMessage(entity, "message.typemoonworld.magic.no_magic_selected");
+         return;
+      }
+
+      if ("rune_program".equals(entry.sourceType) || RuneProgramService.isDynamicId(entry.magicId)) {
+         if (!(entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+         var program = RuneProgramService.find(vars, entry.magicId);
+         RuneProgramExecutor.execute(serverPlayer, vars, program);
          return;
       }
 

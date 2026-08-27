@@ -21,6 +21,10 @@ public class ModCreativeModeTabs {
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.SERVANT_CARD_EMIYA_ARCHER.get()))
                     .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
                     .displayItems((itemDisplayParameters, output) -> {
+                        var addon = net.xxxjk.typemoonworld.api.TypeMoonWorldApi.addon("typemoonaddon");
+                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ID));
+                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ALTER_ID));
+                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.FHA_ID));
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.MEDEA_REINFORCEMENT_CHARM);
                         output.accept(ModItems.MEDEA_SERVANT_CONTRACT);
@@ -357,6 +361,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARASH_SPAWN_EGG);
                         output.accept(ModItems.BAOBHAN_SITH_SPAWN_EGG);
                         output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.SHADOW_FAMILIAR_SPAWN_EGG);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.BLACK_SHADOW_SPAWN_EGG);
                     }).build());
 
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
@@ -365,6 +371,11 @@ public class ModCreativeModeTabs {
                     //添加创造栏物品
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.IMAGINARY_PRIMER);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.CREST_WORM);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.HOLY_GRAIL_FRAGMENT);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.CURSED_ARMOR_RENDER);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.VOID_RING_REGALIA);
                         output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
                         output.accept(ModItems.GANRYU_MANUAL);
                         output.accept(ModItems.HOKUSHIN_MANUAL);

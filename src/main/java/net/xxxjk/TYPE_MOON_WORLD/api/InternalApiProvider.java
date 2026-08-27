@@ -452,6 +452,36 @@ public final class InternalApiProvider implements ApiProvider {
                 vars.syncPlayerVariables(entity);
                 return true;
              }
+             @Override public int learnAll() {
+                int learned = 0;
+                java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(MagicDefinitionRegistry.ids());
+                ids.addAll(net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry.registeredMagicIds());
+                for (String raw : ids) {
+                   ResourceLocation id = ResourceLocation.tryParse(raw);
+                   if (id == null || !valid(id, Magics.this.namespace)
+                      || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(id.toString())
+                      || vars.hasLearnedSelfMagic(id.toString()) || vars.hasLearnedSelfMagic(id.getPath())) {
+                      continue;
+                   }
+                   vars.learned_magics.add(id.toString());
+                   learned++;
+                }
+                if (learned > 0) vars.syncPlayerVariables(entity);
+                return learned;
+             }
+             @Override public int forgetAll() {
+                int forgotten = 0;
+                java.util.Iterator<String> iterator = vars.learned_magics.iterator();
+                while (iterator.hasNext()) {
+                   ResourceLocation id = ResourceLocation.tryParse(iterator.next());
+                   if (id != null && valid(id, Magics.this.namespace)) {
+                      iterator.remove();
+                      forgotten++;
+                   }
+                }
+                if (forgotten > 0) vars.syncPlayerVariables(entity);
+                return forgotten;
+             }
              @Override public double proficiency(ResourceLocation magicId) {
                 if (magicId == null) return 0.0;
                 if (net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())) {

@@ -38,6 +38,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
@@ -249,6 +251,14 @@ public class TypeMoonCommands {
          if (normalized != null && !normalized.isBlank()) {
             ids.add(normalized);
          }
+      }
+      for (String magicId : MagicDefinitionRegistry.ids()) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank()) ids.add(normalized);
+      }
+      for (String magicId : MagicModularRegistry.registeredMagicIds()) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank()) ids.add(normalized);
       }
       return ids;
    }
@@ -1256,6 +1266,10 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
+         // Pull namespaced addon definitions through the public API as well as
+         // the legacy built-in list, so /typemoon magic learn_all stays complete.
+         int addonLearned = TypeMoonWorldApi.addon("typemoonaddon").magics().knowledge(player).learnAll();
+
          for (String m : allMagicIds()) {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
@@ -1263,7 +1277,7 @@ public class TypeMoonCommands {
          }
 
          vars.syncPlayerVariables(player);
-         ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned all magics"), true);
+         ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned all magics (addon definitions: " + addonLearned + ")"), true);
          return 1;
       } catch (Exception var7) {
          return 0;

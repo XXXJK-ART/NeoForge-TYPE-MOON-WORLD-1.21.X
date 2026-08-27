@@ -3339,5 +3339,9 @@
   "subtitles.typemoonworld.zhao_yun.attack": "Attack",
   "subtitles.typemoonworld.zhao_yun.fail": "Death",
   "subtitles.typemoonworld.zhao_yun.np": "Noble Phantasm",
-  "subtitles.typemoonworld.zhao_yun.victory": "Victory"
+  "subtitles.typemoonworld.zhao_yun.victory": "Victory",
+  "item.typemoonworld.rune_learning": "Rune Knowledge Fragment",
+  "magic.typemoonworld.rune_origin.name": "Primordial Rune Magic",
+  "message.typemoonworld.rune.learned": "Learned rune: %s",
+  "message.typemoonworld.rune.cast_failed": "Rune program failed to release"
 }

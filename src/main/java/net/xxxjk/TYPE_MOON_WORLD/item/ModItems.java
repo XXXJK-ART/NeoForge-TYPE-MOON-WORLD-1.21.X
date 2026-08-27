@@ -44,6 +44,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.LeylineSurveyMapItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.LancelotWeaponItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ManaSurveyCompassItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MagicCrestItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.RuneLearningItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaServantContractItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem;
@@ -209,6 +210,8 @@ public class ModItems {
             () -> new Item(new Item.Properties().stacksTo(3)));
     public static final DeferredItem<Item> MAGIC_WASTE_PAPER = ITEMS.register("magic_waste_paper",
             () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> RUNE_LEARNING = ITEMS.register("rune_learning",
+            () -> new RuneLearningItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
     public static final DeferredItem<Item> RANDOM_GEM = ITEMS.register("random_gem",
             () -> new RandomGemItem(new Item.Properties()));

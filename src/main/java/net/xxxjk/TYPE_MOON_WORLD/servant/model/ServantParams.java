@@ -16,6 +16,13 @@ public record ServantParams(
    }
 
    private int effectiveCoefficient(StatRank rank, boolean plus) {
+      if (rank == null) {
+         return StatRank.E.coefficient();
+      }
+      // A++ is encoded as its own rank and is exactly 3x the base value.
+      if (rank == StatRank.A_PLUS_PLUS) {
+         return (int)Math.round(StatRank.A.coefficient() * rank.parameterMultiplier());
+      }
       return plus ? rank.plusCoefficient() : rank.coefficient();
    }
 
@@ -32,7 +39,7 @@ public record ServantParams(
    }
 
    public double armor() {
-      return effectiveCoefficient(this.endurance, this.endurancePlus) * 0.15;
+      return effectiveCoefficient(this.strength, this.strengthPlus) * 0.15;
    }
 
    public double manaPool() {

@@ -11,6 +11,8 @@
                    "typemoonworld:tsumukari_muramasa",
                    "typemoonworld:imaginary_absorption",
                    "typemoonworld:magic_output",
-                   "typemoonworld:okita_mumyoudan_zuki"
+        "typemoonworld:okita_mumyoudan_zuki",
+        "typemoonaddon:imaginary_absorption",
+        "typemoonaddon:magic_output"
                ]
 }
