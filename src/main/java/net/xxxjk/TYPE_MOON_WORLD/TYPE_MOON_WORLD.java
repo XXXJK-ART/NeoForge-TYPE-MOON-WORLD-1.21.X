@@ -155,6 +155,8 @@ import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
+import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.network.AddonNetwork;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -193,6 +195,7 @@ public class TYPE_MOON_WORLD {
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
+      new TypeMoonAddon(modEventBus, modContainer);
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
@@ -259,6 +262,8 @@ public class TYPE_MOON_WORLD {
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
+      // Integrated addon payloads must share this registrar and protocol channel.
+      AddonNetwork.registerPayloads(registrar);
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);

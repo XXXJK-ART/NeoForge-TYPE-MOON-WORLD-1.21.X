@@ -36,7 +36,8 @@ public final class ServantCardManaService {
          return 4.0 * SERVANT_CARD_REGEN_MULTIPLIER;
       }
       ServantParams params = definition.parameters();
-      return params.manaPool() / fullRegenSeconds(params) * SERVANT_CARD_REGEN_MULTIPLIER;
+      double regen = params.manaPool() / fullRegenSeconds(params) * SERVANT_CARD_REGEN_MULTIPLIER;
+      return "artoria_pendragon".equals(servantId) ? regen * 2.0 : regen;
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

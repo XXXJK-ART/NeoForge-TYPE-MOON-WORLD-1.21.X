@@ -622,6 +622,14 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", currentCooldown / 20.0F)), true);
          return false;
       }
+      if ("mana_burst".equals(action.effectId())
+         && "artoria_pendragon".equals(vars.servant_card_id)
+         && ServantCardArtoriaSkills.isManaBurstActive(player)) {
+         ServantCardArtoriaSkills.performManaBurst(player);
+         vars.syncPlayerVariables(player);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.off"), true);
+         return true;
+      }
       if ("copy_weapon".equals(action.effectId())
          && ServantCardEmiyaSkills.findCopyableWeaponTarget(player, 20.0, 1.6) == null
          && ServantCardEmiyaSkills.findCrossSlashCopyTarget(player, 40.0) == null) {

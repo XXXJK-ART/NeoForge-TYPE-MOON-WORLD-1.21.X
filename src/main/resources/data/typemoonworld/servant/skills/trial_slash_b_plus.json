@@ -1,1 +1,1 @@
-{"id":"trial_slash_b_plus","display_name":"Trial Slash B+","display_name_zh":"试斩 B+","type":"active","mp_cost":10,"cooldown_ticks":500,"duration_ticks":300,"effects":[{"effect_type":"damage_bonus","params":{"bonus":0.30}},{"effect_type":"ignore_defense_chance","params":{"chance":0.30}}]}
+{"id":"trial_slash_b_plus","display_name":"Trial Slash B+","display_name_zh":"试斩 B+","type":"active","mp_cost":10,"cooldown_ticks":500,"duration_ticks":400,"effects":[{"effect_type":"damage_bonus","params":{"bonus":0.30}},{"effect_type":"ignore_defense_chance","params":{"chance":0.30}}]}

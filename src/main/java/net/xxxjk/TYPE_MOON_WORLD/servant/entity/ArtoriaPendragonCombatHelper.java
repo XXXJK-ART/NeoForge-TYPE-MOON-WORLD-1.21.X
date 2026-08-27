@@ -49,6 +49,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 public final class ArtoriaPendragonCombatHelper {
    public static final String TAG_INVISIBLE_AIR_ACTIVE = "ArtoriaInvisibleAirActive";
    public static final String TAG_MANA_BURST_UNTIL = "ArtoriaManaBurstUntil";
+   public static final String TAG_MANA_BURST_ACTIVE = "ArtoriaManaBurstActive";
    public static final String TAG_CHARISMA_UNTIL = "ArtoriaCharismaUntil";
    public static final String TAG_EXCALIBUR_WINDUP_UNTIL = "ArtoriaExcaliburWindupUntil";
    public static final String TAG_EXCALIBUR_RELEASE_UNTIL = "ArtoriaExcaliburReleaseUntil";
@@ -106,6 +107,8 @@ public final class ArtoriaPendragonCombatHelper {
    private static final ResourceLocation RIDING_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_armor");
    private static final ResourceLocation MANA_BURST_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_attack");
    private static final ResourceLocation MANA_BURST_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_speed");
+   private static final ResourceLocation EXCALIBUR_REVEALED_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_revealed_excalibur_attack");
+   private static final double REVEALED_EXCALIBUR_BONUS = 117.0;
    private static final ResourceLocation CHARISMA_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_charisma_attack");
    private static final String TAG_LAST_PERSISTENT_TICK = "ArtoriaLastPersistentStateTick";
    private static final String TAG_PERSISTENT_BUSY = "ArtoriaPersistentStateBusy";
@@ -274,7 +277,21 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    public static boolean isManaBurstActive(LivingEntity entity) {
-      return entity != null && entity.getPersistentData().getLong(TAG_MANA_BURST_UNTIL) > entity.level().getGameTime();
+      return entity != null && (entity.getPersistentData().getBoolean(TAG_MANA_BURST_ACTIVE)
+         || entity.getPersistentData().getLong(TAG_MANA_BURST_UNTIL) > entity.level().getGameTime());
+   }
+
+   public static float applyManaBurstDefense(LivingEntity target, DamageSource source, float amount) {
+      if (target == null || source == null || amount <= 0.0F || !isManaBurstActive(target)
+         || source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         return amount;
+      }
+      if (target.level() instanceof ServerLevel level && target.tickCount % 10 == 0) {
+         level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.58,
+            target.getZ(), 8, 0.25, 0.35, 0.25, 0.025);
+         level.playSound(null, target.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.55F, 1.35F);
+      }
+      return amount * 0.30F;
    }
 
    public static boolean isExcaliburWindingOrReleasing(LivingEntity entity) {
@@ -446,12 +463,22 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static void tickTimedModifiers(ArtoriaPendragonEntity entity, long now) {
-      boolean manaBurst = entity.getPersistentData().getLong(TAG_MANA_BURST_UNTIL) > now;
+      CompoundTag data = entity.getPersistentData();
+      boolean manaBurst = isManaBurstActive(entity);
       updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), MANA_BURST_ATTACK_ID, manaBurst ? 1.0 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), MANA_BURST_SPEED_ID, manaBurst ? 0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), EXCALIBUR_REVEALED_ATTACK_ID,
+         entity.isExcaliburVisible() ? REVEALED_EXCALIBUR_BONUS : 0.0, AttributeModifier.Operation.ADD_VALUE);
       if (manaBurst && entity.level() instanceof ServerLevel level) {
          spawnManaBurstSustainFx(entity, level);
          tickManaBurstJetMovement(entity, level);
+         if (entity.tickCount % 20 == 0) {
+            entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 6.0));
+            if (entity.getCurrentMp() <= 0.0) {
+               data.putBoolean(TAG_MANA_BURST_ACTIVE, false);
+               data.remove(TAG_MANA_BURST_UNTIL);
+            }
+         }
       }
       if (entity.getPersistentData().getLong(TAG_CHARISMA_UNTIL) <= now) {
          removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), CHARISMA_ATTACK_ID);
@@ -744,11 +771,11 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static boolean tryManaBurst(ArtoriaPendragonEntity entity, ServerLevel level, CompoundTag data, long now) {
-      if (entity.getCurrentMp() < 30.0 || now - data.getLong(TAG_LAST_MANA_BURST) < MANA_BURST_COOLDOWN || data.getLong(TAG_MANA_BURST_UNTIL) > now) {
+      if (isManaBurstActive(entity) || entity.getCurrentMp() < 30.0 || now - data.getLong(TAG_LAST_MANA_BURST) < MANA_BURST_COOLDOWN) {
          return false;
       }
       data.putLong(TAG_LAST_MANA_BURST, now);
-      data.putLong(TAG_MANA_BURST_UNTIL, now + MANA_BURST_DURATION);
+      data.putBoolean(TAG_MANA_BURST_ACTIVE, true);
       entity.setCurrentMp(entity.getCurrentMp() - 30.0);
       entity.triggerSlashAnimation();
       spawnManaBurstActivationFx(entity, level);

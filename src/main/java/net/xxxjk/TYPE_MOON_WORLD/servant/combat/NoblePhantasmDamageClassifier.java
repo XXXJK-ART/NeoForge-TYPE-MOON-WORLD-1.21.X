@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanDamageTypes;
 
 public final class NoblePhantasmDamageClassifier {
@@ -23,6 +24,10 @@ public final class NoblePhantasmDamageClassifier {
    );
 
    private NoblePhantasmDamageClassifier() {}
+
+   public static boolean isParacelsusElementalSwordDamage(DamageSource source) {
+      return source != null && source.is(ParacelsusDamageTypes.ELEMENTAL_SWORD);
+   }
 
    public static boolean isNoblePhantasmDamage(DamageSource source, float originalDamage) {
       if (source == null) return false;

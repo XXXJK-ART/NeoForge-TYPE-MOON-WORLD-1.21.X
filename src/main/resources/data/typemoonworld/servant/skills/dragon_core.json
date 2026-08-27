@@ -1,0 +1,17 @@
+{
+  "id": "dragon_core",
+  "display_name": "Dragon Core",
+  "display_name_zh": "龙之炉心",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mana_regeneration_multiplier",
+      "params": {
+        "multiplier": 2.0
+      }
+    }
+  ]
+}

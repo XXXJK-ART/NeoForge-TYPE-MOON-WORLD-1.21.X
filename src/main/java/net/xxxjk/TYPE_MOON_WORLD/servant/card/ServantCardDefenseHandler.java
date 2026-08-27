@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
@@ -129,7 +130,12 @@ public final class ServantCardDefenseHandler {
       CompoundTag data = player.getPersistentData();
       initializeResources(data, params);
       long now = player.level().getGameTime();
+      if (!defensePiercing && "artoria_pendragon".equals(vars.servant_card_id)) {
+         event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(player, event.getSource(), event.getAmount()));
+      }
       boolean specialNoblePhantasmDamage = isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount());
+      boolean elementalSwordDamage = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier
+         .isParacelsusElementalSwordDamage(event.getSource());
       boolean divineDefenseBroken = now < data.getLong(OdaNobunagaCombatHelper.TAG_DIVINE_BREAK_UNTIL);
       if (divineDefenseBroken) {
          player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
@@ -232,7 +238,7 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage
+      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage && !elementalSwordDamage
          || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
          ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {

@@ -6,13 +6,10 @@ import com.example.typemoonaddon.client.model.ShadowFamiliarModel;
 import com.example.typemoonaddon.client.model.ShadowFamiliarOutlineModel;
 import com.example.typemoonaddon.client.model.WingedWormModel;
 import com.example.typemoonaddon.client.renderer.BlackMudCorruptionLayer;
-import com.example.typemoonaddon.client.renderer.BlackShadowRenderer;
 import com.example.typemoonaddon.client.renderer.CursedArmorLayer;
 import com.example.typemoonaddon.client.renderer.GillesDeRaisArmorRenderer;
 import com.example.typemoonaddon.client.renderer.GillesDeRaisRenderer;
 import com.example.typemoonaddon.client.renderer.HugeSeaMonsterRenderer;
-import com.example.typemoonaddon.client.renderer.ShadowFamiliarRenderer;
-import com.example.typemoonaddon.client.renderer.ShadowPiercingRhoAiasRenderer;
 import com.example.typemoonaddon.client.renderer.SeaMonsterRenderer;
 import com.example.typemoonaddon.client.renderer.VoidRingRegaliaRenderer;
 import com.example.typemoonaddon.client.renderer.WormRenderer;
@@ -28,7 +25,6 @@ import com.example.typemoonaddon.network.RequestDevourerSelectionPayload;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonFluids;
 import com.example.typemoonaddon.registry.AddonItems;
-import com.example.typemoonaddon.shadowlogic.client.renderer.ShadowArtRibbonRenderer;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.model.HumanoidModel;
@@ -80,10 +76,6 @@ public final class ClientModEvents {
 
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(AddonEntities.BLACK_SHADOW.get(), BlackShadowRenderer::new);
-        event.registerEntityRenderer(AddonEntities.SHADOW_FAMILIAR.get(), ShadowFamiliarRenderer::new);
-        event.registerEntityRenderer(AddonEntities.SHADOW_ART_RIBBON.get(), ShadowArtRibbonRenderer::new);
-        event.registerEntityRenderer(AddonEntities.SHADOW_PIERCING_RHO_AIAS.get(), ShadowPiercingRhoAiasRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_DE_RAIS_CASTER.get(), GillesDeRaisRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER.get(), SeaMonsterRenderer::new);
         event.registerEntityRenderer(AddonEntities.GILLES_SEA_MONSTER_SPIT.get(), ThrownItemRenderer::new);

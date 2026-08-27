@@ -53,37 +53,15 @@ public final class AddonEntities {
                     .updateInterval(1)
                     .build("airflow_blade_projectile"));
 
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowFamiliarEntity>> SHADOW_FAMILIAR =
-            ENTITIES.register("shadow_familiar", () -> EntityType.Builder
-                    .of(SakuraShadowFamiliarEntity::new, MobCategory.CREATURE)
-                    .sized(1.0F, 1.85F)
-                    .eyeHeight(1.30F)
-                    .clientTrackingRange(8)
-                    .build("shadow_familiar"));
+    /** Legacy source-compatibility handle; registration lives in sakura-addon. */
+    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowFamiliarEntity>> SHADOW_FAMILIAR = null;
 
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraBlackShadowEntity>> BLACK_SHADOW =
-            ENTITIES.register("black_shadow", () -> EntityType.Builder
-                    .of(SakuraBlackShadowEntity::new, MobCategory.MONSTER)
-                    .sized(0.60F, 1.80F)
-                    .eyeHeight(1.62F)
-                    .clientTrackingRange(8)
-                    .build("black_shadow"));
+    /** Legacy source-compatibility handle; registration lives in sakura-addon. */
+    public static final DeferredHolder<EntityType<?>, EntityType<SakuraBlackShadowEntity>> BLACK_SHADOW = null;
 
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowArtRibbonEntity>> SHADOW_ART_RIBBON =
-            ENTITIES.register("shadow_art_ribbon", () -> EntityType.Builder
-                    .<SakuraShadowArtRibbonEntity>of(SakuraShadowArtRibbonEntity::new, MobCategory.MISC)
-                    .sized(0.75F, 0.75F)
-                    .clientTrackingRange(64)
-                    .updateInterval(2)
-                    .build("shadow_art_ribbon"));
+    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowArtRibbonEntity>> SHADOW_ART_RIBBON = null;
 
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowPiercingRhoAiasEntity>> SHADOW_PIERCING_RHO_AIAS =
-            ENTITIES.register("shadow_piercing_rho_aias", () -> EntityType.Builder
-                    .<SakuraShadowPiercingRhoAiasEntity>of(SakuraShadowPiercingRhoAiasEntity::new, MobCategory.MISC)
-                    .sized(0.1F, 0.1F)
-                    .clientTrackingRange(64)
-                    .updateInterval(1)
-                    .build("shadow_piercing_rho_aias"));
+    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowPiercingRhoAiasEntity>> SHADOW_PIERCING_RHO_AIAS = null;
 
     public static final DeferredHolder<EntityType<?>, EntityType<GillesDeRaisEntity>> GILLES_DE_RAIS_CASTER =
             ENTITIES.register("gilles_de_rais_caster", () -> EntityType.Builder
@@ -168,8 +146,6 @@ public final class AddonEntities {
     }
 
     public static void registerAttributes(EntityAttributeCreationEvent event) {
-        event.put(SHADOW_FAMILIAR.get(), SakuraShadowFamiliarEntity.createAttributes().build());
-        event.put(BLACK_SHADOW.get(), SakuraBlackShadowEntity.createAttributes().build());
         event.put(GILLES_DE_RAIS_CASTER.get(), GillesDeRaisEntity.createAttributes().build());
         event.put(GILLES_SEA_MONSTER.get(), SeaMonsterEntity.createAttributes().build());
         event.put(GILLES_HUGE_SEA_MONSTER.get(), HugeSeaMonsterEntity.createAttributes().build());

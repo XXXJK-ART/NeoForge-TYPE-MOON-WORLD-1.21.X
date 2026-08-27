@@ -199,6 +199,9 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
          this.setCurrentMp(0.0);
       }
       copyBaseAttribute(owner, Attributes.MAX_HEALTH);
+      if (this.isClone()) {
+         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(100.0);
+      }
       copyBaseAttribute(owner, Attributes.ATTACK_DAMAGE);
       copyBaseAttribute(owner, Attributes.MOVEMENT_SPEED);
       copyBaseAttribute(owner, Attributes.ARMOR);

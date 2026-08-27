@@ -1645,6 +1645,11 @@ public final class PlayerNoblePhantasmHelper {
          && player.getPersistentData().getLong(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG) > level.getGameTime();
    }
 
+   public static boolean isArtoriaExcaliburRevealed(ServerPlayer player) {
+      return player != null && player.level() instanceof ServerLevel level
+         && player.getPersistentData().getLong(ARTORIA_WIND_REVEAL_UNTIL_TAG) > level.getGameTime();
+   }
+
    public static void clearArtoriaExcaliburWindLock(ServerPlayer player) {
       if (player != null) {
          player.getPersistentData().remove(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG);

@@ -8,7 +8,7 @@ public final class ServantCardSkillLayout {
       return switch (servantId == null ? "" : servantId) {
          case "artoria_pendragon" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Knight Combo", "artoria_small_combo", 16.0, 30);
-            case 0 -> new ServantCardSkillAction("Mana Burst", "mana_burst", 20.0, 1400);
+            case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst", 20.0, 0);
             case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0, 220);
             case 2 -> new ServantCardSkillAction("Charisma", "charisma", 30.0, 360);
             case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0, 100);
@@ -87,7 +87,7 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 800);
+            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 180);
             case 1 -> new ServantCardSkillAction("Self Modification", "self_mod", 28.0, 360);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
@@ -322,7 +322,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Usumidori: Heaven-Blade Step", "ushiwakamaru_usumidori", 50.0, 600);
             case 7 -> new ServantCardSkillAction("Benkei: Immovable Ground", "ushiwakamaru_benkei", 100.0, 600);
             case 8 -> new ServantCardSkillAction("Houmaru: Spider Slayer", "ushiwakamaru_spider_slayer", 50.0, 600);
-            case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 150.0, 600);
+            case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 225.0, 1200);
             default -> null;
          };
          case "arash" -> switch (slot) {

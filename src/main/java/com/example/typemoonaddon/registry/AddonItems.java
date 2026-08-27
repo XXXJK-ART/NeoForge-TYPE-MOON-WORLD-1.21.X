@@ -273,16 +273,6 @@ public final class AddonItems {
             )
     );
 
-    public static final DeferredItem<DeferredSpawnEggItem> SHADOW_FAMILIAR_SPAWN_EGG = ITEMS.register(
-            "shadow_familiar_spawn_egg",
-            () -> new DeferredSpawnEggItem(AddonEntities.SHADOW_FAMILIAR, 0x12051F, 0xA74CFF, new Item.Properties())
-    );
-
-    public static final DeferredItem<DeferredSpawnEggItem> BLACK_SHADOW_SPAWN_EGG = ITEMS.register(
-            "black_shadow_spawn_egg",
-            () -> new DeferredSpawnEggItem(AddonEntities.BLACK_SHADOW, 0x08050A, 0x991C2C, new Item.Properties())
-    );
-
     public static final DeferredItem<DeferredSpawnEggItem> GILLES_DE_RAIS_CASTER_SPAWN_EGG = ITEMS.register(
             "gilles_de_rais_caster_spawn_egg",
             () -> new DeferredSpawnEggItem(AddonEntities.GILLES_DE_RAIS_CASTER, 0x20202A, 0x8B1238, new Item.Properties())

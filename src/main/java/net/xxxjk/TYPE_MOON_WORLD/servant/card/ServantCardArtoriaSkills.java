@@ -13,6 +13,9 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -27,8 +30,8 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ServantCardArtoriaSkills {
    private static final double ARTORIA_MANA_BURST_DRAIN_PER_SECOND = 6.0;
-   private static final int ARTORIA_MANA_BURST_DURATION = 1200;
    private static final String ARTORIA_CARD_MANA_BURST_DRAIN_TICK = "ServantCardArtoriaManaBurstDrainTick";
+   private static final ResourceLocation REVEALED_EXCALIBUR_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, "artoria_card_revealed_excalibur_attack");
    public static final int WIND_HAMMER_SLOT = 1;
    public static final int WIND_RELEASE_SLOT = 3;
 
@@ -39,16 +42,30 @@ public final class ServantCardArtoriaSkills {
       return action != null && ("invisible_air_hammer".equals(action.effectId()) || "invisible_air_release".equals(action.effectId()));
    }
 
+   public static boolean isManaBurstActive(ServerPlayer player) {
+      return ArtoriaPendragonCombatHelper.isManaBurstActive(player);
+   }
+
    public static boolean isWindLockedByExcalibur(ServerPlayer player) {
       return PlayerNoblePhantasmHelper.isArtoriaExcaliburWindLocked(player);
    }
 
    public static void performManaBurst(ServerPlayer player) {
-      long until = player.level().getGameTime() + ARTORIA_MANA_BURST_DURATION;
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, ARTORIA_MANA_BURST_DURATION, 2, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, ARTORIA_MANA_BURST_DURATION, 1, false, true, true));
-      player.getPersistentData().putLong(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL, until);
-      player.getPersistentData().putInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK, player.tickCount + 20);
+      CompoundTag data = player.getPersistentData();
+      if (ArtoriaPendragonCombatHelper.isManaBurstActive(player)) {
+         data.putBoolean(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_ACTIVE, false);
+         data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
+         data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+         ManaBurstService.clearExternalJetMovement(player);
+         player.removeEffect(MobEffects.DAMAGE_BOOST);
+         player.removeEffect(MobEffects.MOVEMENT_SPEED);
+         return;
+      }
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 45, 2, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 45, 1, false, true, true));
+      data.putBoolean(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_ACTIVE, true);
+      data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
+      data.putInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK, player.tickCount + 20);
       ManaBurstService.primeExternalJetMovement(player, 5);
       spawnManaBurstActivationFx(player);
    }
@@ -61,11 +78,15 @@ public final class ServantCardArtoriaSkills {
       CompoundTag data = player.getPersistentData();
       data.remove(ArtoriaPendragonCombatHelper.TAG_HAS_AVALON);
       data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
+      data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_ACTIVE);
       data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_ACTIVE);
       data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_ACTIVE + "Until");
       data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_RELEASED);
       data.remove(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL);
       data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
+      if (player.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+         player.getAttribute(Attributes.ATTACK_DAMAGE).removeModifier(REVEALED_EXCALIBUR_ATTACK_ID);
+      }
       ManaBurstService.clearExternalJetMovement(player);
       PlayerNoblePhantasmHelper.clearArtoriaExcaliburWindLock(player);
    }
@@ -78,8 +99,9 @@ public final class ServantCardArtoriaSkills {
       long now = player.level().getGameTime();
       data.remove(ArtoriaPendragonCombatHelper.TAG_HAS_AVALON);
       ArtoriaPendragonCombatHelper.tickLakeProtection(player);
-      long manaBurstUntil = data.getLong(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
-      if (manaBurstUntil <= now) {
+      boolean manaBurstActive = ArtoriaPendragonCombatHelper.isManaBurstActive(player);
+      updateRevealedExcaliburAttack(player);
+      if (!manaBurstActive) {
          data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
          ManaBurstService.clearExternalJetMovement(player);
          return;
@@ -90,6 +112,7 @@ public final class ServantCardArtoriaSkills {
       if (player.tickCount >= data.getInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK)) {
          data.putInt(ARTORIA_CARD_MANA_BURST_DRAIN_TICK, player.tickCount + 20);
          if (!ServantCardManaService.consume(player, vars, ARTORIA_MANA_BURST_DRAIN_PER_SECOND)) {
+            data.putBoolean(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_ACTIVE, false);
             data.remove(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_UNTIL);
             data.remove(ARTORIA_CARD_MANA_BURST_DRAIN_TICK);
             ManaBurstService.clearExternalJetMovement(player);
@@ -246,6 +269,18 @@ public final class ServantCardArtoriaSkills {
          level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, 2, 0.06, 0.06, 0.06, 0.01);
       }
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.95F, 1.3F);
+   }
+
+   private static void updateRevealedExcaliburAttack(ServerPlayer player) {
+      var attribute = player.getAttribute(Attributes.ATTACK_DAMAGE);
+      if (attribute == null) return;
+      boolean revealed = PlayerNoblePhantasmHelper.isArtoriaExcaliburRevealed(player);
+      AttributeModifier existing = attribute.getModifier(REVEALED_EXCALIBUR_ATTACK_ID);
+      if (revealed && existing == null) {
+         attribute.addTransientModifier(new AttributeModifier(REVEALED_EXCALIBUR_ATTACK_ID, 117.0, AttributeModifier.Operation.ADD_VALUE));
+      } else if (!revealed && existing != null) {
+         attribute.removeModifier(REVEALED_EXCALIBUR_ATTACK_ID);
+      }
    }
 
    public static void performInstinct(ServerPlayer player) {

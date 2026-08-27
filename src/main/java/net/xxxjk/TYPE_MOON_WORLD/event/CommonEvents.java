@@ -692,6 +692,9 @@ public class CommonEvents {
                      return;
                   }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
+                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity) {
+                     event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(living, event.getSource(), event.getAmount()));
+                  }
                   event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
                   if (event.getAmount() <= 0.0F) {
                      event.setCanceled(true);

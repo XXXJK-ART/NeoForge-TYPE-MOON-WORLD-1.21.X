@@ -259,7 +259,7 @@ public final class MuramasaCombatHelper {
             entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + 10.0));
          }
          if (now < entity.getPersistentData().getLong(TEMPER_UNTIL)) {
-            living.igniteForSeconds(3.0F);
+            living.igniteForSeconds(4.0F);
             levelTemperHitFx(entity, living);
          }
          entity.getPersistentData().putLong(LAST_CONTACT, now);
@@ -306,7 +306,7 @@ public final class MuramasaCombatHelper {
       if (phase == ServantCombatPhase.PROBING
          && now >= data.getLong("MuramasaTrialCooldown")
          && entity.getCurrentMp() >= 10.0) {
-         data.putLong(TRIAL_UNTIL, now + 300L);
+         data.putLong(TRIAL_UNTIL, now + 400L);
          data.putLong("MuramasaTrialCooldown", now + 500L);
          entity.setCurrentMp(entity.getCurrentMp() - 10.0);
          lockAction(entity, data, now, 10L);
@@ -318,7 +318,7 @@ public final class MuramasaCombatHelper {
          && now >= data.getLong("MuramasaKarmaCooldown")
          && entity.getCurrentMp() >= 15.0
          && lineOfSight) {
-         data.putLong(KARMA_UNTIL, now + 200L);
+         data.putLong(KARMA_UNTIL, now + 267L);
          data.putLong("MuramasaKarmaCooldown", now + 600L);
          entity.setCurrentMp(entity.getCurrentMp() - 15.0);
          lockAction(entity, data, now, 12L);
@@ -342,15 +342,15 @@ public final class MuramasaCombatHelper {
          && now >= data.getLong("MuramasaTemperCooldown")
          && entity.getCurrentMp() >= 20.0
          && (entity.getHealth() <= entity.getMaxHealth() * 0.72F || distance <= 4.5)) {
-         data.putLong(TEMPER_UNTIL, now + 240L);
+         data.putLong(TEMPER_UNTIL, now + 320L);
          data.putLong("MuramasaTemperCooldown", now + 600L);
          entity.setCurrentMp(entity.getCurrentMp() - 20.0);
          lockAction(entity, data, now, 10L);
          entity.triggerNamedActionAnimation("charge");
          entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-            net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 240, 0, false, true, true));
+            net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 320, 0, false, true, true));
          entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-            net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 240, 0, false, true, true));
+            net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 320, 0, false, true, true));
          spawnSkillFx(level, entity, net.minecraft.core.particles.ParticleTypes.FLAME, 32);
          return true;
       }
@@ -379,7 +379,7 @@ public final class MuramasaCombatHelper {
       }
       if (now >= data.getLong("MuramasaFlameCooldown")
          && entity.getCurrentMp() <= entity.getMaxMp() * 0.55) {
-         data.putLong(FLAME_UNTIL, now + 300L);
+         data.putLong(FLAME_UNTIL, now + 400L);
          data.putLong("MuramasaFlameCooldown", now + 600L);
          entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + 100.0));
          lockAction(entity, data, now, 8L);
@@ -395,7 +395,7 @@ public final class MuramasaCombatHelper {
          && now >= data.getLong("MuramasaTsumukariCooldown")
          && entity.getCurrentMp() >= 25.0
          && distance <= 8.0) {
-         data.putLong(TSUMUKARI_UNTIL, now + 400L);
+         data.putLong(TSUMUKARI_UNTIL, now + 533L);
          data.putLong("MuramasaTsumukariCooldown", now + 600L);
          entity.setCurrentMp(entity.getCurrentMp() - 25.0);
          lockAction(entity, data, now, 12L);
@@ -512,7 +512,7 @@ public final class MuramasaCombatHelper {
             candidate -> candidate != entity && candidate.isAlive()
                && !entity.isAlliedTo(candidate) && !EntityUtils.isImmunePlayerTarget(candidate))) {
             applyNoDefenseDamage(entity, living, 28.0F);
-            living.igniteForSeconds(3.0F);
+            living.igniteForSeconds(4.0F);
          }
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.SNOWFLAKE,
             entity.getX(), entity.getY() + 1.0, entity.getZ(), 140, 8.0, 1.1, 8.0, 0.1);
@@ -529,11 +529,11 @@ public final class MuramasaCombatHelper {
          return false;
       }
       long now = level.getGameTime();
-      entity.getPersistentData().putLong(TEMPER_UNTIL, now + 240L);
+      entity.getPersistentData().putLong(TEMPER_UNTIL, now + 320L);
       entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-         net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 240, 0, false, true, true));
+         net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 320, 0, false, true, true));
       entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-         net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 240, 0, false, true, true));
+         net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, 320, 0, false, true, true));
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.6, entity.getZ(),
          32, 0.42, 0.55, 0.42, 0.06);

@@ -31,6 +31,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Integer> DURATION = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> LAYERS = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> FACING_YAW = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.FLOAT);
+   private static final EntityDataAccessor<Boolean> PARTICLE_ONLY = SynchedEntityData.defineId(RhoAiasEntity.class, EntityDataSerializers.BOOLEAN);
    private static final double PROTECT_RADIUS = 6.0;
    private static final double OWNER_EXIT_DISTANCE = 5.4;
    private static final double OWNER_BEHIND_DOT = -0.25;
@@ -50,11 +51,16 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
    }
 
    public RhoAiasEntity(Level level, LivingEntity owner, LivingEntity target) {
+      this(level, owner, target, false);
+   }
+
+   public RhoAiasEntity(Level level, LivingEntity owner, LivingEntity target, boolean particleOnly) {
       this(ModEntities.RHO_AIAS_SHIELD.get(), level);
       this.ownerUuid = owner == null ? null : owner.getUUID();
       this.entityData.set(SHIELD_HP, MAX_SHIELD_HP);
       this.entityData.set(DURATION, 20 * 15);
       this.entityData.set(LAYERS, 7);
+      this.entityData.set(PARTICLE_ONLY, particleOnly);
       if (owner != null) {
          Vec3 direction = fixedDirection(owner, target);
          Vec3 pos = owner.position().add(direction.scale(2.2)).add(0.0, owner.getBbHeight() * 0.55, 0.0);
@@ -70,6 +76,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       builder.define(DURATION, 20 * 15);
       builder.define(LAYERS, 7);
       builder.define(FACING_YAW, 0.0F);
+      builder.define(PARTICLE_ONLY, false);
    }
 
    @Override
@@ -173,6 +180,10 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
 
    public int getLayers() {
       return this.entityData.get(LAYERS);
+   }
+
+   public boolean isParticleOnly() {
+      return this.entityData.get(PARTICLE_ONLY);
    }
 
    public LivingEntity getOwnerEntity() {
@@ -279,6 +290,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       this.entityData.set(SHIELD_HP, hp);
       this.entityData.set(DURATION, tag.contains("Duration") ? tag.getInt("Duration") : 20 * 15);
       this.entityData.set(LAYERS, tag.contains("Layers") ? Mth.clamp(tag.getInt("Layers"), 1, 7) : 7);
+      this.entityData.set(PARTICLE_ONLY, tag.getBoolean("ParticleOnly"));
       this.ownerAwayTicks = tag.getInt("OwnerAwayTicks");
       if (tag.contains("FixedYaw")) {
          float yaw = tag.getFloat("FixedYaw");
@@ -296,6 +308,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       tag.putFloat("ShieldHp", this.entityData.get(SHIELD_HP));
       tag.putInt("Duration", this.entityData.get(DURATION));
       tag.putInt("Layers", this.entityData.get(LAYERS));
+      tag.putBoolean("ParticleOnly", this.entityData.get(PARTICLE_ONLY));
       tag.putInt("OwnerAwayTicks", this.ownerAwayTicks);
       tag.putFloat("FixedYaw", this.getYRot());
    }

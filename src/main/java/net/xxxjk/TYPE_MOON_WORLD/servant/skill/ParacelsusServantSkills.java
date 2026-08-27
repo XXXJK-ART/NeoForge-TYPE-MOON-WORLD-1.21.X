@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantLifecycleContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantNoblePhantasmContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusWorkshopHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
@@ -400,11 +401,11 @@ public final class ParacelsusServantSkills {
 
       AABB search = entity.getBoundingBox().inflate(100.0).expandTowards(forward.scale(100.0));
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, e -> isHostileNoblePhantasmTarget(entity, e))) {
-         if (!isInStoredForwardFan(entity, living, forward, 100.0, 22.5)) {
+         if (!isInStoredForwardFan(entity, living, forward, 100.0, 32.5)) {
             continue;
          }
          living.invulnerableTime = 0;
-         living.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
+         living.hurt(ParacelsusDamageTypes.elementalSword(entity), paracelsusSkillDamage(damage));
          living.invulnerableTime = 0;
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 300, 0, false, true, true));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 300, 0, false, true, true));
@@ -456,13 +457,16 @@ public final class ParacelsusServantSkills {
    }
 
    private static boolean isInStoredForwardFan(ParacelsusEntity entity, LivingEntity living, Vec3 forward, double maxDistance, double halfAngleDeg) {
-      Vec3 toLiving = living.position().subtract(entity.position());
+      Vec3 toLiving = living.getBoundingBox().getCenter().subtract(entity.position());
       Vec3 horizontal = new Vec3(toLiving.x, 0.0, toLiving.z);
-      if (horizontal.lengthSqr() < 1.0E-4 || horizontal.lengthSqr() > maxDistance * maxDistance) {
+      double distance = horizontal.length();
+      if (distance < 1.0E-4 || distance > maxDistance) {
          return false;
       }
       horizontal = horizontal.normalize();
-      return horizontal.dot(forward) >= Math.cos(Math.toRadians(halfAngleDeg));
+      double targetRadius = Math.max(0.65, living.getBbWidth() * 0.5);
+      double paddingAngle = Math.toDegrees(Math.atan2(targetRadius, distance));
+      return horizontal.dot(forward) >= Math.cos(Math.toRadians(halfAngleDeg + paddingAngle));
    }
 
    private static void breakElementalSwordTerrain(ServerLevel level, ParacelsusEntity entity, Vec3 forward) {
@@ -854,7 +858,7 @@ public final class ParacelsusServantSkills {
       living.invulnerableTime = 0;
       living.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
       if (fireTicks > 0) {
-         living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), fireTicks));
+         ParacelsusBalanceRules.applyFire(living, fireTicks);
       }
       if (slow) {
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true));
@@ -875,9 +879,13 @@ public final class ParacelsusServantSkills {
    }
 
    private static void scheduleMagicBurn(ParacelsusEntity entity, LivingEntity target, ServerLevel level, float damage, int seconds) {
-      for (int tick = 20; tick <= seconds * 20; tick += 20) {
+      long burnToken = ParacelsusBalanceRules.startBurnSequence(target, level);
+      if (burnToken < 0L) return;
+      int durationTicks = Math.min(ParacelsusBalanceRules.MAX_FIRE_TICKS, Math.max(0, seconds * 20));
+      for (int tick = 20; tick <= durationTicks; tick += 20) {
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(tick, () -> {
-            if (target.isAlive() && target.level() == level && entity.isAlive() && target.getRemainingFireTicks() > 0) {
+            if (entity.isAlive() && ParacelsusBalanceRules.isBurnSequenceActive(target, level, burnToken)
+               && target.getRemainingFireTicks() > 0) {
                target.invulnerableTime = 0;
                target.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
             }
@@ -1035,7 +1043,7 @@ public final class ParacelsusServantSkills {
       target.invulnerableTime = 0;
       target.hurt(entity.damageSources().magic(), paracelsusSkillDamage((float)(6.0 + entity.getCurrentMp() * 0.02)));
       if (variant == 0) {
-         target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 80));
+         ParacelsusBalanceRules.applyFire(target, 80);
       } else if (variant == 1) {
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
       } else if (variant == 2) {

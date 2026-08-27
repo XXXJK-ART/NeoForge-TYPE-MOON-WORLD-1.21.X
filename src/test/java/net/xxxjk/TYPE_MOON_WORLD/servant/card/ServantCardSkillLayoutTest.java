@@ -89,8 +89,8 @@ class ServantCardSkillLayoutTest {
 
    @Test
    void ushiwakamaruSkillsMatchTheRequestedLayout() {
-      double[] costs = {25.0, 15.0, 6.0, 8.0, 15.0, 50.0, 50.0, 100.0, 50.0, 150.0};
-      int[] cooldowns = {400, 600, 140, 120, 200, 600, 600, 600, 600, 600};
+      double[] costs = {25.0, 15.0, 6.0, 8.0, 15.0, 50.0, 50.0, 100.0, 50.0, 225.0};
+      int[] cooldowns = {400, 600, 140, 120, 200, 600, 600, 600, 600, 1200};
       for (int slot = 0; slot < 10; slot++) {
          ServantCardSkillAction action = ServantCardSkillLayout.actionFor("ushiwakamaru_rider", slot, false);
          assertNotNull(action);

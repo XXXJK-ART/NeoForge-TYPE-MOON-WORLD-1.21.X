@@ -310,7 +310,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       target.hurt(owner.damageSources().magic(), damage);
       target.invulnerableTime = 0;
       if (element == 0) {
-         target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 70));
+         ParacelsusBalanceRules.applyFire(target, 70);
       } else if (element == 1) {
          target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true, true));
       } else if (element == 2) {

@@ -55,7 +55,7 @@ public final class UshiwakamaruCombatHelper {
    private static final int USUMIDORI_COOLDOWN = 12 * 20;
    private static final int BENKEI_COOLDOWN = 30 * 20;
    private static final int BENKEI_DURATION = 15 * 20;
-   private static final int EIGHT_BOAT_COOLDOWN = 20 * 20;
+   private static final int EIGHT_BOAT_COOLDOWN = 60 * 20;
    private static final int EIGHT_BOAT_DURATION = 15 * 20;
    private static final int SPIDER_SLAYER_COOLDOWN = 20 * 20;
    private static final int MOONLIT_STEP_COOLDOWN = 7 * 20;
@@ -460,7 +460,7 @@ public final class UshiwakamaruCombatHelper {
    private static boolean tryEightBoatLeap(UshiwakamaruRiderEntity entity, ServerLevel level, LivingEntity target, double distance, long now) {
       CompoundTag data = entity.getPersistentData();
       ServantNoblePhantasmResourceService.CastDecision resource =
-         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 20.0);
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 30.0);
       int previousCooldown = data.getBoolean(TAG_EIGHT_BOAT_OVERDRAFT) ? EIGHT_BOAT_COOLDOWN * 2 : EIGHT_BOAT_COOLDOWN;
       if (data.getLong(TAG_EIGHT_BOAT_UNTIL) > now || !resource.allowed()
          || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)

@@ -15,7 +15,6 @@ import com.example.typemoonaddon.engravedworm.EngravedWormAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceConfig;
 import com.example.typemoonaddon.kimaris.KimarisAttachments;
-import com.example.typemoonaddon.magic.SakuraTypeMoonIntegration;
 import com.example.typemoonaddon.magic.WormMagicIntegration;
 import com.example.typemoonaddon.magic.SummoningMagicIntegration;
 import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
@@ -26,7 +25,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -37,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
 
 public final class TypeMoonAddon {
+    /** Legacy compatibility namespace for the non-Sakura extensions retained by the core mod. */
     public static final String MOD_ID = "typemoonworld";
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -127,15 +126,7 @@ public final class TypeMoonAddon {
                 CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
-            ItemStack afterMasterCards = new ItemStack(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS.get());
-            ItemStack sakura = AddonItems.MASTER_CARD_MATOU_SAKURA.toStack();
-            ItemStack sakuraAlter = AddonItems.MASTER_CARD_MATOU_SAKURA_ALTER.toStack();
-            ItemStack sakuraFha = AddonItems.MASTER_CARD_MATOU_SAKURA_FHA.toStack();
-            event.insertAfter(afterMasterCards, sakura, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.insertAfter(sakura, sakuraAlter, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.insertAfter(sakuraAlter, sakuraFha, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.insertAfter(sakuraFha, AddonItems.MASTER_CARD_MATOU_KARIYA.toStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.CURSED_ARMOR_RENDER);
+            event.accept(AddonItems.MASTER_CARD_MATOU_KARIYA);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);
@@ -146,7 +137,11 @@ public final class TypeMoonAddon {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        SakuraTypeMoonIntegration.register();
+        registerNonSakuraMagic();
+    }
+
+    /** Registers only legacy extensions that are still owned by the core jar. */
+    public static void registerNonSakuraMagic() {
         WormMagicIntegration.register();
         SummoningMagicIntegration.register();
         BoundaryMagicIntegration.register();
