@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ArcaneMobilityService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
@@ -86,6 +87,7 @@ public final class ServantCardTransformManager {
       if (vars.master_active) {
          MasterStateManager.release(player);
       }
+      ArcaneMobilityService.cancelFlightMagic(player);
       clearServantRuntimeState(player, vars);
       player.getPersistentData().remove("MasterLossForcedDeath");
       player.getPersistentData().remove("MasterLossDecayDamage");
@@ -1461,6 +1463,7 @@ public final class ServantCardTransformManager {
          case "cu_laguz" -> ServantCardCuChulainnSkills.performLaguzRune(player);
          case "cu_tiwaz" -> ServantCardCuChulainnSkills.performTiwazRune(player);
          case "cu_algiz" -> ServantCardCuChulainnSkills.performAlgizRune(player);
+         case "cu_rune_barrier" -> ServantCardCuChulainnSkills.performRuneBarrier(player);
          case "cu_berkana" -> ServantCardCuChulainnSkills.performBerkanaRune(player);
          case "cu_crouch_thrust" -> ServantCardCuChulainnSkills.performCrouchThrust(player);
          case "cu_disengage" -> ServantCardCuChulainnSkills.performDisengage(player);

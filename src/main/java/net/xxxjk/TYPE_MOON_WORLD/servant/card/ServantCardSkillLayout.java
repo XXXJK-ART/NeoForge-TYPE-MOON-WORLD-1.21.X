@@ -51,6 +51,7 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Algiz Rune", "cu_algiz", 30.0, 300);
             case 4 -> new ServantCardSkillAction("Berkana Rune", "cu_berkana", 34.0, 400);
             case 5 -> new ServantCardSkillAction("Disengage", "cu_disengage", 18.0, 400);
+            case 6 -> new ServantCardSkillAction("Rune Barrier", "cu_rune_barrier", 80.0, 600);
             default -> null;
          };
          case "heracles" -> switch (slot) {

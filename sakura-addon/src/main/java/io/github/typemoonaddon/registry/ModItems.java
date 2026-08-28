@@ -7,6 +7,8 @@ import io.github.typemoonaddon.item.HolyGrailFragmentItem;
 import io.github.typemoonaddon.item.BlackShadowSpawnEggItem;
 import io.github.typemoonaddon.item.CursedArmorRenderItem;
 import io.github.typemoonaddon.item.VoidRingRegaliaItem;
+import io.github.typemoonaddon.item.MasterProfileCardItem;
+import io.github.typemoonaddon.magic.MatouSakuraMasterProfile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
@@ -43,6 +45,30 @@ public final class ModItems {
         "void_ring_regalia",
         () -> new VoidRingRegaliaItem(
             new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant()
+        )
+    );
+
+    public static final DeferredItem<MasterProfileCardItem> MASTER_CARD_MATOU_SAKURA = ITEMS.register(
+        "master_card_matou_sakura",
+        () -> new MasterProfileCardItem(
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
+            MatouSakuraMasterProfile.ID
+        )
+    );
+
+    public static final DeferredItem<MasterProfileCardItem> MASTER_CARD_MATOU_SAKURA_ALTER = ITEMS.register(
+        "master_card_matou_sakura_alter",
+        () -> new MasterProfileCardItem(
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
+            MatouSakuraMasterProfile.ALTER_ID
+        )
+    );
+
+    public static final DeferredItem<MasterProfileCardItem> MASTER_CARD_MATOU_SAKURA_FHA = ITEMS.register(
+        "master_card_matou_sakura_fha",
+        () -> new MasterProfileCardItem(
+            new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
+            MatouSakuraMasterProfile.FHA_ID
         )
     );
 

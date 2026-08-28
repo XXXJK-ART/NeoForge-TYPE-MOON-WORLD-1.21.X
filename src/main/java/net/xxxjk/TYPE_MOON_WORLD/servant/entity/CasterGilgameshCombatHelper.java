@@ -1,8 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
-import java.util.Comparator;
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -498,36 +495,32 @@ public final class CasterGilgameshCombatHelper {
       Vec3 behind = forward.scale(-1.0);
       Vec3 center = owner.position().add(0.0, owner.getBbHeight() * 0.75, 0.0).add(behind.scale(2.0));
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x).normalize();
-      List<LivingEntity> targets = collectVolleyTargets(level, owner, target, Math.max(1, Math.min(shots, 8)));
       for (int i = 0; i < shots; i++) {
-         LivingEntity shotTarget = targets.get(targets.size() == 1 ? 0 : Math.floorMod(i * 7, targets.size()));
          double angle = (Math.PI * 2.0 * i / shots) + owner.getRandom().nextDouble() * 0.22;
-         double ring = 1.05 + (i % 3) * 0.48;
+         double ring = 1.55 + (i % 4) * 0.72;
          double side = Math.cos(angle) * ring;
-         double height = Math.sin(angle) * 1.18 + ((i & 1) == 0 ? 0.34 : -0.26);
-         Vec3 start = center.add(right.scale(side)).add(behind.scale(0.18 + owner.getRandom().nextDouble() * 0.68)).add(0.0, height, 0.0);
-         Vec3 targetOffset = right.scale((owner.getRandom().nextDouble() - 0.5) * 2.6)
-            .add(0.0, (owner.getRandom().nextDouble() - 0.5) * 1.4, 0.0)
-            .add(forward.scale((owner.getRandom().nextDouble() - 0.5) * 1.2));
-         Vec3 predicted = shotTarget.position()
-            .add(shotTarget.getDeltaMovement().scale(5.0 + owner.getRandom().nextDouble() * 5.0))
-            .add(0.0, shotTarget.getBbHeight() * (0.42 + owner.getRandom().nextDouble() * 0.22), 0.0)
+         double height = Math.sin(angle) * 1.65 + ((i & 1) == 0 ? 0.42 : -0.34);
+         Vec3 start = center.add(right.scale(side))
+            .add(behind.scale(0.35 + owner.getRandom().nextDouble() * 1.05))
+            .add(0.0, height, 0.0);
+         // Each shot receives its own impact point at launch; the wide spread is
+         // intentional so that the volley creates pressure and spectacle without
+         // guaranteeing a hit on the selected enemy.
+         Vec3 targetOffset = right.scale((owner.getRandom().nextDouble() - 0.5) * 8.0)
+            .add(0.0, (owner.getRandom().nextDouble() - 0.5) * 4.8, 0.0)
+            .add(forward.scale((owner.getRandom().nextDouble() - 0.5) * 3.0));
+         Vec3 predicted = target.position()
+            .add(0.0, target.getBbHeight() * (0.35 + owner.getRandom().nextDouble() * 0.35), 0.0)
             .add(targetOffset);
          Vec3 direct = predicted.subtract(start).normalize();
          Vec3 launchFan = right.scale(Math.cos(angle) * (0.26 + owner.getRandom().nextDouble() * 0.22))
             .add(behind.scale(0.16 + owner.getRandom().nextDouble() * 0.24))
             .add(0.0, Math.sin(angle) * 0.22 + (owner.getRandom().nextDouble() - 0.35) * 0.18, 0.0);
          Vec3 aim = direct.scale(explosive ? 0.76 : 0.88).add(launchFan).normalize();
-         Vec3 curve = right.scale(Math.cos(angle + Math.PI * 0.5))
-            .add(forward.scale(Math.sin(angle) * 0.38))
-            .add(0.0, Math.cos(angle * 0.7) * 0.28, 0.0);
-         if (curve.lengthSqr() < 1.0E-6) curve = right;
-         curve = curve.normalize();
          RoyalCannonProjectileEntity projectile = new RoyalCannonProjectileEntity(level, owner, start, aim, damage);
-         projectile.setHomingTarget(shotTarget);
          projectile.setDamageMultiplier(damageMultiplier);
          if (explosive) {
-            projectile.configureRoyalCannon(CANNON_EXPLOSION_RADIUS, curve, 0.055 + owner.getRandom().nextDouble() * 0.035);
+            projectile.configureRoyalCannon(CANNON_EXPLOSION_RADIUS);
          }
          level.addFreshEntity(projectile);
          level.sendParticles(GOLD, start.x, start.y, start.z, 12, 0.12, 0.12, 0.12, 0.035);
@@ -535,29 +528,6 @@ public final class CasterGilgameshCombatHelper {
       }
       spawnRoyalCannonGateFx(level, center, forward, right, shots);
       return shots;
-   }
-
-   private static List<LivingEntity> collectVolleyTargets(ServerLevel level, LivingEntity owner, LivingEntity primary, int limit) {
-      List<LivingEntity> result = new ArrayList<>();
-      if (isValidVolleyTarget(owner, primary)) {
-         result.add(primary);
-      }
-      level.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(48.0), e -> isValidVolleyTarget(owner, e))
-         .stream()
-         .sorted(Comparator.comparingDouble(owner::distanceToSqr))
-         .forEach(candidate -> {
-            if (result.size() < limit && result.stream().noneMatch(existing -> existing.getId() == candidate.getId())) {
-               result.add(candidate);
-            }
-         });
-      return result.isEmpty() && primary != null ? List.of(primary) : result;
-   }
-
-   private static boolean isValidVolleyTarget(LivingEntity owner, LivingEntity target) {
-      return owner != null && target != null && target.isAlive() && target != owner
-         && !target.isAlliedTo(owner) && !owner.isAlliedTo(target)
-         && !isProtectedMasterTarget(owner, target)
-         && !EntityUtils.isImmunePlayerTarget(target);
    }
 
    public static boolean isProtectedMasterTarget(LivingEntity owner, LivingEntity target) {

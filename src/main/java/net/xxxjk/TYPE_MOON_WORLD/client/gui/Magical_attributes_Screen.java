@@ -232,6 +232,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
+      this.addMagic("rune_origin", "magic.typemoonworld.rune_origin.name", "rune,nordic", -12753153);
       this.addMagic("bajiquan", "key.typemoonworld.magic.bajiquan.short", "martial", 0xFF2EB872);
       this.addMagic("ganryu", "key.typemoonworld.magic.ganryu.short", "martial", 0xFF7893A8);
       this.addMagic("hokushin_ittoryu", "key.typemoonworld.magic.hokushin_ittoryu.short", "martial", 0xFFB06A4C);
@@ -241,6 +242,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
+      if (!MagicLearningStrategy.isKnowledgeVisible(id)) return;
       Magical_attributes_Screen.MagicEntry entry = new Magical_attributes_Screen.MagicEntry(id, nameKey, category, MagicUiColors.colorFor(id, false));
       this.baseMagicCatalog.add(entry);
       this.magicCatalogById.put(id, entry);
@@ -266,7 +268,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          }
 
          for (String displayMagicId : MagicLearningStrategy.displayMagicIds(vars.learned_magics)) {
-            if (displayMagicId == null || displayMagicId.isEmpty() || added.contains(displayMagicId)) {
+            if (displayMagicId == null || displayMagicId.isEmpty()
+                || !MagicLearningStrategy.isKnowledgeVisible(displayMagicId) || added.contains(displayMagicId)) {
                continue;
             }
             Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(displayMagicId);
@@ -285,7 +288,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (crestEntry != null && crestEntry.magicId != null && !crestEntry.magicId.isEmpty()) {
                String displayMagicId = normalizeMagicIdForDisplay(crestEntry.magicId);
                Magical_attributes_Screen.MagicEntry basex = this.magicCatalogById.get(displayMagicId);
-               if (!MagicLearningStrategy.isRemovedMagic(displayMagicId) && !shouldHideCrestMagic(displayMagicId, basex)) {
+               if (MagicLearningStrategy.isKnowledgeVisible(displayMagicId)
+                   && !MagicLearningStrategy.isRemovedMagic(displayMagicId)
+                   && !shouldHideCrestMagic(displayMagicId, basex)) {
                   Magical_attributes_Screen.MagicEntry entry = basex == null
                      ? new Magical_attributes_Screen.MagicEntry(
                         displayMagicId, "key.typemoonworld.magic." + displayMagicId + ".short", this.resolveFallbackCategory(displayMagicId), -1811878
@@ -386,6 +391,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.worm";
       } else if ("boundary".equals(category)) {
          return "gui.typemoonworld.category.boundary";
+      } else if ("rune".equals(category)) {
+         return "gui.typemoonworld.category.rune";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -401,6 +408,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.ubw",
          "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
+         "gui.typemoonworld.category.rune",
          "gui.typemoonworld.category.nordic",
          "gui.typemoonworld.category.martial",
          "gui.typemoonworld.category.talent",
@@ -477,6 +485,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("special".equals(current)) {
          return "other";
       } else if ("other".equals(current)) {
+         return "rune";
+      } else if ("rune".equals(current)) {
          return "nordic";
       } else if ("nordic".equals(current)) {
          return "martial";

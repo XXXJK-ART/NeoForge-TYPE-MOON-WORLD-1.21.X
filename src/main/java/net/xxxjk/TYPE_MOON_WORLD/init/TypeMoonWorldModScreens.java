@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicResearchTableScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicCopyingTableScreen;
 
 @EventBusSubscriber(
+   modid = "typemoonworld",
    bus = Bus.MOD,
    value = {Dist.CLIENT}
 )

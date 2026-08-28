@@ -177,9 +177,6 @@ public final class PlayerMagicSelectionService {
    public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
       magicId = canonicalRuntimeMagicId(magicId);
       CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
-      if (normalized.isEmpty()) {
-         return normalized;
-      }
       net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.CompoundResult external =
          net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.normalize(magicId, normalized);
       if (external.handler() != null) {

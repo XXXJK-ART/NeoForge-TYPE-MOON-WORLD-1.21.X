@@ -120,14 +120,10 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
-            event.insertAfter(ModItems.KIKU_ICHIMONJI_NORIMUNE.toStack(), AddonItems.PRELATIS_SPELLBOOK.toStack(),
+            // Creative tab contents can be rebuilt with a different feature/permission set;
+            // an anchor item is not guaranteed to be present in every rebuild.
+            event.accept(AddonItems.MANA_FURNACE.toStack(),
                 CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.insertAfter(AddonItems.PRELATIS_SPELLBOOK.toStack(), AddonItems.MANA_FURNACE.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-        }
-        if (event.getTab() == ModCreativeModeTabs.SERVANT_CARDS_TAB.get()) {
-            event.insertAfter(ModItems.MASTER_CARD_URYU_RYUNOSUKE.toStack(), AddonItems.MASTER_CARD_MATOU_KARIYA.toStack(),
-                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);

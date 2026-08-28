@@ -935,6 +935,7 @@
   "gui.typemoonworld.category.martial": "体術",
   "gui.typemoonworld.category.nordic": "北欧魔術",
   "gui.typemoonworld.category.other": "その他",
+  "gui.typemoonworld.category.rune": "ルーン",
   "gui.typemoonworld.category.solomon": "ソロモン魔術",
   "gui.typemoonworld.category.spawn": "降霊術",
   "gui.typemoonworld.category.special": "特殊魔術",
@@ -3338,5 +3339,6 @@
   "subtitles.typemoonworld.zhao_yun.attack": "攻撃",
   "subtitles.typemoonworld.zhao_yun.fail": "死亡",
   "subtitles.typemoonworld.zhao_yun.np": "宝具",
-  "subtitles.typemoonworld.zhao_yun.victory": "勝利"
+  "subtitles.typemoonworld.zhao_yun.victory": "勝利",
+  "message.typemoonworld.rune.cast_failed": "ルーンプログラムの解放に失敗しました: %s"
 }

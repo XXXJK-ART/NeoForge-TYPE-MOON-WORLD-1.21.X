@@ -31,6 +31,12 @@ public final class RuneRegistry {
       String[] effects = {"create", "reinforce", "impact", "speak", "path", "fire", "share", "heal", "ice", "drain", "barrier", "harvest", "shadow", "random", "shield", "light", "pierce", "nature", "speed", "mind", "water", "energy", "change", "earth"};
       String[] modifiers = {"amplify", "power", "shatter", "range", "swift", "heat", "link", "duration", "area", "cost", "slow", "repeat", "resist", "luck", "guard", "accuracy", "critical", "restore", "mobility", "focus", "control", "store", "fuse", "persist"};
       String[] terminals = {"release", "strike", "detonate", "seal", "return", "burn", "transfer", "bless", "disperse", "sacrifice", "endure", "complete", "banish", "reveal", "protect", "purify", "execute", "renew", "escape", "awaken", "dissolve", "discharge", "renew", "anchor"};
+      int[] colors = {
+         0xFFFFB84D, 0xFFFFCC66, 0xFFFF6B6B, 0xFF69D2E7, 0xFF7BD389, 0xFFFF8A65,
+         0xFFE5A4FF, 0xFFFFD166, 0xFFB8C0FF, 0xFFFF9F9F, 0xFFA8DADC, 0xFFC4E17F,
+         0xFFC2B0FF, 0xFFDDA15E, 0xFF8AE1FC, 0xFFFFE66D, 0xFFF28482, 0xFF9BE564,
+         0xFF6ECEDA, 0xFFF6BD60, 0xFF5BC0EB, 0xFFC77DFF, 0xFFF7A072, 0xFFB8E0D2
+      };
       Map<String, RuneDefinition> result = new LinkedHashMap<>();
       for (int i = 0; i < ids.length; i++) {
          EnumMap<RunePosition, String> semantics = new EnumMap<>(RunePosition.class);
@@ -40,7 +46,7 @@ public final class RuneRegistry {
          semantics.put(RunePosition.TERMINAL, terminals[i]);
          String family = effects[i];
          result.put(ids[i], new RuneDefinition(
-            ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, ids[i]), names[i], 0xFFB23A + (i * 0x030303),
+            ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, ids[i]), names[i], colors[i],
             ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "textures/gui/runes/" + ids[i] + ".png"),
             50.0D, Set.of("air", "stone", "weapon", "armor", "tool", "body"), Set.of(), Set.of(family), semantics));
       }

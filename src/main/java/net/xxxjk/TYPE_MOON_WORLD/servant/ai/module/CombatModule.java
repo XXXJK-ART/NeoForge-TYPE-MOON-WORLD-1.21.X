@@ -931,14 +931,19 @@ public final class CombatModule implements ServantAiModule {
          }
          CuChulainnCombatRules.SingleGaeBolgPlan gaeBolgPlan = CuChulainnCombatRules.singleGaeBolgPlan(distance);
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.MELEE) {
+            CuChulainnCombatHelper.clearMeleeGaeBolgPursuit(entity);
             performGaeBolg(entity, target, true);
             return;
          }
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.CLOSE_FOR_MELEE) {
-            entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
-            entity.faceToward(target.position());
-            moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
-            return;
+            if (CuChulainnCombatHelper.tryMeleeGaeBolgPursuit(entity, target)) {
+               entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
+               entity.faceToward(target.position());
+               moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
+               return;
+            }
+         } else {
+            CuChulainnCombatHelper.clearMeleeGaeBolgPursuit(entity);
          }
       }
 
@@ -2048,6 +2053,12 @@ public final class CombatModule implements ServantAiModule {
          return true;
       }
 
+      if (healthRatio < 0.45 && entity.getCurrentMp() >= 80.0 && entity.getPersistentData().getFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG) <= 0.0F
+            && entity.getRandom().nextFloat() < 0.12F) {
+         performRuneBarrier(entity);
+         return true;
+      }
+
       if (distance > 7.0 && hasLineOfSight && target != null && !ansuzActive) {
          performAnsuzRune(entity, target);
          return true;
@@ -2142,6 +2153,30 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.WAX_ON,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(),
          18, 0.5, 0.8, 0.5, 0.03);
+   }
+
+   private void performRuneBarrier(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - 80.0);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      var data = entity.getPersistentData();
+      long now = entity.level().getGameTime();
+      data.putFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG, 2000.0F);
+      data.putLong(CuChulainnCombatHelper.RUNE_BARRIER_UNTIL_TAG, now + 300L);
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_X_TAG, entity.getX());
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_Y_TAG, entity.getY());
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_Z_TAG, entity.getZ());
+      entity.setDeltaMovement(Vec3.ZERO);
+      for (int i = 0; i < 13; i++) {
+         double t = i / 12.0, offset = -2.15 + t * 4.3;
+         for (double y : new double[]{entity.getY() + 0.05, entity.getY() + entity.getBbHeight() + 0.15}) {
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() - 2.15, y, entity.getZ() + offset, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + 2.15, y, entity.getZ() + offset, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + offset, y, entity.getZ() - 2.15, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + offset, y, entity.getZ() + 2.15, 1, 0, 0, 0, 0);
+         }
+      }
    }
 
    private void performAnsuzRune(ServantEntity entity, LivingEntity target) {
@@ -2311,12 +2346,18 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : findNearestCombatTarget(entity, 32.0);
+      LivingEntity resolvedTarget = target != null && target.isAlive()
+         ? target
+         : preferMelee ? null : findNearestCombatTarget(entity, 32.0);
       if (resolvedTarget == null && fallbackAim == null) {
          return;
       }
 
-      if (resolvedTarget != null && preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
+      if (preferMelee) {
+         if (resolvedTarget == null
+            || !CuChulainnCombatRules.canReleaseMeleeGaeBolg(entity.distanceTo(resolvedTarget))) {
+            return;
+         }
          if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
             sl.sendParticles(ParticleTypes.END_ROD,
                resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),

@@ -935,6 +935,7 @@
   "gui.typemoonworld.category.martial": "Боевые искусства",
   "gui.typemoonworld.category.nordic": "Северная магия",
   "gui.typemoonworld.category.other": "Другое",
+  "gui.typemoonworld.category.rune": "Руны",
   "gui.typemoonworld.category.solomon": "Магия Соломона",
   "gui.typemoonworld.category.spawn": "Призыв духов",
   "gui.typemoonworld.category.special": "Особая магия",
@@ -3335,5 +3336,6 @@
   "subtitles.typemoonworld.zhao_yun.attack": "Атака",
   "subtitles.typemoonworld.zhao_yun.fail": "Смерть",
   "subtitles.typemoonworld.zhao_yun.np": "Благородный фантом",
-  "subtitles.typemoonworld.zhao_yun.victory": "Победа"
+  "subtitles.typemoonworld.zhao_yun.victory": "Победа",
+  "message.typemoonworld.rune.cast_failed": "Не удалось активировать рунную программу: %s"
 }

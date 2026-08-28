@@ -15,6 +15,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_UBW = "unlimited_blade_works";
    public static final String CATEGORY_OTHER = "other";
    public static final String CATEGORY_NORDIC = "nordic";
+   public static final String CATEGORY_RUNE = "rune";
    public static final String CATEGORY_MARTIAL = "martial";
    public static final String CATEGORY_TALENT = "talent";
    public static final String CATEGORY_IMAGINARY = "imaginary";
@@ -91,6 +92,8 @@ public final class MagicDisplayMetadata {
          return CATEGORY_WORM;
       } else if (isBoundaryMagic(magicId)) {
          return CATEGORY_BOUNDARY;
+      } else if ("rune_origin".equals(path)) {
+         return CATEGORY_RUNE + "," + CATEGORY_NORDIC;
       } else if (path.startsWith("jewel_") || path.startsWith("ruby") || path.startsWith("sapphire")
          || path.startsWith("emerald") || path.startsWith("topaz") || path.startsWith("cyan")) {
          return CATEGORY_JEWEL;

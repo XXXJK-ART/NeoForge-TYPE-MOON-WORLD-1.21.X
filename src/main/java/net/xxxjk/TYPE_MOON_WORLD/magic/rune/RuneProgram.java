@@ -64,9 +64,28 @@ public final class RuneProgram {
       List<String> errors = new ArrayList<>();
       for (String id : slots) if (!id.isEmpty() && !RuneRegistry.isKnown(id)) errors.add("unknown_rune:" + id);
       boolean trigger = !slots(RunePosition.TRIGGER).stream().allMatch(String::isEmpty);
-      if (!trigger) errors.add("missing_trigger");
-      if (releaseMode != RuneReleaseMode.DIRECT_AIR && slots(RunePosition.TRIGGER).stream().anyMatch(id -> !id.isEmpty() && (releaseMode == RuneReleaseMode.WEAPON || releaseMode == RuneReleaseMode.ARMOR || releaseMode == RuneReleaseMode.TOOL || releaseMode == RuneReleaseMode.BODY))) errors.add("release_mode_conflict");
+      if (!trigger && releaseMode != RuneReleaseMode.BODY) errors.add("missing_trigger");
+      if (releaseMode == RuneReleaseMode.BODY && slots(RunePosition.TRIGGER).stream().anyMatch(id -> !id.isEmpty())) errors.add("release_mode_conflict");
+      if (releaseMode == RuneReleaseMode.WEAPON || releaseMode == RuneReleaseMode.ARMOR || releaseMode == RuneReleaseMode.TOOL) {
+         for (String id : slots(RunePosition.TRIGGER)) {
+            RuneDefinition definition = RuneRegistry.get(id);
+            if (definition != null && isProjectileTrigger(definition)) errors.add("projectile_trigger_conflict");
+         }
+      }
+      if (releaseMode == RuneReleaseMode.BLOCK_TRAP) {
+         for (String id : slots(RunePosition.TRIGGER)) {
+            RuneDefinition definition = RuneRegistry.get(id);
+            if (definition != null && isProjectileTrigger(definition)) errors.add("trap_projectile_conflict");
+         }
+      }
       return new RuneProgramValidationResult(errors.isEmpty(), errors);
+   }
+
+   private static boolean isProjectileTrigger(RuneDefinition definition) {
+      String id = definition.idPath();
+      return id.equals("fehu") || id.equals("thurisaz") || id.equals("ansuz")
+         || id.equals("hagalaz") || id.equals("kenaz") || id.equals("sowilo")
+         || id.equals("laguz");
    }
 
    public CompoundTag serializeNBT() {

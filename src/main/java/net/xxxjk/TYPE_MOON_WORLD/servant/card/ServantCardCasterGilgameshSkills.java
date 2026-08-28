@@ -234,7 +234,10 @@ public final class ServantCardCasterGilgameshSkills {
    private static boolean fireSlateShots(ServerPlayer player, int shots) {
       if (!(player.level() instanceof ServerLevel level) || shots <= 0) return false;
       LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0, 1.6);
-      Vec3 look = player.getLookAngle().normalize();
+      Vec3 look = target == null
+         ? player.getLookAngle().normalize()
+         : target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
+            .subtract(player.getEyePosition()).normalize();
       for (int i = 0; i < shots; i++) {
          Vec3 direction = look;
          if (shots > 1) {
@@ -246,7 +249,6 @@ public final class ServantCardCasterGilgameshSkills {
          float damage = GilgameshSlateItem.MIN_SHOT_DAMAGE
             + player.getRandom().nextInt((int)(GilgameshSlateItem.MAX_SHOT_DAMAGE - GilgameshSlateItem.MIN_SHOT_DAMAGE) + 1);
          RoyalCannonProjectileEntity shot = new RoyalCannonProjectileEntity(level, player, start, direction, damage);
-         shot.setHomingTarget(target);
          level.addFreshEntity(shot);
          level.sendParticles(GOLD, start.x, start.y, start.z, 8, 0.08, 0.08, 0.08, 0.04);
       }

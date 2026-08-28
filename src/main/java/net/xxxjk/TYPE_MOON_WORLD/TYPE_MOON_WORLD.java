@@ -42,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModDataComponents;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModVillagers;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
@@ -182,6 +183,7 @@ public class TYPE_MOON_WORLD {
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);
+      ModDataComponents.register(modEventBus);
       ModBlocks.register(modEventBus);
       ModBlockEntities.register(modEventBus);
       ModEntities.register(modEventBus);

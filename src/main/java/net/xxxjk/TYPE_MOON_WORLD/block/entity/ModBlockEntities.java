@@ -32,6 +32,9 @@ public class ModBlockEntities {
    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ArtificialLeylineBlockEntity>> ARTIFICIAL_LEYLINE_BLOCK_ENTITY = BLOCK_ENTITIES.register(
       "artificial_leyline_block_entity", () -> Builder.of(ArtificialLeylineBlockEntity::new, new Block[]{(Block)ModBlocks.ARTIFICIAL_LEYLINE_BLOCK.get()}).build(null)
    );
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RuneBlockEntity>> RUNE_BLOCK_ENTITY = BLOCK_ENTITIES.register(
+      "rune_block_entity", () -> Builder.of(RuneBlockEntity::new, ModBlocks.RUNE_INSCRIPTION.get()).build(null)
+   );
 
    public static void register(IEventBus eventBus) {
       BLOCK_ENTITIES.register(eventBus);

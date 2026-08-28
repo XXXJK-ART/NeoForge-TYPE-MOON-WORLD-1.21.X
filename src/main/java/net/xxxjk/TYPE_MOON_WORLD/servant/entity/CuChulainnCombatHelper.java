@@ -31,7 +31,15 @@ public final class CuChulainnCombatHelper {
    public static final String LAST_GAE_BOLG_ARMY_TICK_TAG = "CuLastGaeBolgArmyTick";
    public static final String GAE_BOLG_ARMY_USED_TAG = "CuGaeBolgArmyUsed";
    public static final String GAE_BOLG_WINDUP_UNTIL_TAG = "CuGaeBolgWindupUntil";
+   public static final String GAE_BOLG_MELEE_PURSUIT_UNTIL_TAG = "CuGaeBolgMeleePursuitUntil";
+   public static final String GAE_BOLG_MELEE_PURSUIT_TARGET_TAG = "CuGaeBolgMeleePursuitTarget";
+   public static final String GAE_BOLG_MELEE_PURSUIT_EXHAUSTED_TAG = "CuGaeBolgMeleePursuitExhausted";
    public static final String ALGIZ_SHIELD_TAG = "CuAlgizShield";
+   public static final String RUNE_BARRIER_HP_TAG = "CuRuneBarrierHp";
+   public static final String RUNE_BARRIER_UNTIL_TAG = "CuRuneBarrierUntil";
+   public static final String RUNE_BARRIER_X_TAG = "CuRuneBarrierX";
+   public static final String RUNE_BARRIER_Y_TAG = "CuRuneBarrierY";
+   public static final String RUNE_BARRIER_Z_TAG = "CuRuneBarrierZ";
    public static final String BERKANA_NEXT_HEAL_TICK_TAG = "CuBerkanaNextHealTick";
    public static final String EXHAUST_EXPIRES_TAG = "CuExhaustExpires";
    public static final int SINGLE_GAE_BOLG_COOLDOWN = 160;
@@ -214,6 +222,41 @@ public final class CuChulainnCombatHelper {
       return isCuChulainn(entity) && entity.getPersistentData().getLong(GAE_BOLG_WINDUP_UNTIL_TAG) > entity.level().getGameTime();
    }
 
+   /** Opens one bounded close-in window and does not restart it until the target leaves the band. */
+   public static boolean tryMeleeGaeBolgPursuit(ServantEntity entity, LivingEntity target) {
+      if (!isCuChulainn(entity) || target == null || !target.isAlive()) {
+         return false;
+      }
+      var data = entity.getPersistentData();
+      long now = entity.level().getGameTime();
+      if (!data.hasUUID(GAE_BOLG_MELEE_PURSUIT_TARGET_TAG)
+         || !target.getUUID().equals(data.getUUID(GAE_BOLG_MELEE_PURSUIT_TARGET_TAG))) {
+         data.putUUID(GAE_BOLG_MELEE_PURSUIT_TARGET_TAG, target.getUUID());
+         data.putBoolean(GAE_BOLG_MELEE_PURSUIT_EXHAUSTED_TAG, false);
+         data.putLong(GAE_BOLG_MELEE_PURSUIT_UNTIL_TAG, now + CuChulainnCombatRules.MELEE_GAE_BOLG_PURSUIT_TICKS);
+         return true;
+      }
+      if (data.getBoolean(GAE_BOLG_MELEE_PURSUIT_EXHAUSTED_TAG)) {
+         return false;
+      }
+      long until = data.getLong(GAE_BOLG_MELEE_PURSUIT_UNTIL_TAG);
+      if (until > now) {
+         return true;
+      }
+      data.putBoolean(GAE_BOLG_MELEE_PURSUIT_EXHAUSTED_TAG, true);
+      return false;
+   }
+
+   public static void clearMeleeGaeBolgPursuit(ServantEntity entity) {
+      if (entity == null) {
+         return;
+      }
+      var data = entity.getPersistentData();
+      data.remove(GAE_BOLG_MELEE_PURSUIT_UNTIL_TAG);
+      data.remove(GAE_BOLG_MELEE_PURSUIT_TARGET_TAG);
+      data.remove(GAE_BOLG_MELEE_PURSUIT_EXHAUSTED_TAG);
+   }
+
    public static void markSingleGaeBolg(ServantEntity entity) {
       entity.getPersistentData().putLong(LAST_GAE_BOLG_TICK_TAG, entity.level().getGameTime());
       markCombat(entity);
@@ -261,6 +304,15 @@ public final class CuChulainnCombatHelper {
       }
       entity.getPersistentData().remove(ACTIVE_RUNE_TAG);
       entity.getPersistentData().remove(RUNE_EXPIRES_TAG);
+      clearRuneBarrier(entity);
+   }
+
+   public static void clearRuneBarrier(ServantEntity entity) {
+      entity.getPersistentData().remove(RUNE_BARRIER_HP_TAG);
+      entity.getPersistentData().remove(RUNE_BARRIER_UNTIL_TAG);
+      entity.getPersistentData().remove(RUNE_BARRIER_X_TAG);
+      entity.getPersistentData().remove(RUNE_BARRIER_Y_TAG);
+      entity.getPersistentData().remove(RUNE_BARRIER_Z_TAG);
    }
 
    public static void applyExhaustion(ServantEntity entity, int durationTicks) {
@@ -281,6 +333,29 @@ public final class CuChulainnCombatHelper {
       }
 
       long now = entity.level().getGameTime();
+      if (entity.getPersistentData().getFloat(RUNE_BARRIER_HP_TAG) > 0.0F
+         && entity.getPersistentData().getLong(RUNE_BARRIER_UNTIL_TAG) > now) {
+         entity.getNavigation().stop();
+         entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+         entity.teleportTo(entity.getPersistentData().getDouble(RUNE_BARRIER_X_TAG), entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG), entity.getPersistentData().getDouble(RUNE_BARRIER_Z_TAG));
+         if (entity.tickCount % 12 == 0 && entity.level() instanceof ServerLevel level) {
+            double x = entity.getPersistentData().getDouble(RUNE_BARRIER_X_TAG);
+            double y = entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG) + entity.getBbHeight() * 0.5;
+            double z = entity.getPersistentData().getDouble(RUNE_BARRIER_Z_TAG);
+            double bottom = entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG) + 0.05;
+            double top = bottom + entity.getBbHeight() + 0.1;
+            for (int i = 0; i < 8; i++) {
+               double t = i / 7.0, offset = -2.15 + t * 4.3;
+               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x - 2.15, bottom, z + offset, 1, 0, 0, 0, 0);
+               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + 2.15, top, z + offset, 1, 0, 0, 0, 0);
+               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + offset, bottom, z - 2.15, 1, 0, 0, 0, 0);
+               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + offset, top, z + 2.15, 1, 0, 0, 0, 0);
+            }
+            level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x, y, z, 6, 2.15, 0.9, 2.15, 0.0);
+         }
+      } else if (entity.getPersistentData().getFloat(RUNE_BARRIER_HP_TAG) > 0.0F) {
+         clearRuneBarrier(entity);
+      }
       long lastCombat = entity.getPersistentData().getLong(LAST_COMBAT_TICK_TAG);
       LivingEntity target = entity.getTarget();
       boolean outOfCombat = target == null || !target.isAlive() || entity.distanceToSqr(target) > 400.0;

@@ -935,6 +935,7 @@
   "gui.typemoonworld.category.martial": "체술",
   "gui.typemoonworld.category.nordic": "북유럽 마술",
   "gui.typemoonworld.category.other": "기타",
+  "gui.typemoonworld.category.rune": "룬",
   "gui.typemoonworld.category.solomon": "솔로몬 마술",
   "gui.typemoonworld.category.spawn": "강령술",
   "gui.typemoonworld.category.special": "특수 마술",
@@ -3338,5 +3339,6 @@
   "subtitles.typemoonworld.zhao_yun.attack": "공격",
   "subtitles.typemoonworld.zhao_yun.fail": "사망",
   "subtitles.typemoonworld.zhao_yun.np": "보구",
-  "subtitles.typemoonworld.zhao_yun.victory": "승리"
+  "subtitles.typemoonworld.zhao_yun.victory": "승리",
+  "message.typemoonworld.rune.cast_failed": "룬 프로그램 시전에 실패했습니다: %s"
 }

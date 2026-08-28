@@ -20,6 +20,10 @@ public final class ShadowHassanCombatHelper {
    private static final String TAG_LAST_SLASH = "ShadowHassanLastSlash";
    private static final String TAG_SLASH_UNTIL = "ShadowHassanSlashUntil";
    private static final int SLASH_COOLDOWN = 240;
+   private static final int SLASH_STRIKE_COUNT = 100;
+   private static final int SLASH_STRIKES_PER_TICK = 5;
+   private static final long SLASH_DURATION_TICKS = 1L
+      + (SLASH_STRIKE_COUNT + SLASH_STRIKES_PER_TICK - 1L) / SLASH_STRIKES_PER_TICK;
 
    private ShadowHassanCombatHelper() {
    }
@@ -58,12 +62,12 @@ public final class ShadowHassanCombatHelper {
 
    public static void performSlash(ShadowHassanEntity hassan, LivingEntity target) {
       long now = hassan.level().getGameTime();
-      hassan.getPersistentData().putLong(TAG_SLASH_UNTIL, now + 46L);
+      hassan.getPersistentData().putLong(TAG_SLASH_UNTIL, now + SLASH_DURATION_TICKS);
       hassan.getNavigation().stop();
       hassan.revealForAttack();
       float damage = Math.max(1.0F, (float)hassan.getAttributeValue(Attributes.ATTACK_DAMAGE));
-      for (int index = 0; index < 10; index++) {
-         int delay = index * 5;
+      for (int index = 0; index < SLASH_STRIKE_COUNT; index++) {
+         int delay = 1 + index / SLASH_STRIKES_PER_TICK;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             if (!hassan.isAlive() || !target.isAlive() || hassan.level() != target.level()
                || hassan.distanceToSqr(target) > 8.0 * 8.0

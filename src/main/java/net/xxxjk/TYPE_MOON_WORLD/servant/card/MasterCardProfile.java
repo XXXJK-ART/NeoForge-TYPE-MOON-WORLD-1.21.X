@@ -799,7 +799,15 @@ public final class MasterCardProfile {
    }
 
    private static ItemStack createCardStack(String masterId) {
-      if (MasterProfileApiRegistry.get(ResourceLocation.tryParse(masterId)) != null) {
+      ResourceLocation profileId = ResourceLocation.tryParse(masterId);
+      if (MasterProfileApiRegistry.get(profileId) != null) {
+         ResourceLocation dedicatedCardId = ResourceLocation.fromNamespaceAndPath(
+            profileId.getNamespace(), "master_card_" + profileId.getPath()
+         );
+         Item dedicatedCard = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(dedicatedCardId);
+         if (dedicatedCard != net.minecraft.world.item.Items.AIR) {
+            return new ItemStack(dedicatedCard);
+         }
          return net.xxxjk.TYPE_MOON_WORLD.item.custom.MasterCardItem.create(ModItems.MASTER_CARD_GENERIC.get(), masterId);
       }
       Item item = switch (masterId == null ? "" : masterId) {

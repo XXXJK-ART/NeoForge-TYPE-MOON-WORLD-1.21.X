@@ -197,6 +197,19 @@ public final class ServantCardDefenseHandler {
          return true;
       }
       if (!defensePiercing && "cu_chulainn".equals(vars.servant_card_id)) {
+         float barrier = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG);
+         if (barrier > 0.0F && data.getLong(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_UNTIL_TAG) > now) {
+            float absorbed = Math.min(barrier, event.getAmount());
+            data.putFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG, barrier - absorbed);
+            event.setAmount(Math.max(0.0F, event.getAmount() - absorbed));
+            spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.35F);
+            if (event.getAmount() <= 0.0F) {
+               event.setCanceled(true);
+               if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
+               return true;
+            }
+            if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
+         }
          float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
             float absorbed = Math.min(shield, event.getAmount());

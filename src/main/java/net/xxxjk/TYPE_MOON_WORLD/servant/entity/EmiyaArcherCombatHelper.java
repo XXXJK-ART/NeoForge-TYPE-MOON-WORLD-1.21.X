@@ -2361,7 +2361,6 @@ public final class EmiyaArcherCombatHelper {
       PseudoSpiralSwordProjectileEntity projectile = new PseudoSpiralSwordProjectileEntity(level, entity);
       projectile.setNoGravity(true);
       projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.72, entity.getZ());
-      projectile.setTrackedTarget(target);
       Vec3 dir = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0).subtract(projectile.position()).normalize();
       projectile.setDeltaMovement(dir.scale(3.15));
       level.addFreshEntity(projectile);

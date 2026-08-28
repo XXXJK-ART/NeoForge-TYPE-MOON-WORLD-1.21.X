@@ -4,24 +4,27 @@ import net.minecraft.client.gui.GuiGraphics;
 
 public class GuiUtils {
    /** Opaque central base; the area outside it remains transparent. */
-   public static final int ARCANE_OVERLAY = 0xF010151B;
-   public static final int ARCANE_BACKGROUND = 0xF010151B;
-   public static final int ARCANE_HEADER = 0xF5161C23;
-   public static final int ARCANE_PANEL = 0xE8171E26;
-   public static final int ARCANE_PANEL_ALT = 0xD91D2630;
-   public static final int ARCANE_BORDER = 0xFF34404C;
-   public static final int ARCANE_CYAN = 0xFF35C6D0;
-   public static final int ARCANE_GOLD = 0xFFD6AE5D;
-   public static final int ARCANE_CREST = 0xFFC85E73;
-   public static final int ARCANE_VALID = 0xFF53C58B;
-   public static final int ARCANE_DANGER = 0xFFE05B67;
-   public static final int ARCANE_TEXT = 0xFFF2F5F7;
-   public static final int ARCANE_TEXT_MUTED = 0xFF99A6B2;
+   public static final int ARCANE_OVERLAY = 0xF4141A20;
+   public static final int ARCANE_BACKGROUND = 0xF04A5963;
+   public static final int ARCANE_HEADER = 0xFF52636D;
+   public static final int ARCANE_PANEL = 0xFF465963;
+   public static final int ARCANE_PANEL_ALT = 0xFF5A707B;
+   public static final int ARCANE_BORDER = 0xFFD2E4ED;
+   public static final int ARCANE_CYAN = 0xFF58EAF2;
+   public static final int ARCANE_GOLD = 0xFFFFD978;
+   public static final int ARCANE_CREST = 0xFFFF8295;
+   public static final int ARCANE_VALID = 0xFF6FF3A9;
+   public static final int ARCANE_DANGER = 0xFFFF7180;
+   public static final int ARCANE_TEXT = 0xFFFFFFFF;
+   public static final int ARCANE_TEXT_MUTED = 0xFFF4FAFD;
 
    public static void renderScreenBackdrop(GuiGraphics guiGraphics, int width, int height) {
+      // Do not apply a full-screen dark veil: it reduces contrast in rune artwork.
+      guiGraphics.fill(0, 0, width, 2, 0xFF35C6D0);
    }
 
    public static void renderScreenBaseBackdrop(GuiGraphics guiGraphics, int width, int height) {
+      renderScreenBackdrop(guiGraphics, width, height);
       int baseWidth = Math.min(Math.max(420, width * 4 / 5), Math.max(1, width - 12));
       int baseHeight = Math.min(Math.max(230, height * 4 / 5), Math.max(1, height - 12));
       int baseX = (width - baseWidth) / 2;
@@ -37,7 +40,7 @@ public class GuiUtils {
       guiGraphics.fill(x, y, x + w, y + h, ARCANE_BACKGROUND);
       guiGraphics.fill(x + 1, y + 1, x + w - 1, y + 27, ARCANE_HEADER);
       guiGraphics.renderOutline(x, y, w, h, ARCANE_BORDER);
-      guiGraphics.fill(x + 8, y + 27, x + w - 8, y + 28, 0x5534404C);
+      guiGraphics.fill(x + 8, y + 27, x + w - 8, y + 28, 0xAA8299A8);
       guiGraphics.fill(x + 8, y + 27, x + Math.min(w - 8, 94), y + 28, accentColor);
       guiGraphics.fill(x, y, x + 2, y + h, accentColor);
    }
@@ -46,7 +49,7 @@ public class GuiUtils {
       GuiGraphics guiGraphics, int x, int y, int w, int h, int accentColor, boolean selected, boolean enabled
    ) {
       int fill = !enabled ? 0xD012171D : selected ? ARCANE_PANEL_ALT : ARCANE_PANEL;
-      int border = !enabled ? ARCANE_BORDER : selected ? accentColor : ARCANE_BORDER;
+      int border = !enabled ? 0xFF718391 : selected ? accentColor : ARCANE_BORDER;
       guiGraphics.fill(x, y, x + w, y + h, fill);
       guiGraphics.renderOutline(x, y, w, h, border);
       guiGraphics.fill(x + 1, y + 1, x + 3, y + h - 1, enabled ? accentColor : 0xFF65717C);
@@ -94,7 +97,7 @@ public class GuiUtils {
    public static void renderBackground(GuiGraphics guiGraphics, int x, int y, int w, int h) {
       guiGraphics.fill(x, y, x + w, y + h, ARCANE_BACKGROUND);
       guiGraphics.renderOutline(x, y, w, h, ARCANE_BORDER);
-      guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0x5534404C);
+      guiGraphics.fill(x + 5, y + 25, x + w - 5, y + 26, 0xAA8299A8);
    }
 
    public static void renderArcaneBackground(GuiGraphics guiGraphics, int x, int y, int w, int h) {
@@ -102,7 +105,7 @@ public class GuiUtils {
       guiGraphics.fill(x + 1, y + 1, x + w - 1, y + 28, ARCANE_HEADER);
       guiGraphics.renderOutline(x, y, w, h, ARCANE_BORDER);
       guiGraphics.fill(x + 8, y + 27, x + w - 8, y + 28, ARCANE_CYAN);
-      guiGraphics.fill(x + 10, y + 31, x + 102, y + 32, 0x6635C6D0);
+      guiGraphics.fill(x + 10, y + 31, x + 102, y + 32, 0xAA35C6D0);
    }
 
    public static void renderArcanePanel(GuiGraphics guiGraphics, int x, int y, int w, int h) {
@@ -117,7 +120,7 @@ public class GuiUtils {
    }
 
    public static void renderSectionHeader(GuiGraphics guiGraphics, int x, int y, int w, int accentColor) {
-      guiGraphics.fill(x, y + 10, x + w, y + 11, 0x5534404C);
+      guiGraphics.fill(x, y + 10, x + w, y + 11, 0xAA8299A8);
       guiGraphics.fill(x, y + 10, x + Math.min(24, w), y + 11, accentColor);
    }
 
@@ -133,10 +136,10 @@ public class GuiUtils {
    }
 
    public static void renderArcaneSlot(GuiGraphics guiGraphics, int x, int y, int size, int accentColor, boolean active) {
-      int outer = active ? accentColor : 0xFF41505D;
-      int inner = active ? 0xFF1A2830 : 0xFF11161B;
-      int glow = active ? 0xAAFFFFFF : 0xAA65717C;
-      int mark = active ? accentColor : 0xFF7A8793;
+      int outer = active ? accentColor : 0xFF718391;
+      int inner = active ? 0xFF29404D : 0xFF151D23;
+      int glow = active ? 0xEEFFFFFF : 0xAA93A4B0;
+      int mark = active ? accentColor : 0xFF9AAAB5;
       guiGraphics.fill(x, y, x + size, y + size, 0xF00A0E12);
       guiGraphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, inner);
       guiGraphics.renderOutline(x, y, size, size, outer);
@@ -149,6 +152,17 @@ public class GuiUtils {
          guiGraphics.fill(x + size - Math.min(size - 2, 6), y + size - 3, x + size - 2, y + size - 2, mark);
          guiGraphics.fill(x + size - 3, y + size - Math.min(size - 2, 6), x + size - 2, y + size - 2, mark);
       }
+   }
+
+   /** Renders rune art with a readable halo against the dark arcane panels. */
+   public static void renderRuneIcon(GuiGraphics graphics, net.minecraft.resources.ResourceLocation texture,
+      int x, int y, int size, int accentColor, boolean emphasized) {
+      // Static icons use the same readable treatment as the drag preview.
+      int halo = emphasized ? 0xC038DCE8 : 0xA038DCE8;
+      graphics.fill(x - 2, y - 2, x + size + 2, y + size + 2, halo);
+      graphics.renderOutline(x - 1, y - 1, size + 2, size + 2,
+         emphasized ? 0xF0FFFFFF : 0xD6FFFFFF);
+      graphics.blit(texture, x, y, 0, 0, size, size, size, size);
    }
 
    public static void renderArcaneSlotMarker(GuiGraphics guiGraphics, int x, int y, int size, int accentColor, boolean active) {

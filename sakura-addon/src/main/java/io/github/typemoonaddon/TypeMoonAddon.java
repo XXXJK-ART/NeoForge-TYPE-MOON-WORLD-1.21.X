@@ -26,7 +26,6 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import org.slf4j.Logger;
-import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 
 @Mod(TypeMoonAddon.MOD_ID)
 public final class TypeMoonAddon {
@@ -62,10 +61,6 @@ public final class TypeMoonAddon {
 
     private void addCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey().equals(SERVANT_CARDS_TAB)) {
-            var masters = TypeMoonWorldApi.addon(MOD_ID).masters();
-            event.accept(masters.createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ID));
-            event.accept(masters.createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ALTER_ID));
-            event.accept(masters.createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.FHA_ID));
             event.accept(VoidRingRegaliaService.create(event.getParameters().holders()));
         }
         if (event.getTabKey().equals(TYPE_MOON_WORLD_TAB)) {

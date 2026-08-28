@@ -252,5 +252,6 @@ public class ClientModEventSubscriber {
       event.registerSpriteSet(ModParticles.TIWAZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 1.0F, 0.88F, 0.42F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.ALGIZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.78F, 0.55F, 1.0F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.BERKANA_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.42F, 1.0F, 0.48F, 1.95F, 24));
+      event.registerSpriteSet(ModParticles.RUNE_BARRIER.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.30F, 0.72F, 1.0F, 0.55F, 14, 0.28F));
    }
 }

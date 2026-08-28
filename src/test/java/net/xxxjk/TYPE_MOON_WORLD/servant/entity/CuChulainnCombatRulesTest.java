@@ -20,6 +20,14 @@ class CuChulainnCombatRulesTest {
    }
 
    @Test
+   void meleeGaeBolgReleaseUsesFiveBlockLockAndTwoSecondPursuit() {
+      assertTrue(CuChulainnCombatRules.canReleaseMeleeGaeBolg(5.0));
+      assertFalse(CuChulainnCombatRules.canReleaseMeleeGaeBolg(5.01));
+      assertFalse(CuChulainnCombatRules.canReleaseMeleeGaeBolg(Double.NaN));
+      assertEquals(40, CuChulainnCombatRules.MELEE_GAE_BOLG_PURSUIT_TICKS);
+   }
+
+   @Test
    void armyGaeBolgRequiresARealFinalWindow() {
       assertFalse(CuChulainnCombatRules.isArmyFinalWindow(0.50, true, 4, 300.0, 1.0));
       assertFalse(CuChulainnCombatRules.isArmyFinalWindow(0.10, false, 4, 300.0, 1.0));

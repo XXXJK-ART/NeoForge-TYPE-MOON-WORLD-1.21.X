@@ -930,6 +930,7 @@
   "gui.typemoonworld.category.martial": "體術",
   "gui.typemoonworld.category.nordic": "北歐魔術",
   "gui.typemoonworld.category.other": "其他",
+  "gui.typemoonworld.category.rune": "盧恩",
   "gui.typemoonworld.category.solomon": "所羅門魔術",
   "gui.typemoonworld.category.spawn": "降靈術",
   "gui.typemoonworld.category.special": "特殊魔術",
@@ -3314,5 +3315,6 @@
   "subtitles.typemoonworld.zhao_yun.attack": "攻擊",
   "subtitles.typemoonworld.zhao_yun.fail": "死亡",
   "subtitles.typemoonworld.zhao_yun.np": "寶具",
-  "subtitles.typemoonworld.zhao_yun.victory": "勝利"
+  "subtitles.typemoonworld.zhao_yun.victory": "勝利",
+  "message.typemoonworld.rune.cast_failed": "盧恩程式釋放失敗：%s"
 }

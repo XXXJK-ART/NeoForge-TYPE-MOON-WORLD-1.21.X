@@ -19,6 +19,8 @@ public final class ModParticles {
       PARTICLE_TYPES.register("algiz_rune", () -> new SimpleParticleType(false));
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> BERKANA_RUNE =
       PARTICLE_TYPES.register("berkana_rune", () -> new SimpleParticleType(false));
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> RUNE_BARRIER =
+      PARTICLE_TYPES.register("rune_barrier", () -> new SimpleParticleType(false));
 
    private ModParticles() {
    }

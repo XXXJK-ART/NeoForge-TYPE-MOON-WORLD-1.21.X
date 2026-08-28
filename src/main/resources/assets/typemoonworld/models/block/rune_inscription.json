@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "typemoonworld:gui/runes/ansuz",
+    "texture": "typemoonworld:gui/runes/ansuz"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 1, 16],
+      "faces": {
+        "up": { "texture": "#texture" },
+        "down": { "texture": "#texture" },
+        "north": { "texture": "#texture" },
+        "south": { "texture": "#texture" },
+        "west": { "texture": "#texture" },
+        "east": { "texture": "#texture" }
+      }
+    }
+  ]
+}

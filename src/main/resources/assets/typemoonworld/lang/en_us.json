@@ -848,7 +848,7 @@
   "key.typemoonworld.magic_mode_switch": "Magic Mode Switch (Hold + Scroll)",
   "key.typemoonworld.magic_wheel_switch": "Magic Wheel Switch / Servant Skill Select",
   "key.typemoonworld.mystic_eyes_activate": "Toggle Mystic Eyes",
-  "key.typemoonworld.open_projection_preset": "Open Projection Preset",
+  "key.typemoonworld.open_projection_preset": "Open Current Magic Configuration",
   "key.typemoonworld.open_space": "Open Imaginary Space",
   "key.typemoonworld.servant_card.keybinds": "Servant Card Skill Bindings",
   "key.typemoonworld.servant_card.slot0": "Servant Card Skill 0",
@@ -935,6 +935,7 @@
   "gui.typemoonworld.category.martial": "Martial Arts",
   "gui.typemoonworld.category.nordic": "Nordic",
   "gui.typemoonworld.category.other": "Other",
+  "gui.typemoonworld.category.rune": "Rune",
   "gui.typemoonworld.category.solomon": "Solomon",
   "gui.typemoonworld.category.spawn": "Spirit Summoning",
   "gui.typemoonworld.category.special": "Special",
@@ -3066,6 +3067,7 @@
   "skill.typemoonworld.servant_card.cu_disengage": "Disengage",
   "skill.typemoonworld.servant_card.cu_laguz": "Laguz",
   "skill.typemoonworld.servant_card.cu_tiwaz": "Tiwaz",
+  "skill.typemoonworld.servant_card.cu_rune_barrier": "Rune Barrier",
   "skill.typemoonworld.servant_card.cybele": "Eyes",
   "skill.typemoonworld.servant_card.detection": "Presence Detection",
   "skill.typemoonworld.servant_card.diarmuid_disengage": "Disengage",
@@ -3343,5 +3345,143 @@
   "item.typemoonworld.rune_learning": "Rune Knowledge Fragment",
   "magic.typemoonworld.rune_origin.name": "Primordial Rune Magic",
   "message.typemoonworld.rune.learned": "Learned rune: %s",
-  "message.typemoonworld.rune.cast_failed": "Rune program failed to release"
+  "message.typemoonworld.rune.cast_failed": "Rune program failed to release: %s",
+  "message.typemoonworld.rune.release_external": "This program requires its configured release medium",
+  "message.typemoonworld.rune.inscribed": "Rune program inscribed into medium",
+  "gui.typemoonworld.rune.knowledge": "Rune Knowledge",
+  "gui.typemoonworld.rune.editor": "Program Editor",
+  "gui.typemoonworld.rune.library": "Program Library",
+  "gui.typemoonworld.rune.new": "New Program",
+  "gui.typemoonworld.rune.name": "Program name",
+  "gui.typemoonworld.rune.mode": "Release mode: %s",
+  "gui.typemoonworld.rune.cost": "Estimated mana: %s",
+  "gui.typemoonworld.rune.trigger": "Trigger: %s",
+  "gui.typemoonworld.rune.effect": "Effect: %s",
+  "gui.typemoonworld.rune.modifier": "Modifier: %s",
+  "gui.typemoonworld.rune.terminal": "Terminal: %s",
+  "gui.typemoonworld.rune.slots": "Program slots",
+  "gui.typemoonworld.rune.palette": "Known runes",
+  "gui.typemoonworld.rune.slot.trigger": "Trigger",
+  "gui.typemoonworld.rune.slot.effect": "Effect",
+  "gui.typemoonworld.rune.slot.modifier": "Modifier",
+  "gui.typemoonworld.rune.slot.terminal": "Terminal",
+  "gui.typemoonworld.rune.invalid": "Program invalid",
+  "gui.typemoonworld.rune.drag_hint": "Drag known runes into program slots",
+  "gui.typemoonworld.rune.mode.direct_air": "Direct release",
+  "gui.typemoonworld.rune.mode.rune_stone": "Rune stone",
+  "gui.typemoonworld.rune.mode.weapon": "Weapon",
+  "gui.typemoonworld.rune.mode.armor": "Armor",
+  "gui.typemoonworld.rune.mode.tool": "Tool",
+  "gui.typemoonworld.rune.mode.block_trap": "Block trap",
+  "gui.typemoonworld.rune.mode.body": "Body",
+  "gui.typemoonworld.rune.config": "Rune Program Configuration",
+  "gui.typemoonworld.rune.config_hint": "Choose how this program is released",
+  "gui.typemoonworld.rune.release_mode_select": "Release mode: %s (click to cycle)"
+  ,"gui.typemoonworld.rune.trap_config": "Trap: radius %.1f, delay %s ticks, interval %s ticks"
+  ,"gui.typemoonworld.rune.uses_config": "Trigger uses: %s (click to adjust)"
+  ,"gui.typemoonworld.rune.semantic.wealth": "Wealth"
+  ,"gui.typemoonworld.rune.semantic.strength": "Strength"
+  ,"gui.typemoonworld.rune.semantic.break": "Break"
+  ,"gui.typemoonworld.rune.semantic.command": "Command"
+  ,"gui.typemoonworld.rune.semantic.move": "Move"
+  ,"gui.typemoonworld.rune.semantic.ignite": "Ignite"
+  ,"gui.typemoonworld.rune.semantic.bind": "Bind"
+  ,"gui.typemoonworld.rune.semantic.joy": "Joy"
+  ,"gui.typemoonworld.rune.semantic.storm": "Storm"
+  ,"gui.typemoonworld.rune.semantic.need": "Need"
+  ,"gui.typemoonworld.rune.semantic.freeze": "Freeze"
+  ,"gui.typemoonworld.rune.semantic.cycle": "Cycle"
+  ,"gui.typemoonworld.rune.semantic.ward": "Ward"
+  ,"gui.typemoonworld.rune.semantic.chance": "Chance"
+  ,"gui.typemoonworld.rune.semantic.protect": "Protect"
+  ,"gui.typemoonworld.rune.semantic.shine": "Shine"
+  ,"gui.typemoonworld.rune.semantic.judge": "Judge"
+  ,"gui.typemoonworld.rune.semantic.grow": "Grow"
+  ,"gui.typemoonworld.rune.semantic.travel": "Travel"
+  ,"gui.typemoonworld.rune.semantic.self": "Self"
+  ,"gui.typemoonworld.rune.semantic.flow": "Flow"
+  ,"gui.typemoonworld.rune.semantic.charge": "Charge"
+  ,"gui.typemoonworld.rune.semantic.transform": "Transform"
+  ,"gui.typemoonworld.rune.semantic.inherit": "Inherit"
+  ,"gui.typemoonworld.rune.semantic.create": "Create"
+  ,"gui.typemoonworld.rune.semantic.reinforce": "Reinforce"
+  ,"gui.typemoonworld.rune.semantic.impact": "Impact"
+  ,"gui.typemoonworld.rune.semantic.speak": "Speak"
+  ,"gui.typemoonworld.rune.semantic.path": "Path"
+  ,"gui.typemoonworld.rune.semantic.fire": "Fire"
+  ,"gui.typemoonworld.rune.semantic.share": "Share"
+  ,"gui.typemoonworld.rune.semantic.heal": "Heal"
+  ,"gui.typemoonworld.rune.semantic.ice": "Ice"
+  ,"gui.typemoonworld.rune.semantic.drain": "Drain"
+  ,"gui.typemoonworld.rune.semantic.barrier": "Barrier"
+  ,"gui.typemoonworld.rune.semantic.harvest": "Harvest"
+  ,"gui.typemoonworld.rune.semantic.shadow": "Shadow"
+  ,"gui.typemoonworld.rune.semantic.random": "Random"
+  ,"gui.typemoonworld.rune.semantic.shield": "Shield"
+  ,"gui.typemoonworld.rune.semantic.light": "Light"
+  ,"gui.typemoonworld.rune.semantic.pierce": "Pierce"
+  ,"gui.typemoonworld.rune.semantic.nature": "Nature"
+  ,"gui.typemoonworld.rune.semantic.speed": "Speed"
+  ,"gui.typemoonworld.rune.semantic.mind": "Mind"
+  ,"gui.typemoonworld.rune.semantic.water": "Water"
+  ,"gui.typemoonworld.rune.semantic.energy": "Energy"
+  ,"gui.typemoonworld.rune.semantic.change": "Change"
+  ,"gui.typemoonworld.rune.semantic.earth": "Earth"
+  ,"gui.typemoonworld.rune.semantic.amplify": "Amplify"
+  ,"gui.typemoonworld.rune.semantic.power": "Power"
+  ,"gui.typemoonworld.rune.semantic.shatter": "Shatter"
+  ,"gui.typemoonworld.rune.semantic.range": "Range"
+  ,"gui.typemoonworld.rune.semantic.swift": "Swift"
+  ,"gui.typemoonworld.rune.semantic.heat": "Heat"
+  ,"gui.typemoonworld.rune.semantic.link": "Link"
+  ,"gui.typemoonworld.rune.semantic.duration": "Duration"
+  ,"gui.typemoonworld.rune.semantic.area": "Area"
+  ,"gui.typemoonworld.rune.semantic.cost": "Cost"
+  ,"gui.typemoonworld.rune.semantic.slow": "Slow"
+  ,"gui.typemoonworld.rune.semantic.repeat": "Repeat"
+  ,"gui.typemoonworld.rune.semantic.resist": "Resist"
+  ,"gui.typemoonworld.rune.semantic.luck": "Luck"
+  ,"gui.typemoonworld.rune.semantic.guard": "Guard"
+  ,"gui.typemoonworld.rune.semantic.accuracy": "Accuracy"
+  ,"gui.typemoonworld.rune.semantic.critical": "Critical"
+  ,"gui.typemoonworld.rune.semantic.restore": "Restore"
+  ,"gui.typemoonworld.rune.semantic.mobility": "Mobility"
+  ,"gui.typemoonworld.rune.semantic.focus": "Focus"
+  ,"gui.typemoonworld.rune.semantic.control": "Control"
+  ,"gui.typemoonworld.rune.semantic.store": "Store"
+  ,"gui.typemoonworld.rune.semantic.fuse": "Fuse"
+  ,"gui.typemoonworld.rune.semantic.persist": "Persist"
+  ,"gui.typemoonworld.rune.semantic.release": "Release"
+  ,"gui.typemoonworld.rune.semantic.strike": "Strike"
+  ,"gui.typemoonworld.rune.semantic.detonate": "Detonate"
+  ,"gui.typemoonworld.rune.semantic.seal": "Seal"
+  ,"gui.typemoonworld.rune.semantic.return": "Return"
+  ,"gui.typemoonworld.rune.semantic.burn": "Burn"
+  ,"gui.typemoonworld.rune.semantic.transfer": "Transfer"
+  ,"gui.typemoonworld.rune.semantic.bless": "Bless"
+  ,"gui.typemoonworld.rune.semantic.disperse": "Disperse"
+  ,"gui.typemoonworld.rune.semantic.sacrifice": "Sacrifice"
+  ,"gui.typemoonworld.rune.semantic.endure": "Endure"
+  ,"gui.typemoonworld.rune.semantic.complete": "Complete"
+  ,"gui.typemoonworld.rune.semantic.banish": "Banish"
+  ,"gui.typemoonworld.rune.semantic.reveal": "Reveal"
+  ,"gui.typemoonworld.rune.semantic.purify": "Purify"
+  ,"gui.typemoonworld.rune.semantic.execute": "Execute"
+  ,"gui.typemoonworld.rune.semantic.renew": "Renew"
+  ,"gui.typemoonworld.rune.semantic.escape": "Escape"
+  ,"gui.typemoonworld.rune.semantic.awaken": "Awaken"
+  ,"gui.typemoonworld.rune.semantic.dissolve": "Dissolve"
+  ,"gui.typemoonworld.rune.semantic.discharge": "Discharge"
+  ,"gui.typemoonworld.rune.semantic.anchor": "Anchor"
+  ,"gui.typemoonworld.rune.clear": "Clear Slot"
+  ,"gui.typemoonworld.rune.valid": "Program valid"
+  ,"gui.typemoonworld.rune.edit": "Edit"
+  ,"gui.typemoonworld.rune.copy": "Copy"
+  ,"gui.typemoonworld.rune.delete": "Delete"
+  ,"gui.typemoonworld.rune.add_wheel": "Add to Current Wheel"
+  ,"gui.typemoonworld.rune.radius": "Radius"
+  ,"gui.typemoonworld.rune.delay": "Delay"
+  ,"gui.typemoonworld.rune.interval": "Interval"
+  ,"gui.typemoonworld.rune.triggers": "Uses"
+  ,"block.typemoonworld.rune_inscription": "Rune Inscription"
 }

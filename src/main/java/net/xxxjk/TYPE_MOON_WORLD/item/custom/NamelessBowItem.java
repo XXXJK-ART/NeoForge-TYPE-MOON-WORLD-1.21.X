@@ -108,7 +108,6 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       } else if (payload.is(ModItems.PSEUDO_SPIRAL_SWORD.get())) {
          PseudoSpiralSwordProjectileEntity projectile = new PseudoSpiralSwordProjectileEntity(serverLevel, player);
          projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
-         projectile.setTrackedTarget(findLookTarget(serverLevel, player, MAX_TARGET_RANGE));
          projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.6 + charge * 1.0));
          serverLevel.addFreshEntity(projectile);
       } else {

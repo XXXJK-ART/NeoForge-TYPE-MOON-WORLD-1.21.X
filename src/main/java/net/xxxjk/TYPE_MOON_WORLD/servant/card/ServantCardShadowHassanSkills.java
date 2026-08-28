@@ -34,8 +34,13 @@ public final class ServantCardShadowHassanSkills {
    private static final String TAG_NP_CONSUMED = "ShadowHassanCardNpConsumed";
    private static final String TAG_DARK_WARNING = "ShadowHassanCardDarkWarningTick";
    private static final String TAG_EXPOSED_UNTIL = "ShadowHassanCardExposedUntil";
+   private static final String TAG_SLASH_UNTIL = "ShadowHassanCardSlashUntil";
    private static final int PASSIVE_MANA_INTERVAL = 20;
    private static final double PASSIVE_MANA_RESTORE = 5.0;
+   private static final int SLASH_STRIKE_COUNT = 100;
+   private static final int SLASH_STRIKES_PER_TICK = 5;
+   private static final long SLASH_DURATION_TICKS = 1L
+      + (SLASH_STRIKE_COUNT + SLASH_STRIKES_PER_TICK - 1L) / SLASH_STRIKES_PER_TICK;
 
    private ServantCardShadowHassanSkills() {
    }
@@ -54,6 +59,7 @@ public final class ServantCardShadowHassanSkills {
       if (managedInvisibility) player.removeEffect(MobEffects.INVISIBILITY);
       player.getPersistentData().remove(TAG_DARK_WARNING);
       player.getPersistentData().remove(TAG_EXPOSED_UNTIL);
+      player.getPersistentData().remove(TAG_SLASH_UNTIL);
       if (managedInvisibility) player.setInvisible(false);
    }
 
@@ -168,16 +174,19 @@ public final class ServantCardShadowHassanSkills {
       return true;
    }
 
-   /** Ten full basic strikes, one every five ticks. */
+   /** One hundred full basic strikes, one every five ticks. */
    public static boolean performSlash(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel) || !canAttack(player)) return false;
+      long now = player.level().getGameTime();
+      if (player.getPersistentData().getLong(TAG_SLASH_UNTIL) > now) return false;
       LivingEntity target = validBladeTarget(player, 8.0);
       if (target == null) return false;
       revealForAttack(player);
+      player.getPersistentData().putLong(TAG_SLASH_UNTIL, now + SLASH_DURATION_TICKS);
       float damage = Math.max(1.0F, (float)player.getAttributeValue(
          net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
-      for (int strike = 0; strike < 10; strike++) {
-         int delay = strike * 5;
+      for (int strike = 0; strike < SLASH_STRIKE_COUNT; strike++) {
+         int delay = 1 + strike / SLASH_STRIKES_PER_TICK;
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
             if (!player.isAlive() || !target.isAlive() || player.level() != target.level()
                || player.distanceToSqr(target) > 8.0 * 8.0

@@ -21,10 +21,6 @@ public class ModCreativeModeTabs {
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(ModItems.SERVANT_CARD_EMIYA_ARCHER.get()))
                     .title(Component.translatable("creativetab.typemoonworld.servant_cards"))
                     .displayItems((itemDisplayParameters, output) -> {
-                        var addon = net.xxxjk.typemoonworld.api.TypeMoonWorldApi.addon("typemoonaddon");
-                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ID));
-                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.ALTER_ID));
-                        output.accept(addon.masters().createCard(io.github.typemoonaddon.magic.MatouSakuraMasterProfile.FHA_ID));
                         output.accept(ModItems.SERVANT_MASTER_CONTRACT);
                         output.accept(ModItems.MEDEA_REINFORCEMENT_CHARM);
                         output.accept(ModItems.MEDEA_SERVANT_CONTRACT);
@@ -46,6 +42,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
                         output.accept(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS);
                         output.accept(ModItems.MASTER_CARD_URYU_RYUNOSUKE);
+                        output.accept(com.example.typemoonaddon.registry.AddonItems.MASTER_CARD_MATOU_KARIYA);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA_ALTER);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA_FHA);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -374,7 +374,6 @@ public class ModCreativeModeTabs {
                         output.accept(io.github.typemoonaddon.registry.ModItems.IMAGINARY_PRIMER);
                         output.accept(io.github.typemoonaddon.registry.ModItems.CREST_WORM);
                         output.accept(io.github.typemoonaddon.registry.ModItems.HOLY_GRAIL_FRAGMENT);
-                        output.accept(io.github.typemoonaddon.registry.ModItems.CURSED_ARMOR_RENDER);
                         output.accept(io.github.typemoonaddon.registry.ModItems.VOID_RING_REGALIA);
                         output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
                         output.accept(ModItems.GANRYU_MANUAL);
@@ -434,6 +433,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ISKANDAR_SHORTSWORD);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(com.example.typemoonaddon.registry.AddonItems.PRELATIS_SPELLBOOK);
                         output.accept(ModItems.STAFF);
                         output.accept(ModItems.RUBY_STAFF);
                         output.accept(ModItems.SAPPHIRE_STAFF);

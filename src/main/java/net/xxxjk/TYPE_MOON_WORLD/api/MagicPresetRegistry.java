@@ -28,7 +28,7 @@ public final class MagicPresetRegistry {
       return false;
    }
    public static CompoundResult normalize(String id, net.minecraft.nbt.CompoundTag payload) {
-      MagicPresetHandler handler = HANDLERS.get(id);
+      MagicPresetHandler handler = resolveHandler(id);
       net.minecraft.nbt.CompoundTag incoming = payload == null ? new net.minecraft.nbt.CompoundTag() : payload.copy();
       // Presets arrive from clients and are persisted in wheel/crest data. Keep a hard
       // upper bound before invoking addon code, including when no custom handler exists.
@@ -43,5 +43,28 @@ public final class MagicPresetRegistry {
       if (normalized != null && (normalized.getAllKeys().size() > 64 || normalized.toString().length() > 8192)) normalized = new net.minecraft.nbt.CompoundTag();
       return new CompoundResult(normalized == null ? new net.minecraft.nbt.CompoundTag() : normalized, handler);
    }
+
+   /** Resolves legacy bare wheel paths to the uniquely matching addon handler. */
+   private static MagicPresetHandler resolveHandler(String id) {
+      if (id == null || id.isBlank()) return null;
+      MagicPresetHandler handler = HANDLERS.get(id);
+      if (handler != null) return handler;
+      ResourceLocation parsed = ResourceLocation.tryParse(id);
+      if (parsed != null) {
+         handler = HANDLERS.get(parsed.toString());
+         if (handler != null) return handler;
+      }
+      String path = parsed == null ? id : parsed.getPath();
+      MagicPresetHandler match = null;
+      for (Map.Entry<String, MagicPresetHandler> entry : HANDLERS.entrySet()) {
+         ResourceLocation candidate = ResourceLocation.tryParse(entry.getKey());
+         if (candidate != null && candidate.getPath().equals(path)) {
+            if (match != null) return null;
+            match = entry.getValue();
+         }
+      }
+      return match;
+   }
+
    public record CompoundResult(net.minecraft.nbt.CompoundTag payload, MagicPresetHandler handler) { }
 }

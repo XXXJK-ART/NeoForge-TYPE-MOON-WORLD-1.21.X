@@ -76,6 +76,22 @@ class MagicLearningSystemTest {
    }
 
    @Test
+   void knowledgeCatalogOnlyExposesBasicAndAdvancedJewelKnowledge() {
+      assertTrue(MagicLearningStrategy.isKnowledgeVisible("jewel_magic_shoot"));
+      assertTrue(MagicLearningStrategy.isKnowledgeVisible("typemoonworld:jewel_magic_release"));
+      assertTrue(MagicLearningStrategy.isKnowledgeVisible("jewel_machine_gun"));
+      for (String id : new String[]{
+         "jewel_random_shoot",
+         "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+         "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind",
+         "monstrous_strength", "typemoonworld:clairvoyance"
+      }) {
+         assertFalse(MagicLearningStrategy.isKnowledgeVisible(id), id);
+      }
+      assertTrue(MagicLearningStrategy.isKnowledgeVisible("gae_bolg_throw"));
+   }
+
+   @Test
    void learningChanceUsesAnalysisProficiency() {
       assertEquals(0.65, MagicLearningStrategy.learningChance("projection", 0.0), 1.0E-9);
       assertEquals(1.0, MagicLearningStrategy.learningChance("projection", 35.0), 1.0E-9);

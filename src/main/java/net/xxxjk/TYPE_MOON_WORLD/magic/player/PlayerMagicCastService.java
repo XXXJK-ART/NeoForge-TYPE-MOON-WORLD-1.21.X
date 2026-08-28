@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramExecutor;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -63,18 +64,27 @@ public final class PlayerMagicCastService {
       if ("rune_program".equals(entry.sourceType) || RuneProgramService.isDynamicId(entry.magicId)) {
          if (!(entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
          var program = RuneProgramService.find(vars, entry.magicId);
+         if (program != null && program.releaseMode() != RuneReleaseMode.DIRECT_AIR) {
+            displayClientMessage(entity, "message.typemoonworld.rune.release_external");
+            return;
+         }
          RuneProgramExecutor.execute(serverPlayer, vars, program);
-         return;
-      }
-
-      if (PlayerMagicSelectionService.requiresPresetConfiguration(entry.magicId)
-         && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
-         displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
          return;
       }
 
       boolean fullSyncNeeded = PlayerMagicSelectionService.prepareCurrentSelection(entity, vars);
       entry = PlayerMagicSelectionService.getCurrentEntry(vars);
+
+      // Addon-owned preset handlers may provide a default for an empty payload.
+      // Normalize the selected entry before deciding whether configuration is missing.
+      if (PlayerMagicSelectionService.requiresPresetConfiguration(entry.magicId)
+         && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
+         if (fullSyncNeeded) {
+            vars.syncPlayerVariables(entity);
+         }
+         return;
+      }
 
       if (!vars.isWheelSlotEntryCastable(entry)) {
          displayClientMessage(entity, "message.typemoonworld.magic.not_learned");

@@ -32,8 +32,17 @@ public final class RuneProgramService {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.ensureMagicSystemInitialized();
       RuneProgram normalized = RuneProgram.fromNBT(requested.serializeNBT());
-      if (!validate(vars, normalized).valid()) return null;
       RuneProgram existing = find(vars, normalized.uuid());
+      if (existing == null) {
+         normalized = new RuneProgram(UUID.randomUUID(), normalized.displayName(), normalized.slots(RunePosition.TRIGGER),
+            normalized.slots(RunePosition.EFFECT), normalized.slots(RunePosition.MODIFIER), normalized.slots(RunePosition.TERMINAL),
+            normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), System.currentTimeMillis(), System.currentTimeMillis());
+      } else {
+         normalized = new RuneProgram(existing.uuid(), normalized.displayName(), normalized.slots(RunePosition.TRIGGER),
+            normalized.slots(RunePosition.EFFECT), normalized.slots(RunePosition.MODIFIER), normalized.slots(RunePosition.TERMINAL),
+            normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), existing.createdAt(), System.currentTimeMillis());
+      }
+      if (!validate(vars, normalized).valid()) return null;
       if (existing == null && vars.rune_programs.size() >= MAX_PROGRAMS) return null;
       if (existing == null) vars.rune_programs.add(normalized); else vars.rune_programs.set(vars.rune_programs.indexOf(existing), normalized);
       vars.forceSyncPlayerVariables(player);
@@ -59,5 +68,16 @@ public final class RuneProgramService {
    public static CompoundTag snapshot(TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag result = new CompoundTag(); if (vars == null) return result;
       net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag(); for (RuneProgram p : vars.rune_programs) if (p != null) list.add(p.serializeNBT()); result.put("programs", list); return result;
+   }
+
+   public static CompoundTag normalizeReleaseConfig(CompoundTag input) {
+      CompoundTag result = new CompoundTag();
+      if (input == null) return result;
+      if (input.contains("radius")) result.putDouble("radius", Math.max(1.0D, Math.min(16.0D, input.getDouble("radius"))));
+      if (input.contains("delay")) result.putInt("delay", Math.max(0, Math.min(1200, input.getInt("delay"))));
+      if (input.contains("interval")) result.putInt("interval", Math.max(10, Math.min(1200, input.getInt("interval"))));
+      if (input.contains("triggers")) result.putInt("triggers", Math.max(1, Math.min(20, input.getInt("triggers"))));
+      if (input.contains("condition")) result.putString("condition", input.getString("condition").substring(0, Math.min(32, input.getString("condition").length())));
+      return result;
    }
 }

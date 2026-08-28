@@ -445,6 +445,7 @@ public final class InternalApiProvider implements ApiProvider {
              @Override public boolean learn(ResourceLocation magicId) {
                 if (magicId == null
                    || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(magicId.toString())
+                   || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy.isKnowledgeVisible(magicId.toString())
                    || !MagicDefinitionRegistry.contains(magicId.toString())
                    || vars.learned_magics.contains(magicId.toString())
                    || vars.learned_magics.contains(magicId.getPath())) return false;
@@ -460,6 +461,7 @@ public final class InternalApiProvider implements ApiProvider {
                    ResourceLocation id = ResourceLocation.tryParse(raw);
                    if (id == null || !valid(id, Magics.this.namespace)
                       || net.xxxjk.TYPE_MOON_WORLD.talent.TalentService.isTalent(id.toString())
+                      || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy.isKnowledgeVisible(id.toString())
                       || vars.hasLearnedSelfMagic(id.toString()) || vars.hasLearnedSelfMagic(id.getPath())) {
                       continue;
                    }
