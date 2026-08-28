@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 
 public final class HundredFacesHassanRules {
    public static final String TAG_TOTAL_SPLIT_COUNT = "HundredFacesTotalSplitCount";
@@ -13,6 +14,8 @@ public final class HundredFacesHassanRules {
    public static final int TARGET_SCAN_INTERVAL_TICKS = 20;
    public static final int DIRK_COOLDOWN_TICKS = 70;
    public static final int PERSONA_DIRK_COOLDOWN_TICKS = 120;
+   /** 匕首出手后保留显形时间，动作结束即可重新进入隐匿。 */
+   public static final int PERSONA_DIRK_EXPOSURE_TICKS = 10;
    public static final int SHADOW_STEP_COOLDOWN_TICKS = 120;
    public static final int PERSONA_SHADOW_STEP_COOLDOWN_TICKS = 180;
    public static final int SHADOW_LUNGE_COOLDOWN_TICKS = 90;
@@ -52,6 +55,8 @@ public final class HundredFacesHassanRules {
    public static final ServantParams PERSONA_E_RANK_PARAMS = ServantParams.of(
       "E", false, "E", false, "E", false, "E", false, "E", false
    );
+   /** 分身沿用本体参数，防御、闪避、韧度按战斗阶梯减半。 */
+   public static final ServantParams PERSONA_COMBAT_PARAMS = personaCombatParams(MAIN_FULL_PARAMS);
    public static final ServantParams MAIN_FULL_SPLIT_PARAMS = ServantParams.of(
       "E", false, "E", false, "E", false, "E", false, "E", false
    );
@@ -107,6 +112,34 @@ public final class HundredFacesHassanRules {
          return MAIN_FULL_SPLIT_PARAMS;
       }
       return fallback;
+   }
+
+   public static ServantParams personaCombatParams(ServantParams base) {
+      ServantParams source = base == null ? MAIN_FULL_PARAMS : base;
+      return new ServantParams(
+         halfRank(source.endurance(), source.endurancePlus()), false,
+         source.strength() == null ? StatRank.E : halfRank(source.strength(), source.strengthPlus()), false,
+         source.agility() == null ? StatRank.E : halfRank(source.agility(), source.agilityPlus()), false,
+         source.magic(), source.magicPlus(), source.luck(), source.luckPlus());
+   }
+
+   private static StatRank halfRank(StatRank rank, boolean plus) {
+      int step = switch (rank == null ? StatRank.E : rank) {
+         case E -> 0;
+         case D -> 1;
+         case C -> 2;
+         case B -> 3;
+         case A -> 4;
+         case A_PLUS_PLUS -> 6;
+      };
+      if (plus && rank != StatRank.A_PLUS_PLUS) step = Math.min(5, step + 1);
+      return switch (step / 2) {
+         case 1 -> StatRank.D;
+         case 2 -> StatRank.C;
+         case 3 -> StatRank.B;
+         case 4 -> StatRank.A;
+         default -> StatRank.E;
+      };
    }
 
    public static float visualScaleForHeight(float height) {

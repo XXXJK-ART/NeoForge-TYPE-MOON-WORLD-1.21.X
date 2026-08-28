@@ -117,7 +117,7 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
-            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 240);
+            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 300);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };

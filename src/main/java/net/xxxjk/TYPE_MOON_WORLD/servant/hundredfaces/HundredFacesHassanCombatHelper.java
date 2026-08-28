@@ -471,7 +471,7 @@ public final class HundredFacesHassanCombatHelper {
    private static boolean tryPersonaThrowDirk(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {
       if (distance < 4.0 || distance > 12.0 || !entity.getSensing().hasLineOfSight(target)) return false;
       if (!personaCooldownReady(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.PERSONA_DIRK_COOLDOWN_TICKS)) return false;
-      entity.revealForCombat();
+      entity.revealForCombat(HundredFacesHassanRules.PERSONA_DIRK_EXPOSURE_TICKS);
       entity.triggerDirkThrowAnimation();
       spawnDirkProjectile(entity, target, (float)entity.getAttributeValue(Attributes.ATTACK_DAMAGE), 1.75F);
       return true;

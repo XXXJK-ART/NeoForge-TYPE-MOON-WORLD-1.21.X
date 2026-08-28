@@ -14,6 +14,6 @@ public final class RuneProgramCostService {
       for (String id : program.slots(RunePosition.TRIGGER)) if (!id.isEmpty()) triggers++;
       for (String id : program.slots(RunePosition.MODIFIER)) if (!id.isEmpty()) modifiers++;
       double complexity = 1.0D + Math.max(0, total - 5) * 0.08D;
-      return baseCost(program) * (1.0D + triggers * 0.3D + modifiers * 0.2D) * complexity;
+      return baseCost(program) * (1.0D + triggers * 0.3D + modifiers * 0.2D) * complexity / 3.0D;
    }
 }

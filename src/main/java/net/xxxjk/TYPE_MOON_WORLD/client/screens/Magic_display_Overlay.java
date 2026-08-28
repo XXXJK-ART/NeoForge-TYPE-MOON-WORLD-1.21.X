@@ -67,14 +67,14 @@ public class Magic_display_Overlay {
                 GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
                 event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
 
-                int startColor = 0xFF00E5FF;
-                int endColor = 0xFF2979FF;
+                int startColor = 0xFF008F99;
+                int endColor = 0xFF205EAA;
                 if (currentMana <= maxMana * 0.2) {
-                    startColor = 0xFFFF4000;
-                    endColor = 0xFFFF0000;
+                    startColor = 0xFFB33600;
+                    endColor = 0xFFB00000;
                 } else if (currentMana > maxMana) {
-                    startColor = 0xFFFF00FF;
-                    endColor = 0xFF9D00FF;
+                    startColor = 0xFFB000B0;
+                    endColor = 0xFF7200B8;
                 }
 
                 if (maxMana > 0) {

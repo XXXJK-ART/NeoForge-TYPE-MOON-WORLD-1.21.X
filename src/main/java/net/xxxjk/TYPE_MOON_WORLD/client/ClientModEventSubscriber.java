@@ -253,5 +253,29 @@ public class ClientModEventSubscriber {
       event.registerSpriteSet(ModParticles.ALGIZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.78F, 0.55F, 1.0F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.BERKANA_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.42F, 1.0F, 0.48F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.RUNE_BARRIER.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.30F, 0.72F, 1.0F, 0.55F, 14, 0.28F));
+      event.registerSpriteSet(ModParticles.FEHU_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.URUZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.THURISAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.RAIDHO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.KENAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.GEBO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.WUNJO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.HAGALAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.NAUTHIZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.ISA_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.JERA_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.EIHWAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.PERTHRO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.SOWILO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.BERKANO_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.EHWAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.MANNAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.INGWAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.DAGAZ_RUNE.get(), sprite -> rune(sprite));
+      event.registerSpriteSet(ModParticles.OTHALA_RUNE.get(), sprite -> rune(sprite));
+   }
+
+   private static RuneSigilParticle.Provider rune(net.minecraft.client.particle.SpriteSet sprite) {
+      return new RuneSigilParticle.Provider(sprite, 1.0F, 0.3F, 0.15F, 1.8F, 20);
    }
 }

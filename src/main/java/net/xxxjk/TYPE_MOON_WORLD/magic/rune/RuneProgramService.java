@@ -27,6 +27,32 @@ public final class RuneProgramService {
       return new RuneProgramValidationResult(errors.isEmpty(), errors);
    }
 
+   /** Shared availability predicate used by wheel switching and cast execution. */
+   public static boolean isRuneProgramCastable(TypeMoonWorldModVariables.PlayerVariables vars, RuneProgram program) {
+      if (vars == null || program == null || !RuneLearningService.hasOrigin(vars)) return false;
+      if (!validate(vars, program).valid()) return false;
+      return switch (program.releaseMode()) {
+         case DIRECT_AIR -> program.kind() == RuneProgramKind.FULL_RELEASE || program.kind() == RuneProgramKind.ENCHANTMENT;
+         case BLOCK_TRAP -> program.kind() == RuneProgramKind.FULL_RELEASE;
+         case WEAPON, TOOL -> program.kind() == RuneProgramKind.ENCHANTMENT;
+         case ARMOR -> program.kind() == RuneProgramKind.REINFORCEMENT;
+         case RUNE_STONE -> true;
+         case BODY -> !program.hasRunes(RunePosition.TRIGGER);
+      };
+   }
+
+   public static boolean matchesReleaseMode(RuneProgram program, RuneReleaseMode mode) {
+      if (program == null || mode == null || program.kind() == RuneProgramKind.INVALID) return false;
+      return switch (mode) {
+         case RUNE_STONE -> true;
+         case DIRECT_AIR -> program.kind() == RuneProgramKind.FULL_RELEASE || program.kind() == RuneProgramKind.ENCHANTMENT;
+         case BLOCK_TRAP -> program.kind() == RuneProgramKind.FULL_RELEASE;
+         case WEAPON, TOOL -> program.kind() == RuneProgramKind.ENCHANTMENT;
+         case ARMOR -> program.kind() == RuneProgramKind.REINFORCEMENT;
+         case BODY -> !program.hasRunes(RunePosition.TRIGGER);
+      };
+   }
+
    public static RuneProgram upsert(Player player, RuneProgram requested) {
       if (player == null || requested == null || player.level().isClientSide()) return null;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -34,14 +60,13 @@ public final class RuneProgramService {
       RuneProgram normalized = RuneProgram.fromNBT(requested.serializeNBT());
       RuneProgram existing = find(vars, normalized.uuid());
       if (existing == null) {
-         normalized = new RuneProgram(UUID.randomUUID(), normalized.displayName(), normalized.slots(RunePosition.TRIGGER),
-            normalized.slots(RunePosition.EFFECT), normalized.slots(RunePosition.MODIFIER), normalized.slots(RunePosition.TERMINAL),
+         normalized = RuneProgram.ordered(UUID.randomUUID(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),
             normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), System.currentTimeMillis(), System.currentTimeMillis());
       } else {
-         normalized = new RuneProgram(existing.uuid(), normalized.displayName(), normalized.slots(RunePosition.TRIGGER),
-            normalized.slots(RunePosition.EFFECT), normalized.slots(RunePosition.MODIFIER), normalized.slots(RunePosition.TERMINAL),
+         normalized = RuneProgram.ordered(existing.uuid(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),
             normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), existing.createdAt(), System.currentTimeMillis());
       }
+      if (!matchesReleaseMode(normalized, normalized.releaseMode())) return null;
       if (!validate(vars, normalized).valid()) return null;
       if (existing == null && vars.rune_programs.size() >= MAX_PROGRAMS) return null;
       if (existing == null) vars.rune_programs.add(normalized); else vars.rune_programs.set(vars.rune_programs.indexOf(existing), normalized);
@@ -61,7 +86,7 @@ public final class RuneProgramService {
       TypeMoonWorldModVariables.PlayerVariables vars = player == null ? null : player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       RuneProgram source = find(vars, id); if (source == null || vars.rune_programs.size() >= MAX_PROGRAMS) return null;
       RuneProgram copy = RuneProgram.fromNBT(source.serializeNBT());
-      copy = new RuneProgram(UUID.randomUUID(), source.displayName() + " copy", source.slots(RunePosition.TRIGGER), source.slots(RunePosition.EFFECT), source.slots(RunePosition.MODIFIER), source.slots(RunePosition.TERMINAL), source.releaseMode(), source.releaseConfig(), System.currentTimeMillis(), System.currentTimeMillis());
+      copy = RuneProgram.ordered(UUID.randomUUID(), source.displayName() + " copy", source.sequence(), source.sequencePositions(), source.releaseMode(), source.releaseConfig(), System.currentTimeMillis(), System.currentTimeMillis());
       return upsert(player, copy);
    }
 
@@ -75,8 +100,6 @@ public final class RuneProgramService {
       if (input == null) return result;
       if (input.contains("radius")) result.putDouble("radius", Math.max(1.0D, Math.min(16.0D, input.getDouble("radius"))));
       if (input.contains("delay")) result.putInt("delay", Math.max(0, Math.min(1200, input.getInt("delay"))));
-      if (input.contains("interval")) result.putInt("interval", Math.max(10, Math.min(1200, input.getInt("interval"))));
-      if (input.contains("triggers")) result.putInt("triggers", Math.max(1, Math.min(20, input.getInt("triggers"))));
       if (input.contains("condition")) result.putString("condition", input.getString("condition").substring(0, Math.min(32, input.getString("condition").length())));
       return result;
    }

@@ -56,6 +56,7 @@ public class VFXEmitter {
    private Supplier<Vector3f> dynamicOrigin;
    private Supplier<Quaternionf> dynamicRotation;
    private VFXEffectDefinition.BindingDefinition binding = VFXEffectDefinition.BindingDefinition.NONE;
+   private float uniformScale = 1.0F;
 
    public VFXEmitter(
       float duration,
@@ -96,6 +97,10 @@ public class VFXEmitter {
 
    public void setOrigin(float x, float y, float z) {
       this.origin.set(x, y, z);
+   }
+
+   public void setUniformScale(float scale) {
+      this.uniformScale = Mth.clamp(scale, 0.05F, 8.0F);
    }
 
    public void setDynamicTransform(Supplier<Vector3f> originProvider, Supplier<Quaternionf> rotationProvider) {
@@ -279,7 +284,7 @@ public class VFXEmitter {
       for (int i = 0; i < count; i++) {
          VFXParticle sample = this.samplePoints.get(this.random.nextInt(this.samplePoints.size()));
          VFXParticle particle = VFXParticle.acquire();
-         particle.position.set(sample.position).mul(scale).rotate(rotation).add(this.origin).add(translation);
+         particle.position.set(sample.position).mul(scale).mul(this.uniformScale).rotate(rotation).add(this.origin).add(translation);
          if (this.positionVariance > 0.0F) {
             particle.position.add(randomSigned() * this.positionVariance, randomSigned() * this.positionVariance, randomSigned() * this.positionVariance);
          }
@@ -293,7 +298,7 @@ public class VFXEmitter {
             .add(randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance);
          particle.color = color;
          float variance = this.sizeVariance <= 0.0F ? 1.0F : 1.0F + (this.random.nextFloat() * 2.0F - 1.0F) * this.sizeVariance;
-         particle.size = Math.max(0.001F, size * variance);
+         particle.size = Math.max(0.001F, size * this.uniformScale * variance);
          float lifetimeScale = this.lifetimeVariance <= 0.0F ? 1.0F : 1.0F + randomSigned() * this.lifetimeVariance;
          particle.totalLife = Math.max(0.001F, this.particleLifetime * lifetimeScale);
          particle.additive = this.blendMode == VFXBlendMode.ADDITIVE;

@@ -58,8 +58,12 @@ public final class RuneProgramEditorScreen extends Screen {
    }
 
    private void clearSelected() {
-      if (selectedSlot < 0) return;
-      program.setSlot(RunePosition.values()[selectedSlot / 5], selectedSlot % 5, "");
+      if (selectedSlot < 0) {
+         for (RunePosition position : RunePosition.values()) for (int i = 0; i < RuneProgram.BAND_SIZE; i++) program.setSlot(position, i, "");
+      } else {
+         program.setSlot(RunePosition.values()[selectedSlot / 5], selectedSlot % 5, "");
+      }
+      selectedSlot = -1;
    }
 
    private void save() {
@@ -95,8 +99,9 @@ public final class RuneProgramEditorScreen extends Screen {
          layout.palettePanelWidth, layout.contentHeight, GuiUtils.ARCANE_CYAN);
       renderSlots(graphics, layout, mouseX, mouseY);
       renderPalette(graphics, layout, mouseX, mouseY);
-      RuneProgramValidationResultView.render(graphics, font, program,
-         layout.slotPanelX + 8, layout.contentY + layout.contentHeight - 15);
+      graphics.drawString(font, Component.translatable("gui.typemoonworld.rune.cost",
+         String.format("%.0f", RuneProgramCostService.calculate(program))),
+         layout.slotPanelX + 8, layout.contentY + layout.contentHeight - 15, GuiUtils.ARCANE_TEXT_MUTED, false);
       super.render(graphics, mouseX, mouseY, partialTick);
       if (draggingRune != null) {
          int icon = Math.max(16, Math.min(28, layout.paletteSize));

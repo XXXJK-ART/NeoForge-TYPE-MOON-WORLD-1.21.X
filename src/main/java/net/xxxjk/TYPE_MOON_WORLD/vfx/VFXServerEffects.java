@@ -23,6 +23,10 @@ public final class VFXServerEffects {
    }
 
    public static void spawn(ServerLevel level, String effectId, Vec3 origin, double radius) {
+      spawnScaled(level, effectId, origin, radius, 1.0F);
+   }
+
+   public static void spawnScaled(ServerLevel level, String effectId, Vec3 origin, double radius, float scale) {
       VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(
          effectId,
          origin.x,
@@ -30,7 +34,9 @@ public final class VFXServerEffects {
          origin.z,
          Optional.empty(),
          level.dimension().location().toString(),
-         level.getRandom().nextLong()
+         level.getRandom().nextLong(),
+         Optional.empty(),
+         scale
       );
       sendToSupportedPlayersNear(level, origin, radius, message);
    }

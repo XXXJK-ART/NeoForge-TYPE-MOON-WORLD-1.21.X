@@ -7,6 +7,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramKind;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.network.RuneProgramMessage;
 
 /** Release configuration for a saved rune program. Slot composition stays in the editor. */
@@ -18,6 +20,9 @@ public final class RuneProgramConfigScreen extends Screen {
       super(Component.translatable("gui.typemoonworld.rune.config"));
       this.parent = parent;
       this.program = program == null ? new RuneProgram() : program.copy();
+      if (!RuneProgramService.matchesReleaseMode(this.program, this.program.releaseMode())) {
+         this.program.setReleaseMode(defaultMode(this.program.kind()));
+      }
    }
 
    @Override
@@ -27,8 +32,10 @@ public final class RuneProgramConfigScreen extends Screen {
       int y = Math.max(12, (height - 250) / 2) + 52;
       addRenderableWidget(new NeonButton(panelX + 16, y, panelW - 32, 24,
          modeLabel(), b -> cycleMode(), GuiUtils.ARCANE_CYAN).setArcaneStyle(true));
-      addRenderableWidget(new NeonButton(panelX + 16, y + 32, panelW - 32, 20,
-         configLabel(), b -> cycleConfig(), GuiUtils.ARCANE_GOLD).setArcaneStyle(true));
+      if (program.releaseMode() == RuneReleaseMode.BLOCK_TRAP) {
+         addRenderableWidget(new NeonButton(panelX + 16, y + 32, panelW - 32, 20,
+            configLabel(), b -> cycleConfig(), GuiUtils.ARCANE_GOLD).setArcaneStyle(true));
+      }
       addRenderableWidget(new NeonButton(panelX + 16, y + 88, (panelW - 44) / 2, 22,
          Component.translatable("gui.typemoonworld.rune.editor"), b -> minecraft.setScreen(new RuneProgramEditorScreen(this, program)), GuiUtils.ARCANE_GOLD).setArcaneStyle(true));
       addRenderableWidget(new NeonButton(panelX + 28 + (panelW - 44) / 2, y + 88, (panelW - 44) / 2, 22,
@@ -40,9 +47,9 @@ public final class RuneProgramConfigScreen extends Screen {
    private Component configLabel() {
       var config = program.releaseConfig();
       if (program.releaseMode() == RuneReleaseMode.BLOCK_TRAP) {
-         return Component.translatable("gui.typemoonworld.rune.trap_config", config.getDouble("radius"), config.getInt("delay"), config.getInt("interval"));
+         return Component.translatable("gui.typemoonworld.rune.trap_config", config.getDouble("radius"), config.getInt("delay"));
       }
-      return Component.translatable("gui.typemoonworld.rune.uses_config", Math.max(1, config.getInt("triggers")));
+      return Component.empty();
    }
 
    private void cycleConfig() {
@@ -50,16 +57,10 @@ public final class RuneProgramConfigScreen extends Screen {
       if (program.releaseMode() == RuneReleaseMode.BLOCK_TRAP) {
          double radius = config.contains("radius") ? config.getDouble("radius") : 4.0D;
          int delay = config.contains("delay") ? config.getInt("delay") : 0;
-         int interval = config.contains("interval") ? config.getInt("interval") : 40;
          radius = radius >= 16.0D ? 2.0D : radius + 2.0D;
          delay = delay >= 600 ? 0 : delay + 100;
-         interval = interval >= 200 ? 20 : interval + 20;
          config.putDouble("radius", radius);
          config.putInt("delay", delay);
-         config.putInt("interval", interval);
-      } else {
-         int uses = config.contains("triggers") ? config.getInt("triggers") : 1;
-         config.putInt("triggers", uses >= 20 ? 1 : uses + 1);
       }
       program.setReleaseConfig(config);
       clearWidgetsAndReinit();
@@ -73,10 +74,28 @@ public final class RuneProgramConfigScreen extends Screen {
    }
 
    private void cycleMode() {
-      RuneReleaseMode[] modes = RuneReleaseMode.values();
-      int next = (program.releaseMode().ordinal() + 1) % modes.length;
-      program.setReleaseMode(modes[next]);
+      RuneReleaseMode[] modes = allowedModes();
+      int current = java.util.Arrays.asList(modes).indexOf(program.releaseMode());
+      program.setReleaseMode(modes[(current + 1 + modes.length) % modes.length]);
       clearWidgetsAndReinit();
+   }
+
+   private RuneReleaseMode[] allowedModes() {
+      return switch (program.kind()) {
+         case FULL_RELEASE -> new RuneReleaseMode[] {RuneReleaseMode.DIRECT_AIR, RuneReleaseMode.BLOCK_TRAP, RuneReleaseMode.RUNE_STONE};
+         case ENCHANTMENT -> new RuneReleaseMode[] {RuneReleaseMode.WEAPON, RuneReleaseMode.TOOL, RuneReleaseMode.RUNE_STONE};
+         case REINFORCEMENT -> new RuneReleaseMode[] {RuneReleaseMode.ARMOR, RuneReleaseMode.BODY, RuneReleaseMode.RUNE_STONE};
+         case INSCRIPTION, INVALID -> new RuneReleaseMode[] {RuneReleaseMode.RUNE_STONE};
+      };
+   }
+
+   private static RuneReleaseMode defaultMode(RuneProgramKind kind) {
+      return switch (kind) {
+         case FULL_RELEASE -> RuneReleaseMode.DIRECT_AIR;
+         case ENCHANTMENT -> RuneReleaseMode.WEAPON;
+         case REINFORCEMENT -> RuneReleaseMode.ARMOR;
+         case INSCRIPTION, INVALID -> RuneReleaseMode.RUNE_STONE;
+      };
    }
 
    private void clearWidgetsAndReinit() {

@@ -28,32 +28,76 @@ class RuneProgramRulesTest {
    }
 
    @Test
-   void weaponRejectsProjectileStyleTrigger() {
+   void weaponAllowsProjectileStyleTriggerWithoutLegacyConflict() {
       RuneProgram weapon = program(List.of("hagalaz"), List.of("kenaz"), List.of(), List.of(), RuneReleaseMode.WEAPON);
-      assertFalse(weapon.validate().valid());
-      assertTrue(weapon.validate().errors().contains("projectile_trigger_conflict"));
+      assertTrue(weapon.validate().valid());
+      assertFalse(weapon.validate().errors().contains("projectile_trigger_conflict"));
    }
 
    @Test
    void costUsesTriggerAndModifierMultipliers() {
       RuneProgram program = program(List.of("fehu", "uruz"), List.of("kenaz"), List.of("fehu", "uruz"), List.of(), RuneReleaseMode.DIRECT_AIR);
-      assertEquals(500.0, RuneProgramCostService.calculate(program), 0.001);
+      assertEquals(500.0 / 3.0, RuneProgramCostService.calculate(program), 0.001);
    }
 
    @Test
    void costAddsComplexityMultiplierAfterFiveRunes() {
       RuneProgram program = program(List.of("fehu"), List.of("kenaz", "wunjo", "laguz", "berkano"), List.of("uruz"), List.of(), RuneReleaseMode.DIRECT_AIR);
-      // Six runes: base 300, trigger/modifier multiplier 1.5, complexity 1.08.
-      assertEquals(486.0, RuneProgramCostService.calculate(program), 0.001);
+      // Six runes: base 300, trigger/modifier multiplier 1.5, complexity 1.08, then /3.
+      assertEquals(486.0 / 3.0, RuneProgramCostService.calculate(program), 0.001);
    }
 
    @Test
-   void weaponRejectsAllProjectileTriggerFamilies() {
+   void weaponAllowsAllProjectileTriggerFamilies() {
       for (String trigger : List.of("fehu", "ansuz", "kenaz", "hagalaz", "sowilo")) {
          RuneProgram weapon = program(List.of(trigger), List.of(), List.of(), List.of(), RuneReleaseMode.WEAPON);
-         assertFalse(weapon.validate().valid(), trigger);
-         assertTrue(weapon.validate().errors().contains("projectile_trigger_conflict"), trigger);
+         assertTrue(weapon.validate().valid(), trigger);
+         assertFalse(weapon.validate().errors().contains("projectile_trigger_conflict"), trigger);
       }
+   }
+
+   @Test
+   void directProgramMayBeSavedWithoutTrigger() {
+      RuneProgram program = program(List.of(), List.of("kenaz"), List.of("uruz"), List.of(), RuneReleaseMode.DIRECT_AIR);
+      assertTrue(program.validate().valid());
+      assertFalse(program.validate().errors().contains("missing_trigger"));
+   }
+
+   @Test
+   void releaseModesFollowProgramStructure() {
+      RuneProgram full = program(List.of("fehu"), List.of("kenaz"), List.of(), List.of("othala"), RuneReleaseMode.DIRECT_AIR);
+      RuneProgram enchantment = program(List.of(), List.of("kenaz"), List.of("uruz"), List.of(), RuneReleaseMode.WEAPON);
+      RuneProgram reinforcement = program(List.of(), List.of(), List.of("uruz"), List.of("othala"), RuneReleaseMode.ARMOR);
+      RuneProgram inscription = program(List.of(), List.of(), List.of(), List.of(), RuneReleaseMode.RUNE_STONE);
+      RuneProgram invalid = program(List.of(), List.of("kenaz"), List.of(), List.of("othala"), RuneReleaseMode.WEAPON);
+
+      assertEquals(RuneProgramKind.FULL_RELEASE, full.kind());
+      assertEquals(RuneProgramKind.ENCHANTMENT, enchantment.kind());
+      assertEquals(RuneProgramKind.REINFORCEMENT, reinforcement.kind());
+      assertEquals(RuneProgramKind.INSCRIPTION, inscription.kind());
+      assertEquals(RuneProgramKind.INVALID, invalid.kind());
+      assertTrue(RuneProgramService.matchesReleaseMode(full, RuneReleaseMode.DIRECT_AIR));
+      assertTrue(RuneProgramService.matchesReleaseMode(enchantment, RuneReleaseMode.WEAPON));
+      assertTrue(RuneProgramService.matchesReleaseMode(reinforcement, RuneReleaseMode.ARMOR));
+      assertTrue(RuneProgramService.matchesReleaseMode(inscription, RuneReleaseMode.RUNE_STONE));
+      assertFalse(RuneProgramService.matchesReleaseMode(invalid, RuneReleaseMode.WEAPON));
+   }
+
+   @Test
+   void everyRuneCanBeUsedAsStandaloneDirectTrigger() {
+      for (String id : RuneRegistry.ids()) {
+         RuneProgram single = program(List.of(id), List.of(), List.of(), List.of(), RuneReleaseMode.DIRECT_AIR);
+         assertTrue(single.validate().valid(), id);
+         assertTrue(RuneProgramService.matchesReleaseMode(single, RuneReleaseMode.DIRECT_AIR), id);
+      }
+   }
+
+   @Test
+   void newModeNamesMigrateToLegacyMediaIds() {
+      assertEquals(RuneReleaseMode.DIRECT_AIR, RuneReleaseMode.byName("full_release"));
+      assertEquals(RuneReleaseMode.WEAPON, RuneReleaseMode.byName("enchantment"));
+      assertEquals(RuneReleaseMode.ARMOR, RuneReleaseMode.byName("reinforcement"));
+      assertEquals(RuneReleaseMode.RUNE_STONE, RuneReleaseMode.byName("inscription"));
    }
 
    @Test
@@ -63,6 +107,16 @@ class RuneProgramRulesTest {
       assertEquals(original.uuid(), restored.uuid());
       assertEquals(20, restored.slots().size());
       assertEquals(original.releaseMode(), restored.releaseMode());
+   }
+
+   @Test
+   void releaseConfigDoesNotPersistTriggerCountPreset() {
+      CompoundTag input = new CompoundTag();
+      input.putInt("triggers", 5);
+      input.putInt("delay", 20);
+      CompoundTag normalized = RuneProgramService.normalizeReleaseConfig(input);
+      assertFalse(normalized.contains("triggers"));
+      assertEquals(20, normalized.getInt("delay"));
    }
 
    private static RuneProgram program(List<String> triggers, List<String> effects, List<String> modifiers, List<String> terminals, RuneReleaseMode mode) {

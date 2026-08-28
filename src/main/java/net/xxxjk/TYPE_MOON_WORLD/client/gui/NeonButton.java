@@ -87,15 +87,15 @@ public class NeonButton extends Button {
       int borderColor;
       int textColor;
       if (!this.active) {
-         fillColor = 0xC012171D;
+         fillColor = 0xA00F1419;
          borderColor = GuiUtils.ARCANE_BORDER;
          textColor = 0xFF8FA0AB;
       } else if (this.selected) {
-         fillColor = 0xF028343E;
+         fillColor = 0xD0202B34;
          borderColor = this.selectedColor;
          textColor = GuiUtils.ARCANE_TEXT;
       } else if (hovered) {
-         fillColor = 0xE0253039;
+         fillColor = 0xC91F2931;
          borderColor = this.hoverColor;
          textColor = GuiUtils.ARCANE_TEXT;
       } else {

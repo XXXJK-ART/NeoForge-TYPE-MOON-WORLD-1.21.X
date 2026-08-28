@@ -24,7 +24,6 @@ import com.example.typemoonaddon.storage.StorageAttachments;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -65,29 +64,6 @@ public final class TypeMoonAddon {
     }
 
     private void addCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(AddonItems.MYSTIC_CODE_FRAGMENT);
-            event.accept(AddonItems.IMAGINARY_PRIMER);
-            event.accept(AddonItems.CREST_WORM);
-            event.accept(AddonItems.WORM);
-            event.accept(AddonItems.ENGRAVED_WORM);
-            event.accept(AddonItems.HOLY_GRAIL_FRAGMENT);
-            event.accept(AddonItems.VOID_RING_REGALIA);
-            event.accept(AddonItems.MAGIC_PAGE_SPIRIT_SUMMONING);
-            event.accept(AddonItems.MAGIC_PAGE_WRAITH_SERVITUDE);
-            event.accept(AddonItems.MAGIC_PAGE_EVIL_SPIRIT_SUMMONING);
-            event.accept(AddonItems.MAGIC_PAGE_WORM_MAGIC);
-            event.accept(AddonItems.MAGIC_PAGE_WORM_CONTROL);
-            event.accept(AddonItems.MAGIC_PAGE_ENGRAVED_WORM_OPERATION);
-            event.accept(AddonItems.MAGIC_PAGE_BOUNDARY_ART);
-            event.accept(AddonItems.MAGIC_PAGE_SENSING_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_WARNING_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_DEFENSE_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_SUGGESTION_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_ANTI_MAGIC_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_GUARD_BOUNDARY);
-            event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
-        }
         if (event.getTab() == ModCreativeModeTabs.MAGIC_BOOKS_TAB.get()) {
             event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_STORAGE);
             event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_STORAGE);
@@ -120,6 +96,9 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
+            event.accept(AddonItems.MYSTIC_CODE_FRAGMENT);
+            event.accept(AddonItems.WORM);
+            event.accept(AddonItems.ENGRAVED_WORM);
             // Creative tab contents can be rebuilt with a different feature/permission set;
             // an anchor item is not guaranteed to be present in every rebuild.
             event.accept(AddonItems.MANA_FURNACE.toStack(),

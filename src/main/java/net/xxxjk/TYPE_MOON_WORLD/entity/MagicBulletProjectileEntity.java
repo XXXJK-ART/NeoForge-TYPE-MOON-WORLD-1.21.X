@@ -42,6 +42,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private static final DustParticleOptions WATER_DUST = new DustParticleOptions(new Vector3f(0.15F, 0.45F, 1.0F), 1.0F);
    private static final DustParticleOptions EARTH_DUST = new DustParticleOptions(new Vector3f(0.42F, 0.28F, 0.12F), 1.0F);
    private static final DustParticleOptions WIND_DUST = new DustParticleOptions(new Vector3f(0.65F, 1.0F, 0.78F), 1.0F);
+   private static final DustParticleOptions FIRE_DUST = new DustParticleOptions(new Vector3f(1.0F, 0.06F, 0.01F), 1.15F);
    public final List<Vec3> tracePos = new LinkedList<>();
    private float magicDamage = 3.0F;
    private float slowPercent = 0.0F;
@@ -49,6 +50,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private Vec3 originPos = Vec3.ZERO;
    private String sourceMagicId = "magic_bullet";
    private double casterProficiency = 0.0;
+   private double runeExplosionRadius = 0.0D;
 
    public MagicBulletProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -82,6 +84,10 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       this.entityData.set(ELEMENT, Math.max(ELEMENT_NONE, Math.min(ELEMENT_WIND, element)));
       this.entityData.set(VISUAL_SCALE, Math.max(0.2F, visualScale));
       this.originPos = this.position();
+   }
+
+   public void setRuneExplosionRadius(double radius) {
+      this.runeExplosionRadius = Math.max(0.0D, Math.min(16.0D, radius));
    }
 
    public void setMagicSource(String magicId, double proficiency) {
@@ -147,6 +153,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
                applyElementEffect(target);
             }
             spawnImpactParticles(this.position());
+            explodeRune(this.position());
          }
          this.discard();
       }
@@ -156,8 +163,14 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       super.onHit(result);
       if (!this.level().isClientSide && !this.isRemoved()) {
          spawnImpactParticles(result.getLocation());
+         explodeRune(result.getLocation());
          this.discard();
       }
+   }
+
+   private void explodeRune(Vec3 pos) {
+      if (runeExplosionRadius <= 0.0D || !(this.level() instanceof ServerLevel level)) return;
+      level.explode(this, pos.x, pos.y, pos.z, (float)runeExplosionRadius, Level.ExplosionInteraction.NONE);
    }
 
    private void applyElementEffect(LivingEntity target) {
@@ -182,6 +195,9 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       ParticleOptions particle = particleForElement(getElement());
       if (this.level() instanceof ServerLevel level) {
          level.sendParticles(particle, this.getX(), this.getY(), this.getZ(), 2, 0.04, 0.04, 0.04, 0.0);
+         if (getElement() == ELEMENT_FIRE) {
+            level.sendParticles(FIRE_DUST, this.getX(), this.getY(), this.getZ(), 2, 0.05, 0.05, 0.05, 0.01);
+         }
       } else {
          this.level().addParticle(particle, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       }
@@ -190,7 +206,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private void spawnImpactParticles(Vec3 pos) {
       if (this.level() instanceof ServerLevel level) {
          level.sendParticles(particleForElement(getElement()), pos.x, pos.y, pos.z, 18, 0.18, 0.18, 0.18, 0.02);
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 6, 0.12, 0.12, 0.12, 0.02);
+         if (getElement() == ELEMENT_FIRE) level.sendParticles(FIRE_DUST, pos.x, pos.y, pos.z, 12, 0.2, 0.2, 0.2, 0.02);
       }
    }
 
@@ -208,6 +224,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putString("TypeMoonSourceMagicId", this.sourceMagicId);
       tag.putDouble("TypeMoonCasterProficiency", this.casterProficiency);
+      tag.putDouble("RuneExplosionRadius", this.runeExplosionRadius);
    }
 
    public void readAdditionalSaveData(CompoundTag tag) {
@@ -218,5 +235,6 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       if (tag.contains("TypeMoonCasterProficiency")) {
          this.casterProficiency = Math.max(0.0, Math.min(100.0, tag.getDouble("TypeMoonCasterProficiency")));
       }
+      this.runeExplosionRadius = Math.max(0.0D, Math.min(16.0D, tag.getDouble("RuneExplosionRadius")));
    }
 }

@@ -35,7 +35,7 @@ public class ModBlocks {
       )
    );
    public static final DeferredBlock<RuneInscriptionBlock> RUNE_INSCRIPTION = registerBlock(
-      "rune_inscription", () -> new RuneInscriptionBlock(Properties.of().noCollission().noOcclusion().strength(0.2F).lightLevel(s -> 10))
+      "rune_inscription", () -> new RuneInscriptionBlock(Properties.of().noCollission().noOcclusion().strength(0.2F).lightLevel(s -> 0))
    );
    public static final DeferredBlock<Block> AGE_OF_GODS_DIRT = registerBlock(
       "age_of_gods_dirt", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DIRT))

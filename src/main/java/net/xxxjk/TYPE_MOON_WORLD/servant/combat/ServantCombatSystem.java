@@ -1064,7 +1064,8 @@ public final class ServantCombatSystem {
 
    private static ServantParams effectiveParams(ServantEntity entity, ServantDefinition definition) {
       if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return HundredFacesHassanRules.PERSONA_E_RANK_PARAMS;
+         return HundredFacesHassanRules.personaCombatParams(
+            definition != null ? definition.parameters() : HundredFacesHassanRules.MAIN_FULL_PARAMS);
       }
       if (entity instanceof HundredFacesHassanEntity hundredFaces) {
          ServantParams params = definition != null ? definition.parameters() : HundredFacesHassanRules.MAIN_FULL_PARAMS;

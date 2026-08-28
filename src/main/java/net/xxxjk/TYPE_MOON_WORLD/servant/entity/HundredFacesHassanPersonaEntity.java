@@ -33,6 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
@@ -75,7 +76,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
          .add(Attributes.ATTACK_SPEED, 4.0)
          .add(Attributes.MOVEMENT_SPEED, HundredFacesHassanRules.PERSONA_MOVEMENT_SPEED)
          .add(Attributes.ARMOR, HundredFacesHassanRules.PERSONA_BASE_ARMOR)
-         .add(Attributes.ARMOR_TOUGHNESS, 0.0)
+         .add(Attributes.ARMOR_TOUGHNESS,
+            ServantCombatFormulas.armorToughness(HundredFacesHassanRules.PERSONA_COMBAT_PARAMS))
          .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE)
          .add(Attributes.STEP_HEIGHT, 3.0);
@@ -137,6 +139,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    public void applyPersonaAttributes(int liveCount, boolean resetHealth) {
       setBase(Attributes.MAX_HEALTH, HundredFacesHassanRules.personaHealthForCount(liveCount));
       setBase(Attributes.ARMOR, HundredFacesHassanRules.personaArmorForCount(liveCount));
+      setBase(Attributes.ARMOR_TOUGHNESS,
+         ServantCombatFormulas.armorToughness(HundredFacesHassanRules.PERSONA_COMBAT_PARAMS));
       setBase(Attributes.ATTACK_DAMAGE, HundredFacesHassanRules.personaAttackDamageForCount(liveCount));
       setBase(Attributes.MOVEMENT_SPEED, this.personaMovementSpeed());
       setBase(Attributes.KNOCKBACK_RESISTANCE, HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE);
@@ -157,7 +161,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       long now = level.getGameTime();
       boolean exposed = now < this.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
       boolean hasTarget = this.getTarget() != null && this.getTarget().isAlive();
-      this.setPresenceConcealed(this.forceConcealment() || (!exposed && hasTarget && this.distanceToSqr(this.getTarget()) > 4.0));
+      this.setPresenceConcealed(!exposed
+         && (this.forceConcealment() || (hasTarget && this.distanceToSqr(this.getTarget()) > 4.0)));
       if (this.tickCount % 40 == 0) this.ensureDirkLoadout();
    }
 
@@ -282,12 +287,13 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    }
 
    public void revealForCombat() {
+      revealForCombat(HundredFacesHassanRules.CONCEALMENT_EXPOSURE_TICKS);
+   }
+
+   public void revealForCombat(int exposureTicks) {
       if (this.level().isClientSide()) return;
-      if (this.forceConcealment()) {
-         this.setPresenceConcealed(true);
-         return;
-      }
-      this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, this.level().getGameTime() + HundredFacesHassanRules.CONCEALMENT_EXPOSURE_TICKS);
+      this.getPersistentData().putLong(TAG_EXPOSED_UNTIL,
+         this.level().getGameTime() + Math.max(1, exposureTicks));
       this.setPresenceConcealed(false);
    }
 
@@ -375,7 +381,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    private void setPresenceConcealed(boolean concealed) {
       boolean changed = this.entityData.get(PRESENCE_CONCEALED) != concealed;
       if (changed) this.entityData.set(PRESENCE_CONCEALED, concealed);
-      this.setInvisible(concealed && this.forceConcealment());
+      this.setInvisible(concealed);
       this.setSilent(concealed);
       this.setCustomNameVisible(!concealed);
       if (this.hasEffect(MobEffects.INVISIBILITY)) {
@@ -439,7 +445,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
 
    @Override
    public boolean isInvisibleTo(net.minecraft.world.entity.player.Player player) {
-      return super.isInvisibleTo(player);
+      return this.isPresenceConcealed() || super.isInvisibleTo(player);
    }
 
    @Override

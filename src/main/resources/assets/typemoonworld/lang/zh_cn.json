@@ -212,7 +212,7 @@
   "item.typemoonworld.magic_book_flight_magic": "飞行魔术教材",
   "item.typemoonworld.magic_book_gale_wind_array": "风飓阵教材",
   "item.typemoonworld.magic_book_guard_boundary": "守卫结界教材",
-  "item.typemoonworld.magic_book_healing": "治疗魔术教材",
+  "item.typemoonworld.magic_book_healing": "治愈魔术教材",
   "item.typemoonworld.magic_book_imaginary_absorption": "虚数吸收教材",
   "item.typemoonworld.magic_book_imaginary_displacement": "虚数置换魔术教材",
   "item.typemoonworld.magic_book_imaginary_dive": "虚数潜航魔术教材",
@@ -278,7 +278,7 @@
   "item.typemoonworld.magic_page_flight_magic": "飞行残页",
   "item.typemoonworld.magic_page_gale_wind_array": "风飓阵残页",
   "item.typemoonworld.magic_page_guard_boundary": "守卫结界残页",
-  "item.typemoonworld.magic_page_healing": "治疗魔术残页",
+  "item.typemoonworld.magic_page_healing": "治愈魔术残页",
   "item.typemoonworld.magic_page_imaginary_absorption": "虚数吸收残页",
   "item.typemoonworld.magic_page_imaginary_displacement": "虚数置换魔术残页",
   "item.typemoonworld.magic_page_imaginary_dive": "虚数潜航魔术残页",
@@ -731,6 +731,9 @@
   "key.typemoonworld.magic.gravity_magic": "重力魔术",
   "key.typemoonworld.magic.gravity_magic.selected": "重力魔术",
   "key.typemoonworld.magic.gravity_magic.short": "重力魔术",
+  "key.typemoonworld.magic.healing_magic": "治愈魔术",
+  "key.typemoonworld.magic.healing_magic.selected": "治愈魔术",
+  "key.typemoonworld.magic.healing_magic.short": "治愈魔术",
   "key.typemoonworld.magic.heroic_spirit_devourer.selected": "英灵噬者",
   "key.typemoonworld.magic.heroic_spirit_devourer.short": "英灵噬者",
   "key.typemoonworld.magic.hokushin_ittoryu.selected": "北辰一刀流",
@@ -745,6 +748,9 @@
   "key.typemoonworld.magic.imaginary_space.short": "虚数空间",
   "key.typemoonworld.magic.imaginary_storage.selected": "虚数存储",
   "key.typemoonworld.magic.imaginary_storage.short": "虚数存储",
+  "key.typemoonworld.magic.spiritual_healing": "灵体治疗",
+  "key.typemoonworld.magic.spiritual_healing.selected": "灵体治疗",
+  "key.typemoonworld.magic.spiritual_healing.short": "灵体治疗",
   "key.typemoonworld.magic.jewel_machine_gun": "宝石机关枪",
   "key.typemoonworld.magic.jewel_machine_gun.selected": "宝石机关枪",
   "key.typemoonworld.magic.jewel_machine_gun.short": "宝石机关枪",
@@ -789,6 +795,9 @@
   "key.typemoonworld.magic.shadow_materialization.short": "黑影具现化",
   "key.typemoonworld.magic.shadow_transfer.selected": "传送",
   "key.typemoonworld.magic.shadow_transfer.short": "传送",
+  "key.typemoonworld.magic.time_alter": "固有时制御",
+  "key.typemoonworld.magic.time_alter.selected": "固有时制御",
+  "key.typemoonworld.magic.time_alter.short": "固有时制御",
   "key.typemoonworld.magic.spiritron_cannon.selected": "灵子炮",
   "key.typemoonworld.magic.spiritron_cannon.short": "灵子炮",
   "key.typemoonworld.magic.stigma": "圣痕",
@@ -1219,7 +1228,7 @@
   "gui.typemoonworld.tab.magic_knowledge": "魔术知识",
   "gui.typemoonworld.tab.passives": "被动",
   "gui.typemoonworld.time_alter.multiplier": "倍率",
-  "gui.typemoonworld.time_alter.title": "固有时御倍率",
+  "gui.typemoonworld.time_alter.title": "固有时制御倍率",
   "gui.typemoonworld.touko_travel.clamp": "限制距离",
   "gui.typemoonworld.touko_travel.current": "当前位置",
   "gui.typemoonworld.touko_travel.looking": "准星方块",
@@ -1344,8 +1353,8 @@
   "magic.typemoonworld.gravity_magic.name": "重力魔术",
   "magic.typemoonworld.guard_boundary.desc": "对范围内符合黑名单条件的目标持续造成低强度魔术伤害，只有攻击到目标时才额外耗魔。",
   "magic.typemoonworld.guard_boundary.name": "守卫结界",
-  "magic.typemoonworld.healing_magic.desc": "消耗魔力治疗伤势。",
-  "magic.typemoonworld.healing_magic.name": "治疗魔术",
+  "magic.typemoonworld.healing_magic.desc": "消耗魔力治愈伤势。",
+  "magic.typemoonworld.healing_magic.name": "治愈魔术",
   "magic.typemoonworld.heroic_spirit_devourer.desc": "按魔术模式切换键选择记录于黑泥中的完全污染生物或玩家，再施法召回所选生物和在线玩家。",
   "magic.typemoonworld.heroic_spirit_devourer.name": "英灵噬者",
   "magic.typemoonworld.hokushin_ittoryu.desc": "左键=A，右键=B，潜行=↓，跳跃=↑。\n开启魔术回路、选中北辰一刀流并手持合规刀剑后使用。",
@@ -3346,8 +3355,11 @@
   "magic.typemoonworld.rune_origin.name": "原初卢恩魔术",
   "message.typemoonworld.rune.learned": "已学习卢恩：%s",
   "message.typemoonworld.rune.cast_failed": "卢恩程序释放失败：%s",
+  "message.typemoonworld.rune.cast_success": "卢恩程序释放成功：%s",
   "message.typemoonworld.rune.release_external": "该程序必须通过指定介质释放",
   "message.typemoonworld.rune.inscribed": "卢恩程序已刻入介质",
+  "tooltip.typemoonworld.rune.inscribed": "已刻录卢恩：%s",
+  "tooltip.typemoonworld.rune.uses": "剩余释放次数：%s",
   "gui.typemoonworld.rune.knowledge": "卢恩知识",
   "gui.typemoonworld.rune.editor": "程序编辑器",
   "gui.typemoonworld.rune.library": "程序库",
@@ -3368,17 +3380,16 @@
   "gui.typemoonworld.rune.invalid": "程序无效",
   "gui.typemoonworld.rune.drag_hint": "拖动已掌握的卢恩到程序槽位",
   "gui.typemoonworld.rune.mode.direct_air": "直接释放",
-  "gui.typemoonworld.rune.mode.rune_stone": "卢恩石",
-  "gui.typemoonworld.rune.mode.weapon": "武器",
-  "gui.typemoonworld.rune.mode.armor": "护甲",
-  "gui.typemoonworld.rune.mode.tool": "工具",
+  "gui.typemoonworld.rune.mode.rune_stone": "刻录模式",
+  "gui.typemoonworld.rune.mode.weapon": "附魔模式·武器",
+  "gui.typemoonworld.rune.mode.armor": "强化模式·护甲",
+  "gui.typemoonworld.rune.mode.tool": "附魔模式·工具",
   "gui.typemoonworld.rune.mode.block_trap": "方块陷阱",
   "gui.typemoonworld.rune.mode.body": "身体",
   "gui.typemoonworld.rune.config": "卢恩程序配置",
   "gui.typemoonworld.rune.config_hint": "在此选择程序的释放方式",
   "gui.typemoonworld.rune.release_mode_select": "释放方式：%s（点击切换）"
-  ,"gui.typemoonworld.rune.trap_config": "陷阱：半径 %.1f，延迟 %s tick，间隔 %s tick"
-  ,"gui.typemoonworld.rune.uses_config": "触发次数：%s（点击调整）"
+  ,"gui.typemoonworld.rune.trap_config": "陷阱：半径 %.1f，延迟 %s tick"
   ,"gui.typemoonworld.rune.semantic.wealth": "财富"
   ,"gui.typemoonworld.rune.semantic.strength": "力量"
   ,"gui.typemoonworld.rune.semantic.break": "破坏"
@@ -3481,7 +3492,5 @@
   ,"gui.typemoonworld.rune.add_wheel": "加入当前轮盘"
   ,"gui.typemoonworld.rune.radius": "半径"
   ,"gui.typemoonworld.rune.delay": "延迟"
-  ,"gui.typemoonworld.rune.interval": "间隔"
-  ,"gui.typemoonworld.rune.triggers": "次数"
   ,"block.typemoonworld.rune_inscription": "卢恩刻画"
 }

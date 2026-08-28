@@ -19,7 +19,7 @@ public final class ShadowHassanCombatHelper {
    private static final String TAG_LAST_BASIC = "ShadowHassanLastBasicAttack";
    private static final String TAG_LAST_SLASH = "ShadowHassanLastSlash";
    private static final String TAG_SLASH_UNTIL = "ShadowHassanSlashUntil";
-   private static final int SLASH_COOLDOWN = 240;
+   private static final int SLASH_COOLDOWN = 300;
    private static final int SLASH_STRIKE_COUNT = 100;
    private static final int SLASH_STRIKES_PER_TICK = 5;
    private static final long SLASH_DURATION_TICKS = 1L

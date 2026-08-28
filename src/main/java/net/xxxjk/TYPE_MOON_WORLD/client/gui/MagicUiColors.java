@@ -3,11 +3,11 @@ package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 
 public final class MagicUiColors {
-   public static final int NORMAL = 0xFF2E74D2;
-   public static final int CREST = 0xFFE8505C;
-   public static final int CHURCH = 0xFFF0C63C;
-   public static final int MARTIAL = 0xFF2EB872;
-   public static final int TALENT = 0xFFB66CFF;
+   public static final int NORMAL = 0xFF255EAA;
+   public static final int CREST = 0xFFB63F4A;
+   public static final int CHURCH = 0xFFC09E2F;
+   public static final int MARTIAL = 0xFF258F59;
+   public static final int TALENT = 0xFF8C55C7;
 
    private MagicUiColors() {
    }

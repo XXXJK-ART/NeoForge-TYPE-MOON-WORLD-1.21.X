@@ -6,6 +6,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.SwordItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -18,8 +20,9 @@ public final class RuneReleaseService {
    public static boolean canUse(RuneProgram program, RuneReleaseMode mode, ItemStack stack) {
       if (program == null || mode == null) return false;
       if (program.releaseMode() != mode) return false;
-      if ((mode == RuneReleaseMode.WEAPON || mode == RuneReleaseMode.ARMOR || mode == RuneReleaseMode.TOOL) && !mediumMatches(stack, mode)) return false;
-      return mode != RuneReleaseMode.BODY || program.slots(RunePosition.TRIGGER).stream().allMatch(String::isEmpty);
+      if (!RuneProgramService.matchesReleaseMode(program, mode)) return false;
+      if ((mode == RuneReleaseMode.RUNE_STONE || mode == RuneReleaseMode.WEAPON || mode == RuneReleaseMode.ARMOR || mode == RuneReleaseMode.TOOL) && !mediumMatches(stack, mode)) return false;
+      return mode != RuneReleaseMode.BODY || !program.hasRunes(RunePosition.TRIGGER);
    }
 
    public static boolean trigger(ServerPlayer player, RuneReleaseMode mode, ItemStack stack, LivingEntity target) {
@@ -44,13 +47,15 @@ public final class RuneReleaseService {
          return new MagicExecutionResult(true, false, 0.0D, -1, "medium_incompatible");
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return RuneProgramExecutor.execute(player, vars, program, target);
+      return mode == RuneReleaseMode.DIRECT_AIR
+         ? RuneProgramExecutor.execute(player, vars, program, target)
+         : RuneProgramExecutor.executeExternal(player, vars, program, target, mode);
    }
 
    private static boolean mediumMatches(ItemStack stack, RuneReleaseMode mode) {
       if (stack == null || stack.isEmpty()) return mode == RuneReleaseMode.BODY;
       return switch (mode) {
-         case RUNE_STONE -> stack.is(Items.STONE) || stack.is(Items.COBBLESTONE) || stack.is(Items.SMOOTH_STONE);
+         case RUNE_STONE -> !(stack.getItem() instanceof ArmorItem) && !(stack.getItem() instanceof TieredItem) && !(stack.getItem() instanceof SwordItem);
          case WEAPON -> stack.getAttributeModifiers().modifiers().stream().anyMatch(e -> e.attribute().is(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE));
          case ARMOR -> stack.getItem() instanceof ArmorItem;
          case TOOL -> {
@@ -79,9 +84,10 @@ public final class RuneReleaseService {
 
    public static void onDamage(LivingIncomingDamageEvent event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
-      if (!(event.getSource().getEntity() instanceof LivingEntity attacker)) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       RuneProgram program = current(vars);
-      if (program != null && program.releaseMode() == RuneReleaseMode.ARMOR) trigger(player, RuneReleaseMode.ARMOR, player.getMainHandItem(), player);
+      if (program != null && program.releaseMode() == RuneReleaseMode.ARMOR && program.kind() == RuneProgramKind.REINFORCEMENT) {
+         RuneEffectDispatcher.applyReinforcement(player, program);
+      }
    }
 }

@@ -62,6 +62,7 @@ import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
@@ -1010,6 +1011,7 @@ public class TypeMoonWorldModVariables {
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;
       private transient int manaSyncSnapshotHash = 0;
+      private transient boolean magicSystemInitialized = false;
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -1520,6 +1522,12 @@ public class TypeMoonWorldModVariables {
       }
 
       public void ensureMagicSystemInitialized() {
+         if (magicSystemInitialized && this.magic_wheels != null && this.magic_wheels.size() == MAGIC_WHEEL_COUNT * MAGIC_WHEEL_SLOT_COUNT
+            && this.selected_magic_runtime_slot_indices != null && this.selected_magic_display_names != null
+            && this.crest_entries != null && this.crest_practice_count != null && this.magicCrestInventory != null
+            && this.learned_runes != null && this.rune_programs != null) {
+            return;
+         }
          if (this.magic_wheels == null) {
             this.magic_wheels = new ArrayList<>();
          }
@@ -1594,6 +1602,7 @@ public class TypeMoonWorldModVariables {
          for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry : this.crest_entries) {
             normalizeCrestEntry(crestEntry);
          }
+         magicSystemInitialized = true;
       }
 
       public TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry getWheelSlotEntry(int wheelIndex, int slotIndex) {
@@ -1732,7 +1741,9 @@ public class TypeMoonWorldModVariables {
          } else if (TalentService.isTalent(slotEntry.magicId)) {
             return !"crest".equals(slotEntry.sourceType) && TalentService.owns(this, slotEntry.magicId);
          } else if ("rune_program".equals(slotEntry.sourceType)) {
-            return RuneProgramService.find(this, slotEntry.magicId) != null && RuneLearningService.hasOrigin(this);
+            RuneProgram program = RuneProgramService.find(this, slotEntry.magicId);
+            if (program == null || !RuneLearningService.hasOrigin(this)) return false;
+            return RuneProgramService.isRuneProgramCastable(this, program);
          } else if (!"crest".equals(slotEntry.sourceType)) {
             return this.hasLearnedSelfMagic(slotEntry.magicId);
          } else if (!this.hasValidImplantedCrest()) {
@@ -1772,7 +1783,11 @@ public class TypeMoonWorldModVariables {
          this.selected_magic_display_names.clear();
 
          for (int slot = 0; slot < 12; slot++) {
-            TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry = this.getWheelSlotEntry(this.active_wheel_index, slot);
+            // We already initialized the wheel above. Calling getWheelSlotEntry
+            // here would initialize and normalize all 120 slots again for every
+            // slot, making each magic switch needlessly quadratic.
+            TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry =
+               this.magic_wheels.get(wheelFlatIndex(this.active_wheel_index, slot));
             if (this.isWheelSlotEntryCastable(slotEntry)) {
                this.selected_magics.add(slotEntry.magicId);
                this.selected_magic_runtime_slot_indices.add(slot);
@@ -1814,7 +1829,7 @@ public class TypeMoonWorldModVariables {
          this.ensureMagicSystemInitialized();
          if (this.current_magic_index >= 0 && this.current_magic_index < this.selected_magic_runtime_slot_indices.size()) {
             int slot = this.selected_magic_runtime_slot_indices.get(this.current_magic_index);
-            return this.getWheelSlotEntry(this.active_wheel_index, slot);
+            return this.magic_wheels.get(wheelFlatIndex(this.active_wheel_index, slot));
          } else {
             return null;
          }
@@ -2592,6 +2607,7 @@ public class TypeMoonWorldModVariables {
       }
 
       public void deserializeNBT(@NotNull Provider lookupProvider, CompoundTag nbt) {
+         magicSystemInitialized = false;
          this.player_mana = nbt.getDouble("player_mana");
          this.player_max_mana = nbt.getDouble("player_max_mana");
          this.player_mana_egenerated_every_moment = nbt.getDouble("player_mana_egenerated_every_moment");

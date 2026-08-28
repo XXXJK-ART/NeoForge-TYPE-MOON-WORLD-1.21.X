@@ -21,6 +21,30 @@ public final class ModParticles {
       PARTICLE_TYPES.register("berkana_rune", () -> new SimpleParticleType(false));
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> RUNE_BARRIER =
       PARTICLE_TYPES.register("rune_barrier", () -> new SimpleParticleType(false));
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> FEHU_RUNE = rune("fehu");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> URUZ_RUNE = rune("uruz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> THURISAZ_RUNE = rune("thurisaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> RAIDHO_RUNE = rune("raidho");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> KENAZ_RUNE = rune("kenaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> GEBO_RUNE = rune("gebo");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> WUNJO_RUNE = rune("wunjo");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> HAGALAZ_RUNE = rune("hagalaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> NAUTHIZ_RUNE = rune("nauthiz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> ISA_RUNE = rune("isa");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> JERA_RUNE = rune("jera");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> EIHWAZ_RUNE = rune("eihwaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> PERTHRO_RUNE = rune("perthro");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> SOWILO_RUNE = rune("sowilo");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> BERKANO_RUNE = rune("berkano");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> EHWAZ_RUNE = rune("ehwaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> MANNAZ_RUNE = rune("mannaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> INGWAZ_RUNE = rune("ingwaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> DAGAZ_RUNE = rune("dagaz");
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> OTHALA_RUNE = rune("othala");
+
+   private static DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> rune(String id) {
+      return PARTICLE_TYPES.register(id + "_rune", () -> new SimpleParticleType(false));
+   }
 
    private ModParticles() {
    }

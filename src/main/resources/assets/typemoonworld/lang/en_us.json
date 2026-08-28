@@ -731,6 +731,9 @@
   "key.typemoonworld.magic.gravity_magic": "Gravity Magic",
   "key.typemoonworld.magic.gravity_magic.selected": "Gravity Magic",
   "key.typemoonworld.magic.gravity_magic.short": "Gravity",
+  "key.typemoonworld.magic.healing_magic": "Healing Magic",
+  "key.typemoonworld.magic.healing_magic.selected": "Healing Magic",
+  "key.typemoonworld.magic.healing_magic.short": "Healing",
   "key.typemoonworld.magic.heroic_spirit_devourer.selected": "Heroic Spirit Devourer",
   "key.typemoonworld.magic.heroic_spirit_devourer.short": "Heroic Spirit Devourer",
   "key.typemoonworld.magic.hokushin_ittoryu.selected": "Hokushin Itto-ryu",
@@ -745,6 +748,9 @@
   "key.typemoonworld.magic.imaginary_space.short": "Imaginary Space",
   "key.typemoonworld.magic.imaginary_storage.selected": "Imaginary Storage",
   "key.typemoonworld.magic.imaginary_storage.short": "Imaginary Storage",
+  "key.typemoonworld.magic.spiritual_healing": "Spiritual Healing",
+  "key.typemoonworld.magic.spiritual_healing.selected": "Spiritual Healing",
+  "key.typemoonworld.magic.spiritual_healing.short": "Spiritual Heal",
   "key.typemoonworld.magic.jewel_machine_gun": "Jewel Machine Gun",
   "key.typemoonworld.magic.jewel_machine_gun.selected": "Jewel Machine Gun",
   "key.typemoonworld.magic.jewel_machine_gun.short": "Machine Gun",
@@ -789,6 +795,9 @@
   "key.typemoonworld.magic.shadow_materialization.short": "Shadow Materialization",
   "key.typemoonworld.magic.shadow_transfer.selected": "Transfer",
   "key.typemoonworld.magic.shadow_transfer.short": "Transfer",
+  "key.typemoonworld.magic.time_alter": "Time Alter",
+  "key.typemoonworld.magic.time_alter.selected": "Time Alter",
+  "key.typemoonworld.magic.time_alter.short": "Time Alter",
   "key.typemoonworld.magic.spiritron_cannon.selected": "Spiritron Cannon",
   "key.typemoonworld.magic.spiritron_cannon.short": "Spiritron Cannon",
   "key.typemoonworld.magic.stigma": "Stigma",
@@ -3346,8 +3355,11 @@
   "magic.typemoonworld.rune_origin.name": "Primordial Rune Magic",
   "message.typemoonworld.rune.learned": "Learned rune: %s",
   "message.typemoonworld.rune.cast_failed": "Rune program failed to release: %s",
+  "message.typemoonworld.rune.cast_success": "Rune program released: %s",
   "message.typemoonworld.rune.release_external": "This program requires its configured release medium",
   "message.typemoonworld.rune.inscribed": "Rune program inscribed into medium",
+  "tooltip.typemoonworld.rune.inscribed": "Inscribed rune: %s",
+  "tooltip.typemoonworld.rune.uses": "Releases remaining: %s",
   "gui.typemoonworld.rune.knowledge": "Rune Knowledge",
   "gui.typemoonworld.rune.editor": "Program Editor",
   "gui.typemoonworld.rune.library": "Program Library",
@@ -3368,17 +3380,16 @@
   "gui.typemoonworld.rune.invalid": "Program invalid",
   "gui.typemoonworld.rune.drag_hint": "Drag known runes into program slots",
   "gui.typemoonworld.rune.mode.direct_air": "Direct release",
-  "gui.typemoonworld.rune.mode.rune_stone": "Rune stone",
-  "gui.typemoonworld.rune.mode.weapon": "Weapon",
-  "gui.typemoonworld.rune.mode.armor": "Armor",
-  "gui.typemoonworld.rune.mode.tool": "Tool",
+  "gui.typemoonworld.rune.mode.rune_stone": "Inscription mode",
+  "gui.typemoonworld.rune.mode.weapon": "Enchantment mode - weapon",
+  "gui.typemoonworld.rune.mode.armor": "Reinforcement mode - armor",
+  "gui.typemoonworld.rune.mode.tool": "Enchantment mode - tool",
   "gui.typemoonworld.rune.mode.block_trap": "Block trap",
   "gui.typemoonworld.rune.mode.body": "Body",
   "gui.typemoonworld.rune.config": "Rune Program Configuration",
   "gui.typemoonworld.rune.config_hint": "Choose how this program is released",
   "gui.typemoonworld.rune.release_mode_select": "Release mode: %s (click to cycle)"
-  ,"gui.typemoonworld.rune.trap_config": "Trap: radius %.1f, delay %s ticks, interval %s ticks"
-  ,"gui.typemoonworld.rune.uses_config": "Trigger uses: %s (click to adjust)"
+  ,"gui.typemoonworld.rune.trap_config": "Trap: radius %.1f, delay %s ticks"
   ,"gui.typemoonworld.rune.semantic.wealth": "Wealth"
   ,"gui.typemoonworld.rune.semantic.strength": "Strength"
   ,"gui.typemoonworld.rune.semantic.break": "Break"
@@ -3481,7 +3492,5 @@
   ,"gui.typemoonworld.rune.add_wheel": "Add to Current Wheel"
   ,"gui.typemoonworld.rune.radius": "Radius"
   ,"gui.typemoonworld.rune.delay": "Delay"
-  ,"gui.typemoonworld.rune.interval": "Interval"
-  ,"gui.typemoonworld.rune.triggers": "Uses"
   ,"block.typemoonworld.rune_inscription": "Rune Inscription"
 }

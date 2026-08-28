@@ -108,7 +108,11 @@ public final class PlayerMagicCastService {
          displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
          return;
       }
-       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId)) return;
+       // Stopping a running jewel machine gun is a toggle action and must not be
+       // blocked by the cooldown applied between its bursts.
+       boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
+          && net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun.isActive(entity);
+       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
        boolean infiniteMana = entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
           && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
 

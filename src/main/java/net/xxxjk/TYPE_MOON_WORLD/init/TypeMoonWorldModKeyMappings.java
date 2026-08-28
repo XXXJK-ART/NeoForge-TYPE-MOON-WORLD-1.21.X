@@ -483,16 +483,7 @@ public class TypeMoonWorldModKeyMappings {
                      && vars.current_magic_index >= 0
                      && vars.current_magic_index < vars.selected_magics.size()) {
                      String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                     if (RuneLearningService.ORIGIN_MAGIC_ID.equals(currentMagic)) {
-                        if (!suppressScreens && Minecraft.getInstance().screen == null) Minecraft.getInstance().setScreen(new RuneKnowledgeScreen(null));
-                        isModeSwitchDown = true;
-                     } else if (RuneProgramService.isDynamicId(currentMagic)) {
-                        if (!suppressScreens && Minecraft.getInstance().screen == null) {
-                           var program = RuneProgramService.find(vars, currentMagic);
-                           Minecraft.getInstance().setScreen(new RuneProgramConfigScreen(null, program));
-                        }
-                        isModeSwitchDown = true;
-                     } else if (vars.isCurrentSelectionFromCrest(currentMagic)) {
+                     if (vars.isCurrentSelectionFromCrest(currentMagic)) {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
                      } else if ("sword_barrel_full_open".equals(currentMagic)) {
                         if (!suppressScreens && Minecraft.getInstance().screen == null) {
@@ -637,6 +628,33 @@ public class TypeMoonWorldModKeyMappings {
             || "unlimited_blade_works".equals(magicId)
             || "broken_phantasm".equals(magicId)) {
             Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
+            return true;
+         }
+
+         if ("reinforcement".equals(magicId) || "reinforcement_self".equals(magicId)
+            || "reinforcement_other".equals(magicId) || "reinforcement_item".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
+            return true;
+         }
+         if ("gravity_magic".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.gravity_magic_mode));
+            return true;
+         }
+         if ("mana_burst".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(0));
+            return true;
+         }
+         if ("jewel_magic_shoot".equals(magicId) || "jewel_magic_release".equals(magicId)
+            || "jewel_machine_gun".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.jewel_magic_mode));
+            return true;
+         }
+         if ("sword_barrel_full_open".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.sword_barrel_mode));
+            return true;
+         }
+         if ("time_alter".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.TimeAlterMultiplierScreen(vars.time_alter_multiplier));
             return true;
          }
 
