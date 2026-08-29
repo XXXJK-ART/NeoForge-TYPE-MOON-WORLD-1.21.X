@@ -28,7 +28,8 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="typemoonworld"
 type="required"
-versionRange="[3.3,3.4)"
+# Keep the addon loadable across future Type Moon World releases.
+versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
 

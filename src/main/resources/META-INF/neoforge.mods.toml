@@ -23,7 +23,7 @@ issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #opti
 modId="typemoonworld" #mandatory
 
 # The version number of the mod
-version="3.3.0" #mandatory
+version="${mod_version}" #mandatory
 
 # A display name for the mod
 displayName="Type_Moon_World Mod" #mandatory
@@ -134,7 +134,8 @@ description='''Sakura and imaginary-space extensions for Type Moon World.'''
 [[dependencies.typemoonaddon]]
     modId="typemoonworld"
     type="required"
-    versionRange="[3.3,3.4)"
+    # Keep the addon loadable across future Type Moon World releases.
+    versionRange="[0,)"
     ordering="AFTER"
     side="BOTH"
 

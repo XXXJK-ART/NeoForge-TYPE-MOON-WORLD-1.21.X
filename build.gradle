@@ -110,10 +110,17 @@ base {
 tasks.named('jar').configure {
     archiveFileName = "Type_Moon_World-neoforge-${mod_version}-mc${minecraft_version}.jar"
     // Keep the legacy non-Sakura extensions (Gilles, worms, boundaries, etc.)
-    // available to the core jar. Sakura and shadow-logic implementations are
-    // supplied exclusively by sakura-addon.
-    exclude 'com/example/typemoonaddon/shadowlogic/**'
-    exclude 'com/example/typemoonaddon/entity/Sakura*.class'
+    // available to the core jar. The core compatibility registries still
+    // reference a small set of legacy Sakura value/registry classes, so those
+    // server-side classes must remain loadable even though the standalone
+    // io.github.typemoonaddon implementation owns the active Sakura systems.
+    // Legacy client implementations and Mixins remain excluded to avoid
+    // registering two client stacks.
+    // AddonNetwork still exposes the legacy payload type while the active
+    // shadow logic lives in io.github.typemoonaddon. Keep only that wire-level
+    // compatibility package and omit the old logic/client implementation.
+    exclude 'com/example/typemoonaddon/shadowlogic/magic/**'
+    exclude 'com/example/typemoonaddon/shadowlogic/client/**'
     exclude 'com/example/typemoonaddon/client/**/BlackMud*.class'
     exclude 'com/example/typemoonaddon/client/**/Shadow*.class'
     exclude 'com/example/typemoonaddon/client/**/*Shadow*.class'
@@ -125,28 +132,13 @@ tasks.named('jar').configure {
     exclude 'com/example/typemoonaddon/client/PlayerArmorOcclusion*.class'
     exclude 'com/example/typemoonaddon/client/model/CursedArmor*.class'
     exclude 'com/example/typemoonaddon/client/renderer/CursedArmor*.class'
-    exclude 'com/example/typemoonaddon/data/ImaginarySpaceData.class'
-    exclude 'com/example/typemoonaddon/data/PollutionData.class'
-    exclude 'com/example/typemoonaddon/data/Sakura*.class'
-    exclude 'com/example/typemoonaddon/data/SpiritualDamageData.class'
-    exclude 'com/example/typemoonaddon/data/CursedArmorViewData.class'
-    exclude 'com/example/typemoonaddon/effect/Sakura*.class'
+    // Core registry classes use these legacy server-side Sakura types.
     exclude 'com/example/typemoonaddon/event/SakuraBehaviorEvents.class'
     exclude 'com/example/typemoonaddon/event/ImaginarySpaceEvents.class'
-    exclude 'com/example/typemoonaddon/imaginary_space/**'
-    exclude 'com/example/typemoonaddon/item/CursedArmor*.class'
-    exclude 'com/example/typemoonaddon/item/HolyGrailFragmentItem.class'
-    exclude 'com/example/typemoonaddon/item/ImaginaryPrimerItem.class'
-    exclude 'com/example/typemoonaddon/magic/Sakura*.class'
-    exclude 'com/example/typemoonaddon/magic/BlackShadowNightService.class'
-    exclude 'com/example/typemoonaddon/magic/CursedArmorService.class'
-    exclude 'com/example/typemoonaddon/magic/Imaginary*.class'
+    // The old server-side Sakura implementation is retained for binary
+    // compatibility with the core registries; it is not wired as an active
+    // event subscriber or Mixin.
     exclude 'com/example/typemoonaddon/mixin/**'
-    exclude 'com/example/typemoonaddon/network/*Sakura*.class'
-    exclude 'com/example/typemoonaddon/network/*Shadow*.class'
-    exclude 'com/example/typemoonaddon/network/*Imaginary*.class'
-    exclude 'com/example/typemoonaddon/network/*BlackMud*.class'
-    exclude 'com/example/typemoonaddon/world/Sakura*.class'
 }
 
 tasks.named('jarJar').configure {
