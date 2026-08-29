@@ -8,7 +8,7 @@ public final class ServantCardSkillLayout {
       return switch (servantId == null ? "" : servantId) {
          case "artoria_pendragon" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Knight Combo", "artoria_small_combo", 16.0, 30);
-            case 0 -> new ServantCardSkillAction("Mana Burst", "mana_burst", 20.0, 1400);
+            case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst", 20.0, 0);
             case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0, 220);
             case 2 -> new ServantCardSkillAction("Charisma", "charisma", 30.0, 360);
             case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0, 100);
@@ -51,6 +51,7 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Algiz Rune", "cu_algiz", 30.0, 300);
             case 4 -> new ServantCardSkillAction("Berkana Rune", "cu_berkana", 34.0, 400);
             case 5 -> new ServantCardSkillAction("Disengage", "cu_disengage", 18.0, 400);
+            case 6 -> new ServantCardSkillAction("Rune Barrier", "cu_rune_barrier", 80.0, 600);
             default -> null;
          };
          case "heracles" -> switch (slot) {
@@ -87,7 +88,7 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 800);
+            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 180);
             case 1 -> new ServantCardSkillAction("Self Modification", "self_mod", 28.0, 360);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
@@ -116,7 +117,7 @@ public final class ServantCardSkillLayout {
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
-            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 240);
+            case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 300);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };
@@ -162,7 +163,8 @@ public final class ServantCardSkillLayout {
             case -1 -> new ServantCardSkillAction("Morphing Melee Combo", "enkidu_morph_melee", 0.0, 18);
             case 0 -> new ServantCardSkillAction("Transfiguration", "transfiguration", 0.0, 0);
             case 1 -> new ServantCardSkillAction("Presence Detection", "detection", 18.0, 160);
-            case 2 -> new ServantCardSkillAction("Chains of Heaven", "chains", 36.0, 260);
+            // Enkidu exposes one NP only; the chain barrage is an Enuma sub-stage.
+            case 2 -> null;
             case 3 -> new ServantCardSkillAction(crouching ? "Grand Age of Babylon" : "Age of Babylon", crouching ? "age_babylon_grand" : "age_babylon", crouching ? 80.0 : 34.0, crouching ? 520 : 180);
             case 4 -> new ServantCardSkillAction("Mega Age of Babylon", "mega_age", 90.0, 900);
             case 5 -> new ServantCardSkillAction("Clay Bulwark", "bulwark", 30.0, 320);
@@ -321,7 +323,7 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Usumidori: Heaven-Blade Step", "ushiwakamaru_usumidori", 50.0, 600);
             case 7 -> new ServantCardSkillAction("Benkei: Immovable Ground", "ushiwakamaru_benkei", 100.0, 600);
             case 8 -> new ServantCardSkillAction("Houmaru: Spider Slayer", "ushiwakamaru_spider_slayer", 50.0, 600);
-            case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 150.0, 600);
+            case 9 -> new ServantCardSkillAction("Dan-no-ura: Eight-Boat Leap", "ushiwakamaru_eight_boat", 225.0, 1200);
             default -> null;
          };
          case "arash" -> switch (slot) {

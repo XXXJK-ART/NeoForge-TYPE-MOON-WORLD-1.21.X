@@ -118,6 +118,33 @@ public final class MagicLearningStrategy {
       Map.entry("gandr_machine_gun", "gander")
    );
 
+   /** Only these two jewel entries are actual magic-knowledge entries. */
+   private static final Set<String> JEWEL_KNOWLEDGE_IDS = Set.of(
+      "jewel_magic_shoot", "jewel_magic_release", "jewel_machine_gun"
+   );
+   private static final Set<String> JEWEL_RUNTIME_ACTION_IDS = Set.of(
+      "jewel_random_shoot",
+      "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+      "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"
+   );
+
+   public static boolean isJewelKnowledge(String id) {
+      if (id == null || id.isBlank()) return false;
+      String path = knowledgePath(id);
+      return JEWEL_KNOWLEDGE_IDS.contains(path) || JEWEL_RUNTIME_ACTION_IDS.contains(path);
+   }
+
+   public static boolean isKnowledgeVisible(String id) {
+      if (id == null || id.isBlank()) return false;
+      String path = knowledgePath(id);
+      return !TalentService.isTalent(path) && !JEWEL_RUNTIME_ACTION_IDS.contains(path);
+   }
+
+   private static String knowledgePath(String id) {
+      ResourceLocation parsed = ResourceLocation.tryParse(id);
+      return parsed == null ? id : parsed.getPath();
+   }
+
    private static Rule rule(String id) {
       String normalized = normalizeDisplayId(id);
       return RULES.getOrDefault(normalized, new Rule(50, true, false, false, false, false, false));
@@ -258,7 +285,7 @@ public final class MagicLearningStrategy {
       if (ids == null || ids.isEmpty()) return List.of();
       LinkedHashSet<String> result = new LinkedHashSet<>();
       for (String id : ids) {
-         if (id == null || id.isBlank() || isRemovedMagic(id)) continue;
+         if (id == null || id.isBlank() || isRemovedMagic(id) || !isKnowledgeVisible(id)) continue;
          result.add(normalizeDisplayId(id));
       }
       return List.copyOf(result);

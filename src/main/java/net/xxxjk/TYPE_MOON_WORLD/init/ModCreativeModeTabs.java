@@ -42,6 +42,10 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MASTER_CARD_TOHSAKA_TOKIOMI);
                         output.accept(ModItems.MASTER_CARD_LEFF_LAYNOR_FLAUROS);
                         output.accept(ModItems.MASTER_CARD_URYU_RYUNOSUKE);
+                        output.accept(com.example.typemoonaddon.registry.AddonItems.MASTER_CARD_MATOU_KARIYA);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA_ALTER);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.MASTER_CARD_MATOU_SAKURA_FHA);
                         output.accept(ModItems.SERVANT_CARD_EMIYA_ARCHER);
                         output.accept(ModItems.SERVANT_CARD_ARTORIA_PENDRAGON);
                         output.accept(ModItems.SERVANT_CARD_SASAKI_KOJIRO);
@@ -357,6 +361,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ARASH_SPAWN_EGG);
                         output.accept(ModItems.BAOBHAN_SITH_SPAWN_EGG);
                         output.accept(ModItems.MACEDONIAN_SOLDIER_SPAWN_EGG);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.SHADOW_FAMILIAR_SPAWN_EGG);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.BLACK_SHADOW_SPAWN_EGG);
                     }).build());
 
     public static final Supplier<CreativeModeTab> TYPE_MOON_WORLD_TAB = CREATIVE_MODE_TAB.register("type_moon_world_tab",
@@ -365,6 +371,10 @@ public class ModCreativeModeTabs {
                     //添加创造栏物品
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.IMAGINARY_PRIMER);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.CREST_WORM);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.HOLY_GRAIL_FRAGMENT);
+                        output.accept(io.github.typemoonaddon.registry.ModItems.VOID_RING_REGALIA);
                         output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
                         output.accept(ModItems.GANRYU_MANUAL);
                         output.accept(ModItems.HOKUSHIN_MANUAL);
@@ -423,6 +433,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.ISKANDAR_SHORTSWORD);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
+                        output.accept(com.example.typemoonaddon.registry.AddonItems.PRELATIS_SPELLBOOK);
                         output.accept(ModItems.STAFF);
                         output.accept(ModItems.RUBY_STAFF);
                         output.accept(ModItems.SAPPHIRE_STAFF);

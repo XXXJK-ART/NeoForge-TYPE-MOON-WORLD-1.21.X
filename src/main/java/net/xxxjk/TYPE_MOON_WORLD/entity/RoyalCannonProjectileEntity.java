@@ -30,7 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.joml.Vector3f;
 
-/** Fast, single-hit, lightly homing Royal Cannon shot. */
+/** Fast, single-hit Royal Cannon shot with a fixed launch direction. */
 public final class RoyalCannonProjectileEntity extends Entity {
    private static final EntityDataAccessor<Boolean> EXPLOSIVE_VISUAL =
       SynchedEntityData.defineId(RoyalCannonProjectileEntity.class, EntityDataSerializers.BOOLEAN);
@@ -46,8 +46,6 @@ public final class RoyalCannonProjectileEntity extends Entity {
    private float damageMultiplier = 1.0F;
    private boolean explosive;
    private float explosionRadius = 0.0F;
-   private Vec3 curveDirection = Vec3.ZERO;
-   private double curveStrength = 0.0;
    private final Set<Integer> hit = new HashSet<>();
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -65,6 +63,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
       this.setDeltaMovement(direction.normalize().scale(2.15));
    }
 
+   /** Used by the non-explosive slate volley; Royal Cannon never assigns a target. */
    public void setHomingTarget(LivingEntity target) {
       this.homingTargetUuid = target == null || EntityUtils.isImmunePlayerTarget(target) ? null : target.getUUID();
    }
@@ -76,10 +75,8 @@ public final class RoyalCannonProjectileEntity extends Entity {
       this.entityData.set(VISUAL_SCALE, this.explosive ? 1.42F : 0.86F);
    }
 
-   public void configureRoyalCannon(float radius, Vec3 curveDirection, double curveStrength) {
+   public void configureRoyalCannon(float radius) {
       setExplosive(radius);
-      this.curveDirection = curveDirection == null || curveDirection.lengthSqr() < 1.0E-6 ? Vec3.ZERO : curveDirection.normalize();
-      this.curveStrength = Math.max(0.0, curveStrength);
    }
 
    public void setDamageMultiplier(float damageMultiplier) {
@@ -115,9 +112,10 @@ public final class RoyalCannonProjectileEntity extends Entity {
          discard();
          return;
       }
-      LivingEntity target = getTarget(level);
-      if (target != null) steer(target);
-      applyCurvedFlight();
+      if (!explosive) {
+         LivingEntity target = getTarget(level);
+         if (target != null) steer(target);
+      }
       Vec3 old = position();
       Vec3 next = old.add(getDeltaMovement());
       HitResult blockHit = level.clip(new ClipContext(old, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
@@ -156,39 +154,18 @@ public final class RoyalCannonProjectileEntity extends Entity {
    }
 
    private LivingEntity getTarget(ServerLevel level) {
-      LivingEntity target = null;
       LivingEntity owner = getOwner(level);
-      if (homingTargetUuid != null && owner != null) {
-         Entity entity = level.getEntity(homingTargetUuid);
-         if (entity instanceof LivingEntity living && isValidVictim(owner, living)) target = living;
-      }
-      if (target == null && owner != null) {
-         target = level.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(32.0),
-            e -> isValidVictim(owner, e))
-            .stream().min(java.util.Comparator.comparingDouble(this::distanceTo)).orElse(null);
-      }
-      return target;
+      if (owner == null || homingTargetUuid == null) return null;
+      Entity entity = level.getEntity(homingTargetUuid);
+      return entity instanceof LivingEntity living && isValidVictim(owner, living) ? living : null;
    }
 
    private void steer(LivingEntity target) {
-      Vec3 desired = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0)
-         .subtract(position());
+      Vec3 desired = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(position());
       if (desired.lengthSqr() < 1.0E-6) return;
       Vec3 current = getDeltaMovement().normalize();
-      double homing = explosive ? 0.105 : 0.12;
-      Vec3 steered = current.scale(1.0 - homing).add(desired.normalize().scale(homing));
+      Vec3 steered = current.scale(0.88).add(desired.normalize().scale(0.12));
       setDeltaMovement(steered.normalize().scale(2.15));
-   }
-
-   private void applyCurvedFlight() {
-      if (!explosive || curveStrength <= 0.0 || curveDirection.lengthSqr() < 1.0E-6 || tickCount > 28) return;
-      double fade = Math.max(0.0, 1.0 - tickCount / 28.0);
-      double wave = Math.sin((tickCount + getId() * 0.37) * 0.42) * 0.45 + 0.72;
-      Vec3 current = getDeltaMovement();
-      Vec3 curved = current.add(curveDirection.scale(curveStrength * fade * wave));
-      if (curved.lengthSqr() > 1.0E-6) {
-         setDeltaMovement(curved.normalize().scale(2.15));
-      }
    }
 
    private void impact(ServerLevel level, LivingEntity owner, Vec3 pos) {

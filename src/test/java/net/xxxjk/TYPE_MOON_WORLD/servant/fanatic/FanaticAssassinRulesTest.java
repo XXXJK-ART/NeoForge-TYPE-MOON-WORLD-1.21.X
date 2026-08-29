@@ -16,7 +16,7 @@ class FanaticAssassinRulesTest {
       assertEquals(400.0, params.maxHealth());
       assertEquals(15.0, params.attackDamage());
       assertEquals(0.36, params.movementSpeed());
-      assertEquals(6.0, params.armor());
+      assertEquals(4.5, params.armor());
       assertEquals(600.0, params.manaPool());
       assertEquals(4.0, params.critRatePercent());
    }

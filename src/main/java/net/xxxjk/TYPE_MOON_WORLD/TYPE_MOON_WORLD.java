@@ -1,8 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD;
 
 import com.mojang.logging.LogUtils;
-import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.network.AddonNetwork;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -44,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModLootModifiers;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModDataComponents;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModVillagers;
 import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
@@ -149,6 +148,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TerrainDebrisMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.RuneProgramMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
@@ -157,6 +157,8 @@ import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
+import com.example.typemoonaddon.TypeMoonAddon;
+import com.example.typemoonaddon.network.AddonNetwork;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -181,6 +183,7 @@ public class TYPE_MOON_WORLD {
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);
+      ModDataComponents.register(modEventBus);
       ModBlocks.register(modEventBus);
       ModBlockEntities.register(modEventBus);
       ModEntities.register(modEventBus);
@@ -188,7 +191,6 @@ public class TYPE_MOON_WORLD {
       ModParticles.register(modEventBus);
       ModSounds.register(modEventBus);
       ModVillagers.register(modEventBus);
-      new TypeMoonAddon(modEventBus, modContainer);
       ModLootModifiers.register(modEventBus);
       ModBiomes.register(modEventBus);
       TypeMoonWorldModMenus.REGISTRY.register(modEventBus);
@@ -196,6 +198,7 @@ public class TYPE_MOON_WORLD {
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
+      new TypeMoonAddon(modEventBus, modContainer);
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
@@ -262,9 +265,7 @@ public class TYPE_MOON_WORLD {
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
-      // Integrated addon payloads must share this registrar. A second registrar
-      // creates a separate protocol channel and leaves mock/server connections
-      // unable to send the payload despite successful class loading.
+      // Integrated addon payloads must share this registrar and protocol channel.
       AddonNetwork.registerPayloads(registrar);
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
@@ -279,6 +280,7 @@ public class TYPE_MOON_WORLD {
       );
       registrar.playToServer(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
       registrar.playToServer(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
+      registrar.playBidirectional(RuneProgramMessage.TYPE, RuneProgramMessage.STREAM_CODEC, RuneProgramMessage::handleData);
       registrar.playToServer(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
       registrar.playToServer(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
       registrar.playToServer(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);

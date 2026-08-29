@@ -71,6 +71,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -108,6 +109,8 @@ public final class EmiyaArcherCombatHelper {
    public static final String UBW_CHANT_END_TICK = "EmiyaUbwChantEndTick";
    public static final String UBW_CHANT_TARGET_ID = "EmiyaUbwChantTargetId";
    public static final String UBW_ACTIVE_UNTIL = "EmiyaUbwActiveUntil";
+   public static final String UBW_POWER_SCALE = "EmiyaUbwPowerScale";
+   public static final String UBW_OVERDRAFT = "EmiyaUbwOverdraft";
    public static final String UBW_MIN_UNTIL = "EmiyaUbwMinUntil";
    public static final String UBW_NEXT_RAIN = "EmiyaUbwNextRain";
    public static final String UBW_NEXT_INTERCEPT = "EmiyaUbwNextIntercept";
@@ -603,10 +606,11 @@ public final class EmiyaArcherCombatHelper {
       if (entity.getPersistentData().getLong(UBW_ACTIVE_UNTIL) > now) {
          return false;
       }
-      if (!canUse(now, entity.getPersistentData().getLong(LAST_UBW_TICK), UBW_COOLDOWN)) {
+      int previousCooldown = entity.getPersistentData().getBoolean(UBW_OVERDRAFT) ? UBW_COOLDOWN * 2 : UBW_COOLDOWN;
+      if (!canUse(now, entity.getPersistentData().getLong(LAST_UBW_TICK), previousCooldown)) {
          return false;
       }
-      if (entity.getCurrentMp() < 120.0) {
+      if (!ServantNoblePhantasmResourceService.canAttemptNpcCast(entity, 100.0)) {
          return false;
       }
       if (entity.level() instanceof ServerLevel level && UBWInstanceManager.isDimensionOccupied(level.getServer(), ModDimensions.EMIYA_UBW_KEY, entity.getUUID())) {
@@ -650,10 +654,17 @@ public final class EmiyaArcherCombatHelper {
    }
 
    private static void beginUbwChant(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 100.0);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) {
+         return;
+      }
       entity.getPersistentData().putLong(LAST_UBW_TICK, now);
       entity.getPersistentData().putLong(UBW_CHANT_END_TICK, now + UBW_CHANT_TICKS);
       entity.getPersistentData().putInt(UBW_CHANT_TARGET_ID, target.getId());
-      entity.setCurrentMp(entity.getCurrentMp() - 100.0);
+      entity.getPersistentData().putDouble(UBW_POWER_SCALE, resource.powerScale());
+      entity.getPersistentData().putBoolean(UBW_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       ServantVoiceHelper.tryPlayEmiyaUbw(entity);
       entity.triggerNamedActionAnimation("ubw_chant");
       entity.getNavigation().stop();
@@ -2350,7 +2361,6 @@ public final class EmiyaArcherCombatHelper {
       PseudoSpiralSwordProjectileEntity projectile = new PseudoSpiralSwordProjectileEntity(level, entity);
       projectile.setNoGravity(true);
       projectile.setPos(entity.getX(), entity.getY() + entity.getBbHeight() * 0.72, entity.getZ());
-      projectile.setTrackedTarget(target);
       Vec3 dir = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0).subtract(projectile.position()).normalize();
       projectile.setDeltaMovement(dir.scale(3.15));
       level.addFreshEntity(projectile);

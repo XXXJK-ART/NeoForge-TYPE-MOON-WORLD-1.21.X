@@ -39,6 +39,10 @@ import net.xxxjk.TYPE_MOON_WORLD.client.gui.ProjectionPresetScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCommandScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ServantCardKeybindScreen;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.ToukoTravelPresetScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.RuneKnowledgeScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.RuneProgramEditorScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.RuneProgramConfigScreen;
+import net.xxxjk.TYPE_MOON_WORLD.client.gui.RuneProgramLibraryScreen;
 import net.xxxjk.TYPE_MOON_WORLD.api.ClientExtensionRegistryImpl;
 import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.projection.StructuralAnalysisSelectionClient;
@@ -69,11 +73,14 @@ import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(
+   modid = "typemoonworld",
    bus = Bus.MOD,
    value = {Dist.CLIENT}
 )
@@ -84,7 +91,8 @@ public class TypeMoonWorldModKeyMappings {
    public static final KeyMapping LOSE_HEALTH_REGAIN_MANA = new KeyMapping("key.typemoonworld.lose_health_regain_mana", 88, "key.categories.typemoonworld");
    public static final KeyMapping BASIC_INFORMATION_GUI = new KeyMapping("key.typemoonworld.basic_information_gui", 82, "key.categories.typemoonworld");
    public static final KeyMapping MYSTIC_EYES_ACTIVATE = new KeyMapping("key.typemoonworld.mystic_eyes_activate", 86, "key.categories.typemoonworld");
-   public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", 258, "key.categories.typemoonworld");
+   /** Opens the configuration/library for the currently selected wheel entry. */
+   public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", GLFW.GLFW_KEY_TAB, "key.categories.typemoonworld");
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
@@ -586,6 +594,15 @@ public class TypeMoonWorldModKeyMappings {
                      int index = vars.current_magic_index;
                      if (index >= 0 && index < vars.selected_magics.size()) {
                         String magicId = vars.selected_magics.get(index);
+                        if (RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId)) {
+                           Minecraft.getInstance().setScreen(new RuneKnowledgeScreen(null));
+                           return;
+                        }
+                        if (RuneProgramService.isDynamicId(magicId)) {
+                           var program = RuneProgramService.find(vars, magicId);
+                           Minecraft.getInstance().setScreen(new RuneProgramConfigScreen(null, program));
+                           return;
+                        }
                         openCurrentMagicPreset(player, vars, magicId);
                      }
                   }
@@ -596,7 +613,7 @@ public class TypeMoonWorldModKeyMappings {
          }
       }
 
-      /** Opens the Tab preset editor for both built-in and addon magic. */
+      /** Opens the preset editor for both built-in and addon magic. */
       private static boolean openCurrentMagicPreset(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
          if (player == null || vars == null || magicId == null || magicId.isBlank()) {
             return false;
@@ -611,6 +628,33 @@ public class TypeMoonWorldModKeyMappings {
             || "unlimited_blade_works".equals(magicId)
             || "broken_phantasm".equals(magicId)) {
             Minecraft.getInstance().setScreen(new ProjectionPresetScreen(player));
+            return true;
+         }
+
+         if ("reinforcement".equals(magicId) || "reinforcement_self".equals(magicId)
+            || "reinforcement_other".equals(magicId) || "reinforcement_item".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.reinforcement_mode));
+            return true;
+         }
+         if ("gravity_magic".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.gravity_magic_mode));
+            return true;
+         }
+         if ("mana_burst".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(0));
+            return true;
+         }
+         if ("jewel_magic_shoot".equals(magicId) || "jewel_magic_release".equals(magicId)
+            || "jewel_machine_gun".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.jewel_magic_mode));
+            return true;
+         }
+         if ("sword_barrel_full_open".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new MagicModeSwitcherScreen(vars.sword_barrel_mode));
+            return true;
+         }
+         if ("time_alter".equals(magicId)) {
+            Minecraft.getInstance().setScreen(new net.xxxjk.TYPE_MOON_WORLD.client.gui.TimeAlterMultiplierScreen(vars.time_alter_multiplier));
             return true;
          }
 

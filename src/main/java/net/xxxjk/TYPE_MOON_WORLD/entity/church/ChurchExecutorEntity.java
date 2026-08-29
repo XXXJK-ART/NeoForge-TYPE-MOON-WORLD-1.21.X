@@ -268,6 +268,11 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
    protected void customServerAiStep() {
       boolean tactical = net.xxxjk.TYPE_MOON_WORLD.combat.ai.NpcTacticalController.tick(this);
       if (!tactical) super.customServerAiStep();
+      if (getTarget() == null || !getTarget().isAlive()) {
+         LivingEntity nearest = level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(12.0),
+            this::isChurchTarget).stream().min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
+         if (nearest != null) setTarget(nearest);
+      }
       NpcScaleHelper.ensureRandomScale(this);
       if (!getPersistentData().getBoolean(BASIC_MAGIC_ROSTER_VERSION)) rollBasicMagics();
       if (!getPersistentData().getBoolean(MIRACLE_ROSTER_VERSION)) rollMiracles();

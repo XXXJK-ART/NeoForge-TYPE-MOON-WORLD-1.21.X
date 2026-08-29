@@ -19,13 +19,18 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneEffectDispatcher;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
@@ -42,6 +47,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private static final DustParticleOptions WATER_DUST = new DustParticleOptions(new Vector3f(0.15F, 0.45F, 1.0F), 1.0F);
    private static final DustParticleOptions EARTH_DUST = new DustParticleOptions(new Vector3f(0.42F, 0.28F, 0.12F), 1.0F);
    private static final DustParticleOptions WIND_DUST = new DustParticleOptions(new Vector3f(0.65F, 1.0F, 0.78F), 1.0F);
+   private static final DustParticleOptions FIRE_DUST = new DustParticleOptions(new Vector3f(1.0F, 0.06F, 0.01F), 1.15F);
    public final List<Vec3> tracePos = new LinkedList<>();
    private float magicDamage = 3.0F;
    private float slowPercent = 0.0F;
@@ -49,6 +55,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private Vec3 originPos = Vec3.ZERO;
    private String sourceMagicId = "magic_bullet";
    private double casterProficiency = 0.0;
+   private double runeExplosionRadius = 0.0D;
 
    public MagicBulletProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -84,6 +91,10 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       this.originPos = this.position();
    }
 
+   public void setRuneExplosionRadius(double radius) {
+      this.runeExplosionRadius = Math.max(0.0D, Math.min(16.0D, radius));
+   }
+
    public void setMagicSource(String magicId, double proficiency) {
       this.sourceMagicId = magicId == null || magicId.isBlank() ? "magic_bullet" : magicId;
       this.casterProficiency = Math.max(0.0, Math.min(100.0, proficiency));
@@ -98,6 +109,16 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    }
 
    public void tick() {
+      if (!this.level().isClientSide && this.getPersistentData().getBoolean("tmwRuneProjectile")) {
+         var tag = this.getPersistentData();
+         if (tag.getBoolean("tmwRuneGravity")) this.setNoGravity(false);
+         int delay = tag.getInt("tmwRuneDelayRemaining");
+         if (delay > 0) {
+            this.setDeltaMovement(Vec3.ZERO);
+            tag.putInt("tmwRuneDelayRemaining", delay - 1);
+            if (delay == 1) this.setDeltaMovement(new Vec3(tag.getDouble("tmwRuneVelocityX"), tag.getDouble("tmwRuneVelocityY"), tag.getDouble("tmwRuneVelocityZ")));
+         }
+      }
       super.tick();
       if (this.level().isClientSide || this.tickCount % 2 == 0) {
          spawnTrailParticles();
@@ -133,6 +154,14 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
             damage = MagicResistanceHelper.applyMagicDamageReduction(
                target, this.damageSources().magic(), damage, MagicComplexity.SIMPLE_ACTION,
                this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+            // Resolve effect bands against the projectile's actual base damage at impact.
+            // This is where life drain, elemental bonuses, stasis and terminal effects become real.
+            var runeTag = this.getPersistentData();
+            if (runeTag.contains("tmwRuneProgram", 10) && this.getOwner() instanceof net.minecraft.server.level.ServerPlayer player) {
+               var resolved = RuneEffectDispatcher.applyProjectileImpact(player, target,
+                  RuneProgram.fromNBT(runeTag.getCompound("tmwRuneProgram")), damage);
+               if (resolved != null && !resolved.failed()) damage = (float)Math.max(damage, resolved.damage());
+            }
             target.invulnerableTime = 0;
             target.hurt(this.damageSources().magic(), damage);
             target.invulnerableTime = 0;
@@ -146,18 +175,65 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
             if (duration > 0 || damage > 0.0F) {
                applyElementEffect(target);
             }
-            spawnImpactParticles(this.position());
+             spawnImpactParticles(this.position());
+             explodeRune(this.position());
+             var rune = this.getPersistentData();
+             int ricochet = rune.getInt("tmwRuneRicochetRemaining");
+             int pierce = rune.getInt("tmwRunePierceRemaining");
+             int rebound = rune.getInt("tmwRuneReboundRemaining");
+             if (rebound > 0) {
+                rune.putInt("tmwRuneReboundRemaining", rebound - 1);
+                Vec3 reflected = this.getDeltaMovement().scale(-1.0D);
+                if (reflected.lengthSqr() > 1.0E-6) this.setDeltaMovement(reflected.normalize().scale(Math.max(.35D, reflected.length())));
+             }
+             if (ricochet > 0 || pierce > 0 || rebound > 0) {
+                if (ricochet > 0) {
+                   rune.putInt("tmwRuneRicochetRemaining", ricochet - 1);
+                   LivingEntity next = this.level().getEntitiesOfClass(LivingEntity.class, new AABB(this.position(), this.position()).inflate(24.0D),
+                      candidate -> candidate.isAlive() && candidate != target && candidate != this.getOwner())
+                      .stream().min(java.util.Comparator.comparingDouble(candidate -> candidate.distanceToSqr(this))).orElse(null);
+                   if (next != null) {
+                      Vec3 redirected = next.getEyePosition().subtract(this.position()).normalize();
+                      this.setDeltaMovement(redirected.scale(Math.max(.35D, this.getDeltaMovement().length())));
+                   }
+                }
+                if (pierce > 0) rune.putInt("tmwRunePierceRemaining", pierce - 1);
+                Vec3 velocity = this.getDeltaMovement();
+                if (velocity.lengthSqr() > 1.0E-6) this.setDeltaMovement(velocity.normalize().scale(Math.max(.35D, velocity.length())));
+                this.setPos(this.position().add(this.getDeltaMovement().normalize().scale(.25D)));
+                return;
+             }
          }
          this.discard();
       }
    }
 
    protected void onHit(HitResult result) {
+      if (!this.level().isClientSide && result instanceof BlockHitResult blockHit) {
+         var rune = this.getPersistentData();
+         var state = this.level().getBlockState(blockHit.getBlockPos());
+         if (rune.getBoolean("tmwRuneLiquid") && (!state.getFluidState().isEmpty() || state.is(BlockTags.LEAVES))) {
+            int cycle = rune.getInt("tmwRuneCycleRemaining");
+            if (cycle > 0) {
+               rune.putInt("tmwRuneCycleRemaining", cycle - 1);
+               this.setDeltaMovement(this.getDeltaMovement().scale(-1.0D));
+            }
+            Vec3 velocity = this.getDeltaMovement();
+            if (velocity.lengthSqr() > 1.0E-6) this.setPos(this.position().add(velocity.normalize().scale(.3D)));
+            return;
+         }
+      }
       super.onHit(result);
       if (!this.level().isClientSide && !this.isRemoved()) {
          spawnImpactParticles(result.getLocation());
+         explodeRune(result.getLocation());
          this.discard();
       }
+   }
+
+   private void explodeRune(Vec3 pos) {
+      if (runeExplosionRadius <= 0.0D || !(this.level() instanceof ServerLevel level)) return;
+      level.explode(this, pos.x, pos.y, pos.z, (float)runeExplosionRadius, Level.ExplosionInteraction.NONE);
    }
 
    private void applyElementEffect(LivingEntity target) {
@@ -182,6 +258,9 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       ParticleOptions particle = particleForElement(getElement());
       if (this.level() instanceof ServerLevel level) {
          level.sendParticles(particle, this.getX(), this.getY(), this.getZ(), 2, 0.04, 0.04, 0.04, 0.0);
+         if (getElement() == ELEMENT_FIRE) {
+            level.sendParticles(FIRE_DUST, this.getX(), this.getY(), this.getZ(), 2, 0.05, 0.05, 0.05, 0.01);
+         }
       } else {
          this.level().addParticle(particle, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       }
@@ -190,7 +269,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
    private void spawnImpactParticles(Vec3 pos) {
       if (this.level() instanceof ServerLevel level) {
          level.sendParticles(particleForElement(getElement()), pos.x, pos.y, pos.z, 18, 0.18, 0.18, 0.18, 0.02);
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 6, 0.12, 0.12, 0.12, 0.02);
+         if (getElement() == ELEMENT_FIRE) level.sendParticles(FIRE_DUST, pos.x, pos.y, pos.z, 12, 0.2, 0.2, 0.2, 0.02);
       }
    }
 
@@ -208,6 +287,7 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       super.addAdditionalSaveData(tag);
       tag.putString("TypeMoonSourceMagicId", this.sourceMagicId);
       tag.putDouble("TypeMoonCasterProficiency", this.casterProficiency);
+      tag.putDouble("RuneExplosionRadius", this.runeExplosionRadius);
    }
 
    public void readAdditionalSaveData(CompoundTag tag) {
@@ -218,5 +298,6 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
       if (tag.contains("TypeMoonCasterProficiency")) {
          this.casterProficiency = Math.max(0.0, Math.min(100.0, tag.getDouble("TypeMoonCasterProficiency")));
       }
+      this.runeExplosionRadius = Math.max(0.0D, Math.min(16.0D, tag.getDouble("RuneExplosionRadius")));
    }
 }

@@ -20,6 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.MuramasaBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SummoningCircleBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.RuneInscriptionBlock;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaBlockItem;
 
@@ -32,6 +33,9 @@ public class ModBlocks {
          Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.WHITE_CARPET)
             .noOcclusion().noLootTable().strength(0.1F).lightLevel(SummoningCircleBlock::activeLight)
       )
+   );
+   public static final DeferredBlock<RuneInscriptionBlock> RUNE_INSCRIPTION = registerBlock(
+      "rune_inscription", () -> new RuneInscriptionBlock(Properties.of().noCollission().noOcclusion().strength(0.2F).lightLevel(s -> 0))
    );
    public static final DeferredBlock<Block> AGE_OF_GODS_DIRT = registerBlock(
       "age_of_gods_dirt", () -> new Block(Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.DIRT))

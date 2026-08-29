@@ -19,12 +19,16 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.magic.AddonMagicRegistration;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
@@ -38,6 +42,8 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
@@ -50,6 +56,10 @@ import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineChunkProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineNoise;
 import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneRegistry;
 
 public class TypeMoonCommands {
    private static final String MAGIC_ANALYSIS_MAGIC_ID = "magic_analysis";
@@ -240,15 +250,23 @@ public class TypeMoonCommands {
       LinkedHashSet<String> ids = new LinkedHashSet<>();
       for (String magicId : ALL_MAGICS) {
          String normalized = normalizeMagicId(magicId);
-         if (normalized != null && !normalized.isBlank()) {
+         if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) {
             ids.add(normalized);
          }
       }
       for (String magicId : AddonMagicRegistration.registeredMagicIds()) {
          String normalized = normalizeMagicId(magicId);
-         if (normalized != null && !normalized.isBlank()) {
+         if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) {
             ids.add(normalized);
          }
+      }
+      for (String magicId : MagicDefinitionRegistry.ids()) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) ids.add(normalized);
+      }
+      for (String magicId : MagicModularRegistry.registeredMagicIds()) {
+         String normalized = normalizeMagicId(magicId);
+         if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) ids.add(normalized);
       }
       return ids;
    }
@@ -472,6 +490,18 @@ public class TypeMoonCommands {
                            .then(Commands.literal("learn_all").executes(TypeMoonCommands::learnAllMagics)))
                            .then(Commands.literal("forget_all").executes(TypeMoonCommands::forgetAllMagics))
                      ))
+                  .then(
+                     Commands.literal("rune")
+                        .then(Commands.literal("give").then(Commands.argument("rune_id", StringArgumentType.word())
+                           .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(RuneRegistry.ids(), builder))
+                           .executes(TypeMoonCommands::giveRune)
+                           .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::giveRune))))
+                        .then(Commands.literal("learn").then(Commands.argument("rune_id", StringArgumentType.word())
+                           .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(RuneRegistry.ids(), builder))
+                           .executes(TypeMoonCommands::learnRune)
+                           .then(Commands.argument("target", EntityArgument.player()).executes(TypeMoonCommands::learnRune))))
+                        .then(Commands.literal("learn_all").executes(TypeMoonCommands::learnAllRunes))
+                  )
                   .then(
                      ((LiteralArgumentBuilder)Commands.literal("npc")
                            .then(
@@ -863,6 +893,7 @@ public class TypeMoonCommands {
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon player reset | max | cooldown toggle"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn|forget <magic_id>"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic learn_all | forget_all"), false);
+      ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon magic rune give|learn <rune_id> [target] | learn_all"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon talent grant|grant_all|revoke <id> [target]"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon passive grant|grant_all|revoke|list <id> [rank] [target]"), false);
       ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("/typemoon martial learn|forget bajiquan|ganryu|hokushin|tennen"), false);
@@ -1065,6 +1096,7 @@ public class TypeMoonCommands {
          vars.body_resistance = BodyTrainingService.MAX_STAT_POINTS;
          vars.body_technique = BodyTrainingService.MAX_STAT_POINTS;
 
+         vars.learned_magics.removeIf(magicId -> !MagicLearningStrategy.isKnowledgeVisible(magicId));
          for (String m : allMagicIds()) {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
@@ -1088,6 +1120,9 @@ public class TypeMoonCommands {
          }
 
          vars.has_unlimited_blade_works = true;
+         vars.rune_origin_unlocked = true;
+         if (!vars.learned_magics.contains(RuneLearningService.ORIGIN_MAGIC_ID)) vars.learned_magics.add(RuneLearningService.ORIGIN_MAGIC_ID);
+         for (RuneDefinition rune : RuneRegistry.all()) if (!vars.learned_runes.contains(rune.idPath())) vars.learned_runes.add(rune.idPath());
          vars.syncPlayerVariables(player);
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Player set to MAX LEVEL with ALL SKILLS."), true);
          return 1;
@@ -1112,6 +1147,35 @@ public class TypeMoonCommands {
       } catch (Exception var4) {
          return 0;
       }
+   }
+
+   private static int giveRune(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      RuneDefinition rune = RuneRegistry.get(StringArgumentType.getString(ctx, "rune_id"));
+      if (rune == null) { ctx.getSource().sendFailure(Component.literal("Unknown rune")); return 0; }
+      ItemStack stack = new ItemStack(ModItems.RUNE_LEARNING.get());
+      CompoundTag tag = new CompoundTag(); tag.putString("rune_id", rune.idPath());
+      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+      if (!target.getInventory().add(stack)) target.drop(stack, false);
+      ctx.getSource().sendSuccess(() -> Component.literal("Gave rune fragment: " + rune.idPath()), true);
+      return 1;
+   }
+
+   private static int learnRune(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      RuneDefinition rune = RuneRegistry.get(StringArgumentType.getString(ctx, "rune_id"));
+      if (rune == null || !RuneLearningService.learn(target, rune.idPath())) { ctx.getSource().sendFailure(Component.literal("Rune could not be learned")); return 0; }
+      ctx.getSource().sendSuccess(() -> Component.literal("Learned rune: " + rune.idPath()), true);
+      return 1;
+   }
+
+   private static int learnAllRunes(CommandContext<CommandSourceStack> ctx) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+      ServerPlayer target = commandTarget(ctx);
+      int learned = 0;
+      for (RuneDefinition rune : RuneRegistry.all()) if (RuneLearningService.learn(target, rune.idPath())) learned++;
+      int learnedCount = learned;
+      ctx.getSource().sendSuccess(() -> Component.literal("Learned " + RuneRegistry.all().size() + " runes (" + learnedCount + " new)."), true);
+      return learned;
    }
 
    private static int setShikiHealth(CommandContext<CommandSourceStack> ctx, double health) {
@@ -1163,9 +1227,13 @@ public class TypeMoonCommands {
             ctx.getSource().sendFailure(Component.translatable("message.typemoonworld.talent.acquisition_restricted"));
             return 0;
          }
+         if (!MagicLearningStrategy.isKnowledgeVisible(magicId)) {
+            ctx.getSource().sendFailure(Component.literal("This runtime action is not a magic-knowledge entry: " + magicId));
+            return 0;
+         }
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) {
+          if (!MagicLearningStrategy.learningRequirementsMet(vars, magicId) || !MagicDefinitionRegistry.meetsAttributeRequirements(player, magicId)) {
             ((CommandSourceStack)ctx.getSource()).sendFailure(Component.literal("Magic learning requirements not met: " + magicId));
             return 0;
          }
@@ -1189,17 +1257,12 @@ public class TypeMoonCommands {
                   changed = true;
                }
 
-               if (!vars.learned_magics.contains("jewel_random_shoot")) {
-                  vars.learned_magics.add("jewel_random_shoot");
-                  changed = true;
-               }
-
                vars.syncPlayerVariables(player);
                if (changed) {
-                  ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned magics: jewel_magic_shoot, jewel_random_shoot"), true);
+                  ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned magic: jewel_magic_shoot"), true);
                } else {
                   ((CommandSourceStack)ctx.getSource())
-                     .sendSuccess(() -> Component.literal("Magics already learned: jewel_magic_shoot, jewel_random_shoot"), false);
+                     .sendSuccess(() -> Component.literal("Magic already learned: jewel_magic_shoot"), false);
                }
             } else if (!vars.learned_magics.contains(magicId)) {
                vars.learned_magics.add(magicId);
@@ -1256,6 +1319,10 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
 
+         // Pull namespaced addon definitions through the public API as well as
+         // the legacy built-in list, so /typemoon magic learn_all stays complete.
+         int addonLearned = TypeMoonWorldApi.addon("typemoonaddon").magics().knowledge(player).learnAll();
+
          for (String m : allMagicIds()) {
             if (!vars.learned_magics.contains(m)) {
                vars.learned_magics.add(m);
@@ -1263,7 +1330,7 @@ public class TypeMoonCommands {
          }
 
          vars.syncPlayerVariables(player);
-         ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned all magics"), true);
+         ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Learned all magics (addon definitions: " + addonLearned + ")"), true);
          return 1;
       } catch (Exception var7) {
          return 0;

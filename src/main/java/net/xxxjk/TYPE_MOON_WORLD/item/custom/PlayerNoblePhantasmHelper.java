@@ -54,8 +54,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
@@ -92,10 +94,10 @@ public final class PlayerNoblePhantasmHelper {
    private static final int SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS = 60;
    private static final double SERVANT_CARD_CHARGE_VOICE_STOP_RADIUS = 96.0;
    private static final DustParticleOptions GAE_BULG_CHARGE_PARTICLE = new DustParticleOptions(new Vector3f(0.85F, 0.0F, 0.03F), 1.35F);
-   private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 10;
+   private static final int GAE_BULG_MELEE_MIN_CHARGE_TICKS = 20;
    private static final int GAE_DEATH_FLIGHT_CHARGE_TICKS = 40;
    private static final int GAE_BULG_LOCK_TICKS = 1200;
-   private static final int GAE_BULG_MELEE_PURSUIT_TICKS = 40;
+   private static final int GAE_BULG_MELEE_PURSUIT_TICKS = CuChulainnCombatRules.MELEE_GAE_BOLG_PURSUIT_TICKS;
    private static final double GAE_BULG_MELEE_LOCK_RANGE = 4.0;
    private static final double GAE_BULG_MELEE_HIT_DISTANCE = 4.0;
    private static final double GAE_BULG_MELEE_PURSUIT_START_SPEED = 2.05;
@@ -112,7 +114,7 @@ public final class PlayerNoblePhantasmHelper {
    private static final double GOLDEN_EXCALIBUR_MANA_PER_TICK = 3.0;
    private static final int GALLATIN_MAX_CHARGE_TICKS = 100;
    private static final int GALLATIN_PLAYER_COOLDOWN = 1200;
-   private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 300;
+   private static final int GAE_BULG_SINGLE_PLAYER_COOLDOWN = 600;
    private static final int GAE_BULG_ARMY_PLAYER_COOLDOWN = 1200;
    private static final double GALLATIN_RANGE = 100.0;
    private static final double GALLATIN_HALF_ANGLE_COS = Math.cos(Math.toRadians(35.0));
@@ -411,6 +413,7 @@ public final class PlayerNoblePhantasmHelper {
       boolean lockCreatedThisUse = data.getBoolean(GAE_LOCK_CREATED_THIS_USE_TAG);
       int meleeCharged = data.getInt(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
       int charged = data.getInt(GAE_DEATH_FLIGHT_TAG + "Ticks");
+      boolean hadLockedTarget = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
       LivingEntity lockedTarget = resolveGaeBulgLockedTarget(player);
       stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
       data.remove(GAE_LOCKED_MELEE_CHARGE_TAG);
@@ -426,7 +429,9 @@ public final class PlayerNoblePhantasmHelper {
       }
 
       int useTicks = lockedMelee ? meleeCharged : charged;
-      if (lockCreatedThisUse && lockedTarget != null && useTicks < GAE_BULG_MELEE_MIN_CHARGE_TICKS) {
+      // A previously acquired melee lock must not turn a tap into an instant
+      // Death Thorn release. Every melee release observes the full charge.
+      if (lockedTarget != null && useTicks < GAE_BULG_MELEE_MIN_CHARGE_TICKS) {
          return true;
       }
 
@@ -443,8 +448,16 @@ public final class PlayerNoblePhantasmHelper {
          return true;
       }
 
+      if (lockedMelee && hadLockedTarget && lockedTarget == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return true;
+      }
       LivingEntity target = lockedTarget != null ? lockedTarget : findRandomGaeBulgMeleeTarget(player, GAE_BULG_MELEE_LOCK_RANGE);
       if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return true;
+      }
+      if (!CuChulainnCombatRules.canReleaseMeleeGaeBolg(player.distanceTo(target))) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return true;
       }
@@ -1085,12 +1098,15 @@ public final class PlayerNoblePhantasmHelper {
          && !(target instanceof EnkiduEntity)
          && player.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       DamageSource source = player.damageSources().mobAttack(player);
+      int livesBeforeInitialHit = target.getPersistentData().getInt("GodHandLives");
       target.invulnerableTime = 0;
       target.hurt(source, 250.0F);
       target.invulnerableTime = 0;
-      if (target.isAlive() && deathThorn) {
+      boolean initialHitRevived = HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeInitialHit);
+      if (target.isAlive() && deathThorn && !initialHitRevived) {
+         int livesBeforeDeathThorn = target.getPersistentData().getInt("GodHandLives");
          target.hurt(source, Math.max(target.getMaxHealth() * 2.0F, 500.0F));
-         if (target.isAlive()) {
+         if (target.isAlive() && !HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeDeathThorn)) {
             target.setHealth(0.0F);
             target.die(player.damageSources().genericKill());
          }
@@ -1643,6 +1659,11 @@ public final class PlayerNoblePhantasmHelper {
       return player != null
          && player.level() instanceof ServerLevel level
          && player.getPersistentData().getLong(ARTORIA_EXCALIBUR_WIND_LOCK_UNTIL_TAG) > level.getGameTime();
+   }
+
+   public static boolean isArtoriaExcaliburRevealed(ServerPlayer player) {
+      return player != null && player.level() instanceof ServerLevel level
+         && player.getPersistentData().getLong(ARTORIA_WIND_REVEAL_UNTIL_TAG) > level.getGameTime();
    }
 
    public static void clearArtoriaExcaliburWindLock(ServerPlayer player) {

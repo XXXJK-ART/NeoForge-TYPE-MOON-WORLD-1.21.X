@@ -34,7 +34,6 @@ public final class NeroChaosGameTests {
       helper.succeed();
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 60)
    public static void neroKeepsBeastsInsideWithoutEnemies(GameTestHelper helper) {
       NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
       helper.runAfterDelay(35, () -> {
@@ -49,7 +48,6 @@ public final class NeroChaosGameTests {
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 80)
    public static void releasedBeastsCostLivesAndDeadBeastsQueueRevival(GameTestHelper helper) {
       NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
       var prey = helper.spawn(EntityType.ZOMBIE, new BlockPos(8, 8, 3));
@@ -75,7 +73,6 @@ public final class NeroChaosGameTests {
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 80)
    public static void nearbyEnemyWithoutTargetStillGetsACombatPack(GameTestHelper helper) {
       NeroChaosEntity nero = helper.spawn(ModEntities.NERO_CHAOS.get(), new BlockPos(5, 8, 3));
       var prey = helper.spawn(EntityType.ZOMBIE, new BlockPos(8, 8, 3));

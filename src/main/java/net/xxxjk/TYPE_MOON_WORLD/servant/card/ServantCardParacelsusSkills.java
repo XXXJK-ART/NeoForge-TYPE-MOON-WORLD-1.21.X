@@ -463,12 +463,13 @@ public final class ServantCardParacelsusSkills {
       setDiamondShieldStock(player, stock - 1);
       syncParacelsusStocks(player, vars);
       if (player.level() instanceof ServerLevel level) {
-         RhoAiasEntity shield = new RhoAiasEntity(level, player, findLookTarget(player, 18.0, 2.0));
+         RhoAiasEntity shield = new RhoAiasEntity(level, player, findLookTarget(player, 18.0, 2.0), true);
          shield.setPos(player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ());
          level.addFreshEntity(shield);
          player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 120, 1, false, true, true));
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 0, false, true, true));
          level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1.0, player.getZ(), 36, 0.65, 0.5, 0.65, 0.03);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 48, 1.4, 1.0, 1.4, 0.04);
          level.playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0F, 0.8F);
       }
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_diamond_shield_used", getDiamondShieldStock(player)), true);
@@ -803,10 +804,12 @@ public final class ServantCardParacelsusSkills {
          for (LivingEntity target : hostilesInRadius(level, player, pos, 2.1, 3.4)) {
             target.invulnerableTime = 0;
             target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 80.0));
-            target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 100));
-            for (int burn = 20; burn <= 100; burn += 20) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.applyFire(target, 100);
+            long burnToken = net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.startBurnSequence(target, level);
+            for (int burn = 20; burn <= net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.MAX_FIRE_TICKS && burnToken >= 0L; burn += 20) {
                TYPE_MOON_WORLD.queueServerWork(burn, () -> {
-                  if (target.isAlive() && target.level() == level && target.getRemainingFireTicks() > 0) {
+                  if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.isBurnSequenceActive(target, level, burnToken)
+                     && target.getRemainingFireTicks() > 0) {
                      target.invulnerableTime = 0;
                      target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 15.0));
                   }

@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
@@ -38,6 +39,8 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_SHUKUCHI_COOLDOWN = "OkitaShukuchiCooldown";
    private static final String TAG_SHUKUCHI_UNTIL = "OkitaShukuchiUntil";
    private static final String TAG_MUMYOUDAN_COOLDOWN = "OkitaMumyoudanCooldown";
+   private static final String TAG_MUMYOUDAN_POWER_SCALE = "OkitaMumyoudanPowerScale";
+   private static final String TAG_MUMYOUDAN_OVERDRAFT = "OkitaMumyoudanOverdraft";
    private static final String TAG_WEAK_UNTIL = "OkitaWeakConstitutionUntil";
    private static final String TAG_FLAG_COOLDOWN = "OkitaFlagCooldown";
    private static final String TAG_ICHIMONJI_COOLDOWN = "OkitaIchimonjiCooldown";
@@ -264,18 +267,25 @@ public final class OkitaSoujiSaberCombatHelper {
 
    private static boolean tryMumyoudanZuki(OkitaSoujiSaberEntity entity, LivingEntity target, ServerLevel level, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (!entity.canUseMumyoudanZuki() || entity.isPerformingAction() || entity.getCurrentMp() < MUMYOUDAN_MP_COST
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, MUMYOUDAN_MP_COST);
+      int cooldown = MUMYOUDAN_COOLDOWN * (data.getBoolean(TAG_MUMYOUDAN_OVERDRAFT) ? 2 : 1);
+      if (!entity.canUseMumyoudanZuki() || entity.isPerformingAction() || !resource.allowed()
+         || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
          || now < data.getLong(TAG_MUMYOUDAN_COOLDOWN) || !entity.hasMasterNoblePhantasmPermission()
          || !entity.getSensing().hasLineOfSight(target)) {
          return false;
       }
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - MUMYOUDAN_MP_COST));
-      data.putLong(TAG_MUMYOUDAN_COOLDOWN, now + MUMYOUDAN_COOLDOWN);
+      data.putDouble(TAG_MUMYOUDAN_POWER_SCALE, resource.powerScale());
+      data.putBoolean(TAG_MUMYOUDAN_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      data.putLong(TAG_MUMYOUDAN_COOLDOWN, now + cooldown);
       entity.faceToward(target.position());
       entity.triggerSlashAnimation();
       ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
 
-      float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0);
+      float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0
+         * Math.max(0.2, Math.min(1.0, data.getDouble(TAG_MUMYOUDAN_POWER_SCALE))));
       for (int i = 0; i < 3 && target.isAlive(); i++) {
          target.stopUsingItem();
          target.removeEffect(MobEffects.DAMAGE_RESISTANCE);

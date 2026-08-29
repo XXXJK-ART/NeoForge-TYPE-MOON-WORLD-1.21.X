@@ -10,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -55,6 +56,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private static final double MASTER_SEAT_FORWARD = 0.72;
    private static final double MASTER_SEAT_HEIGHT = 0.68;
    private static final int RIDER_RELINK_GRACE_TICKS = 20;
+   private static final int COMBAT_DIRECT_TICKS = 36;
+   private static final int COMBAT_ORBIT_TICKS = 24;
+   private static final double COMBAT_ORBIT_MAX_DISTANCE = 16.0;
+   private static final double COMBAT_STOP_DISTANCE = 4.6;
    /** Matches Zhao Yun's Rider-card big-jump vertical impulse (A agility). */
    private static final double ZHAO_YUN_BIG_JUMP_VERTICAL = 1.14;
    public static final String TAG_RIDER = "ZhaoYunRider";
@@ -78,6 +83,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private double airborneMaxY;
    private long lastLandingImpactTick = Long.MIN_VALUE;
    private int riderRelinkGraceTicks;
+   private int combatMovementTargetId = -1;
+   private int combatMovementStartTick;
+   private int combatOrbitSign = 1;
+   private int blockedCombatMoveTicks;
 
    public ZhaoYunHakuryuEntity(EntityType<? extends ZhaoYunHakuryuEntity> type, Level level) {
       super(type, level);
@@ -243,7 +252,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          // Chanting does not immobilize Zhao Yun. Follow the normal target or
          // master destination until the invocation releases the charge.
          setNpActive(false);
-         followRiderIntent(rider, master);
+         followRiderIntent(level, rider, master);
       } else if (rider.isChangbanpoActive()) {
          // Changbanpo supplies only horizontal thrust; normal gravity remains
          // active so Hakuryu cannot hover.
@@ -251,7 +260,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          rider.tickChangbanpoMount(this);
       } else {
          setNpActive(false);
-         followRiderIntent(rider, master);
+         followRiderIntent(level, rider, master);
       }
       setMovingState(isNpActive() || getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
       fallDistance = 0.0F;
@@ -363,41 +372,169 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       return super.mobInteract(player, hand);
    }
 
-   private void followRiderIntent(ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
-      LivingEntity target = rider.getTarget();
-      Vec3 direction;
-      if (target != null && target.isAlive()) {
-         direction = target.position().subtract(position());
-      } else if (master != null && master.isAlive() && distanceToSqr(master) > 16.0) {
-         direction = master.position().subtract(position());
-      } else {
-         // Do not treat Zhao Yun's facing as a movement command. This keeps
-         // the mount stationary when there is no target or follow destination.
+   private void followRiderIntent(ServerLevel level, ZhaoYunRiderEntity rider, @Nullable LivingEntity master) {
+      LivingEntity target = resolveRiderCombatTarget(level, rider);
+      if (target != null) {
+         moveTowardCombatTarget(target, rider);
+         return;
+      }
+      resetCombatMovement();
+      if (master != null && master.isAlive() && distanceToSqr(master) > 16.0) {
+         moveToward(master.position().subtract(position()), getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.55);
+         return;
+      }
+      // Do not treat Zhao Yun's facing as a movement command. This keeps the
+      // mount stationary when there is no target or follow destination.
+      preserveGravityWhileStopping();
+   }
+
+   @Nullable
+   private LivingEntity resolveRiderCombatTarget(ServerLevel level, ZhaoYunRiderEntity rider) {
+      LivingEntity target = EntityUtils.redirectMountedCombatTarget(rider, rider.getTarget());
+      if (isValidRiderCombatTarget(rider, target)) {
+         return target;
+      }
+
+      LivingEntity attacker = rider.getLastHurtByMob();
+      if (isValidRiderCombatTarget(rider, attacker)
+         && rider.tickCount - rider.getLastHurtByMobTimestamp() <= 200) {
+         return attacker;
+      }
+
+      LivingEntity best = null;
+      double bestDistance = Double.MAX_VALUE;
+      for (net.minecraft.world.entity.Mob mob : level.getEntitiesOfClass(
+         net.minecraft.world.entity.Mob.class,
+         getBoundingBox().inflate(42.0),
+         candidate -> (candidate.getTarget() == rider || candidate.getTarget() == this)
+            && isValidRiderCombatTarget(rider, candidate))) {
+         double distance = distanceToSqr(mob);
+         if (distance < bestDistance) {
+            bestDistance = distance;
+            best = mob;
+         }
+      }
+      return best;
+   }
+
+   private boolean isValidRiderCombatTarget(ZhaoYunRiderEntity rider, @Nullable LivingEntity target) {
+      return target != null
+         && target.isAlive()
+         && target != this
+         && target != rider
+         && !getPassengers().contains(target)
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !EntityUtils.isUntargetableServantTransition(target)
+         && !isAlliedTo(target)
+         && !rider.isAlliedTo(target);
+   }
+
+   private void moveTowardCombatTarget(LivingEntity target, ZhaoYunRiderEntity rider) {
+      if (combatMovementTargetId != target.getId()) {
+         combatMovementTargetId = target.getId();
+         combatMovementStartTick = tickCount;
+         combatOrbitSign = getRandom().nextBoolean() ? 1 : -1;
+      }
+
+      double distance = distanceTo(target);
+      boolean forceMelee = rider.getPersistentData().getLong(
+         ZhaoYunRiderEntity.TAG_FORCE_MELEE_UNTIL) > level().getGameTime();
+      int cycleTicks = COMBAT_DIRECT_TICKS + COMBAT_ORBIT_TICKS;
+      int phase = Math.floorMod(tickCount - combatMovementStartTick, cycleTicks);
+      boolean orbitPhase = !forceMelee && phase >= COMBAT_DIRECT_TICKS;
+      if (orbitPhase && distance >= COMBAT_STOP_DISTANCE * 0.85
+         && distance <= COMBAT_ORBIT_MAX_DISTANCE) {
+         moveAroundCombatTarget(target);
+         return;
+      }
+
+      Vec3 toTarget = horizontal(target.position().subtract(position()));
+      if (distance > COMBAT_STOP_DISTANCE && toTarget.lengthSqr() > 1.0E-4) {
+         moveToward(toTarget, Math.max(0.55, getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.6));
+         return;
+      }
+
+      resetBlockedCombatMove();
+      faceHorizontal(toTarget);
+      preserveGravityWhileStopping();
+   }
+
+   private void moveAroundCombatTarget(LivingEntity target) {
+      Vec3 toTarget = horizontal(target.position().subtract(position()));
+      if (toTarget.lengthSqr() < 1.0E-4) {
          preserveGravityWhileStopping();
          return;
       }
-      Vec3 flat = new Vec3(direction.x, 0.0, direction.z);
+      Vec3 radial = toTarget.normalize();
+      Vec3 tangent = new Vec3(-radial.z, 0.0, radial.x).scale(combatOrbitSign);
+      double orbitRadius = 7.0;
+      double radialError = distanceTo(target) - orbitRadius;
+      Vec3 desired = tangent.scale(0.72);
+      if (Math.abs(radialError) > 1.0) {
+         desired = desired.add(radial.scale(Mth.clamp(radialError * 0.24, -0.9, 0.9)));
+      }
+      moveToward(desired, Math.max(0.5, getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.25));
+   }
+
+   private void moveToward(Vec3 direction, double speed) {
+      Vec3 flat = horizontal(direction);
       if (flat.lengthSqr() < 1.0E-4) {
          preserveGravityWhileStopping();
          return;
       }
+      Vec3 before = position();
       flat = flat.normalize();
+      faceHorizontal(flat);
+      move(net.minecraft.world.entity.MoverType.SELF, flat.scale(speed));
+      setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
+      recoverBlockedCombatMove(before, flat);
+   }
+
+   private void recoverBlockedCombatMove(Vec3 before, Vec3 intendedDirection) {
+      double movedSqr = horizontal(position().subtract(before)).lengthSqr();
+      if ((movedSqr < 0.0025 && this.horizontalCollision) || this.isInWall()) {
+         blockedCombatMoveTicks++;
+      } else {
+         blockedCombatMoveTicks = 0;
+         return;
+      }
+      if (blockedCombatMoveTicks < 4) {
+         return;
+      }
+      if (onGround()) {
+         jumpFromGround();
+         setDeltaMovement(0.0, Math.max(0.72, getDeltaMovement().y), 0.0);
+      } else {
+         Vec3 escape = new Vec3(-intendedDirection.z, 0.0, intendedDirection.x)
+            .scale(combatOrbitSign * 0.45);
+         move(net.minecraft.world.entity.MoverType.SELF, escape);
+      }
+      blockedCombatMoveTicks = 0;
+   }
+
+   private void faceHorizontal(Vec3 direction) {
+      Vec3 flat = horizontal(direction);
+      if (flat.lengthSqr() < 1.0E-4) {
+         return;
+      }
       float yaw = (float)(Math.atan2(-flat.x, flat.z) * 180.0 / Math.PI);
       setYRot(yaw);
       setYBodyRot(yaw);
       setYHeadRot(yaw);
-      boolean forceMelee = rider.getPersistentData().getLong(
-         ZhaoYunRiderEntity.TAG_FORCE_MELEE_UNTIL) > level().getGameTime();
-      double followMultiplier = forceMelee ? 0.85 : 1.8;
-      Vec3 velocity = flat.scale(getAttributeValue(Attributes.MOVEMENT_SPEED) * followMultiplier);
-      move(net.minecraft.world.entity.MoverType.SELF, velocity);
-      if (horizontalCollision && onGround()) {
-         jumpWithZhaoYunPower();
-      }
-      // Movement is applied explicitly above. Do not leave horizontal
-      // velocity behind for PathfinderMob.tick(), or the horse advances a
-      // second time on the next tick and can overshoot its target.
-      setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
+   }
+
+   private void resetCombatMovement() {
+      combatMovementTargetId = -1;
+      combatMovementStartTick = tickCount;
+      resetBlockedCombatMove();
+   }
+
+   private void resetBlockedCombatMove() {
+      blockedCombatMoveTicks = 0;
+   }
+
+   private static Vec3 horizontal(Vec3 vector) {
+      return new Vec3(vector.x, 0.0, vector.z);
    }
 
    private void preserveGravityWhileStopping() {
@@ -538,11 +675,19 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       if (skillOwnerUuid != null) {
          if (!(level() instanceof ServerLevel server)) return true;
          refreshSkillOwnerMaster(server);
-         return getPassengers().isEmpty() && skillOwnerUuid.equals(player.getUUID())
-            || getPassengers().size() == 1
-               && getPassengers().get(0).getUUID().equals(skillOwnerUuid)
-               && masterUuid != null
-               && masterUuid.equals(player.getUUID());
+         if (getPassengers().isEmpty() && skillOwnerUuid.equals(player.getUUID())) return true;
+         if (getPassengers().size() == 1 && getPassengers().get(0).getUUID().equals(skillOwnerUuid)) {
+            Entity ownerEntity = server.getEntity(skillOwnerUuid);
+            if (ownerEntity instanceof ServerPlayer owner) {
+               TypeMoonWorldModVariables.PlayerVariables ownerVars =
+                  owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+               if (player.getUUID().toString().equals(ownerVars.servant_card_master_uuid)
+                  && player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).master_active) {
+                  return true;
+               }
+            }
+         }
+         return false;
       }
       return false;
    }

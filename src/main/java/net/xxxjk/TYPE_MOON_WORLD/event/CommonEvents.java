@@ -692,6 +692,9 @@ public class CommonEvents {
                      return;
                   }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
+                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity) {
+                     event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(living, event.getSource(), event.getAmount()));
+                  }
                   event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
                   if (event.getAmount() <= 0.0F) {
                      event.setCanceled(true);
@@ -1175,6 +1178,19 @@ public class CommonEvents {
          }
 
          float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
+         float barrier = data.getFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG);
+         if (!fanaticDefensePiercing && !originBullet && barrier > 0.0F
+            && data.getLong(CuChulainnCombatHelper.RUNE_BARRIER_UNTIL_TAG) > currentTick) {
+            float absorbed = Math.min(barrier, damage);
+            data.putFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG, barrier - absorbed);
+            event.setAmount(Math.max(0.0F, damage - absorbed));
+            damage = event.getAmount();
+            if (barrier <= absorbed) CuChulainnCombatHelper.clearRuneBarrier(servant);
+            if (damage <= 0.0F) {
+               event.setCanceled(true);
+               return;
+            }
+         }
          if (!fanaticDefensePiercing && !originBullet && shield > 0.0F) {
             if (majorBrokenPhantasmExplosion) {
                float minimumDamage = originalDamage * 0.5F;

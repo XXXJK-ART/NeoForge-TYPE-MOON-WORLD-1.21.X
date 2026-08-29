@@ -148,6 +148,21 @@ public final class ArcaneMobilityService {
       return true;
    }
 
+   /** Cancels survival flight when another form takes ownership of the player. */
+   public static void cancelFlightMagic(Player player) {
+      if (player == null) {
+         return;
+      }
+      CompoundTag data = player.getPersistentData();
+      data.remove(TAG_FLIGHT_ACTIVE);
+      data.remove(TAG_FLIGHT_TICKS);
+      if (!player.isCreative() && !player.isSpectator()) {
+         player.getAbilities().mayfly = false;
+         player.getAbilities().flying = false;
+         player.onUpdateAbilities();
+      }
+   }
+
    public static boolean startToukoTravel(LivingEntity caster, TypeMoonWorldModVariables.PlayerVariables vars, double proficiency, CompoundTag payload) {
       if (caster == null || payload == null || !(payload.contains("x") && payload.contains("y") && payload.contains("z"))) {
          if (caster instanceof Player player) {
@@ -390,14 +405,8 @@ public final class ArcaneMobilityService {
    }
 
    private static void clearFlight(Player player) {
+      cancelFlightMagic(player);
       CompoundTag data = player.getPersistentData();
-      data.remove(TAG_FLIGHT_ACTIVE);
-      data.remove(TAG_FLIGHT_TICKS);
-      if (!player.isCreative() && !player.isSpectator()) {
-         player.getAbilities().mayfly = false;
-         player.getAbilities().flying = false;
-         player.onUpdateAbilities();
-      }
       if (!player.isCreative() && !player.isSpectator()
          && isAirborne(player)
          && data.getInt(TAG_AERIAL_MODE) == MODE_NONE) {

@@ -115,6 +115,9 @@ public final class TalentService {
       if (until <= now) {
          player.getPersistentData().remove(STRENGTH_UNTIL_TAG);
          player.getPersistentData().remove(STRENGTH_AMPLIFIER_TAG);
+         if (player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH)) {
+            player.removeEffect(ModMobEffects.MONSTROUS_STRENGTH);
+         }
       } else if (!player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH)) {
          int amplifier = Mth.clamp(player.getPersistentData().getInt(STRENGTH_AMPLIFIER_TAG), 0, 5);
          player.addEffect(new MobEffectInstance(ModMobEffects.MONSTROUS_STRENGTH, (int)Math.min(Integer.MAX_VALUE, until - now), amplifier, false, true, true));

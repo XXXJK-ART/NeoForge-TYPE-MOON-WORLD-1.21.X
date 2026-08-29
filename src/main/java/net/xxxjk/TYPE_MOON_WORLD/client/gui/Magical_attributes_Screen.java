@@ -28,6 +28,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
@@ -47,6 +48,8 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicalattributesMenu;
 import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
 import org.jetbrains.annotations.NotNull;
@@ -229,6 +232,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("gravity_magic", "key.typemoonworld.magic.gravity_magic.short", "other", -7701249);
       this.addMagic("gander", "key.typemoonworld.magic.gander.short", "nordic", -5230544);
       this.addMagic("gandr_machine_gun", "key.typemoonworld.magic.gandr_machine_gun.short", "nordic", -3121056);
+      this.addMagic("rune_origin", "magic.typemoonworld.rune_origin.name", "rune,nordic", -12753153);
       this.addMagic("bajiquan", "key.typemoonworld.magic.bajiquan.short", "martial", 0xFF2EB872);
       this.addMagic("ganryu", "key.typemoonworld.magic.ganryu.short", "martial", 0xFF7893A8);
       this.addMagic("hokushin_ittoryu", "key.typemoonworld.magic.hokushin_ittoryu.short", "martial", 0xFFB06A4C);
@@ -238,6 +242,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    }
 
    private void addMagic(String id, String nameKey, String category, int color) {
+      if (!MagicLearningStrategy.isKnowledgeVisible(id)) return;
       Magical_attributes_Screen.MagicEntry entry = new Magical_attributes_Screen.MagicEntry(id, nameKey, category, MagicUiColors.colorFor(id, false));
       this.baseMagicCatalog.add(entry);
       this.magicCatalogById.put(id, entry);
@@ -263,7 +268,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          }
 
          for (String displayMagicId : MagicLearningStrategy.displayMagicIds(vars.learned_magics)) {
-            if (displayMagicId == null || displayMagicId.isEmpty() || added.contains(displayMagicId)) {
+            if (displayMagicId == null || displayMagicId.isEmpty()
+                || !MagicLearningStrategy.isKnowledgeVisible(displayMagicId) || added.contains(displayMagicId)) {
                continue;
             }
             Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(displayMagicId);
@@ -282,7 +288,9 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             if (crestEntry != null && crestEntry.magicId != null && !crestEntry.magicId.isEmpty()) {
                String displayMagicId = normalizeMagicIdForDisplay(crestEntry.magicId);
                Magical_attributes_Screen.MagicEntry basex = this.magicCatalogById.get(displayMagicId);
-               if (!MagicLearningStrategy.isRemovedMagic(displayMagicId) && !shouldHideCrestMagic(displayMagicId, basex)) {
+               if (MagicLearningStrategy.isKnowledgeVisible(displayMagicId)
+                   && !MagicLearningStrategy.isRemovedMagic(displayMagicId)
+                   && !shouldHideCrestMagic(displayMagicId, basex)) {
                   Magical_attributes_Screen.MagicEntry entry = basex == null
                      ? new Magical_attributes_Screen.MagicEntry(
                         displayMagicId, "key.typemoonworld.magic." + displayMagicId + ".short", this.resolveFallbackCategory(displayMagicId), -1811878
@@ -383,6 +391,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          return "gui.typemoonworld.category.worm";
       } else if ("boundary".equals(category)) {
          return "gui.typemoonworld.category.boundary";
+      } else if ("rune".equals(category)) {
+         return "gui.typemoonworld.category.rune";
       } else {
          return "nordic".equals(category) ? "gui.typemoonworld.category.nordic" : "gui.typemoonworld.category.all";
       }
@@ -398,6 +408,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          "gui.typemoonworld.category.ubw",
          "gui.typemoonworld.category.special",
          "gui.typemoonworld.category.other",
+         "gui.typemoonworld.category.rune",
          "gui.typemoonworld.category.nordic",
          "gui.typemoonworld.category.martial",
          "gui.typemoonworld.category.talent",
@@ -474,6 +485,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       } else if ("special".equals(current)) {
          return "other";
       } else if ("other".equals(current)) {
+         return "rune";
+      } else if ("rune".equals(current)) {
          return "nordic";
       } else if ("nordic".equals(current)) {
          return "martial";
@@ -950,7 +963,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry wheelEntry = vars.getWheelSlotEntry(activeWheel, slot);
          boolean empty = wheelEntry == null || wheelEntry.isEmpty();
          boolean crest = !empty && "crest".equals(wheelEntry.sourceType);
-         boolean castable = !empty && vars.isWheelSlotEntryCastable(wheelEntry);
+         boolean castable = !empty && vars.isWheelSlotEntryCastable(wheelEntry) && this.isMagicAvailable(wheelEntry.magicId);
          int magicColor = empty ? MagicUiColors.NORMAL : MagicUiColors.colorFor(wheelEntry.magicId, crest);
          int fillColor = GuiUtils.ARCANE_PANEL_ALT;
          int borderColor = GuiUtils.ARCANE_BORDER;
@@ -988,6 +1001,13 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
              guiGraphics.drawCenteredString(this.font, Component.literal(shortName), slotX + WHEEL_SLOT_SIZE / 2, slotY + 15, GuiUtils.ARCANE_TEXT);
           }
        }
+    }
+
+   private boolean isMagicAvailable(String rawId) {
+      var definition = MagicDefinitionRegistry.get(rawId);
+      ResourceLocation id = definition == null ? ResourceLocation.tryParse(rawId) : definition.id();
+      Player player = Minecraft.getInstance().player;
+      return id == null || player == null || TypeMoonWorldApi.isMagicAvailable(player, id);
    }
 
    private int getCurrentSelectedRuntimeSlot(TypeMoonWorldModVariables.PlayerVariables vars) {

@@ -23,6 +23,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import org.jetbrains.annotations.Nullable;
 
 public final class SeaMonsterSpitEntity extends ThrowableItemProjectile {
@@ -99,7 +100,7 @@ public final class SeaMonsterSpitEntity extends ThrowableItemProjectile {
         if (this.level().isClientSide()) {
             if (this.tickCount % 2 == 0) {
                 this.level().addParticle(ParticleTypes.SQUID_INK, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
-                this.level().addParticle(ParticleTypes.BUBBLE, this.getX(), this.getY(), this.getZ(), 0.0, 0.02, 0.0);
+                this.level().addParticle(ModParticles.ELEMENTAL_FOAM.get(), this.getX(), this.getY(), this.getZ(), 0.0, 0.02, 0.0);
             }
             return;
         }
@@ -111,7 +112,7 @@ public final class SeaMonsterSpitEntity extends ThrowableItemProjectile {
             Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.12) : Vec3.ZERO;
             Vec3 pos = this.position().add(back);
             level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y, pos.z, 2, 0.06, 0.06, 0.06, 0.01);
-            level.sendParticles(ParticleTypes.BUBBLE, pos.x, pos.y, pos.z, 2, 0.05, 0.05, 0.05, 0.01);
+            level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), pos.x, pos.y, pos.z, 2, 0.05, 0.05, 0.05, 0.01);
         }
     }
 
@@ -170,7 +171,7 @@ public final class SeaMonsterSpitEntity extends ThrowableItemProjectile {
         level.sendParticles(ParticleTypes.SQUID_INK, impactPos.x, impactPos.y + 0.25, impactPos.z,
                 this.pollutionRadius >= 12.0 ? 120 : this.pollutionRadius >= 6.0 ? 48 : 24,
                 this.pollutionRadius * 0.25, this.pollutionRadius * 0.12, this.pollutionRadius * 0.25, 0.03);
-        level.sendParticles(ParticleTypes.BUBBLE, impactPos.x, impactPos.y + 0.15, impactPos.z,
+        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), impactPos.x, impactPos.y + 0.15, impactPos.z,
                 this.pollutionRadius >= 12.0 ? 80 : this.pollutionRadius >= 6.0 ? 28 : 12,
                 this.pollutionRadius * 0.18, this.pollutionRadius * 0.08, this.pollutionRadius * 0.18, 0.04);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, impactPos.x, impactPos.y + 0.35, impactPos.z,

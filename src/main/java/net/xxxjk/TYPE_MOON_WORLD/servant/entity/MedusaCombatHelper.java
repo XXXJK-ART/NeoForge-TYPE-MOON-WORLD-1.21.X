@@ -45,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -66,6 +67,7 @@ public final class MedusaCombatHelper {
    private static final String TAG_BLOODFORT_Y = "MedusaBloodfortY";
    private static final String TAG_BLOODFORT_Z = "MedusaBloodfortZ";
    private static final String TAG_BLOODFORT_NP_ACTIVE = "MedusaBloodfortNpActive";
+   private static final String TAG_BLOODFORT_NP_POWER_SCALE = "MedusaBloodfortNpPowerScale";
    private static final String TAG_LAST_BELLEROPHON_TICK = "MedusaLastBellerophonTick";
    private static final String TAG_BELLEROPHON_CHARGE_UNTIL = "MedusaBellerophonChargeUntil";
    private static final String TAG_BELLEROPHON_SHOCKWAVE_DONE = "MedusaBellerophonShockwaveDone";
@@ -83,6 +85,8 @@ public final class MedusaCombatHelper {
    private static final String TAG_CHARM_OWNER = "MedusaCharmOwner";
    private static final String TAG_CHARM_UNTIL = "MedusaCharmUntil";
    private static final String TAG_BELLEROPHON_HIT_UNTIL = "MedusaBellerophonHitUntil";
+   private static final String TAG_BELLEROPHON_POWER_SCALE = "MedusaBellerophonPowerScale";
+   private static final String TAG_BELLEROPHON_OVERDRAFT = "MedusaBellerophonOverdraft";
    private static final String TAG_PEGASUS_COLLISION_HIT_UNTIL = "MedusaPegasusCollisionHitUntil";
    private static final String TAG_LAST_ROOFTOP_REPOSITION_TICK = "MedusaLastRooftopRepositionTick";
    private static final String TAG_RAPID_ASSAULT_HIT_UNTIL = "MedusaRapidAssaultHitUntil";
@@ -420,15 +424,23 @@ public final class MedusaCombatHelper {
 
    private static void castBloodfort(MedusaEntity entity, long now, boolean noblePhantasm) {
       double cost = noblePhantasm ? 40.0 : 20.0;
-      if (entity.getCurrentMp() < cost) {
+      ServantNoblePhantasmResourceService.CastDecision resource = noblePhantasm
+         ? ServantNoblePhantasmResourceService.evaluateNpcCast(entity, cost) : null;
+      if (noblePhantasm && (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity))) {
          return;
       }
+      if (!noblePhantasm && entity.getCurrentMp() < cost) return;
       double radius = BLOODFORT_RADIUS_VALUE;
       if (!hasAbsorbableTargets(entity, radius)) {
          return;
       }
 
-      entity.setCurrentMp(entity.getCurrentMp() - cost);
+      if (noblePhantasm) {
+         ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+         entity.getPersistentData().putDouble(TAG_BLOODFORT_NP_POWER_SCALE, resource.powerScale());
+      } else {
+         entity.setCurrentMp(entity.getCurrentMp() - cost);
+      }
       if (noblePhantasm) {
          ServantCombatSystem.broadcastNoblePhantasmWindup(entity, null, 16, false);
       }
@@ -486,7 +498,8 @@ public final class MedusaCombatHelper {
          return;
       }
 
-      float damage = noblePhantasm ? 24.0F + entity.getRandom().nextInt(7) : 15.0F;
+      float damage = noblePhantasm ? (24.0F + entity.getRandom().nextInt(7))
+         * (float)Math.max(0.2, Math.min(1.0, entity.getPersistentData().getDouble(TAG_BLOODFORT_NP_POWER_SCALE))) : 15.0F;
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius, radius, radius),
@@ -563,13 +576,20 @@ public final class MedusaCombatHelper {
    }
 
    private static void beginBellerophon(MedusaEntity entity, LivingEntity target, long now) {
-      if (entity.getCurrentMp() < 60.0 || entity.getPersistentData().getLong(TAG_LAST_BELLEROPHON_TICK) + BELLEROPHON_COOLDOWN > now) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 60.0);
+      int previousCooldown = entity.getPersistentData().getBoolean(TAG_BELLEROPHON_OVERDRAFT)
+         ? BELLEROPHON_COOLDOWN * 2 : BELLEROPHON_COOLDOWN;
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || entity.getPersistentData().getLong(TAG_LAST_BELLEROPHON_TICK) + previousCooldown > now) {
          return;
       }
       if (!ServantCombatSystem.canUseNoblePhantasm(entity)) {
          return;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 60.0);
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      entity.getPersistentData().putDouble(TAG_BELLEROPHON_POWER_SCALE, resource.powerScale());
+      entity.getPersistentData().putBoolean(TAG_BELLEROPHON_OVERDRAFT, resource.overdraft());
       entity.getPersistentData().putLong(TAG_LAST_BELLEROPHON_TICK, now);
       entity.getPersistentData().putLong(TAG_BELLEROPHON_LAUNCH_TICK, now + CHARGE_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CHARGE_WINDUP_TICKS, false);
@@ -733,6 +753,8 @@ public final class MedusaCombatHelper {
    }
 
    private static boolean hurtPegasusVictim(MedusaEntity entity, LivingEntity victim, float damage) {
+      double scale = entity.getPersistentData().getDouble(TAG_BELLEROPHON_POWER_SCALE);
+      if (scale > 0.0) damage *= (float)Math.max(0.2, Math.min(1.0, scale));
       victim.invulnerableTime = 0;
       boolean hurt = victim.hurt(entity.damageSources().mobAttack(entity), damage);
       victim.invulnerableTime = 0;

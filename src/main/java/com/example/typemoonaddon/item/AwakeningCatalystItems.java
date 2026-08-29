@@ -11,9 +11,7 @@ public final class AwakeningCatalystItems {
     public static boolean isCatalyst(Item item) {
         return item == AddonItems.IMAGINARY_PRIMER.get()
                 || item == AddonItems.CREST_WORM.get()
-                || item == AddonItems.HOLY_GRAIL_FRAGMENT.get()
-                || item == AddonItems.SHADOW_FAMILIAR_SPAWN_EGG.get()
-                || item == AddonItems.BLACK_SHADOW_SPAWN_EGG.get();
+                || item == AddonItems.HOLY_GRAIL_FRAGMENT.get();
     }
 
     public static boolean isAwakened(Player player) {

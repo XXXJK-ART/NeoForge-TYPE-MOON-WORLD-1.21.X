@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.FullManaCarvedGemItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemType;
 import net.xxxjk.TYPE_MOON_WORLD.utils.GemUtils;
@@ -49,7 +50,7 @@ public class MagicRubyFlameSword {
       if (!gemStack.isEmpty()) {
          Level level = player.level();
          if (level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.FLAME, player.getX(), player.getEyeY(), player.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
+            serverLevel.sendParticles(ModParticles.ELEMENTAL_FLAME.get(), player.getX(), player.getEyeY(), player.getZ(), 20, 0.5, 0.5, 0.5, 0.1);
          }
 
          RubyProjectileEntity projectile = new RubyProjectileEntity(level, player);

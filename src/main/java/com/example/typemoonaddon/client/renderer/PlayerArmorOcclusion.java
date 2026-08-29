@@ -57,7 +57,7 @@ public final class PlayerArmorOcclusion {
 
     private static OcclusionMask mask(Player player) {
         CursedArmorState cursedState = player.getData(AddonAttachments.CURSED_ARMOR_VIEW.get()).state();
-        if (cursedState == CursedArmorState.ACTIVE) {
+        if (cursedState != CursedArmorState.NONE && cursedState != CursedArmorState.REMOVED) {
             return OcclusionMask.CURSED_ARMOR;
         }
         if (player.getItemBySlot(EquipmentSlot.CHEST).is(AddonItems.VOID_RING_REGALIA.get())) {
@@ -73,7 +73,7 @@ public final class PlayerArmorOcclusion {
     private enum OcclusionMask {
         NONE(false, false, false, false, false, false),
         VOID_RING(false, true, false, true, false, false),
-        CURSED_ARMOR(true, true, true, true, false, false);
+        CURSED_ARMOR(true, true, true, true, true, true);
 
         private final boolean hideBody;
         private final boolean hideJacket;

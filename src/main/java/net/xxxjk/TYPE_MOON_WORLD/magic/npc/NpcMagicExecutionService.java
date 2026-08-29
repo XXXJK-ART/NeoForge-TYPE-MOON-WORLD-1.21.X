@@ -25,7 +25,7 @@ public final class NpcMagicExecutionService {
       if (vars != null && magicId != null && !magicId.isEmpty()) {
          var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed()) return false;
-         if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
+          if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
          for (int slot = 0; slot < 12; slot++) {
             TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = vars.getWheelSlotEntry(vars.active_wheel_index, slot);
             if (entry != null && !entry.isEmpty() && magicId.equals(entry.magicId) && vars.isWheelSlotEntryCastable(entry)) {
@@ -65,7 +65,7 @@ public final class NpcMagicExecutionService {
       if (definitionFor(magicId) != null) {
          var definition = definitionFor(magicId);
          if (definition != null && !definition.npcAllowed() && !isLeffExclusiveNpcMagic(caster, magicId)) return false;
-         if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, magicId)) return false;
+          if (!MagicDefinitionRegistry.meetsAttributeRequirements(caster, magicId)) return false;
          ExecutionResult external = InternalApiProvider.executeNpc(caster, target, magicId, payload, effectiveProficiency, gameTime);
          if (external.handled()) return external.success();
       }

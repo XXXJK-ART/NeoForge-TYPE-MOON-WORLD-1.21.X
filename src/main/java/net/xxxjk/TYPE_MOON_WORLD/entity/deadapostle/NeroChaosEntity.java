@@ -313,7 +313,6 @@ public class NeroChaosEntity extends DeadApostleEntity {
    }
 
    private void tickBeastRelease(long now) {
-      if (now % 20L != Math.floorMod(getId(), 20)) return;
       if (now < getPersistentData().getLong(TAG_BEAST_REGROUP_UNTIL)) return;
       int active = countOwnedBeasts();
       int desired;
@@ -324,6 +323,7 @@ public class NeroChaosEntity extends DeadApostleEntity {
       } else {
          desired = NeroChaosRules.combatBeastTarget(getRemainingLives(), nearbyEnemies);
       }
+      if (active > 0 && now % 20L != Math.floorMod(getId(), 20)) return;
       desired = Math.min(NeroChaosRules.MAX_ACTIVE_BEASTS, desired);
       while (active < desired && active < NeroChaosRules.MAX_ACTIVE_BEASTS && getRemainingLives() > 0) {
          if (!spawnBeast()) break;

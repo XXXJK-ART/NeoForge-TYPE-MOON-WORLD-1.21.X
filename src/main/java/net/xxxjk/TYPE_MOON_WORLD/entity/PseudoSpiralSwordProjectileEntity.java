@@ -3,10 +3,6 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -25,7 +21,6 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosio
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
-   private static final EntityDataAccessor<Integer> TARGET_ID = SynchedEntityData.defineId(PseudoSpiralSwordProjectileEntity.class, EntityDataSerializers.INT);
    private static final float DIRECT_HIT_DAMAGE = 1500.0F;
    private final Set<Integer> hitIds = new HashSet<>();
 
@@ -36,16 +31,6 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
    public PseudoSpiralSwordProjectileEntity(Level level, LivingEntity shooter) {
       super(ModEntities.PSEUDO_SPIRAL_SWORD_PROJECTILE.get(), shooter, level);
       this.setItem(new ItemStack((net.minecraft.world.level.ItemLike)ModItems.PSEUDO_SPIRAL_SWORD.get()));
-   }
-
-   @Override
-   protected void defineSynchedData(Builder builder) {
-      super.defineSynchedData(builder);
-      builder.define(TARGET_ID, -1);
-   }
-
-   public void setTrackedTarget(LivingEntity target) {
-      this.entityData.set(TARGET_ID, target == null || EntityUtils.isImmunePlayerTarget(target) ? -1 : target.getId());
    }
 
    @Override
@@ -67,22 +52,6 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
          this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          this.level().addParticle(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       } else {
-         Entity targetEntity = this.level().getEntity(this.entityData.get(TARGET_ID));
-         if (targetEntity instanceof LivingEntity target && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target)) {
-            Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.35, 0.0).subtract(this.position());
-            if (aim.lengthSqr() > 1.0E-4) {
-               Vec3 desired = aim.normalize().scale(Math.max(2.2, this.getDeltaMovement().length()));
-               this.setDeltaMovement(this.getDeltaMovement().scale(0.8).add(desired.scale(0.2)));
-            }
-            if (this.distanceToSqr(target) <= 1.35 * 1.35) {
-               applyDirectHit(target);
-               triggerBrokenPhantasm(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
-               this.discard();
-               return;
-            }
-         } else if (targetEntity != null) {
-            this.entityData.set(TARGET_ID, -1);
-         }
          damageAlongPath(previous, this.position());
          if (this.tickCount > 60) {
             triggerBrokenPhantasm(this.position());
@@ -135,7 +104,6 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
 
    private void applyDirectHit(LivingEntity target) {
       if (EntityUtils.isImmunePlayerTarget(target)) {
-         this.entityData.set(TARGET_ID, -1);
          return;
       }
       Entity owner = this.getOwner();

@@ -3,6 +3,7 @@ package net.xxxjk.typemoonworld.api;
 import java.util.ServiceLoader;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceLocation;
 
 /** Stable entry point for addons. The implementation is supplied by the main mod at runtime. */
 public final class TypeMoonWorldApi {
@@ -34,6 +35,10 @@ public final class TypeMoonWorldApi {
 
    public static MagicAttributeAccess magicAttributes(LivingEntity entity) {
       return provider().magicAttributes(entity);
+   }
+
+   public static boolean isMagicAvailable(LivingEntity entity, ResourceLocation magicId) {
+      return provider().isMagicAvailable(entity, magicId);
    }
 
    public static ProjectionEffects projectionEffects() {

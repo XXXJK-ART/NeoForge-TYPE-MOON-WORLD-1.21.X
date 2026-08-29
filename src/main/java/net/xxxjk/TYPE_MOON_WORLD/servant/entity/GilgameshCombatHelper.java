@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -523,10 +524,13 @@ public final class GilgameshCombatHelper {
    }
 
    private static boolean tryEa(GilgameshEntity entity, ServerLevel level, LivingEntity target, long now, CompoundTag data) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 200.0);
+      int previousCooldown = data.getBoolean("GilgameshEaOverdraft") ? 2400 : 1200;
       if (ServantCombatSystem.getPhase(entity) != ServantCombatPhase.DECISIVE
-         || now - data.getLong(LAST_EA) < 1200
+         || now - data.getLong(LAST_EA) < previousCooldown
          || data.contains(LAST_CROSS) && now - data.getLong(LAST_CROSS) < MAJOR_NP_SWITCH_LOCK_TICKS
-         || entity.getCurrentMp() < 200.0) return false;
+         || !resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) return false;
       if (entity.tickCount % 20 != 0) return false;
       float chance = level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(18.0),
          living -> living != entity && living.isAlive() && !living.isAlliedTo(entity)).size() >= 2 ? 0.16F : 0.08F;
@@ -540,6 +544,9 @@ public final class GilgameshCombatHelper {
          return true;
       }
       Vec3 look = target.position().add(0, target.getBbHeight() * 0.5, 0).subtract(entity.position().add(0, entity.getBbHeight() * 0.65, 0)).normalize();
+      data.putDouble("GilgameshEaPowerScale", resource.powerScale());
+      data.putBoolean("GilgameshEaOverdraft", resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       beginNpcEaSummon(entity, level, target, now, look);
       data.putLong(LAST_EA, now);
       return true;

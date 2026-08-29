@@ -56,4 +56,38 @@ class ZhaoYunHakuryuMountRulesTest {
       assertTrue(riderSource.contains("never dig downward"));
       assertTrue(riderSource.contains("if (pos.getY() < base.getY()) continue;"));
    }
+
+   @Test
+   void npcHakuryuUsesCombatIntentInsteadOfOnlyChasingTargetPosition() throws IOException {
+      String source = Files.readString(SOURCE);
+
+      assertTrue(source.contains("resolveRiderCombatTarget"));
+      assertTrue(source.contains("rider.getLastHurtByMob()"));
+      assertTrue(source.contains("COMBAT_DIRECT_TICKS = 36"));
+      assertTrue(source.contains("moveAroundCombatTarget"));
+      assertTrue(source.contains("COMBAT_STOP_DISTANCE = 4.6"));
+      assertTrue(source.contains("recoverBlockedCombatMove"));
+      assertTrue(source.contains("blockedCombatMoveTicks"));
+      assertTrue(source.contains("this.horizontalCollision"));
+      assertTrue(source.contains("this.isInWall()"));
+   }
+
+   @Test
+   void ordinaryMountedMobsReceiveRiderCombatIntent() throws IOException {
+      String source = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/combat/ai/MountedCombatIntentService.java"));
+      String servant = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/combat/ServantCombatSystem.java"));
+      String npc = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/combat/ai/NpcTacticalController.java"));
+      String humanNpc = Files.readString(Path.of(
+         "src/main/java/net/xxxjk/TYPE_MOON_WORLD/entity/HumanNpcEntity.java"));
+
+      assertTrue(source.contains("mount.setTarget(target)"));
+      assertTrue(source.contains("pathfinder.getNavigation().moveTo(target, speed)"));
+      assertTrue(source.contains("hasPlayerPassenger"));
+      assertTrue(servant.contains("MountedCombatIntentService.tick(entity)"));
+      assertTrue(npc.contains("MountedCombatIntentService.tick(entity)"));
+      assertTrue(humanNpc.contains("MountedCombatIntentService.tick(this)"));
+   }
 }

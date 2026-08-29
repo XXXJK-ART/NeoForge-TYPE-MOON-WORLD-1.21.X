@@ -136,4 +136,10 @@ public final class MagicDefinitionRegistry {
       MagicDefinitionData definition = get(id);
       return definition == null || MagicAttributeService.meets(vars, definition.requiredAttributes());
    }
+
+   public static boolean meetsAttributeRequirements(net.minecraft.world.entity.LivingEntity entity, String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null || net.xxxjk.typemoonworld.api.TypeMoonWorldApi.magicAttributes(entity)
+         .hasAll(definition.requiredAttributes());
+   }
 }

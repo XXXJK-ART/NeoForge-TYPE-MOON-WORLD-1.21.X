@@ -28,6 +28,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -425,7 +426,7 @@ public final class AndrasiasService {
                 point.x, point.y + 0.15D, point.z,
                 20, IMPACT_RADIUS * 0.45D, 0.12D, IMPACT_RADIUS * 0.45D, 0.08D);
         level.sendParticles(
-                net.minecraft.core.particles.ParticleTypes.FLAME,
+                ModParticles.ELEMENTAL_FLAME.get(),
                 point.x, point.y + 0.45D, point.z,
                 16, IMPACT_RADIUS * 0.55D, 0.7D, IMPACT_RADIUS * 0.55D, 0.08D);
         level.sendParticles(

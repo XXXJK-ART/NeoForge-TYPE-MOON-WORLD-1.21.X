@@ -54,20 +54,28 @@ public class RuneSigilParticle extends TextureSheetParticle {
       private final float blue;
       private final float quadScale;
       private final int lifetime;
+      private final float alpha;
 
       public Provider(SpriteSet sprites, float red, float green, float blue, float quadScale, int lifetime) {
+         this(sprites, red, green, blue, quadScale, lifetime, 0.95F);
+      }
+
+      public Provider(SpriteSet sprites, float red, float green, float blue, float quadScale, int lifetime, float alpha) {
          this.sprites = sprites;
          this.red = red;
          this.green = green;
          this.blue = blue;
          this.quadScale = quadScale;
          this.lifetime = lifetime;
+         this.alpha = alpha;
       }
 
       @Override
       public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z,
                                      double xSpeed, double ySpeed, double zSpeed) {
-         return new RuneSigilParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites, this.red, this.green, this.blue, this.quadScale, this.lifetime);
+         RuneSigilParticle particle = new RuneSigilParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.sprites, this.red, this.green, this.blue, this.quadScale, this.lifetime);
+         particle.alpha = this.alpha;
+         return particle;
       }
    }
 }

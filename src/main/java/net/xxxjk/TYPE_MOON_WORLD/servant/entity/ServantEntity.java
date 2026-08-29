@@ -55,6 +55,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalController;
 import net.xxxjk.TYPE_MOON_WORLD.servant.api.ServantExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
@@ -69,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.personality.PrincipleAxis;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SpecialTargetPrinciple;
 import net.xxxjk.TYPE_MOON_WORLD.servant.personality.SocialDisposition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantSkillRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
@@ -366,6 +368,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(this);
       if (!this.level().isClientSide) {
+         ServantNoblePhantasmResourceService.tick(this);
          this.tickPassiveManaRegeneration();
       }
       if (!this.level().isClientSide && this.tickCount == 1) {
@@ -768,6 +771,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(params.attackDamage());
       this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(params.movementSpeed());
       this.getAttribute(Attributes.ARMOR).setBaseValue(params.armor());
+      this.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(ServantCombatFormulas.armorToughness(params));
       this.setCustomName(Component.literal(def.displayNameZh()));
       this.setCustomNameVisible(true);
 

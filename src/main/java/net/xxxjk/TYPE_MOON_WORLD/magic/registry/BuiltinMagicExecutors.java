@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.registry;
 
-import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -146,9 +145,6 @@ public final class BuiltinMagicExecutors {
 
    private static MagicExecutionResult executeMagicAnalysis(MagicExecutionContext context) {
       ServerPlayer player = context.asServerPlayer();
-      if (player != null && BoundaryMagicIntegration.tryAnalyzeTargetedBoundaryMark(player)) {
-         return MagicExecutionResult.SUCCESS;
-      }
       TypeMoonWorldModVariables.PlayerVariables vars = context.vars();
       vars.magic_analysis_active = !vars.magic_analysis_active;
       vars.syncPlayerVariables(context.entity());

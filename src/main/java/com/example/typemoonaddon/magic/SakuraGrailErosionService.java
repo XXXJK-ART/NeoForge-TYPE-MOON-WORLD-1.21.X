@@ -15,6 +15,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 /** Advances Sakura's three-step Holy Grail erosion gate. */
 public final class SakuraGrailErosionService {
@@ -91,11 +92,15 @@ public final class SakuraGrailErosionService {
                         player.getGameProfile().getName()
                 );
             }
-            if (!SakuraTypeMoonIntegration.ensureGrailWormPower(player)) {
-                SakuraTypeMoonIntegration.ensureForbiddenMagicKnowledge(player);
-            }
+            SakuraTypeMoonIntegration.ensureGrailWormPower(player);
+            SakuraTypeMoonIntegration.ensureForbiddenMagicKnowledge(player);
+            player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).syncPlayerVariables(player);
             ensureCrestWormExpelled(player);
-            CursedArmorService.beginFormation(player);
+            if (SakuraTypeMoonIntegration.isAlterBlackSakura(player)) {
+                CursedArmorService.beginFormation(player);
+            } else if (data.cursedArmorPresent()) {
+                CursedArmorService.beginDissolution(player);
+            }
             BlackShadowNightService.playerUnavailable(player);
             SakuraShadowMaterializationService.playerUnavailable(player);
             AddonAttachments.sync(player, AddonAttachments.IMAGINARY_SPACE);

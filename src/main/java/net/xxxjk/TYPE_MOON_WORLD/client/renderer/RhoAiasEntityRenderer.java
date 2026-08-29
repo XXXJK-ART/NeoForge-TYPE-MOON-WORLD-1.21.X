@@ -18,6 +18,9 @@ public class RhoAiasEntityRenderer extends GeoEntityRenderer<RhoAiasEntity> {
 
    @Override
    public void render(RhoAiasEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
+      if (entity.isParticleOnly()) {
+         return;
+      }
       poseStack.pushPose();
       super.render(entity, 0.0F, partialTick, poseStack, bufferSource, packedLight);
       poseStack.popPose();

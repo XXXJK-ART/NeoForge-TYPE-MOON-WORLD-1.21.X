@@ -124,12 +124,6 @@ public final class ShadowHassanEntity extends ServantEntity {
       }
 
       if (!this.wasTacticalAiHandledThisTick()) {
-         if (!this.isNoblePhantasmConsumed() && target != null && target.isAlive()
-            && !ShadowHassanPursuitData.isPaleRider(target)
-            && ShadowHassanRules.shouldTriggerNoblePhantasm(this.getHealth(), this.getMaxHealth())) {
-            this.triggerNoblePhantasm(target);
-            return;
-         }
          this.tickShadowMovement(level, target, now);
       }
    }
@@ -308,13 +302,7 @@ public final class ShadowHassanEntity extends ServantEntity {
    public boolean hurt(DamageSource source, float amount) {
       if (amount <= 0.0F) return false;
       if (!this.isAdministrativeDamage(source) && !this.isEligibleMeleeDamage(source)) return false;
-      boolean hurt = super.hurt(source, amount);
-      if (hurt && this.isAlive() && !this.isNoblePhantasmConsumed()
-         && ShadowHassanRules.shouldTriggerNoblePhantasm(this.getHealth(), this.getMaxHealth())) {
-         LivingEntity target = source.getEntity() instanceof LivingEntity living ? living : this.getTarget();
-         if (target != null && target.isAlive() && !ShadowHassanPursuitData.isPaleRider(target)) this.triggerNoblePhantasm(target);
-      }
-      return hurt;
+      return super.hurt(source, amount);
    }
 
    private boolean isEligibleMeleeDamage(DamageSource source) {
@@ -354,17 +342,6 @@ public final class ShadowHassanEntity extends ServantEntity {
       }
       this.playDeathVoiceOnce();
       super.die(cause);
-   }
-
-   private void triggerNoblePhantasm(LivingEntity target) {
-      if (this.isNoblePhantasmConsumed() || !(this.level() instanceof ServerLevel level)) return;
-      this.revealForAttack();
-      this.consumeNoblePhantasm();
-      ShadowHassanPursuitData.get(level.getServer()).addPursuit(level, this.position(), target);
-      this.playDeathVoiceOnce();
-      this.internalDeath = true;
-      this.setHealth(0.0F);
-      super.die(this.damageSources().genericKill());
    }
 
    private void consumeNoblePhantasm() {

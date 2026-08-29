@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -40,6 +41,8 @@ public final class LiShuwenCombatHelper {
    private static final String TAG_LAST_TREMOR = "LiShuwenLastTremor";
    private static final String TAG_LAST_COUNTER = "LiShuwenLastCounter";
    private static final String TAG_LAST_WU_ER_DA = "LiShuwenLastWuErDa";
+   private static final String TAG_WU_ER_DA_POWER_SCALE = "LiShuwenWuErDaPowerScale";
+   private static final String TAG_WU_ER_DA_OVERDRAFT = "LiShuwenWuErDaOverdraft";
    private static final String TAG_WU_ER_DA_RELEASE = "LiShuwenWuErDaRelease";
    private static final String TAG_WU_ER_DA_TARGET = "LiShuwenWuErDaTarget";
    private static final String TAG_CIRCLE_DODGE_UNTIL = "LiShuwenCircleDodgeUntil";
@@ -300,7 +303,12 @@ public final class LiShuwenCombatHelper {
 
    private static boolean tryBeginWuErDa(LiShuwenEntity entity, LivingEntity target, ServerLevel level, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (entity.getCurrentMp() < WU_ER_DA_MP_COST || now - data.getLong(TAG_LAST_WU_ER_DA) < WU_ER_DA_COOLDOWN || data.getLong(TAG_WU_ER_DA_RELEASE) > now) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, WU_ER_DA_MP_COST);
+      int previousCooldown = data.getBoolean(TAG_WU_ER_DA_OVERDRAFT) ? WU_ER_DA_COOLDOWN * 2 : WU_ER_DA_COOLDOWN;
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || now - data.getLong(TAG_LAST_WU_ER_DA) < previousCooldown
+         || data.getLong(TAG_WU_ER_DA_RELEASE) > now) {
          return false;
       }
       if (!entity.getSensing().hasLineOfSight(target)) {
@@ -309,7 +317,9 @@ public final class LiShuwenCombatHelper {
       data.putLong(TAG_LAST_WU_ER_DA, now);
       data.putLong(TAG_WU_ER_DA_RELEASE, now + WU_ER_DA_WINDUP);
       data.putInt(TAG_WU_ER_DA_TARGET, target.getId());
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - WU_ER_DA_MP_COST));
+      data.putDouble(TAG_WU_ER_DA_POWER_SCALE, resource.powerScale());
+      data.putBoolean(TAG_WU_ER_DA_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       entity.setWuErDaTargeting(true);
       entity.faceToward(target.position());
       entity.triggerWuErDaAnimation();

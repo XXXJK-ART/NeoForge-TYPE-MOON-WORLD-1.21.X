@@ -1,0 +1,7 @@
+{
+  "parent": "typemoonworld:item/template/card_3d",
+  "textures": {
+    "front": "typemoonaddon:item/card_faces_3d/master/matou_sakura_fha_card",
+    "back": "typemoonaddon:item/card_faces_3d/master/matou_sakura_fha_card"
+  }
+}

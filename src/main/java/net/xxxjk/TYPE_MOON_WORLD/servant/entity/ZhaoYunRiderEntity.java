@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import org.jetbrains.annotations.Nullable;
 
 public final class ZhaoYunRiderEntity extends ServantEntity {
@@ -49,6 +50,8 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    public static final String TAG_NP_COOLDOWN = "ZhaoYunChangbanpoCooldown";
    private static final String TAG_NP_CHANT_UNTIL = "ZhaoYunChangbanpoChantUntil";
    private static final String TAG_NP_INITIAL_CHARGE = "ZhaoYunChangbanpoInitialCharge";
+   private static final String TAG_NP_OVERDRAFT = "ZhaoYunChangbanpoOverdraft";
+   private static final String TAG_NP_POWER_SCALE = "ZhaoYunChangbanpoPowerScale";
    private static final String TAG_NP_INITIAL_DISTANCE = "ZhaoYunChangbanpoInitialDistance";
    private static final String TAG_NP_SAFE_X = "ZhaoYunChangbanpoSafeX";
    private static final String TAG_NP_SAFE_Y = "ZhaoYunChangbanpoSafeY";
@@ -570,8 +573,22 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive()
          || getCurrentMp() < 50.0 || !hasMasterNoblePhantasmPermission()
          || level.getGameTime() < getPersistentData().getLong(TAG_AOKO_COOLDOWN)) return false;
+      return startAokoSword(level, null);
+   }
+
+   public boolean startAokoSword(ServantNoblePhantasmResourceService.CastDecision resource) {
+      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive()
+         || !hasMasterNoblePhantasmPermission()
+         || level.getGameTime() < getPersistentData().getLong(TAG_AOKO_COOLDOWN)
+         || resource == null || !resource.allowed()) return false;
+      return startAokoSword(level, resource);
+   }
+
+   private boolean startAokoSword(ServerLevel level, ServantNoblePhantasmResourceService.CastDecision resource) {
       long now = level.getGameTime();
-      setCurrentMp(getCurrentMp() - 50.0);
+      if (resource == null) {
+         setCurrentMp(getCurrentMp() - 50.0);
+      }
       getPersistentData().putLong(TAG_AOKO_UNTIL, now + AOKO_DURATION);
       getPersistentData().putLong(TAG_AOKO_COOLDOWN, now + AOKO_COOLDOWN);
       // Qinggang Sword has no voice line; use only a brief weapon flourish.
@@ -587,13 +604,19 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    }
 
    public boolean startChangbanpo() {
-      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive() || getCurrentMp() < CHANGBANPO_MP_COST
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(this, CHANGBANPO_MP_COST);
+      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting() || isAokoSwordActive()
+         || !resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(this)
          || !hasMasterNoblePhantasmPermission()
          || level.getGameTime() < getPersistentData().getLong(TAG_NP_COOLDOWN)) return false;
-      setCurrentMp(getCurrentMp() - CHANGBANPO_MP_COST);
+      ServantNoblePhantasmResourceService.commitNpcCast(this, resource);
       long now = level.getGameTime();
       getPersistentData().putLong(TAG_NP_CHANT_UNTIL, now + NP_CHANT_DURATION);
-      getPersistentData().putLong(TAG_NP_COOLDOWN, level.getGameTime() + NP_COOLDOWN);
+      getPersistentData().putLong(TAG_NP_COOLDOWN, level.getGameTime()
+         + (resource.overdraft() ? NP_COOLDOWN * 2L : NP_COOLDOWN));
+      getPersistentData().putBoolean(TAG_NP_OVERDRAFT, resource.overdraft());
+      getPersistentData().putDouble(TAG_NP_POWER_SCALE, resource.powerScale());
       ServantVoiceHelper.tryPlayZhaoYunNp(this);
       return true;
    }

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -66,14 +67,14 @@ public class Magic_display_Overlay {
                 GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
                 event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
 
-                int startColor = 0xFF00E5FF;
-                int endColor = 0xFF2979FF;
+                int startColor = 0xFF008F99;
+                int endColor = 0xFF205EAA;
                 if (currentMana <= maxMana * 0.2) {
-                    startColor = 0xFFFF4000;
-                    endColor = 0xFFFF0000;
+                    startColor = 0xFFB33600;
+                    endColor = 0xFFB00000;
                 } else if (currentMana > maxMana) {
-                    startColor = 0xFFFF00FF;
-                    endColor = 0xFF9D00FF;
+                    startColor = 0xFFB000B0;
+                    endColor = 0xFF7200B8;
                 }
 
                 if (maxMana > 0) {
@@ -96,13 +97,13 @@ public class Magic_display_Overlay {
             }
 
             if (selectedTalent || vars.is_magus && vars.is_magic_circuit_open) {
-                net.minecraft.network.chat.MutableComponent magicName = Component.translatable("gui.typemoonworld.mode.none");
+                MutableComponent magicName = Component.translatable("gui.typemoonworld.mode.none");
                 int magicColor = 0xFF00FFFF;
 
                 if (!vars.selected_magics.isEmpty() && vars.current_magic_index >= 0 && vars.current_magic_index < vars.selected_magics.size()) {
                     String magicId = vars.selected_magics.get(vars.current_magic_index);
-                    String translationKey = "magic.typemoonworld." + magicId + ".name";
-                    magicName = Component.translatable(translationKey);
+                    MutableComponent baseMagicName = resolveMagicDisplayName(vars, vars.current_magic_index, magicId);
+                    magicName = baseMagicName.copy();
 
                     if (magicId.startsWith("ruby")) {
                         magicColor = 0xFFFF0000;
@@ -122,7 +123,7 @@ public class Magic_display_Overlay {
                         magicColor = 0xFFFF0000;
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.mode_with_index",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 vars.sword_barrel_mode
                         );
                     } else if ("gravity_magic".equals(magicId)) {
@@ -139,7 +140,7 @@ public class Magic_display_Overlay {
                         };
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.gravity.format",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 Component.translatable(targetKey),
                                 Component.translatable(modeKey)
                         );
@@ -150,7 +151,7 @@ public class Magic_display_Overlay {
                                 : "gui.typemoonworld.overlay.healing.target.other.short";
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.healing.format",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 Component.translatable(targetKey)
                         );
                     } else if ("magic_bullet".equals(magicId)) {
@@ -163,7 +164,7 @@ public class Magic_display_Overlay {
                         magicColor = 0xFF66CCFF;
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.time_alter.format",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 Component.translatable(vars.time_alter_mode == 0
                                         ? "gui.typemoonworld.overlay.time_alter.mode.accel.short"
                                         : "gui.typemoonworld.overlay.time_alter.mode.stagnate.short")
@@ -183,7 +184,7 @@ public class Magic_display_Overlay {
                         };
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.element.format",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 Component.translatable(mode == 1
                                         ? "gui.typemoonworld.overlay.element.mode.utility.short"
                                         : "gui.typemoonworld.overlay.element.mode.attack.short")
@@ -193,7 +194,7 @@ public class Magic_display_Overlay {
                         String mode = currentImaginaryMode(entity, vars, magicId);
                         magicName = Component.translatable(
                                 "gui.typemoonworld.overlay.imaginary.format",
-                                Component.translatable(translationKey),
+                                baseMagicName,
                                 Component.translatable(imaginaryModeLabelKey(magicId, mode))
                         );
                     } else if ("jewel_random_shoot".equals(magicId)) {
@@ -289,6 +290,30 @@ public class Magic_display_Overlay {
     private static boolean isImaginaryStorageMagic(String magicId) {
         String path = magicPath(magicId);
         return "imaginary_absorption".equals(path) || "imaginary_absorption_evolved".equals(path);
+    }
+
+    /** Uses the same display-name precedence as the radial selector. */
+    private static MutableComponent resolveMagicDisplayName(TypeMoonWorldModVariables.PlayerVariables vars, int index, String magicId) {
+        if (vars != null && index >= 0 && index < vars.selected_magic_display_names.size()) {
+            String cached = vars.selected_magic_display_names.get(index);
+            if (cached != null && !cached.isBlank() && !cached.equals(magicId) && !cached.contains(".typemoonworld.")) {
+                return Component.literal(cached);
+            }
+        }
+
+        String path = magicPath(magicId);
+        String selectedKey = "key.typemoonworld.magic." + path + ".selected";
+        MutableComponent selected = Component.translatable(selectedKey);
+        if (!selected.getString().equals(selectedKey)) return selected;
+
+        String nameKey = "magic.typemoonworld." + path + ".name";
+        MutableComponent name = Component.translatable(nameKey);
+        if (!name.getString().equals(nameKey)) return name;
+
+        String shortKey = "key.typemoonworld.magic." + path + ".short";
+        MutableComponent shortName = Component.translatable(shortKey);
+        if (!shortName.getString().equals(shortKey)) return shortName;
+        return Component.literal(path.replace('_', ' '));
     }
 
     private static String currentImaginaryMode(Player player, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {

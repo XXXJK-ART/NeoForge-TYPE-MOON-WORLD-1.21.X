@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
@@ -641,7 +642,7 @@ public final class MedeaCombatHelper {
       spawnMagicCircle(level, entity.position().add(0.0, entity.getBbHeight() * 0.45, 0.0), direction, 0.82F);
       for (int i = 0; i < 7; i++) {
          double y = center.y + 5.2 - i * 0.95;
-         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, y, center.z, 14, 0.18, 0.22, 0.18, 0.04);
+         level.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), center.x, y, center.z, 14, 0.18, 0.22, 0.18, 0.04);
          level.sendParticles(ParticleTypes.END_ROD, center.x, y, center.z, 6, 0.16, 0.2, 0.16, 0.03);
       }
       level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
@@ -681,7 +682,7 @@ public final class MedeaCombatHelper {
             break;
          }
          Vec3 center = victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0);
-         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
+         level.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
          level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
          victim.invulnerableTime = 0;
          victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
@@ -948,7 +949,7 @@ public final class MedeaCombatHelper {
          if (trapped) {
             target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 12, 0, false, true, true));
          }
-         serverLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, current.x, current.y, current.z, 16, 0.3, 0.55, 0.3, 0.03);
+         serverLevel.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), current.x, current.y, current.z, 16, 0.3, 0.55, 0.3, 0.03);
          serverLevel.sendParticles(CIRCLE_ACCENT, current.x, current.y + 0.2, current.z, 8, 0.18, 0.25, 0.18, 0.0);
          serverLevel.playSound(null, BlockPos.containing(current), SoundEvents.BEACON_DEACTIVATE, SoundSource.HOSTILE, 0.9F, 1.35F);
       });

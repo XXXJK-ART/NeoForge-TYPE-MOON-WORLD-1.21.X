@@ -14,6 +14,7 @@ import net.minecraft.network.syncher.SynchedEntityData.Builder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -158,7 +159,8 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
          this.currentRadius = 0.0;
          this.explosionTick = 0;
          if (this.level() instanceof ServerLevel serverLevel) {
-            VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", this.position(), 128.0);
+            VFXServerEffects.spawnScaled(serverLevel, "broken_phantasm_explosion", this.position(), 128.0,
+               (float)Mth.clamp(this.maxRadius * 1.2F / 25.0F, 0.35F, 2.4F));
             queueBrokenPhantasmTerrain(serverLevel, Vec3.atCenterOf(this.explosionCenter), this.maxRadius, 42.0F, this.maxRadius >= 28.0F ? 80 : 45);
          }
          this.level()

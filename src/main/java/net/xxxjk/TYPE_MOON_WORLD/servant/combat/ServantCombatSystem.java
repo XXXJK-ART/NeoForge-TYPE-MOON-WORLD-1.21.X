@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.MountedCombatIntentService;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
@@ -51,6 +52,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSpecialization;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 
@@ -91,6 +93,8 @@ public final class ServantCombatSystem {
       if (entity.level().isClientSide()) {
          return false;
       }
+
+      MountedCombatIntentService.tick(entity);
 
       if (EnkiduCombatHelper.isBoundByChainsOfHeaven(entity)) {
          entity.getNavigation().stop();
@@ -272,7 +276,8 @@ public final class ServantCombatSystem {
 
    public static boolean skillsSuppressed(LivingEntity entity) {
       return entity instanceof ServantEntity servant
-         && servant.getPersistentData().getLong(TAG_SUPPRESSED_UNTIL) > servant.level().getGameTime();
+         && (servant.getPersistentData().getLong(TAG_SUPPRESSED_UNTIL) > servant.level().getGameTime()
+            || ServantNoblePhantasmResourceService.isOverdraftWeak(servant));
    }
 
    public static boolean isUntargetable(LivingEntity entity) {
@@ -1059,7 +1064,8 @@ public final class ServantCombatSystem {
 
    private static ServantParams effectiveParams(ServantEntity entity, ServantDefinition definition) {
       if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return HundredFacesHassanRules.PERSONA_E_RANK_PARAMS;
+         return HundredFacesHassanRules.personaCombatParams(
+            definition != null ? definition.parameters() : HundredFacesHassanRules.MAIN_FULL_PARAMS);
       }
       if (entity instanceof HundredFacesHassanEntity hundredFaces) {
          ServantParams params = definition != null ? definition.parameters() : HundredFacesHassanRules.MAIN_FULL_PARAMS;

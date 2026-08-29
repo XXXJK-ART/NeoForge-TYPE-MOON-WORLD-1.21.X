@@ -50,10 +50,14 @@ public final class VFXClientRuntime {
    }
 
    public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed) {
-      spawn(effectId, x, y, z, targetEntityUuid, seed, Optional.empty());
+      spawn(effectId, x, y, z, targetEntityUuid, seed, Optional.empty(), 1.0F);
    }
 
    public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed, Optional<Vec3> direction) {
+      spawn(effectId, x, y, z, targetEntityUuid, seed, direction, 1.0F);
+   }
+
+   public static void spawn(String effectId, double x, double y, double z, Optional<UUID> targetEntityUuid, long seed, Optional<Vec3> direction, float scale) {
       VFXEffectDefinition definition = EffectLibrary.INSTANCE.get(effectId);
       if (definition == null) {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
@@ -76,6 +80,9 @@ public final class VFXClientRuntime {
          VFXEnvironmentManager.add(environment, originX, originY, originZ, targetEntityUuid.orElse(null));
       }
       List<VFXEmitter> emitters = definition.createEmitters((float)originX, (float)originY, (float)originZ, seed);
+      for (VFXEmitter emitter : emitters) {
+         emitter.setUniformScale(scale);
+      }
       if (direction.isPresent() && target == null) {
          Quaternionf rotation = rotationFromForward(direction.get());
          float fixedX = (float)originX, fixedY = (float)originY, fixedZ = (float)originZ;

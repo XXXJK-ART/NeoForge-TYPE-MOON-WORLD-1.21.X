@@ -42,6 +42,15 @@ public class MagicJewelMachineGun {
    private static final double[] SHOT_SIDE_OFFSETS = new double[]{0.0, -0.12, 0.12};
    private static final double[] SHOT_UP_OFFSETS = new double[]{0.0, 0.07, -0.07};
 
+   /** Returns whether the server still owns an active machine-gun state. */
+   public static boolean isActive(Entity entity) {
+      if (!(entity instanceof ServerPlayer player)) {
+         return false;
+      }
+      CompoundTag state = player.getPersistentData();
+      return state.getBoolean(TAG_ACTIVE) || state.getBoolean(TAG_CHANTING);
+   }
+
    public static boolean execute(Entity entity) {
       if (entity instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);

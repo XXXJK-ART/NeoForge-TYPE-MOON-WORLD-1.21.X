@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -51,12 +52,17 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicPassiveProgressionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveRank;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.performance.PerformanceMonitor;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentPassiveDataCodec;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
@@ -243,6 +249,10 @@ public class TypeMoonWorldModVariables {
          }
 
           clone.learned_magics = new ArrayList<>(original.learned_magics);
+          clone.rune_origin_unlocked = original.rune_origin_unlocked;
+          clone.learned_runes = new ArrayList<>(original.learned_runes);
+          clone.rune_programs = new ArrayList<>();
+          for (RuneProgram program : original.rune_programs) if (program != null) clone.rune_programs.add(program.copy());
           clone.magic_proficiencies = new HashMap<>(original.magic_proficiencies);
           clone.magic_learning_progress = new HashMap<>(original.magic_learning_progress);
           clone.magic_learning_progress_last_gain_tick = new HashMap<>(original.magic_learning_progress_last_gain_tick);
@@ -996,14 +1006,12 @@ public class TypeMoonWorldModVariables {
       private static final String SOURCE_TYPE_CREST = "crest";
       private static final String CREST_SOURCE_SELF = "self";
       private static final String CREST_SOURCE_PLUNDER = "plunder";
-      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = Set.of(
-         "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
-         "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
-      );
+      private static final Set<String> SELF_CREST_EXCLUDED_MAGICS = createSelfCrestExcludedMagics();
       private transient boolean fullSyncSnapshotSent = false;
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;
       private transient int manaSyncSnapshotHash = 0;
+      private transient boolean magicSystemInitialized = false;
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -1083,6 +1091,9 @@ public class TypeMoonWorldModVariables {
       public Map<String, Integer> crest_practice_count = new HashMap<>();
       public boolean is_mystic_eyes_active = false;
       public List<String> learned_magics = new ArrayList<>();
+      public boolean rune_origin_unlocked = false;
+      public List<String> learned_runes = new ArrayList<>();
+      public List<RuneProgram> rune_programs = new ArrayList<>();
       public Map<String, Double> magic_proficiencies = new HashMap<>();
       public Map<String, Double> magic_learning_progress = new HashMap<>();
       public Map<String, Long> magic_learning_progress_last_gain_tick = new HashMap<>();
@@ -1320,11 +1331,19 @@ public class TypeMoonWorldModVariables {
       }
 
       private static String sanitizeSourceType(String sourceType) {
-         return "crest".equals(sourceType) ? "crest" : "self";
+         return "crest".equals(sourceType) || "rune_program".equals(sourceType) ? sourceType : "self";
       }
 
       private static String sanitizeCrestSourceKind(String sourceKind) {
          return "plunder".equals(sourceKind) ? "plunder" : "self";
+      }
+
+      private static Set<String> createSelfCrestExcludedMagics() {
+         java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(Set.of(
+            "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma",
+            "unlimited_blade_works", "sword_barrel_full_open", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+         ));
+         return Set.copyOf(ids);
       }
 
       private static String ensureCrestEntryId(String id) {
@@ -1336,7 +1355,26 @@ public class TypeMoonWorldModVariables {
       }
 
       private static boolean isKnownMagicId(String magicId) {
-         return magicId != null && (TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
+         return magicId != null && (RuneProgramService.isDynamicId(magicId) || RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId)
+            || TalentService.isTalent(magicId) || MagicClassification.isKnownMagic(magicId));
+      }
+
+      private static boolean magicIdMatches(String actual, String expected) {
+         if (actual == null || expected == null) {
+            return false;
+         }
+         if (actual.equals(expected)) {
+            return true;
+         }
+         return actual.equals(shortMagicId(expected)) || shortMagicId(actual).equals(expected);
+      }
+
+      private static String shortMagicId(String magicId) {
+         if (magicId == null) {
+            return "";
+         }
+         int split = magicId.indexOf(':');
+         return split >= 0 ? magicId.substring(split + 1) : magicId;
       }
 
       private static boolean isPresetOptionMagic(String magicId) {
@@ -1353,6 +1391,12 @@ public class TypeMoonWorldModVariables {
          return !"reinforcement_self".equals(magicId) && !"reinforcement_other".equals(magicId) && !"reinforcement_item".equals(magicId)
             ? magicId
             : "reinforcement";
+      }
+
+      private static boolean isBlockedCrestMagic(String magicId) {
+         return magicId == null || magicId.isBlank()
+            || !isKnownMagicId(magicId)
+            || !net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(magicId);
       }
 
       private static int crestPresetSeed(TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry) {
@@ -1445,7 +1489,21 @@ public class TypeMoonWorldModVariables {
          if (crestEntry != null) {
             crestEntry.entryId = ensureCrestEntryId(crestEntry.entryId);
             crestEntry.sourceKind = sanitizeCrestSourceKind(crestEntry.sourceKind);
-            if (!net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(crestEntry.magicId)) {
+            String originalMagicId = crestEntry.magicId == null ? "" : crestEntry.magicId;
+            String canonicalMagicId = PlayerMagicSelectionService.canonicalRuntimeMagicId(originalMagicId);
+            if (!Objects.equals(crestEntry.magicId, canonicalMagicId)) {
+               crestEntry.magicId = canonicalMagicId;
+               CompoundTag migratedPayload = crestEntry.presetPayload == null ? new CompoundTag() : crestEntry.presetPayload.copy();
+               if (!migratedPayload.contains("reinforcement_target")) {
+                  migratedPayload.putInt("reinforcement_target", switch (originalMagicId) {
+                     case "reinforcement_other" -> 1;
+                     case "reinforcement_item" -> 2;
+                     default -> 0;
+                  });
+               }
+               crestEntry.presetPayload = migratedPayload;
+            }
+            if (isBlockedCrestMagic(crestEntry.magicId)) {
                crestEntry.magicId = "";
                crestEntry.active = false;
             }
@@ -1464,6 +1522,13 @@ public class TypeMoonWorldModVariables {
       }
 
       public void ensureMagicSystemInitialized() {
+         normalizeLearnedRunes();
+         if (magicSystemInitialized && this.magic_wheels != null && this.magic_wheels.size() == MAGIC_WHEEL_COUNT * MAGIC_WHEEL_SLOT_COUNT
+            && this.selected_magic_runtime_slot_indices != null && this.selected_magic_display_names != null
+            && this.crest_entries != null && this.crest_practice_count != null && this.magicCrestInventory != null
+            && this.learned_runes != null && this.rune_programs != null) {
+            return;
+         }
          if (this.magic_wheels == null) {
             this.magic_wheels = new ArrayList<>();
          }
@@ -1486,6 +1551,11 @@ public class TypeMoonWorldModVariables {
 
          if (this.magicCrestInventory == null) {
             this.magicCrestInventory = new ItemStackHandler(1);
+         }
+         if (this.learned_runes == null) this.learned_runes = new ArrayList<>();
+         if (this.rune_programs == null) this.rune_programs = new ArrayList<>();
+         if (this.rune_programs.size() > RuneProgramService.MAX_PROGRAMS) {
+            this.rune_programs = new ArrayList<>(this.rune_programs.subList(0, RuneProgramService.MAX_PROGRAMS));
          }
 
          int totalSlots = 120;
@@ -1517,10 +1587,44 @@ public class TypeMoonWorldModVariables {
             }
          }
 
+         for (TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry : this.magic_wheels) {
+            if (entry == null || !isKnownMagicId(entry.magicId)) {
+               if (entry != null) {
+                  entry.clear();
+               }
+            } else {
+               entry.sourceType = sanitizeSourceType(entry.sourceType);
+               PlayerMagicSelectionService.normalizeRuntimeWheelEntry(this, entry);
+            }
+         }
+
          this.active_wheel_index = Mth.clamp(this.active_wheel_index, 0, 9);
 
          for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry : this.crest_entries) {
             normalizeCrestEntry(crestEntry);
+         }
+         magicSystemInitialized = true;
+      }
+
+      /** Canonicalizes legacy rune ids before any validation or persistence. */
+      private void normalizeLearnedRunes() {
+         if (this.learned_runes == null) {
+            this.learned_runes = new ArrayList<>();
+            return;
+         }
+         java.util.LinkedHashSet<String> canonical = new java.util.LinkedHashSet<>();
+         for (String rune : this.learned_runes) {
+            net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneDefinition definition = net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneRegistry.get(rune);
+            if (definition != null) canonical.add(definition.idPath());
+         }
+         if (!canonical.equals(new java.util.LinkedHashSet<>(this.learned_runes))) {
+            this.learned_runes = new ArrayList<>(canonical);
+         }
+         if (!canonical.isEmpty()) {
+            this.rune_origin_unlocked = true;
+            if (!this.learned_magics.contains(RuneLearningService.ORIGIN_MAGIC_ID)) {
+               this.learned_magics.add(RuneLearningService.ORIGIN_MAGIC_ID);
+            }
          }
       }
 
@@ -1536,6 +1640,7 @@ public class TypeMoonWorldModVariables {
             normalized.wheelIndex = wheelIndex;
             normalized.slotIndex = slotIndex;
             normalized.sourceType = sanitizeSourceType(normalized.sourceType);
+            PlayerMagicSelectionService.normalizeRuntimeWheelEntry(this, normalized);
             if (!isKnownMagicId(normalized.magicId)) {
                normalized.clear();
             }
@@ -1573,6 +1678,47 @@ public class TypeMoonWorldModVariables {
                this.magic_wheels.set(wheelFlatIndex(wheel, slot), createEmptyWheelSlot(wheel, slot));
             }
          }
+      }
+
+      public boolean removeLearnedMagic(String magicId) {
+         return magicId != null && !magicId.isEmpty() && this.learned_magics.removeIf(magic -> magicIdMatches(magic, magicId));
+      }
+
+      public boolean replaceLearnedMagic(String fromMagicId, String toMagicId) {
+         if (fromMagicId == null || fromMagicId.isEmpty() || toMagicId == null || toMagicId.isEmpty()) {
+            return false;
+         }
+         boolean changed = this.learned_magics.removeIf(magic -> magicIdMatches(magic, fromMagicId));
+         if (!this.learned_magics.contains(toMagicId)) {
+            this.learned_magics.add(toMagicId);
+            changed = true;
+         }
+         return changed;
+      }
+
+      public boolean replaceWheelMagic(String fromMagicId, String toMagicId) {
+         if (fromMagicId == null || fromMagicId.isEmpty() || toMagicId == null || toMagicId.isEmpty()) {
+            return false;
+         }
+         this.ensureMagicSystemInitialized();
+         boolean changed = false;
+         for (TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry : this.magic_wheels) {
+            if (entry != null && magicIdMatches(entry.magicId, fromMagicId)) {
+               entry.magicId = toMagicId;
+               entry.presetPayload = entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy();
+               changed = true;
+            }
+         }
+         if (changed) {
+            this.rebuildSelectedMagicsFromActiveWheel();
+         }
+         return changed;
+      }
+
+      public boolean migrateMagicId(String fromMagicId, String toMagicId) {
+         boolean changed = this.replaceLearnedMagic(fromMagicId, toMagicId);
+         changed |= this.replaceWheelMagic(fromMagicId, toMagicId);
+         return changed;
       }
 
       public TypeMoonWorldModVariables.PlayerVariables.CrestEntry getCrestEntryById(String entryId) {
@@ -1617,6 +1763,10 @@ public class TypeMoonWorldModVariables {
             return false;
          } else if (TalentService.isTalent(slotEntry.magicId)) {
             return !"crest".equals(slotEntry.sourceType) && TalentService.owns(this, slotEntry.magicId);
+         } else if ("rune_program".equals(slotEntry.sourceType)) {
+            RuneProgram program = RuneProgramService.find(this, slotEntry.magicId);
+            if (program == null || !RuneLearningService.hasOrigin(this)) return false;
+            return RuneProgramService.isRuneProgramCastable(this, program);
          } else if (!"crest".equals(slotEntry.sourceType)) {
             return this.hasLearnedSelfMagic(slotEntry.magicId);
          } else if (!this.hasValidImplantedCrest()) {
@@ -1629,6 +1779,13 @@ public class TypeMoonWorldModVariables {
                return "plunder".equals(crestEntry.sourceKind) ? true : this.hasLearnedSelfMagic(slotEntry.magicId);
             }
          }
+      }
+
+      public void removeWheelReferences(String magicId) {
+         if (magicId == null) return;
+         ensureMagicSystemInitialized();
+         for (WheelSlotEntry entry : magic_wheels) if (entry != null && magicId.equals(entry.magicId)) entry.clear();
+         rebuildSelectedMagicsFromActiveWheel();
       }
 
       public void switchActiveWheel(int wheelIndex) {
@@ -1649,7 +1806,11 @@ public class TypeMoonWorldModVariables {
          this.selected_magic_display_names.clear();
 
          for (int slot = 0; slot < 12; slot++) {
-            TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry = this.getWheelSlotEntry(this.active_wheel_index, slot);
+            // We already initialized the wheel above. Calling getWheelSlotEntry
+            // here would initialize and normalize all 120 slots again for every
+            // slot, making each magic switch needlessly quadratic.
+            TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slotEntry =
+               this.magic_wheels.get(wheelFlatIndex(this.active_wheel_index, slot));
             if (this.isWheelSlotEntryCastable(slotEntry)) {
                this.selected_magics.add(slotEntry.magicId);
                this.selected_magic_runtime_slot_indices.add(slot);
@@ -1691,7 +1852,7 @@ public class TypeMoonWorldModVariables {
          this.ensureMagicSystemInitialized();
          if (this.current_magic_index >= 0 && this.current_magic_index < this.selected_magic_runtime_slot_indices.size()) {
             int slot = this.selected_magic_runtime_slot_indices.get(this.current_magic_index);
-            return this.getWheelSlotEntry(this.active_wheel_index, slot);
+            return this.magic_wheels.get(wheelFlatIndex(this.active_wheel_index, slot));
          } else {
             return null;
          }
@@ -1870,14 +2031,14 @@ public class TypeMoonWorldModVariables {
                normalizeCrestEntry(entry);
                if ("self".equals(entry.sourceKind)) {
                   String canonicalMagicId = canonicalSelfKnowledgeMagicId(entry.magicId);
-                  if (isKnownMagicId(canonicalMagicId)) {
+                  if (!isBlockedCrestMagic(canonicalMagicId)) {
                      TypeMoonWorldModVariables.PlayerVariables.CrestEntry normalizedCopy = entry.copy();
                      normalizedCopy.magicId = canonicalMagicId;
                      existingSelfEntries.putIfAbsent(canonicalMagicId, normalizedCopy);
                   }
-               } else {
-                  updated.add(entry.copy());
-               }
+                } else if (!isBlockedCrestMagic(entry.magicId)) {
+                   updated.add(entry.copy());
+                }
             }
          }
 
@@ -1992,7 +2153,7 @@ public class TypeMoonWorldModVariables {
                      TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry = TypeMoonWorldModVariables.PlayerVariables.CrestEntry.fromNBT(
                         listTag.getCompound(i)
                      );
-                     if (isKnownMagicId(entry.magicId)) {
+                     if (isKnownMagicId(entry.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(entry.magicId)) {
                         normalizeCrestEntry(entry);
                         entries.add(entry);
                      }
@@ -2010,7 +2171,7 @@ public class TypeMoonWorldModVariables {
             ListTag listTag = new ListTag();
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry entry : entries) {
-               if (entry != null && isKnownMagicId(entry.magicId)) {
+               if (entry != null && isKnownMagicId(entry.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(entry.magicId)) {
                   listTag.add(entry.serializeNBT());
                }
             }
@@ -2026,7 +2187,7 @@ public class TypeMoonWorldModVariables {
             Map<String, TypeMoonWorldModVariables.PlayerVariables.CrestEntry> merged = new LinkedHashMap<>();
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry existing : this.crest_entries) {
-               if (existing != null && isKnownMagicId(existing.magicId)) {
+               if (existing != null && isKnownMagicId(existing.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(existing.magicId)) {
                   TypeMoonWorldModVariables.PlayerVariables.CrestEntry copy = existing.copy();
                   normalizeCrestEntry(copy);
                   String key = copy.magicId
@@ -2044,7 +2205,7 @@ public class TypeMoonWorldModVariables {
             }
 
             for (TypeMoonWorldModVariables.PlayerVariables.CrestEntry incoming : incomingEntries) {
-               if (incoming != null && isKnownMagicId(incoming.magicId)) {
+               if (incoming != null && isKnownMagicId(incoming.magicId) && net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata.canEnterMagicCrest(incoming.magicId)) {
                   TypeMoonWorldModVariables.PlayerVariables.CrestEntry normalized = incoming.copy();
                   normalizeCrestEntry(normalized);
                   String key = normalized.magicId
@@ -2408,6 +2569,16 @@ public class TypeMoonWorldModVariables {
          }
 
          nbt.put("learned_magics", learnedList);
+         nbt.putBoolean("rune_origin_unlocked", this.rune_origin_unlocked);
+         ListTag learnedRunes = new ListTag();
+         for (String rune : this.learned_runes) if (rune != null && RuneLearningService.hasRune(this, rune)) learnedRunes.add(StringTag.valueOf(rune));
+         nbt.put("learned_runes", learnedRunes);
+         ListTag runePrograms = new ListTag();
+          // Preserve intrinsically valid programs even when learned-rune state
+          // is temporarily incomplete during migration or sync. Ownership is
+          // enforced when the program is selected/cast, not by data loss here.
+          for (RuneProgram program : this.rune_programs) if (program != null && program.validate().valid()) runePrograms.add(program.serializeNBT());
+         nbt.put("rune_programs", runePrograms);
           CompoundTag dynamicProficiency = new CompoundTag();
           for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
              dynamicProficiency.putDouble(entry.getKey(), Math.max(0.0, Math.min(100.0, entry.getValue())));
@@ -2462,6 +2633,7 @@ public class TypeMoonWorldModVariables {
       }
 
       public void deserializeNBT(@NotNull Provider lookupProvider, CompoundTag nbt) {
+         magicSystemInitialized = false;
          this.player_mana = nbt.getDouble("player_mana");
          this.player_max_mana = nbt.getDouble("player_max_mana");
          this.player_mana_egenerated_every_moment = nbt.getDouble("player_mana_egenerated_every_moment");
@@ -2836,6 +3008,23 @@ public class TypeMoonWorldModVariables {
                this.learned_magics.add(learnedList.getString(i));
             }
          }
+         this.rune_origin_unlocked = nbt.getBoolean("rune_origin_unlocked");
+         this.learned_runes.clear();
+         if (nbt.contains("learned_runes", 9)) {
+            ListTag runes = nbt.getList("learned_runes", 8);
+            for (int i = 0; i < runes.size(); i++) if (net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneRegistry.isKnown(runes.getString(i))) this.learned_runes.add(runes.getString(i));
+         }
+         this.rune_programs.clear();
+         if (nbt.contains("rune_programs", 9)) {
+            ListTag programs = nbt.getList("rune_programs", 10);
+            for (int i = 0; i < Math.min(RuneProgramService.MAX_PROGRAMS, programs.size()); i++) {
+               RuneProgram program = RuneProgram.fromNBT(programs.getCompound(i));
+               // Do not discard saved programs because learned-rune/Origin
+               // state is loaded or migrated separately. They remain unusable
+               // until RuneProgramService.validate grants ownership.
+               if (program.validate().valid()) this.rune_programs.add(program);
+            }
+         }
          this.magic_proficiencies.clear();
           if (nbt.contains("magic_proficiencies", 10)) {
              CompoundTag dynamicProficiency = nbt.getCompound("magic_proficiencies");
@@ -2911,10 +3100,10 @@ public class TypeMoonWorldModVariables {
                TypeMoonWorldModVariables.PlayerVariables.CrestEntry crestEntry = TypeMoonWorldModVariables.PlayerVariables.CrestEntry.fromNBT(
                   crestList.getCompound(i)
                );
-               if (isKnownMagicId(crestEntry.magicId)) {
-                  normalizeCrestEntry(crestEntry);
-                  this.crest_entries.add(crestEntry);
-               }
+                if (!isBlockedCrestMagic(crestEntry.magicId)) {
+                   normalizeCrestEntry(crestEntry);
+                   this.crest_entries.add(crestEntry);
+                }
             }
          }
 
@@ -2923,7 +3112,7 @@ public class TypeMoonWorldModVariables {
             CompoundTag practiceTag = nbt.getCompound("crest_practice_count");
 
             for (String key : practiceTag.getAllKeys()) {
-               if (isKnownMagicId(key)) {
+               if (!isBlockedCrestMagic(key)) {
                   this.crest_practice_count.put(key, Math.max(0, practiceTag.getInt(key)));
                }
             }

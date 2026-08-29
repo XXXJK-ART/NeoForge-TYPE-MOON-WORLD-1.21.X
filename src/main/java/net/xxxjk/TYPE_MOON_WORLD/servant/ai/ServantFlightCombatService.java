@@ -41,6 +41,12 @@ public final class ServantFlightCombatService {
 
    public static void tick(ServantEntity entity) {
       if (entity == null || entity.level().isClientSide()) return;
+      // Enuma Elish owns Enkidu's complete movement sequence, including the
+      // aerial windup and the dive. Do not let generic flight correction
+      // overwrite the noble phantasm's per-tick motion.
+      if (entity instanceof EnkiduEntity enkidu && EnkiduCombatHelper.isEnumaElishActive(enkidu)) {
+         return;
+      }
       long now = entity.level().getGameTime();
       if (!isManagedFlight(entity, now)) {
          if (shouldForceGroundedGravity(entity, now)) {

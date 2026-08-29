@@ -8,6 +8,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.typemoonworld.api.MagicAttributeAccess;
 import net.xxxjk.typemoonworld.api.MagicAttributes;
+import net.xxxjk.typemoonworld.api.MagicAttributeProvider;
 
 public final class MagicAttributeService {
    private static final MagicAttributeAccess EMPTY = new MagicAttributeAccess() {
@@ -21,8 +22,18 @@ public final class MagicAttributeService {
       if (entity == null) return EMPTY;
       TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return new MagicAttributeAccess() {
-         @Override public boolean has(ResourceLocation attribute) { return MagicAttributeService.has(vars, attribute); }
-         @Override public Set<ResourceLocation> attributes() { return MagicAttributeService.attributes(vars); }
+         @Override public boolean has(ResourceLocation attribute) {
+            if (MagicAttributeService.has(vars, attribute)) return true;
+            return InternalApiProvider.attributeProviders().values().stream().anyMatch(provider -> provider.has(entity, attribute));
+         }
+         @Override public Set<ResourceLocation> attributes() {
+            Set<ResourceLocation> result = new LinkedHashSet<>(MagicAttributeService.attributes(vars));
+            for (MagicAttributeProvider provider : InternalApiProvider.attributeProviders().values()) {
+               Set<ResourceLocation> provided = provider.attributes(entity);
+               if (provided != null) result.addAll(provided);
+            }
+            return Set.copyOf(result);
+         }
       };
    }
 

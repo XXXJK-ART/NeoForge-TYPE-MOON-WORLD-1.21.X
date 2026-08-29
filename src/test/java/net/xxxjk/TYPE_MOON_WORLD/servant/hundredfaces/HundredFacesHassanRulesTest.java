@@ -21,7 +21,7 @@ class HundredFacesHassanRulesTest {
    void mainBodyAlsoWeakensByTotalSplitCount() {
       assertEquals(200.0, HundredFacesHassanRules.mainHealthForSplitCount(0), 1.0E-9);
       assertEquals(15.0, HundredFacesHassanRules.mainAttackDamageForSplitCount(0), 1.0E-9);
-      assertEquals(3.0, HundredFacesHassanRules.mainArmorForSplitCount(0), 1.0E-9);
+      assertEquals(4.5, HundredFacesHassanRules.mainArmorForSplitCount(0), 1.0E-9);
       assertEquals(600.0, HundredFacesHassanRules.mainManaForSplitCount(0), 1.0E-9);
       assertTrue(HundredFacesHassanRules.mainHealthForSplitCount(40) < HundredFacesHassanRules.mainHealthForSplitCount(10));
       assertTrue(HundredFacesHassanRules.mainAttackDamageForSplitCount(40) < HundredFacesHassanRules.mainAttackDamageForSplitCount(10));

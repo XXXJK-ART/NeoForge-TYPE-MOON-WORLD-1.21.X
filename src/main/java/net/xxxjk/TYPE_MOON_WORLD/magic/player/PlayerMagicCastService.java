@@ -21,9 +21,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.nbt.CompoundTag;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
 import net.xxxjk.typemoonworld.api.MagicCastContext;
+import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 import net.xxxjk.typemoonworld.api.event.MagicCastEvent;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
 import net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramExecutor;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
 
 public final class PlayerMagicCastService {
    private static final double DEFAULT_COOLDOWN = 10.0;
@@ -57,14 +61,30 @@ public final class PlayerMagicCastService {
          return;
       }
 
-      if (PlayerMagicSelectionService.requiresPresetConfiguration(entry.magicId)
-         && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
-         displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
+      if ("rune_program".equals(entry.sourceType) || RuneProgramService.isDynamicId(entry.magicId)) {
+         if (!(entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
+         var program = RuneProgramService.find(vars, entry.magicId);
+         if (program != null && program.releaseMode() != RuneReleaseMode.DIRECT_AIR) {
+            displayClientMessage(entity, "message.typemoonworld.rune.release_external");
+            return;
+         }
+         RuneProgramExecutor.execute(serverPlayer, vars, program);
          return;
       }
 
       boolean fullSyncNeeded = PlayerMagicSelectionService.prepareCurrentSelection(entity, vars);
       entry = PlayerMagicSelectionService.getCurrentEntry(vars);
+
+      // Addon-owned preset handlers may provide a default for an empty payload.
+      // Normalize the selected entry before deciding whether configuration is missing.
+      if (PlayerMagicSelectionService.requiresPresetConfiguration(entry.magicId)
+         && (entry.presetPayload == null || entry.presetPayload.isEmpty())) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_configured");
+         if (fullSyncNeeded) {
+            vars.syncPlayerVariables(entity);
+         }
+         return;
+      }
 
       if (!vars.isWheelSlotEntryCastable(entry)) {
          displayClientMessage(entity, "message.typemoonworld.magic.not_learned");
@@ -88,12 +108,16 @@ public final class PlayerMagicCastService {
          displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
          return;
       }
-       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId)) return;
+       // Stopping a running jewel machine gun is a toggle action and must not be
+       // blocked by the cooldown applied between its bursts.
+       boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
+          && net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun.isActive(entity);
+       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
        boolean infiniteMana = entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
           && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
 
        var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
-       if (!MagicDefinitionRegistry.meetsAttributeRequirements(vars, entry.magicId)) {
+       if (!MagicDefinitionRegistry.meetsAttributeRequirements(entity instanceof LivingEntity living ? living : null, entry.magicId)) {
           displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
           return;
        }
@@ -108,6 +132,11 @@ public final class PlayerMagicCastService {
          || "hokushin_ittoryu".equals(entry.magicId) || "tennen_rishin_ryu".equals(entry.magicId)) return;
 
       ResourceLocation publicMagicId = resolveMagicId(entry.magicId);
+      if (publicMagicId != null && entity instanceof LivingEntity living
+         && !TypeMoonWorldApi.isMagicAvailable(living, publicMagicId)) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_learned");
+         return;
+      }
       MagicCastContext publicContext = new MagicCastContext(
          entity instanceof LivingEntity living ? living : null,
          null,

@@ -18,7 +18,7 @@ public final class ManaFurnaceService {
     }
 
     public static boolean trySupply(ServerPlayer player, double amount) {
-        return amount >= 0.0D && hasInfiniteSupply(player);
+        return Double.isFinite(amount) && amount >= 0.0D && hasInfiniteSupply(player);
     }
 
     public static List<ManaFurnaceBlockEntity> nearby(ServerPlayer player) {

@@ -113,6 +113,14 @@ public final class EvasionMovementService {
          entity.setDeltaMovement(direction.x * horizontal, Math.max(entity.getDeltaMovement().y, vertical), direction.z * horizontal);
          return true;
       }
+      if (entity.onGround() && !candidates.isEmpty()) {
+         Vec3 direction = candidates.getFirst();
+         face(entity, direction);
+         double horizontal = agility >= 3 ? 0.82 : 0.62;
+         double vertical = agility >= 3 ? 0.46 : 0.12;
+         entity.setDeltaMovement(direction.x * horizontal, Math.max(entity.getDeltaMovement().y, vertical), direction.z * horizontal);
+         return true;
+      }
       return false;
    }
 

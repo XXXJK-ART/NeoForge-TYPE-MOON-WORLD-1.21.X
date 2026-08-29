@@ -32,8 +32,8 @@ class PaleRiderCombatRulesTest {
    }
 
    @Test
-   void plagueDealsDoubleDamageToEnkiduOnly() {
-      assertEquals(2.0F, PaleRiderCombatRules.plagueSpecialAttackMultiplier("enkidu"));
+   void plagueDealsFourfoldDamageToEnkiduOnly() {
+      assertEquals(4.0F, PaleRiderCombatRules.plagueSpecialAttackMultiplier("enkidu"));
       assertEquals(1.0F, PaleRiderCombatRules.plagueSpecialAttackMultiplier("heracles"));
       assertEquals(1.0F, PaleRiderCombatRules.plagueSpecialAttackMultiplier(""));
       assertEquals(1.0F, PaleRiderCombatRules.plagueSpecialAttackMultiplier(null));

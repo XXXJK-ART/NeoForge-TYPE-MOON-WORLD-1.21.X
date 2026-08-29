@@ -42,6 +42,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -75,6 +76,8 @@ public final class OdaNobunagaCombatHelper {
    public static final String TAG_HAJUN_CHANT_END = "OdaHajunChantEnd";
    public static final String TAG_HAJUN_CHANT_TARGET = "OdaHajunChantTarget";
    public static final String TAG_HAJUN_ACTIVE_UNTIL = "OdaHajunActiveUntil";
+   public static final String TAG_HAJUN_POWER_SCALE = "OdaHajunPowerScale";
+   public static final String TAG_HAJUN_OVERDRAFT = "OdaHajunOverdraft";
    public static final String TAG_HAJUN_MIN_UNTIL = "OdaHajunMinUntil";
    public static final String TAG_HAJUN_START_TICK = "OdaHajunStartTick";
    public static final String TAG_HAJUN_STARTED = "OdaHajunStarted";
@@ -816,7 +819,12 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static boolean tryBeginHajun(OdaNobunagaEntity entity, ServerLevel level, LivingEntity target, long now) {
-      if (entity.getCurrentMp() < 100.0 || !canUse(now, entity.getPersistentData().getLong(TAG_LAST_HAJUN), HAJUN_COOLDOWN)) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 100.0);
+      int previousCooldown = entity.getPersistentData().getBoolean(TAG_HAJUN_OVERDRAFT)
+         ? HAJUN_COOLDOWN * 2 : HAJUN_COOLDOWN;
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || !canUse(now, entity.getPersistentData().getLong(TAG_LAST_HAJUN), previousCooldown)) {
          return false;
       }
       if (!hasTrait(target, ServantTraitTag.DIVINE) && !shouldRarelyUseHajun(entity, target)) {
@@ -830,7 +838,9 @@ public final class OdaNobunagaCombatHelper {
       if (ModDimensions.isHajunDimension(level.dimension().location())) {
          return false;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 100.0);
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      entity.getPersistentData().putDouble(TAG_HAJUN_POWER_SCALE, resource.powerScale());
+      entity.getPersistentData().putBoolean(TAG_HAJUN_OVERDRAFT, resource.overdraft());
       entity.getPersistentData().putLong(TAG_LAST_HAJUN, now);
       entity.getPersistentData().putLong(TAG_HAJUN_CHANT_END, now + HAJUN_CHANT_TICKS);
       entity.getPersistentData().putLong(TAG_LAND_FOR_NP_UNTIL, now + HAJUN_CHANT_TICKS + NP_LAND_TICKS);
@@ -1062,12 +1072,14 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static void applyHajunInstantDamage(OdaNobunagaEntity entity, ServerLevel level) {
+      float scale = (float)Math.max(0.2, Math.min(1.0,
+         entity.getPersistentData().getDouble(TAG_HAJUN_POWER_SCALE)));
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(HAJUN_RADIUS),
          living -> isPulledByHajun(entity.getUUID(), living) && living != entity && !living.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(living)
       )) {
-         float damage = hasTrait(living, ServantTraitTag.DIVINE) ? 400.0F : 100.0F;
+         float damage = (hasTrait(living, ServantTraitTag.DIVINE) ? 400.0F : 100.0F) * scale;
          living.igniteForSeconds(8.0F);
          living.invulnerableTime = 0;
          living.hurt(entity.damageSources().magic(), damage);
@@ -1076,8 +1088,10 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static void applyHajunDot(OdaNobunagaEntity entity, ServerLevel level) {
+      float scale = (float)Math.max(0.2, Math.min(1.0,
+         entity.getPersistentData().getDouble(TAG_HAJUN_POWER_SCALE)));
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(HAJUN_RADIUS), living -> living != entity && living.isAlive() && !living.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(living))) {
-         float damage = hasTrait(living, ServantTraitTag.DIVINE) ? 40.0F : 10.0F;
+         float damage = (hasTrait(living, ServantTraitTag.DIVINE) ? 40.0F : 10.0F) * scale;
          living.igniteForSeconds(4.0F);
          living.invulnerableTime = 0;
          living.hurt(entity.damageSources().magic(), damage);

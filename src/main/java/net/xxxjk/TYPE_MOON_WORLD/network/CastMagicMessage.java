@@ -59,6 +59,7 @@ public record CastMagicMessage(int eventType, int pressedms) implements CustomPa
          || BajiquanCombatService.isSparring(player)) return;
       switch (eventType) {
          case 0:
+            if (net.xxxjk.TYPE_MOON_WORLD.event.RuneReleaseEvents.tryInscriptionKey(player)) break;
             CastMagic.execute(player);
             break;
          case 1:

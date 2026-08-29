@@ -54,7 +54,7 @@ public class UBWBrokenPhantasmExplosion {
             boolean emiyaDistanceFalloff = isEmiyaBrokenPhantasmOwner(owner);
             DamageSource explosionSource = level.damageSources().explosion(source, owner);
             Set<Integer> damagedEntities = new HashSet<>();
-            VFXServerEffects.spawn(serverLevel, "broken_phantasm_explosion", pos, 128.0);
+            VFXServerEffects.spawnScaled(serverLevel, "broken_phantasm_explosion", pos, 128.0, (float)(damageRadius / 25.0));
             spawnShellEffects(serverLevel, pos, damageRadius);
             queueTerrainFromCenter(serverLevel, pos, damageRadius, 32.0F, damageRadius >= 22.0 ? 80 : 45);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);

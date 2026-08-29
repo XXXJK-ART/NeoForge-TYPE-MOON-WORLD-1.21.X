@@ -57,6 +57,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> SPLIT_INDEX = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
    private static final int SINGLE_HOMING_TICKS = 60;
+   private static final int DEATH_FLIGHT_MAX_LIFETIME_TICKS = 100;
    private static final double ARMY_EXPLOSION_DISTANCE_SQR = 4.0D;
    private static final double SPLIT_TRIGGER_DISTANCE = 5.0D;
    private static final double SPLIT_IMPACT_DISTANCE_SQR = 9.0D;
@@ -66,6 +67,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final long DEATH_FLIGHT_DAMAGE_BUDGET_TTL = 200L;
    private static final Map<UUID, DeathFlightDamageBudget> DEATH_FLIGHT_DAMAGE_BUDGETS = new HashMap<>();
    private int lifeTime = 0;
+   private double initialSpeed;
    private UUID deathFlightCastId;
    public final List<Vec3> tracePos = new ArrayList<>();
 
@@ -190,6 +192,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (!(this.level() instanceof ServerLevel level)) return;
 
       this.lifeTime++;
+      boolean armyMode = this.getMode() == Mode.ARMY;
+      boolean splitMode = this.getMode() == Mode.SPLIT;
+      if ((armyMode || splitMode) && this.lifeTime > DEATH_FLIGHT_MAX_LIFETIME_TICKS) {
+         this.discard();
+         return;
+      }
       LivingEntity target = this.resolveTrackedTarget(level);
       if (this.getMode() == Mode.SINGLE) {
          Vec3 motion = this.getDeltaMovement();
@@ -199,8 +207,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             level.sendParticles(DEATH_THORN_TRAIL, pos.x, pos.y, pos.z, 1, 0.025, 0.025, 0.025, 0.0);
          }
       }
-      boolean armyMode = this.getMode() == Mode.ARMY;
-      boolean splitMode = this.getMode() == Mode.SPLIT;
       boolean canHome = armyMode || splitMode || this.lifeTime <= SINGLE_HOMING_TICKS;
       if (!canHome) {
          this.setTrackedTarget(null);
@@ -216,7 +222,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          if (splitMode) {
             this.steerToward(targetPoint, 5.2, 0.82);
             this.syncRotationToMotion();
-            if (this.position().distanceToSqr(targetPoint) <= SPLIT_IMPACT_DISTANCE_SQR || this.lifeTime > 90) {
+            if (this.position().distanceToSqr(targetPoint) <= SPLIT_IMPACT_DISTANCE_SQR
+               || this.lifeTime >= DEATH_FLIGHT_MAX_LIFETIME_TICKS) {
                this.resolveSplitBurst(level);
                return;
             }
@@ -241,7 +248,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             }
          }
       } else if (this.getMode() == Mode.SPLIT || this.getMode() == Mode.ARMY) {
-         if (this.lifeTime > 40) {
+         if (this.lifeTime >= DEATH_FLIGHT_MAX_LIFETIME_TICKS) {
             this.discard();
          }
       } else if (this.lifeTime > 120) {
@@ -391,11 +398,21 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       }
 
       Vec3 current = this.getDeltaMovement();
-      double speed = Math.max(strength, current.length());
+      double speedLimit = this.initialSpeed > 1.0E-4 ? this.initialSpeed : strength;
+      double speed = Math.min(Math.max(strength, current.length()), speedLimit);
       Vec3 desired = toTarget.normalize().scale(speed);
       Vec3 next = current.scale(1.0 - blend).add(desired.scale(blend));
+      if (next.lengthSqr() > speedLimit * speedLimit) {
+         next = next.normalize().scale(speedLimit);
+      }
       this.setDeltaMovement(next);
       this.hasImpulse = true;
+   }
+
+   @Override
+   public void shoot(double x, double y, double z, float velocity, float inaccuracy) {
+      this.initialSpeed = Math.abs(velocity);
+      super.shoot(x, y, z, velocity, inaccuracy);
    }
 
    @Override
@@ -695,14 +712,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
-      float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(source, damage);
       target.invulnerableTime = 0;
-      float desiredHealth = Math.max(0.0F, before - damage);
-      if (target.getHealth() > desiredHealth && target.getHealth() <= before) {
-         target.setHealth(desiredHealth);
-      }
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {
@@ -747,10 +759,6 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       target.invulnerableTime = 0;
       target.hurt(source, lethalDamage);
       target.invulnerableTime = 0;
-      if (target.isAlive()) {
-         target.setHealth(0.0F);
-         target.die(this.damageSources().genericKill());
-      }
    }
 
    private void spawnSingleTargetImpact(LivingEntity target) {
@@ -771,6 +779,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       this.entityData.set(TARGET_ID, tag.getInt("TargetId"));
       this.setArmyDamage(tag.getFloat("ArmyDamage"));
       this.entityData.set(SPLIT_INDEX, tag.getInt("SplitIndex"));
+      this.initialSpeed = tag.getDouble("InitialSpeed");
       this.deathFlightCastId = tag.hasUUID("DeathFlightCastId") ? tag.getUUID("DeathFlightCastId") : null;
    }
 
@@ -781,6 +790,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       tag.putInt("TargetId", this.entityData.get(TARGET_ID));
       tag.putFloat("ArmyDamage", this.entityData.get(ARMY_DAMAGE));
       tag.putInt("SplitIndex", this.entityData.get(SPLIT_INDEX));
+      tag.putDouble("InitialSpeed", this.initialSpeed);
       if (this.deathFlightCastId != null) {
          tag.putUUID("DeathFlightCastId", this.deathFlightCastId);
       }

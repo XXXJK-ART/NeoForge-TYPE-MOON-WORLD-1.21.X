@@ -30,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BodyTrainingService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.ArcaneMobilityService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
@@ -52,6 +53,7 @@ public final class ServantCardTransformManager {
    private static final ResourceLocation SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed");
    private static final ResourceLocation SPEED_RAMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_speed_ramp");
    private static final ResourceLocation ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_armor");
+   private static final ResourceLocation NIGHTINGALE_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_nightingale_armor");
    private static final ResourceLocation TOUGHNESS_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_toughness");
    private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_knockback_resistance");
    private static final ResourceLocation JUMP_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_card_jump");
@@ -85,6 +87,7 @@ public final class ServantCardTransformManager {
       if (vars.master_active) {
          MasterStateManager.release(player);
       }
+      ArcaneMobilityService.cancelFlightMagic(player);
       clearServantRuntimeState(player, vars);
       player.getPersistentData().remove("MasterLossForcedDeath");
       player.getPersistentData().remove("MasterLossDecayDamage");
@@ -621,6 +624,14 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", currentCooldown / 20.0F)), true);
          return false;
       }
+      if ("mana_burst".equals(action.effectId())
+         && "artoria_pendragon".equals(vars.servant_card_id)
+         && ServantCardArtoriaSkills.isManaBurstActive(player)) {
+         ServantCardArtoriaSkills.performManaBurst(player);
+         vars.syncPlayerVariables(player);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.off"), true);
+         return true;
+      }
       if ("copy_weapon".equals(action.effectId())
          && ServantCardEmiyaSkills.findCopyableWeaponTarget(player, 20.0, 1.6) == null
          && ServantCardEmiyaSkills.findCrossSlashCopyTarget(player, 40.0) == null) {
@@ -880,6 +891,9 @@ public final class ServantCardTransformManager {
       addOrReplace(player.getAttribute(Attributes.ATTACK_DAMAGE), ATTACK_ID, params.attackDamage() - player.getAttributeBaseValue(Attributes.ATTACK_DAMAGE));
       addOrReplace(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID, ServantCombatFormulas.SERVANT_SPEED_E - player.getAttributeBaseValue(Attributes.MOVEMENT_SPEED));
       addOrReplace(player.getAttribute(Attributes.ARMOR), ARMOR_ID, params.armor());
+      if ("nightingale".equals(servantId)) {
+         addOrReplace(player.getAttribute(Attributes.ARMOR), NIGHTINGALE_ARMOR_ID, 15.0);
+      }
       addOrReplace(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID, armorToughnessBonus(params));
       double knockbackResistance = "heracles".equals(servantId)
          ? Math.max(0.0, 1.0 - player.getAttributeBaseValue(Attributes.KNOCKBACK_RESISTANCE))
@@ -916,6 +930,7 @@ public final class ServantCardTransformManager {
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_ID);
       remove(player.getAttribute(Attributes.MOVEMENT_SPEED), SPEED_RAMP_ID);
       remove(player.getAttribute(Attributes.ARMOR), ARMOR_ID);
+      remove(player.getAttribute(Attributes.ARMOR), NIGHTINGALE_ARMOR_ID);
       remove(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TOUGHNESS_ID);
       remove(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), KNOCKBACK_RESISTANCE_ID);
       remove(player.getAttribute(Attributes.JUMP_STRENGTH), JUMP_ID);
@@ -924,7 +939,7 @@ public final class ServantCardTransformManager {
    }
 
    private static double armorToughnessBonus(ServantParams params) {
-      return 0.0;
+      return ServantCombatFormulas.armorToughness(params);
    }
 
    private static double knockbackResistanceBonus(ServantParams params) {
@@ -1448,6 +1463,7 @@ public final class ServantCardTransformManager {
          case "cu_laguz" -> ServantCardCuChulainnSkills.performLaguzRune(player);
          case "cu_tiwaz" -> ServantCardCuChulainnSkills.performTiwazRune(player);
          case "cu_algiz" -> ServantCardCuChulainnSkills.performAlgizRune(player);
+         case "cu_rune_barrier" -> ServantCardCuChulainnSkills.performRuneBarrier(player);
          case "cu_berkana" -> ServantCardCuChulainnSkills.performBerkanaRune(player);
          case "cu_crouch_thrust" -> ServantCardCuChulainnSkills.performCrouchThrust(player);
          case "cu_disengage" -> ServantCardCuChulainnSkills.performDisengage(player);

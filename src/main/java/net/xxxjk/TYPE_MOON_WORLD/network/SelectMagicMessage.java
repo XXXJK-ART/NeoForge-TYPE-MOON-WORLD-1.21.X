@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
+import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 
 public record SelectMagicMessage(String magicId, boolean add) implements CustomPacketPayload {
@@ -35,12 +36,14 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                   TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                      TypeMoonWorldModVariables.PLAYER_VARIABLES
                   );
-                  if (isValidMagicId(message.magicId)) {
-                     if (message.add && (KNOWLEDGE_ONLY_MAGIC_IDS.contains(message.magicId) || MagicDefinitionRegistry.isKnowledgeOnly(message.magicId))) {
+                  String requestedMagicId = message.magicId == null ? "" : message.magicId;
+                  String magicId = PlayerMagicSelectionService.canonicalRuntimeMagicId(requestedMagicId);
+                  if (isValidMagicId(magicId)) {
+                     if (message.add && (KNOWLEDGE_ONLY_MAGIC_IDS.contains(magicId) || MagicDefinitionRegistry.isKnowledgeOnly(magicId))) {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
                      } else {
-                        boolean isLearned = vars.learned_magics.contains(message.magicId);
-                        if (!isLearned && "reinforcement".equals(message.magicId)) {
+                        boolean isLearned = vars.learned_magics.contains(magicId);
+                        if (!isLearned && "reinforcement".equals(magicId)) {
                            isLearned = vars.learned_magics.contains("reinforcement_self")
                               || vars.learned_magics.contains("reinforcement_other")
                               || vars.learned_magics.contains("reinforcement_item");
@@ -55,7 +58,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
 
                            for (int slot = 0; slot < 12; slot++) {
                               TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry existing = vars.getWheelSlotEntry(activeWheel, slot);
-                              if (existing != null && !existing.isEmpty() && "self".equals(existing.sourceType) && message.magicId.equals(existing.magicId)) {
+                              if (existing != null && !existing.isEmpty() && "self".equals(existing.sourceType) && magicId.equals(existing.magicId)) {
                                  vars.rebuildSelectedMagicsFromActiveWheel();
                                  vars.syncRuntimeSelection(player);
                                  return;
@@ -69,7 +72,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                                     activeWheel, slotx
                                  );
                                  entry.sourceType = "self";
-                                 entry.magicId = message.magicId;
+                                 entry.magicId = requestedMagicId;
                                  vars.setWheelSlotEntry(activeWheel, slotx, entry);
                                  break;
                               }
@@ -77,7 +80,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
                         } else {
                            for (int slotxx = 0; slotxx < 12; slotxx++) {
                               TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry existing = vars.getWheelSlotEntry(activeWheel, slotxx);
-                              if (existing != null && !existing.isEmpty() && "self".equals(existing.sourceType) && message.magicId.equals(existing.magicId)) {
+                              if (existing != null && !existing.isEmpty() && "self".equals(existing.sourceType) && magicId.equals(existing.magicId)) {
                                  vars.clearWheelSlotEntry(activeWheel, slotxx);
                               }
                            }
@@ -99,6 +102,7 @@ public record SelectMagicMessage(String magicId, boolean add) implements CustomP
    private static boolean isValidMagicId(String magicId) {
       return magicId != null && !magicId.isEmpty() && magicId.length() <= 64
          && (magicId.matches("[a-z0-9_]+") || net.minecraft.resources.ResourceLocation.tryParse(magicId) != null)
-         && MagicClassification.isKnownMagic(magicId) && MagicDefinitionRegistry.isWheelSelectable(magicId);
+         && (net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId)
+            || (MagicClassification.isKnownMagic(magicId) && MagicDefinitionRegistry.isWheelSelectable(magicId)));
    }
 }

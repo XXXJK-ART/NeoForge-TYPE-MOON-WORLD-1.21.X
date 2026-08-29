@@ -42,6 +42,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -499,7 +500,7 @@ public final class OriasService {
         );
         double ringRadius = Mth.lerp(strength, 0.8D, 5.5D);
         player.serverLevel().sendParticles(
-                ParticleTypes.FLAME,
+                ModParticles.ELEMENTAL_FLAME.get(),
                 player.getX(),
                 player.getY() + 0.12D,
                 player.getZ(),
@@ -630,7 +631,7 @@ public final class OriasService {
         int explosionCount = Mth.clamp(6 + Mth.floor(parameters.strength * 18.0D), 6, 24);
         level.sendParticles(ParticleTypes.LAVA, center.x, center.y + 0.15D, center.z,
                 lavaCount, parameters.coreRadius * 0.75D, 0.35D, parameters.coreRadius * 0.75D, 0.05D);
-        level.sendParticles(ParticleTypes.FLAME, center.x, center.y + parameters.height * 0.5D, center.z,
+        level.sendParticles(ModParticles.ELEMENTAL_FLAME.get(), center.x, center.y + parameters.height * 0.5D, center.z,
                 flameCount, parameters.coreRadius * 0.95D, parameters.height * 0.48D,
                 parameters.coreRadius * 0.95D, 0.12D);
         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,

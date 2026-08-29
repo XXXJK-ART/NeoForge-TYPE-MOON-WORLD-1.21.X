@@ -19,6 +19,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class EnkiduDetectionHighlightClient {
+   private static final int HIGHLIGHT_RED = 255;
+   private static final int HIGHLIGHT_GREEN = 51;
+   private static final int HIGHLIGHT_BLUE = 77;
+   private static final float HIGHLIGHT_SCALE = 1.08F;
    private static final Map<Integer, Integer> HIGHLIGHT_UNTIL = new HashMap<>();
    private static ClientLevel trackedLevel;
    private static int clientTick;
@@ -69,14 +73,19 @@ public final class EnkiduDetectionHighlightClient {
          if (!(entity instanceof LivingEntity living) || !living.isAlive() || entity == minecraft.player) {
             continue;
          }
-         outlines.setColor(255, 202, 56, 255);
+         outlines.setColor(HIGHLIGHT_RED, HIGHLIGHT_GREEN, HIGHLIGHT_BLUE, 255);
          double x = Mth.lerp((double)partialTick, entity.xOld, entity.getX()) - camera.x;
          double y = Mth.lerp((double)partialTick, entity.yOld, entity.getY()) - camera.y;
          double z = Mth.lerp((double)partialTick, entity.zOld, entity.getZ()) - camera.z;
          float yaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
          boolean originallyGlowing = entity.hasGlowingTag();
          entity.setGlowingTag(true);
+         poseStack.pushPose();
          try {
+            double centerY = y + living.getBbHeight() * 0.5D;
+            poseStack.translate(x, centerY, z);
+            poseStack.scale(HIGHLIGHT_SCALE, HIGHLIGHT_SCALE, HIGHLIGHT_SCALE);
+            poseStack.translate(-x, -centerY, -z);
             minecraft.getEntityRenderDispatcher().render(
                entity,
                x,
@@ -90,6 +99,7 @@ public final class EnkiduDetectionHighlightClient {
             );
             renderedAny = true;
          } finally {
+            poseStack.popPose();
             entity.setGlowingTag(originallyGlowing);
          }
       }

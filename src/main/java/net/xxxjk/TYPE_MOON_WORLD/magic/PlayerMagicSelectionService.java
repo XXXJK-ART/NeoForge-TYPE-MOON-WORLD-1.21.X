@@ -18,12 +18,53 @@ public final class PlayerMagicSelectionService {
 
    public static String getCurrentMagicId(TypeMoonWorldModVariables.PlayerVariables vars) {
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = getCurrentEntry(vars);
-      return entry != null && entry.magicId != null ? entry.magicId : "";
+      return entry != null && entry.magicId != null ? canonicalRuntimeMagicId(entry.magicId) : "";
    }
 
    public static boolean isCurrentSelection(TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = getCurrentEntry(vars);
-      return entry != null && Objects.equals(entry.magicId, magicId) && vars.isWheelSlotEntryCastable(entry);
+      return entry != null
+         && Objects.equals(canonicalRuntimeMagicId(entry.magicId), canonicalRuntimeMagicId(magicId))
+         && vars.isWheelSlotEntryCastable(entry);
+   }
+
+   /** Converts legacy wheel IDs to the runtime ID used by the preset system. */
+   public static String canonicalRuntimeMagicId(String magicId) {
+      if (magicId == null) {
+         return "";
+      }
+      return switch (magicId) {
+         case "reinforcement_self", "reinforcement_other", "reinforcement_item" -> "reinforcement";
+         default -> magicId;
+      };
+   }
+
+   /** Migrates a legacy reinforcement wheel entry without changing its learned-magic data. */
+   public static void normalizeRuntimeWheelEntry(
+      TypeMoonWorldModVariables.PlayerVariables vars,
+      TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry
+   ) {
+      if (entry == null) {
+         return;
+      }
+
+      String originalId = entry.magicId == null ? "" : entry.magicId;
+      String canonicalId = canonicalRuntimeMagicId(originalId);
+      CompoundTag payload = entry.presetPayload == null ? new CompoundTag() : entry.presetPayload.copy();
+      if (!Objects.equals(originalId, canonicalId)) {
+         int target = switch (originalId) {
+            case "reinforcement_other" -> 1;
+            case "reinforcement_item" -> 2;
+            default -> 0;
+         };
+         payload.putInt("reinforcement_target", target);
+         if (vars != null) {
+            payload.putInt("reinforcement_mode", clamp(vars.reinforcement_mode, 0, 3));
+            payload.putInt("reinforcement_level", clamp(vars.reinforcement_level, 1, 5));
+         }
+         entry.magicId = canonicalId;
+      }
+      entry.presetPayload = normalizePresetPayload(canonicalId, payload);
    }
 
    public static void initializeSelfPresetIfNeeded(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry) {
@@ -95,11 +136,12 @@ public final class PlayerMagicSelectionService {
 
       TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry updated = entry.copy();
       CompoundTag currentPayload = updated.presetPayload == null ? new CompoundTag() : updated.presetPayload.copy();
-      if (currentPayload.isEmpty()) {
+      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
+      // A projection target can be selected from an initially empty wheel slot.
+      // Do not discard that first selection just because the old payload was empty.
+      if (currentPayload.isEmpty() && isEmptyProjectionPreset(updated.magicId, nextPayload)) {
          return false;
       }
-
-      CompoundTag nextPayload = buildPresetFromCurrentVars(entity, vars, updated.magicId);
       if (nextPayload.equals(currentPayload)) {
          return false;
       }
@@ -124,12 +166,17 @@ public final class PlayerMagicSelectionService {
       vars.syncModeState(entity);
    }
 
-   public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
-      CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
-      if (normalized.isEmpty()) {
-         return normalized;
-      }
+   private static boolean isEmptyProjectionPreset(String magicId, CompoundTag payload) {
+      return "projection".equals(magicId)
+         && payload != null
+         && payload.getBoolean("projection_lock_empty")
+         && !payload.contains("projection_structure_id")
+         && !payload.contains("projection_item", 10);
+   }
 
+   public static CompoundTag normalizePresetPayload(String magicId, CompoundTag payload) {
+      magicId = canonicalRuntimeMagicId(magicId);
+      CompoundTag normalized = payload == null ? new CompoundTag() : payload.copy();
       net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.CompoundResult external =
          net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry.normalize(magicId, normalized);
       if (external.handler() != null) {
@@ -198,6 +245,7 @@ public final class PlayerMagicSelectionService {
       if (magicId == null || magicId.isBlank()) {
          return false;
       }
+      magicId = canonicalRuntimeMagicId(magicId);
       return supportsRuntimePreset(magicId)
          || "touko_travel".equals(magicId)
          || !ExtensionApiRegistry.controlsFor(magicId).isEmpty()
@@ -205,6 +253,7 @@ public final class PlayerMagicSelectionService {
    }
 
    private static boolean supportsRuntimePreset(String magicId) {
+      magicId = canonicalRuntimeMagicId(magicId);
       return "reinforcement".equals(magicId)
          || "gravity_magic".equals(magicId)
          || "gandr_machine_gun".equals(magicId)
@@ -216,6 +265,7 @@ public final class PlayerMagicSelectionService {
    }
 
    private static CompoundTag buildPresetFromCurrentVars(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
+      magicId = canonicalRuntimeMagicId(magicId);
       CompoundTag payload = new CompoundTag();
       if ("reinforcement".equals(magicId)) {
          payload.putInt("reinforcement_target", clamp(vars.reinforcement_target, 0, 3));
@@ -250,6 +300,7 @@ public final class PlayerMagicSelectionService {
    }
 
    private static void applyPresetToVars(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId, CompoundTag payload) {
+      magicId = canonicalRuntimeMagicId(magicId);
       if ("reinforcement".equals(magicId)) {
          if (payload.contains("reinforcement_target")) {
             vars.reinforcement_target = clamp(payload.getInt("reinforcement_target"), 0, 3);

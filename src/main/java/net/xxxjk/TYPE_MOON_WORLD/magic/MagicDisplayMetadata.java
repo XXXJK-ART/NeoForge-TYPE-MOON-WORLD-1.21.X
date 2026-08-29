@@ -15,6 +15,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_UBW = "unlimited_blade_works";
    public static final String CATEGORY_OTHER = "other";
    public static final String CATEGORY_NORDIC = "nordic";
+   public static final String CATEGORY_RUNE = "rune";
    public static final String CATEGORY_MARTIAL = "martial";
    public static final String CATEGORY_TALENT = "talent";
    public static final String CATEGORY_IMAGINARY = "imaginary";
@@ -36,7 +37,9 @@ public final class MagicDisplayMetadata {
       "andrasias", "andrephius", "antores", "demon_god_gaze", "kimaris", "nega_summon", "orias", "storm", "zagan"
    );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
-      "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu"
+      "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu",
+      "imaginary_absorption", "imaginary_absorption_evolved", "shadow_materialization", "black_mud_control", "summon_black_mud",
+      "shadow_binding", "shadow_transfer", "heroic_spirit_devourer", "forbidden_magic", "shadow_art"
    );
 
    private MagicDisplayMetadata() {
@@ -89,6 +92,8 @@ public final class MagicDisplayMetadata {
          return CATEGORY_WORM;
       } else if (isBoundaryMagic(magicId)) {
          return CATEGORY_BOUNDARY;
+      } else if ("rune_origin".equals(path)) {
+         return CATEGORY_RUNE + "," + CATEGORY_NORDIC;
       } else if (path.startsWith("jewel_") || path.startsWith("ruby") || path.startsWith("sapphire")
          || path.startsWith("emerald") || path.startsWith("topaz") || path.startsWith("cyan")) {
          return CATEGORY_JEWEL;

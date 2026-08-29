@@ -38,6 +38,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -50,6 +51,8 @@ public final class CursedArmHassanCombatHelper {
    private static final String LAST_KNIFE_FEINT_TICK = "CursedArmLastKnifeFeintTick";
    private static final String LAST_SHADOW_LUNGE_TICK = "CursedArmLastShadowLungeTick";
    private static final String LAST_ZABANIYA_TICK = "CursedArmLastZabaniyaTick";
+   private static final String ZABANIYA_POWER_SCALE = "CursedArmZabaniyaPowerScale";
+   private static final String ZABANIYA_OVERDRAFT = "CursedArmZabaniyaOverdraft";
    private static final String ZABANIYA_WINDUP_UNTIL = "CursedArmZabaniyaWindupUntil";
    private static final String ZABANIYA_TARGET_ID = "CursedArmZabaniyaTargetId";
    private static final String LAST_SELF_MOD_TICK = "CursedArmLastSelfModTick";
@@ -293,14 +296,21 @@ public final class CursedArmHassanCombatHelper {
 
    private static boolean tryBeginZabaniya(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (entity.getCurrentMp() < 30.0 || distance > entity.getZabaniyaRange() || now - data.getLong(LAST_ZABANIYA_TICK) < ZABANIYA_COOLDOWN) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 30.0);
+      int previousCooldown = data.getBoolean(ZABANIYA_OVERDRAFT) ? ZABANIYA_COOLDOWN * 2 : ZABANIYA_COOLDOWN;
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
+         || distance > entity.getZabaniyaRange()
+         || now - data.getLong(LAST_ZABANIYA_TICK) < previousCooldown) {
          return false;
       }
       if (entity.getRandom().nextFloat() > ZABANIYA_USE_CHANCE) {
          data.putLong(LAST_ZABANIYA_TICK, now - ZABANIYA_COOLDOWN + 40L);
          return false;
       }
-      entity.setCurrentMp(entity.getCurrentMp() - 30.0);
+      data.putDouble(ZABANIYA_POWER_SCALE, resource.powerScale());
+      data.putBoolean(ZABANIYA_OVERDRAFT, resource.overdraft());
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       data.putLong(LAST_ZABANIYA_TICK, now);
       data.putLong(ZABANIYA_WINDUP_UNTIL, now + ZABANIYA_WINDUP);
       data.putInt(ZABANIYA_TARGET_ID, target.getId());

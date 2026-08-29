@@ -6,9 +6,11 @@ import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Pale Rider intentionally has no authored body model.  Keep a stable vanilla
@@ -30,5 +32,13 @@ public final class PaleRiderRenderer extends HumanoidMobRenderer<PaleRiderEntity
    @Override
    public ResourceLocation getTextureLocation(PaleRiderEntity entity) {
       return EMPTY;
+   }
+
+   @Override
+   @Nullable
+   protected RenderType getRenderType(PaleRiderEntity entity, boolean bodyVisible, boolean translucent, boolean glowing) {
+      // Pale Rider has no humanoid body model; its presence is represented by
+      // the horsemen, crows and domain effects.
+      return null;
    }
 }

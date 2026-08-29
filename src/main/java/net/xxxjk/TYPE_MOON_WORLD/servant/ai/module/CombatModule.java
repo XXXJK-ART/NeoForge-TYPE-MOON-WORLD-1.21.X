@@ -60,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
@@ -73,6 +74,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ParacelsusServantSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmExecutor;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
@@ -914,7 +916,7 @@ public final class CombatModule implements ServantAiModule {
 
       if (!gaeBolgWindingUp
          && canGaeBolg
-         && entity.getCurrentMp() >= 10
+         && ServantNoblePhantasmResourceService.canAttemptNpcCast(entity, 10.0)
          && ServantCombatSystem.canUseNoblePhantasm(entity)
          && CuChulainnCombatHelper.canUseSingleGaeBolg(entity)) {
          double targetHealthRatio = target.getHealth() / Math.max(1.0, target.getMaxHealth());
@@ -930,14 +932,19 @@ public final class CombatModule implements ServantAiModule {
          }
          CuChulainnCombatRules.SingleGaeBolgPlan gaeBolgPlan = CuChulainnCombatRules.singleGaeBolgPlan(distance);
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.MELEE) {
+            CuChulainnCombatHelper.clearMeleeGaeBolgPursuit(entity);
             performGaeBolg(entity, target, true);
             return;
          }
          if (gaeBolgPlan == CuChulainnCombatRules.SingleGaeBolgPlan.CLOSE_FOR_MELEE) {
-            entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
-            entity.faceToward(target.position());
-            moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
-            return;
+            if (CuChulainnCombatHelper.tryMeleeGaeBolgPursuit(entity, target)) {
+               entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
+               entity.faceToward(target.position());
+               moveToTargetThrottled(entity, target, 1.4, tick, 0.2);
+               return;
+            }
+         } else {
+            CuChulainnCombatHelper.clearMeleeGaeBolgPursuit(entity);
          }
       }
 
@@ -945,6 +952,7 @@ public final class CombatModule implements ServantAiModule {
       // single-target forms and only reconsider it at a low-frequency final window.
       if (!gaeBolgWindingUp
          && canGaeBolgArmy
+         && ServantNoblePhantasmResourceService.canAttemptNpcCast(entity, Math.max(1.0, entity.getMaxMp()))
          && CuChulainnCombatHelper.canUseArmyGaeBolg(entity)) {
          long lastArmyDecision = data.getLong("CuLastArmyGaeBolgDecisionTick");
          if (CuChulainnCombatRules.isArmyDecisionDue(tick, lastArmyDecision)) {
@@ -2046,6 +2054,12 @@ public final class CombatModule implements ServantAiModule {
          return true;
       }
 
+      if (healthRatio < 0.45 && entity.getCurrentMp() >= 80.0 && entity.getPersistentData().getFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG) <= 0.0F
+            && entity.getRandom().nextFloat() < 0.12F) {
+         performRuneBarrier(entity);
+         return true;
+      }
+
       if (distance > 7.0 && hasLineOfSight && target != null && !ansuzActive) {
          performAnsuzRune(entity, target);
          return true;
@@ -2140,6 +2154,30 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.WAX_ON,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(),
          18, 0.5, 0.8, 0.5, 0.03);
+   }
+
+   private void performRuneBarrier(ServantEntity entity) {
+      if (!(entity.level() instanceof ServerLevel sl)) return;
+      entity.setCurrentMp(entity.getCurrentMp() - 80.0);
+      entity.triggerRuneCastAnimation();
+      CuChulainnCombatHelper.markRuneCast(entity);
+      var data = entity.getPersistentData();
+      long now = entity.level().getGameTime();
+      data.putFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG, 2000.0F);
+      data.putLong(CuChulainnCombatHelper.RUNE_BARRIER_UNTIL_TAG, now + 300L);
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_X_TAG, entity.getX());
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_Y_TAG, entity.getY());
+      data.putDouble(CuChulainnCombatHelper.RUNE_BARRIER_Z_TAG, entity.getZ());
+      entity.setDeltaMovement(Vec3.ZERO);
+      for (int i = 0; i < 13; i++) {
+         double t = i / 12.0, offset = -2.15 + t * 4.3;
+         for (double y : new double[]{entity.getY() + 0.05, entity.getY() + entity.getBbHeight() + 0.15}) {
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() - 2.15, y, entity.getZ() + offset, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + 2.15, y, entity.getZ() + offset, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + offset, y, entity.getZ() - 2.15, 1, 0, 0, 0, 0);
+            sl.sendParticles(ModParticles.RUNE_BARRIER.get(), entity.getX() + offset, y, entity.getZ() + 2.15, 1, 0, 0, 0, 0);
+         }
+      }
    }
 
    private void performAnsuzRune(ServantEntity entity, LivingEntity target) {
@@ -2263,7 +2301,12 @@ public final class CombatModule implements ServantAiModule {
 
    private void performGaeBolg(ServantEntity entity, LivingEntity target, boolean meleeMode) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      entity.setCurrentMp(entity.getCurrentMp() - 10.0);
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 10.0);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) {
+         return;
+      }
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       CuChulainnCombatHelper.markSingleGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
@@ -2276,11 +2319,14 @@ public final class CombatModule implements ServantAiModule {
 
    private void performGaeBolgArmy(ServantEntity entity, LivingEntity target) {
       if (!(entity.level() instanceof ServerLevel sl)) return;
-      double availableMp = Math.max(0.0, entity.getCurrentMp());
       double maxMp = Math.max(1.0, entity.getMaxMp());
-      float damageScale = (float)Math.min(1.0, availableMp / maxMp);
-      float armyDamage = 500.0F;
-      entity.setCurrentMp(0.0);
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(entity, maxMp);
+      if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) {
+         return;
+      }
+      float armyDamage = 500.0F * (float)resource.powerScale();
+      ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
@@ -2301,12 +2347,18 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
 
-      LivingEntity resolvedTarget = target != null && target.isAlive() ? target : findNearestCombatTarget(entity, 32.0);
+      LivingEntity resolvedTarget = target != null && target.isAlive()
+         ? target
+         : preferMelee ? null : findNearestCombatTarget(entity, 32.0);
       if (resolvedTarget == null && fallbackAim == null) {
          return;
       }
 
-      if (resolvedTarget != null && preferMelee && entity.distanceTo(resolvedTarget) <= 3.5) {
+      if (preferMelee) {
+         if (resolvedTarget == null
+            || !CuChulainnCombatRules.canReleaseMeleeGaeBolg(entity.distanceTo(resolvedTarget))) {
+            return;
+         }
          if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
             sl.sendParticles(ParticleTypes.END_ROD,
                resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),
@@ -2509,10 +2561,14 @@ public final class CombatModule implements ServantAiModule {
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
       if (EntityUtils.isImmunePlayerTarget(target)) return;
       if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) return;
+      int livesBeforeHit = target.getPersistentData().getInt("GodHandLives");
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), lethalDamage);
       target.invulnerableTime = 0;
+      if (HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeHit)) {
+         return;
+      }
       if (target.isAlive()) {
          target.setHealth(0.0F);
          target.die(attacker.damageSources().genericKill());

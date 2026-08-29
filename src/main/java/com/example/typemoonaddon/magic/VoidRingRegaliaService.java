@@ -36,11 +36,7 @@ public final class VoidRingRegaliaService {
             return;
         }
         if (!equipped.isEmpty()) {
-            ItemStack displaced = equipped.copy();
             player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
-            if (!player.getInventory().add(displaced)) {
-                player.drop(displaced, false);
-            }
         }
         player.setItemSlot(EquipmentSlot.CHEST, create(player.registryAccess()));
     }

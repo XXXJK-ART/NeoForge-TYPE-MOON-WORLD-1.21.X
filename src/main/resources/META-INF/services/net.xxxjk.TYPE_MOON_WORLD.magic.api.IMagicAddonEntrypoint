@@ -1,6 +1,3 @@
-com.example.typemoonaddon.magic.AbsorptionMagicEntrypoint
-com.example.typemoonaddon.magic.StorageMagicEntrypoint
-com.example.typemoonaddon.magic.ImaginaryDisplacementMagicEntrypoint
 com.example.typemoonaddon.magic.OriasMagicEntrypoint
 com.example.typemoonaddon.magic.StormMagicEntrypoint
 com.example.typemoonaddon.magic.KimarisMagicEntrypoint
@@ -12,6 +9,4 @@ com.example.typemoonaddon.magic.DetectionMagicEntrypoint
 com.example.typemoonaddon.magic.EntityDisplacementMagicEntrypoint
 com.example.typemoonaddon.magic.DemonGodGazeMagicEntrypoint
 com.example.typemoonaddon.magic.NegaSummonMagicEntrypoint
-com.example.typemoonaddon.magic.ImaginarySpaceMagicEntrypoint
-com.example.typemoonaddon.magic.ImaginaryDiveMagicEntrypoint
 com.example.typemoonaddon.magic.AirflowBladeMagicEntrypoint

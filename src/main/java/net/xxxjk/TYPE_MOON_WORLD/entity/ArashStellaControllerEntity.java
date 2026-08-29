@@ -42,6 +42,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
@@ -75,6 +77,7 @@ public final class ArashStellaControllerEntity extends Entity {
    private boolean playerReleaseRequested;
    private int releaseRequestTick = -1;
    private int playerChargeTicks = ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
+   private double noblePhantasmPowerScale = 1.0;
    private String teamName = "";
    private final List<Long> chunks = new ArrayList<>();
    private final Set<Long> forcedChunks = new HashSet<>();
@@ -94,9 +97,12 @@ public final class ArashStellaControllerEntity extends Entity {
    }
 
    public static boolean tryBegin(ArashEntity arash, LivingEntity target) {
+      ServantNoblePhantasmResourceService.CastDecision resource =
+         ServantNoblePhantasmResourceService.evaluateNpcCast(arash, 100.0);
       if (!(arash.level() instanceof ServerLevel level) || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_USED)
          || arash.getPersistentData().getBoolean(ArashEntity.TAG_STELLA_CHANTING)
-         || arash.getCurrentMp() < 100.0 || !arash.hasMasterNoblePhantasmPermission()) return false;
+         || !resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(arash)
+         || !arash.hasMasterNoblePhantasmPermission()) return false;
       if (hasActiveController(level, arash.getUUID())) return false;
       List<LivingEntity> hostiles = level.getEntitiesOfClass(LivingEntity.class, arash.getBoundingBox().inflate(64.0),
          living -> ArashCombatHelper.isTarget(arash, living));
@@ -117,7 +123,8 @@ public final class ArashStellaControllerEntity extends Entity {
       if (controller == null) return false;
       if (!arash.consumeCraftedArrows(ArashCombatRules.STELLA_ARROW_COST)) return false;
       controller.init(arash, origin, flat);
-      arash.setCurrentMp(arash.getCurrentMp() - 100.0);
+      controller.noblePhantasmPowerScale = resource.powerScale();
+      ServantNoblePhantasmResourceService.commitNpcCast(arash, resource);
       arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_USED, true);
       arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_CHANTING, true);
       arash.faceVector(flat);
@@ -144,6 +151,7 @@ public final class ArashStellaControllerEntity extends Entity {
       if (controller == null) return false;
       controller.playerCaster = true;
       controller.init(player, origin, flat);
+      controller.noblePhantasmPowerScale = ServantCardManaService.noblePhantasmPowerScale(player);
       ServantCardArashSkills.beginPlayerChant(player, controller.getUUID());
       level.addFreshEntity(controller);
       player.playNotifySound(ModSounds.ARASH_VOICE_STELLA.get(), SoundSource.VOICE, 1.6F, 1.0F);
@@ -266,15 +274,27 @@ public final class ArashStellaControllerEntity extends Entity {
       if (!Double.isFinite(worldBorderLength) || worldBorderLength >= base.length() - 1.0E-6) return base;
       double length = Math.max(0.0, worldBorderLength);
       double scale = base.length() <= 1.0E-6 ? 0.0 : length / base.length();
-      return new ArashCombatRules.StellaProfile(length,
+      return scaleProfile(new ArashCombatRules.StellaProfile(length,
          Math.max(1, (int)Math.round(base.flightTicks() * scale)),
          base.explosionTicks(), base.terrainRadius(), base.scarRadius(), base.outerRadius(),
-         base.coreRadius(), base.endRadius(), base.coreDamage(), base.outerDamage());
+         base.coreRadius(), base.endRadius(), base.coreDamage(), base.outerDamage()));
    }
 
    private ArashCombatRules.StellaProfile unlimitedStellaProfile() {
-      return playerCaster ? ArashCombatRules.playerStellaProfile(playerChargeTicks)
-         : ArashCombatRules.fullStellaProfile();
+      return scaleProfile(playerCaster ? ArashCombatRules.playerStellaProfile(playerChargeTicks)
+         : ArashCombatRules.fullStellaProfile());
+   }
+
+   private ArashCombatRules.StellaProfile scaleProfile(ArashCombatRules.StellaProfile profile) {
+      double scale = Math.max(0.5, Math.min(1.0, noblePhantasmPowerScale));
+      if (Math.abs(scale - 1.0) < 1.0E-6) return profile;
+      return new ArashCombatRules.StellaProfile(
+         Math.max(1.0, profile.length() * scale), profile.flightTicks(), profile.explosionTicks(),
+         Math.max(1, (int)Math.round(profile.terrainRadius() * scale)),
+         Math.max(1, (int)Math.round(profile.scarRadius() * scale)), profile.outerRadius() * scale,
+         Math.max(0.1, profile.coreRadius() * scale), Math.max(1.0, profile.endRadius() * scale),
+         profile.coreDamage() * (float)scale, profile.outerDamage() * (float)scale
+      );
    }
 
    private void refreshWorldBorderLimit(ServerLevel level) {
@@ -828,6 +848,7 @@ public final class ArashStellaControllerEntity extends Entity {
       tag.putBoolean("PlayerReleaseRequested", playerReleaseRequested);
       tag.putInt("ReleaseRequestTick", releaseRequestTick);
       tag.putInt("PlayerChargeTicks", playerChargeTicks);
+      tag.putDouble("NoblePhantasmPowerScale", noblePhantasmPowerScale);
       tag.putBoolean("FinalDamage", finalDamageDone);
       tag.put("Allies", writeUuids(allies));
       tag.put("LineHits", writeUuids(lineHits));
@@ -859,6 +880,8 @@ public final class ArashStellaControllerEntity extends Entity {
       releaseRequestTick = tag.contains("ReleaseRequestTick") ? tag.getInt("ReleaseRequestTick") : -1;
       playerChargeTicks = tag.contains("PlayerChargeTicks") ? tag.getInt("PlayerChargeTicks")
          : ArashCombatRules.PLAYER_STELLA_FULL_CHARGE_TICKS;
+      noblePhantasmPowerScale = tag.contains("NoblePhantasmPowerScale")
+         ? Math.max(0.5, Math.min(1.0, tag.getDouble("NoblePhantasmPowerScale"))) : 1.0;
       readUuids(tag.getList("Allies", Tag.TAG_INT_ARRAY), allies);
       readUuids(tag.getList("LineHits", Tag.TAG_INT_ARRAY), lineHits);
       lastTicketRefreshTick = -CHUNK_TICKET_REFRESH_TICKS;

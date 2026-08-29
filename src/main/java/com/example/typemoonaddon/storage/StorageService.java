@@ -253,6 +253,7 @@ public final class StorageService {
         vars.rebuildSelectedMagicsFromActiveWheel();
         PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
         return vars.is_magus
+                && vars.player_magic_attributes_imaginary_number
                 && vars.is_magic_circuit_open
                 && vars.magic_cooldown <= 0.0D
                 && PlayerMagicSelectionService.isCurrentSelection(vars, StorageMagic.MAGIC_ID);

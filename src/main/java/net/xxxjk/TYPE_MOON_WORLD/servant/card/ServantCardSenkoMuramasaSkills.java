@@ -123,7 +123,7 @@ public final class ServantCardSenkoMuramasaSkills {
          endWorkshop(player);
          return true;
       }
-      long expires = level.getGameTime() + 1200L;
+      long expires = level.getGameTime() + 1600L;
       player.getPersistentData().putBoolean(WORKSHOP_ACTIVE, true);
       player.getPersistentData().putLong(WORKSHOP_EXPIRES, expires);
       BattlefieldAreaService.register(level, player.getUUID(), BattlefieldAreaService.Type.WORKSHOP,
@@ -134,12 +134,12 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean performTrial(ServerPlayer player) {
-      player.getPersistentData().putLong(TRIAL_UNTIL, player.level().getGameTime() + 300L);
+      player.getPersistentData().putLong(TRIAL_UNTIL, player.level().getGameTime() + 400L);
       return true;
    }
 
    public static boolean performKarma(ServerPlayer player) {
-      player.getPersistentData().putLong(KARMA_UNTIL, player.level().getGameTime() + 200L);
+      player.getPersistentData().putLong(KARMA_UNTIL, player.level().getGameTime() + 267L);
       return true;
    }
 
@@ -173,7 +173,7 @@ public final class ServantCardSenkoMuramasaSkills {
    public static boolean performFlame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 100.0);
       vars.syncMana(player);
-      player.getPersistentData().putLong(FLAME_UNTIL, player.level().getGameTime() + 300L);
+      player.getPersistentData().putLong(FLAME_UNTIL, player.level().getGameTime() + 400L);
       return true;
    }
 
@@ -196,9 +196,9 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean performTemper(ServerPlayer player) {
-      player.getPersistentData().putLong(TEMPER_UNTIL, player.level().getGameTime() + 240L);
-      player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 240, 0, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 240, 0, false, true, true));
+      player.getPersistentData().putLong(TEMPER_UNTIL, player.level().getGameTime() + 320L);
+      player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 320, 0, false, true, true));
+      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 320, 0, false, true, true));
       return true;
    }
 
@@ -226,7 +226,7 @@ public final class ServantCardSenkoMuramasaSkills {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0),
             e -> e != player && e.isAlive() && !player.isAlliedTo(e))) {
             applyTrueDamage(player, target, 28.0F);
-            target.igniteForSeconds(3.0F);
+            target.igniteForSeconds(4.0F);
          }
          level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 120, 8.0, 1.2, 8.0, 0.08);
       });
@@ -237,7 +237,7 @@ public final class ServantCardSenkoMuramasaSkills {
       if (!isMuramasa(player) || isNpUsed(player) || !(player.level() instanceof ServerLevel level)) return false;
       player.getPersistentData().putBoolean(NP_USED, true);
       player.getPersistentData().putBoolean(NP_PENDING, true);
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 220, 10, false, false, false));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 293, 10, false, false, false));
       level.playSound(null, player.blockPosition(), ModSounds.SENKO_MURAMASA_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
       expandField(level, player, 0);
       TYPE_MOON_WORLD.queueServerWork(200, () -> revealTsumukari(player));
@@ -265,7 +265,7 @@ public final class ServantCardSenkoMuramasaSkills {
       level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
       level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 120, 1.5, 1.2, 1.5, 0.15);
       level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 180, 12.0, 3.0, 12.0, 0.12);
-      replaceTemporaryRedField(level, player, 16, 12 * 20);
+      replaceTemporaryRedField(level, player, 16, 16 * 20);
       player.getPersistentData().putBoolean(NP_PENDING, false);
       for (int i = 25; i >= 0; i--) {
          final int step = i;

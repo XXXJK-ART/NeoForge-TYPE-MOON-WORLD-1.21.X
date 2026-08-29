@@ -95,9 +95,9 @@ class ShadowHassanResourcesTest {
       Path texture = RESOURCES.resolve("assets/typemoonworld/textures/item/card_faces_3d/servant/shadow_hassan_card.png");
       var image = ImageIO.read(texture.toFile());
       assertNotNull(image);
-      assertEquals(174, image.getWidth());
-      assertEquals(294, image.getHeight());
-      assertTrue(Files.size(texture) < 19_888L);
+      assertEquals(292, image.getWidth());
+      assertEquals(500, image.getHeight());
+      assertTrue(Files.size(texture) < 200_000L);
       assertEquals("typemoonworld:item/card_faces_3d/servant/shadow_hassan_card",
          json("assets/typemoonworld/models/item/servant_card_shadow_hassan.json")
             .getAsJsonObject("textures").get("front").getAsString());

@@ -28,6 +28,17 @@ class CombatBalanceRegressionTest {
    }
 
    @Test
+   void deathThornDoesNotOverrideGodHandRevival() throws IOException {
+      String combat = Files.readString(JAVA.resolve("servant/ai/module/CombatModule.java"));
+      String playerNp = Files.readString(JAVA.resolve("item/custom/PlayerNoblePhantasmHelper.java"));
+      String godHand = Files.readString(JAVA.resolve("servant/entity/HeraclesGodHandHelper.java"));
+
+      assertTrue(godHand.contains("consumedLifeAfterLethalHit"));
+      assertTrue(combat.contains("HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeHit)"));
+      assertTrue(playerNp.contains("HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeDeathThorn)"));
+   }
+
+   @Test
    void iskandarMountsAlwaysReleasePassengersBeforeRemoval() throws IOException {
       String mount = Files.readString(JAVA.resolve("entity/IskandarMountEntity.java"));
 

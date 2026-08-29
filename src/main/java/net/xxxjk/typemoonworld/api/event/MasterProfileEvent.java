@@ -21,4 +21,8 @@ public abstract class MasterProfileEvent extends Event {
    public static final class Post extends MasterProfileEvent {
       public Post(ServerPlayer player, ResourceLocation profileId) { super(player, profileId); }
    }
+
+   public static final class End extends MasterProfileEvent {
+      public End(ServerPlayer player, ResourceLocation profileId) { super(player, profileId); }
+   }
 }

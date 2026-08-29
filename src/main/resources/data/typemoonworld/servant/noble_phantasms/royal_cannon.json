@@ -8,6 +8,6 @@
   "cooldown_ticks": 0,
   "duration_ticks": 20,
   "effects": [],
-  "description": "Thirty spread-out golden homing orbs fired from a gate behind Gilgamesh. Each orb detonates in a 3-block radius and tears through breakable terrain.",
-  "description_zh": "\u4ece\u5409\u5c14\u4f3d\u7f8e\u4ec0\u8eab\u540e\u5f00\u542f\u7684\u91d1\u8272\u7a7a\u95f4\u95e8\u4e2d\u5206\u6563\u9f50\u5c04\u4e09\u5341\u53d1\u8ffd\u8e2a\u5149\u7403\uff0c\u6bcf\u53d1\u547d\u4e2d\u540e\u57283\u683c\u534a\u5f84\u5185\u7206\u70b8\uff0c\u5e76\u7834\u574f\u53ef\u7834\u574f\u5730\u5f62\u3002"
+  "description": "Thirty spread-out golden orbs fired from a gate behind Gilgamesh. Each orb is corrected toward the enemy only at launch, then follows a fixed path; the wide impact spread leaves some shots intentionally missing. Each orb detonates in a 3-block radius and tears through breakable terrain.",
+  "description_zh": "\u4ece\u5409\u5c14\u4f3d\u7f8e\u4ec0\u8eab\u540e\u91d1\u8272\u7a7a\u95f4\u95e8\u4e2d\u5206\u6563\u9f50\u5c04\u4e09\u5341\u53d1\u5149\u7403\uff0c\u4ec5\u5728\u53d1\u5c04\u65f6\u5c06\u65b9\u5411\u4fee\u6b63\u81f3\u654c\u4eba\uff0c\u4e4b\u540e\u6cbf\u56fa\u5b9a\u8f68\u8ff9\u98de\u884c\uff1b\u843d\u70b9\u5bbd\u5e45\u5206\u6563\uff0c\u6709\u610f\u8ba9\u90e8\u5206\u5149\u7403\u6253\u7a7a\u4ee5\u8425\u9020\u6c14\u6c1b\u3002\u6bcf\u53d1\u547d\u4e2d\u540e\u57283\u683c\u534a\u5f84\u5185\u7206\u70b8\uff0c\u5e76\u7834\u574f\u53ef\u7834\u574f\u5730\u5f62\u3002"
 }

@@ -80,33 +80,33 @@ public class ServantCardHud {
          int statusWidth = 81;
          int leftStatusX = guiWidth / 2 - 91;
          int baseStatusY = guiHeight - 39;
-         drawBar(gui, minecraft, leftStatusX, baseStatusY, statusWidth, "HP", player.getHealth(), player.getMaxHealth(), 0xFFB71C1C, 0xFFE53935);
-         drawBar(gui, minecraft, leftStatusX, baseStatusY - 10, statusWidth, "DEF", player.getArmorValue(), 20.0, 0xFF607D8B, 0xFFECEFF1);
+         drawBar(gui, minecraft, leftStatusX, baseStatusY, statusWidth, "HP", player.getHealth(), player.getMaxHealth(), 0xFF8D1717, 0xFFB82E2E);
+         drawBar(gui, minecraft, leftStatusX, baseStatusY - 10, statusWidth, "DEF", player.getArmorValue(), 20.0, 0xFF4D626D, 0xFFB6C1C5);
       }
 
       int manaX = 10;
       int manaY = guiHeight - 20;
       if (vars.master_active) {
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00838F, 0xFF00E5FF);
+            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00656D, 0xFF0099A6);
          }
       } else {
          int barY = manaY;
-         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00838F, 0xFF00E5FF);
+         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00656D, 0xFF0099A6);
          barY -= 11;
          if ("gilles_de_rais_caster".equals(vars.servant_card_id) && vars.servant_card_gilles_spellbook_max_mana > 0.0) {
             drawBar(gui, minecraft, manaX, barY, 120,
                Component.translatable("hud.typemoonworld.servant_card.gilles_spellbook_mana").getString(),
                vars.servant_card_gilles_spellbook_mana, vars.servant_card_gilles_spellbook_max_mana,
-               0xFF0D47A1, 0xFF42A5F5);
+               0xFF0A3478, 0xFF2E79B5);
             barY -= 11;
          }
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, barY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF6A1B9A, 0xFFCE93D8);
+            drawBar(gui, minecraft, manaX, barY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF501477, 0xFF996BA5);
             barY -= 11;
          }
          if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF006064, 0xFF00E5FF);
+            drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF004A4D, 0xFF0099A6);
          }
       }
 

@@ -14,6 +14,8 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
 
 public record MagicWheelSlotEditMessage(
    int action,
@@ -110,8 +112,16 @@ public record MagicWheelSlotEditMessage(
    }
 
    private static void handleSet(Player player, TypeMoonWorldModVariables.PlayerVariables vars, MagicWheelSlotEditMessage message) {
-      String magicId = message.magicId == null ? "" : message.magicId;
-      if (MagicClassification.isKnownMagic(magicId)) {
+      String requestedMagicId = message.magicId == null ? "" : message.magicId;
+      String magicId = PlayerMagicSelectionService.canonicalRuntimeMagicId(requestedMagicId);
+      if (RuneProgramService.isDynamicId(magicId)) {
+         if (!"rune_program".equals(message.sourceType) || RuneProgramService.find(vars, magicId) == null) return;
+         TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry = new TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry(message.wheelIndex, message.slotIndex);
+         entry.sourceType = "rune_program";
+         entry.magicId = magicId;
+         entry.displayNameCache = message.displayName == null ? "" : message.displayName;
+         vars.setWheelSlotEntry(message.wheelIndex, message.slotIndex, entry);
+      } else if (RuneLearningService.ORIGIN_MAGIC_ID.equals(magicId) || MagicClassification.isKnownMagic(magicId)) {
          if (isKnowledgeOnlyMagic(magicId)) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.knowledge_only"), true);
          } else {
@@ -120,8 +130,9 @@ public record MagicWheelSlotEditMessage(
                message.wheelIndex, message.slotIndex
             );
             entry.sourceType = sourceType;
-            entry.magicId = magicId;
+            entry.magicId = requestedMagicId;
             entry.presetPayload = PlayerMagicSelectionService.normalizePresetPayload(magicId, message.presetPayload);
+            PlayerMagicSelectionService.normalizeRuntimeWheelEntry(vars, entry);
             if ("projection".equals(magicId)) {
                entry.presetPayload = TypeMoonWorldModVariables.PlayerVariables.normalizeProjectionPresetPayload(entry.presetPayload);
             }

@@ -18,4 +18,6 @@ public interface AddonRegistrar {
    EffectsRegistry effects();
    DamageTypeRegistry damageTypes();
    AiTacticsRegistry ai();
+   boolean registerAttributeProvider(MagicAttributeProvider provider);
+   boolean registerMagicAvailability(MagicAvailabilityProvider provider);
 }

@@ -29,4 +29,9 @@ class MagicDisplayMetadataCategoryTest {
          assertEquals(MagicDisplayMetadata.CATEGORY_SOLOMON, MagicDisplayMetadata.categoryOf(id), id);
       }
    }
+
+   @Test
+   void primordialRuneMagicBelongsToRuneAndNordicCategories() {
+      assertEquals("rune,nordic", MagicDisplayMetadata.categoryOf("rune_origin"));
+   }
 }

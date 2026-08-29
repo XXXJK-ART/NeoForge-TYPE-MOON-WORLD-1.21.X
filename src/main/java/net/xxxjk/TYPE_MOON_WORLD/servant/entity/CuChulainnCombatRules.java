@@ -3,6 +3,8 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 public final class CuChulainnCombatRules {
    public static final double MELEE_GAE_BOLG_RANGE = 3.75;
    public static final double MELEE_GAE_BOLG_COMMIT_RANGE = 7.0;
+   public static final double MELEE_GAE_BOLG_RELEASE_RANGE = 5.0;
+   public static final int MELEE_GAE_BOLG_PURSUIT_TICKS = 40;
    public static final int ARMY_DECISION_INTERVAL_TICKS = 40;
    public static final double ARMY_HEALTH_RATIO = 0.15;
    public static final double ARMY_CRITICAL_HEALTH_RATIO = 0.08;
@@ -30,6 +32,10 @@ public final class CuChulainnCombatRules {
          return SingleGaeBolgPlan.CLOSE_FOR_MELEE;
       }
       return SingleGaeBolgPlan.NONE;
+   }
+
+   public static boolean canReleaseMeleeGaeBolg(double distance) {
+      return Double.isFinite(distance) && distance >= 0.0 && distance <= MELEE_GAE_BOLG_RELEASE_RANGE;
    }
 
    public static boolean isArmyDecisionDue(long now, long lastDecisionTick) {

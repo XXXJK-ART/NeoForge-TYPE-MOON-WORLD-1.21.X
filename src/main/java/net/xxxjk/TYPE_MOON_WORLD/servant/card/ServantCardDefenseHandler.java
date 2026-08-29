@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
@@ -129,7 +130,12 @@ public final class ServantCardDefenseHandler {
       CompoundTag data = player.getPersistentData();
       initializeResources(data, params);
       long now = player.level().getGameTime();
+      if (!defensePiercing && "artoria_pendragon".equals(vars.servant_card_id)) {
+         event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(player, event.getSource(), event.getAmount()));
+      }
       boolean specialNoblePhantasmDamage = isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount());
+      boolean elementalSwordDamage = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier
+         .isParacelsusElementalSwordDamage(event.getSource());
       boolean divineDefenseBroken = now < data.getLong(OdaNobunagaCombatHelper.TAG_DIVINE_BREAK_UNTIL);
       if (divineDefenseBroken) {
          player.removeEffect(MobEffects.DAMAGE_RESISTANCE);
@@ -191,6 +197,19 @@ public final class ServantCardDefenseHandler {
          return true;
       }
       if (!defensePiercing && "cu_chulainn".equals(vars.servant_card_id)) {
+         float barrier = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG);
+         if (barrier > 0.0F && data.getLong(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_UNTIL_TAG) > now) {
+            float absorbed = Math.min(barrier, event.getAmount());
+            data.putFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG, barrier - absorbed);
+            event.setAmount(Math.max(0.0F, event.getAmount() - absorbed));
+            spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.35F);
+            if (event.getAmount() <= 0.0F) {
+               event.setCanceled(true);
+               if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
+               return true;
+            }
+            if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
+         }
          float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
          if (shield > 0.0F) {
             float absorbed = Math.min(shield, event.getAmount());
@@ -232,7 +251,7 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
-      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage
+      Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage && !elementalSwordDamage
          || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
          ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
       if (reduced != null) {
