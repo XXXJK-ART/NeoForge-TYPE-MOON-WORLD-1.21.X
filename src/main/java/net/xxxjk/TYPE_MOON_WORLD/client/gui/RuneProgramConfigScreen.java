@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramKind;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.network.RuneProgramMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 /** Release configuration for a saved rune program. Slot composition stays in the editor. */
 public final class RuneProgramConfigScreen extends Screen {
@@ -110,9 +111,34 @@ public final class RuneProgramConfigScreen extends Screen {
          }
          return;
       }
+      // A newly-created editor copy is not persisted on the server yet.  Send
+      // an empty anchor for creation; only an entry already present in the
+      // client library may submit an update anchor.
+      String persistedId = "";
+      if (minecraft != null && minecraft.player != null) {
+         TypeMoonWorldModVariables.PlayerVariables vars =
+            minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (RuneProgramService.find(vars, program.uuid()) != null) persistedId = program.uuid().toString();
+      }
+      applyLocalProgramPreview();
       PacketDistributor.sendToServer(new RuneProgramMessage(RuneProgramMessage.UPSERT,
-         program.serializeNBT(), program.uuid().toString()), new CustomPacketPayload[0]);
+         program.serializeNBT(), persistedId), new CustomPacketPayload[0]);
       onClose();
+   }
+
+   private void applyLocalProgramPreview() {
+      if (minecraft == null || minecraft.player == null) return;
+      TypeMoonWorldModVariables.PlayerVariables vars =
+         minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      for (int i = 0; i < vars.rune_programs.size(); i++) {
+         RuneProgram current = vars.rune_programs.get(i);
+         if (current != null && program.uuid().equals(current.uuid())) {
+            vars.rune_programs.set(i, program.copy());
+            return;
+         }
+      }
+      if (vars.rune_programs.size() < RuneProgramService.MAX_PROGRAMS) vars.rune_programs.add(program.copy());
    }
 
    @Override

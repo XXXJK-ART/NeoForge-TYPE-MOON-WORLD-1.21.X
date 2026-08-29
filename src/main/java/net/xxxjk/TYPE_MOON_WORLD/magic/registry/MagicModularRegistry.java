@@ -148,7 +148,12 @@ public final class MagicModularRegistry implements IMagicRegistry {
    }
 
    private static void loadAddonEntrypoints() {
-      for (IMagicAddonEntrypoint entrypoint : ServiceLoader.load(IMagicAddonEntrypoint.class)) {
+      // Common setup can be entered from the integrated addon mod, whose
+      // thread context loader contains a second copy of the internal API.
+      // Resolve providers with the core loader so ServiceLoader sees the
+      // same IMagicAddonEntrypoint class used by this registry.
+      ClassLoader loader = MagicModularRegistry.class.getClassLoader();
+      for (IMagicAddonEntrypoint entrypoint : ServiceLoader.load(IMagicAddonEntrypoint.class, loader)) {
          if (entrypoint != null) {
             String provider = entrypoint.providerId();
 

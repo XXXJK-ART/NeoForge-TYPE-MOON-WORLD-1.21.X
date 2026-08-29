@@ -62,18 +62,36 @@ public final class RuneProgramService {
    }
 
    public static RuneProgram upsert(Player player, RuneProgram requested) {
-      return upsert(player, requested == null ? null : requested.uuid(), requested);
+      if (player == null || requested == null || player.level().isClientSide()) return null;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.ensureMagicSystemInitialized();
+      // Preserve the original convenience API: an object whose UUID is
+      // already owned is an edit; otherwise it is a new program.
+      UUID persistedId = find(vars, requested.uuid()) == null ? null : requested.uuid();
+      return upsert(player, persistedId, requested);
    }
 
-   /** Uses the pre-edit UUID as the update anchor so a stale client payload cannot create a duplicate program. */
+   /**
+    * Saves a new program or updates an existing one.  The persisted id is an
+    * explicit edit anchor; a missing anchor means creation.  Keeping those
+    * cases separate prevents a stale edit packet from becoming a duplicate.
+    */
    public static RuneProgram upsert(Player player, UUID persistedId, RuneProgram requested) {
       if (player == null || requested == null || player.level().isClientSide()) return null;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.ensureMagicSystemInitialized();
       RuneProgram normalized = RuneProgram.fromNBT(requested.serializeNBT());
-      RuneProgram existing = find(vars, persistedId == null ? normalized.uuid() : persistedId);
+      RuneProgram existing = persistedId == null ? null : find(vars, persistedId);
+      // An edit must never fall through to the create path.  This is also
+      // what makes a pre-sync/stale client payload fail safely.
+      if (persistedId != null && existing == null) return null;
       if (existing == null) {
-         normalized = RuneProgram.ordered(UUID.randomUUID(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),
+         // UUIDs are client-generated for new programs.  Preserve that id so
+         // client references and wheel entries remain stable across sync.
+         // A collision means this is a stale/desynchronized create request;
+         // reject it instead of silently creating a second copy.
+         if (find(vars, normalized.uuid()) != null) return null;
+         normalized = RuneProgram.ordered(normalized.uuid(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),
             normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), System.currentTimeMillis(), System.currentTimeMillis());
       } else {
          normalized = RuneProgram.ordered(existing.uuid(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),

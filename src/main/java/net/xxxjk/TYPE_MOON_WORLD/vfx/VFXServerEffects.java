@@ -42,9 +42,14 @@ public final class VFXServerEffects {
    }
 
    public static void spawnOriented(ServerLevel level, String effectId, Vec3 origin, Vec3 direction, double radius) {
+      spawnOrientedScaled(level, effectId, origin, direction, radius, 1.0F);
+   }
+
+   public static void spawnOrientedScaled(ServerLevel level, String effectId, Vec3 origin, Vec3 direction,
+                                           double radius, float scale) {
       Vec3 dir = direction == null || direction.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : direction.normalize();
       VFXSpawnEffectMessage message = new VFXSpawnEffectMessage(effectId, origin.x, origin.y, origin.z, Optional.empty(),
-         level.dimension().location().toString(), level.getRandom().nextLong(), Optional.of(dir));
+         level.dimension().location().toString(), level.getRandom().nextLong(), Optional.of(dir), scale);
       sendToSupportedPlayersNear(level, origin, radius, message);
    }
 

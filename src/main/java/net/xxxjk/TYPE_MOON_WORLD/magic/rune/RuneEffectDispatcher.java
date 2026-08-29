@@ -21,6 +21,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 
 /** Ordered, data-driven rune actions. All methods are server-only. */
 public final class RuneEffectDispatcher {
@@ -84,6 +86,8 @@ public final class RuneEffectDispatcher {
       fusion(ctx);
       if (ctx.program().sequence().isEmpty()) phase(ctx, RunePosition.TERMINAL);
       if (ctx.program().kind() == RuneProgramKind.REINFORCEMENT) applyReinforcement(ctx.caster(), ctx.program());
+      applyRuneTerrain(ctx);
+      emitRuneSpectacle(ctx);
       return ctx;
    }
 
@@ -110,6 +114,8 @@ public final class RuneEffectDispatcher {
          else terminal(context, action);
       }
       fusion(context);
+      context.damage(scaledRuneDamage(context, context.damage()));
+      applyRuneTerrain(context);
       return context;
    }
 
@@ -359,7 +365,7 @@ public final class RuneEffectDispatcher {
          case "defense_barrier" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 9)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
          case "fate_dice" -> directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_NONE, 50, 1.0F, 0, 20 + c.caster().getRandom().nextInt(41));
          case "guardian_shield" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 7)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
-         case "beam" -> { VFXServerEffects.spawnOriented(c.level(), "beam", c.origin(), c.direction(), 50); lineDamage(c, 50, effectiveDamage(c, 60.0D)); }
+         case "beam" -> { VFXServerEffects.spawnOrientedScaled(c.level(), "beam", c.origin(), c.direction(), 50, c.visualScale()); lineDamage(c, 50, effectiveDamage(c, 60.0D)); }
          case "sure_strike" -> lineDamage(c, 15, effectiveDamage(c, 50.0D));
          case "healing_wave" -> healArea(c, c.endpoint(8), 15, 50);
          case "mirror_clone" -> spawnAncestor(c);
@@ -384,7 +390,7 @@ public final class RuneEffectDispatcher {
          case "need" -> { link(c, 8.0D); area(c, c.endpoint(8.0D), 8.0D, 0.0D, ParticleTypes.SQUID_INK); }
          case "freeze" -> freezeArea(c, c.caster().position(), 10.0D, 60);
          case "ward", "protect" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 0)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
-         case "shine" -> { VFXServerEffects.spawnOriented(c.level(), "beam", c.origin(), c.direction(), 50.0D); lineDamage(c, 50.0D, effectiveDamage(c, 60.0D)); }
+         case "shine" -> { VFXServerEffects.spawnOrientedScaled(c.level(), "beam", c.origin(), c.direction(), 50.0D, c.visualScale()); lineDamage(c, 50.0D, effectiveDamage(c, 60.0D)); }
          case "judge" -> { lineDamage(c, 15.0D, effectiveDamage(c, 50.0D)); c.emit(ParticleTypes.SWEEP_ATTACK, c.endpoint(8), 12); }
          case "grow" -> healArea(c, c.endpoint(8.0D), 15.0D, 50.0F);
          case "chance" -> directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_NONE, 50.0D, 1.0F, 0.0D, 20.0D + c.caster().getRandom().nextInt(41));
@@ -425,7 +431,7 @@ public final class RuneEffectDispatcher {
             }
          }
       }
-      return Math.min(1000.0D, value);
+      return Math.min(4000.0D, value);
    }
 
    private static boolean fixedRune(RuneExecutionContext c, String id) {
@@ -435,7 +441,7 @@ public final class RuneEffectDispatcher {
          case "kenaz" -> { c.setEffectDamage(id, c.damage()); c.setEffectRadius(id, 5.0D); c.setEffectQuantity(id, 1); directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_FIRE, 200.0D, 2.0F, 5.0D); c.updateLastEffect(id); return true; }
          case "hagalaz" -> { c.setEffectRadius(id, 10.0D); c.setEffectQuantity(id, 10); Vec3 p = c.endpoint(24.0D); for (int i = 12; i >= 0; i--) c.emit(ParticleTypes.SNOWFLAKE, p.add(0.0D, i, 0.0D), 1); area(c, p, 10.0D, 6.0D, ParticleTypes.SNOWFLAKE); c.updateLastEffect(id); return true; }
          case "thurisaz" -> { c.radius(8.0D); Vec3 p = c.endpoint(24.0D); lightning(c, p); area(c, p, 8.0D, 8.0D, ModParticles.ELEMENTAL_LIGHTNING.get()); return true; }
-         case "sowilo" -> { c.setEffectRadius(id, 0.75D); c.setEffectQuantity(id, 50); VFXServerEffects.spawnOriented(c.level(), "beam", c.origin(), c.direction(), 64.0D); lineDamage(c, 50.0D, 6.0D); c.updateLastEffect(id); return true; }
+         case "sowilo" -> { c.setEffectRadius(id, 0.75D); c.setEffectQuantity(id, 50); VFXServerEffects.spawnOrientedScaled(c.level(), "beam", c.origin(), c.direction(), 64.0D, c.visualScale()); lineDamage(c, 50.0D, 6.0D); c.updateLastEffect(id); return true; }
          case "nauthiz" -> { c.radius(8.0D); area(c, c.endpoint(8.0D), 8.0D, 5.0D, ParticleTypes.SQUID_INK); return true; }
          case "isa" -> { c.radius(12.0D); area(c, c.caster().position(), 12.0D, 0.0D, ParticleTypes.SNOWFLAKE); return true; }
          case "algiz" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 1)); c.emit(ParticleTypes.ENCHANT, c.caster().position(), 32); return true; }
@@ -488,10 +494,11 @@ public final class RuneEffectDispatcher {
    private static void charge(RuneExecutionContext c, double distance, double knockback) {
       Vec3 start = c.caster().position();
       c.caster().setDeltaMovement(c.direction().scale(1.25D));
+      double resolvedDamage = scaledRuneDamage(c, effectiveDamage(c, c.damage()));
       for (int i = 1; i <= (int)distance; i++) {
          Vec3 point = start.add(c.direction().scale(i));
          for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(1.0D), x -> x.isAlive() && x != c.caster())) {
-            e.hurt(c.caster().damageSources().magic(), (float)Math.max(1.0D, effectiveDamage(c, c.damage())));
+            e.hurt(c.caster().damageSources().magic(), (float)Math.max(1.0D, resolvedDamage));
             e.setDeltaMovement(e.getDeltaMovement().add(c.direction().scale(.35D).add(0, .2D, 0)));
          }
          if ((i & 3) == 0) c.emit(ParticleTypes.SWEEP_ATTACK, point, 1);
@@ -558,7 +565,7 @@ public final class RuneEffectDispatcher {
    private static void directionalBullet(RuneExecutionContext c, int element, double range, float scale, double explosionRadius, double damage) {
       int split = Math.min(3, c.modifierCount("split"));
       int count = projectileCountForSplit(split);
-      float splitDamage = (float)projectileDamageForSplit(damage, split);
+      float splitDamage = (float)projectileDamageForSplit(scaledRuneDamage(c, damage), split);
       double speedMultiplier = 1.0D + 2.0D * c.modifierCount("acceleration")
          + c.modifierCount("haste") + actionCount(c, "haste");
       int pierce = Math.min(3, c.modifierCount("pierce"));
@@ -572,8 +579,8 @@ public final class RuneEffectDispatcher {
       for (int i = 0; i < count; i++) {
          MagicBulletProjectileEntity projectile = new MagicBulletProjectileEntity(c.level(), c.caster());
          projectile.setPos(c.origin());
-         projectile.configure(splitDamage, 0.0F, range, element, scale);
-         projectile.setRuneExplosionRadius(explosionRadius);
+         projectile.configure(splitDamage, 0.0F, range, element, Math.min(6.0F, scale * c.visualScale()));
+         projectile.setRuneExplosionRadius(Math.min(16.0D, explosionRadius * c.powerScale()));
          Vec3 shotDirection = count == 1 ? direction : direction.add(right.scale((i - (count - 1) / 2.0D) * .08D)).normalize();
          projectile.shoot(shotDirection.x, shotDirection.y, shotDirection.z, (float)(2.5D * speedMultiplier), 0.0F);
          var tag = projectile.getPersistentData();
@@ -602,9 +609,10 @@ public final class RuneEffectDispatcher {
 
    private static void lineDamage(RuneExecutionContext c, double length, double damage) {
       Vec3 origin = c.origin();
+      double resolvedDamage = scaledRuneDamage(c, damage);
       for (int i = 1; i <= (int)length; i++) {
          Vec3 point = origin.add(c.direction().scale(i));
-         for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(0.75D), e -> e.isAlive() && e != c.caster())) entity.hurt(c.caster().damageSources().magic(), (float)damage);
+         for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(0.75D), e -> e.isAlive() && e != c.caster())) entity.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
          if (c.particlesRemaining() > 0) c.emit(ParticleTypes.END_ROD, point, 1);
       }
    }
@@ -612,8 +620,9 @@ public final class RuneEffectDispatcher {
    private static void area(RuneExecutionContext c, Vec3 center, double radius, double damage, net.minecraft.core.particles.ParticleOptions particle) {
       c.setEffectRadius("area", radius);
       if (particle != null) c.emit(particle, center, Math.min(32, (int)Math.ceil(radius)));
+      double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
       for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius), e -> e.isAlive() && e != c.caster())) {
-         if (damage > 0.0D) entity.hurt(c.caster().damageSources().magic(), (float)damage);
+         if (resolvedDamage > 0.0D) entity.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
          else if (damage < 0.0D) entity.heal((float)-damage);
          if (c.program().sequence().contains("isa")) entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4));
       }
@@ -794,6 +803,97 @@ public final class RuneEffectDispatcher {
       }
    }
 
+   private static double scaledRuneDamage(RuneExecutionContext c, double amount) {
+      if (c == null) return Math.max(0.0D, amount);
+      return Math.min(4000.0D, Math.max(0.0D, amount) * c.powerScale());
+   }
+
+   private static final java.util.Set<String> TERRAIN_ACTIONS = java.util.Set.of(
+      "materialize", "charge", "lightning", "mind_blast", "fireball", "ice_spike", "shadow_chain",
+      "freeze_aura", "vine_bind", "beam", "sure_strike", "water_impact", "dawn", "break", "strength",
+      "storm", "command", "ignite", "bind", "freeze", "shine", "judge", "flow", "transform", "detonate",
+      "strike", "burn", "discharge", "impact", "fire", "ice", "earth", "shadow", "water", "energy");
+
+   /** Queues the same bounded terrain service used by servant combat. */
+   private static void applyRuneTerrain(RuneExecutionContext c) {
+      if (c == null || c.level() == null || !hasTerrainAction(c)) return;
+      long now = c.level().getGameTime();
+      var data = c.caster().getPersistentData();
+      if (data.getLong("tmwRuneTerrainPulse") == now) return;
+      data.putLong("tmwRuneTerrainPulse", now);
+
+      int modifiers = c.modifierCount("power") + c.modifierCount("empower") + c.modifierCount("amplify")
+         + c.modifierCount("area") + c.modifierCount("range");
+      double modifierScale = 1.0D + Math.min(2.0D, modifiers * 0.35D);
+      boolean grand = c.grandMagic();
+      double radius = grand ? 22.0D : Math.min(16.0D, 3.5D + c.runeCount() * 0.45D) * Math.min(1.75D, modifierScale);
+      float hardness = grand ? Float.MAX_VALUE : 30.0F;
+      int debris = grand ? 96 : (int)Math.ceil(36.0D * modifierScale);
+      int dust = grand ? 192 : (int)Math.ceil(72.0D * modifierScale);
+      TerrainImpactProfile profile = new TerrainImpactProfile(
+         grand ? TerrainImpactProfile.Tier.NP : TerrainImpactProfile.Tier.HEAVY,
+         radius, hardness, debris, dust);
+      Vec3 center = c.hasExplicitTarget() ? c.target().position() : c.endpoint(grand ? 28.0D : 16.0D);
+      TerrainImpactService.impact(c.level(), c.caster(), center, profile,
+         grand ? TerrainImpactService.Shape.AIR_SPHERE : TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      if (grand || hasDirectionalTerrainAction(c)) {
+         double length = grand ? 48.0D : Math.min(30.0D, 12.0D + c.runeCount() * 0.8D);
+         int width = grand ? 10 : 4;
+         int height = grand ? 9 : 5;
+         TerrainImpactService.impactForwardBreakthrough(c.level(), c.caster(), c.origin(), c.direction(), profile,
+            length, width, height);
+      }
+   }
+
+   private static boolean hasTerrainAction(RuneExecutionContext c) {
+      for (int i = 0; i < c.program().sequence().size(); i++) {
+         RunePosition role = i < c.program().sequencePositions().size() ? c.program().sequencePositions().get(i) : RunePosition.EFFECT;
+         if (TERRAIN_ACTIONS.contains(RuneRegistry.actionKey(c.program().sequence().get(i), role))) return true;
+      }
+      return false;
+   }
+
+   private static boolean hasDirectionalTerrainAction(RuneExecutionContext c) {
+      for (int i = 0; i < c.program().sequence().size(); i++) {
+         RunePosition role = i < c.program().sequencePositions().size() ? c.program().sequencePositions().get(i) : RunePosition.EFFECT;
+         String action = RuneRegistry.actionKey(c.program().sequence().get(i), role);
+         if ("beam".equals(action) || "charge".equals(action) || "materialize".equals(action)
+            || "fireball".equals(action) || "water_impact".equals(action) || "strike".equals(action)) return true;
+      }
+      return false;
+   }
+
+   private static boolean hasEnkiduTheme(RuneExecutionContext c) {
+      for (int i = 0; i < c.program().sequence().size(); i++) {
+         RunePosition role = i < c.program().sequencePositions().size() ? c.program().sequencePositions().get(i) : RunePosition.EFFECT;
+         String action = RuneRegistry.actionKey(c.program().sequence().get(i), role);
+         if ("shadow_chain".equals(action) || "bind".equals(action) || "earth".equals(action)
+            || "nature".equals(action) || "territory".equals(action) || "territory_arrival".equals(action)
+            || "anchor".equals(action)) return true;
+      }
+      return false;
+   }
+
+   /** Uses the Enkidu-scale finale only for chain, earth and territory programs. */
+   private static void emitRuneSpectacle(RuneExecutionContext c) {
+      if (c == null || c.spectacleEmitted()) return;
+      c.markSpectacleEmitted();
+      if (!c.grandMagic() || !hasEnkiduTheme(c)) return;
+      Vec3 origin = c.origin();
+      double audience = 256.0D;
+      Vec3 impact = c.hasExplicitTarget() ? c.target().position() : c.endpoint(28.0D);
+      VFXServerEffects.spawnScaled(c.level(), "servant_enkidu_enuma_elish", origin, audience, c.visualScale());
+      VFXServerEffects.spawnScaled(c.level(), "servant_enkidu_enuma_elish_ground_impact", impact, audience, c.visualScale());
+      if (c.hasExplicitTarget()) {
+         VFXServerEffects.spawn(c.level(), "servant_enkidu_chain_of_heaven", c.target(), audience);
+      }
+      TYPE_MOON_WORLD.queueServerWork(12, () -> {
+         if (c.level().isLoaded(net.minecraft.core.BlockPos.containing(impact))) {
+            VFXServerEffects.spawnScaled(c.level(), "servant_enkidu_enuma_elish_aftermath", impact, audience, c.visualScale());
+         }
+      });
+   }
+
    private static void scheduleAreaPulse(RuneExecutionContext c, Vec3 center, double radius, int duration, int interval,
       double damage, double healing, net.minecraft.core.particles.ParticleOptions particle) {
       if (!(c.level() instanceof ServerLevel level) || center == null) return;
@@ -806,11 +906,12 @@ public final class RuneEffectDispatcher {
             if (!level.isLoaded(net.minecraft.core.BlockPos.containing(point))) return;
             LivingEntity owner = level.getEntity(casterId) instanceof LivingEntity living ? living : null;
             if (owner == null || !owner.isAlive()) return;
-            if (particle != null) level.sendParticles(particle, point.x, point.y, point.z, 8, .3, .15, .3, .01);
-            for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(radius),
-               entity -> entity.isAlive() && isFriendly(owner, entity))) {
-               if (damage > 0) entity.hurt(owner.damageSources().magic(), (float)damage);
-               if (damage > 0 && entity == owner) continue;
+             if (particle != null) level.sendParticles(particle, point.x, point.y, point.z, 24, .3, .15, .3, .01);
+             double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
+             for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(radius),
+                entity -> entity.isAlive() && isFriendly(owner, entity))) {
+                if (resolvedDamage > 0) entity.hurt(owner.damageSources().magic(), (float)resolvedDamage);
+                if (resolvedDamage > 0 && entity == owner) continue;
                if (healing > 0) entity.heal((float)healing);
             }
          });
@@ -838,7 +939,7 @@ public final class RuneEffectDispatcher {
    }
 
    private static void hit(RuneExecutionContext c, double amount) {
-       double resolvedDamage = Math.max(amount, c.damage());
+      double resolvedDamage = scaledRuneDamage(c, Math.max(amount, c.damage()));
       for (int i = 0; i < c.repeats(); i++) {
          if (c.radius() > 0.0D) {
             var center = c.hasExplicitTarget() ? c.target().position() : c.endpoint(Math.min(50.0D, c.program().releaseConfig().contains("range") ? c.program().releaseConfig().getDouble("range") : 12.0D));

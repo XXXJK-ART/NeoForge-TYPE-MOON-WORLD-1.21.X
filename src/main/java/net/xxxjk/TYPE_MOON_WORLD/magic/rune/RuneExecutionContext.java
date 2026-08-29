@@ -32,8 +32,9 @@ public final class RuneExecutionContext {
    private boolean pierce;
    private boolean projectileImpact;
    private boolean delayedDispatch;
-   private int particleBudget = 50;
+   private int particleBudget = 192;
    private int particlesEmitted;
+   private boolean spectacleEmitted;
    private final Map<String, Double> effectDamage = new LinkedHashMap<>();
    private final Map<String, Double> effectRadius = new LinkedHashMap<>();
    private final Map<String, Integer> effectQuantity = new LinkedHashMap<>();
@@ -54,6 +55,8 @@ public final class RuneExecutionContext {
       this.program = program;
       this.originOverride = origin;
       this.directionOverride = direction;
+      int runeCount = program == null ? 0 : program.sequence().size();
+      this.particleBudget = runeCount >= RuneProgram.SLOT_COUNT ? 1024 : Math.min(768, 192 + runeCount * 20);
    }
    public ServerPlayer caster() { return caster; }
    public ServerLevel level() { return caster.serverLevel(); }
@@ -71,6 +74,17 @@ public final class RuneExecutionContext {
       return hit.getType() == BlockHitResult.Type.MISS ? end : hit.getLocation();
    }
    public RuneProgram program() { return program; }
+   public int runeCount() { return program == null ? 0 : program.sequence().size(); }
+   /** A full twenty-rune sequence is treated as a grand magic cast. */
+   public boolean grandMagic() { return runeCount() >= RuneProgram.SLOT_COUNT; }
+   /** Damage, terrain and visual systems share this cast intensity. */
+   public double powerScale() { return grandMagic() ? 4.0D : 3.0D; }
+   public float visualScale() {
+      int amplifiers = modifierCount("power") + modifierCount("empower") + modifierCount("amplify");
+      return (float)Math.min(6.0D, powerScale() * (1.0D + Math.min(0.5D, amplifiers * 0.15D)));
+   }
+   public boolean spectacleEmitted() { return spectacleEmitted; }
+   public void markSpectacleEmitted() { spectacleEmitted = true; }
    public Map<String, Integer> effects() { return Collections.unmodifiableMap(effects); }
    public Map<String, Integer> modifiers() { return Collections.unmodifiableMap(modifiers); }
    public int effectCount(String semantic) { return effects.getOrDefault(semantic, 0); }
@@ -113,11 +127,12 @@ public final class RuneExecutionContext {
    public int particlesRemaining() { return Math.max(0, particleBudget - particlesEmitted); }
    public int particlesEmitted() { return particlesEmitted; }
    public int particleBudget() { return particleBudget; }
-   public void particleBudget(int budget) { particleBudget = Math.max(0, Math.min(50, budget)); }
+   public void particleBudget(int budget) { particleBudget = Math.max(0, Math.min(1024, budget)); }
    public void resetParticleBudget() { particlesEmitted = 0; }
    public boolean emit(ParticleOptions particle, Vec3 point, int requested) {
       if (particle == null || point == null || requested <= 0 || particlesRemaining() <= 0) return false;
-      int count = Math.min(requested, particlesRemaining());
+      int intensity = grandMagic() ? 4 : 3;
+      int count = Math.min(Math.max(1, requested) * intensity, particlesRemaining());
       level().sendParticles(particle, point.x, point.y, point.z, count, .18D, .18D, .18D, .02D);
       particlesEmitted += count;
       return true;
@@ -136,7 +151,7 @@ public final class RuneExecutionContext {
       int count = Math.max(1, total);
       double ring = Math.max(0.85D, count * 0.16D);
       double angle = (Math.PI * 2.0D * Math.max(0, index)) / count - Math.PI / 2.0D;
-      emit(particle, (center == null ? caster.position() : center).add(Math.cos(angle) * ring, 0.0D, Math.sin(angle) * ring), 1);
+      emit(particle, (center == null ? caster.position() : center).add(Math.cos(angle) * ring, 0.0D, Math.sin(angle) * ring), grandMagic() ? 2 : 1);
    }
 
    private static ParticleOptions runeParticle(String runeId) {
@@ -167,9 +182,9 @@ public final class RuneExecutionContext {
    public boolean delayedDispatch() { return delayedDispatch; }
    public void delayedDispatch(boolean value) { delayedDispatch = value; }
    /** Adds an effect bonus without truncating high-tier rune damage. */
-   public void addDamage(double value) { damage(Math.min(1000.0D, damage + value)); }
+   public void addDamage(double value) { damage(Math.min(4000.0D, damage + value)); }
    public double radius() { return radius; }
-   public void radius(double value) { radius = Math.max(0.0D, Math.min(16.0D, value)); }
+   public void radius(double value) { radius = Math.max(0.0D, Math.min(64.0D, value)); }
    public int repeats() { return repeats; }
    public void repeats(int value) { repeats = Math.max(1, Math.min(8, value)); }
    public boolean pierce() { return pierce; }

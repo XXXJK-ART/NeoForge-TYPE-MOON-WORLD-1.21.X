@@ -280,7 +280,7 @@ public class TYPE_MOON_WORLD {
       );
       registrar.playToServer(MagicCircuitSwitchMessage.TYPE, MagicCircuitSwitchMessage.STREAM_CODEC, MagicCircuitSwitchMessage::handleData);
       registrar.playToServer(CastMagicMessage.TYPE, CastMagicMessage.STREAM_CODEC, CastMagicMessage::handleData);
-      registrar.playToServer(RuneProgramMessage.TYPE, RuneProgramMessage.STREAM_CODEC, RuneProgramMessage::handleData);
+      registrar.playBidirectional(RuneProgramMessage.TYPE, RuneProgramMessage.STREAM_CODEC, RuneProgramMessage::handleData);
       registrar.playToServer(SelectMagicMessage.TYPE, SelectMagicMessage.STREAM_CODEC, SelectMagicMessage::handleData);
       registrar.playToServer(CycleMagicMessage.TYPE, CycleMagicMessage.STREAM_CODEC, CycleMagicMessage::handleData);
       registrar.playToServer(SelectProjectionItemMessage.TYPE, SelectProjectionItemMessage.STREAM_CODEC, SelectProjectionItemMessage::handleData);
