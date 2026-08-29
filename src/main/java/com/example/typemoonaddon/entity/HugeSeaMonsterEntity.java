@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import org.joml.Vector3f;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -537,7 +538,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         level.addFreshEntity(spit);
         level.playSound(null, this.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 1.7F, 0.5F);
         level.sendParticles(ParticleTypes.SQUID_INK, spawn.x, spawn.y, spawn.z, 180, 4.5, 2.2, 4.5, 0.08);
-        level.sendParticles(ParticleTypes.BUBBLE, spawn.x, spawn.y, spawn.z, 120, 3.8, 1.8, 3.8, 0.07);
+        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), spawn.x, spawn.y, spawn.z, 120, 3.8, 1.8, 3.8, 0.07);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, spawn.x, spawn.y, spawn.z, 70, 4.0, 2.0, 4.0, 0.05);
         return true;
     }

@@ -42,6 +42,17 @@ public final class HeraclesGodHandHelper {
       return hasGodHand(target) && target.getPersistentData().getBoolean(ZABANIYA_ADAPTED_TAG);
    }
 
+   /** Returns whether a lethal hit just consumed one God Hand life and revived the target. */
+   public static boolean consumedLifeAfterLethalHit(LivingEntity target, int livesBeforeHit) {
+      if (target == null || livesBeforeHit <= 0) {
+         return false;
+      }
+      CompoundTag data = target.getPersistentData();
+      return !data.getBoolean("CausalSevered")
+         && data.getBoolean("GodHandActive")
+         && data.getInt("GodHandLives") == livesBeforeHit - 1;
+   }
+
    public static boolean consumeLifeForCybele(LivingEntity target) {
       return consumeLife(target, CYBELE_ADAPTED_TAG);
    }

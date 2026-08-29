@@ -3356,6 +3356,8 @@
   "message.typemoonworld.rune.learned": "Learned rune: %s",
   "message.typemoonworld.rune.cast_failed": "Rune program failed to release: %s",
   "message.typemoonworld.rune.cast_success": "Rune program released: %s",
+  "message.typemoonworld.rune.saved": "Rune program saved: %s",
+  "message.typemoonworld.rune.save_failed": "Rune program was not saved. Check its release mode, learned runes, and program limit.",
   "message.typemoonworld.rune.release_external": "This program requires its configured release medium",
   "message.typemoonworld.rune.inscribed": "Rune program inscribed into medium",
   "tooltip.typemoonworld.rune.inscribed": "Inscribed rune: %s",

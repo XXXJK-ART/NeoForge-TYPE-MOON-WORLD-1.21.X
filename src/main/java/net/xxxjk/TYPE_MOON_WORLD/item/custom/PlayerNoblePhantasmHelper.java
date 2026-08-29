@@ -57,6 +57,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
@@ -1097,12 +1098,15 @@ public final class PlayerNoblePhantasmHelper {
          && !(target instanceof EnkiduEntity)
          && player.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       DamageSource source = player.damageSources().mobAttack(player);
+      int livesBeforeInitialHit = target.getPersistentData().getInt("GodHandLives");
       target.invulnerableTime = 0;
       target.hurt(source, 250.0F);
       target.invulnerableTime = 0;
-      if (target.isAlive() && deathThorn) {
+      boolean initialHitRevived = HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeInitialHit);
+      if (target.isAlive() && deathThorn && !initialHitRevived) {
+         int livesBeforeDeathThorn = target.getPersistentData().getInt("GodHandLives");
          target.hurt(source, Math.max(target.getMaxHealth() * 2.0F, 500.0F));
-         if (target.isAlive()) {
+         if (target.isAlive() && !HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeDeathThorn)) {
             target.setHealth(0.0F);
             target.die(player.damageSources().genericKill());
          }

@@ -60,6 +60,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaCombatHelper;
@@ -2560,10 +2561,14 @@ public final class CombatModule implements ServantAiModule {
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
       if (EntityUtils.isImmunePlayerTarget(target)) return;
       if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) return;
+      int livesBeforeHit = target.getPersistentData().getInt("GodHandLives");
       float lethalDamage = Math.max(target.getMaxHealth() * 2.0F, 500.0F);
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), lethalDamage);
       target.invulnerableTime = 0;
+      if (HeraclesGodHandHelper.consumedLifeAfterLethalHit(target, livesBeforeHit)) {
+         return;
+      }
       if (target.isAlive()) {
          target.setHealth(0.0F);
          target.die(attacker.damageSources().genericKill());

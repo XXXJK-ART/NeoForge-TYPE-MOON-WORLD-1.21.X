@@ -3356,6 +3356,8 @@
   "message.typemoonworld.rune.learned": "已学习卢恩：%s",
   "message.typemoonworld.rune.cast_failed": "卢恩程序释放失败：%s",
   "message.typemoonworld.rune.cast_success": "卢恩程序释放成功：%s",
+  "message.typemoonworld.rune.saved": "卢恩程序已保存：%s",
+  "message.typemoonworld.rune.save_failed": "卢恩程序保存失败：请检查释放方式、已掌握卢恩与程序数量。",
   "message.typemoonworld.rune.release_external": "该程序必须通过指定介质释放",
   "message.typemoonworld.rune.inscribed": "卢恩程序已刻入介质",
   "tooltip.typemoonworld.rune.inscribed": "已刻录卢恩：%s",

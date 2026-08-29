@@ -42,7 +42,7 @@ public final class RuneBlockEntity extends BlockEntity {
       if (target == null) return;
       TypeMoonWorldModVariables.PlayerVariables vars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (RuneProgramExecutor.executeExternal(owner, vars, program, target, RuneReleaseMode.BLOCK_TRAP,
-         Vec3.atCenterOf(pos).add(0.0D, 0.2D, 0.0D)).success()) {
+         Vec3.atCenterOf(pos).add(0.0D, 0.2D, 0.0D), null).success()) {
          RuneEffectDispatcher.emitProgramGlyphs(owner, program, Vec3.atCenterOf(pos).add(0.0D, 0.18D, 0.0D));
          serverLevel.sendParticles(ParticleTypes.FLAME, pos.getX() + 0.5D, pos.getY() + 0.15D, pos.getZ() + 0.5D, 12, 0.35D, 0.08D, 0.35D, 0.03D);
          serverLevel.removeBlock(pos, false);

@@ -14,6 +14,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 /** Ordered, data-driven rune actions. All methods are server-only. */
@@ -115,9 +116,20 @@ public final class RuneEffectDispatcher {
    public static void emitProgramGlyphs(net.minecraft.server.level.ServerPlayer caster, RuneProgram program, Vec3 center) {
       if (caster == null || program == null || program.sequence().isEmpty()) return;
       RuneExecutionContext context = new RuneExecutionContext(caster, caster, program);
-      for (int i = 0; i < program.sequence().size(); i++) {
-         context.emitRuneParticleAt(program.sequence().get(i), i, program.sequence().size(), center);
+      int visible = Math.min(8, program.sequence().size());
+      for (int i = 0; i < visible; i++) {
+         int sourceIndex = i * program.sequence().size() / visible;
+         context.emitRuneParticleAt(program.sequence().get(sourceIndex), i, visible, center);
       }
+   }
+
+   /** Low-frequency ambient cue for a maintained armor inscription. */
+   public static void emitPassiveGlyph(net.minecraft.server.level.ServerPlayer caster, RuneProgram program) {
+      if (caster == null || program == null || program.sequence().isEmpty()) return;
+      int index = Math.floorMod((int)(caster.level().getGameTime() + caster.getId()), program.sequence().size());
+      RuneExecutionContext context = new RuneExecutionContext(caster, caster, program);
+      context.emitRuneParticleAt(program.sequence().get(index), 0, 1,
+         caster.position().add(0.0D, caster.getBbHeight() + 0.2D, 0.0D));
    }
 
    private static void phase(RuneExecutionContext ctx, RunePosition position) {
@@ -191,7 +203,7 @@ public final class RuneEffectDispatcher {
       switch (id) {
          case "kenaz" -> { c.setEffectDamage(id, c.damage()); c.setEffectRadius(id, 5.0D); c.setEffectQuantity(id, 1); directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_FIRE, 200.0D, 2.0F, 5.0D); c.updateLastEffect(id); return true; }
          case "hagalaz" -> { c.setEffectRadius(id, 10.0D); c.setEffectQuantity(id, 10); Vec3 p = c.endpoint(24.0D); for (int i = 12; i >= 0; i--) c.emit(ParticleTypes.SNOWFLAKE, p.add(0.0D, i, 0.0D), 1); area(c, p, 10.0D, 6.0D, ParticleTypes.SNOWFLAKE); c.updateLastEffect(id); return true; }
-         case "thurisaz" -> { c.radius(8.0D); Vec3 p = c.endpoint(24.0D); lightning(c, p); area(c, p, 8.0D, 8.0D, ParticleTypes.ELECTRIC_SPARK); return true; }
+         case "thurisaz" -> { c.radius(8.0D); Vec3 p = c.endpoint(24.0D); lightning(c, p); area(c, p, 8.0D, 8.0D, ModParticles.ELEMENTAL_LIGHTNING.get()); return true; }
          case "sowilo" -> { c.setEffectRadius(id, 0.75D); c.setEffectQuantity(id, 50); VFXServerEffects.spawnOriented(c.level(), "beam", c.origin(), c.direction(), 64.0D); lineDamage(c, 50.0D, 6.0D); c.updateLastEffect(id); return true; }
          case "nauthiz" -> { c.radius(8.0D); area(c, c.endpoint(8.0D), 8.0D, 5.0D, ParticleTypes.SQUID_INK); return true; }
          case "isa" -> { c.radius(12.0D); area(c, c.caster().position(), 12.0D, 0.0D, ParticleTypes.SNOWFLAKE); return true; }
@@ -343,6 +355,8 @@ public final class RuneEffectDispatcher {
       LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(c.level());
       if (bolt == null) { c.fail("lightning_unavailable"); return; }
       bolt.moveTo(point); bolt.setCause(c.caster()); c.level().addFreshEntity(bolt);
+      // The vanilla bolt remains authoritative; this adds the custom impact sprite.
+      c.emit(ModParticles.ELEMENTAL_LIGHTNING.get(), point.add(0.0D, 1.0D, 0.0D), 8);
    }
 
    /** Stable behavior constants for tests and addon visual extensions. */

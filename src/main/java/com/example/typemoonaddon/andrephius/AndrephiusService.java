@@ -35,6 +35,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
@@ -354,7 +355,7 @@ public final class AndrephiusService {
                 (float) charge, 1.0F, CHARGE_VFX_INTERVAL_TICKS + 7,
                 0, VFX_OBSERVER_RADIUS);
         player.serverLevel().sendParticles(
-                ParticleTypes.ELECTRIC_SPARK,
+                ModParticles.ELEMENTAL_LIGHTNING.get(),
                 player.getX(),
                 player.getY() + player.getBbHeight() + 3.0D,
                 player.getZ(),
@@ -557,6 +558,18 @@ public final class AndrephiusService {
                 lightning.setVisualOnly(true);
                 level.addFreshEntity(lightning);
             }
+            // Keep the vanilla lightning bolt and layer the custom sprite around its impact.
+            level.sendParticles(
+                    ModParticles.ELEMENTAL_LIGHTNING.get(),
+                    strikePosition.x,
+                    strikePosition.y + 1.0D,
+                    strikePosition.z,
+                    18,
+                    0.55D,
+                    1.35D,
+                    0.55D,
+                    0.035D
+            );
 
             float damage = Mth.clamp(
                     parameters.damageAt(lockedTarget.distanceSquared()) * DAMAGE_PER_STRIKE_FRACTION,

@@ -27,12 +27,19 @@ public record RuneProgramMessage(int action, CompoundTag program, String uuid) i
          try {
             UUID id = message.uuid == null || message.uuid.isBlank() ? null : UUID.fromString(message.uuid);
             switch (message.action) {
-               case UPSERT -> RuneProgramService.upsert(player, RuneProgram.fromNBT(message.program == null ? new CompoundTag() : message.program));
+               case UPSERT -> {
+                  RuneProgram saved = RuneProgramService.upsert(player, id, RuneProgram.fromNBT(message.program == null ? new CompoundTag() : message.program));
+                  if (saved == null) player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.save_failed"), true);
+                  else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.saved", saved.displayName()), true);
+               }
                case DELETE -> RuneProgramService.remove(player, id);
                case COPY -> RuneProgramService.copy(player, id);
                default -> { }
             }
-         } catch (Exception ignored) { }
+         } catch (Exception exception) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.save_failed"), true);
+            TYPE_MOON_WORLD.LOGGER.warn("Failed to update rune program for {}", player.getGameProfile().getName(), exception);
+         }
       });
    }
 }

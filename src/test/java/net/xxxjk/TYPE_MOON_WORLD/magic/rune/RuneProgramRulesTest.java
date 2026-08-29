@@ -93,6 +93,27 @@ class RuneProgramRulesTest {
    }
 
    @Test
+   void multiRuneCombinationsRemainCastable() {
+      List<List<String>> combinations = List.of(
+         List.of("kenaz", "uruz", "fehu", "othala"),
+         List.of("hagalaz", "isa", "laguz", "jera"),
+         List.of("thurisaz", "sowilo", "tiwaz", "ansuz"),
+         List.of("algiz", "berkano", "ehwaz", "mannaz"),
+         List.of("nauthiz", "perthro", "eihwaz", "dagaz"),
+         List.of("fehu", "uruz", "thurisaz", "ansuz", "raidho", "kenaz", "gebo", "wunjo"),
+         List.of("hagalaz", "nauthiz", "isa", "jera", "eihwaz", "perthro", "algiz", "sowilo"),
+         List.of("tiwaz", "berkano", "ehwaz", "mannaz", "laguz", "ingwaz", "dagaz", "othala"),
+         List.of("kenaz", "hagalaz", "thurisaz", "algiz", "berkano", "raidho"),
+         List.of("uruz", "sowilo", "nauthiz", "isa", "laguz", "othala")
+      );
+      for (List<String> ids : combinations) {
+         RuneProgram direct = program(ids, List.of(), List.of(), List.of(), RuneReleaseMode.DIRECT_AIR);
+         assertTrue(direct.validate().valid(), ids.toString());
+         assertTrue(RuneProgramService.matchesReleaseMode(direct, RuneReleaseMode.DIRECT_AIR), ids.toString());
+      }
+   }
+
+   @Test
    void newModeNamesMigrateToLegacyMediaIds() {
       assertEquals(RuneReleaseMode.DIRECT_AIR, RuneReleaseMode.byName("full_release"));
       assertEquals(RuneReleaseMode.WEAPON, RuneReleaseMode.byName("enchantment"));

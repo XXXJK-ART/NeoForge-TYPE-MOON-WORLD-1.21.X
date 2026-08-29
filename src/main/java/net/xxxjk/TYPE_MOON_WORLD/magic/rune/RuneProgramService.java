@@ -54,11 +54,16 @@ public final class RuneProgramService {
    }
 
    public static RuneProgram upsert(Player player, RuneProgram requested) {
+      return upsert(player, requested == null ? null : requested.uuid(), requested);
+   }
+
+   /** Uses the pre-edit UUID as the update anchor so a stale client payload cannot create a duplicate program. */
+   public static RuneProgram upsert(Player player, UUID persistedId, RuneProgram requested) {
       if (player == null || requested == null || player.level().isClientSide()) return null;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.ensureMagicSystemInitialized();
       RuneProgram normalized = RuneProgram.fromNBT(requested.serializeNBT());
-      RuneProgram existing = find(vars, normalized.uuid());
+      RuneProgram existing = find(vars, persistedId == null ? normalized.uuid() : persistedId);
       if (existing == null) {
          normalized = RuneProgram.ordered(UUID.randomUUID(), normalized.displayName(), normalized.sequence(), normalized.sequencePositions(),
             normalized.releaseMode(), normalizeReleaseConfig(normalized.releaseConfig()), System.currentTimeMillis(), System.currentTimeMillis());

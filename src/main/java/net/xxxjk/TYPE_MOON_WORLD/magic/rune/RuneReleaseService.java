@@ -36,7 +36,7 @@ public final class RuneReleaseService {
 
    public static boolean triggerProgram(ServerPlayer player, RuneProgram program, RuneReleaseMode mode, ItemStack stack, LivingEntity target) {
       if (player == null || program == null) return false;
-      return release(player, program, mode, stack, target == null ? player : target).success();
+      return release(player, program, mode, stack, target).success();
    }
 
    /** Unified server release result used by UI, logging and tests. */
@@ -49,7 +49,7 @@ public final class RuneReleaseService {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return mode == RuneReleaseMode.DIRECT_AIR
          ? RuneProgramExecutor.execute(player, vars, program, target)
-         : RuneProgramExecutor.executeExternal(player, vars, program, target, mode);
+         : RuneProgramExecutor.executeExternal(player, vars, program, target, mode, null, stack);
    }
 
    private static boolean mediumMatches(ItemStack stack, RuneReleaseMode mode) {

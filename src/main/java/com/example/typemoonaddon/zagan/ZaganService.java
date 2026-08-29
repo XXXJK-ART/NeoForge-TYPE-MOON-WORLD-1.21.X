@@ -40,6 +40,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -123,7 +124,7 @@ public final class ZaganService {
                 level, AddonSpellVisualPayload.ZAGAN, AddonSpellVisualPayload.WATER_FIELD,
                 caster.getUUID(), anchor, (float) EFFECT_RADIUS, 5.0F,
                 EFFECT_DURATION_TICKS + 5, 0, VFX_OBSERVER_RADIUS);
-        level.sendParticles(ParticleTypes.SPLASH, anchor.x, anchor.y, anchor.z,
+        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), anchor.x, anchor.y, anchor.z,
                 28, 7.0D, 0.7D, 7.0D, 0.16D);
         caster.displayClientMessage(Component.translatable(
                 "message.typemoonworld.zagan.cast"), true);
@@ -266,7 +267,7 @@ public final class ZaganService {
         state.activeTargets.clear();
         state.activeTargets.addAll(current);
         VFXServerEffects.spawn(level, PULSE_EFFECT, state.anchor, VFX_OBSERVER_RADIUS);
-        level.sendParticles(ParticleTypes.SPLASH, state.anchor.x, state.anchor.y,
+        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), state.anchor.x, state.anchor.y,
                 state.anchor.z, Math.min(40, 18 + targets.size() / 2),
                 EFFECT_RADIUS * 0.65D, 0.55D, EFFECT_RADIUS * 0.65D, 0.2D);
     }

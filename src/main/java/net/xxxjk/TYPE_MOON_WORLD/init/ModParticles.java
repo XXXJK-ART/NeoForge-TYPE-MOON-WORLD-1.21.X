@@ -21,6 +21,13 @@ public final class ModParticles {
       PARTICLE_TYPES.register("berkana_rune", () -> new SimpleParticleType(false));
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> RUNE_BARRIER =
       PARTICLE_TYPES.register("rune_barrier", () -> new SimpleParticleType(false));
+   /** Elemental particles backed by the custom art in textures/particle. */
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> ELEMENTAL_FLAME =
+      PARTICLE_TYPES.register("elemental_flame", () -> new SimpleParticleType(false));
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> ELEMENTAL_FOAM =
+      PARTICLE_TYPES.register("elemental_foam", () -> new SimpleParticleType(false));
+   public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> ELEMENTAL_LIGHTNING =
+      PARTICLE_TYPES.register("elemental_lightning", () -> new SimpleParticleType(false));
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> FEHU_RUNE = rune("fehu");
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> URUZ_RUNE = rune("uruz");
    public static final DeferredHolder<net.minecraft.core.particles.ParticleType<?>, SimpleParticleType> THURISAZ_RUNE = rune("thurisaz");

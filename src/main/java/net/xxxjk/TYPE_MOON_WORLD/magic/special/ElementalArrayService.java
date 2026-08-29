@@ -25,6 +25,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -51,7 +52,7 @@ public final class ElementalArrayService {
       new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.03F), 1.15F),
       new DustParticleOptions(new Vector3f(0.50F, 0.86F, 1.0F), 1.25F),
       new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.10F), 1.2F),
-      ParticleTypes.FLAME,
+      ModParticles.ELEMENTAL_FLAME.get(),
       ParticleTypes.LAVA,
       ParticleTypes.SMOKE,
       ParticleTypes.END_ROD,
@@ -63,9 +64,9 @@ public final class ElementalArrayService {
       new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.08F),
       new DustParticleOptions(new Vector3f(0.20F, 0.52F, 1.0F), 1.15F),
       new DustParticleOptions(new Vector3f(0.14F, 0.86F, 1.0F), 1.08F),
-      ParticleTypes.SPLASH,
-      ParticleTypes.BUBBLE_POP,
-      ParticleTypes.SPLASH,
+      ModParticles.ELEMENTAL_FOAM.get(),
+      ModParticles.ELEMENTAL_FOAM.get(),
+      ModParticles.ELEMENTAL_FOAM.get(),
       ParticleTypes.END_ROD,
       ParticleTypes.END_ROD
    );

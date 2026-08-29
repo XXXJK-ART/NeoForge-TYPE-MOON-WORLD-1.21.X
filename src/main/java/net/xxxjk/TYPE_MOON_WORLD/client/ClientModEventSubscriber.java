@@ -253,6 +253,12 @@ public class ClientModEventSubscriber {
       event.registerSpriteSet(ModParticles.ALGIZ_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.78F, 0.55F, 1.0F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.BERKANA_RUNE.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.42F, 1.0F, 0.48F, 1.95F, 24));
       event.registerSpriteSet(ModParticles.RUNE_BARRIER.get(), sprite -> new RuneSigilParticle.Provider(sprite, 0.30F, 0.72F, 1.0F, 0.55F, 14, 0.28F));
+      event.registerSpriteSet(ModParticles.ELEMENTAL_FLAME.get(), sprite ->
+         new RuneSigilParticle.Provider(sprite, 1.0F, 0.72F, 0.18F, 1.65F, 16, 0.92F));
+      event.registerSpriteSet(ModParticles.ELEMENTAL_FOAM.get(), sprite ->
+         new RuneSigilParticle.Provider(sprite, 0.62F, 0.92F, 1.0F, 1.35F, 18, 0.78F));
+      event.registerSpriteSet(ModParticles.ELEMENTAL_LIGHTNING.get(), sprite ->
+         new RuneSigilParticle.Provider(sprite, 0.78F, 0.86F, 1.0F, 1.45F, 10, 0.88F));
       event.registerSpriteSet(ModParticles.FEHU_RUNE.get(), sprite -> rune(sprite));
       event.registerSpriteSet(ModParticles.URUZ_RUNE.get(), sprite -> rune(sprite));
       event.registerSpriteSet(ModParticles.THURISAZ_RUNE.get(), sprite -> rune(sprite));
