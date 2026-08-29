@@ -46,55 +46,6 @@ public final class ElementalArrayService {
    private static final double RANGE = 8.0;
    private static final double WIDTH_PER_BLOCK = 0.35;
 
-   private static final ElementPalette FIRE = new ElementPalette(
-      new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.03F), 1.35F),
-      new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.10F), 1.2F),
-      new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.03F), 1.15F),
-      new DustParticleOptions(new Vector3f(0.50F, 0.86F, 1.0F), 1.25F),
-      new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.10F), 1.2F),
-      ModParticles.ELEMENTAL_FLAME.get(),
-      ParticleTypes.LAVA,
-      ParticleTypes.SMOKE,
-      ParticleTypes.END_ROD,
-      ParticleTypes.END_ROD
-   );
-   private static final ElementPalette WATER = new ElementPalette(
-      new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.25F),
-      new DustParticleOptions(new Vector3f(0.14F, 0.86F, 1.0F), 1.2F),
-      new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.08F),
-      new DustParticleOptions(new Vector3f(0.20F, 0.52F, 1.0F), 1.15F),
-      new DustParticleOptions(new Vector3f(0.14F, 0.86F, 1.0F), 1.08F),
-      ModParticles.ELEMENTAL_FOAM.get(),
-      ModParticles.ELEMENTAL_FOAM.get(),
-      ModParticles.ELEMENTAL_FOAM.get(),
-      ParticleTypes.END_ROD,
-      ParticleTypes.END_ROD
-   );
-   private static final ElementPalette WIND = new ElementPalette(
-      new DustParticleOptions(new Vector3f(0.46F, 0.96F, 0.84F), 1.25F),
-      new DustParticleOptions(new Vector3f(0.90F, 0.98F, 1.0F), 1.15F),
-      new DustParticleOptions(new Vector3f(0.46F, 0.96F, 0.84F), 1.1F),
-      new DustParticleOptions(new Vector3f(0.90F, 0.98F, 1.0F), 1.05F),
-      new DustParticleOptions(new Vector3f(0.76F, 1.0F, 0.90F), 1.0F),
-      ParticleTypes.CLOUD,
-      ParticleTypes.POOF,
-      ParticleTypes.WAX_OFF,
-      ParticleTypes.END_ROD,
-      ParticleTypes.END_ROD
-   );
-   private static final ElementPalette EARTH = new ElementPalette(
-      new DustParticleOptions(new Vector3f(0.60F, 0.44F, 0.24F), 1.25F),
-      new DustParticleOptions(new Vector3f(0.72F, 0.60F, 0.36F), 1.15F),
-      new DustParticleOptions(new Vector3f(0.60F, 0.44F, 0.24F), 1.1F),
-      new DustParticleOptions(new Vector3f(0.72F, 0.60F, 0.36F), 1.05F),
-      new DustParticleOptions(new Vector3f(0.80F, 0.72F, 0.52F), 1.0F),
-      ParticleTypes.CRIT,
-      ParticleTypes.POOF,
-      ParticleTypes.SMOKE,
-      ParticleTypes.END_ROD,
-      ParticleTypes.END_ROD
-   );
-
    private ElementalArrayService() {
    }
 
@@ -480,11 +431,92 @@ public final class ElementalArrayService {
 
    private static ElementPalette palette(Kind kind) {
       return switch (kind) {
-         case FIRE -> FIRE;
-         case WATER -> WATER;
-         case WIND -> WIND;
-         case EARTH -> EARTH;
+         case FIRE -> FirePaletteHolder.INSTANCE;
+         case WATER -> WaterPaletteHolder.INSTANCE;
+         case WIND -> WindPaletteHolder.INSTANCE;
+         case EARTH -> EarthPaletteHolder.INSTANCE;
       };
+   }
+
+   /*
+    * Event subscribers are discovered while the mod is being constructed,
+    * before deferred registries have been bound. Keep particle holder access
+    * behind lazy class initialization so .get() only runs during gameplay.
+    */
+   private static ElementPalette createFirePalette() {
+      return new ElementPalette(
+         new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.03F), 1.35F),
+         new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.10F), 1.2F),
+         new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.03F), 1.15F),
+         new DustParticleOptions(new Vector3f(0.50F, 0.86F, 1.0F), 1.25F),
+         new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.10F), 1.2F),
+         ModParticles.ELEMENTAL_FLAME.get(),
+         ParticleTypes.LAVA,
+         ParticleTypes.SMOKE,
+         ParticleTypes.END_ROD,
+         ParticleTypes.END_ROD
+      );
+   }
+
+   private static ElementPalette createWaterPalette() {
+      return new ElementPalette(
+         new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.25F),
+         new DustParticleOptions(new Vector3f(0.14F, 0.86F, 1.0F), 1.2F),
+         new DustParticleOptions(new Vector3f(0.30F, 0.68F, 1.0F), 1.08F),
+         new DustParticleOptions(new Vector3f(0.20F, 0.52F, 1.0F), 1.15F),
+         new DustParticleOptions(new Vector3f(0.14F, 0.86F, 1.0F), 1.08F),
+         ModParticles.ELEMENTAL_FOAM.get(),
+         ModParticles.ELEMENTAL_FOAM.get(),
+         ModParticles.ELEMENTAL_FOAM.get(),
+         ParticleTypes.END_ROD,
+         ParticleTypes.END_ROD
+      );
+   }
+
+   private static ElementPalette createWindPalette() {
+      return new ElementPalette(
+         new DustParticleOptions(new Vector3f(0.46F, 0.96F, 0.84F), 1.25F),
+         new DustParticleOptions(new Vector3f(0.90F, 0.98F, 1.0F), 1.15F),
+         new DustParticleOptions(new Vector3f(0.46F, 0.96F, 0.84F), 1.1F),
+         new DustParticleOptions(new Vector3f(0.90F, 0.98F, 1.0F), 1.05F),
+         new DustParticleOptions(new Vector3f(0.76F, 1.0F, 0.90F), 1.0F),
+         ParticleTypes.CLOUD,
+         ParticleTypes.POOF,
+         ParticleTypes.WAX_OFF,
+         ParticleTypes.END_ROD,
+         ParticleTypes.END_ROD
+      );
+   }
+
+   private static ElementPalette createEarthPalette() {
+      return new ElementPalette(
+         new DustParticleOptions(new Vector3f(0.60F, 0.44F, 0.24F), 1.25F),
+         new DustParticleOptions(new Vector3f(0.72F, 0.60F, 0.36F), 1.15F),
+         new DustParticleOptions(new Vector3f(0.60F, 0.44F, 0.24F), 1.1F),
+         new DustParticleOptions(new Vector3f(0.72F, 0.60F, 0.36F), 1.05F),
+         new DustParticleOptions(new Vector3f(0.80F, 0.72F, 0.52F), 1.0F),
+         ParticleTypes.CRIT,
+         ParticleTypes.POOF,
+         ParticleTypes.SMOKE,
+         ParticleTypes.END_ROD,
+         ParticleTypes.END_ROD
+      );
+   }
+
+   private static final class FirePaletteHolder {
+      private static final ElementPalette INSTANCE = createFirePalette();
+   }
+
+   private static final class WaterPaletteHolder {
+      private static final ElementPalette INSTANCE = createWaterPalette();
+   }
+
+   private static final class WindPaletteHolder {
+      private static final ElementPalette INSTANCE = createWindPalette();
+   }
+
+   private static final class EarthPaletteHolder {
+      private static final ElementPalette INSTANCE = createEarthPalette();
    }
 
    private static void drawVerticalRing(ServerLevel level, Vec3 center, Vec3 right, Vec3 up, float radius, ParticleOptions particle, int points) {

@@ -30,6 +30,8 @@ public final class RuneExecutionContext {
    private double radius = 0.0D;
    private int repeats = 1;
    private boolean pierce;
+   private boolean projectileImpact;
+   private boolean delayedDispatch;
    private int particleBudget = 50;
    private int particlesEmitted;
    private final Map<String, Double> effectDamage = new LinkedHashMap<>();
@@ -38,6 +40,7 @@ public final class RuneExecutionContext {
    private final Map<String, Integer> effectDuration = new LinkedHashMap<>();
    private final Map<String, Vec3> effectDirections = new LinkedHashMap<>();
    private final List<EffectParameters> effectParameterList = new ArrayList<>();
+   private int projectilesSpawned;
    private boolean failed;
    private String failureReason = "";
 
@@ -94,6 +97,8 @@ public final class RuneExecutionContext {
    public Vec3 effectDirection(String semantic) { return effectDirections.getOrDefault(semantic, direction()); }
    public void effectDirection(String semantic, Vec3 value) { if (semantic != null && value != null && value.lengthSqr() > 1.0E-6) effectDirections.put(semantic, value.normalize()); }
    public List<EffectParameters> effectParameters() { return Collections.unmodifiableList(effectParameterList); }
+   public int projectilesSpawned() { return projectilesSpawned; }
+   public void markProjectilesSpawned(int count) { projectilesSpawned += Math.max(0, count); }
    public void updateLastEffect(String semantic) {
       if (effectParameterList.isEmpty() || semantic == null) return;
       int index = effectParameterList.size() - 1;
@@ -155,7 +160,14 @@ public final class RuneExecutionContext {
    public List<String> executionTrace() { return Collections.unmodifiableList(executionTrace); }
    public double damage() { return damage; }
    public void damage(double value) { damage = Math.max(0.0D, value); }
-   public void addDamage(double value) { damage(Math.min(40.0D, damage + value)); }
+   /** Sets the pre-effect impact damage used when resolving a projectile hit. */
+   public void baseDamage(double value) { damage = Math.max(0.0D, value); }
+   public boolean projectileImpact() { return projectileImpact; }
+   public void projectileImpact(boolean value) { projectileImpact = value; }
+   public boolean delayedDispatch() { return delayedDispatch; }
+   public void delayedDispatch(boolean value) { delayedDispatch = value; }
+   /** Adds an effect bonus without truncating high-tier rune damage. */
+   public void addDamage(double value) { damage(Math.min(1000.0D, damage + value)); }
    public double radius() { return radius; }
    public void radius(double value) { radius = Math.max(0.0D, Math.min(16.0D, value)); }
    public int repeats() { return repeats; }

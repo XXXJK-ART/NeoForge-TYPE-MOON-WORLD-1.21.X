@@ -93,18 +93,23 @@ public final class RuneKnowledgeScreen extends Screen {
       graphics.drawString(font, Component.literal(rune.displayName()), textX, textY,
          learned ? 0xFFFFFFFF : 0xFFE5EEF2, false);
       if (grid.compact) {
-         String summary = semanticValue(rune.semantic(RunePosition.TRIGGER)).getString() + " / "
-            + semanticValue(rune.semantic(RunePosition.EFFECT)).getString() + " / "
-            + semanticValue(rune.semantic(RunePosition.MODIFIER)).getString() + " / "
-            + semanticValue(rune.semantic(RunePosition.TERMINAL)).getString();
+         String summary = rune.effectSpec(RunePosition.TRIGGER).name() + " / "
+            + rune.effectSpec(RunePosition.EFFECT).name() + " / "
+            + rune.effectSpec(RunePosition.MODIFIER).name() + " / "
+            + rune.effectSpec(RunePosition.TERMINAL).name();
          graphics.drawString(font, font.plainSubstrByWidth(summary, detailWidth - 20), textX, textY + 15,
             learned ? 0xFFFFFFFF : 0xFFE5EEF2, false);
          return;
       }
-      drawSemantic(graphics, textX, textY + 24, detailWidth - 20, "gui.typemoonworld.rune.trigger", rune.semantic(RunePosition.TRIGGER));
-      drawSemantic(graphics, textX, textY + 44, detailWidth - 20, "gui.typemoonworld.rune.effect", rune.semantic(RunePosition.EFFECT));
-      drawSemantic(graphics, textX, textY + 64, detailWidth - 20, "gui.typemoonworld.rune.modifier", rune.semantic(RunePosition.MODIFIER));
-      drawSemantic(graphics, textX, textY + 84, detailWidth - 20, "gui.typemoonworld.rune.terminal", rune.semantic(RunePosition.TERMINAL));
+      drawSpec(graphics, textX, textY + 24, detailWidth - 20, "gui.typemoonworld.rune.trigger", rune.effectSpec(RunePosition.TRIGGER));
+      drawSpec(graphics, textX, textY + 44, detailWidth - 20, "gui.typemoonworld.rune.effect", rune.effectSpec(RunePosition.EFFECT));
+      drawSpec(graphics, textX, textY + 64, detailWidth - 20, "gui.typemoonworld.rune.modifier", rune.effectSpec(RunePosition.MODIFIER));
+      drawSpec(graphics, textX, textY + 84, detailWidth - 20, "gui.typemoonworld.rune.terminal", rune.effectSpec(RunePosition.TERMINAL));
+   }
+
+   private void drawSpec(GuiGraphics graphics, int x, int y, int width, String key, net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneEffectSpec spec) {
+      String value = spec.name() + "：" + spec.description();
+      graphics.drawString(font, Component.translatable(key, font.plainSubstrByWidth(value, width)), x, y, GuiUtils.ARCANE_TEXT_MUTED, false);
    }
 
    private void drawSemantic(GuiGraphics graphics, int x, int y, int maxWidth, String key, String value) {

@@ -23,8 +23,16 @@ public final class RuneProgramService {
       RuneProgramValidationResult result = program.validate();
       List<String> errors = new ArrayList<>(result.errors());
       for (String id : program.slots()) if (!id.isEmpty() && !RuneLearningService.hasRune(vars, id)) errors.add("rune_not_learned:" + id);
-      if (!RuneLearningService.hasOrigin(vars)) errors.add("origin_not_unlocked");
+      if (!program.isEmptyProgram() && !RuneLearningService.hasOrigin(vars)) errors.add("origin_not_unlocked");
       return new RuneProgramValidationResult(errors.isEmpty(), errors);
+   }
+
+   /** Returns the first server-side reason an upsert would be rejected. */
+   public static String saveFailureReason(TypeMoonWorldModVariables.PlayerVariables vars, RuneProgram program) {
+      RuneProgramValidationResult result = validate(vars, program);
+      if (!result.valid()) return result.errors().isEmpty() ? "invalid_program" : result.errors().get(0);
+      if (!matchesReleaseMode(program, program.releaseMode())) return "release_mode_conflict";
+      return "";
    }
 
    /** Shared availability predicate used by wheel switching and cast execution. */

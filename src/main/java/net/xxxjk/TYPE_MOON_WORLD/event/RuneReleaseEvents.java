@@ -96,6 +96,9 @@ public final class RuneReleaseEvents {
    public static void onProjectileImpact(ProjectileImpactEvent event) {
       Projectile projectile = event.getProjectile();
       if (projectile.level().isClientSide() || !projectile.getPersistentData().getBoolean(PROJECTILE_RUNE)) return;
+      // MagicBulletProjectileEntity resolves the rune program with its configured
+      // base damage in onHitEntity; only skip the duplicate effect application below.
+      boolean magicBullet = projectile instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
       if (projectile.getPersistentData().getBoolean("tmwRuneSureHit")
          && !(event.getRayTraceResult() instanceof net.minecraft.world.phys.EntityHitResult)) {
          if (projectile.getOwner() instanceof LivingEntity owner) {
@@ -108,7 +111,7 @@ public final class RuneReleaseEvents {
             }
          }
       }
-      if (event.getRayTraceResult() instanceof net.minecraft.world.phys.EntityHitResult hit
+      if (!magicBullet && event.getRayTraceResult() instanceof net.minecraft.world.phys.EntityHitResult hit
          && hit.getEntity() instanceof LivingEntity target
          && projectile.getOwner() instanceof ServerPlayer player) {
          CompoundTag snapshot = projectile.getPersistentData().getCompound("tmwRuneProgram");
@@ -124,6 +127,29 @@ public final class RuneReleaseEvents {
    }
 
    @SubscribeEvent
+   public static void onRuneLinkDamage(LivingIncomingDamageEvent event) {
+      if (event.isCanceled() || event.getEntity().level().isClientSide()) return;
+      LivingEntity linked = event.getEntity();
+      var tag = linked.getPersistentData();
+      if (!tag.hasUUID("tmwRuneLinkOwner") || linked.level().getGameTime() > tag.getLong("tmwRuneLinkUntil")) {
+         if (tag.hasUUID("tmwRuneLinkOwner")) tag.remove("tmwRuneLinkOwner");
+         return;
+      }
+      if (tag.getBoolean("tmwRuneLinkRedirecting")) return;
+      if (!(linked.level() instanceof net.minecraft.server.level.ServerLevel level)) return;
+      net.minecraft.world.entity.Entity ownerEntity = level.getEntity(tag.getUUID("tmwRuneLinkOwner"));
+      if (!(ownerEntity instanceof LivingEntity owner) || !owner.isAlive() || owner == linked) return;
+      float split = event.getAmount() * 0.5F;
+      event.setAmount(split);
+      tag.putBoolean("tmwRuneLinkRedirecting", true);
+      try {
+         owner.hurt(event.getSource(), split);
+      } finally {
+         tag.remove("tmwRuneLinkRedirecting");
+      }
+   }
+
+   @SubscribeEvent
    public static void onArmorRuneTriggered(LivingIncomingDamageEvent event) {
       if (event.isCanceled() || !(event.getEntity() instanceof ServerPlayer player)) return;
       long now = player.level().getGameTime();
@@ -134,6 +160,7 @@ public final class RuneReleaseEvents {
          if (data == null || data.medium() != RuneReleaseMode.ARMOR) continue;
          RuneProgram reinforcement = RuneProgram.fromNBT(data.snapshot());
          if (reinforcement.kind() != RuneProgramKind.REINFORCEMENT) continue;
+         event.setAmount(RuneEffectDispatcher.applyArmorEnchantments(player, event.getAmount(), reinforcement));
          RuneEffectDispatcher.applyReinforcement(player, reinforcement);
          RuneEffectDispatcher.emitProgramGlyphs(player, reinforcement);
          triggered = true;
@@ -185,7 +212,8 @@ public final class RuneReleaseEvents {
    }
 
    private static LivingEntity nearestProjectileTarget(Projectile projectile, LivingEntity owner, boolean sureHit) {
-      double radius = sureHit ? 32.0D : 24.0D;
+      double configuredRadius = projectile.getPersistentData().getDouble("tmwRuneTrackingRange");
+      double radius = configuredRadius > 0.0D ? Math.min(50.0D, configuredRadius) : (sureHit ? 32.0D : 24.0D);
       Vec3 origin = projectile.position();
       Vec3 direction = projectile.getDeltaMovement().lengthSqr() > 1.0E-6 ? projectile.getDeltaMovement().normalize() : owner.getLookAngle();
       return projectile.level().getEntitiesOfClass(LivingEntity.class, new AABB(origin, origin).inflate(radius), entity -> {
@@ -207,10 +235,8 @@ public final class RuneReleaseEvents {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       ItemStack held = event.getItemStack();
       RuneProgram selected = current(player);
-      // Inscription mode is a normal right-click action. Keep crouch as an
-      // explicit modifier for weapon/armor/tool engraving so those media do
-      // not steal vanilla item use actions.
-      boolean engravingRequest = selected != null && selected.releaseMode() != RuneReleaseMode.DIRECT_AIR
+      // Require crouching for engraving so it does not steal vanilla item use actions.
+      boolean engravingRequest = player.isCrouching() && selected != null && selected.releaseMode() != RuneReleaseMode.DIRECT_AIR
          && selected.releaseMode() != RuneReleaseMode.BLOCK_TRAP && selected.releaseMode() != RuneReleaseMode.BODY
          && mediumMatches(held, selected.releaseMode())
          && selected.releaseMode() == RuneReleaseMode.RUNE_STONE
@@ -232,7 +258,7 @@ public final class RuneReleaseEvents {
    public static void onRightClickBlock(RightClickBlock event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       RuneProgram program = current(player);
-      if (program != null && program.releaseMode() == RuneReleaseMode.BLOCK_TRAP) {
+      if (player.isCrouching() && program != null && program.releaseMode() == RuneReleaseMode.BLOCK_TRAP) {
          net.minecraft.core.BlockPos placePos = event.getPos().relative(event.getFace());
          if (!event.getLevel().getBlockState(placePos).canBeReplaced()) return;
          if (event.getLevel().setBlock(placePos, ModBlocks.RUNE_INSCRIPTION.get().defaultBlockState(), 3)) {
@@ -243,7 +269,7 @@ public final class RuneReleaseEvents {
       } else {
          ItemStack held = event.getItemStack();
          RuneInscriptionData stored = inscription(held);
-         if (program != null && program.releaseMode() == RuneReleaseMode.RUNE_STONE
+         if (player.isCrouching() && program != null && program.releaseMode() == RuneReleaseMode.RUNE_STONE
             && mediumMatches(held, RuneReleaseMode.RUNE_STONE) && stored == null) {
             inscribe(player, held, program);
             event.setCanceled(true);
@@ -265,6 +291,7 @@ public final class RuneReleaseEvents {
    @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
+      tickRunePortal(player);
       if (player.tickCount % 20 == 0) {
          for (ItemStack armor : player.getArmorSlots()) {
             RuneInscriptionData data = inscription(armor);
@@ -288,6 +315,24 @@ public final class RuneReleaseEvents {
          if (RuneReleaseService.trigger(player, RuneReleaseMode.BODY, ItemStack.EMPTY, player)) data.putLong("tmwRuneBodyLast", now);
          data.putInt("tmwRuneMeditation", 0);
       }
+   }
+
+   private static void tickRunePortal(ServerPlayer player) {
+      var tag = player.getPersistentData();
+      long until = tag.getLong("tmwRunePortalUntil");
+      if (until <= 0L) return;
+      if (player.level().getGameTime() > until) { tag.remove("tmwRunePortalUntil"); return; }
+      long cooldown = tag.getLong("tmwRunePortalCooldown");
+      if (player.level().getGameTime() < cooldown) return;
+      Vec3 a = new Vec3(tag.getDouble("tmwRunePortalAX"), tag.getDouble("tmwRunePortalAY"), tag.getDouble("tmwRunePortalAZ"));
+      Vec3 b = new Vec3(tag.getDouble("tmwRunePortalBX"), tag.getDouble("tmwRunePortalBY"), tag.getDouble("tmwRunePortalBZ"));
+      int side = player.position().distanceToSqr(a) < 2.25D ? 1 : player.position().distanceToSqr(b) < 2.25D ? 2 : 0;
+      if (side == 0) { tag.putInt("tmwRunePortalLastSide", 0); return; }
+      if (side == tag.getInt("tmwRunePortalLastSide")) return;
+      Vec3 destination = side == 1 ? b : a;
+      player.teleportTo(destination.x, destination.y, destination.z);
+      tag.putInt("tmwRunePortalLastSide", side == 1 ? 2 : 1);
+      tag.putLong("tmwRunePortalCooldown", player.level().getGameTime() + 10L);
    }
 
    private static RuneProgram current(ServerPlayer player) {

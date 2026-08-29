@@ -28,8 +28,14 @@ public record RuneProgramMessage(int action, CompoundTag program, String uuid) i
             UUID id = message.uuid == null || message.uuid.isBlank() ? null : UUID.fromString(message.uuid);
             switch (message.action) {
                case UPSERT -> {
-                  RuneProgram saved = RuneProgramService.upsert(player, id, RuneProgram.fromNBT(message.program == null ? new CompoundTag() : message.program));
-                  if (saved == null) player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.save_failed"), true);
+                  RuneProgram requested = RuneProgram.fromNBT(message.program == null ? new CompoundTag() : message.program);
+                  RuneProgram saved = RuneProgramService.upsert(player, id, requested);
+                  if (saved == null) {
+                     String reason = RuneProgramService.saveFailureReason(
+                        player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), requested);
+                     player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.save_failed"), true);
+                     TYPE_MOON_WORLD.LOGGER.warn("Rejected rune program save for {}: {}", player.getGameProfile().getName(), reason);
+                  }
                   else player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.saved", saved.displayName()), true);
                }
                case DELETE -> RuneProgramService.remove(player, id);
@@ -38,7 +44,8 @@ public record RuneProgramMessage(int action, CompoundTag program, String uuid) i
             }
          } catch (Exception exception) {
             player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.rune.save_failed"), true);
-            TYPE_MOON_WORLD.LOGGER.warn("Failed to update rune program for {}", player.getGameProfile().getName(), exception);
+            TYPE_MOON_WORLD.LOGGER.warn("Failed to update rune program for {} (action={}, uuid={})",
+               player.getGameProfile().getName(), message.action, message.uuid, exception);
          }
       });
    }

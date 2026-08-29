@@ -61,7 +61,7 @@ public final class RuneProgramExecutor {
       try {
          RuneExecutionContext execution;
          if (external && (invocationMode == RuneReleaseMode.WEAPON || invocationMode == RuneReleaseMode.TOOL)) {
-            execution = applyEnchantment(player, target, program, mediumStack);
+            execution = applyEnchantment(player, target, program, mediumStack, invocationMode);
          } else {
             execution = new RuneExecutionContext(player, target, program, originOverride,
                originOverride != null && target != null ? target.position().subtract(originOverride) : null);
@@ -98,9 +98,8 @@ public final class RuneProgramExecutor {
    }
 
    /** Applies weapon/tool inscriptions as permanent hit modifiers, never as projectiles. */
-   private static RuneExecutionContext applyEnchantment(ServerPlayer player, LivingEntity target, RuneProgram program, ItemStack mediumStack) {
+   private static RuneExecutionContext applyEnchantment(ServerPlayer player, LivingEntity target, RuneProgram program, ItemStack mediumStack, RuneReleaseMode mode) {
       RuneExecutionContext context = new RuneExecutionContext(player, target, program);
-      int bonusDamage = 0;
       for (int i = 0; i < program.sequence().size(); i++) {
          String id = program.sequence().get(i);
          RuneDefinition definition = RuneRegistry.get(id);
@@ -109,32 +108,14 @@ public final class RuneProgramExecutor {
          context.emitRuneParticle(id, i, program.sequence().size());
          String semantic = definition.semantic(role);
          context.trace(role, semantic);
-         switch (semantic) {
-            case "fire" -> { if (target != null) target.igniteForSeconds(4.0F); }
-            case "ice", "slow" -> { if (target != null) target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1)); }
-            case "impact", "pierce", "shatter", "power", "amplify", "critical" -> bonusDamage += 2;
-            case "drain" -> { if (target != null) { target.hurt(player.damageSources().magic(), 2.0F); player.heal(1.0F); } }
-            case "heal", "nature", "restore" -> {
-               player.heal(1.0F);
-               if (mediumStack != null && mediumStack.getMaxDamage() > 0) mediumStack.setDamageValue(Math.max(0, mediumStack.getDamageValue() - 2));
-            }
-            case "speed", "swift", "mobility" -> {
-               player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 0));
-               if (mediumStack != null && mediumStack.getMaxDamage() > 0) mediumStack.setDamageValue(Math.max(0, mediumStack.getDamageValue() - 1));
-            }
-            case "barrier", "shield", "resist", "guard" -> player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
-            case "water", "earth" -> { if (target != null) target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0)); }
-            case "shadow", "mind" -> { if (target != null) target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0)); }
-            case "light", "shine" -> context.emit(ParticleTypes.END_ROD, player.position().add(0.0D, 1.0D, 0.0D), 4);
-            default -> { }
-         }
       }
-      if (target != null && bonusDamage > 0) target.hurt(player.damageSources().playerAttack(player), bonusDamage);
+      if (mode == RuneReleaseMode.TOOL) RuneEffectDispatcher.applyToolEnchantments(player, program);
+      else RuneEffectDispatcher.applyWeaponEnchantments(player, target, program);
       return context;
    }
 
    public static void applyProjectileEffects(ServerPlayer player, LivingEntity target, RuneProgram program) {
-      if (player != null && target != null && program != null) applyEnchantment(player, target, program, null);
+      if (player != null && target != null && program != null) RuneEffectDispatcher.applyProjectileImpact(player, target, program);
    }
 
    private static void applyFailureEasterEgg(ServerPlayer player, RuneProgram program) {

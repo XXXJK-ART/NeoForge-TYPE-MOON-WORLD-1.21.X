@@ -1522,6 +1522,7 @@ public class TypeMoonWorldModVariables {
       }
 
       public void ensureMagicSystemInitialized() {
+         normalizeLearnedRunes();
          if (magicSystemInitialized && this.magic_wheels != null && this.magic_wheels.size() == MAGIC_WHEEL_COUNT * MAGIC_WHEEL_SLOT_COUNT
             && this.selected_magic_runtime_slot_indices != null && this.selected_magic_display_names != null
             && this.crest_entries != null && this.crest_practice_count != null && this.magicCrestInventory != null
@@ -1603,6 +1604,28 @@ public class TypeMoonWorldModVariables {
             normalizeCrestEntry(crestEntry);
          }
          magicSystemInitialized = true;
+      }
+
+      /** Canonicalizes legacy rune ids before any validation or persistence. */
+      private void normalizeLearnedRunes() {
+         if (this.learned_runes == null) {
+            this.learned_runes = new ArrayList<>();
+            return;
+         }
+         java.util.LinkedHashSet<String> canonical = new java.util.LinkedHashSet<>();
+         for (String rune : this.learned_runes) {
+            net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneDefinition definition = net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneRegistry.get(rune);
+            if (definition != null) canonical.add(definition.idPath());
+         }
+         if (!canonical.equals(new java.util.LinkedHashSet<>(this.learned_runes))) {
+            this.learned_runes = new ArrayList<>(canonical);
+         }
+         if (!canonical.isEmpty()) {
+            this.rune_origin_unlocked = true;
+            if (!this.learned_magics.contains(RuneLearningService.ORIGIN_MAGIC_ID)) {
+               this.learned_magics.add(RuneLearningService.ORIGIN_MAGIC_ID);
+            }
+         }
       }
 
       public TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry getWheelSlotEntry(int wheelIndex, int slotIndex) {
@@ -2551,7 +2574,10 @@ public class TypeMoonWorldModVariables {
          for (String rune : this.learned_runes) if (rune != null && RuneLearningService.hasRune(this, rune)) learnedRunes.add(StringTag.valueOf(rune));
          nbt.put("learned_runes", learnedRunes);
          ListTag runePrograms = new ListTag();
-         for (RuneProgram program : this.rune_programs) if (program != null && RuneProgramService.validate(this, program).valid()) runePrograms.add(program.serializeNBT());
+          // Preserve intrinsically valid programs even when learned-rune state
+          // is temporarily incomplete during migration or sync. Ownership is
+          // enforced when the program is selected/cast, not by data loss here.
+          for (RuneProgram program : this.rune_programs) if (program != null && program.validate().valid()) runePrograms.add(program.serializeNBT());
          nbt.put("rune_programs", runePrograms);
           CompoundTag dynamicProficiency = new CompoundTag();
           for (Map.Entry<String, Double> entry : this.magic_proficiencies.entrySet()) {
@@ -2993,7 +3019,10 @@ public class TypeMoonWorldModVariables {
             ListTag programs = nbt.getList("rune_programs", 10);
             for (int i = 0; i < Math.min(RuneProgramService.MAX_PROGRAMS, programs.size()); i++) {
                RuneProgram program = RuneProgram.fromNBT(programs.getCompound(i));
-               if (RuneProgramService.validate(this, program).valid()) this.rune_programs.add(program);
+               // Do not discard saved programs because learned-rune/Origin
+               // state is loaded or migrated separately. They remain unusable
+               // until RuneProgramService.validate grants ownership.
+               if (program.validate().valid()) this.rune_programs.add(program);
             }
          }
          this.magic_proficiencies.clear();

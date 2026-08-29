@@ -28,6 +28,14 @@ class RuneProgramRulesTest {
    }
 
    @Test
+   void effectAndTerminalWithoutTriggerAreRejectedBeforeSave() {
+      RuneProgram invalid = program(List.of(), List.of("kenaz"), List.of(), List.of("othala"), RuneReleaseMode.RUNE_STONE);
+      assertEquals(RuneProgramKind.INVALID, invalid.kind());
+      assertFalse(invalid.validate().valid());
+      assertTrue(invalid.validate().errors().contains("invalid_structure"));
+   }
+
+   @Test
    void weaponAllowsProjectileStyleTriggerWithoutLegacyConflict() {
       RuneProgram weapon = program(List.of("hagalaz"), List.of("kenaz"), List.of(), List.of(), RuneReleaseMode.WEAPON);
       assertTrue(weapon.validate().valid());
@@ -128,6 +136,18 @@ class RuneProgramRulesTest {
       assertEquals(original.uuid(), restored.uuid());
       assertEquals(20, restored.slots().size());
       assertEquals(original.releaseMode(), restored.releaseMode());
+      assertEquals(original.slots(), restored.slots());
+      assertEquals(original.sequence(), restored.sequence());
+      assertEquals(original.sequencePositions(), restored.sequencePositions());
+      assertEquals(original.releaseConfig(), restored.releaseConfig());
+
+      CompoundTag legacy = original.serializeNBT();
+      legacy.remove("sequence");
+      legacy.remove("sequence_roles");
+      RuneProgram restoredLegacy = RuneProgram.fromNBT(legacy);
+      assertEquals(original.slots(), restoredLegacy.slots());
+      assertEquals(original.sequence(), restoredLegacy.sequence());
+      assertEquals(original.sequencePositions(), restoredLegacy.sequencePositions());
    }
 
    @Test

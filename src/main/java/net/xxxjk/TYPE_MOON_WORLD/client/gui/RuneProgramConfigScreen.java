@@ -104,6 +104,12 @@ public final class RuneProgramConfigScreen extends Screen {
    }
 
    private void save() {
+      if (!program.validate().valid() || !RuneProgramService.matchesReleaseMode(program, program.releaseMode())) {
+         if (minecraft != null && minecraft.player != null) {
+            minecraft.player.displayClientMessage(Component.translatable("message.typemoonworld.rune.save_failed"), true);
+         }
+         return;
+      }
       PacketDistributor.sendToServer(new RuneProgramMessage(RuneProgramMessage.UPSERT,
          program.serializeNBT(), program.uuid().toString()), new CustomPacketPayload[0]);
       onClose();

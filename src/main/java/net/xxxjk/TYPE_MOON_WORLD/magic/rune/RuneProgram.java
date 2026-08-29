@@ -168,6 +168,10 @@ public final class RuneProgram {
       List<String> errors = new ArrayList<>();
       for (String id : slots) if (!id.isEmpty() && !RuneRegistry.isKnown(id)) errors.add("unknown_rune:" + id);
       for (String id : sequence) if (!id.isEmpty() && !RuneRegistry.isKnown(id)) errors.add("unknown_rune:" + id);
+      // Effect and terminal bands without a trigger or a reinforcement-only
+      // shape cannot be released by any medium. Surface this in the editor
+      // instead of letting the server reject the save with no useful state.
+      if (kind() == RuneProgramKind.INVALID) errors.add("invalid_structure");
       if (releaseMode == RuneReleaseMode.BODY && slots(RunePosition.TRIGGER).stream().anyMatch(id -> !id.isEmpty())) errors.add("release_mode_conflict");
       return new RuneProgramValidationResult(errors.isEmpty(), errors);
    }

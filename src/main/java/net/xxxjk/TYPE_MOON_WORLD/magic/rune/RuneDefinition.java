@@ -17,6 +17,7 @@ public final class RuneDefinition {
    private final Set<String> conflictTags;
    private final Set<String> fusionTags;
    private final EnumMap<RunePosition, String> semantics;
+   private final EnumMap<RunePosition, RuneEffectSpec> effectSpecs;
 
    public RuneDefinition(ResourceLocation id, String displayName, int color, ResourceLocation icon,
       double baseCost, Set<String> mediaTags, Set<String> conflictTags, Set<String> fusionTags,
@@ -33,6 +34,15 @@ public final class RuneDefinition {
       this.semantics = new EnumMap<>(RunePosition.class);
       if (semantics != null) this.semantics.putAll(semantics);
       for (RunePosition position : RunePosition.values()) this.semantics.putIfAbsent(position, "");
+      this.effectSpecs = new EnumMap<>(RunePosition.class);
+      for (RunePosition position : RunePosition.values()) this.effectSpecs.put(position, RuneEffectSpec.empty());
+   }
+
+   public RuneDefinition(ResourceLocation id, String displayName, int color, ResourceLocation icon,
+      double baseCost, Set<String> mediaTags, Set<String> conflictTags, Set<String> fusionTags,
+      Map<RunePosition, String> semantics, Map<RunePosition, RuneEffectSpec> effectSpecs) {
+      this(id, displayName, color, icon, baseCost, mediaTags, conflictTags, fusionTags, semantics);
+      if (effectSpecs != null) this.effectSpecs.putAll(effectSpecs);
    }
 
    private static Set<String> immutable(Set<String> values) {
@@ -50,4 +60,9 @@ public final class RuneDefinition {
    public Set<String> fusionTags() { return fusionTags; }
    public String semantic(RunePosition position) { return semantics.getOrDefault(position, ""); }
    public Map<RunePosition, String> semantics() { return Collections.unmodifiableMap(semantics); }
+   public RuneEffectSpec effectSpec(RunePosition position) { return effectSpecs.getOrDefault(position, RuneEffectSpec.empty()); }
+   public RuneEffectSpec spec(RunePosition position) { return effectSpec(position); }
+   public String visual(RunePosition position) { return effectSpec(position).visual(); }
+   public String description(RunePosition position) { return effectSpec(position).description(); }
+   public Map<RunePosition, RuneEffectSpec> effectSpecs() { return Collections.unmodifiableMap(effectSpecs); }
 }

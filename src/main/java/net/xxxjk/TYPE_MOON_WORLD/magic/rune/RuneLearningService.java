@@ -10,7 +10,13 @@ public final class RuneLearningService {
 
    public static boolean hasRune(TypeMoonWorldModVariables.PlayerVariables vars, String runeId) {
       RuneDefinition definition = RuneRegistry.get(runeId);
-      return vars != null && definition != null && vars.learned_runes.contains(definition.idPath());
+      if (vars == null || definition == null || vars.learned_runes == null) return false;
+      // Accept legacy namespaced entries as well as the canonical path form.
+      // This keeps old player data from making the editor's learned runes
+      // appear valid on the client but fail the server save check.
+      return vars.learned_runes.stream().map(RuneRegistry::get)
+         .filter(java.util.Objects::nonNull)
+         .anyMatch(learned -> definition.idPath().equals(learned.idPath()));
    }
 
    public static boolean learn(Player player, String runeId) {

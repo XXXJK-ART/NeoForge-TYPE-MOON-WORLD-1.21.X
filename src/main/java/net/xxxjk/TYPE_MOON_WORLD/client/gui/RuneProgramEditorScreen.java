@@ -258,10 +258,11 @@ public final class RuneProgramEditorScreen extends Screen {
    private void renderRuneTooltip(GuiGraphics graphics, RuneDefinition rune, int mouseX, int mouseY) {
       List<Component> lines = new ArrayList<>();
       lines.add(Component.literal(rune.displayName()));
-      lines.add(Component.translatable("gui.typemoonworld.rune.trigger", semanticValue(rune.semantic(RunePosition.TRIGGER))));
-      lines.add(Component.translatable("gui.typemoonworld.rune.effect", semanticValue(rune.semantic(RunePosition.EFFECT))));
-      lines.add(Component.translatable("gui.typemoonworld.rune.modifier", semanticValue(rune.semantic(RunePosition.MODIFIER))));
-      lines.add(Component.translatable("gui.typemoonworld.rune.terminal", semanticValue(rune.semantic(RunePosition.TERMINAL))));
+      for (RunePosition position : RunePosition.values()) {
+         var spec = rune.effectSpec(position);
+         String label = spec.isEmpty() ? semanticValue(rune.semantic(position)).getString() : spec.name() + "：" + spec.description();
+         lines.add(Component.translatable("gui.typemoonworld.rune." + position.name().toLowerCase(java.util.Locale.ROOT), label));
+      }
       graphics.renderTooltip(font, lines, Optional.empty(), mouseX, mouseY);
    }
 
