@@ -4,13 +4,8 @@ import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.AirflowBladeEntity;
 import com.example.typemoonaddon.entity.GillesDeRaisEntity;
 import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
-import com.example.typemoonaddon.entity.SakuraBlackShadowEntity;
-import com.example.typemoonaddon.entity.SakuraShadowArtRibbonEntity;
-import com.example.typemoonaddon.entity.SakuraShadowFamiliarEntity;
-import com.example.typemoonaddon.entity.SakuraShadowPiercingRhoAiasEntity;
 import com.example.typemoonaddon.entity.SeaMonsterEntity;
 import com.example.typemoonaddon.entity.SeaMonsterSpitEntity;
-import com.example.typemoonaddon.entity.SakuraVisualEntity;
 import com.example.typemoonaddon.entity.StorageVisualEntity;
 import com.example.typemoonaddon.entity.WraithEntity;
 import com.example.typemoonaddon.entity.EvilSpiritEntity;
@@ -52,16 +47,6 @@ public final class AddonEntities {
                     .clientTrackingRange(96)
                     .updateInterval(1)
                     .build("airflow_blade_projectile"));
-
-    /** Legacy source-compatibility handle; registration lives in sakura-addon. */
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowFamiliarEntity>> SHADOW_FAMILIAR = null;
-
-    /** Legacy source-compatibility handle; registration lives in sakura-addon. */
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraBlackShadowEntity>> BLACK_SHADOW = null;
-
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowArtRibbonEntity>> SHADOW_ART_RIBBON = null;
-
-    public static final DeferredHolder<EntityType<?>, EntityType<SakuraShadowPiercingRhoAiasEntity>> SHADOW_PIERCING_RHO_AIAS = null;
 
     public static final DeferredHolder<EntityType<?>, EntityType<GillesDeRaisEntity>> GILLES_DE_RAIS_CASTER =
             ENTITIES.register("gilles_de_rais_caster", () -> EntityType.Builder

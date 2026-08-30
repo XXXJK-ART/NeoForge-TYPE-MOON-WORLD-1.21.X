@@ -38,6 +38,9 @@ public final class ServantCardGillesDeRaisSkills {
    private static final double BOOK_MAX_MANA = 2000.0;
    private static final double BOOK_REGEN_PER_SECOND = 20.0;
    private static final int SMALL_COUNT = 3;
+   private static final int MAX_SMALL_SUMMONS = 12;
+   private static final int MAX_LARGE_SUMMONS = 3;
+   private static final int MAX_HUGE_SUMMONS = 1;
    private static final int SHROUD_DURATION = 160;
    private static final int GROWTH_DURATION = 400;
 
@@ -111,12 +114,20 @@ public final class ServantCardGillesDeRaisSkills {
       if (!requireUsableSpellbook(player)) {
          return false;
       }
-      if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 50.0)) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      int existingSmall = countOwnedSeaMonsters(level, player, 128.0, false);
+      if (existingSmall >= MAX_SMALL_SUMMONS) {
+         return false;
+      }
+      if (!consumeBookMana(player, 50.0)) {
          return false;
       }
       LivingEntity target = findLookTarget(player, 28.0, 2.4);
       int summoned = 0;
-      for (int i = 0; i < SMALL_COUNT; i++) {
+      int summonCount = Math.min(SMALL_COUNT, MAX_SMALL_SUMMONS - existingSmall);
+      for (int i = 0; i < summonCount; i++) {
          SeaMonsterEntity seaMonster = AddonEntities.GILLES_SEA_MONSTER.get().create(level);
          if (seaMonster == null) {
             continue;
@@ -144,7 +155,13 @@ public final class ServantCardGillesDeRaisSkills {
       if (!requireUsableSpellbook(player)) {
          return false;
       }
-      if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, 200.0)) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (countOwnedSeaMonsters(level, player, 128.0, true) >= MAX_LARGE_SUMMONS) {
+         return false;
+      }
+      if (!consumeBookMana(player, 200.0)) {
          return false;
       }
       LivingEntity target = findLookTarget(player, 32.0, 2.6);
@@ -338,7 +355,13 @@ public final class ServantCardGillesDeRaisSkills {
       if (!requireUsableSpellbook(player)) {
          return false;
       }
-      if (!(player.level() instanceof ServerLevel level) || !consumeBookMana(player, BOOK_MAX_MANA)) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      if (ownedHugeSeaMonsters(level, player, 256.0).size() >= MAX_HUGE_SUMMONS) {
+         return false;
+      }
+      if (!consumeBookMana(player, BOOK_MAX_MANA)) {
          return false;
       }
       HugeSeaMonsterEntity hugeSeaMonster = AddonEntities.GILLES_HUGE_SEA_MONSTER.get().create(level);
@@ -519,6 +542,12 @@ public final class ServantCardGillesDeRaisSkills {
       UUID owner = player.getUUID();
       return new ArrayList<>(level.getEntitiesOfClass(SeaMonsterEntity.class, player.getBoundingBox().inflate(radius),
          seaMonster -> seaMonster.isAlive() && owner.equals(seaMonster.getControllerUuid())));
+   }
+
+   private static int countOwnedSeaMonsters(ServerLevel level, ServerPlayer player, double radius, boolean large) {
+      UUID owner = player.getUUID();
+      return level.getEntitiesOfClass(SeaMonsterEntity.class, player.getBoundingBox().inflate(radius),
+         seaMonster -> seaMonster.isAlive() && seaMonster.isLarge() == large && owner.equals(seaMonster.getControllerUuid())).size();
    }
 
    private static List<HugeSeaMonsterEntity> ownedHugeSeaMonsters(ServerLevel level, ServerPlayer player, double radius) {

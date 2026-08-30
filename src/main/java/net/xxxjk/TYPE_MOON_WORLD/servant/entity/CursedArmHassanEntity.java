@@ -83,8 +83,6 @@ public class CursedArmHassanEntity extends ServantEntity {
          }
          if (this.getOffhandItem().isEmpty()) {
             super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
-         } else {
-            this.spawnAtLocation(rightHandStack);
          }
          super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          return;
@@ -103,8 +101,6 @@ public class CursedArmHassanEntity extends ServantEntity {
       }
       if (this.getOffhandItem().isEmpty()) {
          super.setItemInHand(InteractionHand.OFF_HAND, moved);
-      } else {
-         this.spawnAtLocation(moved);
       }
       super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
    }

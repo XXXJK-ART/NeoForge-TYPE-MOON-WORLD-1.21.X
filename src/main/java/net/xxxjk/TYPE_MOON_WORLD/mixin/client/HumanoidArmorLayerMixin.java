@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ReinforcementRenderType;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -50,7 +51,10 @@ public abstract class HumanoidArmorLayerMixin {
    ) {
       CURRENT_ARMOR_STACK.remove();
       if (livingEntity instanceof net.minecraft.world.entity.player.Player player
-         && ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+         && ServantCardConcealmentClient.isPerfectlyConcealed(player)
+         && !(slot == EquipmentSlot.HEAD
+            && livingEntity.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof ServantCardArmorItem armor
+            && "shadow_hassan".equals(armor.servantId()))) {
          ci.cancel();
          return;
       }

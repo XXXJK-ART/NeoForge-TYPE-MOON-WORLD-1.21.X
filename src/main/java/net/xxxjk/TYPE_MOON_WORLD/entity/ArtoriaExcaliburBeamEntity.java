@@ -42,8 +42,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private static final double POINT_BLANK_DAMAGE_LENGTH = 3.0;
    private static final int DAMAGE_INTERVAL = 5;
    private static final int BLOCK_DESTROY_PHASE_TICKS = 5;
-   private static final float DAMAGE_TOTAL = 4000.0F;
-   private static final float DAMAGE_PER_PULSE = DAMAGE_TOTAL / (150.0F / DAMAGE_INTERVAL);
+   private static final float DAMAGE_TOTAL = 4500.0F;
+   private static final int EXCALIBUR_DAMAGE_START = 58;
+   private static final int DAMAGE_PULSE_COUNT = (150 - EXCALIBUR_DAMAGE_START) / DAMAGE_INTERVAL + 1;
+   private static final float DAMAGE_PER_PULSE = DAMAGE_TOTAL / DAMAGE_PULSE_COUNT;
    private static final float CRATER_DAMAGE = 180.0F;
    private static final double GOLDEN_LENGTH = 45.0;
    private static final double GOLDEN_HALF_WIDTH = 4.0;

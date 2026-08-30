@@ -37,10 +37,9 @@ public final class ServantCardShadowHassanSkills {
    private static final String TAG_SLASH_UNTIL = "ShadowHassanCardSlashUntil";
    private static final int PASSIVE_MANA_INTERVAL = 20;
    private static final double PASSIVE_MANA_RESTORE = 5.0;
-   private static final int SLASH_STRIKE_COUNT = 100;
-   private static final int SLASH_STRIKES_PER_TICK = 5;
-   private static final long SLASH_DURATION_TICKS = 1L
-      + (SLASH_STRIKE_COUNT + SLASH_STRIKES_PER_TICK - 1L) / SLASH_STRIKES_PER_TICK;
+   private static final int SLASH_STRIKE_COUNT = 200;
+   private static final int SLASH_STRIKES_PER_TICK = 2;
+   private static final long SLASH_DURATION_TICKS = 100L;
 
    private ServantCardShadowHassanSkills() {
    }
@@ -48,7 +47,8 @@ public final class ServantCardShadowHassanSkills {
    public static void initialize(ServerPlayer player) {
       clear(player);
       player.getPersistentData().putBoolean(TAG_BODY_INVISIBILITY_MANAGED, true);
-      maintainBodyInvisibility(player, false);
+      // Presence concealment is the card's default state; attacks briefly reveal it.
+      setConcealed(player, true);
       setNoblePhantasmConsumed(player, false);
    }
 
@@ -174,7 +174,7 @@ public final class ServantCardShadowHassanSkills {
       return true;
    }
 
-   /** One hundred full basic strikes, one every five ticks. */
+   /** Two hundred full basic strikes over five seconds. */
    public static boolean performSlash(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel) || !canAttack(player)) return false;
       long now = player.level().getGameTime();
@@ -334,6 +334,8 @@ public final class ServantCardShadowHassanSkills {
       target.invulnerableTime = 0;
       target.hurt(player.damageSources().playerAttack(player), damage);
       target.invulnerableTime = 0;
+      target.hurtTime = 0;
+      target.hurtDuration = 0;
    }
 
    private static Vec3 horizontal(Vec3 direction) {

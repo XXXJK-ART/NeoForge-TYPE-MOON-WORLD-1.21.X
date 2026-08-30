@@ -20,10 +20,9 @@ public final class ShadowHassanCombatHelper {
    private static final String TAG_LAST_SLASH = "ShadowHassanLastSlash";
    private static final String TAG_SLASH_UNTIL = "ShadowHassanSlashUntil";
    private static final int SLASH_COOLDOWN = 300;
-   private static final int SLASH_STRIKE_COUNT = 100;
-   private static final int SLASH_STRIKES_PER_TICK = 5;
-   private static final long SLASH_DURATION_TICKS = 1L
-      + (SLASH_STRIKE_COUNT + SLASH_STRIKES_PER_TICK - 1L) / SLASH_STRIKES_PER_TICK;
+   private static final int SLASH_STRIKE_COUNT = 200;
+   private static final int SLASH_STRIKES_PER_TICK = 2;
+   private static final long SLASH_DURATION_TICKS = 100L;
 
    private ShadowHassanCombatHelper() {
    }
@@ -119,6 +118,9 @@ public final class ShadowHassanCombatHelper {
    private static void strike(ShadowHassanEntity hassan, LivingEntity target, float damage) {
       target.invulnerableTime = 0;
       target.hurt(hassan.damageSources().mobAttack(hassan), damage);
+      target.invulnerableTime = 0;
+      target.hurtTime = 0;
+      target.hurtDuration = 0;
    }
 
    private static void spawnStrikeFx(ServerLevel level, LivingEntity target, int count) {

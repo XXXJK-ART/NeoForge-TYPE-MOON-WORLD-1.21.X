@@ -6,10 +6,7 @@ import com.example.typemoonaddon.registry.AddonMobEffects;
 import com.example.typemoonaddon.registry.AddonEntities;
 import com.example.typemoonaddon.registry.AddonBlocks;
 import com.example.typemoonaddon.block.entity.AddonBlockEntities;
-import com.example.typemoonaddon.registry.AddonFluids;
-import com.example.typemoonaddon.registry.AddonAttachments;
 import com.example.typemoonaddon.registry.AddonSounds;
-import com.example.typemoonaddon.config.GameplayConfig;
 import com.example.typemoonaddon.detection.DetectionAttachments;
 import com.example.typemoonaddon.engravedworm.EngravedWormAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceAttachments;
@@ -34,12 +31,11 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
 
 public final class TypeMoonAddon {
-    /** Legacy compatibility namespace for the non-Sakura extensions retained by the core mod. */
+    /** Compatibility namespace for extensions retained by the core mod. */
     public static final String MOD_ID = "typemoonworld";
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public TypeMoonAddon(IEventBus modEventBus, ModContainer modContainer) {
-        AddonFluids.register(modEventBus);
         AddonBlocks.register(modEventBus);
         AddonBlockEntities.register(modEventBus);
         AddonItems.register(modEventBus);
@@ -47,14 +43,12 @@ public final class TypeMoonAddon {
         AddonMobEffects.register(modEventBus);
         AddonEntities.register(modEventBus);
         AddonSounds.register(modEventBus);
-        AddonAttachments.register(modEventBus);
         StorageAttachments.register(modEventBus);
         ImaginaryDisplacementAttachments.register(modEventBus);
         KimarisAttachments.register(modEventBus);
         DetectionAttachments.register(modEventBus);
         EngravedWormAttachments.register(modEventBus);
         ImaginarySpaceAttachments.register(modEventBus);
-        modContainer.registerConfig(ModConfig.Type.COMMON, GameplayConfig.SPEC, "typemoonworld-sakura-gameplay.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, ImaginarySpaceConfig.SPEC, "typemoonworld-imaginary-space.toml");
         modEventBus.addListener(AddonEntities::registerAttributes);
         modEventBus.addListener(AddonEntities::registerSpawnPlacements);
@@ -65,10 +59,6 @@ public final class TypeMoonAddon {
 
     private void addCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
         if (event.getTab() == ModCreativeModeTabs.MAGIC_BOOKS_TAB.get()) {
-            event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_STORAGE);
-            event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_STORAGE);
-            event.accept(AddonItems.MAGIC_BOOK_IMAGINARY_ABSORPTION);
-            event.accept(AddonItems.MAGIC_PAGE_IMAGINARY_ABSORPTION);
             event.accept(AddonItems.MAGIC_BOOK_SPIRIT_SUMMONING);
             event.accept(AddonItems.MAGIC_BOOK_WRAITH_SERVITUDE);
             event.accept(AddonItems.MAGIC_BOOK_EVIL_SPIRIT_SUMMONING);
@@ -96,9 +86,6 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
-            event.accept(AddonItems.MYSTIC_CODE_FRAGMENT);
-            event.accept(AddonItems.WORM);
-            event.accept(AddonItems.ENGRAVED_WORM);
             // Creative tab contents can be rebuilt with a different feature/permission set;
             // an anchor item is not guaranteed to be present in every rebuild.
             event.accept(AddonItems.MANA_FURNACE.toStack(),
@@ -113,11 +100,11 @@ public final class TypeMoonAddon {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        registerNonSakuraMagic();
+        registerLegacyMagic();
     }
 
-    /** Registers only legacy extensions that are still owned by the core jar. */
-    public static void registerNonSakuraMagic() {
+    /** Registers extensions that are still owned by the core jar. */
+    public static void registerLegacyMagic() {
         WormMagicIntegration.register();
         SummoningMagicIntegration.register();
         BoundaryMagicIntegration.register();

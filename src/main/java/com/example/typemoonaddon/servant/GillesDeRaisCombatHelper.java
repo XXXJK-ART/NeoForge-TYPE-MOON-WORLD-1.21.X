@@ -445,7 +445,7 @@ public final class GillesDeRaisCombatHelper {
     }
 
     private static boolean trySummonSmall(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now, int cooldownTicks) {
-        if (now - data.getLong(TAG_LAST_SMALL_SUMMON) < cooldownTicks || countSeaMonsters(entity, false) >= 50) {
+        if (now - data.getLong(TAG_LAST_SMALL_SUMMON) < cooldownTicks || countSeaMonsters(entity, false) >= 20) {
             return false;
         }
         if (!canAffordBookMana(entity, data, 50.0)) {
@@ -456,7 +456,7 @@ public final class GillesDeRaisCombatHelper {
 
     private static boolean trySummonLarge(GillesDeRaisEntity entity, LivingEntity target, CompoundTag data, long now,
                                           int cooldownTicks, boolean force) {
-        if (now - data.getLong(TAG_LAST_LARGE_SUMMON) < cooldownTicks || countSeaMonsters(entity, true) >= 5) {
+        if (now - data.getLong(TAG_LAST_LARGE_SUMMON) < cooldownTicks || countSeaMonsters(entity, true) >= 3) {
             return false;
         }
         if (force || entity.distanceToSqr(target) < 8.0 * 8.0 || countSeaMonsters(entity, false) >= 8 || target.getHealth() > 120.0F) {
@@ -508,13 +508,13 @@ public final class GillesDeRaisCombatHelper {
         }
         switch (data.getString(TAG_CHANT_KIND)) {
             case CHANT_SMALL -> {
-                if (countSeaMonsters(entity, false) < 50 && spendBookMana(entity, data, 50.0)) {
+                if (countSeaMonsters(entity, false) < 20 && spendBookMana(entity, data, 50.0)) {
                     data.putLong(TAG_LAST_SMALL_SUMMON, now);
                     spawnSeaMonster(entity, target, false);
                 }
             }
             case CHANT_LARGE -> {
-                if (countSeaMonsters(entity, true) < 5 && spendBookMana(entity, data, 200.0)) {
+                if (countSeaMonsters(entity, true) < 3 && spendBookMana(entity, data, 200.0)) {
                     data.putLong(TAG_LAST_LARGE_SUMMON, now);
                     spawnSeaMonster(entity, target, true);
                 }

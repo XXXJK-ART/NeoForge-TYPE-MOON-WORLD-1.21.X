@@ -1,6 +1,8 @@
 package com.example.typemoonaddon.item;
 
 import com.example.typemoonaddon.entity.SeaMonsterEntity;
+import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
+import com.example.typemoonaddon.registry.AddonEntities;
 import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
@@ -26,6 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 
 public final class SeaMonsterSpawnEggItem extends DeferredSpawnEggItem {
@@ -57,6 +60,9 @@ public final class SeaMonsterSpawnEggItem extends DeferredSpawnEggItem {
         }
 
         BlockPos spawnPos = state.getCollisionShape(level, clicked).isEmpty() ? clicked : clicked.relative(direction);
+        if (spawnLimitReached(serverLevel, stack, spawnPos)) {
+            return InteractionResult.FAIL;
+        }
         Entity spawned = this.getType(stack).spawn(serverLevel, stack, context.getPlayer(), spawnPos, MobSpawnType.SPAWN_EGG,
                 true, !Objects.equals(clicked, spawnPos) && direction == Direction.UP);
         if (spawned != null) {
@@ -84,6 +90,9 @@ public final class SeaMonsterSpawnEggItem extends DeferredSpawnEggItem {
         if (!level.mayInteract(player, pos) || !player.mayUseItemAt(pos, hit.getDirection(), stack)) {
             return InteractionResultHolder.fail(stack);
         }
+        if (spawnLimitReached(serverLevel, stack, pos)) {
+            return InteractionResultHolder.fail(stack);
+        }
         Entity spawned = this.getType(stack).spawn(serverLevel, stack, player, pos, MobSpawnType.SPAWN_EGG, false, false);
         if (spawned == null) {
             return InteractionResultHolder.pass(stack);
@@ -99,5 +108,15 @@ public final class SeaMonsterSpawnEggItem extends DeferredSpawnEggItem {
         if (entity instanceof SeaMonsterEntity seaMonster) {
             seaMonster.setLarge(this.large);
         }
+    }
+
+    private boolean spawnLimitReached(ServerLevel level, ItemStack stack, BlockPos pos) {
+        AABB area = new AABB(pos).inflate(48.0D, 32.0D, 48.0D);
+        if (this.getType(stack) == AddonEntities.GILLES_HUGE_SEA_MONSTER.get()) {
+            return !level.getEntitiesOfClass(HugeSeaMonsterEntity.class, area, Entity::isAlive).isEmpty();
+        }
+        int count = level.getEntitiesOfClass(SeaMonsterEntity.class, area,
+                monster -> monster.isAlive() && monster.isLarge() == this.large).size();
+        return count >= (this.large ? 4 : 16);
     }
 }

@@ -41,30 +41,35 @@ public final class WormItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return InteractionResultHolder.sidedSuccess(stack, true);
+        if (!(player instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
-        if (player.isShiftKeyDown()) {
-            ItemStack engraved = EngravedWormService.createFromWorm((ServerPlayer) player, stack);
-            if (engraved.isEmpty()) {
-                return InteractionResultHolder.fail(stack);
+        try {
+            if (player.isShiftKeyDown()) {
+                ItemStack engraved = EngravedWormService.createFromWorm(serverPlayer, stack);
+                if (engraved.isEmpty()) {
+                    return InteractionResultHolder.fail(stack);
+                }
+                if (!player.addItem(engraved)) {
+                    player.drop(engraved, false);
+                }
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                return InteractionResultHolder.success(stack);
             }
-            if (!player.addItem(engraved)) {
-                player.drop(engraved, false);
+            if (!WormCaptureService.release(serverLevel, serverPlayer, stack,
+                    player.getX(), player.getEyeY() - 0.15D, player.getZ())) {
+                return InteractionResultHolder.fail(stack);
             }
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
             return InteractionResultHolder.success(stack);
-        }
-        if (!WormCaptureService.release(serverLevel, (ServerPlayer) player, stack,
-                player.getX(), player.getEyeY() - 0.15D, player.getZ())) {
+        } catch (RuntimeException exception) {
+            com.example.typemoonaddon.TypeMoonAddon.LOGGER.error("Worm item activation failed", exception);
             return InteractionResultHolder.fail(stack);
         }
-        if (!player.getAbilities().instabuild) {
-            stack.shrink(1);
-        }
-        return InteractionResultHolder.success(stack);
     }
 
     @Override

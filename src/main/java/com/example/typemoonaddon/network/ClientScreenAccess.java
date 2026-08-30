@@ -9,14 +9,6 @@ final class ClientScreenAccess {
     private ClientScreenAccess() {
     }
 
-    static void openDevourerSelection(OpenDevourerSelectionPayload payload) {
-        invoke("openDevourerSelection", OpenDevourerSelectionPayload.class, payload);
-    }
-
-    static void openShadowTransfer(OpenShadowTransferPayload payload) {
-        invoke("openShadowTransfer", OpenShadowTransferPayload.class, payload);
-    }
-
     static void openBoundaryImmunity(OpenBoundaryImmunityPayload payload) {
         invoke("openBoundaryImmunity", OpenBoundaryImmunityPayload.class, payload);
     }

@@ -102,7 +102,6 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             this.tickDissolve();
             return;
         }
-        super.customServerAiStep();
         if (!(this.level() instanceof ServerLevel level)) {
             return;
         }
@@ -112,6 +111,7 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
             }
             return;
         }
+        super.customServerAiStep();
         if (this.tickCount > (this.isLarge() ? LARGE_LIFETIME : SMALL_LIFETIME)) {
             this.beginDissolve(null);
             return;

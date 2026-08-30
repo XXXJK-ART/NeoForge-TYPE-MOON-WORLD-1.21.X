@@ -1,7 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.screens;
 
-import com.example.typemoonaddon.data.ImaginarySpaceData;
-import com.example.typemoonaddon.registry.AddonAttachments;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
@@ -322,8 +320,7 @@ public class Magic_display_Overlay {
             return entry.presetPayload.getString("imaginary_mode");
         }
 
-        ImaginarySpaceData data = player.getData(AddonAttachments.IMAGINARY_SPACE.get());
-        return data.magicMode() == ImaginarySpaceData.MagicMode.PROTECTION ? "protection" : "storage";
+        return "storage";
     }
 
     private static String imaginaryModeLabelKey(String magicId, String mode) {

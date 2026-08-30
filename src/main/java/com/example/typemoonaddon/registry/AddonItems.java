@@ -1,15 +1,11 @@
 package com.example.typemoonaddon.registry;
 
 import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.item.CrestWormItem;
 import com.example.typemoonaddon.item.EngravedWormItem;
 import com.example.typemoonaddon.item.CursedArmorRenderItem;
-import com.example.typemoonaddon.item.HolyGrailFragmentItem;
-import com.example.typemoonaddon.item.ImaginaryPrimerItem;
 import com.example.typemoonaddon.item.PrelatisSpellbookItem;
 import com.example.typemoonaddon.item.SeaMonsterSpawnEggItem;
 import com.example.typemoonaddon.item.WormItem;
-import com.example.typemoonaddon.item.VoidRingRegaliaItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Rarity;
@@ -27,35 +23,6 @@ public final class AddonItems {
     public static final DeferredItem<Item> MYSTIC_CODE_FRAGMENT = ITEMS.register(
             "mystic_code_fragment",
             () -> new Item(new Item.Properties())
-    );
-
-    public static final DeferredItem<Item> IMAGINARY_PRIMER = ITEMS.register(
-            "imaginary_primer",
-            () -> new ImaginaryPrimerItem(new Item.Properties().stacksTo(1).rarity(Rarity.RARE))
-    );
-
-    public static final DeferredItem<Item> MAGIC_BOOK_IMAGINARY_STORAGE = ITEMS.register(
-            "magic_book_imaginary_storage",
-            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.RARE), 1.0D, (String) null,
-                    TypeMoonAddon.id("imaginary_absorption").toString())
-    );
-
-    public static final DeferredItem<Item> MAGIC_PAGE_IMAGINARY_STORAGE = ITEMS.register(
-            "magic_page_imaginary_storage",
-            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.RARE), 0.5D, (String) null,
-                    TypeMoonAddon.id("imaginary_absorption").toString())
-    );
-
-    public static final DeferredItem<Item> MAGIC_BOOK_IMAGINARY_ABSORPTION = ITEMS.register(
-            "magic_book_imaginary_absorption",
-            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.EPIC), 1.0D, (String) null,
-                    TypeMoonAddon.id("imaginary_absorption_evolved").toString())
-    );
-
-    public static final DeferredItem<Item> MAGIC_PAGE_IMAGINARY_ABSORPTION = ITEMS.register(
-            "magic_page_imaginary_absorption",
-            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.EPIC), 0.5D, (String) null,
-                    TypeMoonAddon.id("imaginary_absorption_evolved").toString())
     );
 
     public static final DeferredItem<Item> MAGIC_BOOK_WORM_MAGIC = ITEMS.register(
@@ -201,11 +168,6 @@ public final class AddonItems {
                     "spirit_summoning", "evil_spirit_summoning")
     );
 
-    public static final DeferredItem<Item> CREST_WORM = ITEMS.register(
-            "crest_worm",
-            () -> new CrestWormItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC))
-    );
-
     public static final DeferredItem<Item> WORM = ITEMS.register(
             "worm",
             () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON))
@@ -221,11 +183,6 @@ public final class AddonItems {
             () -> new BlockItem(AddonBlocks.MANA_FURNACE.get(), new Item.Properties().rarity(Rarity.EPIC))
     );
 
-    public static final DeferredItem<Item> HOLY_GRAIL_FRAGMENT = ITEMS.register(
-            "holy_grail_fragment",
-            () -> new HolyGrailFragmentItem(new Item.Properties().stacksTo(16).rarity(Rarity.EPIC))
-    );
-
     public static final DeferredItem<PrelatisSpellbookItem> PRELATIS_SPELLBOOK = ITEMS.register(
             "prelatis_spellbook",
             () -> new PrelatisSpellbookItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
@@ -234,35 +191,6 @@ public final class AddonItems {
     public static final DeferredItem<CursedArmorRenderItem> CURSED_ARMOR_RENDER = ITEMS.register(
             "cursed_armor_render",
             () -> new CursedArmorRenderItem(new Item.Properties().stacksTo(1).fireResistant())
-    );
-
-    public static final DeferredItem<VoidRingRegaliaItem> VOID_RING_REGALIA = ITEMS.register(
-            "void_ring_regalia",
-            () -> new VoidRingRegaliaItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant())
-    );
-
-    public static final DeferredItem<MasterCardItem> MASTER_CARD_MATOU_SAKURA = ITEMS.register(
-            "master_card_matou_sakura",
-            () -> new MasterCardItem(
-                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
-                    TypeMoonAddon.id("matou_sakura").toString()
-            )
-    );
-
-    public static final DeferredItem<MasterCardItem> MASTER_CARD_MATOU_SAKURA_ALTER = ITEMS.register(
-            "master_card_matou_sakura_alter",
-            () -> new MasterCardItem(
-                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
-                    TypeMoonAddon.id("matou_sakura_alter").toString()
-            )
-    );
-
-    public static final DeferredItem<MasterCardItem> MASTER_CARD_MATOU_SAKURA_FHA = ITEMS.register(
-            "master_card_matou_sakura_fha",
-            () -> new MasterCardItem(
-                    new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant(),
-                    TypeMoonAddon.id("matou_sakura_fha").toString()
-            )
     );
 
     public static final DeferredItem<MasterCardItem> MASTER_CARD_MATOU_KARIYA = ITEMS.register(

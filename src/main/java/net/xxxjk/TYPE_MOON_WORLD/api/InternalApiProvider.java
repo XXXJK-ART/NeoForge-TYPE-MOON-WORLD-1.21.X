@@ -453,6 +453,23 @@ public final class InternalApiProvider implements ApiProvider {
                 vars.syncPlayerVariables(entity);
                 return true;
              }
+             @Override public boolean forget(ResourceLocation magicId) {
+                if (magicId == null || !valid(magicId, Magics.this.namespace)) return false;
+                boolean changed = vars.removeLearnedMagic(magicId.toString());
+                if (changed) {
+                   vars.removeWheelReferences(magicId.toString());
+                   vars.syncPlayerVariables(entity);
+                }
+                return changed;
+             }
+             @Override public boolean migrate(ResourceLocation fromMagicId, ResourceLocation toMagicId) {
+                if (fromMagicId == null || toMagicId == null
+                   || !valid(fromMagicId, Magics.this.namespace)
+                   || !valid(toMagicId, Magics.this.namespace)) return false;
+                boolean changed = vars.migrateMagicId(fromMagicId.toString(), toMagicId.toString());
+                if (changed) vars.syncPlayerVariables(entity);
+                return changed;
+             }
              @Override public int learnAll() {
                 int learned = 0;
                 java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>(MagicDefinitionRegistry.ids());
