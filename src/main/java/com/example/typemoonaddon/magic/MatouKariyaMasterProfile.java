@@ -37,7 +37,6 @@ public final class MatouKariyaMasterProfile {
         context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_MAGIC, 45.0D);
         context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_CONTROL, 35.0D);
         context.magicKnowledge().setProficiency(WormMagicIntegration.ENGRAVED_WORM_OPERATION, 25.0D);
-        SakuraTypeMoonIntegration.grantWaterAttribute(player);
         giveStarterWorms(player);
     }
 

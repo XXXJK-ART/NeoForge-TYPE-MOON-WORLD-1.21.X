@@ -109,56 +109,5 @@ description='''An MC mod of TYPE-MOON'''
 #[features.typemoonworld]
 #openGLVersion="[3.2,)"
 
-# The Sakura extension is packaged in this same JAR with its own mod identity.
-[[mods]]
-modId="typemoonaddon"
-version="1.0.0"
-displayName="Type Moon Sakura Addon"
-authors="xxxjk"
-description='''Sakura and imaginary-space extensions for Type Moon World.'''
-
-[[dependencies.typemoonaddon]]
-    modId="neoforge"
-    type="required"
-    versionRange="[21.1.242,)"
-    ordering="NONE"
-    side="BOTH"
-
-[[dependencies.typemoonaddon]]
-    modId="minecraft"
-    type="required"
-    versionRange="[1.21.1,1.22)"
-    ordering="NONE"
-    side="BOTH"
-
-[[dependencies.typemoonaddon]]
-    modId="typemoonworld"
-    type="required"
-    # Keep the addon loadable across future Type Moon World releases.
-    versionRange="[0,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.typemoonaddon]]
-    modId="geckolib"
-    type="required"
-    versionRange="[4.9.2,)"
-    ordering="NONE"
-    side="BOTH"
-
-[[dependencies.typemoonaddon]]
-    modId="terrablender"
-    type="required"
-    versionRange="[4.1.0.8,)"
-    ordering="NONE"
-    side="BOTH"
-
-[[dependencies.typemoonaddon]]
-    modId="epicfight"
-    type="optional"
-    versionRange="[21.17.3.1,)"
-    ordering="AFTER"
-    side="BOTH"
-
 [[mixins]]
 config="typemoonworld.mixins.json"

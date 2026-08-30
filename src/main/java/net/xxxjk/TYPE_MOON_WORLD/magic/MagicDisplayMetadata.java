@@ -38,8 +38,7 @@ public final class MagicDisplayMetadata {
    );
    private static final Set<String> CREST_FORBIDDEN_MAGICS = Set.of(
       "theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma", "bajiquan", "ganryu", "hokushin_ittoryu", "tennen_rishin_ryu",
-      "imaginary_absorption", "imaginary_absorption_evolved", "shadow_materialization", "black_mud_control", "summon_black_mud",
-      "shadow_binding", "shadow_transfer", "heroic_spirit_devourer", "forbidden_magic", "shadow_art"
+      "imaginary_absorption", "imaginary_absorption_evolved"
    );
 
    private MagicDisplayMetadata() {

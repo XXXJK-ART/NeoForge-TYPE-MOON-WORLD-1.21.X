@@ -221,7 +221,7 @@ class ChurchDeadApostleResourcesTest {
       String renderer = Files.readString(JAVA_SOURCES.resolve(
          "com/example/typemoonaddon/client/renderer/SummonedSpiritParticleRenderer.java"));
       String clientEvents = Files.readString(JAVA_SOURCES.resolve(
-         "com/example/typemoonaddon/client/ClientModEvents.java"));
+         "com/example/typemoonaddon/client/LegacyEntityRendererEvents.java"));
       assertTrue(summoning.contains("SUMMON_SIZE"));
       assertTrue(summoning.contains("EVIL_SPIRIT_SMALL"));
       assertTrue(summoning.contains("registerControl(EVIL_SPIRIT_SUMMONING"));

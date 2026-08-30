@@ -58,10 +58,14 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private static final int BOSS_ATTACK_INTERVAL = 40;
     private static final int COLOSSAL_SPIT_INTERVAL = 80;
     private static final int BROOD_SUMMON_INTERVAL = 480;
-    private static final int BROOD_SMALL_BATCH = 20;
-    private static final int BROOD_LARGE_BATCH = 10;
-    private static final int BROOD_SMALL_LIMIT = 100;
-    private static final int BROOD_LARGE_LIMIT = 10;
+    private static final int BROOD_SMALL_BATCH = 2;
+    private static final int BROOD_LARGE_BATCH = 1;
+    private static final int BROOD_SMALL_LIMIT = 12;
+    private static final int BROOD_LARGE_LIMIT = 2;
+    private static final int HUGE_LIFETIME_TICKS = 20 * 60 * 10;
+    private static final int UNATTENDED_DISSOLVE_DELAY = 20 * 30;
+    private static final String TAG_SPAWN_TICK = "GillesHugeSeaMonsterSpawnTick";
+    private static final String TAG_UNATTENDED_SINCE = "GillesHugeSeaMonsterUnattendedSince";
     private static final int FOG_INTERVAL = 45;
     private static final int HEAL_TICK_INTERVAL = 20;
     private static final float HEAL_PER_SECOND = 200.0F;
@@ -120,15 +124,31 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             this.tickDissolve();
             return;
         }
-        super.customServerAiStep();
         if (!(this.level() instanceof ServerLevel level)) {
+            return;
+        }
+        long now = level.getGameTime();
+        CompoundTag persistent = this.getPersistentData();
+        if (!persistent.contains(TAG_SPAWN_TICK)) {
+            persistent.putLong(TAG_SPAWN_TICK, now);
+        }
+        if (now - persistent.getLong(TAG_SPAWN_TICK) >= HUGE_LIFETIME_TICKS) {
+            this.beginDissolve(null);
             return;
         }
         boolean nearbyPlayer = level.hasNearbyAlivePlayer(this.getX(), this.getY(), this.getZ(), 128.0);
         if (!nearbyPlayer) {
             this.getNavigation().stop();
+            long unattended = persistent.getLong(TAG_UNATTENDED_SINCE);
+            if (unattended == 0L) {
+                persistent.putLong(TAG_UNATTENDED_SINCE, now);
+            } else if (now - unattended >= UNATTENDED_DISSOLVE_DELAY) {
+                this.beginDissolve(null);
+            }
             return;
         }
+        persistent.remove(TAG_UNATTENDED_SINCE);
+        super.customServerAiStep();
         LivingEntity target = this.getTarget();
         if (this.isStaggeredTick(FOG_INTERVAL, 0)) {
             this.spawnUnknowableFog(level);
@@ -345,9 +365,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             return;
         }
         double y = this.getY() + this.getBbHeight() * 0.62;
-        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 24, 18.0, 14.0, 18.0, 0.02);
-        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 18, 15.0, 12.0, 15.0, 0.015);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 12, 17.0, 11.0, 17.0, 0.014);
+        level.sendParticles(PURPLE_FOG, this.getX(), y, this.getZ(), 8, 18.0, 14.0, 18.0, 0.02);
+        level.sendParticles(DEEP_PURPLE_FOG, this.getX(), y + 2.0, this.getZ(), 6, 15.0, 12.0, 15.0, 0.015);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, this.getX(), y + 1.0, this.getZ(), 4, 17.0, 11.0, 17.0, 0.014);
     }
 
     private void tickHeal(ServerLevel level) {
@@ -406,7 +426,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
     private void bossPulseAttack(ServerLevel level, LivingEntity target) {
         this.triggerAnim("action_controller", "slam");
         level.playSound(null, this.blockPosition(), SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.HOSTILE, 1.6F, 0.55F);
-        this.breakTerrainAhead(level, 34.0, 19.0F, 18, 260);
+        this.breakTerrainAhead(level, 34.0, 19.0F, 18, 96);
         Vec3 center = target.position();
         AABB box = new AABB(center.x - 16.0, center.y - 6.0, center.z - 16.0,
                 center.x + 16.0, center.y + 8.0, center.z + 16.0);
@@ -443,16 +463,16 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         level.playSound(null, this.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 1.3F, 0.7F);
         Vec3 center = target.position();
         GillesDeRaisCombatHelper.addPollutionZone(level.dimension(), center, 22.0, 300, 14.0F, this.getSourceUuid(), this.getMasterUuid());
-        this.breakCraterTerrain(level, center, 14.0, 5, 260);
+        this.breakCraterTerrain(level, center, 14.0, 5, 128);
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(22.0), this::isValidTarget)) {
             living.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 120, 0, false, true, true));
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 180, 2, false, true, true));
             living.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, true, true));
             living.hurt(this.damageSources().magic(), 14.0F);
         }
-        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 260, 8.0, 1.4, 8.0, 0.04);
-        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.2, center.z, 180, 7.0, 1.2, 7.0, 0.03);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.4, center.z, 140, 7.5, 1.1, 7.5, 0.03);
+        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 90, 8.0, 1.4, 8.0, 0.04);
+        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.2, center.z, 60, 7.0, 1.2, 7.0, 0.03);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.4, center.z, 48, 7.5, 1.1, 7.5, 0.03);
     }
 
     private void crossTentacleSweep(ServerLevel level, LivingEntity target) {
@@ -480,8 +500,8 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             living.hurtMarked = true;
         }
         level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.8, center.z, 16, 6.0, 1.0, 6.0, 0.03);
-        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 220, 7.0, 1.6, 7.0, 0.05);
-        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.2, center.z, 150, 6.0, 1.4, 6.0, 0.04);
+        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 80, 7.0, 1.6, 7.0, 0.05);
+        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.2, center.z, 54, 6.0, 1.4, 6.0, 0.04);
     }
 
     private void abyssalCataclysm(ServerLevel level, LivingEntity target) {
@@ -490,7 +510,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         level.playSound(null, this.blockPosition(), SoundEvents.WITHER_BREAK_BLOCK, SoundSource.HOSTILE, 1.8F, 0.45F);
         level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.4F, 0.7F);
         GillesDeRaisCombatHelper.addPollutionZone(level.dimension(), center, 26.0, 360, 16.0F, this.getSourceUuid(), this.getMasterUuid());
-        this.breakCraterTerrain(level, center, 22.0, 9, 720);
+        this.breakCraterTerrain(level, center, 22.0, 9, 280);
         AABB box = new AABB(center.x - 28.0, center.y - 8.0, center.z - 28.0, center.x + 28.0, center.y + 14.0, center.z + 28.0);
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, this::isValidTarget)) {
             double distance = Math.max(1.0, living.position().distanceTo(center));
@@ -511,9 +531,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             living.hurtMarked = true;
         }
         level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 1.0, center.z, 28, 9.0, 1.4, 9.0, 0.04);
-        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 1.2, center.z, 360, 11.0, 2.0, 11.0, 0.06);
-        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.4, center.z, 260, 10.0, 2.0, 10.0, 0.045);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.8, center.z, 220, 10.0, 1.7, 10.0, 0.04);
+        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 1.2, center.z, 120, 11.0, 2.0, 11.0, 0.06);
+        level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.4, center.z, 90, 10.0, 2.0, 10.0, 0.045);
+        level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.8, center.z, 70, 10.0, 1.7, 10.0, 0.04);
     }
 
     private boolean tryColossalSpitAttack(ServerLevel level, LivingEntity target, double distance) {
@@ -792,9 +812,9 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         int broken = 0;
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
         int baseY = Mth.floor(center.y - 2.0);
-        for (int ring = 0; ring < 5 && broken < 520; ring++) {
+        for (int ring = 0; ring < 5 && broken < 160; ring++) {
             double distance = 4.0 + ring * 3.0;
-            for (double offset = -distance; offset <= distance && broken < 520; offset += 1.0) {
+            for (double offset = -distance; offset <= distance && broken < 160; offset += 1.0) {
                 broken += destroyCrossColumn(level, mutable, center.add(forward.scale(offset)).add(right.scale(distance)), baseY, 5);
                 broken += destroyCrossColumn(level, mutable, center.add(forward.scale(offset)).add(right.scale(-distance)), baseY, 5);
                 broken += destroyCrossColumn(level, mutable, center.add(forward.scale(distance)).add(right.scale(offset)), baseY, 5);
