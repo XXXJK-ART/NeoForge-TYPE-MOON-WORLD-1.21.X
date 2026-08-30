@@ -1,9 +1,0 @@
-{
-    "format_version":  "1.8.0",
-    "animations":  {
-                       "animation.shadow_art_ribbon.reference":  {
-                                                                     "loop":  false,
-                                                                     "animation_length":  0
-                                                                 }
-                   }
-}

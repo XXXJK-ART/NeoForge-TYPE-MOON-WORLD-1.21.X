@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "typemoonaddon:item/void_ring_regalia"
-  }
-}
