@@ -153,7 +153,7 @@ public final class WormMagicIntegration {
         if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel level)) {
             return ExecutionResult.FAILED;
         }
-        String mode = context.preset().getString(CONTROL_MODE);
+        String mode = context.preset() == null ? "" : context.preset().getString(CONTROL_MODE);
         if (!CONTROL_MODES.contains(mode)) {
             return ExecutionResult.FAILED;
         }
@@ -195,7 +195,7 @@ public final class WormMagicIntegration {
         if (caster.level().isClientSide()) {
             return ExecutionResult.FAILED;
         }
-        String mode = context.preset().getString(OPERATION_MODE);
+        String mode = context.preset() == null ? "" : context.preset().getString(OPERATION_MODE);
         if (!OPERATION_MODES.contains(mode)) {
             return ExecutionResult.FAILED;
         }
@@ -215,7 +215,7 @@ public final class WormMagicIntegration {
     private static ExecutionResult castNpcEngravedWormOperation(MagicCastContext context) {
         LivingEntity caster = context.caster();
         if (caster == null || !(caster.level() instanceof net.minecraft.server.level.ServerLevel)
-                || !OPERATION_MODES.contains(context.preset().getString(OPERATION_MODE))) {
+                || context.preset() == null || !OPERATION_MODES.contains(context.preset().getString(OPERATION_MODE))) {
             return ExecutionResult.FAILED;
         }
         String mode = context.preset().getString(OPERATION_MODE);

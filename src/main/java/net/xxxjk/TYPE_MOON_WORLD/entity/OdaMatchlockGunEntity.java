@@ -274,7 +274,10 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          this.entityData.set(LIFE_TICKS, 20 * 60);
       }
       this.fallDistance = 0.0F;
-      this.noPhysics = true;
+      // The mount must retain normal block collision while flying so descending
+      // cannot tunnel through terrain into the void.
+      this.noPhysics = false;
+      this.setNoGravity(true);
       double yaw = Math.toRadians(owner.getYRot());
       Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);

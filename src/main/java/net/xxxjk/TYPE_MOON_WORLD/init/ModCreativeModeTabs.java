@@ -372,7 +372,6 @@ public class ModCreativeModeTabs {
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
                         output.accept(io.github.typemoonaddon.registry.ModItems.IMAGINARY_PRIMER);
-                        output.accept(io.github.typemoonaddon.registry.ModItems.CREST_WORM);
                         output.accept(io.github.typemoonaddon.registry.ModItems.HOLY_GRAIL_FRAGMENT);
                         output.accept(io.github.typemoonaddon.registry.ModItems.VOID_RING_REGALIA);
                         output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);

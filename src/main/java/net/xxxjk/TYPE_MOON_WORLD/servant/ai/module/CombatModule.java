@@ -351,6 +351,7 @@ public final class CombatModule implements ServantAiModule {
       LivingEntity sharedTarget = context.target();
       if (sharedTarget != null && sharedTarget.isAlive()
          && ServantCombatTempoService.isMeleeOverride(entity)
+         && !(entity instanceof ParacelsusEntity)
          && forceMeleeContact(entity, sharedTarget, context.gameTick())) {
          return;
       }

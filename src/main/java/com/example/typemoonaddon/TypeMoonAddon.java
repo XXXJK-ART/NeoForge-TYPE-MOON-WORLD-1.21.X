@@ -96,9 +96,6 @@ public final class TypeMoonAddon {
             event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
-            event.accept(AddonItems.MYSTIC_CODE_FRAGMENT);
-            event.accept(AddonItems.WORM);
-            event.accept(AddonItems.ENGRAVED_WORM);
             // Creative tab contents can be rebuilt with a different feature/permission set;
             // an anchor item is not guaranteed to be present in every rebuild.
             event.accept(AddonItems.MANA_FURNACE.toStack(),
