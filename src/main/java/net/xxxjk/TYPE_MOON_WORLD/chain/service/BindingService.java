@@ -302,6 +302,20 @@ public final class BindingService {
         return keys != null && !keys.isEmpty();
     }
 
+    /** Returns whether this target is currently held by a chain owned by the given servant. */
+    public static boolean isBoundByOwner(UUID targetId, UUID ownerId) {
+        if (targetId == null || ownerId == null) {
+            return false;
+        }
+        Set<BindingKey> keys = BINDINGS_BY_TARGET.get(targetId);
+        if (keys == null || keys.isEmpty()) {
+            return false;
+        }
+        return keys.stream()
+            .map(BINDINGS::get)
+            .anyMatch(binding -> binding != null && ownerId.equals(binding.ownerId()));
+    }
+
     public static boolean isBoundByChain(UUID targetId, UUID chainId) {
         Set<BindingKey> keys = BINDINGS_BY_TARGET.get(targetId);
         return keys != null && keys.stream().anyMatch(key -> key.chainId().equals(chainId));
@@ -379,19 +393,28 @@ public final class BindingService {
     private static void holdTarget(LivingEntity target, TargetState state) {
         if (target instanceof Mob mob) {
             mob.getNavigation().stop();
-            if (!Boolean.TRUE.equals(state.oldNoAi())) {
+            // Freeze both sides of a mounted group. Mount implementations have
+            // custom movement outside vanilla goals, so no-AI is part of the
+            // binding state while the group is held.
+            if (target.isVehicle() || target.isPassenger()) {
+                mob.setNoAi(true);
+            } else if (!Boolean.TRUE.equals(state.oldNoAi())) {
                 mob.setNoAi(false);
             }
         }
-        boolean wasPassenger = target.isPassenger();
-        if (wasPassenger) {
-            target.stopRiding();
-        }
+        // Never detach a rider while binding its vehicle. Vanilla will place
+        // passengers from the vehicle's positionRider implementation; forcing
+        // a second absolute position here causes server/client jitter.
+        boolean passenger = target.isPassenger();
         target.setDeltaMovement(Vec3.ZERO);
         target.fallDistance = 0.0F;
+        if (passenger) {
+            target.hurtMarked = true;
+            return;
+        }
         Vec3 anchor = state.anchor();
         boolean positionDrifted = target.position().distanceToSqr(anchor) > POSITION_CORRECTION_EPSILON_SQR;
-        if (target instanceof ServerPlayer player && (wasPassenger || positionDrifted)) {
+        if (target instanceof ServerPlayer player && positionDrifted) {
             player.connection.teleport(anchor.x, anchor.y, anchor.z, player.getYRot(), player.getXRot());
         } else {
             target.setPos(anchor.x, anchor.y, anchor.z);

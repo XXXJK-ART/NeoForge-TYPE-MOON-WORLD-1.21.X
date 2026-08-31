@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -105,6 +106,12 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    public void tick() {
       super.tick();
       tickRearBodyPhysics();
+      if (BindingService.isBound(this.getUUID())) {
+         this.setDeltaMovement(Vec3.ZERO);
+         this.entityData.set(MOVING, false);
+         this.fallDistance = 0.0F;
+         return;
+      }
       if (this.level() instanceof ServerLevel level) {
          tickFlightAndDive(level);
          if (!isFlyingMode()) {

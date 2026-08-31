@@ -121,13 +121,13 @@ public class GilgameshEntity extends ServantEntity {
       if (hit && target instanceof net.minecraft.world.entity.LivingEntity living) {
          if (GilgameshCombatHelper.isMeleeMode(this)) {
             living.invulnerableTime = 0;
-            living.hurt(this.damageSources().mobAttack(this), 25.0F);
+            living.hurt(this.damageSources().mobAttack(this), 8.0F);
             living.invulnerableTime = 0;
-            living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 40, 1, false, true, true));
+            living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 20, 1, false, true, true));
          }
          living.invulnerableTime = 0;
          living.hurt(this.damageSources().magic(), 5.0F);
-         if (this.getRandom().nextFloat() < 0.15F) {
+         if (this.getRandom().nextFloat() < 0.05F) {
             living.invulnerableTime = 0;
             living.hurt(this.damageSources().mobAttack(this), (float)this.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 0.5F);
          }

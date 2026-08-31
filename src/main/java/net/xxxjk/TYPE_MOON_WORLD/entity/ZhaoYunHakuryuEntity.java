@@ -29,6 +29,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
@@ -118,6 +119,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override public void tick() {
       super.tick();
       if (!(level() instanceof ServerLevel level)) return;
+      if (BindingService.isBound(getUUID())) {
+         getNavigation().stop();
+         setDeltaMovement(Vec3.ZERO);
+         setMovingState(false);
+         fallDistance = 0.0F;
+         return;
+      }
       if (skillOwnerUuid != null) {
          refreshSkillOwnerMaster(level);
       }

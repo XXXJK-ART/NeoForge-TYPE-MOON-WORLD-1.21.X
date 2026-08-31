@@ -45,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EnkiduEarthWeaponProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.EnumaChainService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
@@ -768,38 +769,10 @@ public final class EnkiduCombatHelper {
       data.putLong(TAG_LAND_UNTIL, now + 100L);
       entity.setNoGravity(false);
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.55, 0.0));
-      if (tryBoundAgeOfBabylonBarrage(entity, level, target, now, phase)) {
-         return true;
-      }
-      if (distance > 5.0) {
-         ServantNavigationHelper.moveToTargetThrottled(
-            entity,
-            target,
-            1.35,
-            now,
-            ServantNavigationHelper.SHORT_REPATH_INTERVAL,
-            0.8,
-            "EnkiduBoundAssaultPath"
-         );
-         return true;
-      }
+      // A bound target is a dedicated Age of Babylon firing window. Do not
+      // close in or fall back to melee between volley cooldowns.
+      tryBoundAgeOfBabylonBarrage(entity, level, target, now, phase);
       entity.getNavigation().stop();
-      if (now - data.getLong(TAG_LAST_BOUND_ASSAULT) < 7L) {
-         return true;
-      }
-      data.putLong(TAG_LAST_BOUND_ASSAULT, now);
-      if (entity.getRandom().nextBoolean()) {
-         Vec3 hit = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
-         entity.triggerSlashAnimation();
-         applyMorphingLimbBasic(entity, level, target, phase, hit);
-      } else {
-         entity.triggerHorizontalSwingAnimation();
-         applyMeleeDamage(entity, target, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.15 + phase.id() * 0.12) + 8.0F), 0.45, false);
-         Vec3 hit = target.position().add(0.0, target.getBbHeight() * 0.52, 0.0);
-         level.sendParticles(ParticleTypes.SWEEP_ATTACK, hit.x, hit.y, hit.z, 2, 0.0, 0.0, 0.0, 0.0);
-         level.sendParticles(ParticleTypes.END_ROD, hit.x, hit.y, hit.z, 14, 0.22, 0.25, 0.22, 0.07);
-         level.playSound(null, target.getX(), target.getY(), target.getZ(), SoundEvents.TRIDENT_HIT, SoundSource.HOSTILE, 0.95F, 1.35F);
-      }
       return true;
    }
 
@@ -807,7 +780,8 @@ public final class EnkiduCombatHelper {
       CompoundTag targetData = target.getPersistentData();
       return targetData.hasUUID(TAG_BOUND_OWNER)
          && entity.getUUID().equals(targetData.getUUID(TAG_BOUND_OWNER))
-         && targetData.getLong(TAG_BOUND_UNTIL) > now;
+         && targetData.getLong(TAG_BOUND_UNTIL) > now
+         || BindingService.isBoundByOwner(target.getUUID(), entity.getUUID());
    }
 
    public static boolean isBoundByChainsOfHeaven(LivingEntity target) {

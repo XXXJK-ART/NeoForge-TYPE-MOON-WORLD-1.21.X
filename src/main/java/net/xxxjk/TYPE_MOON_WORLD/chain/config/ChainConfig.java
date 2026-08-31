@@ -2,15 +2,16 @@ package net.xxxjk.TYPE_MOON_WORLD.chain.config;
 
 public final class ChainConfig {
     public static final int CHAIN_COUNT = 8;
-    public static final int RIGHT_CLICK_PHYSICAL_CHAIN_COUNT = 2;
+    /** A single representative chain owns the capped 500 durability pool. */
+    public static final int RIGHT_CLICK_PHYSICAL_CHAIN_COUNT = 1;
     public static final int SKILL_GATES_PER_PLANE = 6;
     public static final int SKILL_PHYSICAL_CHAINS_PER_TARGET = 1;
-    public static final int SKILL_TARGET_CAP = 3;
+    public static final int SKILL_TARGET_CAP = 1;
     public static final int SKILL_GATE_LAUNCH_DELAY = 12;
     public static final double SKILL_GATE_RADIUS = 6.0D;
     public static final double SKILL_GATE_VERTICAL_OFFSET = 4.5D;
     public static final int SKILL_GATE_REFRESH_TICKS = 16;
-    public static final float CHAIN_MAX_HEALTH = 100.0F;
+    public static final float CHAIN_MAX_HEALTH = 500.0F;
     public static final double TARGET_RADIUS = 50.0D;
     public static final double TARGET_RADIUS_SQR = TARGET_RADIUS * TARGET_RADIUS;
     public static final double MAX_EXTENSION = 100.0D;
@@ -35,7 +36,9 @@ public final class ChainConfig {
     public static final double CHAIN_HEAD_CONNECTION_OFFSET = 0.40D;
     public static final float ENUMA_CHAIN_MAX_HEALTH = 50.0F;
     public static final int ENUMA_CHAIN_COUNT = 10;
-    public static final int MAX_FUSED_CHAIN_COUNT = Math.max(ENUMA_CHAIN_COUNT, CHAIN_COUNT);
+    // Normal Heaven's Chain is represented by one physical lock with one
+    // durability pool; Enuma keeps its own separate ten-chain aggregation.
+    public static final int MAX_FUSED_CHAIN_COUNT = 1;
     public static final float ENUMA_AGGREGATED_MAX_HEALTH = ENUMA_CHAIN_MAX_HEALTH * ENUMA_CHAIN_COUNT;
     public static final int ENUMA_WINDUP_TICKS = 200;
     public static final int ENUMA_ASCENT_TICKS = 36;

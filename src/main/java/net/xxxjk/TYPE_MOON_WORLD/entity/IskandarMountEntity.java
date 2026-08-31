@@ -31,6 +31,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardIskandarSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
@@ -109,6 +110,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    public void tick() {
       super.tick();
       if (!(this.level() instanceof ServerLevel level)) {
+         return;
+      }
+      if (BindingService.isBound(this.getUUID())) {
+         this.getNavigation().stop();
+         this.setDeltaMovement(Vec3.ZERO);
+         this.entityData.set(MOVING, false);
+         this.fallDistance = 0.0F;
          return;
       }
       for (Entity passenger : List.copyOf(this.getPassengers())) {

@@ -247,7 +247,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
 
     public void setStackedChainCount(int count) {
         int clamped = clampStackedChainCount(count);
-        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH;
         entityData.set(STACKED_CHAIN_COUNT, clamped);
         entityData.set(DURABILITY_CAP, maximumHealth);
         entityData.set(HEALTH, maximumHealth);
@@ -256,7 +256,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
     public void setStackedChainCountPreservingDamage(int count) {
         int clamped = clampStackedChainCount(count);
         float previousMissingHealth = Math.max(0.0F, chainMaxHealth() - chainHealth());
-        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH * clamped;
+        float maximumHealth = ChainConfig.CHAIN_MAX_HEALTH;
         entityData.set(STACKED_CHAIN_COUNT, clamped);
         entityData.set(DURABILITY_CAP, maximumHealth);
         entityData.set(HEALTH, Mth.clamp(maximumHealth - previousMissingHealth, 0.0F, maximumHealth));
@@ -921,7 +921,7 @@ public final class HeavenChainEntity extends Entity implements GeoEntity {
         maximumHealth = Math.max(maximumHealth, perChainHealth * stackedCount);
         maximumHealth = savedEnumaChain
             ? Mth.clamp(maximumHealth, perChainHealth, ChainConfig.ENUMA_AGGREGATED_MAX_HEALTH)
-            : Math.max(maximumHealth, ChainConfig.CHAIN_MAX_HEALTH);
+            : ChainConfig.CHAIN_MAX_HEALTH;
         entityData.set(STACKED_CHAIN_COUNT, stackedCount);
         entityData.set(DURABILITY_CAP, maximumHealth);
         float savedHealth = tag.contains("ChainHealth", Tag.TAG_FLOAT) ? tag.getFloat("ChainHealth") : maximumHealth;

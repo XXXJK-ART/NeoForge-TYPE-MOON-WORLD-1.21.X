@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.AABB;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -71,6 +72,12 @@ public class MedusaPegasusEntity extends PathfinderMob implements GeoEntity {
 
    @Override
    protected void customServerAiStep() {
+      if (BindingService.isBound(this.getUUID())) {
+         this.getNavigation().stop();
+         this.setDeltaMovement(Vec3.ZERO);
+         this.fallDistance = 0.0F;
+         return;
+      }
       super.customServerAiStep();
       this.setNoGravity(this.isFlyingMode());
       this.fallDistance = 0.0F;

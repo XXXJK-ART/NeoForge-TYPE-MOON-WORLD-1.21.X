@@ -102,7 +102,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    private static boolean usesFullHeadwearModel(String servantId) {
       return switch (servantId) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider", "gilgamesh_caster" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
       };
    }

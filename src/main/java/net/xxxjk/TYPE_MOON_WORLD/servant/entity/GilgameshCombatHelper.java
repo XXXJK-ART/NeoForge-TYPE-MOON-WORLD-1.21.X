@@ -18,6 +18,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.ChainControlService;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ChainsOfHeavenBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshCrossSlashEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
@@ -75,12 +76,17 @@ public final class GilgameshCombatHelper {
    private static final String EA_SUMMON_END = "GilgameshEaSummonEnd";
    private static final String EA_DRAW_END = "GilgameshEaDrawEnd";
    private static final String EA_SUMMON_TARGET = "GilgameshEaSummonTarget";
+   private static final String EA_ASCENT_START_Y = "GilgameshEaAscentStartY";
    private static final String EA_SHIELD_FORCED = "GilgameshEaShieldForced";
    private static final String LAST_DIVINE_SHIELD_SCAN = "GilgameshLastDivineShieldScan";
    private static final String BOUNDARY_EA_DIMENSION = "GilgameshBoundaryEaDimension";
    public static final int EA_SUMMON_TICKS = 72;
    public static final int EA_DRAW_TICKS = 53;
+   private static final double EA_ASCENT_HEIGHT = 8.0D;
+   private static final double EA_ASCENT_MAX_SPEED = 0.12D;
    private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
+   private static final int NPC_MELEE_DURATION_TICKS = 40;
+   private static final int NPC_MELEE_REUSE_TICKS = 600;
    private static final String LAST_CHARISMA = "GilgameshLastCharisma";
    private static final String ENKIDU_BARRAGE_REMAINING = "GilgameshEnkiduBarrageRemaining";
    private static final String ENKIDU_BARRAGE_NEXT = "GilgameshEnkiduBarrageNext";
@@ -89,7 +95,6 @@ public final class GilgameshCombatHelper {
    private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
    private static final String LAST_PERSISTENT_TICK = "GilgameshLastPersistentStateTick";
    private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
-   private static final int FLIGHT_ACTIVE_TICKS = 12 * 20;
    private static final long FLIGHT_STALLED_TICKS = 8 * 20L;
    private GilgameshCombatHelper() { }
 
@@ -168,7 +173,7 @@ public final class GilgameshCombatHelper {
       data.putLong(LAST_PERSISTENT_TICK, now);
       maintainEaShield(entity, data);
       GilgameshDivineShield.tick(entity);
-      tryActivateDivineShield(entity, level);
+      GilgameshDivineShield.maintainAlwaysOn(entity);
       tryTriggerBoundaryEa(entity, level, now);
       if (!data.getBoolean("GilgameshPassivesInitialized")) {
          data.putBoolean("GilgameshPassivesInitialized", true);
@@ -323,19 +328,18 @@ public final class GilgameshCombatHelper {
          data.putUUID(FLIGHT_CYCLE_TARGET, target.getUUID());
          data.putLong(FLIGHT_CYCLE_START, now);
       }
-      long elapsed = Math.floorMod(now - data.getLong(FLIGHT_CYCLE_START), (long)FLIGHT_CYCLE_TICKS);
-      if (elapsed >= FLIGHT_ACTIVE_TICKS) {
-         enterGroundMode(entity);
-         return;
-      }
       double distance = entity.distanceTo(target);
       if (entity.isFlyingMode()
          && ServantCombatTempoService.disconnectedTicks(entity, now) >= FLIGHT_STALLED_TICKS) {
-         data.putLong(MELEE_UNTIL, now + 100L);
-         data.putLong(FLIGHT_CYCLE_START, now + FLIGHT_ACTIVE_TICKS);
+         // Recover the flight controller without turning a stalled ranged NPC
+         // into a melee pursuer.
+         data.putLong(FLIGHT_CYCLE_START, now);
          enterGroundMode(entity);
-         ServantNavigationHelper.moveToTargetThrottled(
-            entity, target, 1.35, now, 2, 0.2, "GilgameshFlightStalled");
+         ServantEngagementService.RangeBand recoveryBand =
+            ServantEngagementService.rangedBand(target, 14.0, 26.0, 40.0);
+         Vec3 recoveryPosition = ServantEngagementService.rangedDestination(entity, target, now, recoveryBand);
+         ServantNavigationHelper.moveToPositionThrottled(
+            entity, recoveryPosition, 1.15, now, 2, 0.2, "GilgameshFlightStalled");
          return;
       }
       entity.setFlyingMode(true);
@@ -347,11 +351,11 @@ public final class GilgameshCombatHelper {
       if (away.lengthSqr() < 1.0E-4) away = new Vec3(1, 0, 0);
       away = away.normalize();
       boolean retreat = shouldRetreatFrom(entity, target, now);
-      ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(target, 18.0, 22.0, 26.0);
+      ServantEngagementService.RangeBand band = ServantEngagementService.rangedBand(target, 14.0, 26.0, 40.0);
       boolean rangedDuel = ServantEngagementService.role(target) == ServantEngagementService.CombatRole.RANGED;
       double radial = retreat
          ? distance < band.minimum() ? 0.24 : distance > band.maximum() ? -0.08 : 0.0
-         : distance > band.maximum() ? -0.12 : distance < band.minimum() ? 0.08 : 0.0;
+         : distance > band.maximum() ? -0.10 : distance < band.minimum() ? 0.20 : 0.0;
       Vec3 orbit = new Vec3(-away.z, 0, away.x).scale(rangedDuel ? 0.14 : retreat ? 0.06 : 0.10);
       double vertical = net.minecraft.util.Mth.clamp((desiredY - entity.getY()) * 0.08, -0.22, 0.22);
       Vec3 motion = entity.getDeltaMovement().scale(0.58).add(away.scale(radial)).add(orbit).add(0, vertical, 0);
@@ -411,7 +415,8 @@ public final class GilgameshCombatHelper {
    private static boolean isBoundByGilgamesh(GilgameshEntity entity, LivingEntity target, long now) {
       CompoundTag targetData = target.getPersistentData();
       return targetData.hasUUID(CHAIN_OWNER) && entity.getUUID().equals(targetData.getUUID(CHAIN_OWNER))
-         && targetData.getLong("ChainsOfHeavenBoundUntil") > now;
+         && targetData.getLong("ChainsOfHeavenBoundUntil") > now
+         || BindingService.isBoundByOwner(target.getUUID(), entity.getUUID());
    }
 
    public static void tryRetaliatoryChains(GilgameshEntity entity, DamageSource source) {
@@ -474,11 +479,13 @@ public final class GilgameshCombatHelper {
          if (active) endMeleeMode(entity);
          return false;
       }
-      if (!active && entity.tickCount % 20 == 0 && horizontalDistance <= 5.0
-         && Math.abs(entity.getY() - target.getY()) <= 8.0 && now - data.getLong(LAST_MELEE) >= 300L) {
-         float chance = ServantCombatSystem.getPhase(entity) == ServantCombatPhase.PROBING ? 0.16F : 0.24F;
+      if (!active && entity.tickCount % 20 == 0 && horizontalDistance <= 3.5
+         && ServantEngagementService.role(target) == ServantEngagementService.CombatRole.MELEE
+         && Math.abs(entity.getY() - target.getY()) <= 8.0
+         && now - data.getLong(LAST_MELEE) >= NPC_MELEE_REUSE_TICKS) {
+         float chance = ServantCombatSystem.getPhase(entity) == ServantCombatPhase.PROBING ? 0.02F : 0.04F;
          if (entity.getRandom().nextFloat() < chance && entity.getMainHandItem().isEmpty()) {
-            data.putLong(MELEE_UNTIL, now + 80L);
+            data.putLong(MELEE_UNTIL, now + NPC_MELEE_DURATION_TICKS);
             data.putLong(LAST_MELEE, now);
             data.putLong(NEXT_MELEE_SWING, now + 8L);
             entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_DURANDAL.get()));
@@ -573,6 +580,7 @@ public final class GilgameshCombatHelper {
       level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.HOSTILE, 1.6F, 0.72F);
       data.putLong(EA_SUMMON_END, now + EA_SUMMON_TICKS);
       data.putUUID(EA_SUMMON_TARGET, target.getUUID());
+      data.putDouble(EA_ASCENT_START_Y, entity.getY());
       forceEaShield(entity);
    }
 
@@ -589,7 +597,23 @@ public final class GilgameshCombatHelper {
       }
       lockFacing(entity, target);
       entity.getNavigation().stop();
-      entity.setDeltaMovement(Vec3.ZERO);
+      // EA's prelude is deliberately a slow vertical ascent. The no-gravity
+      // flight state prevents ground collision and the shield protects the
+      // animation from ordinary incoming hits.
+      entity.setNoGravity(true);
+      entity.setFlyingMode(true);
+      double ascentStartY = data.contains(EA_ASCENT_START_Y)
+         ? data.getDouble(EA_ASCENT_START_Y) : entity.getY();
+      double ascentTargetY = ascentStartY + EA_ASCENT_HEIGHT;
+      double rise = net.minecraft.util.Mth.clamp((ascentTargetY - entity.getY()) * 0.10D,
+         0.025D, EA_ASCENT_MAX_SPEED);
+      if (entity.getY() < ascentTargetY - 0.02D) {
+         entity.setDeltaMovement(0.0D, rise, 0.0D);
+         entity.moveTo(entity.getX(), Math.min(ascentTargetY, entity.getY() + rise), entity.getZ());
+      } else {
+         entity.setDeltaMovement(Vec3.ZERO);
+      }
+      entity.hurtTime = 0;
       if (data.contains(EA_SUMMON_END)) {
          if (now < data.getLong(EA_SUMMON_END)) return true;
          entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_EA.get()));
@@ -616,6 +640,7 @@ public final class GilgameshCombatHelper {
       data.remove(EA_SUMMON_END);
       data.remove(EA_DRAW_END);
       data.remove(EA_SUMMON_TARGET);
+      data.remove(EA_ASCENT_START_Y);
       clearEaEquipment(entity);
    }
 
