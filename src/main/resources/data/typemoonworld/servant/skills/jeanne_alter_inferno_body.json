@@ -1,0 +1,9 @@
+{
+  "id": "jeanne_alter_inferno_body",
+  "display_name": "Inferno Body",
+  "display_name_zh": "业火缠身",
+  "type": "active",
+  "mp_cost": 45,
+  "cooldown_ticks": 600,
+  "duration_ticks": 300
+}

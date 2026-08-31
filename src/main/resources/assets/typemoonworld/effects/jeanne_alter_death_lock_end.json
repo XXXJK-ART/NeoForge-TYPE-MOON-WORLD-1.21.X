@@ -1,0 +1,18 @@
+{
+  "duration": 0.95,
+  "emitters": [
+    {
+      "start_time":0.0,
+      "end_time":0.72,
+      "rate":980,
+      "particle_lifetime":0.58,
+      "binding":{"mode":"entity","offset":[0,1.0,0],"rotate_with_entity":false},
+      "component":{"type":"sphere","radius":1,"sample_count":220},
+      "color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.3,"color":"#F56A13AB"},{"t":0.72,"color":"#B120031F"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.22},{"t":0.6,"size":0.62},{"t":1,"size":0.03}],
+      "transform_over_life":[{"t":0,"scale":[0.3,0.4,0.3]},{"t":1,"scale":[4.8,3.8,4.8],"easing":"ease_out_cubic"}],
+      "blend":"ADDITIVE",
+      "enable_trail":true
+    }
+  ]
+}

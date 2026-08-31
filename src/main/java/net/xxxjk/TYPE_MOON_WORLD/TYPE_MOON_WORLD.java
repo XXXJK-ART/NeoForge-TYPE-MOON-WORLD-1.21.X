@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.EffectsApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterContent;
 import net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
@@ -204,6 +205,7 @@ public class TYPE_MOON_WORLD {
    private void commonSetup(FMLCommonSetupEvent event) {
       event.enqueueWork(
          () -> {
+            JeanneAlterContent.register();
             MagicModularRegistry.ensureInitialized();
             MagicDefinitionRegistry.bootstrapBuiltins();
             ServantSkillRegistry.ensureInitialized();

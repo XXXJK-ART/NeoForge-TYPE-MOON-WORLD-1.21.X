@@ -1,0 +1,21 @@
+{
+  "duration": 1.25,
+  "environment":[{"type":"screen_tint","color":"#20B30025","start":0,"end":0.55,"fade_in":0.02,"fade_out":0.45,"intensity":0.24}],
+  "emitters":[
+    {
+      "start_time":0.0,"end_time":0.9,"rate":2100,"particle_lifetime":0.62,
+      "component":{"type":"sphere","radius":1,"sample_count":260},
+      "color_over_life":[{"t":0.0,"color":"#FFFFFFFF"},{"t":0.28,"color":"#FFFF4BDF"},{"t":0.68,"color":"#FF5C061C"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.34},{"t":0.55,"size":1.05},{"t":1.0,"size":0.04}],
+      "transform_over_life":[{"t":0.0,"scale":[0.2,0.2,0.2]},{"t":1.0,"scale":[9,5.5,9],"easing":"ease_out_back"}],
+      "blend":"ADDITIVE","enable_trail":true
+    },
+    {
+      "start_time":0.0,"end_time":0.82,"rate":520,"particle_lifetime":0.5,
+      "component":{"type":"circle","radius":6.8,"segments":220},
+      "color_over_life":[{"t":0.0,"color":"#FFFFFFFF"},{"t":0.42,"color":"#FFFF681A"},{"t":1.0,"color":"#00000000"}],
+      "size_over_life":[{"t":0.0,"size":0.30},{"t":0.6,"size":0.82},{"t":1.0,"size":0.03}],
+      "blend":"ADDITIVE","enable_trail":true
+    }
+  ]
+}

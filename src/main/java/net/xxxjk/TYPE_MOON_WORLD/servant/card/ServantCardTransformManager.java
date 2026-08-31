@@ -1051,6 +1051,13 @@ public final class ServantCardTransformManager {
          player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
          return;
       }
+      if ("jeanne_alter".equals(servantId)) {
+         player.setItemSlot(EquipmentSlot.HEAD, generatedArmor(servantId, EquipmentSlot.HEAD));
+         player.setItemSlot(EquipmentSlot.CHEST, generatedArmor(servantId, EquipmentSlot.CHEST));
+         player.setItemSlot(EquipmentSlot.LEGS, generatedArmor(servantId, EquipmentSlot.LEGS));
+         player.setItemSlot(EquipmentSlot.FEET, generatedArmor(servantId, EquipmentSlot.FEET));
+         return;
+      }
       if ("gilles_de_rais_caster".equals(servantId)) {
          player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
          player.setItemSlot(EquipmentSlot.CHEST, addonArmor("typemoonworld:cursed_armor_render"));
@@ -1084,7 +1091,8 @@ public final class ServantCardTransformManager {
          || "zhao_yun_rider".equals(servantId)
          || "gilgamesh_caster".equals(servantId)
          || "baobhan_sith".equals(servantId)
-         || "hundred_faces_hassan".equals(servantId);
+         || "hundred_faces_hassan".equals(servantId)
+         || "jeanne_alter".equals(servantId);
 
    }
 

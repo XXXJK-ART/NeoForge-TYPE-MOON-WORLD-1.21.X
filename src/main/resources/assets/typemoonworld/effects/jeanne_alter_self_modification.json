@@ -1,0 +1,7 @@
+{
+  "duration":1.45,"notes":"Violet-black self-remodelling pillars and lightning from the supplied reference.",
+  "emitters":[
+    {"start_time":0,"end_time":1.25,"rate":760,"particle_lifetime":0.58,"binding":{"mode":"entity","offset":[0,0.8,0]},"component":{"type":"line","start":[0,-1.0,0],"end":[0,4.8,0],"segments":150},"position_variance":1.35,"color_over_life":[{"t":0,"color":"#FF110016"},{"t":0.36,"color":"#FF7B16C9"},{"t":0.72,"color":"#FFFF45E9"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.28},{"t":0.5,"size":0.78},{"t":1,"size":0.04}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0.05,"end_time":1.35,"rate":260,"particle_lifetime":0.5,"binding":{"mode":"entity","offset":[0,1.2,0]},"component":{"type":"fractal_lightning","start":[-3,4,0],"end":[2,-1,0],"iterations":5,"roughness":0.62,"period":4,"density":8,"randomize_end":true,"random_radius_min":1,"random_radius_max":4,"segments":100},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.45,"color":"#FFB72FFF"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.22},{"t":1,"size":0.03}],"blend":"ADDITIVE"}
+  ]
+}

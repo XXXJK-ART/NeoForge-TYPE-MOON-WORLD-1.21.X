@@ -135,6 +135,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.EnumaChainCrownEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -522,6 +523,10 @@ public class ModEntities {
    );
    public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(
       "heracles", () -> Builder.of(HeraclesEntity::new, MobCategory.CREATURE).sized(1.0F, 3.0F).build("heracles")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<JeanneAlterEntity>> JEANNE_ALTER = ENTITY_TYPES.register(
+      "jeanne_alter", () -> Builder.of(JeanneAlterEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.85F).clientTrackingRange(96).updateInterval(1).build("jeanne_alter")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<GenericServantEntity>> GENERIC_SERVANT = ENTITY_TYPES.register(
       "generic_servant", () -> Builder.of(GenericServantEntity::new, MobCategory.CREATURE)

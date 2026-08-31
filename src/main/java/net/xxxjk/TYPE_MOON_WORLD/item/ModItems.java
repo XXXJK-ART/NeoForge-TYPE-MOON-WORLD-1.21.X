@@ -70,6 +70,9 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.IskandarShortswordItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterFlagItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSpawnEggItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSwordItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -418,6 +421,11 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
 
+    public static final DeferredItem<Item> JEANNE_ALTER_SWORD = ITEMS.register("jeanne_alter_sword",
+            () -> new JeanneAlterSwordItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    public static final DeferredItem<Item> JEANNE_ALTER_FLAG = ITEMS.register("jeanne_alter_flag",
+            () -> new JeanneAlterFlagItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");
     public static final DeferredItem<Item> SERVANT_CARD_SASAKI_KOJIRO = registerServantCard("sasaki_kojiro");
@@ -448,7 +456,14 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_ISKANDAR = registerServantCard("iskandar");
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH = registerServantCard("baobhan_sith");
     public static final DeferredItem<Item> SERVANT_CARD_OKITA_SOUJI_SABER = registerServantCard("okita_souji_saber");
+    public static final DeferredItem<Item> SERVANT_CARD_JEANNE_ALTER = registerServantCard("jeanne_alter");
+    public static final DeferredItem<Item> JEANNE_ALTER_SPAWN_EGG = ITEMS.register("jeanne_alter_spawn_egg",
+            () -> new JeanneAlterSpawnEggItem(new Item.Properties()));
 
+    public static final DeferredItem<Item> SERVANT_CARD_JEANNE_ALTER_HEAD = registerServantArmor("jeanne_alter", net.minecraft.world.entity.EquipmentSlot.HEAD);
+    public static final DeferredItem<Item> SERVANT_CARD_JEANNE_ALTER_CHEST = registerServantArmor("jeanne_alter", net.minecraft.world.entity.EquipmentSlot.CHEST);
+    public static final DeferredItem<Item> SERVANT_CARD_JEANNE_ALTER_LEGS = registerServantArmor("jeanne_alter", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_JEANNE_ALTER_FEET = registerServantArmor("jeanne_alter", net.minecraft.world.entity.EquipmentSlot.FEET);
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_HEAD = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_CHEST = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_BAOBHAN_SITH_LEGS = registerServantArmor("baobhan_sith", net.minecraft.world.entity.EquipmentSlot.LEGS);
@@ -1523,6 +1538,10 @@ public class ModItems {
             case "pale_rider" -> Items.AIR;
             case "emiya_archer" -> (legs ? SERVANT_CARD_EMIYA_ARCHER_LEGS : SERVANT_CARD_EMIYA_ARCHER_CHEST).get();
             case "artoria_pendragon" -> (head ? SERVANT_CARD_ARTORIA_PENDRAGON_HEAD : legs ? SERVANT_CARD_ARTORIA_PENDRAGON_LEGS : SERVANT_CARD_ARTORIA_PENDRAGON_CHEST).get();
+            case "jeanne_alter" -> head ? SERVANT_CARD_JEANNE_ALTER_HEAD.get()
+                : legs ? SERVANT_CARD_JEANNE_ALTER_LEGS.get()
+                : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_JEANNE_ALTER_FEET.get()
+                : SERVANT_CARD_JEANNE_ALTER_CHEST.get();
             case "okita_souji_saber" -> head ? SERVANT_CARD_OKITA_SOUJI_SABER_HEAD.get()
                 : legs ? SERVANT_CARD_OKITA_SOUJI_SABER_LEGS.get()
                 : slot == net.minecraft.world.entity.EquipmentSlot.FEET ? SERVANT_CARD_OKITA_SOUJI_SABER_FEET.get()

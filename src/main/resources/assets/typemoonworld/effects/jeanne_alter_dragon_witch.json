@@ -1,0 +1,7 @@
+{
+  "duration":1.6,"notes":"Orange dragon-fire leadership aura based on the supplied Dragon Witch reference.",
+  "emitters":[
+    {"start_time":0,"end_time":1.4,"rate":620,"particle_lifetime":0.7,"binding":{"mode":"entity","offset":[0,0.9,0]},"component":{"type":"sphere","radius":1,"sample_count":180},"velocity":[0,0.18,0],"velocity_variance":0.16,"color_over_life":[{"t":0,"color":"#00FF1800"},{"t":0.22,"color":"#FFFFD84A"},{"t":0.62,"color":"#FFFF4B05"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.10},{"t":0.5,"size":0.55},{"t":1,"size":0.04}],"transform_over_life":[{"t":0,"scale":[0.4,0.4,0.4]},{"t":1,"scale":[5.5,3.2,5.5],"easing":"ease_out_cubic"}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0.12,"end_time":1.5,"rate":280,"particle_lifetime":0.8,"binding":{"mode":"entity_yaw","offset":[0,0.2,0]},"component":{"type":"parametric","mode":"EXPRESSION","expr_x":"(1.2+2.8*t)*cos(t*18.85+time*5)","expr_y":"5.0*t","expr_z":"(1.2+2.8*t)*sin(t*18.85+time*5)","t_start":0,"t_end":1,"segments":160},"color_over_life":[{"t":0,"color":"#FFFFF0A0"},{"t":0.5,"color":"#FFFF6208"},{"t":1,"color":"#001B0000"}],"size_over_life":[{"t":0,"size":0.16},{"t":1,"size":0.04}],"blend":"ADDITIVE","enable_trail":true}
+  ]
+}

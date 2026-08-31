@@ -1,0 +1,24 @@
+{
+  "duration": 1.15,
+  "emitters": [
+    {
+      "start_time":0.0,"end_time":0.98,"rate":1900,"particle_lifetime":0.72,
+      "component":{"type":"line","start":[0,-0.8,0],"end":[0,15,0],"segments":300},
+      "position_variance":1.8,"velocity":[0,0.38,0],"velocity_variance":0.26,
+      "color_over_life":[
+        {"t":0.0,"color":"#FFFFFFFF"},{"t":0.18,"color":"#FFFFEF74"},
+        {"t":0.48,"color":"#FFFF4800"},{"t":0.78,"color":"#FF8B0012"},
+        {"t":1.0,"color":"#00000000"}
+      ],
+      "size_over_life":[{"t":0.0,"size":0.46},{"t":0.45,"size":1.75},{"t":1.0,"size":0.06}],
+      "blend":"ADDITIVE","enable_trail":true
+    },
+    {
+      "start_time":0.0,"end_time":0.9,"rate":520,"particle_lifetime":0.58,
+      "component":{"type":"parametric","mode":"EXPRESSION","expr_x":"(1.3+3.7*t)*cos(t*37.699+time*12)","expr_y":"13*t","expr_z":"(1.3+3.7*t)*sin(t*37.699+time*12)","t_start":0,"t_end":1,"segments":230},
+      "color_over_life":[{"t":0.0,"color":"#FFFFFFFF"},{"t":0.46,"color":"#FFFF8512"},{"t":1.0,"color":"#00150000"}],
+      "size_over_life":[{"t":0.0,"size":0.24},{"t":0.55,"size":0.72},{"t":1.0,"size":0.03}],
+      "blend":"ADDITIVE","enable_trail":true
+    }
+  ]
+}

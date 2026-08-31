@@ -1,0 +1,57 @@
+{
+  "duration": 1.35,
+  "notes": "Dense red-orange avenger fire wrapped around the moving caster.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.32,
+      "rate": 820,
+      "particle_lifetime": 0.62,
+      "binding": {"mode":"entity","offset":[0,0.75,0],"rotate_with_entity":false},
+      "component": {"type":"line","start":[0,-1.1,0],"end":[0,4.4,0],"segments":180},
+      "position_variance": 1.25,
+      "velocity": [0,0.38,0],
+      "velocity_variance": 0.24,
+      "color_over_life": [
+        {"t":0.0,"color":"#FFFFFFFF"},
+        {"t":0.18,"color":"#FFFFE56B"},
+        {"t":0.52,"color":"#FFFF4A05"},
+        {"t":0.82,"color":"#FF78000A"},
+        {"t":1.0,"color":"#00000000"}
+      ],
+      "size_over_life": [
+        {"t":0.0,"size":0.20},
+        {"t":0.48,"size":0.78},
+        {"t":1.0,"size":0.04}
+      ],
+      "blend": "ADDITIVE",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 1.3,
+      "rate": 360,
+      "particle_lifetime": 0.68,
+      "binding": {"mode":"entity_yaw","offset":[0,0.1,0]},
+      "component": {
+        "type":"parametric","mode":"EXPRESSION",
+        "expr_x":"(0.8+1.8*t)*cos(t*31.416+time*10)",
+        "expr_y":"4.8*t",
+        "expr_z":"(0.8+1.8*t)*sin(t*31.416+time*10)",
+        "t_start":0,"t_end":1,"segments":190
+      },
+      "color_over_life": [
+        {"t":0.0,"color":"#FFFFF2A2"},
+        {"t":0.50,"color":"#FFFF6508"},
+        {"t":1.0,"color":"#00200000"}
+      ],
+      "size_over_life": [
+        {"t":0.0,"size":0.17},
+        {"t":0.55,"size":0.52},
+        {"t":1.0,"size":0.03}
+      ],
+      "blend": "ADDITIVE",
+      "enable_trail": true
+    }
+  ]
+}

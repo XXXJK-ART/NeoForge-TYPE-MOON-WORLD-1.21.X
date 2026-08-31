@@ -1,0 +1,9 @@
+{
+  "id":"jeanne_alter_le_grondement_du_haine",
+  "display_name":"Le Grondement Du Haine",
+  "display_name_zh":"咆哮吧，吾之愤怒",
+  "type":"anti_army","rank":"A+","mp_cost":220,"over_charge_supported":true,
+  "over_charge_levels":5,"base_damage_multiplier":1.0,"range":72.0,
+  "effects":[{"effect_type":"timed_fire_and_lance_execution","params":{"duration_ticks":112,"curse_ticks":1200,"buff_null_charges":1}}],
+  "class_restrictions":["avenger"]
+}

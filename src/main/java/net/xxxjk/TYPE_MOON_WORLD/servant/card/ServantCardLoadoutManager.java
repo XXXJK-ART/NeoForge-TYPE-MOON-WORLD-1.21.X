@@ -91,6 +91,10 @@ public final class ServantCardLoadoutManager {
          case "iskandar" -> main = stack(ModItems.ISKANDAR_SHORTSWORD.get());
          case "baobhan_sith" -> main = stack(ModItems.BAOBHAN_SITH_HARP.get());
          case "okita_souji_saber" -> main = stack(ModItems.KIKU_ICHIMONJI_NORIMUNE.get());
+         case "jeanne_alter" -> {
+            main = stack(ModItems.JEANNE_ALTER_SWORD.get());
+            off = stack(ModItems.JEANNE_ALTER_FLAG.get());
+         }
          case "gilles_de_rais_caster" -> main = registryStack("typemoonworld:prelatis_spellbook");
          default -> {
          }

@@ -91,6 +91,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
       return switch (normalizedId) {
          case "oda_nobunaga" -> 0.800F;
          case "artoria_pendragon" -> 0.811F;
+         case "jeanne_alter" -> 0.837F;
          case "okita_souji_saber" -> 0.811F;
          case "fanatic_assassin", "medea" -> 0.858F;
          case "nightingale" -> 0.868F;
@@ -122,6 +123,18 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.riding = false;
          }
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+         if (isJeanneAlter(entity.getServantId())) {
+            this.leftArm.xRot = -(float)Math.PI / 2.0F;
+            this.leftArm.yRot = 0.0F;
+            this.leftArm.zRot = 0.0F;
+            this.leftSleeve.copyFrom(this.leftArm);
+         }
+      }
+
+      private static boolean isJeanneAlter(String servantId) {
+         if (servantId == null) return false;
+         int separator = servantId.indexOf(':');
+         return "jeanne_alter".equals(separator >= 0 ? servantId.substring(separator + 1) : servantId);
       }
    }
 }

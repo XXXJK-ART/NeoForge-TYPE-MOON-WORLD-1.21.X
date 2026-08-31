@@ -73,6 +73,11 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_ISKANDAR);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH);
                         output.accept(ModItems.SERVANT_CARD_OKITA_SOUJI_SABER);
+                        output.accept(ModItems.SERVANT_CARD_JEANNE_ALTER);
+                        output.accept(ModItems.SERVANT_CARD_JEANNE_ALTER_HEAD);
+                        output.accept(ModItems.SERVANT_CARD_JEANNE_ALTER_CHEST);
+                        output.accept(ModItems.SERVANT_CARD_JEANNE_ALTER_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_JEANNE_ALTER_FEET);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_HEAD);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_BAOBHAN_SITH_LEGS);
@@ -328,6 +333,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.TOHSAKA_RIN_SPAWN_EGG);
                         output.accept(ModItems.LEFF_LAYNOR_FLAUROS_SPAWN_EGG);
                         output.accept(ModItems.HERACLES_SPAWN_EGG);
+                        output.accept(ModItems.JEANNE_ALTER_SPAWN_EGG);
                         output.accept(ModItems.SASAKI_KOJIRO_SPAWN_EGG);
                         output.accept(ModItems.OKITA_SOUJI_SABER_SPAWN_EGG);
                         output.accept(ModItems.CU_CHULAINN_SPAWN_EGG);
@@ -422,6 +428,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MACEDONIAN_SPEAR);
                         output.accept(ModItems.MACEDONIAN_ROUND_SHIELD);
                         output.accept(ModItems.ISKANDAR_SHORTSWORD);
+                        output.accept(ModItems.JEANNE_ALTER_SWORD);
+                        output.accept(ModItems.JEANNE_ALTER_FLAG);
                         output.accept(ModItems.RULE_BREAKER);
                         output.accept(ModItems.HECATES_STAFF);
                         output.accept(com.example.typemoonaddon.registry.AddonItems.PRELATIS_SPELLBOOK);

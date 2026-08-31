@@ -1,0 +1,11 @@
+{
+  "movement": {"follow_distance":48,"wander_radius":10,"likes_high_places":false},
+  "combat": {"preferred_attack_distance":18.0,"retreat_health_ratio":0.16,"melee_preference":0.30,"berserk_health_ratio":0.30,"berserk_damage_multiplier":1.35},
+  "tactical": {
+    "style":"controller","minimum_range":7.0,"preferred_range":18.0,"maximum_range":48.0,
+    "reposition_distance":11.0,"pursuit_aggression":0.82,"intercept_bias":1.6,
+    "vertical_mobility":0.72,"recovery_tendency":0.42,"collateral_caution":0.30,
+    "maximum_terrain_impact":"high"
+  },
+  "social":{},"command":{},"environment":{}
+}

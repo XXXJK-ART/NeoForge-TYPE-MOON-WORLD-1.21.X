@@ -1,0 +1,111 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    128,
+    128
+  ],
+  "textures": {
+    "particle": "typemoonworld:item/jeanne_alter_flag"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        -1,
+        -12.75,
+        5.25
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        -90,
+        0
+      ],
+      "translation": [
+        -1,
+        -12.0,
+        4.5
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        -1,
+        -12.75,
+        5.25
+      ]
+    },
+    "firstperson_lefthand": {
+      "translation": [
+        -1,
+        -12.75,
+        5.25
+      ]
+    },
+    "ground": {
+      "translation": [
+        -1,
+        -12.75,
+        5.25
+      ]
+    },
+    "gui": {
+      "rotation": [
+        -96.80999999999995,
+        -50.2800000000002,
+        -94.32000000000016
+      ],
+      "translation": [
+        -10,
+        -12.75,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "head": {
+      "translation": [
+        -1,
+        -12.75,
+        5.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        -96.81,
+        -50.28,
+        -94.32
+      ],
+      "translation": [
+        -10,
+        -12.75,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        -96.80999999999995,
+        -50.2800000000002,
+        -94.32000000000016
+      ],
+      "translation": [
+        -10,
+        -12.75,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    }
+  }
+}

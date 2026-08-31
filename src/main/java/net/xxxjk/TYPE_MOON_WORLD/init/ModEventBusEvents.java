@@ -87,6 +87,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.TOHSAKA_RIN.get(), TohsakaRinEntity.createAttributes().build());
       event.put(ModEntities.LEFF_LAYNOR_FLAUROS.get(), LeffLaynorFlaurosEntity.createAttributes().build());
       event.put(ModEntities.HERACLES.get(), ServantEntity.createAttributes().build());
+      event.put(ModEntities.JEANNE_ALTER.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.GENERIC_SERVANT.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.SASAKI_KOJIRO.get(), ServantEntity.createAttributes().build());
       event.put(ModEntities.OKITA_SOUJI_SABER.get(), ServantEntity.createAttributes().build());

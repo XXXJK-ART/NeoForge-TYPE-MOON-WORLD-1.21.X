@@ -1,0 +1,8 @@
+{
+  "duration":2.0,"notes":"Magenta spectral-dragon/flame surge based on the supplied Ephemeral Dream reference.",
+  "environment":[{"type":"screen_tint","color":"#1FD600FF","start":0,"end":1.1,"fade_in":0.1,"fade_out":0.55,"intensity":0.18}],
+  "emitters":[
+    {"start_time":0,"end_time":1.7,"rate":1100,"particle_lifetime":0.82,"binding":{"mode":"entity_yaw","offset":[0,0.8,0]},"component":{"type":"parametric","mode":"EXPRESSION","expr_x":"(1.0+4.5*t)*cos(t*25.13+time*7)","expr_y":"7.0*t","expr_z":"(1.0+4.5*t)*sin(t*25.13+time*7)","t_start":0,"t_end":1,"segments":240},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.28,"color":"#FFFF57F4"},{"t":0.65,"color":"#FF8C13DB"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.20},{"t":0.55,"size":0.95},{"t":1,"size":0.04}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0.22,"end_time":1.8,"rate":480,"particle_lifetime":0.74,"binding":{"mode":"entity","offset":[0,1.1,0]},"component":{"type":"sphere","radius":1,"sample_count":200},"color_over_life":[{"t":0,"color":"#88FFFFFF"},{"t":0.55,"color":"#CC5C0A90"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.3},{"t":1,"size":0.05}],"transform_over_life":[{"t":0,"scale":[0.6,0.8,0.6]},{"t":1,"scale":[8,5,8],"easing":"ease_out_cubic"}],"blend":"ADDITIVE"}
+  ]
+}

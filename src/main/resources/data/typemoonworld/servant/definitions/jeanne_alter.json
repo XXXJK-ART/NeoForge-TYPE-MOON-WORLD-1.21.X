@@ -1,0 +1,44 @@
+{
+  "id": "jeanne_alter",
+  "display_name": "Jeanne d'Arc Alter (Avenger)",
+  "display_name_zh": "贞德〔Alter〕（Avenger）",
+  "class_type": "avenger",
+  "faction": "human",
+  "traits": [
+    "servant", "humanoid", "living_human", "human", "human_kind",
+    "female", "avenger", "chaotic", "evil", "costume"
+  ],
+  "parameters": {
+    "strength": "A", "strength_plus": false,
+    "endurance": "C", "endurance_plus": false,
+    "agility": "A", "agility_plus": false,
+    "magic": "A", "magic_plus": true,
+    "luck": "E", "luck_plus": false,
+    "noble_phantasm": "A", "noble_phantasm_plus": true
+  },
+  "model": {
+    "geometry": "",
+    "texture": "typemoonworld:textures/entity/jeanne_alter.png",
+    "animation": ""
+  },
+  "specialization": {
+    "dimensions": {"width": 0.6, "height": 1.85, "eye_height": 1.66},
+    "hand_item_offset": {"x": 0.0, "y": 0.0, "z": 0.0},
+    "default_weapon": "typemoonworld:jeanne_alter_sword",
+    "combat_actions": [
+      "sweep", "slash", "horizontal_swing"
+    ]
+  },
+  "skills": [
+    "typemoonworld:jeanne_alter_avenger_b",
+    "typemoonworld:jeanne_alter_oblivion_correction_a",
+    "typemoonworld:jeanne_alter_self_replenishment_a_plus"
+  ],
+  "noble_phantasm": "typemoonworld:jeanne_alter_le_grondement_du_haine",
+  "personality": {
+    "obedience": "proud", "principle": "chaotic", "morality": "evil",
+    "social": "reserved", "combat": "aggressive", "starting_favor": 25.0
+  },
+  "ai_config": "jeanne_alter_ai",
+  "spawn_egg": {"primary": 1446428, "secondary": 9312057}
+}
