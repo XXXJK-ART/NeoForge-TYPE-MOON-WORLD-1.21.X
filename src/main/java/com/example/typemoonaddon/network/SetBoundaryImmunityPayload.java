@@ -25,7 +25,7 @@ public record SetBoundaryImmunityPayload(int entityId, List<String> boundaryIds)
     );
 
     public SetBoundaryImmunityPayload {
-        boundaryIds = List.copyOf(boundaryIds);
+        boundaryIds = boundaryIds == null ? List.of() : List.copyOf(boundaryIds);
     }
 
     @Override

@@ -1589,5 +1589,37 @@
     "sounds": [
       {"name": "typemoonworld:voice/okita_souji_saber/np", "stream": true}
     ]
+  },
+  "jeanne_alter_voice_summon": {
+    "sounds": [
+      {"name": "typemoonworld:jeanne_alter_summon", "stream": true}
+    ]
+  },
+  "jeanne_alter_voice_attack": {
+    "sounds": [
+      {"name": "typemoonworld:jeanne_alter_attack_1", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_attack_2", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_attack_3", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_attack_4", "stream": true}
+    ]
+  },
+  "jeanne_alter_voice_skill": {
+    "sounds": [
+      {"name": "typemoonworld:jeanne_alter_skill_1", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_skill_2", "stream": true}
+    ]
+  },
+  "jeanne_alter_voice_np": {
+    "sounds": [
+      {"name": "typemoonworld:jeanne_alter_np_1", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_np_2", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_np_3", "stream": true}
+    ]
+  },
+  "jeanne_alter_voice_defeat": {
+    "sounds": [
+      {"name": "typemoonworld:jeanne_alter_defeat_1", "stream": true},
+      {"name": "typemoonworld:jeanne_alter_defeat_2", "stream": true}
+    ]
   }
 }

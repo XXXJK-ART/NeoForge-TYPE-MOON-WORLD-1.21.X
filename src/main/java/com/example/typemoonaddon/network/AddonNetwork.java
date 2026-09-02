@@ -16,7 +16,12 @@ public final class AddonNetwork {
                 || !player.connection.hasChannel(payload.type())) {
             return;
         }
-        PacketDistributor.sendToPlayer(player, payload);
+        try {
+            PacketDistributor.sendToPlayer(player, payload);
+        } catch (UnsupportedOperationException ignored) {
+            // Embedded/GameTest players can report a channel before a client
+            // listener exists. Treat this as an unavailable optional client.
+        }
     }
 
     public static void sendNear(ServerLevel level, double x, double y, double z,

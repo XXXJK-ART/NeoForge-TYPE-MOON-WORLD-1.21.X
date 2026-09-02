@@ -206,6 +206,7 @@ public class TYPE_MOON_WORLD {
       event.enqueueWork(
          () -> {
             JeanneAlterContent.register();
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.class);
             MagicModularRegistry.ensureInitialized();
             MagicDefinitionRegistry.bootstrapBuiltins();
             ServantSkillRegistry.ensureInitialized();

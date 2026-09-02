@@ -156,6 +156,9 @@ public final class ServantCardTransformManager {
       vars.servant_card_flight_vertical = 0.0;
       clearServantRuntimeState(player, vars);
       ServantCardTraitService.apply(player, definition);
+      if ("jeanne_alter".equals(servantId)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.initializeCardPassives(player);
+      }
       if ("heracles".equals(servantId)) {
          ServantCardHeraclesSkills.initializeHeraclesGodHand(player);
       }
@@ -177,6 +180,9 @@ public final class ServantCardTransformManager {
          ServantCardEnkiduSkills.applyCurrentTransfiguration(player);
       }
       vars.syncPlayerVariables(player);
+      if ("jeanne_alter".equals(servantId)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterVoice.summon(player);
+      }
       player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.transformed", definition.displayName()), true);
       NeoForge.EVENT_BUS.post(new ServantTransformEvent.Post(player, publicId));
       return true;
@@ -206,6 +212,9 @@ public final class ServantCardTransformManager {
       if ("gilgamesh_caster".equals(vars.servant_card_id)) ServantCardCasterGilgameshSkills.clear(player);
       if ("okita_souji_saber".equals(vars.servant_card_id)) ServantCardOkitaSoujiSaberSkills.clear(player);
       if ("gilles_de_rais_caster".equals(vars.servant_card_id)) ServantCardGillesDeRaisSkills.clear(player);
+      if ("jeanne_alter".equals(vars.servant_card_id)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.clear(player);
+      }
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
       vars.servant_card_transformed = false;
@@ -528,6 +537,15 @@ public final class ServantCardTransformManager {
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
       ServantContext externalContext = new ServantContext(player, null, vars.servant_card_id, player.level(), 0.0, true, player.level().getGameTime());
       boolean noblePhantasmAction = isNoblePhantasmAction(vars.servant_card_id, slot);
+      boolean externalUnlimited = ServantCardUnlimitedMode.isEnabled(player);
+      int externalCooldownSlot = slot < 0 ? 6 : slot;
+      int externalCooldown = externalUnlimited ? 0 : noblePhantasmAction
+         ? vars.servant_card_np_cooldown : getSkillCooldown(vars, externalCooldownSlot);
+      if (parsedActionId != null && externalCooldown > 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown",
+            String.format(java.util.Locale.ROOT, "%.1f", externalCooldown / 20.0F)), true);
+         return false;
+      }
       if (parsedActionId != null && NeoForge.EVENT_BUS.post(new ServantActionEvent.Pre(
          noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
       net.xxxjk.typemoonworld.api.ExecutionResult external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
@@ -535,7 +553,18 @@ public final class ServantCardTransformManager {
       );
       if (external.handled()) {
          if (external.success() && external.resourceCost() > 0.0) {
-            if (!ServantCardManaService.consume(player, vars, external.resourceCost())) return false;
+            boolean paid = noblePhantasmAction
+               ? ServantCardManaService.consumeNoblePhantasm(player, vars, external.resourceCost())
+               : ServantCardManaService.consume(player, vars, external.resourceCost());
+            if (!paid) return false;
+         }
+         if (external.success() && !externalUnlimited && external.cooldownTicks() >= 0) {
+            if (noblePhantasmAction) {
+               setNoblePhantasmCooldown(player, vars, external.cooldownTicks());
+            } else {
+               setSkillCooldown(player, vars, externalCooldownSlot, external.cooldownTicks());
+            }
+            vars.syncPlayerVariables(player);
          }
          if (parsedActionId != null) NeoForge.EVENT_BUS.post(new ServantActionEvent.Post(
             noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext, external));

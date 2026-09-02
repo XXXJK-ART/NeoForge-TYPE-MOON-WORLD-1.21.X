@@ -26,7 +26,14 @@
     "hand_item_offset": {"x": 0.0, "y": 0.0, "z": 0.0},
     "default_weapon": "typemoonworld:jeanne_alter_sword",
     "combat_actions": [
-      "sweep", "slash", "horizontal_swing"
+      "sweep", "slash", "horizontal_swing",
+      "typemoonworld:jeanne_alter_fire_pillar",
+      "typemoonworld:jeanne_alter_cursed_lance",
+      "typemoonworld:jeanne_alter_self_modification_ex",
+      "typemoonworld:jeanne_alter_dragon_witch_ex",
+      "typemoonworld:jeanne_alter_inferno_body",
+      "typemoonworld:jeanne_alter_ephemeral_dream_a",
+      "typemoonworld:jeanne_alter_le_grondement_du_haine"
     ]
   },
   "skills": [

@@ -22,7 +22,9 @@ public record TerrainDebrisMessage(Vec3 center, long seed, List<Sample> samples)
    private static final int MAX_SAMPLES = 48;
 
    public TerrainDebrisMessage {
-      samples = List.copyOf(samples.subList(0, Math.min(MAX_SAMPLES, samples.size())));
+      samples = samples == null || samples.isEmpty()
+         ? List.of()
+         : List.copyOf(samples.subList(0, Math.min(MAX_SAMPLES, samples.size())));
    }
 
    @Override @NotNull public Type<TerrainDebrisMessage> type() { return TYPE; }

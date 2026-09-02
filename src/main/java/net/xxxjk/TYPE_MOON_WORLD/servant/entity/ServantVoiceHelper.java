@@ -7,6 +7,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterVoice;
 
 public final class ServantVoiceHelper {
    private static final String GLOBAL_VOICE_TICK_TAG = "TypeMoonVoiceGlobalTick";
@@ -142,6 +144,8 @@ public final class ServantVoiceHelper {
       } else if (isOkitaSoujiSaber(servant)) {
          if (servant.getRandom().nextFloat() > 0.50F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get());
+      } else if (isJeanneAlter(servant)) {
+         JeanneAlterVoice.attack(servant);
       }
    }
 
@@ -298,6 +302,8 @@ public final class ServantVoiceHelper {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.12F, 0.88F, ModSounds.ISKANDAR_VOICE_FAIL.get());
       } else if (isOkitaSoujiSaber(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.98F, ModSounds.OKITA_SOUJI_SABER_VOICE_FAIL.get());
+      } else if (isJeanneAlter(servant)) {
+         JeanneAlterVoice.defeat(servant);
       }
    }
 
@@ -758,6 +764,10 @@ public final class ServantVoiceHelper {
 
    private static boolean isOkitaSoujiSaber(ServantEntity servant) {
       return servant != null && OkitaSoujiSaberEntity.SERVANT_KEY.equals(servant.getServantId());
+   }
+
+   private static boolean isJeanneAlter(ServantEntity servant) {
+      return servant != null && JeanneAlterEntity.SERVANT_KEY.equals(servant.getServantId());
    }
 
 }

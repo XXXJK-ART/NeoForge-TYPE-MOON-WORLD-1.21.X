@@ -37,6 +37,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    private static final DustParticleOptions GREEN = new DustParticleOptions(new Vector3f(0.2F, 1.0F, 0.42F), 1.15F);
    private static final DustParticleOptions CHARGED_GREEN = new DustParticleOptions(new Vector3f(0.2F, 1.0F, 0.42F), 2.4F);
    private static final DustParticleOptions HEAVY_RED = new DustParticleOptions(new Vector3f(1.0F, 0.04F, 0.015F), 4.0F);
+   private static final DustParticleOptions ARROW_RED = new DustParticleOptions(new Vector3f(0.92F, 0.03F, 0.02F), 1.45F);
    private static final DustParticleOptions DARK_RED = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.0F), 2.6F);
    private static final DustParticleOptions GOLD = new DustParticleOptions(new Vector3f(1.0F, 0.78F, 0.08F), 2.2F);
    private static final DustParticleOptions WHITE = new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.8F);
@@ -165,7 +166,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    private void spawnFlightTrail() {
       int variant = this.getVariant();
       if (variant != SMALL_ENERGY && variant != LARGE_ENERGY) {
-         addFlightParticle(GREEN, this.position());
+         addFlightParticle(variant == NORMAL ? ARROW_RED : GREEN, this.position());
          addFlightParticle(ParticleTypes.END_ROD, this.position());
          return;
       }

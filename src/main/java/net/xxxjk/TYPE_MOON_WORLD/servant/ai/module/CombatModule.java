@@ -136,7 +136,8 @@ public final class CombatModule implements ServantAiModule {
    private static final ResourceLocation FRENZY_SPEED_RES = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "frenzy_speed_boost");
    private static final int PARACELSUS_CANNON_SUMMON_COOLDOWN = 240;
-   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 50;
+   private static final int PARACELSUS_MAGIC_AI_INTERVAL = 16;
+   private static final int PARACELSUS_HIGH_SPEED_MAGIC_AI_INTERVAL = 8;
    private static final String TAG_PARACELSUS_LAST_AI_MAGIC = "ParacelsusLastAiMagicTick";
 
    private boolean destroyBlockWithCombatFx(ServerLevel level, BlockPos pos, BlockState state, boolean heavyFx) {
@@ -288,7 +289,8 @@ public final class CombatModule implements ServantAiModule {
          || ParacelsusServantSkills.isNoblePhantasmChanting(entity, now)
          || !ParacelsusServantSkills.combatActionReady(entity, now)
          || now - entity.getPersistentData().getLong(TAG_PARACELSUS_LAST_AI_MAGIC)
-            < (entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now ? 20 : PARACELSUS_MAGIC_AI_INTERVAL)) {
+            < (entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now
+               ? PARACELSUS_HIGH_SPEED_MAGIC_AI_INTERVAL : PARACELSUS_MAGIC_AI_INTERVAL)) {
          return false;
       }
       if (!EntityUtils.isValidCombatTarget(entity, target)) {
@@ -297,14 +299,13 @@ public final class CombatModule implements ServantAiModule {
       String[] actions = entity.getCurrentMp() > entity.getMaxMp() * 0.55
          ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_b_cast", "earth_magic_b_cast", "wind_magic_b_cast"}
          : new String[]{"water_magic_b_cast", "earth_magic_b_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_b_cast", "fire_magic_a_cast"};
-      // High-speed chanting shortens the next decision interval, but it never
-      // permits several damaging actions in the same tick.
-      int casts = 1;
       boolean castAny = false;
       int decisionInterval = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now
-         ? 20 : PARACELSUS_MAGIC_AI_INTERVAL;
+         ? PARACELSUS_HIGH_SPEED_MAGIC_AI_INTERVAL : PARACELSUS_MAGIC_AI_INTERVAL;
       int start = (int)((now / decisionInterval) % actions.length);
-      for (int i = 0; i < casts; i++) {
+      // A cooling-down first choice must not waste the whole casting window.
+      // Stop after the first success so one AI decision still produces one spell.
+      for (int i = 0; i < actions.length; i++) {
          if (entity.getCurrentMp() < 7.0) {
             break;
          }
@@ -314,7 +315,7 @@ public final class CombatModule implements ServantAiModule {
          );
          if (result.handled() && result.success()) {
             castAny = true;
-            ParacelsusServantSkills.markCombatAction(entity, now, 20L);
+            ParacelsusServantSkills.markCombatAction(entity, now, decisionInterval);
             break;
          }
       }

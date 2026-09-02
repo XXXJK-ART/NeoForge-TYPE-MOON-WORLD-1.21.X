@@ -18,6 +18,11 @@ public class CuChulainnEntity extends ServantEntity {
          return false;
       }
       if (!source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+         CuChulainnCombatHelper.tryActivateBarrierAgainstNoblePhantasm(this, source);
+         amount = CuChulainnCombatHelper.absorbRuneBarrierDamage(this, amount);
+         if (amount <= 0.0F) {
+            return false;
+         }
          if (CuChulainnCombatHelper.tryNegateMedeaSmallMagic(this, source, amount)) {
             return false;
          }

@@ -218,7 +218,11 @@ public class ThompsonContenderItem extends Item implements GeoItem {
       level.sendParticles(origin ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, origin ? 14 : 8, 0.08, 0.08, 0.08, 0.03);
       drawInitialTrail(level, spawn, look, origin);
       level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, origin ? 1.1F : 0.95F, origin ? 1.35F : 1.65F);
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new FirearmPoseMessage(player.getUUID(), 12), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new FirearmPoseMessage(player.getUUID(), 12), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      } catch (UnsupportedOperationException ignored) {
+         // Visual-only payload; ignore unavailable embedded clients.
+      }
    }
 
    private static void drawInitialTrail(ServerLevel level, Vec3 start, Vec3 look, boolean origin) {

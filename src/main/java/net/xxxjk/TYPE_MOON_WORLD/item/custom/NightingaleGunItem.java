@@ -95,7 +95,11 @@ public class NightingaleGunItem extends Item implements GeoItem {
       ServantCardVoiceHelper.tryPlayAttack(player);
       player.getCooldowns().addCooldown(gun.getItem(),
          NightingaleSupportService.adjustActionTicks(player, 14, player.level().getGameTime()));
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new FirearmPoseMessage(player.getUUID(), 12));
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new FirearmPoseMessage(player.getUUID(), 12));
+      } catch (UnsupportedOperationException ignored) {
+         // Visual-only payload; ignore unavailable embedded clients.
+      }
    }
 
    public static boolean requiresAmmunition(Player player) {

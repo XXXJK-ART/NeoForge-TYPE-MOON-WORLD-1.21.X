@@ -4,11 +4,16 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import org.jetbrains.annotations.Nullable;
 
 /** Built-in Avenger Jeanne d'Arc Alter. */
 public final class JeanneAlterEntity extends ServantEntity {
@@ -21,6 +26,15 @@ public final class JeanneAlterEntity extends ServantEntity {
    @Override
    public HumanoidArm getMainArm() {
       return HumanoidArm.RIGHT;
+   }
+
+   @Override
+   public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType,
+                                       @Nullable SpawnGroupData groupData) {
+      SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, groupData);
+      this.ensureDefaultNpcLoadout(false);
+      JeanneAlterVoice.summon(this);
+      return result;
    }
 
    @Override

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -25,8 +26,10 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm.UBWBrokenPhantasmExplosion;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import org.joml.Vector3f;
 
 public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
+   private static final DustParticleOptions ARROW_RED = new DustParticleOptions(new Vector3f(0.92F, 0.03F, 0.02F), 1.35F);
    private static final EntityDataAccessor<Float> DIRECT_DAMAGE = SynchedEntityData.defineId(EmiyaArrowOrbProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> BROKEN_PHANTASM = SynchedEntityData.defineId(EmiyaArrowOrbProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private int maxLifeTicks = 80;
@@ -87,7 +90,7 @@ public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
       }
 
       if (this.level().isClientSide) {
-         this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
+         this.level().addParticle(ARROW_RED, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          this.level().addParticle(ParticleTypes.ENCHANT, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       } else if (this.tickCount > this.maxLifeTicks) {
          this.discard();

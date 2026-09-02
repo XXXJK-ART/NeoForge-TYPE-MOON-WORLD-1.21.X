@@ -75,7 +75,7 @@ public final class ParacelsusServantSkills {
    private static final int PHILOSOPHER_STONE_COOLDOWN = 900;
    private static final int NP_COOLDOWN = 900;
    private static final int NP_CHANT_TICKS = 140;
-   private static final int ELEMENTAL_MAGIC_COOLDOWN = 100;
+   private static final int ELEMENTAL_MAGIC_COOLDOWN = 20;
    private static final int TARGET_CANNON_COOLDOWN = 90;
    private static final int PHILOSOPHER_STONE_STARTING_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_MAX_CHARGES = 3;
@@ -235,6 +235,8 @@ public final class ParacelsusServantSkills {
             default -> castWindCut(level, entity, target, center, now);
          }
       }
+      // Registry callers outside the dedicated AI still receive a shared
+      // action gap; CombatModule replaces this with its current casting tempo.
       markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(7.0);
    }

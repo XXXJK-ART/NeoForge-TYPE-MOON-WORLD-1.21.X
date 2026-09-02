@@ -23,6 +23,10 @@ public final class JeanneAlterContent {
       addon.cards().registerAction(id("jeanne_alter_le_grondement_du_haine"), JeanneAlterSkills::noblePhantasm);
       addon.servants().registerAction(id("jeanne_alter_fire_pillar"), JeanneAlterSkills::combatFirePillar);
       addon.servants().registerAction(id("jeanne_alter_cursed_lance"), JeanneAlterSkills::combatCursedLance);
+      addon.servants().registerAction(id("jeanne_alter_self_modification_ex"), JeanneAlterSkills::combatSelfModification);
+      addon.servants().registerAction(id("jeanne_alter_dragon_witch_ex"), JeanneAlterSkills::combatDragonWitch);
+      addon.servants().registerAction(id("jeanne_alter_inferno_body"), JeanneAlterSkills::combatInfernoBody);
+      addon.servants().registerAction(id("jeanne_alter_ephemeral_dream_a"), JeanneAlterSkills::combatEphemeralDream);
       addon.servants().registerAction(id("jeanne_alter_le_grondement_du_haine"), JeanneAlterSkills::combatNoblePhantasm);
    }
    private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, path); }

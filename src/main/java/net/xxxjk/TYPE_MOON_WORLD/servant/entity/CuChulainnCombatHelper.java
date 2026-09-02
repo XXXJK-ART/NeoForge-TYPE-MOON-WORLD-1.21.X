@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCapabilityResolver;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
 
 public final class CuChulainnCombatHelper {
    public static final String PROTECTION_FROM_ARROWS_TAG = "CuProtectionFromArrows";
@@ -40,6 +41,9 @@ public final class CuChulainnCombatHelper {
    public static final String RUNE_BARRIER_X_TAG = "CuRuneBarrierX";
    public static final String RUNE_BARRIER_Y_TAG = "CuRuneBarrierY";
    public static final String RUNE_BARRIER_Z_TAG = "CuRuneBarrierZ";
+   public static final float RUNE_BARRIER_MAX_HP = 2000.0F;
+   public static final int RUNE_BARRIER_DURATION = 300;
+   public static final double RUNE_BARRIER_MP_COST = 80.0;
    public static final String BERKANA_NEXT_HEAL_TICK_TAG = "CuBerkanaNextHealTick";
    public static final String EXHAUST_EXPIRES_TAG = "CuExhaustExpires";
    public static final int SINGLE_GAE_BOLG_COOLDOWN = 160;
@@ -152,6 +156,42 @@ public final class CuChulainnCombatHelper {
          return true;
       }
       return false;
+   }
+
+   /** Opens the large rune barrier only when a lethal/NP-class attack is incoming. */
+   public static boolean tryActivateBarrierAgainstNoblePhantasm(CuChulainnEntity entity, DamageSource source) {
+      if (entity == null || source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+         || !NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, 300.0F)) {
+         return false;
+      }
+      var data = entity.getPersistentData();
+      long now = entity.level().getGameTime();
+      if (data.getFloat(RUNE_BARRIER_HP_TAG) > 0.0F && data.getLong(RUNE_BARRIER_UNTIL_TAG) > now) {
+         return true;
+      }
+      if (entity.getCurrentMp() < RUNE_BARRIER_MP_COST) return false;
+      entity.setCurrentMp(entity.getCurrentMp() - RUNE_BARRIER_MP_COST);
+      data.putFloat(RUNE_BARRIER_HP_TAG, RUNE_BARRIER_MAX_HP);
+      data.putLong(RUNE_BARRIER_UNTIL_TAG, now + RUNE_BARRIER_DURATION);
+      data.putDouble(RUNE_BARRIER_X_TAG, entity.getX());
+      data.putDouble(RUNE_BARRIER_Y_TAG, entity.getY());
+      data.putDouble(RUNE_BARRIER_Z_TAG, entity.getZ());
+      entity.triggerRuneCastAnimation();
+      if (entity.level() instanceof ServerLevel level) spawnDefenseFx(entity, false);
+      return true;
+   }
+
+   /** Absorbs damage from the active barrier and returns the remainder. */
+   public static float absorbRuneBarrierDamage(CuChulainnEntity entity, float amount) {
+      if (entity == null || amount <= 0.0F) return amount;
+      var data = entity.getPersistentData();
+      long now = entity.level().getGameTime();
+      float barrier = data.getFloat(RUNE_BARRIER_HP_TAG);
+      if (barrier <= 0.0F || data.getLong(RUNE_BARRIER_UNTIL_TAG) <= now) return amount;
+      float absorbed = Math.min(barrier, amount);
+      barrier -= absorbed;
+      if (barrier <= 0.0F) clearRuneBarrier(entity); else data.putFloat(RUNE_BARRIER_HP_TAG, barrier);
+      return amount - absorbed;
    }
 
    public static boolean isLaguzActive(ServantEntity entity) {

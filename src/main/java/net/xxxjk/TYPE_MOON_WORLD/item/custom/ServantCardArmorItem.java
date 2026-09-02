@@ -17,6 +17,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -144,6 +145,9 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       Entity entity = state.getData(DataTickets.ENTITY);
       if (!(entity instanceof LivingEntity living)) {
          return false;
+      }
+      if (living instanceof MedeaEntity medea) {
+         return medea.isFlyingMode();
       }
       TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "medea".equals(vars.servant_card_id) && vars.servant_card_flying;

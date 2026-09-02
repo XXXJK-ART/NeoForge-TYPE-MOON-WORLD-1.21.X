@@ -52,6 +52,8 @@ import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaThrownWeaponEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgArmyProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity;
@@ -131,6 +133,7 @@ public final class EmiyaArcherCombatHelper {
    public static final String RANGED_STANDOFF_START_TICK = "EmiyaRangedStandoffStartTick";
    public static final String LAST_PROBING_RANGED_SPECIAL_TICK = "EmiyaLastProbingRangedSpecialTick";
    public static final String LAST_ANALYSIS_TICK = "EmiyaLastAnalysisTick";
+   private static final String LAST_RED_ARROW_TICK = "EmiyaLastRedArrowTick";
    public static final String ANALYZED_WEAPON_STACK = "EmiyaAnalyzedWeaponStack";
    public static final String ANALYZED_WEAPON_BUFF_UNTIL = "EmiyaAnalyzedWeaponBuffUntil";
    public static final String BORROWED_NP_USED_UNTIL = "EmiyaBorrowedNoblePhantasmUsedUntil";
@@ -334,6 +337,11 @@ public final class EmiyaArcherCombatHelper {
             castProjectionVolley(entity, level, target, now);
             return;
          }
+         if (canUse(now, entity.getPersistentData().getLong(LAST_RED_ARROW_TICK), 24)
+            && distance >= 8.0 && entity.getSensing().hasLineOfSight(target)) {
+            shootRedArrow(entity, level, target, now);
+            return;
+         }
          if (activeShield != null) {
             stayBehindRhoAias(entity, activeShield, target);
          } else {
@@ -443,6 +451,20 @@ public final class EmiyaArcherCombatHelper {
       if (normalOrDecisive && distance <= 8.0 && canCastRhoAias(entity, now, phasedCooldown(RHO_AIAS_COOLDOWN, phase)) && entity.getCurrentMp() >= 35.0 && target.getLastHurtByMob() != null) {
          castRhoAias(entity, level, target, now);
       }
+   }
+
+   private static void shootRedArrow(EmiyaArcherEntity entity, ServerLevel level, LivingEntity target, long now) {
+      Vec3 start = entity.getEyePosition().add(entity.getLookAngle().scale(0.55));
+      Vec3 direction = target.getEyePosition().subtract(start);
+      if (direction.lengthSqr() < 1.0E-4) return;
+      direction = direction.normalize();
+      ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, entity,
+         ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE);
+      arrow.setPos(start.x, start.y, start.z);
+      arrow.setDeltaMovement(direction.scale(3.0));
+      level.addFreshEntity(arrow);
+      entity.getPersistentData().putLong(LAST_RED_ARROW_TICK, now);
+      entity.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
    }
 
    public static void tickPersistentState(EmiyaArcherEntity entity) {

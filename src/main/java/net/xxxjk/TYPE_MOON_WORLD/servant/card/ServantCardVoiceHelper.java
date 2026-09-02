@@ -41,6 +41,7 @@ public final class ServantCardVoiceHelper {
          case "diarmuid_ua_duibhne" -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
          case "lancelot_berserker" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
          case "baobhan_sith" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
+         case "jeanne_alter" -> ModSounds.JEANNE_ALTER_VOICE_ATTACK.get();
          default -> null;
       }, 70);
    }
@@ -92,6 +93,10 @@ public final class ServantCardVoiceHelper {
          case "baobhan_sith_blood_spike", "baobhan_sith_blood_thorns", "baobhan_sith_curse_volley",
             "baobhan_sith_fingertip_dance", "baobhan_sith_night_feast", "baobhan_sith_grimalkin",
             "baobhan_sith_blessed_successor", "baobhan_sith_fairy_vampirism" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
+         case "jeanne_alter_le_grondement_du_haine" -> ModSounds.JEANNE_ALTER_VOICE_NP.get();
+         case "jeanne_alter_fire_pillar", "jeanne_alter_cursed_lance", "jeanne_alter_self_modification_ex",
+            "jeanne_alter_dragon_witch_ex", "jeanne_alter_inferno_body", "jeanne_alter_ephemeral_dream_a"
+            -> ModSounds.JEANNE_ALTER_VOICE_SKILL.get();
          default -> null;
       };
       play(player, sound, 40);

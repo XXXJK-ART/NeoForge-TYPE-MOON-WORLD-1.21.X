@@ -75,8 +75,16 @@ public final class CardActionRegistry {
       return java.util.Collections.unmodifiableMap(result);
    }
    private static SlotBinding binding(String servantId, int slot) {
+      if (servantId == null || servantId.isBlank()) return null;
       String key = servantId + "#" + slot;
       SlotBinding binding = SLOT_BINDINGS.get(key);
+      if (binding == null) binding = DATA_BINDINGS.get(key);
+      if (binding != null || servantId.indexOf(':') >= 0) return binding;
+
+      // Built-in card state predates namespaced servant ids, while datapack
+      // definitions are always normalized to ResourceLocations.
+      key = "typemoonworld:" + servantId + "#" + slot;
+      binding = SLOT_BINDINGS.get(key);
       return binding != null ? binding : DATA_BINDINGS.get(key);
    }
    private record Entry(CardActionExecutor executor, String provider) { }
