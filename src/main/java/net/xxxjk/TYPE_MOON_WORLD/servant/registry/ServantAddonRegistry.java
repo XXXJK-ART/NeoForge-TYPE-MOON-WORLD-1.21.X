@@ -161,16 +161,49 @@ public final class ServantAddonRegistry implements IServantAddonRegistry {
       if (actionIds == null || actionIds.isEmpty() || contextFactory == null) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      for (String actionId : actionIds) {
-         if (!COMBAT_ACTIONS.containsKey(actionId)) {
-            continue;
-         }
+      // Sets originate from datapack definitions and do not provide a stable,
+      // fair order. Sort once, then rotate the starting point per caster. A
+      // failed/temporarily unavailable action must not block later skills.
+      List<String> available = actionIds.stream()
+         .map(ServantAddonRegistry::resolveCombatActionId)
+         .filter(java.util.Objects::nonNull)
+         .distinct()
+         .sorted()
+         .toList();
+      if (available.isEmpty()) return ServantExecutionResult.NOT_HANDLED;
+      ServantCombatActionContext probe = contextFactory.apply(available.getFirst());
+      var caster = probe == null ? null : probe.caster();
+      var data = caster == null ? null : caster.getPersistentData();
+      int start = data == null ? 0
+         : Math.floorMod(data.getInt("TypeMoonAddonActionCursor"), available.size());
+      ServantExecutionResult lastHandled = ServantExecutionResult.NOT_HANDLED;
+      for (int offset = 0; offset < available.size(); offset++) {
+         String actionId = available.get((start + offset) % available.size());
          ServantExecutionResult result = executeCombatAction(contextFactory.apply(actionId));
-         if (result.handled()) {
-            return result;
+         if (!result.handled()) continue;
+         lastHandled = result;
+         if (data != null) {
+            data.putInt("TypeMoonAddonActionCursor", (start + offset + 1) % available.size());
          }
+         if (result.success()) return result;
       }
-      return ServantExecutionResult.NOT_HANDLED;
+      return lastHandled;
+   }
+
+   /** Resolves legacy unqualified ids to the unique namespaced addon action. */
+   private static String resolveCombatActionId(String requested) {
+      if (requested == null || requested.isBlank()) return null;
+      if (COMBAT_ACTIONS.containsKey(requested)) return requested;
+      ResourceLocation parsed = ResourceLocation.tryParse(requested);
+      String path = parsed == null ? requested : parsed.getPath();
+      return COMBAT_ACTIONS.keySet().stream()
+         .filter(registered -> {
+            ResourceLocation id = ResourceLocation.tryParse(registered);
+            return id != null && id.getPath().equals(path);
+         })
+         .sorted()
+         .findFirst()
+         .orElse(null);
    }
 
    public static ServantExecutionResult runLifecycleHandlers(ServantLifecycleContext context) {

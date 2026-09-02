@@ -1,1 +1,1 @@
-{"id":"jeanne_alter_fire_pillar","display_name":"Execution Flame","display_name_zh":"火刑","type":"active","mp_cost":22,"cooldown_ticks":140,"duration_ticks":8}
+{"id":"jeanne_alter_fire_pillar","display_name":"Execution Flame","display_name_zh":"火刑","type":"active","mp_cost":22,"cooldown_ticks":140,"duration_ticks":8,"description_zh":"在锁定敌人脚下引爆火柱，造成72点范围伤害并点燃。"}

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType;
@@ -31,5 +32,15 @@ class ServantEngagementServiceTest {
       assertEquals(16.0, meleePressure.preferred());
       assertEquals(21.0, meleePressure.maximum());
       assertTrue(meleePressure.preferred() > rangedDuel.preferred());
+   }
+
+   @Test
+   void rangedFighterHoldsAStableFiringWindow() {
+      var band = new ServantEngagementService.RangeBand(8.0, 14.0, 20.0);
+
+      assertTrue(ServantEngagementService.shouldHoldFiringPosition(14.0, band, true, false));
+      assertFalse(ServantEngagementService.shouldHoldFiringPosition(7.0, band, true, false));
+      assertFalse(ServantEngagementService.shouldHoldFiringPosition(14.0, band, false, false));
+      assertFalse(ServantEngagementService.shouldHoldFiringPosition(14.0, band, true, true));
    }
 }

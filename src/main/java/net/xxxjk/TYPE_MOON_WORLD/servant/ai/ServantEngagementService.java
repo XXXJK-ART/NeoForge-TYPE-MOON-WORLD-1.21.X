@@ -122,8 +122,36 @@ public final class ServantEngagementService {
       String keyPrefix
    ) {
       RangeBand band = rangedBand(target, minimum, preferred, maximum);
-      Vec3 destination = rangedDestination(entity, target, gameTick, band);
       double distance = entity.distanceTo(target);
+      boolean hasLineOfSight = entity.getSensing().hasLineOfSight(target);
+      boolean closingFast = isClosingFast(entity, target);
+      String nextRepositionKey = keyPrefix + "NextRepositionTick";
+      var data = entity.getPersistentData();
+
+      if (shouldHoldFiringPosition(distance, band, hasLineOfSight, closingFast)) {
+         long nextReposition = data.getLong(nextRepositionKey);
+         if (nextReposition <= 0L) {
+            data.putLong(nextRepositionKey, gameTick + rangedRepositionInterval(entity));
+            nextReposition = data.getLong(nextRepositionKey);
+         }
+         if (gameTick < nextReposition) {
+            if (ServantNavigationHelper.movementAvailable(entity, gameTick, keyPrefix)) {
+               entity.getNavigation().stop();
+               entity.setSprinting(false);
+            }
+            entity.getLookControl().setLookAt(target, 55.0F, 45.0F);
+            return true;
+         }
+         data.putLong(nextRepositionKey, gameTick + rangedRepositionInterval(entity));
+      } else if (!hasLineOfSight) {
+         ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
+         if (ServantManeuverService.reposition(entity, target, tactical, gameTick)) {
+            data.putLong(nextRepositionKey, gameTick + 10L);
+            return true;
+         }
+      }
+
+      Vec3 destination = rangedDestination(entity, target, gameTick, band);
       double movementSpeed = distance < band.minimum() ? speed * 1.12 : distance > band.maximum() ? speed * 1.08 : speed;
       return ServantNavigationHelper.moveToPositionThrottled(
          entity,
@@ -134,6 +162,23 @@ public final class ServantEngagementService {
          1.0,
          keyPrefix
       );
+   }
+
+   static boolean shouldHoldFiringPosition(double distance, RangeBand band,
+                                           boolean hasLineOfSight, boolean closingFast) {
+      return band != null && hasLineOfSight && !closingFast
+         && distance >= band.minimum() + 0.75
+         && distance <= band.maximum() - 0.75;
+   }
+
+   private static boolean isClosingFast(LivingEntity entity, LivingEntity target) {
+      Vec3 towardEntity = horizontal(entity.position().subtract(target.position()));
+      if (towardEntity.lengthSqr() < MIN_DIRECTION_SQR) return false;
+      return horizontal(target.getDeltaMovement()).dot(towardEntity.normalize()) > 0.08;
+   }
+
+   private static int rangedRepositionInterval(LivingEntity entity) {
+      return 28 + Math.floorMod(entity.getId(), 13);
    }
 
    public static Vec3 rangedDestination(LivingEntity entity, LivingEntity target, long gameTick, RangeBand band) {

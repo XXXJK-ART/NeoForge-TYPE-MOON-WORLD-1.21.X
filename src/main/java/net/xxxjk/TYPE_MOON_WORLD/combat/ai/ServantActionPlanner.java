@@ -6,6 +6,8 @@ import javax.annotation.Nullable;
 import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver;
 
 /** Scores explicitly shared data-driven actions while legacy helpers remain compatible. */
 public final class ServantActionPlanner {
@@ -27,16 +29,18 @@ public final class ServantActionPlanner {
       AiBlackboard.OpponentSnapshot memory = blackboard == null
          ? AiBlackboard.OpponentSnapshot.EMPTY
          : blackboard.opponent(target.getUUID());
+      ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       return profile.actions().stream()
          .filter(action -> ServantPlannedActionExecutor.canExecute(entity, target, action, entity.level().getGameTime()))
          .sorted(Comparator.comparingDouble((AiActionDescriptor action) ->
-            utility(entity, target, phase, profile, action, distance, memory)).reversed())
+            utility(entity, target, phase, profile, action, distance, memory, tactical)).reversed())
          .toList();
    }
 
    private static double utility(ServantEntity entity, LivingEntity target, ServantCombatPhase phase,
                                  ServantActionProfile profile, AiActionDescriptor action, double distance,
-                                 AiBlackboard.OpponentSnapshot memory) {
+                                 AiBlackboard.OpponentSnapshot memory,
+                                 ServantAiDefinition.Tactical tactical) {
       double rangeCenter = (action.minimumRange() + action.maximumRange()) * 0.5;
       double score = 100.0 - Math.abs(distance - rangeCenter) * 5.0;
       double environmentComfort = entity.getPersistentData().getDouble("TypeMoonAiEnvironmentComfort");
@@ -74,7 +78,7 @@ public final class ServantActionPlanner {
       if (action.threat().collateralRadius() > 0.0) {
          double radius = action.threat().collateralRadius();
          long allies = entity.level().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(radius), entity::isAlliedTo).size();
-         double caution = net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver.resolve(entity).collateralCaution();
+         double caution = tactical.collateralCaution();
          double collateralMultiplier = 0.35 + caution * 1.3;
          score -= allies * 35.0 * collateralMultiplier;
       }

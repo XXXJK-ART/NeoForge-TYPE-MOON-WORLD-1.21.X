@@ -1,7 +1,7 @@
 {
   "id": "fanatic_assassin",
-  "display_name": "Fanatic (Assassin)",
-  "display_name_zh": "\u72c2\u4fe1\u5b50\uff08Assassin\uff09",
+  "display_name": "Fanatic",
+  "display_name_zh": "狂信子",
   "class_type": "assassin",
   "faction": "human",
   "traits": [

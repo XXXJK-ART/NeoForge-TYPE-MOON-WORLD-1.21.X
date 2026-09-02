@@ -1,7 +1,7 @@
 {
   "id": "ushiwakamaru_rider",
-  "display_name": "Ushiwakamaru (Rider)",
-  "display_name_zh": "\u725b\u82e5\u4e38\uff08Rider\uff09",
+  "display_name": "Ushiwakamaru",
+  "display_name_zh": "牛若丸",
   "class_type": "rider",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "human", "female", "rider", "riding", "genji", "sapient", "balanced", "chaotic", "neutral_alignment"],

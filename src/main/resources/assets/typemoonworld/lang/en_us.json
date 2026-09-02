@@ -2095,7 +2095,7 @@
 
   "entity.typemoonworld.apocalypse_horse": "Apocalypse Horse",
   "entity.typemoonworld.apocalypse_horseman": "Horseman Manifestation",
-  "entity.typemoonworld.arash": "Arash (Archer)",
+  "entity.typemoonworld.arash": "Arash",
   "entity.typemoonworld.arash_particle_arrow": "Arash Particle Arrow",
   "entity.typemoonworld.arash_stella_controller": "Stella",
   "entity.typemoonworld.artoria_pendragon": "Artoria Pendragon",
@@ -2113,17 +2113,17 @@
   "entity.typemoonworld.cursed_arm_hassan": "Hassan of the Cursed Arm",
   "entity.typemoonworld.diarmuid_ua_duibhne": "Diarmuid Ua Duibhne",
   "entity.typemoonworld.dragonfang_soldier": "Dragonfang Soldier",
-  "entity.typemoonworld.emiya_archer": "Emiya (Archer)",
-  "entity.typemoonworld.enkidu": "Enkidu (Lancer)",
+  "entity.typemoonworld.emiya_archer": "Emiya",
+  "entity.typemoonworld.enkidu": "Enkidu",
   "entity.typemoonworld.enkidu_earth_weapon": "Age of Babylon",
   "entity.typemoonworld.enuma_chain_crown": "Chains of Heaven Crown",
   "entity.typemoonworld.evil_spirit": "Greater Evil Spirit",
   "entity.typemoonworld.evil_spirit_small": "Lesser Evil Spirit",
   "entity.typemoonworld.fanatic_assassin": "Fanatic",
   "entity.typemoonworld.fanatic_assassin_jinn": "Jinn of the Fanatic",
-  "entity.typemoonworld.gawain": "Gawain (Saber)",
+  "entity.typemoonworld.gawain": "Gawain",
   "entity.typemoonworld.ghoul": "Ghoul",
-  "entity.typemoonworld.gilgamesh": "Gilgamesh (Archer)",
+  "entity.typemoonworld.gilgamesh": "Gilgamesh",
   "entity.typemoonworld.gilgamesh_caster": "Gilgamesh",
   "entity.typemoonworld.gilles_de_rais_caster": "Gilles de Rais",
   "entity.typemoonworld.gilles_huge_sea_monster": "Uncontrolled Huge Sea Monster",
@@ -2346,10 +2346,10 @@
   "entity.typemoonworld.nero_chaos_serpent": "Serpent of Nrvnqsr Chaos",
   "entity.typemoonworld.nero_chaos_stag": "Stag of Nrvnqsr Chaos",
   "entity.typemoonworld.night_kin": "Night Kin",
-  "entity.typemoonworld.nightingale": "Florence Nightingale (Berserker)",
+  "entity.typemoonworld.nightingale": "Florence Nightingale",
   "entity.typemoonworld.nightingale_bullet": "Nightingale Bullet",
   "entity.typemoonworld.oda_matchlock_gun": "Matchlock Gun",
-  "entity.typemoonworld.oda_nobunaga": "Oda Nobunaga (Archer)",
+  "entity.typemoonworld.oda_nobunaga": "Oda Nobunaga",
   "entity.typemoonworld.okita_shinsengumi": "Shinsengumi Member",
   "entity.typemoonworld.okita_souji_saber": "Okita Souji",
   "entity.typemoonworld.pale_rider": "Pale Rider",
@@ -2482,7 +2482,7 @@
   "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_3": "§7[Ryougi Shiki] Whatever it is, if it's an obstacle, I'll cut it.",
   "entity.typemoonworld.ryougi_shiki.speech.void_fall": "§c[Ryougi Shiki] §4The concept of death... this kind of thing doesn't work on me.",
   "entity.typemoonworld.sasaki_kojiro": "Sasaki Kojirou",
-  "entity.typemoonworld.senko_muramasa": "Senko Muramasa (Saber)",
+  "entity.typemoonworld.senko_muramasa": "Senko Muramasa",
   "entity.typemoonworld.shadow_hassan": "Hassan of the Shadow",
   "entity.typemoonworld.shadow_hassan_death_shadow": "Meditative Sensitivity",
   "entity.typemoonworld.shinsengumi": "Shinsengumi",
@@ -2490,7 +2490,7 @@
   "entity.typemoonworld.stone_man": "Stone Man",
   "entity.typemoonworld.the_dead": "The Dead",
   "entity.typemoonworld.tohsaka_rin": "Tohsaka Rin",
-  "entity.typemoonworld.ushiwakamaru_rider": "Ushiwakamaru (Rider)",
+  "entity.typemoonworld.ushiwakamaru_rider": "Ushiwakamaru",
   "entity.typemoonworld.worm": "Worm",
   "entity.typemoonworld.worm.detection": "Detection Worm",
   "entity.typemoonworld.worm.endermite": "Endermite Worm",
@@ -3317,6 +3317,7 @@
   ,"entity.typemoonworld.jeanne_alter": "Jeanne d'Arc Alter"
   ,"skill.typemoonworld.jeanne_alter.fire_pillar": "Execution Flame"
   ,"skill.typemoonworld.jeanne_alter.cursed_lance": "Cursed Lance Array"
+  ,"item.typemoonworld.jeanne_alter_cursed_lance_item": "Vengeance Flame Lance"
   ,"skill.typemoonworld.jeanne_alter.self_modification_ex": "Self-Modification EX"
   ,"skill.typemoonworld.jeanne_alter.dragon_witch_ex": "Dragon Witch EX"
   ,"skill.typemoonworld.jeanne_alter.inferno_body": "Inferno Body"

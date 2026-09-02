@@ -46,10 +46,17 @@ public final class ServantManeuverService {
          && tactical.verticalMobility() >= 0.35;
       boolean rangedPressure = hasRangedPressure(servant, target);
       boolean antiKiteApproach = rangedPressure && distance > Math.max(5.0, tactical.minimumRange() + 1.0);
+      // Jeanne Alter's profile is ranged-capable (cursed lance), so the
+      // generic maneuver gate can otherwise leave her idle between the last
+      // action's range and the distant-pursuit threshold. Keep her advancing
+      // whenever she has drifted beyond her preferred casting band.
+      boolean jeanneAlterAdvance = "jeanne_alter".equals(servant.getServantId())
+         && distance > tactical.preferredRange() + 1.5;
       boolean maneuverActive = maneuverLatch(servant, target, distance);
       return distance >= MIN_MANEUVER_DISTANCE && distance <= MANEUVER_EXIT_DISTANCE && maneuverActive
          && (ServantCombatMotionService.canPursue(servant, target)
              || antiKiteApproach
+             || jeanneAlterAdvance
              || ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.MELEE
                 && distance >= 10.0
                 && (target.getDeltaMovement().horizontalDistanceSqr() >= 0.08 || airborneIntercept));

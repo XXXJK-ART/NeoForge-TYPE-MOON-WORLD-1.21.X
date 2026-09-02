@@ -1,1 +1,1 @@
-{"id":"jeanne_alter_self_modification_ex","display_name":"Self-Modification EX","display_name_zh":"自我改造 EX","type":"active","mp_cost":30,"cooldown_ticks":500,"duration_ticks":400}
+{"id":"jeanne_alter_self_modification_ex","display_name":"Self-Modification EX","display_name_zh":"自我改造 EX","type":"active","mp_cost":30,"cooldown_ticks":500,"duration_ticks":400,"description_zh":"20秒内将暴击率提高至45%，暴击伤害提高至3倍；结束后恢复忘却补正。"}

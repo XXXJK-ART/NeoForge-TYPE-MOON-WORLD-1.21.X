@@ -1,7 +1,7 @@
 {
   "id": "arash",
-  "display_name": "Arash (Archer)",
-  "display_name_zh": "阿拉什（Archer）",
+  "display_name": "Arash",
+  "display_name_zh": "阿拉什",
   "class_type": "archer",
   "faction": "human",
   "traits": [

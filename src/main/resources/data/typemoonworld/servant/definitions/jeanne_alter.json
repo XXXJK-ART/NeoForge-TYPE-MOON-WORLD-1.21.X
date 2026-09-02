@@ -1,7 +1,7 @@
 {
   "id": "jeanne_alter",
-  "display_name": "Jeanne d'Arc Alter (Avenger)",
-  "display_name_zh": "贞德〔Alter〕（Avenger）",
+  "display_name": "Jeanne d'Arc Alter",
+  "display_name_zh": "贞德〔Alter〕",
   "class_type": "avenger",
   "faction": "human",
   "traits": [

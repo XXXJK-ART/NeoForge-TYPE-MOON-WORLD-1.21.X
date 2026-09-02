@@ -1,7 +1,7 @@
 {
   "id": "hundred_faces_hassan",
-  "display_name": "Hassan of the Hundred Faces (Assassin)",
-  "display_name_zh": "\u767e\u8c8c\u54c8\u6851\uff08Assassin\uff09",
+  "display_name": "Hassan of the Hundred Faces",
+  "display_name_zh": "百貌哈桑",
   "class_type": "assassin",
   "faction": "human",
   "traits": [

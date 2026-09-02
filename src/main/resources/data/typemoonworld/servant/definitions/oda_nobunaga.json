@@ -1,7 +1,7 @@
 {
   "id": "oda_nobunaga",
   "display_name": "Oda Nobunaga",
-  "display_name_zh": "织田信长(Archer)",
+  "display_name_zh": "织田信长",
   "class_type": "archer",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "archer", "female", "human", "sapient", "lawful", "neutral_alignment", "balanced"],

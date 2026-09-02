@@ -1,6 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai;
 
 import java.util.UUID;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionProfile;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
@@ -40,6 +43,8 @@ public final class ServantTacticalController {
    private static final ResourceLocation DISTANT_PURSUIT = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/distant_pursuit");
    private static final ResourceLocation COMBAT_MANEUVER = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/combat_maneuver");
    private static final ResourceLocation TACTICAL_REPOSITION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/tactical_reposition");
+   private static final int ACTION_DECISION_INTERVAL = 4;
+   private static final Map<ServantEntity, CachedActionCandidates> ACTION_CACHE = new WeakHashMap<>();
 
    private ServantTacticalController() { }
 
@@ -72,7 +77,7 @@ public final class ServantTacticalController {
          && ServantPlannedActionExecutor.stage(entity) != ServantPlannedActionExecutor.Stage.APPROACH;
       java.util.List<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor> candidates = plannedActive
          ? java.util.List.of()
-          : ServantActionPlanner.candidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard());
+          : cachedActionCandidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard(), now);
       if (tempo.meleePressure() && entity.getTarget() != null && entity.distanceTo(entity.getTarget()) <= 6.0) {
          candidates = candidates.stream().filter(ServantTacticalController::allowedDuringMeleePressure).toList();
       }
@@ -140,12 +145,12 @@ public final class ServantTacticalController {
          }
       }
 
-      for (CombatThreat threat : CombatThreatService.nearby(level, entity.position(), 64.0, now)) {
-         if (!hostile(entity, level, threat.sourceUuid())) continue;
+      CombatThreatService.forEachNearby(level, entity.position(), 64.0, now, threat -> {
+         if (!hostile(entity, level, threat.sourceUuid())) return;
          boolean explicitlyTargeted = entity.getUUID().equals(threat.targetUuid());
-         if (!explicitlyTargeted && !threat.threatens(entity.getEyePosition(), entity.getBbWidth() * 0.65)) continue;
-         if (threat.ticksToImpact(now) > 20L || !threat.dodgeable()) continue;
-         if (ServantCombatDisposition.isRelentlessAdvance(entity)) continue;
+         if (!explicitlyTargeted && !threat.threatens(entity.getEyePosition(), entity.getBbWidth() * 0.65)) return;
+         if (threat.ticksToImpact(now) > 20L || !threat.dodgeable()) return;
+         if (ServantCombatDisposition.isRelentlessAdvance(entity)) return;
          brain.blackboard().observe(threat.sourceUuid(), threat.actionId(),
             entity.position().distanceTo(threat.origin()), 0.0, true, now);
          double utility = threat.danger() * 20.0 + Math.max(0.0, 20.0 - threat.ticksToImpact(now));
@@ -162,7 +167,7 @@ public final class ServantTacticalController {
                }
             },
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
-      }
+      });
 
       AiBrain.Resolution resolution = brain.resolve();
       if (keepActionTimeline && resolution.intent() != null
@@ -177,7 +182,26 @@ public final class ServantTacticalController {
             entity.getLookControl().setLookAt(facingTarget, 45.0F, 45.0F);
          }
       }
-      return resolution.consumesLegacyControl();
+      return consumesLegacyCombat(resolution);
+   }
+
+   /**
+    * Tactical movement is allowed to run beside a servant's combat helper.
+    * Only attacks, casts, defenses, and explicit master/phase commands replace
+    * legacy or addon combat execution for the tick.
+    */
+   static boolean consumesLegacyCombat(AiBrain.Resolution resolution) {
+      if (resolution == null) return false;
+      if (!resolution.executed()) return resolution.committed();
+      AiIntent intent = resolution.intent();
+      if (intent == null) return resolution.committed();
+      return intent.controls().contains(AiControl.ATTACK)
+         || intent.controls().contains(AiControl.CAST)
+         || intent.controls().contains(AiControl.DEFEND)
+         || intent.id().equals(MASTER_FOLLOW)
+         || intent.id().equals(MASTER_GUARD)
+         || intent.id().equals(MASTER_STAY)
+         || intent.id().equals(PHASE_TRANSITION);
    }
 
    static boolean allowedDuringMeleePressure(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor action) {
@@ -186,6 +210,49 @@ public final class ServantTacticalController {
          || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.GUARD)
          || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.HEAL);
    }
+
+   /**
+    * Action scoring performs LOS and nearby-entity queries. Keep the selected
+    * action for a few ticks, but invalidate it immediately when its target,
+    * phase, or cooldown changes. This removes repeated scans without making a
+    * servant commit to a stale action.
+    */
+   private static java.util.List<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor> cachedActionCandidates(
+      ServantEntity entity, LivingEntity target, ServantCombatPhase phase,
+      ServantActionProfile profile, AiBlackboard blackboard, long now) {
+      if (target == null || profile == null) return java.util.List.of();
+      var data = entity.getPersistentData();
+      CachedActionCandidates cached;
+      synchronized (ACTION_CACHE) {
+         cached = ACTION_CACHE.get(entity);
+      }
+      boolean sameTarget = cached != null && cached.target().equals(target.getUUID());
+      boolean samePhase = cached != null && cached.phase() == phase;
+      boolean sameProfile = cached != null && cached.profile() == profile;
+      boolean due = cached == null || now - cached.tick() >= ACTION_DECISION_INTERVAL;
+      if (!due && sameTarget && samePhase && sameProfile) {
+         var usable = cached.actions().stream()
+            .filter(action -> ServantPlannedActionExecutor.canExecute(entity, target, action, now))
+            .toList();
+         if (!usable.isEmpty()) return usable;
+      }
+
+      var scored = ServantActionPlanner.candidates(entity, target, phase, profile, blackboard);
+      if (scored.isEmpty()) {
+         synchronized (ACTION_CACHE) {
+            ACTION_CACHE.remove(entity);
+         }
+         return java.util.List.of();
+      }
+      data.putString("TypeMoonAiSelectedAction", scored.getFirst().id().toString());
+      synchronized (ACTION_CACHE) {
+         ACTION_CACHE.put(entity, new CachedActionCandidates(target.getUUID(), phase, profile, now, scored));
+      }
+      return scored;
+   }
+
+   private record CachedActionCandidates(UUID target, ServantCombatPhase phase, ServantActionProfile profile, long tick,
+                                         java.util.List<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor> actions) { }
 
    private static void submitActivePlannedAction(ServantEntity entity, AiBrain brain, long now) {
       ResourceLocation id = ResourceLocation.tryParse(entity.getPersistentData().getString("TypeMoonPlannedActionId"));
@@ -198,7 +265,7 @@ public final class ServantTacticalController {
       LivingEntity target = entity.getTarget();
       if (!ServantPursuitService.shouldPursue(entity, target)) return;
       double distance = entity.distanceTo(target);
-      brain.submit(AiIntent.of(DISTANT_PURSUIT, AiIntent.PRIORITY_POSITION, distance, 3, true,
+      brain.submit(AiIntent.of(DISTANT_PURSUIT, AiIntent.PRIORITY_POSITION, distance, 0, true,
          () -> ServantPursuitService.pursue(entity, target, now), AiControl.MOVE, AiControl.LOOK));
    }
 
@@ -228,7 +295,7 @@ public final class ServantTacticalController {
       int priority = rangedPressure ? AiIntent.PRIORITY_ATTACK : AiIntent.PRIORITY_POSITION;
       double utility = entity.distanceTo(target) + tactical.pursuitAggression() * 20.0
          + (rangedPressure ? 120.0 : 0.0);
-      brain.submit(AiIntent.attempt(COMBAT_MANEUVER, priority, utility, 3, true,
+      brain.submit(AiIntent.attempt(COMBAT_MANEUVER, priority, utility, 0, true,
          () -> {
             if (!ServantManeuverService.trySideForwardReengage(entity, target, tactical, brain.blackboard(), now)) {
                return ServantManeuverService.maneuver(entity, target, now, tactical.interceptBias(), tactical.pursuitAggression());
@@ -250,7 +317,7 @@ public final class ServantTacticalController {
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
       if (!ServantManeuverService.shouldReposition(entity, target, tactical, now)) return;
       brain.submit(AiIntent.attempt(TACTICAL_REPOSITION, AiIntent.PRIORITY_POSITION,
-         tactical.repositionDistance() + tactical.pursuitAggression() * 10.0, 4, true,
+         tactical.repositionDistance() + tactical.pursuitAggression() * 10.0, 0, true,
          () -> ServantManeuverService.reposition(entity, target, tactical, now), AiControl.MOVE, AiControl.LOOK));
    }
 

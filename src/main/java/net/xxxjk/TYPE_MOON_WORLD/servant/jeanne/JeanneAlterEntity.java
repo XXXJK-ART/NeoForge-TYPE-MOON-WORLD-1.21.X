@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.server.level.ServerLevel;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,14 @@ public final class JeanneAlterEntity extends ServantEntity {
    @Override
    public HumanoidArm getMainArm() {
       return HumanoidArm.RIGHT;
+   }
+
+   @Override
+   protected void customServerAiStep() {
+      super.customServerAiStep();
+      if (this.level() instanceof ServerLevel level && this.isAlive()) {
+         JeanneAlterClosePressureAi.tick(this, level);
+      }
    }
 
    @Override

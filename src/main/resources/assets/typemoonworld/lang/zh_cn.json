@@ -2095,7 +2095,7 @@
 
   "entity.typemoonworld.apocalypse_horse": "天启骷髅马",
   "entity.typemoonworld.apocalypse_horseman": "四骑士显现体",
-  "entity.typemoonworld.arash": "阿拉什（Archer）",
+  "entity.typemoonworld.arash": "阿拉什",
   "entity.typemoonworld.arash_particle_arrow": "阿拉什的粒子箭",
   "entity.typemoonworld.arash_stella_controller": "流星一条",
   "entity.typemoonworld.artoria_pendragon": "阿尔托莉雅·潘德拉贡",
@@ -2113,17 +2113,17 @@
   "entity.typemoonworld.cursed_arm_hassan": "咒腕哈桑",
   "entity.typemoonworld.diarmuid_ua_duibhne": "迪尔姆德·奥迪那",
   "entity.typemoonworld.dragonfang_soldier": "龙牙兵",
-  "entity.typemoonworld.emiya_archer": "卫宫(Archer)",
-  "entity.typemoonworld.enkidu": "恩奇都(Lancer)",
+  "entity.typemoonworld.emiya_archer": "卫宫",
+  "entity.typemoonworld.enkidu": "恩奇都",
   "entity.typemoonworld.enkidu_earth_weapon": "民之睿智",
   "entity.typemoonworld.enuma_chain_crown": "天之锁冠",
   "entity.typemoonworld.evil_spirit": "大型恶灵",
   "entity.typemoonworld.evil_spirit_small": "小型恶灵",
   "entity.typemoonworld.fanatic_assassin": "狂信子",
   "entity.typemoonworld.fanatic_assassin_jinn": "狂信子的镇尼",
-  "entity.typemoonworld.gawain": "高文(Saber)",
+  "entity.typemoonworld.gawain": "高文",
   "entity.typemoonworld.ghoul": "屍鬼",
-  "entity.typemoonworld.gilgamesh": "吉尔伽美什(Archer)",
+  "entity.typemoonworld.gilgamesh": "吉尔伽美什",
   "entity.typemoonworld.gilgamesh_caster": "吉尔伽美什",
   "entity.typemoonworld.gilles_de_rais_caster": "吉尔·德·雷",
   "entity.typemoonworld.gilles_huge_sea_monster": "失控巨型海魔",
@@ -2349,7 +2349,7 @@
   "entity.typemoonworld.nightingale": "弗洛伦斯·南丁格尔",
   "entity.typemoonworld.nightingale_bullet": "南丁格尔的子弹",
   "entity.typemoonworld.oda_matchlock_gun": "火绳枪",
-  "entity.typemoonworld.oda_nobunaga": "织田信长(Archer)",
+  "entity.typemoonworld.oda_nobunaga": "织田信长",
   "entity.typemoonworld.okita_shinsengumi": "新选组成员",
   "entity.typemoonworld.okita_souji_saber": "冲田总司",
   "entity.typemoonworld.pale_rider": "苍白骑士",
@@ -2490,7 +2490,7 @@
   "entity.typemoonworld.stone_man": "魔偶",
   "entity.typemoonworld.the_dead": "死者",
   "entity.typemoonworld.tohsaka_rin": "远坂凛",
-  "entity.typemoonworld.ushiwakamaru_rider": "牛若丸（Rider）",
+  "entity.typemoonworld.ushiwakamaru_rider": "牛若丸",
   "entity.typemoonworld.worm": "虫",
   "entity.typemoonworld.worm.detection": "侦测虫",
   "entity.typemoonworld.worm.endermite": "末影螨",
@@ -3317,6 +3317,7 @@
   ,"entity.typemoonworld.jeanne_alter": "贞德〔Alter〕"
   ,"skill.typemoonworld.jeanne_alter.fire_pillar": "火刑"
   ,"skill.typemoonworld.jeanne_alter.cursed_lance": "灼烧枪阵"
+  ,"item.typemoonworld.jeanne_alter_cursed_lance_item": "复仇之焰长枪"
   ,"skill.typemoonworld.jeanne_alter.self_modification_ex": "自我改造 EX"
   ,"skill.typemoonworld.jeanne_alter.dragon_witch_ex": "龙之魔女 EX"
   ,"skill.typemoonworld.jeanne_alter.inferno_body": "业火缠身"

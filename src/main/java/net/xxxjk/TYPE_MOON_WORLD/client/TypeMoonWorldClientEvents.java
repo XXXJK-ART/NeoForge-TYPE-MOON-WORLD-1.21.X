@@ -92,6 +92,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.renderer.VFXTriggerRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.HajunDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.world.UBWDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.UbwSkyGearEntityRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.JeanneAlterCursedLanceRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ZhaoYunHakuryuRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.chain.client.renderer.EnumaChainCrownRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.chain.client.renderer.HeavenChainBindingRenderer;
@@ -279,6 +280,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.LEFF_LAYNOR_FLAUROS.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.LeffLaynorFlaurosRenderer::new);
       event.registerEntityRenderer(ModEntities.HERACLES.get(), HeraclesRenderer::new);
       event.registerEntityRenderer(ModEntities.JEANNE_ALTER.get(), context -> new HumanoidServantRenderer<>(context, "jeanne_alter"));
+      event.registerEntityRenderer(ModEntities.JEANNE_ALTER_CURSED_LANCE.get(), JeanneAlterCursedLanceRenderer::new);
       event.registerEntityRenderer(ModEntities.GENERIC_SERVANT.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.GenericServantRenderer::new);
       event.registerEntityRenderer(ModEntities.SASAKI_KOJIRO.get(), context -> new HumanoidServantRenderer<>(context, "sasaki_kojiro"));
       event.registerEntityRenderer(ModEntities.OKITA_SOUJI_SABER.get(), context -> new HumanoidServantRenderer<>(context, "okita_souji_saber_body"));

@@ -1,7 +1,7 @@
 {
   "id": "gilgamesh",
-  "display_name": "Gilgamesh (Archer)",
-  "display_name_zh": "吉尔伽美什(Archer)",
+  "display_name": "Gilgamesh",
+  "display_name_zh": "吉尔伽美什",
   "class_type": "archer",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "archer", "male", "human", "sapient", "chaotic", "good", "divine", "ea_special"],

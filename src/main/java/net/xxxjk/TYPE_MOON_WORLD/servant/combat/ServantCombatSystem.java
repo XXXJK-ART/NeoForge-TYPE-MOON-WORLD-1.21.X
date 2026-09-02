@@ -165,7 +165,7 @@ public final class ServantCombatSystem {
       }
 
       double distance = attacker.distanceTo(target);
-      boolean decisive = phase == ServantCombatPhase.DECISIVE || isBerserker(definition);
+      boolean decisive = phase == ServantCombatPhase.DECISIVE || isAlwaysDecisive(definition);
       double maxStartDistance = decisive ? 10.0 : 7.0;
       if (distance > maxStartDistance) {
          return false;
@@ -287,7 +287,7 @@ public final class ServantCombatSystem {
 
    public static ServantCombatPhase getPhase(ServantEntity entity) {
       ServantDefinition definition = entity.getDefinition();
-      if (definition != null && isBerserker(definition)) {
+      if (definition != null && isAlwaysDecisive(definition)) {
          return ServantCombatPhase.DECISIVE;
       }
       ServantCombatPhase phase = ServantCombatPhase.fromId(entity.getPersistentData().getInt(TAG_PHASE));
@@ -308,7 +308,7 @@ public final class ServantCombatSystem {
 
    public static boolean canUseNoblePhantasm(ServantEntity entity) {
       ServantDefinition definition = entity.getDefinition();
-      return definition != null && (isBerserker(definition) || getPhase(entity) == ServantCombatPhase.DECISIVE);
+      return definition != null && (isAlwaysDecisive(definition) || getPhase(entity) == ServantCombatPhase.DECISIVE);
    }
 
    public static double currentStamina(ServantEntity entity) {
@@ -377,7 +377,7 @@ public final class ServantCombatSystem {
             data.putLong(TAG_COMBAT_CONTROL_START, now);
          }
          data.putLong(TAG_LAST_COMBAT_TICK, now);
-         if (isBerserker(definition)) {
+         if (isAlwaysDecisive(definition)) {
             data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
             return;
          }
@@ -1060,6 +1060,11 @@ public final class ServantCombatSystem {
 
    private static boolean isBerserker(ServantDefinition definition) {
       return definition != null && definition.classType() == ServantClassType.BERSERKER;
+   }
+
+   private static boolean isAlwaysDecisive(ServantDefinition definition) {
+      return definition != null && (definition.classType() == ServantClassType.BERSERKER
+         || definition.classType() == ServantClassType.AVENGER);
    }
 
    private static ServantParams effectiveParams(ServantEntity entity, ServantDefinition definition) {

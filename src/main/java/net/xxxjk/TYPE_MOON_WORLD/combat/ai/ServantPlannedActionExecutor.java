@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 /** Tick-driven execution for explicitly data-driven actions. */
 public final class ServantPlannedActionExecutor {
    private static final String COOLDOWN_PREFIX = "TypeMoonPlannedActionCooldown_";
+   private static final String FAILURE_PREFIX = "TypeMoonPlannedActionFailure_";
    private static final String ACTIVE_ACTION = "TypeMoonPlannedActionId";
    private static final int APPROACH_TIMEOUT = 30;
    private static final int MAX_STALLED_TICKS = 8;
@@ -43,6 +44,7 @@ public final class ServantPlannedActionExecutor {
       AiActionDescriptor.ManeuverSpec maneuver = action.maneuver();
       if (maneuver == null || maneuver.equals(AiActionDescriptor.ManeuverSpec.NONE)) return false;
       if (now < entity.getPersistentData().getLong(cooldownKey(action))
+         || now < entity.getPersistentData().getLong(failureKey(action))
          || entity.getCurrentMp() + 1.0E-6 < action.manaCost()
          || ServantCombatSystem.currentStamina(entity) + 1.0E-6 < action.staminaCost()) return false;
       double distance = entity.distanceTo(target);
@@ -65,16 +67,29 @@ public final class ServantPlannedActionExecutor {
 
    public static boolean execute(ServantEntity entity, LivingEntity target, AiActionDescriptor action, long now) {
       if (!canExecute(entity, target, action, now)) return false;
-      String externalId = action.id().getPath();
-      int separator = externalId.lastIndexOf('/');
-      if (separator >= 0) externalId = externalId.substring(separator + 1);
       ServantAiContext context = ServantAiContext.forEntity(entity, target, now);
+      // Registrations use the complete ResourceLocation (for example
+      // typemoonworld:jeanne_alter_fire_pillar).  Keep a path-only fallback
+      // for older addons that registered an unqualified action id.
+      String registeredId = action.id().toString();
       var addonResult = ServantAddonRegistry.executeCombatAction(new ServantCombatActionContext(
-         entity, target, context, entity.getDefinition(), externalId, entity.distanceTo(target),
+         entity, target, context, entity.getDefinition(), registeredId, entity.distanceTo(target),
          entity.getSensing().hasLineOfSight(target), now
       ));
+      if (!addonResult.handled()) {
+         String legacyId = action.id().getPath();
+         int separator = legacyId.lastIndexOf('/');
+         if (separator >= 0) legacyId = legacyId.substring(separator + 1);
+         if (!legacyId.equals(registeredId)) {
+            addonResult = ServantAddonRegistry.executeCombatAction(new ServantCombatActionContext(
+               entity, target, context, entity.getDefinition(), legacyId, entity.distanceTo(target),
+               entity.getSensing().hasLineOfSight(target), now
+            ));
+         }
+      }
       if (addonResult.handled()) {
          if (addonResult.success()) commit(entity, action, now);
+         else markFailure(entity, action, now);
          return addonResult.success();
       }
 
@@ -378,6 +393,17 @@ public final class ServantPlannedActionExecutor {
 
    private static String cooldownKey(AiActionDescriptor action) {
       return COOLDOWN_PREFIX + Integer.toUnsignedString(action.id().toString().hashCode());
+   }
+
+   private static String failureKey(AiActionDescriptor action) {
+      return FAILURE_PREFIX + Integer.toUnsignedString(action.id().toString().hashCode());
+   }
+
+   private static void markFailure(ServantEntity entity, AiActionDescriptor action, long now) {
+      // Addon executors can reject an action after the cheap planner checks
+      // (for example, a role-specific resource or state changed this tick).
+      // Back off briefly so another action can win the next decision.
+      entity.getPersistentData().putLong(failureKey(action), now + 4L);
    }
 
    private static boolean isMovement(String movement) {

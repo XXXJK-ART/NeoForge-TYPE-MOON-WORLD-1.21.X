@@ -1,1 +1,1 @@
-{"id":"jeanne_alter_cursed_lance","display_name":"Cursed Lance Array","display_name_zh":"灼烧枪阵","type":"active","mp_cost":35,"cooldown_ticks":240,"duration_ticks":30}
+{"id":"jeanne_alter_cursed_lance","display_name":"Cursed Lance Array","display_name_zh":"灼烧枪阵","type":"active","mp_cost":35,"cooldown_ticks":240,"duration_ticks":30,"description_zh":"诅咒长枪悬浮于敌人上空并短暂追踪，随后砸落并爆发火柱，造成125点伤害。"}

@@ -240,7 +240,7 @@ class ArashResourcesTest {
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
       assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 128.0"));
       assertTrue(arrow.contains("distanceTraveled + this.getDeltaMovement().length()"));
-      assertTrue(arrow.contains("addFlightParticle(GREEN, this.position())"));
+      assertTrue(arrow.contains("addFlightParticle(variant == NORMAL ? ARROW_RED : GREEN, this.position())"));
       assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_RED : CHARGED_GREEN, center)"));
       assertTrue(arrow.contains("addParticle(particle, false"),
          "Arash arrow trails must stop outside the client's normal visible particle distance");

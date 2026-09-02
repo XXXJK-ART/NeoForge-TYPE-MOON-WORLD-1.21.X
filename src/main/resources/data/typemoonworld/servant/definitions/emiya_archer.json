@@ -1,7 +1,7 @@
 {
   "id": "emiya_archer",
   "display_name": "Emiya Archer",
-  "display_name_zh": "卫宫(Archer)",
+  "display_name_zh": "卫宫",
   "class_type": "archer",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "archer", "male", "human", "sapient", "neutral_alignment", "balanced"],

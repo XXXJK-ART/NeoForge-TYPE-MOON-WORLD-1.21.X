@@ -73,6 +73,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GilgameshSlateItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterFlagItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSpawnEggItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSwordItem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterCursedLanceItem;
 
 public class ModItems {
     public static final DeferredRegister.Items ITEMS =
@@ -425,6 +426,9 @@ public class ModItems {
             () -> new JeanneAlterSwordItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
     public static final DeferredItem<Item> JEANNE_ALTER_FLAG = ITEMS.register("jeanne_alter_flag",
             () -> new JeanneAlterFlagItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
+    /** Render-only carrier for the physical cursed lance entities. */
+    public static final DeferredItem<Item> JEANNE_ALTER_CURSED_LANCE = ITEMS.register("jeanne_alter_cursed_lance_item",
+            () -> new JeanneAlterCursedLanceItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).fireResistant()));
 
     public static final DeferredItem<Item> SERVANT_CARD_EMIYA_ARCHER = registerServantCard("emiya_archer");
     public static final DeferredItem<Item> SERVANT_CARD_ARTORIA_PENDRAGON = registerServantCard("artoria_pendragon");

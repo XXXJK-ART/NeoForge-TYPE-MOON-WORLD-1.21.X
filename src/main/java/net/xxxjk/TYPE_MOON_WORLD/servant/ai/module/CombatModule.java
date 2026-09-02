@@ -296,9 +296,11 @@ public final class CombatModule implements ServantAiModule {
       if (!EntityUtils.isValidCombatTarget(entity, target)) {
          return false;
       }
+      // Ordinary B-rank shots are emitted by the four orbiting spirits. The
+      // servant body only chooses the larger A-rank elemental spells here.
       String[] actions = entity.getCurrentMp() > entity.getMaxMp() * 0.55
-         ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_b_cast", "earth_magic_b_cast", "wind_magic_b_cast"}
-         : new String[]{"water_magic_b_cast", "earth_magic_b_cast", "wind_magic_a_cast", "fire_magic_b_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_b_cast", "fire_magic_a_cast"};
+         ? new String[]{"fire_magic_a_cast", "water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast"}
+         : new String[]{"water_magic_a_cast", "earth_magic_a_cast", "wind_magic_a_cast", "fire_magic_a_cast"};
       boolean castAny = false;
       int decisionInterval = entity.getPersistentData().getLong("ParacelsusHighSpeedChantingUntil") > now
          ? PARACELSUS_HIGH_SPEED_MAGIC_AI_INTERVAL : PARACELSUS_MAGIC_AI_INTERVAL;
