@@ -123,7 +123,10 @@ public final class TerrainImpactService {
       if (source == null || shape == Shape.AIR_SPHERE || !profile.limitsSelfFootDepth()) return null;
       if (Config.protectCombatFooting) {
          int feetY = net.minecraft.util.Mth.floor(source.getY());
-         return shape == Shape.UPPER_SURFACE_CRATER ? feetY : feetY - 1;
+         // Surface impacts are body/wall contacts. Keep the block directly below
+         // the actor intact; ground impacts use GROUND_LOWER_HEMISPHERE and retain
+         // their footing-breaking behavior.
+         return shape == Shape.UPPER_SURFACE_CRATER || shape == Shape.SURFACE_HEMISPHERE ? feetY : feetY - 1;
       }
       double dx = source.getX() - center.x;
       double dz = source.getZ() - center.z;

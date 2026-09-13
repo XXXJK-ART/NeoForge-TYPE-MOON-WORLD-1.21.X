@@ -20,6 +20,9 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 public final class ServantSprintCollisionHelper {
    private static final String PLAYER_LAST_SPRINT_TAG = "ServantCardLastSprintCollisionRun";
    private static final String NPC_LAST_COLLISION_TAG = "ServantLastSprintCollisionBreak";
+   /** Set by ServantCardTransformManager while the three-stage sprint ramp is charging. */
+   private static final String PLAYER_SPRINT_RAMP_TICKS_TAG = "ServantCardSprintRampTicks";
+   private static final int PLAYER_MAX_SPRINT_RAMP_TICKS = 40;
 
    private ServantSprintCollisionHelper() {
    }
@@ -71,7 +74,12 @@ public final class ServantSprintCollisionHelper {
       dir = dir.normalize();
 
       int hit = hitForwardTargets(level, player, dir, fiery, damage, knockback, verticalKnockback, 1.85, 1.55);
-      int broken = breakForwardCube(level, player, dir, maxBroken, hardnessCap);
+      // Sprint collision may damage entities during the ramp, but terrain only breaks
+      // once the card's final speed stage has been reached. This keeps early sprinting
+      // responsive while preventing accidental wall/ground damage at low speed.
+      int broken = hasReachedMaximumSprintSpeed(data)
+         ? breakForwardCube(level, player, dir, maxBroken, hardnessCap)
+         : 0;
       if (hit <= 0 && broken <= 0) {
          return false;
       }
@@ -79,6 +87,10 @@ public final class ServantSprintCollisionHelper {
       data.putLong(cooldownTag, now);
       spawnCollisionFx(level, player, dir, fiery, broken > 0, SoundSource.PLAYERS);
       return true;
+   }
+
+   private static boolean hasReachedMaximumSprintSpeed(CompoundTag data) {
+      return data != null && data.getInt(PLAYER_SPRINT_RAMP_TICKS_TAG) >= PLAYER_MAX_SPRINT_RAMP_TICKS;
    }
 
    public static void tickNpcSprintCollision(ServantEntity entity) {
