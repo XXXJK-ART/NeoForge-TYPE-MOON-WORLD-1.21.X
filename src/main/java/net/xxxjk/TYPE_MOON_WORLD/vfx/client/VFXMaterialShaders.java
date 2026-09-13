@@ -37,10 +37,15 @@ public final class VFXMaterialShaders {
    }
 
    public static void updateGlobals(float time, float progress, float bloom) {
+      updateGlobals(time, progress, bloom, 0.0F);
+   }
+
+   public static void updateGlobals(float time, float progress, float bloom, float distortion) {
       for (ShaderInstance shader : SHADERS.values()) {
          set(shader, "Time", time);
          set(shader, "EffectProgress", progress);
          set(shader, "BloomStrength", bloom);
+         set(shader, "DistortionStrength", distortion);
       }
    }
 

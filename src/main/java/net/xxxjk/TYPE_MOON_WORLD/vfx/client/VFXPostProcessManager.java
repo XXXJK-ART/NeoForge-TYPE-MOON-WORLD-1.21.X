@@ -12,7 +12,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXScreenEffectDefinition;
@@ -68,8 +68,7 @@ public final class VFXPostProcessManager {
    }
 
    @SubscribeEvent
-   public static void render(RenderLevelStageEvent event) {
-      if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+   public static void render(RenderGuiEvent.Pre event) {
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft.level == null) return;
       try {
@@ -80,7 +79,7 @@ public final class VFXPostProcessManager {
                bloomChain.setUniform("Threshold", 0.72F);
                bloomChain.setUniform("Intensity", VFXRenderManager.pressure() == net.xxxjk.TYPE_MOON_WORLD.vfx.VFXPerformanceBudget.Pressure.CRITICAL ? 0.45F : 0.85F);
                bloomChain.process(event.getPartialTick().getGameTimeDeltaTicks());
-               minecraft.getMainRenderTarget().bindWrite(false);
+               minecraft.getMainRenderTarget().bindWrite(true);
             }
          } else {
             closeBloom();
@@ -105,11 +104,32 @@ public final class VFXPostProcessManager {
          chain.setUniform("Vignette", vignette);
          chain.setUniform("Time", time);
          chain.process(event.getPartialTick().getGameTimeDeltaTicks());
-         minecraft.getMainRenderTarget().bindWrite(false);
+         minecraft.getMainRenderTarget().bindWrite(true);
       } catch (Exception exception) {
          TYPE_MOON_WORLD.LOGGER.warn("Failed to render VFX screen effects", exception);
          close();
+      } finally {
+         // A failed/short-circuited pass may leave a temporary target bound.
+         // Always hand the frame back to vanilla's main target before HUD
+         // layers continue rendering.
+         minecraft.getMainRenderTarget().bindWrite(true);
+         // PostPass leaves the depth function/blend state configured for its
+         // fullscreen quad. Restore vanilla state for the first-person hand
+         // pass (and for the HUD if this hook runs from RenderGuiEvent.Pre).
+         restoreRenderState();
       }
+   }
+
+   private static void restoreRenderState() {
+      RenderSystem.enableDepthTest();
+      RenderSystem.depthFunc(515); // GL_LEQUAL
+      RenderSystem.depthMask(true);
+      RenderSystem.colorMask(true, true, true, true);
+      RenderSystem.disableBlend();
+      RenderSystem.defaultBlendFunc();
+      RenderSystem.enableCull();
+      RenderSystem.resetTextureMatrix();
+      RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    private static float strength(String type) {

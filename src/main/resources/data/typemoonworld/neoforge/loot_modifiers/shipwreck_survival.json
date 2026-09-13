@@ -1,4 +1,4 @@
-﻿{
+{
     "conditions":  [
                        {
                            "condition":  "minecraft:location_check",

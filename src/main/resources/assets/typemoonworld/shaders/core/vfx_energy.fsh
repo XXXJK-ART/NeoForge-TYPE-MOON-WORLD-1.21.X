@@ -4,6 +4,7 @@ uniform sampler2D Sampler0;
 uniform float Time;
 uniform float EffectProgress;
 uniform float BloomStrength;
+uniform float DistortionStrength;
 in vec2 vertexUv;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -27,6 +28,7 @@ float fbm(vec2 p) {
 void main() {
     vec2 uv = vertexUv;
     vec2 flow = vec2(Time * 0.035, -Time * 0.021);
+    uv = clamp(uv + DistortionStrength * 0.018 * vec2(sin(Time * 1.7 + uv.y * 9.0), cos(Time * 1.3 + uv.x * 11.0)), 0.001, 0.999);
     float n = fbm(uv * 5.5 + flow);
     float edge = 1.0 - smoothstep(0.34, 0.70, length(uv * 2.0 - 1.0));
     vec4 tex = texture(Sampler0, uv);

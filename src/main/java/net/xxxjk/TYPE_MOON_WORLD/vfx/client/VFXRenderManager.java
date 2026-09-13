@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.vfx.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -234,18 +235,26 @@ public final class VFXRenderManager {
       culledParticles = 0;
       Vec3 camera = event.getCamera().getPosition();
       poseStack.pushPose();
-      poseStack.translate(-camera.x, -camera.y, -camera.z);
+      try {
+       poseStack.translate(-camera.x, -camera.y, -camera.z);
       BufferSource source = mc.renderBuffers().bufferSource();
       RenderType translucent = NeoForgeRenderTypes.getUnlitTranslucent(PARTICLE_TEXTURE, false);
       RenderType additive = RenderType.entityTranslucentEmissive(PARTICLE_TEXTURE);
       RenderType beamType = RenderType.entityTranslucentEmissive(BEAM_TEXTURE);
       RenderType ringType = RenderType.entityTranslucentEmissive(RING_TEXTURE);
       USED_CUSTOM_RENDER_TYPES.clear();
+      // RenderType batches are flushed after all emitters are traversed, so
+      // uniforms must be frame-global rather than updated per emitter.
+      VFXMaterialShaders.updateGlobals(
+         (float)(clientTick + event.getPartialTick().getGameTimeDeltaTicks()),
+         0.0F,
+         0.85F,
+         Config.vfxDistortion ? 1.0F : 0.0F
+      );
       Vector3f cameraLeft = new Vector3f(-1.0F, 0.0F, 0.0F).rotate(event.getCamera().rotation());
       Vector3f cameraUp = new Vector3f(0.0F, 1.0F, 0.0F).rotate(event.getCamera().rotation());
       for (VFXEmitter emitter : EMITTERS) {
          if (emitter.originDistanceToSqr(camera.x, camera.y, camera.z) > VFXPerformanceBudget.MAX_RENDER_DISTANCE_SQR) continue;
-         VFXMaterialShaders.updateGlobals((float)(clientTick + event.getPartialTick().getGameTimeDeltaTicks()), emitter.progress(), emitter.material().bloom());
          for (VFXParticle particle : emitter.particles()) {
             if (!particleVisible(particle, camera)) {
                culledParticles++;
@@ -290,9 +299,27 @@ public final class VFXRenderManager {
       for (RenderType customType : USED_CUSTOM_RENDER_TYPES) {
          source.endBatch(customType);
       }
-      USED_CUSTOM_RENDER_TYPES.clear();
-      poseStack.popPose();
+      } finally {
+         USED_CUSTOM_RENDER_TYPES.clear();
+         // The event pose stack is owned by LevelRenderer. Undo only the
+         // single push made above, including when a custom shader/batch fails.
+         poseStack.popPose();
+         restoreRenderState();
+      }
       renderNanos = System.nanoTime() - renderStart;
+   }
+
+   /** Restore the vanilla level defaults before GameRenderer renders first-person hands. */
+   private static void restoreRenderState() {
+      RenderSystem.enableDepthTest();
+      RenderSystem.depthFunc(515); // GL_LEQUAL
+      RenderSystem.depthMask(true);
+      RenderSystem.colorMask(true, true, true, true);
+      RenderSystem.disableBlend();
+      RenderSystem.defaultBlendFunc();
+      RenderSystem.enableCull();
+      RenderSystem.resetTextureMatrix();
+      RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
    }
 
    private static boolean particleVisible(VFXParticle particle, Vec3 camera) {

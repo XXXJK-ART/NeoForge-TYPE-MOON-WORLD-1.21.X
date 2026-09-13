@@ -155,6 +155,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
+import net.xxxjk.TYPE_MOON_WORLD.survival.LakeRitualService;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
@@ -181,6 +182,7 @@ public class TYPE_MOON_WORLD {
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
       NeoForge.EVENT_BUS.register(MagicAnalysisService.class);
+      NeoForge.EVENT_BUS.register(LakeRitualService.class);
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);

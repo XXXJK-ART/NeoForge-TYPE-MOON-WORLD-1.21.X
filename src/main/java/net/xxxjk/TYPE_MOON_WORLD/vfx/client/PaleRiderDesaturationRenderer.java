@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, value = Dist.CLIENT)
@@ -22,8 +22,7 @@ public final class PaleRiderDesaturationRenderer {
    }
 
    @SubscribeEvent
-   public static void render(RenderLevelStageEvent event) {
-      if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
+   public static void render(RenderGuiEvent.Pre event) {
       Minecraft minecraft = Minecraft.getInstance();
       float strength = VFXEnvironmentManager.desaturationStrength();
       if (minecraft.level == null || strength <= 0.001F) {
@@ -36,11 +35,24 @@ public final class PaleRiderDesaturationRenderer {
             RenderSystem.assertOnRenderThread();
             chain.setUniform("Strength", strength);
             chain.process(event.getPartialTick().getGameTimeDeltaTicks());
-            minecraft.getMainRenderTarget().bindWrite(false);
+            minecraft.getMainRenderTarget().bindWrite(true);
          }
       } catch (Exception exception) {
          TYPE_MOON_WORLD.LOGGER.warn("Failed to render Pale Rider desaturation", exception);
          close();
+      } finally {
+         // Keep the following HUD/overlay render on the main framebuffer even
+         // when PostChain creation or processing fails.
+         minecraft.getMainRenderTarget().bindWrite(true);
+         RenderSystem.enableDepthTest();
+         RenderSystem.depthFunc(515);
+         RenderSystem.depthMask(true);
+         RenderSystem.colorMask(true, true, true, true);
+         RenderSystem.disableBlend();
+         RenderSystem.defaultBlendFunc();
+         RenderSystem.enableCull();
+         RenderSystem.resetTextureMatrix();
+         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
       }
    }
 

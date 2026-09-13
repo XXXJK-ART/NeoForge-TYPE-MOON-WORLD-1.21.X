@@ -61,6 +61,20 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
    public static final EffectLibrary INSTANCE = new EffectLibrary();
    private final Map<ResourceLocation, VFXEffectDefinition> effects = new HashMap<>();
+   private static final Map<String, String> LEGACY_EFFECT_ALIASES = Map.ofEntries(
+      Map.entry("servant_enkidu_perfect_form", "servant_enkidu_transfiguration"),
+      Map.entry("servant_heracles_nine_lives", "servant_heracles_slam"),
+      Map.entry("servant_li_shuwen_quanjing", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_wu_er_da_impact", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_wu_er_da_windup", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_yinyang", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_wu_er_da", "servant_sasaki_tsubame"),
+      Map.entry("servant_medea_barrier", "servant_ushiwakamaru_benkei_shield"),
+      Map.entry("servant_medea_bind", "servant_enkidu_chain_of_heaven"),
+      Map.entry("servant_medea_workshop", "magic_circle"),
+      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort"),
+      Map.entry("servant_oda_hajun", "demon_god_gaze_final_explosion")
+   );
 
    private EffectLibrary() {
       super(GSON, "effects");
@@ -70,7 +84,14 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       ResourceLocation resourceLocation = id.contains(":")
          ? ResourceLocation.parse(id)
          : ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, id);
-      return this.effects.get(resourceLocation);
+      VFXEffectDefinition definition = this.effects.get(resourceLocation);
+      if (definition == null && TYPE_MOON_WORLD.MOD_ID.equals(resourceLocation.getNamespace())) {
+         String alias = LEGACY_EFFECT_ALIASES.get(resourceLocation.getPath());
+         if (alias != null) {
+            definition = this.effects.get(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, alias));
+         }
+      }
+      return definition;
    }
 
    public boolean reloadNow() {
@@ -191,7 +212,9 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       float endTime = GsonHelper.getAsFloat(json, "end_time", 0.0F);
       int maxVanillaParticleSpawnsPerTick = GsonHelper.getAsInt(json, "max_vanilla_particles_per_tick", 12);
       VFXEffectDefinition.BindingDefinition binding = parseBinding(json.has("binding") ? requiredObject(json, "binding") : null);
-      IVFXComponent component = parseComponent(requiredObject(json, "component"));
+      JsonObject componentJson = requiredObject(json, "component");
+      String componentType = requiredString(componentJson, "type").toLowerCase(Locale.ROOT);
+      IVFXComponent component = parseComponent(componentJson);
       List<TransformKeyFrame> transforms = parseTransformKeyFrames(optionalArray(json, "transform_over_life"));
       List<ColorKeyFrame> colors = parseColorKeyFrames(optionalArray(json, "color_over_life"));
       List<SizeKeyFrame> sizes = parseSizeKeyFrames(optionalArray(json, "size_over_life"));
@@ -206,9 +229,15 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          onEnd.add(onComplete);
       }
       VFXPriority priority = VFXPriority.parse(GsonHelper.getAsString(json, "priority", "normal"));
-      VFXRendererType renderer = VFXRendererType.parse(GsonHelper.getAsString(json, "renderer", "billboard"));
-      VFXMaterialDefinition material = parseMaterial(json.has("material") ? requiredObject(json, "material") : null);
-      VFXMotionDefinition motion = parseMotion(json.has("motion") ? requiredObject(json, "motion") : null);
+      VFXRendererType renderer = json.has("renderer")
+         ? VFXRendererType.parse(GsonHelper.getAsString(json, "renderer", "billboard"))
+         : migratedRenderer(componentType);
+      VFXMaterialDefinition material = json.has("material")
+         ? parseMaterial(requiredObject(json, "material"))
+         : migratedMaterial(componentType, particleRole, blend);
+      VFXMotionDefinition motion = json.has("motion")
+         ? parseMotion(requiredObject(json, "motion"))
+         : migratedMotion(componentType);
       return new VFXEffectDefinition.EmitterDefinition(
          rate,
          particleLifetime,
@@ -268,6 +297,43 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          GsonHelper.getAsFloat(json, "frequency", 0.0F),
          vec(json, "axis", new Vector3f(0.0F, 1.0F, 0.0F))
       );
+   }
+
+   /** Applies the VFX 2.0 defaults to legacy definitions without changing their schema. */
+   private static VFXRendererType migratedRenderer(String componentType) {
+      return switch (componentType) {
+         case "circle", "ellipse", "torus", "elliptic_torus", "polygon_face_ring",
+            "bicircle_star", "schlafli_star", "bicircle_star_torus" -> VFXRendererType.DECAL;
+         default -> VFXRendererType.SHADER_QUAD;
+      };
+   }
+
+   private static VFXMaterialDefinition migratedMaterial(String componentType, String particleRole, VFXBlendMode blend) {
+      String role = particleRole == null ? "" : particleRole.toLowerCase(Locale.ROOT);
+      String shader;
+      if (componentType.contains("star") || componentType.contains("polygon") || role.contains("sigil") || role.contains("circuit")) {
+         shader = "vfx_sdf";
+      } else if (componentType.equals("circle") || componentType.equals("ellipse") || componentType.contains("torus") || role.contains("ring") || role.contains("shockwave")) {
+         shader = "vfx_polar";
+      } else if (role.contains("smoke") || role.contains("fog") || role.contains("dust") || role.contains("ash") || role.contains("flame")) {
+         shader = "vfx_smoke";
+      } else {
+         shader = "vfx_energy";
+      }
+      float bloom = blend == VFXBlendMode.ADDITIVE ? 0.8F : 0.35F;
+      if (role.contains("core") || role.contains("beam") || role.contains("lightning")) bloom = 1.1F;
+      return new VFXMaterialDefinition(shader, null, bloom, true, true);
+   }
+
+   private static VFXMotionDefinition migratedMotion(String componentType) {
+      if (componentType.contains("lightning") || componentType.equals("parametric")
+         || componentType.equals("parametric_curve") || componentType.equals("helix")) {
+         return new VFXMotionDefinition("turbulence", 0.012F, 2.0F, new Vector3f(0.0F, 1.0F, 0.0F));
+      }
+      if (componentType.equals("circle") || componentType.equals("ellipse") || componentType.contains("torus")) {
+         return new VFXMotionDefinition("orbit", 0.006F, 1.0F, new Vector3f(0.0F, 1.0F, 0.0F));
+      }
+      return VFXMotionDefinition.NONE;
    }
 
    private static VFXEffectDefinition.BindingDefinition parseBinding(JsonObject json) {

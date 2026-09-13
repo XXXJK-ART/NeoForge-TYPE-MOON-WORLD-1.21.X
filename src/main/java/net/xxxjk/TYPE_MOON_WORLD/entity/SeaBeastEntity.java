@@ -1,5 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -13,9 +17,34 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 /** Shares night-kin combat, specialization and resistance; keeps its own health migration. */
 public class SeaBeastEntity extends NightKinEntity implements GeoEntity {
+   public static final float SMALL_VISUAL_SCALE = 3.0F;
+   public static final float LARGE_VISUAL_SCALE = 4.0F;
+   private static final String VISUAL_SCALE_TAG = "SeaBeastVisualScaleV1";
+   private static final EntityDataAccessor<Float> VISUAL_SCALE =
+      SynchedEntityData.defineId(SeaBeastEntity.class, EntityDataSerializers.FLOAT);
    private final AnimatableInstanceCache cache=GeckoLibUtil.createInstanceCache(this);
-   public SeaBeastEntity(EntityType<? extends Monster> type,Level level){super(type,level);inheritBodyScale(1);}
+   public SeaBeastEntity(EntityType<? extends Monster> type,Level level){
+      super(type,level);
+      inheritBodyScale(1);
+      setVisualScale(random.nextBoolean() ? SMALL_VISUAL_SCALE : LARGE_VISUAL_SCALE);
+   }
    public static AttributeSupplier.Builder createAttributes(){return attributes(300,24,16,.36);}
+   @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(VISUAL_SCALE, SMALL_VISUAL_SCALE);
+   }
+   public float getVisualScale() { return entityData.get(VISUAL_SCALE); }
+   private void setVisualScale(float scale) {
+      entityData.set(VISUAL_SCALE, scale >= 3.5F ? LARGE_VISUAL_SCALE : SMALL_VISUAL_SCALE);
+   }
+   @Override public void addAdditionalSaveData(CompoundTag tag) {
+      super.addAdditionalSaveData(tag);
+      tag.putFloat(VISUAL_SCALE_TAG, getVisualScale());
+   }
+   @Override public void readAdditionalSaveData(CompoundTag tag) {
+      super.readAdditionalSaveData(tag);
+      if (tag.contains(VISUAL_SCALE_TAG)) setVisualScale(tag.getFloat(VISUAL_SCALE_TAG));
+   }
    @Override protected boolean receivesGeneratedName(){return false;}
    @Override protected void registerGoals(){super.registerGoals();goalSelector.addGoal(0,new FloatGoal(this));}
    @Override protected void ensureCurrentStageAttributes(){migrateStageAttributes("SeaBeastStatsV1",300,getPersistentData().getBoolean("NightKinSpeed")?.36*1.3:.36);}

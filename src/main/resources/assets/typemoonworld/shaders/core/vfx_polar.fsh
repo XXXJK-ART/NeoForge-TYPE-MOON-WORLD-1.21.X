@@ -4,12 +4,14 @@ uniform sampler2D Sampler0;
 uniform float Time;
 uniform float EffectProgress;
 uniform float BloomStrength;
+uniform float DistortionStrength;
 in vec2 vertexUv;
 in vec4 vertexColor;
 out vec4 fragColor;
 
 void main() {
-    vec2 p = vertexUv * 2.0 - 1.0;
+    vec2 uv = clamp(vertexUv + DistortionStrength * 0.012 * vec2(cos(Time * 1.5 + vertexUv.y * 8.0), sin(Time * 1.1 + vertexUv.x * 7.0)), 0.001, 0.999);
+    vec2 p = uv * 2.0 - 1.0;
     float radius = length(p);
     if (radius > 1.0) discard;
     float angle = atan(p.y, p.x);

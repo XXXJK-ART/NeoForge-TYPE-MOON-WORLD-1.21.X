@@ -4,6 +4,7 @@ uniform sampler2D Sampler0;
 uniform float Time;
 uniform float EffectProgress;
 uniform float BloomStrength;
+uniform float DistortionStrength;
 in vec2 vertexUv;
 in vec4 vertexColor;
 out vec4 fragColor;
@@ -16,7 +17,8 @@ float sdStar(vec2 p, float r, float n) {
     return d - r;
 }
 void main() {
-    vec2 p = vertexUv * 2.0 - 1.0;
+    vec2 uv = clamp(vertexUv + DistortionStrength * 0.01 * vec2(sin(Time * 1.4 + vertexUv.y * 10.0), cos(Time * 1.8 + vertexUv.x * 8.0)), 0.001, 0.999);
+    vec2 p = uv * 2.0 - 1.0;
     float ring = 1.0 - smoothstep(0.01, 0.045, abs(sdCircle(p, 0.72)));
     float star = 1.0 - smoothstep(0.01, 0.06, abs(sdStar(p, 0.62, 5.0)));
     float inner = 1.0 - smoothstep(0.0, 0.04, abs(sdCircle(p, 0.30)));

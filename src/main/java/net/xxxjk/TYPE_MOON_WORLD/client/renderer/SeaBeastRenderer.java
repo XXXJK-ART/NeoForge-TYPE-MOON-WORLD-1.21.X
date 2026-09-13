@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.SeaBeastWolfModel;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SeaBeastEntity;
 
-/** Uses the vanilla wolf geometry, enlarged to twice its normal size. */
+/** Uses the vanilla wolf geometry, enlarged to three or four times its normal size. */
 public final class SeaBeastRenderer extends MobRenderer<SeaBeastEntity, SeaBeastWolfModel> {
    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/sea_beast.png");
 
@@ -18,7 +18,15 @@ public final class SeaBeastRenderer extends MobRenderer<SeaBeastEntity, SeaBeast
 
    @Override
    protected void scale(SeaBeastEntity entity, PoseStack poseStack, float partialTickTime) {
-      poseStack.scale(2.0F, 2.0F, 2.0F);
+      float scale = entity.getVisualScale();
+      poseStack.scale(scale, scale, scale);
+   }
+
+   @Override
+   protected float getShadowRadius(SeaBeastEntity entity) {
+      // Keep the shadow proportional to the enlarged wolf mesh. The old x2
+      // mesh used the renderer's 1.0 shadow radius as its baseline.
+      return super.getShadowRadius(entity) * (entity.getVisualScale() * 0.5F);
    }
 
    @Override
