@@ -36,6 +36,11 @@
                     "typemoonworld:add_magic_scroll_fragments_to_village_tannery",
                     "typemoonworld:add_magic_scroll_fragments_to_village_temple",
                     "typemoonworld:add_magic_scroll_fragments_to_village_toolsmith",
-                    "typemoonworld:add_magic_scroll_fragments_to_village_weaponsmith"
+                    "typemoonworld:add_magic_scroll_fragments_to_village_weaponsmith",
+                    "typemoonworld:shipwreck_survival",
+                    "typemoonworld:desert_temple_survival",
+                    "typemoonworld:village_survival",
+                    "typemoonworld:mineshaft_survival",
+                    "typemoonworld:zombie_village_survival"
                 ]
 }

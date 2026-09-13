@@ -30,6 +30,16 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Flag of Sincerity", "okita_flag_of_sincerity", 100.0, 2400);
             default -> null;
          };
+         case "jeanne_alter" -> switch (slot) {
+            case 0 -> new ServantCardSkillAction("Execution Flame", "jeanne_alter_fire_pillar", 22.0, 140);
+            case 1 -> new ServantCardSkillAction("Cursed Lance Array", "jeanne_alter_cursed_lance", 35.0, 240);
+            case 2 -> new ServantCardSkillAction("Self-Modification EX", "jeanne_alter_self_modification_ex", 30.0, 500);
+            case 3 -> new ServantCardSkillAction("Dragon Witch EX", "jeanne_alter_dragon_witch_ex", 42.0, 600);
+            case 4 -> new ServantCardSkillAction("Inferno Body", "jeanne_alter_inferno_body", 45.0, 600);
+            case 5 -> new ServantCardSkillAction("Ephemeral Dream A", "jeanne_alter_ephemeral_dream_a", 55.0, 800);
+            case 9 -> new ServantCardSkillAction("Le Grondement Du Haine", "jeanne_alter_le_grondement_du_haine", 220.0, 2400);
+            default -> null;
+         };
          case "gilles_de_rais_caster" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Summon Small Sea Monster", "gilles_summon_small_sea_monster", 0.0, 80);
             case 1 -> new ServantCardSkillAction("Summon Large Sea Monster", "gilles_summon_large_sea_monster", 0.0, 240);

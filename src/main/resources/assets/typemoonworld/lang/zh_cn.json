@@ -17,6 +17,7 @@
   "item.typemoonworld.black_key.desc": "代行者使用的概念武装,右键投出手中的黑键.",
   "item.typemoonworld.blood_bottle": "血瓶",
   "item.typemoonworld.broken_bowstring": "断裂的弓弦",
+  "item.typemoonworld.broken_excalibur": "断裂胜利之剑",
   "item.typemoonworld.bullet": "普通子弹",
   "item.typemoonworld.carved_black_shard": "黑曜石碎片",
   "item.typemoonworld.carved_black_shard_full": "满魔力黑曜石碎片",
@@ -80,6 +81,7 @@
   "item.typemoonworld.diarmuid_ua_duibhne_spawn_egg": "迪尔姆德·奥迪那（Lancer）刷怪蛋",
   "item.typemoonworld.dirk_small_knife": "Dirk小刀",
   "item.typemoonworld.dirk_small_knife.desc": "咒腕哈桑携带的轻型投掷短刀.",
+  "item.typemoonworld.divine_steel": "神钢",
   "item.typemoonworld.dragon_fang": "龙牙",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "龙牙兵 刷怪蛋",
   "item.typemoonworld.dragons_reverse_scale": "龙之逆鳞",
@@ -158,6 +160,10 @@
   "item.typemoonworld.imaginary_space.anomaly": "虚数异常物",
   "item.typemoonworld.iskandar_shortsword": "塞浦路特之剑",
   "item.typemoonworld.iskandar_spawn_egg": "伊斯坎达尔（Rider）刷怪蛋",
+  "item.typemoonworld.jeanne_alter_cursed_lance_item": "复仇之焰长枪",
+  "item.typemoonworld.jeanne_alter_flag": "黑贞德旗帜",
+  "item.typemoonworld.jeanne_alter_spawn_egg": "贞德〔Alter〕（Avenger）刷怪蛋",
+  "item.typemoonworld.jeanne_alter_sword": "黑贞德之剑",
   "item.typemoonworld.katana": "打刀",
   "item.typemoonworld.kendo_apprentice_spawn_egg": "剑道学徒刷怪蛋",
   "item.typemoonworld.kendo_master_spawn_egg": "北辰一刀流剑道老师傅刷怪蛋",
@@ -439,11 +445,12 @@
   "item.typemoonworld.ruby_staff.desc": "手持时强化红宝石相关魔术；蹲下蓄力展开500点护盾。",
   "item.typemoonworld.rule_breaker": "万符必应破戒",
   "item.typemoonworld.rule_breaker.desc": "用于切断魔术与契约的仪式短剑.",
+  "item.typemoonworld.rune_learning": "卢恩知识碎片",
   "item.typemoonworld.ryougi_shiki_spawn_egg": "两仪式 刷怪蛋",
   "item.typemoonworld.sapphire_staff": "蓝宝石手杖",
   "item.typemoonworld.sapphire_staff.desc": "继承手杖与蓝宝石的魔耗减免效果。",
   "item.typemoonworld.sasaki_kojiro_spawn_egg": "佐佐木小次郎(Assassin) 刷怪蛋",
-  "item.typemoonworld.sea_beast_bone": "海兽的骨骼",
+  "item.typemoonworld.sea_beast_spawn_egg": "海兽刷怪蛋",
   "item.typemoonworld.seed_of_yggdrasil": "世界树之种",
   "item.typemoonworld.self_geas_scroll": "自我强制证文",
   "item.typemoonworld.self_geas_scroll.desc": "签订者与签订对象各自完成一半签名后生效。",
@@ -505,6 +512,11 @@
   "item.typemoonworld.servant_card_iskandar_chest": "伊斯坎达尔盔甲",
   "item.typemoonworld.servant_card_iskandar_feet": "伊斯坎达尔靴子",
   "item.typemoonworld.servant_card_iskandar_legs": "伊斯坎达尔裤子",
+  "item.typemoonworld.servant_card_jeanne_alter": "贞德〔Alter〕（Avenger）从者卡",
+  "item.typemoonworld.servant_card_jeanne_alter_chest": "黑贞德铠甲",
+  "item.typemoonworld.servant_card_jeanne_alter_feet": "黑贞德战靴",
+  "item.typemoonworld.servant_card_jeanne_alter_head": "黑贞德头盔",
+  "item.typemoonworld.servant_card_jeanne_alter_legs": "黑贞德护腿",
   "item.typemoonworld.servant_card_lancelot_berserker": "兰斯洛特（Berserker）",
   "item.typemoonworld.servant_card_lancelot_berserker_chest": "兰斯洛特从者卡胸甲",
   "item.typemoonworld.servant_card_lancelot_berserker_head": "兰斯洛特从者卡头盔",
@@ -628,6 +640,7 @@
   "block.typemoonworld.ruby_block_high": "优质红之宝石块",
   "block.typemoonworld.ruby_block_poor": "劣质红之宝石块",
   "block.typemoonworld.ruby_mine": "红之宝石矿",
+  "block.typemoonworld.rune_inscription": "卢恩刻画",
   "block.typemoonworld.sapphire_block": "蓝之宝石块",
   "block.typemoonworld.sapphire_block_high": "优质蓝之宝石块",
   "block.typemoonworld.sapphire_block_poor": "劣质蓝之宝石块",
@@ -635,6 +648,7 @@
   "block.typemoonworld.spirit_vein_block": "玛那结晶",
   "block.typemoonworld.spirit_vein_node": "灵脉矿",
   "block.typemoonworld.summoning_circle": "从者召唤阵",
+  "block.typemoonworld.sword_in_stone": "插入石头的王选之剑",
   "block.typemoonworld.topaz_block": "黄之宝石块",
   "block.typemoonworld.topaz_block_high": "优质黄之宝石块",
   "block.typemoonworld.topaz_block_poor": "劣质黄之宝石块",
@@ -725,9 +739,6 @@
   "key.typemoonworld.magic.imaginary_space.short": "虚数空间",
   "key.typemoonworld.magic.imaginary_storage.selected": "虚数存储",
   "key.typemoonworld.magic.imaginary_storage.short": "虚数存储",
-  "key.typemoonworld.magic.spiritual_healing": "灵体治疗",
-  "key.typemoonworld.magic.spiritual_healing.selected": "灵体治疗",
-  "key.typemoonworld.magic.spiritual_healing.short": "灵体治疗",
   "key.typemoonworld.magic.jewel_machine_gun": "宝石机关枪",
   "key.typemoonworld.magic.jewel_machine_gun.selected": "宝石机关枪",
   "key.typemoonworld.magic.jewel_machine_gun.short": "宝石机关枪",
@@ -764,11 +775,11 @@
   "key.typemoonworld.magic.reinforcement_self": "强化魔术 (自身)",
   "key.typemoonworld.magic.reinforcement_self.selected": "强化魔术 (自身)",
   "key.typemoonworld.magic.reinforcement_self.short": "自身强化",
-  "key.typemoonworld.magic.time_alter": "固有时制御",
-  "key.typemoonworld.magic.time_alter.selected": "固有时制御",
-  "key.typemoonworld.magic.time_alter.short": "固有时制御",
   "key.typemoonworld.magic.spiritron_cannon.selected": "灵子炮",
   "key.typemoonworld.magic.spiritron_cannon.short": "灵子炮",
+  "key.typemoonworld.magic.spiritual_healing": "灵体治疗",
+  "key.typemoonworld.magic.spiritual_healing.selected": "灵体治疗",
+  "key.typemoonworld.magic.spiritual_healing.short": "灵体治疗",
   "key.typemoonworld.magic.stigma": "圣痕",
   "key.typemoonworld.magic.stigma.selected": "圣痕",
   "key.typemoonworld.magic.stigma.short": "圣痕",
@@ -784,6 +795,9 @@
   "key.typemoonworld.magic.sword_barrel_full_open.short": "全投影连续层写",
   "key.typemoonworld.magic.tennen_rishin_ryu.selected": "天然理心流",
   "key.typemoonworld.magic.tennen_rishin_ryu.short": "天然理心流",
+  "key.typemoonworld.magic.time_alter": "固有时制御",
+  "key.typemoonworld.magic.time_alter.selected": "固有时制御",
+  "key.typemoonworld.magic.time_alter.short": "固有时制御",
   "key.typemoonworld.magic.ubw_sword_control.short": "无限剑制·剑操控",
   "key.typemoonworld.magic.unlimited_blade_works": "无限剑制",
   "key.typemoonworld.magic.unlimited_blade_works.selected": "无限剑制",
@@ -1102,6 +1116,138 @@
   "gui.typemoonworld.projection.title": "结构解析 - 投影库",
   "gui.typemoonworld.projection_preset": "魔术预设",
   "gui.typemoonworld.radial_menu.title": "魔术轮盘",
+  "gui.typemoonworld.rune.add_wheel": "加入当前轮盘",
+  "gui.typemoonworld.rune.clear": "清空槽位",
+  "gui.typemoonworld.rune.config": "卢恩程序配置",
+  "gui.typemoonworld.rune.config_hint": "在此选择程序的释放方式",
+  "gui.typemoonworld.rune.copy": "复制",
+  "gui.typemoonworld.rune.cost": "预计魔力：%s",
+  "gui.typemoonworld.rune.delay": "延迟",
+  "gui.typemoonworld.rune.delete": "删除",
+  "gui.typemoonworld.rune.drag_hint": "拖动已掌握的卢恩到程序槽位",
+  "gui.typemoonworld.rune.edit": "编辑",
+  "gui.typemoonworld.rune.editor": "程序编辑器",
+  "gui.typemoonworld.rune.effect": "效果：%s",
+  "gui.typemoonworld.rune.invalid": "程序无效",
+  "gui.typemoonworld.rune.knowledge": "卢恩知识",
+  "gui.typemoonworld.rune.library": "程序库",
+  "gui.typemoonworld.rune.mode": "释放模式：%s",
+  "gui.typemoonworld.rune.mode.armor": "强化模式·护甲",
+  "gui.typemoonworld.rune.mode.block_trap": "方块陷阱",
+  "gui.typemoonworld.rune.mode.body": "身体",
+  "gui.typemoonworld.rune.mode.direct_air": "直接释放",
+  "gui.typemoonworld.rune.mode.rune_stone": "刻录模式",
+  "gui.typemoonworld.rune.mode.tool": "附魔模式·工具",
+  "gui.typemoonworld.rune.mode.weapon": "附魔模式·武器",
+  "gui.typemoonworld.rune.modifier": "修正：%s",
+  "gui.typemoonworld.rune.name": "程序名称",
+  "gui.typemoonworld.rune.new": "新建程序",
+  "gui.typemoonworld.rune.palette": "已掌握卢恩",
+  "gui.typemoonworld.rune.radius": "半径",
+  "gui.typemoonworld.rune.release_mode_select": "释放方式：%s（点击切换）",
+  "gui.typemoonworld.rune.semantic.accuracy": "精准",
+  "gui.typemoonworld.rune.semantic.amplify": "增幅",
+  "gui.typemoonworld.rune.semantic.anchor": "锚定",
+  "gui.typemoonworld.rune.semantic.area": "区域",
+  "gui.typemoonworld.rune.semantic.awaken": "觉醒",
+  "gui.typemoonworld.rune.semantic.banish": "放逐",
+  "gui.typemoonworld.rune.semantic.barrier": "屏障",
+  "gui.typemoonworld.rune.semantic.bind": "束缚",
+  "gui.typemoonworld.rune.semantic.bless": "祝福",
+  "gui.typemoonworld.rune.semantic.break": "破坏",
+  "gui.typemoonworld.rune.semantic.burn": "灼烧",
+  "gui.typemoonworld.rune.semantic.chance": "机遇",
+  "gui.typemoonworld.rune.semantic.change": "变化",
+  "gui.typemoonworld.rune.semantic.charge": "蓄能",
+  "gui.typemoonworld.rune.semantic.command": "命令",
+  "gui.typemoonworld.rune.semantic.complete": "完成",
+  "gui.typemoonworld.rune.semantic.control": "控制",
+  "gui.typemoonworld.rune.semantic.cost": "消耗",
+  "gui.typemoonworld.rune.semantic.create": "创造",
+  "gui.typemoonworld.rune.semantic.critical": "暴击",
+  "gui.typemoonworld.rune.semantic.cycle": "循环",
+  "gui.typemoonworld.rune.semantic.detonate": "引爆",
+  "gui.typemoonworld.rune.semantic.discharge": "放电",
+  "gui.typemoonworld.rune.semantic.disperse": "驱散",
+  "gui.typemoonworld.rune.semantic.dissolve": "消解",
+  "gui.typemoonworld.rune.semantic.drain": "汲取",
+  "gui.typemoonworld.rune.semantic.duration": "持续",
+  "gui.typemoonworld.rune.semantic.earth": "大地",
+  "gui.typemoonworld.rune.semantic.endure": "忍耐",
+  "gui.typemoonworld.rune.semantic.energy": "能量",
+  "gui.typemoonworld.rune.semantic.escape": "脱离",
+  "gui.typemoonworld.rune.semantic.execute": "处决",
+  "gui.typemoonworld.rune.semantic.fire": "火焰",
+  "gui.typemoonworld.rune.semantic.flow": "流动",
+  "gui.typemoonworld.rune.semantic.focus": "专注",
+  "gui.typemoonworld.rune.semantic.freeze": "冻结",
+  "gui.typemoonworld.rune.semantic.fuse": "融合",
+  "gui.typemoonworld.rune.semantic.grow": "生长",
+  "gui.typemoonworld.rune.semantic.guard": "格挡",
+  "gui.typemoonworld.rune.semantic.harvest": "收获",
+  "gui.typemoonworld.rune.semantic.heal": "治愈",
+  "gui.typemoonworld.rune.semantic.heat": "热量",
+  "gui.typemoonworld.rune.semantic.ice": "寒冰",
+  "gui.typemoonworld.rune.semantic.ignite": "点燃",
+  "gui.typemoonworld.rune.semantic.impact": "冲击",
+  "gui.typemoonworld.rune.semantic.inherit": "继承",
+  "gui.typemoonworld.rune.semantic.joy": "喜悦",
+  "gui.typemoonworld.rune.semantic.judge": "裁决",
+  "gui.typemoonworld.rune.semantic.light": "光明",
+  "gui.typemoonworld.rune.semantic.link": "连接",
+  "gui.typemoonworld.rune.semantic.luck": "幸运",
+  "gui.typemoonworld.rune.semantic.mind": "心智",
+  "gui.typemoonworld.rune.semantic.mobility": "机动",
+  "gui.typemoonworld.rune.semantic.move": "移动",
+  "gui.typemoonworld.rune.semantic.nature": "自然",
+  "gui.typemoonworld.rune.semantic.need": "需求",
+  "gui.typemoonworld.rune.semantic.path": "路径",
+  "gui.typemoonworld.rune.semantic.persist": "持久",
+  "gui.typemoonworld.rune.semantic.pierce": "贯穿",
+  "gui.typemoonworld.rune.semantic.power": "威力",
+  "gui.typemoonworld.rune.semantic.protect": "保护",
+  "gui.typemoonworld.rune.semantic.purify": "净化",
+  "gui.typemoonworld.rune.semantic.random": "随机",
+  "gui.typemoonworld.rune.semantic.range": "范围",
+  "gui.typemoonworld.rune.semantic.reinforce": "强化",
+  "gui.typemoonworld.rune.semantic.release": "释放",
+  "gui.typemoonworld.rune.semantic.renew": "更新",
+  "gui.typemoonworld.rune.semantic.repeat": "重复",
+  "gui.typemoonworld.rune.semantic.resist": "抗性",
+  "gui.typemoonworld.rune.semantic.restore": "恢复",
+  "gui.typemoonworld.rune.semantic.return": "回归",
+  "gui.typemoonworld.rune.semantic.reveal": "显现",
+  "gui.typemoonworld.rune.semantic.sacrifice": "牺牲",
+  "gui.typemoonworld.rune.semantic.seal": "封印",
+  "gui.typemoonworld.rune.semantic.self": "自我",
+  "gui.typemoonworld.rune.semantic.shadow": "阴影",
+  "gui.typemoonworld.rune.semantic.share": "共享",
+  "gui.typemoonworld.rune.semantic.shatter": "粉碎",
+  "gui.typemoonworld.rune.semantic.shield": "护盾",
+  "gui.typemoonworld.rune.semantic.shine": "闪耀",
+  "gui.typemoonworld.rune.semantic.slow": "迟缓",
+  "gui.typemoonworld.rune.semantic.speak": "言语",
+  "gui.typemoonworld.rune.semantic.speed": "速度",
+  "gui.typemoonworld.rune.semantic.store": "储存",
+  "gui.typemoonworld.rune.semantic.storm": "风暴",
+  "gui.typemoonworld.rune.semantic.strength": "力量",
+  "gui.typemoonworld.rune.semantic.strike": "打击",
+  "gui.typemoonworld.rune.semantic.swift": "迅捷",
+  "gui.typemoonworld.rune.semantic.transfer": "转移",
+  "gui.typemoonworld.rune.semantic.transform": "变换",
+  "gui.typemoonworld.rune.semantic.travel": "旅行",
+  "gui.typemoonworld.rune.semantic.ward": "守护",
+  "gui.typemoonworld.rune.semantic.water": "水流",
+  "gui.typemoonworld.rune.semantic.wealth": "财富",
+  "gui.typemoonworld.rune.slot.effect": "效果",
+  "gui.typemoonworld.rune.slot.modifier": "修正",
+  "gui.typemoonworld.rune.slot.terminal": "终末",
+  "gui.typemoonworld.rune.slot.trigger": "触发",
+  "gui.typemoonworld.rune.slots": "程序槽位",
+  "gui.typemoonworld.rune.terminal": "终末：%s",
+  "gui.typemoonworld.rune.trap_config": "陷阱：半径 %.1f，延迟 %s tick",
+  "gui.typemoonworld.rune.trigger": "触发：%s",
+  "gui.typemoonworld.rune.valid": "程序有效",
   "gui.typemoonworld.screen.learned_magic": "已学魔术",
   "gui.typemoonworld.section.affinities": "魔术属性",
   "gui.typemoonworld.section.equipment": "身体装备",
@@ -1186,10 +1332,10 @@
   "magic.option.typemoonworld.boundary_interference_effect.blindness": "失明",
   "magic.option.typemoonworld.boundary_interference_effect.darkness": "黑暗",
   "magic.option.typemoonworld.boundary_interference_effect.nausea": "反胃",
+  "magic.option.typemoonworld.boundary_power": "结界效力",
   "magic.option.typemoonworld.boundary_shape": "结界形状",
   "magic.option.typemoonworld.boundary_shape.hemisphere": "上半球",
   "magic.option.typemoonworld.boundary_shape.sphere": "球形",
-  "magic.option.typemoonworld.boundary_power": "结界效力",
   "magic.option.typemoonworld.boundary_side": "结界范围直径",
   "magic.option.typemoonworld.engraved_worm_operation_mode": "刻印虫操作模式",
   "magic.option.typemoonworld.engraved_worm_operation_mode.collapse": "暴毙",
@@ -1348,6 +1494,7 @@
   "magic.typemoonworld.rock_earth_array.name": "土岩阵",
   "magic.typemoonworld.ruby_flame_sword.name": "红宝石·炎之剑",
   "magic.typemoonworld.ruby_throw.name": "红宝石投掷",
+  "magic.typemoonworld.rune_origin.name": "原初卢恩魔术",
   "magic.typemoonworld.sapphire_throw.name": "蓝宝石投掷",
   "magic.typemoonworld.sapphire_winter_frost.name": "蓝宝石·凛冬之霜",
   "magic.typemoonworld.sensing_boundary.desc": "在方形范围内感知并标记符合黑名单条件的目标。",
@@ -1640,6 +1787,8 @@
   "message.typemoonworld.kendo.master.invitation": "老师傅给了你一封切磋邀请函。",
   "message.typemoonworld.kendo.master.manual": "老师傅将对应剑术学习书交给了你。",
   "message.typemoonworld.kendo.move_locked": "熟练度不足，尚未习得该招式",
+  "message.typemoonworld.king.denied": "王选之剑拒绝了你：你还没有王之资格。",
+  "message.typemoonworld.lake.invalid": "湖泊仪式需要六个相连水源和正确的投入物。",
   "message.typemoonworld.lancelot.aroundight_seals_owner": "无毁的湖光解放中，骑士不死于徒手被封印",
   "message.typemoonworld.lancelot.no_weapon": "目标手中没有可夺取的物品",
   "message.typemoonworld.lancelot.owner_limit": "骑士不死于徒手的同化物已达到 30 个上限",
@@ -1791,11 +1940,11 @@
   "message.typemoonworld.mana.not_enough_health": "魔力与生命值都不足...",
   "message.typemoonworld.mana.overload.death": "你因无法承受过量魔力而爆体身亡!",
   "message.typemoonworld.mana.overload.warning": "警告：魔力过载! (%s/%s)",
+  "message.typemoonworld.mana_furnace.already_authorized": "你已经获得魔力炉授权。",
+  "message.typemoonworld.mana_furnace.authorization_busy": "已有其他玩家的授权请求等待确认。",
   "message.typemoonworld.mana_furnace.authorization_pending": "授权请求已发送，等待魔力炉主人确认。",
   "message.typemoonworld.mana_furnace.authorization_request": "%s 请求使用魔力炉，请 Shift 右键确认。",
-  "message.typemoonworld.mana_furnace.authorization_busy": "已有其他玩家的授权请求等待确认。",
   "message.typemoonworld.mana_furnace.authorized": "你已获得魔力炉授权。",
-  "message.typemoonworld.mana_furnace.already_authorized": "你已经获得魔力炉授权。",
   "message.typemoonworld.mana_furnace.binding": "绑定开始：请持续 Shift 右键 3 秒。",
   "message.typemoonworld.mana_furnace.binding_in_progress": "已有玩家正在绑定这台魔力炉。",
   "message.typemoonworld.mana_furnace.bound": "魔力炉绑定完成。",
@@ -1838,6 +1987,8 @@
   "message.typemoonworld.medea_subservant.rule_breaker": "Rule Breaker 切断了美狄亚的专属契约。",
   "message.typemoonworld.medea_subservant.target_occupied": "目标从者已经拥有御主或契约。",
   "message.typemoonworld.medea_subservant.unbound": "美狄亚的专属从者契约已解除。",
+  "message.typemoonworld.merlin.blessing": "梅林授予你两个临时祝福。",
+  "message.typemoonworld.merlin.hero_creation": "梅林授予你英雄作成与王之资格。",
   "message.typemoonworld.mode.protection": "虚数防护已开启",
   "message.typemoonworld.mode.protection_broken": "虚数防护已被打破，需等待 10 秒恢复",
   "message.typemoonworld.mode.protection_cooldown": "虚数防护的切换间隔尚未结束",
@@ -1908,6 +2059,13 @@
   "message.typemoonworld.rule_breaker.grail_dispelled": "万法破除之戒切断了圣杯碎片的力量。刻印虫不会回归体内，其已授予的属性和技能保持不变；你获得了禁忌魔术。",
   "message.typemoonworld.rule_breaker.protection_dispelled": "万法破除之戒击碎了你的虚数防护。",
   "message.typemoonworld.rule_breaker.success": "万符必应破戒：破除成功。",
+  "message.typemoonworld.rune.cast_failed": "卢恩程序释放失败：%s",
+  "message.typemoonworld.rune.cast_success": "卢恩程序释放成功：%s",
+  "message.typemoonworld.rune.inscribed": "卢恩程序已刻入介质",
+  "message.typemoonworld.rune.learned": "已学习卢恩：%s",
+  "message.typemoonworld.rune.release_external": "该程序必须通过指定介质释放",
+  "message.typemoonworld.rune.save_failed": "卢恩程序保存失败：请检查释放方式、已掌握卢恩与程序数量。",
+  "message.typemoonworld.rune.saved": "卢恩程序已保存：%s",
   "message.typemoonworld.scroll.already_learned": "你已经学会上面所有的魔术.",
   "message.typemoonworld.scroll.cooldown": "这本教材还在冷却中。",
   "message.typemoonworld.scroll.learn_failed": "学习失败...",
@@ -2095,7 +2253,7 @@
 
   "entity.typemoonworld.apocalypse_horse": "天启骷髅马",
   "entity.typemoonworld.apocalypse_horseman": "四骑士显现体",
-  "entity.typemoonworld.arash": "阿拉什（Archer）",
+  "entity.typemoonworld.arash": "阿拉什",
   "entity.typemoonworld.arash_particle_arrow": "阿拉什的粒子箭",
   "entity.typemoonworld.arash_stella_controller": "流星一条",
   "entity.typemoonworld.artoria_pendragon": "阿尔托莉雅·潘德拉贡",
@@ -2113,17 +2271,17 @@
   "entity.typemoonworld.cursed_arm_hassan": "咒腕哈桑",
   "entity.typemoonworld.diarmuid_ua_duibhne": "迪尔姆德·奥迪那",
   "entity.typemoonworld.dragonfang_soldier": "龙牙兵",
-  "entity.typemoonworld.emiya_archer": "卫宫(Archer)",
-  "entity.typemoonworld.enkidu": "恩奇都(Lancer)",
+  "entity.typemoonworld.emiya_archer": "卫宫",
+  "entity.typemoonworld.enkidu": "恩奇都",
   "entity.typemoonworld.enkidu_earth_weapon": "民之睿智",
   "entity.typemoonworld.enuma_chain_crown": "天之锁冠",
   "entity.typemoonworld.evil_spirit": "大型恶灵",
   "entity.typemoonworld.evil_spirit_small": "小型恶灵",
   "entity.typemoonworld.fanatic_assassin": "狂信子",
   "entity.typemoonworld.fanatic_assassin_jinn": "狂信子的镇尼",
-  "entity.typemoonworld.gawain": "高文(Saber)",
+  "entity.typemoonworld.gawain": "高文",
   "entity.typemoonworld.ghoul": "屍鬼",
-  "entity.typemoonworld.gilgamesh": "吉尔伽美什(Archer)",
+  "entity.typemoonworld.gilgamesh": "吉尔伽美什",
   "entity.typemoonworld.gilgamesh_caster": "吉尔伽美什",
   "entity.typemoonworld.gilles_de_rais_caster": "吉尔·德·雷",
   "entity.typemoonworld.gilles_huge_sea_monster": "失控巨型海魔",
@@ -2142,6 +2300,7 @@
   "entity.typemoonworld.imaginary_space.cat_arc": "猫arc",
   "entity.typemoonworld.imaginary_space.nao_mushroom": "奈绪蘑菇",
   "entity.typemoonworld.iskandar": "伊斯坎达尔",
+  "entity.typemoonworld.jeanne_alter": "贞德〔Alter〕",
   "entity.typemoonworld.kendo_apprentice": "剑道学徒",
   "entity.typemoonworld.kendo_master": "剑道老师傅",
   "entity.typemoonworld.lancelot_berserker": "兰斯洛特",
@@ -2349,7 +2508,7 @@
   "entity.typemoonworld.nightingale": "弗洛伦斯·南丁格尔",
   "entity.typemoonworld.nightingale_bullet": "南丁格尔的子弹",
   "entity.typemoonworld.oda_matchlock_gun": "火绳枪",
-  "entity.typemoonworld.oda_nobunaga": "织田信长(Archer)",
+  "entity.typemoonworld.oda_nobunaga": "织田信长",
   "entity.typemoonworld.okita_shinsengumi": "新选组成员",
   "entity.typemoonworld.okita_souji_saber": "冲田总司",
   "entity.typemoonworld.pale_rider": "苍白骑士",
@@ -2482,6 +2641,7 @@
   "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_3": "§7[两仪式] 不管是什么,只要是障碍就切除.",
   "entity.typemoonworld.ryougi_shiki.speech.void_fall": "§c[两仪式] §4死亡的概念... 这种东西对我无效.",
   "entity.typemoonworld.sasaki_kojiro": "佐佐木小次郎",
+  "entity.typemoonworld.sea_beast": "海兽",
   "entity.typemoonworld.senko_muramasa": "千子村正",
   "entity.typemoonworld.shadow_hassan": "幽弋之哈桑",
   "entity.typemoonworld.shadow_hassan_death_shadow": "冥想神经",
@@ -2490,7 +2650,7 @@
   "entity.typemoonworld.stone_man": "魔偶",
   "entity.typemoonworld.the_dead": "死者",
   "entity.typemoonworld.tohsaka_rin": "远坂凛",
-  "entity.typemoonworld.ushiwakamaru_rider": "牛若丸（Rider）",
+  "entity.typemoonworld.ushiwakamaru_rider": "牛若丸",
   "entity.typemoonworld.worm": "虫",
   "entity.typemoonworld.worm.detection": "侦测虫",
   "entity.typemoonworld.worm.endermite": "末影螨",
@@ -2501,6 +2661,8 @@
   "entity.typemoonworld.zhao_yun_hakuryu": "白龙",
   "entity.typemoonworld.zhao_yun_rider": "赵云",
 
+  "tooltip.typemoonworld.divine_steel.infuse": "使用玛那进行精炼",
+  "tooltip.typemoonworld.divine_steel.progress": "神钢进度：%s/64",
   "tooltip.typemoonworld.gem.engraved.gravity.self_cast_hint": "Shift+右键：弹出重力档位选择（仅对自身）",
   "tooltip.typemoonworld.gem.engraved.healing.self_cast_hint": "潜行+右键：对自身释放治愈魔术",
   "tooltip.typemoonworld.gem.engraved.magic": "刻录魔术：%s",
@@ -2514,6 +2676,9 @@
   "tooltip.typemoonworld.gem.engraved.reinforcement.part": "强化部位：%s",
   "tooltip.typemoonworld.leyline_map.snapshot": "最近快照：网格 %s×%s 区块,玩家区块 (%s, %s),维度 %s",
   "tooltip.typemoonworld.leyline_map.usage": "右键：扫描并显示周围区块的魔力浓度图",
+  "tooltip.typemoonworld.necklace.mana": "魔力：%s/%s",
+  "tooltip.typemoonworld.rune.inscribed": "已刻录卢恩：%s",
+  "tooltip.typemoonworld.rune.uses": "剩余释放次数：%s",
   "tooltip.typemoonworld.self_geas_scroll.creator": "制作者：%s",
   "tooltip.typemoonworld.self_geas_scroll.force": "强制力：%s",
   "tooltip.typemoonworld.self_geas_scroll.signer": "签订者：%s",
@@ -2626,7 +2791,6 @@
   "death.attack.spiritual_collapse.player": "%1$s 在与 %2$s 战斗时灵基崩溃",
   "death.attack.stigma_delayed": "%1$s因延迟的痛觉而倒下",
   "death.attack.stigma_delayed.player": "%1$s因%2$s造成的延迟痛觉而倒下",
-
 
   "hud.typemoonworld.gilgamesh.block_id": "方块ID：%s",
   "hud.typemoonworld.gilgamesh.distance": "距离：%.1f格",
@@ -2827,6 +2991,13 @@
   "skill.typemoonworld.iskandar.ionioi_hetairoi": "王之军势",
   "skill.typemoonworld.iskandar.leadership_a": "领导力 A",
   "skill.typemoonworld.iskandar.military_tactics_b": "军略 B",
+  "skill.typemoonworld.jeanne_alter.cursed_lance": "灼烧枪阵",
+  "skill.typemoonworld.jeanne_alter.dragon_witch_ex": "龙之魔女 EX",
+  "skill.typemoonworld.jeanne_alter.ephemeral_dream_a": "泡影之梦 A",
+  "skill.typemoonworld.jeanne_alter.fire_pillar": "火刑",
+  "skill.typemoonworld.jeanne_alter.inferno_body": "业火缠身",
+  "skill.typemoonworld.jeanne_alter.le_grondement_du_haine": "咆哮吧，吾之愤怒",
+  "skill.typemoonworld.jeanne_alter.self_modification_ex": "自我改造 EX",
   "skill.typemoonworld.jizaiten_eye_six_secret": "自在天眼·六韬看破",
   "skill.typemoonworld.philosopher_stone_a": "贤者之石 A",
   "skill.typemoonworld.servant_card.afterimage": "残像",
@@ -2886,8 +3057,8 @@
   "skill.typemoonworld.servant_card.cu_crouch_thrust": "枪突",
   "skill.typemoonworld.servant_card.cu_disengage": "重整",
   "skill.typemoonworld.servant_card.cu_laguz": "Laguz",
-  "skill.typemoonworld.servant_card.cu_tiwaz": "Tiwaz",
   "skill.typemoonworld.servant_card.cu_rune_barrier": "卢恩结界",
+  "skill.typemoonworld.servant_card.cu_tiwaz": "Tiwaz",
   "skill.typemoonworld.servant_card.cybele": "魔眼",
   "skill.typemoonworld.servant_card.detection": "气配感知",
   "skill.typemoonworld.servant_card.diarmuid_disengage": "撤退重整",
@@ -2899,6 +3070,7 @@
   "skill.typemoonworld.servant_card.diarmuid_twin_spear_combo": "双枪连击",
   "skill.typemoonworld.servant_card.diarmuid_yellow_rose_focus": "必灭的黄蔷薇",
   "skill.typemoonworld.servant_card.dirk_throw": "投匕",
+  "skill.typemoonworld.servant_card.dragon_core": "龙之炉心",
   "skill.typemoonworld.servant_card.earth": "地",
   "skill.typemoonworld.servant_card.earth_rend": "地裂",
   "skill.typemoonworld.servant_card.earth_spike": "地刺",
@@ -2997,7 +3169,6 @@
   "skill.typemoonworld.servant_card.li_high_jump": "高跳",
   "skill.typemoonworld.servant_card.lion_leap": "狮跃",
   "skill.typemoonworld.servant_card.mana_burst": "魔力放出（开关）",
-  "skill.typemoonworld.servant_card.dragon_core": "龙之炉心",
   "skill.typemoonworld.servant_card.mana_burst_beam": "魔力放出·光炮",
   "skill.typemoonworld.servant_card.maou": "魔王",
   "skill.typemoonworld.servant_card.matchlock": "火枪",
@@ -3161,149 +3332,5 @@
   "subtitles.typemoonworld.zhao_yun.attack": "攻击",
   "subtitles.typemoonworld.zhao_yun.fail": "死亡",
   "subtitles.typemoonworld.zhao_yun.np": "宝具",
-  "subtitles.typemoonworld.zhao_yun.victory": "胜利",
-  "item.typemoonworld.rune_learning": "卢恩知识碎片",
-  "magic.typemoonworld.rune_origin.name": "原初卢恩魔术",
-  "message.typemoonworld.rune.learned": "已学习卢恩：%s",
-  "message.typemoonworld.rune.cast_failed": "卢恩程序释放失败：%s",
-  "message.typemoonworld.rune.cast_success": "卢恩程序释放成功：%s",
-  "message.typemoonworld.rune.saved": "卢恩程序已保存：%s",
-  "message.typemoonworld.rune.save_failed": "卢恩程序保存失败：请检查释放方式、已掌握卢恩与程序数量。",
-  "message.typemoonworld.rune.release_external": "该程序必须通过指定介质释放",
-  "message.typemoonworld.rune.inscribed": "卢恩程序已刻入介质",
-  "tooltip.typemoonworld.rune.inscribed": "已刻录卢恩：%s",
-  "tooltip.typemoonworld.rune.uses": "剩余释放次数：%s",
-  "gui.typemoonworld.rune.knowledge": "卢恩知识",
-  "gui.typemoonworld.rune.editor": "程序编辑器",
-  "gui.typemoonworld.rune.library": "程序库",
-  "gui.typemoonworld.rune.new": "新建程序",
-  "gui.typemoonworld.rune.name": "程序名称",
-  "gui.typemoonworld.rune.mode": "释放模式：%s",
-  "gui.typemoonworld.rune.cost": "预计魔力：%s",
-  "gui.typemoonworld.rune.trigger": "触发：%s",
-  "gui.typemoonworld.rune.effect": "效果：%s",
-  "gui.typemoonworld.rune.modifier": "修正：%s",
-  "gui.typemoonworld.rune.terminal": "终末：%s",
-  "gui.typemoonworld.rune.slots": "程序槽位",
-  "gui.typemoonworld.rune.palette": "已掌握卢恩",
-  "gui.typemoonworld.rune.slot.trigger": "触发",
-  "gui.typemoonworld.rune.slot.effect": "效果",
-  "gui.typemoonworld.rune.slot.modifier": "修正",
-  "gui.typemoonworld.rune.slot.terminal": "终末",
-  "gui.typemoonworld.rune.invalid": "程序无效",
-  "gui.typemoonworld.rune.drag_hint": "拖动已掌握的卢恩到程序槽位",
-  "gui.typemoonworld.rune.mode.direct_air": "直接释放",
-  "gui.typemoonworld.rune.mode.rune_stone": "刻录模式",
-  "gui.typemoonworld.rune.mode.weapon": "附魔模式·武器",
-  "gui.typemoonworld.rune.mode.armor": "强化模式·护甲",
-  "gui.typemoonworld.rune.mode.tool": "附魔模式·工具",
-  "gui.typemoonworld.rune.mode.block_trap": "方块陷阱",
-  "gui.typemoonworld.rune.mode.body": "身体",
-  "gui.typemoonworld.rune.config": "卢恩程序配置",
-  "gui.typemoonworld.rune.config_hint": "在此选择程序的释放方式",
-  "gui.typemoonworld.rune.release_mode_select": "释放方式：%s（点击切换）"
-  ,"gui.typemoonworld.rune.trap_config": "陷阱：半径 %.1f，延迟 %s tick"
-  ,"gui.typemoonworld.rune.semantic.wealth": "财富"
-  ,"gui.typemoonworld.rune.semantic.strength": "力量"
-  ,"gui.typemoonworld.rune.semantic.break": "破坏"
-  ,"gui.typemoonworld.rune.semantic.command": "命令"
-  ,"gui.typemoonworld.rune.semantic.move": "移动"
-  ,"gui.typemoonworld.rune.semantic.ignite": "点燃"
-  ,"gui.typemoonworld.rune.semantic.bind": "束缚"
-  ,"gui.typemoonworld.rune.semantic.joy": "喜悦"
-  ,"gui.typemoonworld.rune.semantic.storm": "风暴"
-  ,"gui.typemoonworld.rune.semantic.need": "需求"
-  ,"gui.typemoonworld.rune.semantic.freeze": "冻结"
-  ,"gui.typemoonworld.rune.semantic.cycle": "循环"
-  ,"gui.typemoonworld.rune.semantic.ward": "守护"
-  ,"gui.typemoonworld.rune.semantic.chance": "机遇"
-  ,"gui.typemoonworld.rune.semantic.protect": "保护"
-  ,"gui.typemoonworld.rune.semantic.shine": "闪耀"
-  ,"gui.typemoonworld.rune.semantic.judge": "裁决"
-  ,"gui.typemoonworld.rune.semantic.grow": "生长"
-  ,"gui.typemoonworld.rune.semantic.travel": "旅行"
-  ,"gui.typemoonworld.rune.semantic.self": "自我"
-  ,"gui.typemoonworld.rune.semantic.flow": "流动"
-  ,"gui.typemoonworld.rune.semantic.charge": "蓄能"
-  ,"gui.typemoonworld.rune.semantic.transform": "变换"
-  ,"gui.typemoonworld.rune.semantic.inherit": "继承"
-  ,"gui.typemoonworld.rune.semantic.create": "创造"
-  ,"gui.typemoonworld.rune.semantic.reinforce": "强化"
-  ,"gui.typemoonworld.rune.semantic.impact": "冲击"
-  ,"gui.typemoonworld.rune.semantic.speak": "言语"
-  ,"gui.typemoonworld.rune.semantic.path": "路径"
-  ,"gui.typemoonworld.rune.semantic.fire": "火焰"
-  ,"gui.typemoonworld.rune.semantic.share": "共享"
-  ,"gui.typemoonworld.rune.semantic.heal": "治愈"
-  ,"gui.typemoonworld.rune.semantic.ice": "寒冰"
-  ,"gui.typemoonworld.rune.semantic.drain": "汲取"
-  ,"gui.typemoonworld.rune.semantic.barrier": "屏障"
-  ,"gui.typemoonworld.rune.semantic.harvest": "收获"
-  ,"gui.typemoonworld.rune.semantic.shadow": "阴影"
-  ,"gui.typemoonworld.rune.semantic.random": "随机"
-  ,"gui.typemoonworld.rune.semantic.shield": "护盾"
-  ,"gui.typemoonworld.rune.semantic.light": "光明"
-  ,"gui.typemoonworld.rune.semantic.pierce": "贯穿"
-  ,"gui.typemoonworld.rune.semantic.nature": "自然"
-  ,"gui.typemoonworld.rune.semantic.speed": "速度"
-  ,"gui.typemoonworld.rune.semantic.mind": "心智"
-  ,"gui.typemoonworld.rune.semantic.water": "水流"
-  ,"gui.typemoonworld.rune.semantic.energy": "能量"
-  ,"gui.typemoonworld.rune.semantic.change": "变化"
-  ,"gui.typemoonworld.rune.semantic.earth": "大地"
-  ,"gui.typemoonworld.rune.semantic.amplify": "增幅"
-  ,"gui.typemoonworld.rune.semantic.power": "威力"
-  ,"gui.typemoonworld.rune.semantic.shatter": "粉碎"
-  ,"gui.typemoonworld.rune.semantic.range": "范围"
-  ,"gui.typemoonworld.rune.semantic.swift": "迅捷"
-  ,"gui.typemoonworld.rune.semantic.heat": "热量"
-  ,"gui.typemoonworld.rune.semantic.link": "连接"
-  ,"gui.typemoonworld.rune.semantic.duration": "持续"
-  ,"gui.typemoonworld.rune.semantic.area": "区域"
-  ,"gui.typemoonworld.rune.semantic.cost": "消耗"
-  ,"gui.typemoonworld.rune.semantic.slow": "迟缓"
-  ,"gui.typemoonworld.rune.semantic.repeat": "重复"
-  ,"gui.typemoonworld.rune.semantic.resist": "抗性"
-  ,"gui.typemoonworld.rune.semantic.luck": "幸运"
-  ,"gui.typemoonworld.rune.semantic.guard": "格挡"
-  ,"gui.typemoonworld.rune.semantic.accuracy": "精准"
-  ,"gui.typemoonworld.rune.semantic.critical": "暴击"
-  ,"gui.typemoonworld.rune.semantic.restore": "恢复"
-  ,"gui.typemoonworld.rune.semantic.mobility": "机动"
-  ,"gui.typemoonworld.rune.semantic.focus": "专注"
-  ,"gui.typemoonworld.rune.semantic.control": "控制"
-  ,"gui.typemoonworld.rune.semantic.store": "储存"
-  ,"gui.typemoonworld.rune.semantic.fuse": "融合"
-  ,"gui.typemoonworld.rune.semantic.persist": "持久"
-  ,"gui.typemoonworld.rune.semantic.release": "释放"
-  ,"gui.typemoonworld.rune.semantic.strike": "打击"
-  ,"gui.typemoonworld.rune.semantic.detonate": "引爆"
-  ,"gui.typemoonworld.rune.semantic.seal": "封印"
-  ,"gui.typemoonworld.rune.semantic.return": "回归"
-  ,"gui.typemoonworld.rune.semantic.burn": "灼烧"
-  ,"gui.typemoonworld.rune.semantic.transfer": "转移"
-  ,"gui.typemoonworld.rune.semantic.bless": "祝福"
-  ,"gui.typemoonworld.rune.semantic.disperse": "驱散"
-  ,"gui.typemoonworld.rune.semantic.sacrifice": "牺牲"
-  ,"gui.typemoonworld.rune.semantic.endure": "忍耐"
-  ,"gui.typemoonworld.rune.semantic.complete": "完成"
-  ,"gui.typemoonworld.rune.semantic.banish": "放逐"
-  ,"gui.typemoonworld.rune.semantic.reveal": "显现"
-  ,"gui.typemoonworld.rune.semantic.purify": "净化"
-  ,"gui.typemoonworld.rune.semantic.execute": "处决"
-  ,"gui.typemoonworld.rune.semantic.renew": "更新"
-  ,"gui.typemoonworld.rune.semantic.escape": "脱离"
-  ,"gui.typemoonworld.rune.semantic.awaken": "觉醒"
-  ,"gui.typemoonworld.rune.semantic.dissolve": "消解"
-  ,"gui.typemoonworld.rune.semantic.discharge": "放电"
-  ,"gui.typemoonworld.rune.semantic.anchor": "锚定"
-  ,"gui.typemoonworld.rune.clear": "清空槽位"
-  ,"gui.typemoonworld.rune.valid": "程序有效"
-  ,"gui.typemoonworld.rune.edit": "编辑"
-  ,"gui.typemoonworld.rune.copy": "复制"
-  ,"gui.typemoonworld.rune.delete": "删除"
-  ,"gui.typemoonworld.rune.add_wheel": "加入当前轮盘"
-  ,"gui.typemoonworld.rune.radius": "半径"
-  ,"gui.typemoonworld.rune.delay": "延迟"
-  ,"block.typemoonworld.rune_inscription": "卢恩刻画"
+  "subtitles.typemoonworld.zhao_yun.victory": "胜利"
 }

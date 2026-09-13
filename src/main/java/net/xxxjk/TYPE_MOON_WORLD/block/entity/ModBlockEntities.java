@@ -11,6 +11,9 @@ import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 
 public class ModBlockEntities {
    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, "typemoonworld");
+   public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SwordInStoneBlockEntity>> SWORD_IN_STONE_BLOCK_ENTITY = BLOCK_ENTITIES.register(
+      "sword_in_stone", () -> Builder.of(SwordInStoneBlockEntity::new, new Block[]{ModBlocks.SWORD_IN_STONE.get()}).build(null)
+   );
    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MuramasaBlockEntity>> MURAMASA_BLOCK_ENTITY = BLOCK_ENTITIES.register(
       "redswordblock", () -> Builder.of(MuramasaBlockEntity::new, new Block[]{(Block)ModBlocks.MURAMASA_BLOCK.get()}).build(null)
    );

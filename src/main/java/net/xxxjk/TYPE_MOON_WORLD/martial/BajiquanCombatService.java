@@ -502,7 +502,11 @@ public final class BajiquanCombatService {
    }
 
    private static void syncCircleRealm(ServerPlayer player, boolean active) {
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CircleRealmStateMessage(player.getUUID(), active), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new CircleRealmStateMessage(player.getUUID(), active), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      } catch (UnsupportedOperationException ignored) {
+         // GameTest and embedded connections may not have a client listener.
+      }
    }
 
    public static boolean canDetectCircleRealm(LivingEntity observer) {

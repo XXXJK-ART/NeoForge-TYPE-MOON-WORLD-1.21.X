@@ -1,0 +1,6 @@
+{
+  "duration":0.9,"emitters":[
+    {"start_time":0,"end_time":0.75,"rate":1600,"particle_lifetime":0.55,"component":{"type":"line","start":[0,-7,0],"end":[0,4,0],"segments":300},"color_over_life":[{"t":0,"color":"#FF170019"},{"t":0.25,"color":"#FF7B18A5"},{"t":0.58,"color":"#FFFF68ED"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.9},{"t":0.6,"size":1.5},{"t":1,"size":0.08}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0.2,"end_time":0.8,"rate":600,"particle_lifetime":0.42,"component":{"type":"sphere","radius":1,"sample_count":180},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.5,"color":"#FFFF2BCE"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.32},{"t":1,"size":0.05}],"transform_over_life":[{"t":0,"scale":[0.2,0.2,0.2]},{"t":1,"scale":[5,5,5],"easing":"ease_out_back"}],"blend":"ADDITIVE"}
+  ]
+}

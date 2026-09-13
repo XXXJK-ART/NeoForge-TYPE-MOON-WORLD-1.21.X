@@ -1,0 +1,7 @@
+{
+  "duration":1.5,"environment":[{"type":"screen_tint","color":"#22CF22FF","start":0,"end":0.6,"fade_in":0.02,"fade_out":0.5,"intensity":0.24}],
+  "emitters":[
+    {"start_time":0,"end_time":1.25,"rate":2600,"particle_lifetime":0.75,"component":{"type":"line","start":[0,-1,0],"end":[0,16,0],"segments":300},"position_variance":2.5,"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.25,"color":"#FFFF6BFF"},{"t":0.62,"color":"#FF740D83"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.55},{"t":0.5,"size":2.0},{"t":1,"size":0.06}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0,"end_time":1.1,"rate":750,"particle_lifetime":0.68,"component":{"type":"sphere","radius":1,"sample_count":220},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.5,"color":"#FF4B005E"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.34},{"t":1,"size":0.05}],"transform_over_life":[{"t":0,"scale":[0.2,0.2,0.2]},{"t":1,"scale":[10,8,10],"easing":"ease_out_back"}],"blend":"ADDITIVE"}
+  ]
+}

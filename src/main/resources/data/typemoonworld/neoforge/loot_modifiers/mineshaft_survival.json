@@ -1,0 +1,17 @@
+{
+    "conditions":  [
+                       {
+                           "condition":  "minecraft:location_check",
+                           "predicate":  {
+                                             "location":  {
+                                                              "structures":  [
+                                                                                 "minecraft:mineshaft"
+                                                                             ]
+                                                          }
+                                         }
+                       }
+                   ],
+    "chance":  0.1,
+    "item":  "typemoonworld:dirk_small_knife",
+    "type":  "typemoonworld:survival_reward"
+}

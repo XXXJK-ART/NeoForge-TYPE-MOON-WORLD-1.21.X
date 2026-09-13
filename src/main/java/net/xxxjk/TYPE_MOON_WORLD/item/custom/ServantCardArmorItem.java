@@ -17,6 +17,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ServantCardArmorRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedusaEntity;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoItem;
@@ -71,6 +72,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
          case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith", "okita_souji_saber" -> true;
+         case "jeanne_alter" -> true;
          default -> false;
       };
    }
@@ -132,7 +134,7 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
          || "artoria_pendragon".equals(this.servantId) || "sasaki_kojiro".equals(this.servantId)
          || "heracles".equals(this.servantId) || "gilgamesh".equals(this.servantId) || "gawain".equals(this.servantId)
          || "paracelsus".equals(this.servantId) || "oda_nobunaga".equals(this.servantId)
-         || "okita_souji_saber".equals(this.servantId)) {
+         || "okita_souji_saber".equals(this.servantId) || "jeanne_alter".equals(this.servantId)) {
          animation = "animation";
       }
       state.getController().setAnimation(RawAnimation.begin().thenLoop(animation));
@@ -143,6 +145,9 @@ public class ServantCardArmorItem extends ArmorItem implements GeoItem {
       Entity entity = state.getData(DataTickets.ENTITY);
       if (!(entity instanceof LivingEntity living)) {
          return false;
+      }
+      if (living instanceof MedeaEntity medea) {
+         return medea.isFlyingMode();
       }
       TypeMoonWorldModVariables.PlayerVariables vars = living.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "medea".equals(vars.servant_card_id) && vars.servant_card_flying;

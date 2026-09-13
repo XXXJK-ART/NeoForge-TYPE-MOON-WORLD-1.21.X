@@ -51,9 +51,17 @@ public final class BattlefieldAreaService {
 
    public static boolean isHostileArea(LivingEntity observer, Vec3 point) {
       if (!(observer.level() instanceof ServerLevel level)) return false;
-      for (Area area : at(level, point)) {
+      long now = level.getGameTime();
+      List<Area> areas = AREAS.get(level.dimension());
+      if (areas != null) for (Area area : areas) {
+         if (area.expiresAt() < now || !area.contains(point)) continue;
          Entity owner = level.getEntity(area.owner());
          if (!(owner instanceof LivingEntity living) || !observer.isAlliedTo(living)) return true;
+      }
+      if (UBWInstanceManager.isUbwDimension(level)) {
+         UUID owner = UBWInstanceManager.getOwnerId(level.dimension());
+         Entity ownerEntity = owner == null ? null : level.getEntity(owner);
+         if (!(ownerEntity instanceof LivingEntity living) || !observer.isAlliedTo(living)) return true;
       }
       return false;
    }

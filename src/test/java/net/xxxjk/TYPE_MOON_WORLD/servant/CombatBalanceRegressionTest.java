@@ -47,4 +47,15 @@ class CombatBalanceRegressionTest {
       assertTrue(mount.contains("public void remove(RemovalReason reason)"));
       assertTrue(mount.contains("passenger.stopRiding();"));
    }
+
+   @Test
+   void paracelsusCastsAtMedeaTempoWithoutWastingCoolingDownChoices() throws IOException {
+      String combat = Files.readString(JAVA.resolve("servant/ai/module/CombatModule.java"));
+      String skills = Files.readString(JAVA.resolve("servant/skill/ParacelsusServantSkills.java"));
+
+      assertTrue(combat.contains("PARACELSUS_MAGIC_AI_INTERVAL = 16"));
+      assertTrue(combat.contains("PARACELSUS_HIGH_SPEED_MAGIC_AI_INTERVAL = 8"));
+      assertTrue(combat.contains("i < actions.length"));
+      assertTrue(skills.contains("ELEMENTAL_MAGIC_COOLDOWN = 20"));
+   }
 }

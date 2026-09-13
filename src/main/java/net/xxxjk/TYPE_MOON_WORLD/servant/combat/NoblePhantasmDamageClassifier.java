@@ -33,7 +33,9 @@ public final class NoblePhantasmDamageClassifier {
       if (source == null) return false;
       if (source.is(NOBLE_PHANTASM_DAMAGE) || source.is(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY)) return true;
       Entity direct = source.getDirectEntity();
-      if (direct instanceof ArtoriaExcaliburBeamEntity || direct instanceof GaeBulgArmyProjectileEntity) return true;
+      if (direct instanceof ArtoriaExcaliburBeamEntity
+         || direct instanceof GaeBulgArmyProjectileEntity
+         || direct instanceof PseudoSpiralSwordProjectileEntity) return true;
       if (!source.is(DamageTypeTags.IS_EXPLOSION) || originalDamage < 300.0F) return false;
       if (direct instanceof PseudoSpiralSwordProjectileEntity
          || direct instanceof CrimsonHoundProjectileEntity

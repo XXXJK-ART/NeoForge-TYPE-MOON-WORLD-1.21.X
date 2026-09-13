@@ -1,0 +1,8 @@
+{
+  "duration":2.2,"environment":[{"type":"screen_tint","color":"#35FF25E5","start":0,"end":1.1,"fade_in":0.02,"fade_out":0.8,"intensity":0.5}],
+  "emitters":[
+    {"start_time":0,"end_time":1.7,"rate":3800,"particle_lifetime":0.86,"component":{"type":"line","start":[0,-1,0],"end":[0,28,0],"segments":420},"position_variance":3.2,"velocity":[0,0.42,0],"velocity_variance":0.28,"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.2,"color":"#FFFFD7FF"},{"t":0.48,"color":"#FFFF36DB"},{"t":0.75,"color":"#FF6C0719"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.7},{"t":0.42,"size":2.8},{"t":1,"size":0.08}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0.02,"end_time":1.5,"rate":1300,"particle_lifetime":0.78,"component":{"type":"parametric","mode":"EXPRESSION","expr_x":"(2+8*t)*cos(t*50.26+time*13)","expr_y":"25*t","expr_z":"(2+8*t)*sin(t*50.26+time*13)","t_start":0,"t_end":1,"segments":360},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.4,"color":"#FFFF4DE5"},{"t":0.78,"color":"#FF55102A"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.35},{"t":0.5,"size":1.3},{"t":1,"size":0.05}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0,"end_time":1.4,"rate":680,"particle_lifetime":0.65,"component":{"type":"sphere","radius":1,"sample_count":220},"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.4,"color":"#FFCE38FF"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.4},{"t":1,"size":0.05}],"transform_over_life":[{"t":0,"scale":[0.2,0.2,0.2]},{"t":0.7,"scale":[12,12,12],"easing":"ease_out_back"},{"t":1,"scale":[8,8,8]}],"blend":"ADDITIVE"}
+  ]
+}

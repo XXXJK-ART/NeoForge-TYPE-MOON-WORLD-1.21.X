@@ -42,6 +42,18 @@ public final class GilgameshDivineShield {
       return true;
    }
 
+   /** Keeps the NPC-only divine shield available instead of waiting for a threat scan. */
+   public static boolean maintainAlwaysOn(LivingEntity defender) {
+      if (defender == null || !defender.isAlive()) {
+         return false;
+      }
+      // A permanent NPC shield still observes the normal post-break lockout.
+      if (isActive(defender) || isOnCooldown(defender)) {
+         return false;
+      }
+      return activate(defender);
+   }
+
    public static void tick(LivingEntity defender) {
       CompoundTag data = defender.getPersistentData();
       migrateLegacyState(defender, data);

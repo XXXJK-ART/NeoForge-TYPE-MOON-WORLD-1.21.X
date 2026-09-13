@@ -54,6 +54,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.EffectsApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterContent;
 import net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
@@ -154,6 +155,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
+import net.xxxjk.TYPE_MOON_WORLD.survival.LakeRitualService;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
@@ -180,6 +182,7 @@ public class TYPE_MOON_WORLD {
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
       NeoForge.EVENT_BUS.register(MagicAnalysisService.class);
+      NeoForge.EVENT_BUS.register(LakeRitualService.class);
       NeoForge.EVENT_BUS.addListener(this::registerCommands);
       ModCreativeModeTabs.register(modEventBus);
       ModItems.register(modEventBus);
@@ -196,6 +199,7 @@ public class TYPE_MOON_WORLD {
       TypeMoonWorldModMenus.REGISTRY.register(modEventBus);
       modEventBus.addListener(this::addCreative);
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
+      modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
       new TypeMoonAddon(modEventBus, modContainer);
@@ -204,6 +208,8 @@ public class TYPE_MOON_WORLD {
    private void commonSetup(FMLCommonSetupEvent event) {
       event.enqueueWork(
          () -> {
+            JeanneAlterContent.register();
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.class);
             MagicModularRegistry.ensureInitialized();
             MagicDefinitionRegistry.bootstrapBuiltins();
             ServantSkillRegistry.ensureInitialized();

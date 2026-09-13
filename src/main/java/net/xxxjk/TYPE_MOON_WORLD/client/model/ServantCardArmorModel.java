@@ -86,6 +86,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
             "gilgamesh", "gilgamesh_caster", "gawain", "paracelsus", "li_shuwen", "oda_nobunaga", "ushiwakamaru_rider" -> true;
          case "fanatic_assassin", "arash", "nightingale", "zhao_yun_rider", "senko_muramasa" -> true;
          case "hundred_faces_hassan", "diarmuid_ua_duibhne", "lancelot_berserker", "iskandar", "baobhan_sith", "okita_souji_saber" -> true;
+         case "jeanne_alter" -> true;
          default -> false;
       };
    }
@@ -102,7 +103,7 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
    private static boolean usesFullHeadwearModel(String servantId) {
       return switch (servantId) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider", "gilgamesh_caster" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider" -> true;
          default -> false;
       };
    }
@@ -123,6 +124,13 @@ public class ServantCardArmorModel extends GeoModel<ServantCardArmorItem> {
       }
       if ("diarmuid_ua_duibhne".equals(animatable.servantId())) {
          applyDiarmuidArmorFit();
+      }
+      if ("jeanne_alter".equals(animatable.servantId())) {
+         // Move the imported helmet farther toward the face (4.8 model units = 0.30 block).
+         GeoBone helmet = this.getAnimationProcessor().getBone("Helmet");
+         if (helmet != null) {
+            helmet.setPosZ(4.8F);
+         }
       }
       GeoBone head = this.getAnimationProcessor().getBone("armorHead");
       if (head != null) {

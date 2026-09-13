@@ -1,6 +1,11 @@
 {
   "duration": 7.5,
   "notes": "Golden EA-style Excalibur release. No weather/environment changes.",
+  "screen_effects": [
+    { "type": "white_flash", "intensity": 0.24, "duration": 0.28 },
+    { "type": "radial_blur", "intensity": 0.16, "duration": 0.42 },
+    { "type": "chromatic_aberration", "intensity": 0.10, "duration": 0.36 }
+  ],
   "environment": [
     { "type": "screen_tint", "color": "#33FFF8D8", "start": 0.0, "end": 0.55, "fade_in": 0.05, "fade_out": 0.24, "intensity": 0.18 },
     { "type": "screen_tint", "color": "#55FFF8D8", "start": 2.65, "end": 3.05, "fade_in": 0.04, "fade_out": 0.22, "intensity": 0.28 }
@@ -77,6 +82,7 @@
       "visibility_condition": "random() > 0.08",
       "blend": "ADDITIVE",
       "particle_role": "EXCALIBUR_CORE_BEAM",
+      "material": { "shader": "vfx_energy", "bloom": 1.2, "soft_particles": true },
       "vanilla_particles": [
         { "type": "end_rod", "count": 1, "spread": [0.15, 0.15, 0.15], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 }
       ],

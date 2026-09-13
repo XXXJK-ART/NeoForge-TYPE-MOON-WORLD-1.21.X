@@ -22,6 +22,10 @@ public final class ServantDataRegistry {
       ServantDefinition value = DEFINITIONS.get(id);
       if (value != null) return value;
       String prefix = net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID + ":";
+      // Preserve cards and saved entities created by the former Jeanne Alter addon.
+      if ("heracles_archer_addon:jeanne_alter".equals(id)) {
+         return DEFINITIONS.get("jeanne_alter");
+      }
       return id.startsWith(prefix) ? DEFINITIONS.get(id.substring(prefix.length())) : DEFINITIONS.get(prefix + id);
    }
 

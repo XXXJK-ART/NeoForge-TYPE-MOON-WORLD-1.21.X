@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.function.Consumer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -65,11 +66,33 @@ public final class CombatThreatService {
       return result;
    }
 
+   /**
+    * Visits nearby active threats without allocating a temporary list. This is
+    * the hot-path variant used by servant arbitration; callers that need a
+    * snapshot should continue using {@link #nearby}.
+    */
+   public static void forEachNearby(ServerLevel level, Vec3 point, double range, long now,
+                                    Consumer<CombatThreat> consumer) {
+      if (level == null || point == null || consumer == null) return;
+      List<CombatThreat> source = THREATS.get(level.dimension());
+      if (source == null || source.isEmpty()) return;
+      double rangeSqr = range * range;
+      for (CombatThreat threat : source) {
+         if (threat.endTick() >= now && threat.origin().distanceToSqr(point) <= rangeSqr) {
+            consumer.accept(threat);
+         }
+      }
+   }
+
    public static CombatThreat incoming(ServerLevel level, LivingEntity target, long now, long maximumTicks,
                                        Predicate<CombatThreat> filter) {
       if (level == null || target == null) return null;
       CombatThreat best = null;
-      for (CombatThreat threat : nearby(level, target.position(), 64.0, now)) {
+      List<CombatThreat> source = THREATS.get(level.dimension());
+      if (source == null || source.isEmpty()) return null;
+      double rangeSqr = 64.0 * 64.0;
+      for (CombatThreat threat : source) {
+         if (threat.endTick() < now || threat.origin().distanceToSqr(target.position()) > rangeSqr) continue;
          if (threat.sourceUuid().equals(target.getUUID()) || threat.ticksToImpact(now) > maximumTicks
             || filter != null && !filter.test(threat)) continue;
          boolean targeted = target.getUUID().equals(threat.targetUuid());

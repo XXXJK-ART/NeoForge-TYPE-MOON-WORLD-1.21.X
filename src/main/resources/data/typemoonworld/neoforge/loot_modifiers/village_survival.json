@@ -1,0 +1,17 @@
+{
+    "conditions":  [
+                       {
+                           "condition":  "minecraft:location_check",
+                           "predicate":  {
+                                             "location":  {
+                                                              "structures":  [
+                                                                                 "minecraft:village_plains"
+                                                                             ]
+                                                          }
+                                         }
+                       }
+                   ],
+    "chance":  0.05,
+    "item":  "typemoonworld:relic_ato_cradle",
+    "type":  "typemoonworld:survival_reward"
+}

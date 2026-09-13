@@ -1,0 +1,7 @@
+{
+  "duration":0.55,"notes":"A wide ground-hugging wall of revenge fire; each spawn advances the front.",
+  "emitters":[
+    {"start_time":0,"end_time":0.5,"rate":1300,"particle_lifetime":0.55,"component":{"type":"line","start":[-5,0,0],"end":[5,0,0],"segments":220},"position_variance":0.35,"velocity":[0,0.25,0],"velocity_variance":0.2,"color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.25,"color":"#FFFFDB45"},{"t":0.65,"color":"#FFFF2A00"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.35},{"t":0.55,"size":1.25},{"t":1,"size":0.05}],"transform_over_life":[{"t":0,"scale":[1,0.2,1]},{"t":1,"scale":[1,5,1],"easing":"ease_out_cubic"}],"blend":"ADDITIVE","enable_trail":true},
+    {"start_time":0,"end_time":0.48,"rate":340,"particle_lifetime":0.48,"component":{"type":"circle","radius":5,"segments":160},"color_over_life":[{"t":0,"color":"#AAFFED8A"},{"t":0.55,"color":"#AA8A0A22"},{"t":1,"color":"#00000000"}],"size_over_life":[{"t":0,"size":0.2},{"t":1,"size":0.04}],"blend":"ADDITIVE"}
+  ]
+}

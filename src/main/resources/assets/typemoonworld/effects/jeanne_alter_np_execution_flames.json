@@ -1,0 +1,27 @@
+{
+  "duration":0.9,
+  "emitters":[
+    {
+      "start_time":0,
+      "end_time":0.88,
+      "rate":900,
+      "particle_lifetime":0.62,
+      "component":{"type":"parametric","mode":"EXPRESSION","expr_x":"(1.2+2.8*t)*cos(t*43.982)","expr_y":"7.5*t","expr_z":"(1.2+2.8*t)*sin(t*43.982)","t_start":0,"t_end":1,"segments":260},
+      "color_over_life":[{"t":0,"color":"#FFFFFFFF"},{"t":0.25,"color":"#FFFFCA35"},{"t":0.62,"color":"#FFFF2500"},{"t":1,"color":"#00200000"}],
+      "size_over_life":[{"t":0,"size":0.42},{"t":0.48,"size":1.1},{"t":1,"size":0.05}],
+      "blend":"ADDITIVE",
+      "enable_trail":true
+    },
+    {
+      "start_time":0,
+      "end_time":0.8,
+      "rate":320,
+      "particle_lifetime":0.55,
+      "component":{"type":"circle","radius":3.8,"segments":180},
+      "color_over_life":[{"t":0,"color":"#FFFFF1B0"},{"t":0.5,"color":"#FFD52A00"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.32},{"t":1,"size":0.04}],
+      "blend":"ADDITIVE",
+      "enable_trail":true
+    }
+  ]
+}

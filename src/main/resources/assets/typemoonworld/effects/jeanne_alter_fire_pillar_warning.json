@@ -1,0 +1,1 @@
+{"duration":0.5,"emitters":[{"start_time":0,"end_time":0.45,"rate":260,"particle_lifetime":0.35,"component":{"type":"circle","radius":2.4,"segments":120},"color_over_life":[{"t":0,"color":"#00FF2000"},{"t":0.4,"color":"#FFFF3810"},{"t":1,"color":"#00FFCC55"}],"size_over_life":[{"t":0,"size":0.12},{"t":1,"size":0.4}],"blend":"ADDITIVE","enable_trail":true}]}

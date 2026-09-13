@@ -22,6 +22,8 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.Easing;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.IVFXComponent;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXBlendMode;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXPriority;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXRendererType;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.curve.BicircleStarCurve;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.curve.CircleCurve;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.component.curve.ConvexPolygonCurve;
@@ -51,6 +53,7 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.component.surface.TorusSurface;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.ColorKeyFrame;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.SizeKeyFrame;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.TransformKeyFrame;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.client.VFXPostProcessManager;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -58,6 +61,20 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
    public static final EffectLibrary INSTANCE = new EffectLibrary();
    private final Map<ResourceLocation, VFXEffectDefinition> effects = new HashMap<>();
+   private static final Map<String, String> LEGACY_EFFECT_ALIASES = Map.ofEntries(
+      Map.entry("servant_enkidu_perfect_form", "servant_enkidu_transfiguration"),
+      Map.entry("servant_heracles_nine_lives", "servant_heracles_slam"),
+      Map.entry("servant_li_shuwen_quanjing", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_wu_er_da_impact", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_wu_er_da_windup", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_shuwen_yinyang", "servant_sasaki_tsubame"),
+      Map.entry("servant_li_wu_er_da", "servant_sasaki_tsubame"),
+      Map.entry("servant_medea_barrier", "servant_ushiwakamaru_benkei_shield"),
+      Map.entry("servant_medea_bind", "servant_enkidu_chain_of_heaven"),
+      Map.entry("servant_medea_workshop", "magic_circle"),
+      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort"),
+      Map.entry("servant_oda_hajun", "demon_god_gaze_final_explosion")
+   );
 
    private EffectLibrary() {
       super(GSON, "effects");
@@ -67,7 +84,14 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       ResourceLocation resourceLocation = id.contains(":")
          ? ResourceLocation.parse(id)
          : ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, id);
-      return this.effects.get(resourceLocation);
+      VFXEffectDefinition definition = this.effects.get(resourceLocation);
+      if (definition == null && TYPE_MOON_WORLD.MOD_ID.equals(resourceLocation.getNamespace())) {
+         String alias = LEGACY_EFFECT_ALIASES.get(resourceLocation.getPath());
+         if (alias != null) {
+            definition = this.effects.get(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, alias));
+         }
+      }
+      return definition;
    }
 
    public boolean reloadNow() {
@@ -81,6 +105,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
 
    @Override
    protected void apply(Map<ResourceLocation, JsonElement> map, ResourceManager resourceManager, ProfilerFiller profiler) {
+      VFXPostProcessManager.requestReset();
       this.effects.clear();
       for (Map.Entry<ResourceLocation, JsonElement> entry : map.entrySet()) {
          try {
@@ -109,7 +134,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
    }
 
    private static VFXEffectDefinition parseEffect(ResourceLocation id, JsonObject json) {
-      requireOnly(json, "duration", "emitters", "environment", "notes");
+      requireOnly(json, "duration", "emitters", "environment", "screen_effects", "notes");
       float duration = requiredFloat(json, "duration");
       JsonArray emittersJson = requiredArray(json, "emitters");
       if (emittersJson.isEmpty()) {
@@ -119,7 +144,29 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       for (JsonElement element : emittersJson) {
          emitters.add(parseEmitter(GsonHelper.convertToJsonObject(element, "emitter")));
       }
-      return new VFXEffectDefinition(duration, emitters, parseEnvironment(optionalArray(json, "environment"), duration));
+      return new VFXEffectDefinition(duration, emitters, parseEnvironment(optionalArray(json, "environment"), duration), parseScreenEffects(optionalArray(json, "screen_effects"), duration));
+   }
+
+   private static List<VFXScreenEffectDefinition> parseScreenEffects(JsonArray array, float effectDuration) {
+      List<VFXScreenEffectDefinition> result = new ArrayList<>();
+      if (array == null) return result;
+      java.util.Set<String> allowedTypes = java.util.Set.of("white_flash", "whiteout", "whiteout_wave", "glass_break", "glass_shatter", "portal_rift", "timestop_border", "time_stop", "timestop", "chromatic_aberration", "color_split", "radial_blur", "impact_blur", "vignette");
+      for (JsonElement element : array) {
+         JsonObject json = GsonHelper.convertToJsonObject(element, "screen effect");
+         requireOnly(json, "type", "intensity", "duration", "radius");
+         String type = GsonHelper.getAsString(json, "type", "");
+         if (!allowedTypes.contains(type)) {
+            TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX screen effect '{}'; skipping", type);
+            continue;
+         }
+         result.add(new VFXScreenEffectDefinition(
+            type,
+            GsonHelper.getAsFloat(json, "intensity", 1.0F),
+            Math.min(effectDuration, GsonHelper.getAsFloat(json, "duration", effectDuration)),
+            GsonHelper.getAsFloat(json, "radius", 0.0F)
+         ));
+      }
+      return result;
    }
 
    private static VFXEffectDefinition.EmitterDefinition parseEmitter(JsonObject json) {
@@ -148,7 +195,11 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          "onStart",
          "onTick",
          "onEnd",
-         "onComplete"
+         "onComplete",
+         "priority",
+         "renderer",
+         "material",
+         "motion"
       );
       float rate = requiredFloat(json, "rate");
       float particleLifetime = requiredFloat(json, "particle_lifetime");
@@ -161,7 +212,9 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       float endTime = GsonHelper.getAsFloat(json, "end_time", 0.0F);
       int maxVanillaParticleSpawnsPerTick = GsonHelper.getAsInt(json, "max_vanilla_particles_per_tick", 12);
       VFXEffectDefinition.BindingDefinition binding = parseBinding(json.has("binding") ? requiredObject(json, "binding") : null);
-      IVFXComponent component = parseComponent(requiredObject(json, "component"));
+      JsonObject componentJson = requiredObject(json, "component");
+      String componentType = requiredString(componentJson, "type").toLowerCase(Locale.ROOT);
+      IVFXComponent component = parseComponent(componentJson);
       List<TransformKeyFrame> transforms = parseTransformKeyFrames(optionalArray(json, "transform_over_life"));
       List<ColorKeyFrame> colors = parseColorKeyFrames(optionalArray(json, "color_over_life"));
       List<SizeKeyFrame> sizes = parseSizeKeyFrames(optionalArray(json, "size_over_life"));
@@ -175,6 +228,16 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       if (!onComplete.isBlank()) {
          onEnd.add(onComplete);
       }
+      VFXPriority priority = VFXPriority.parse(GsonHelper.getAsString(json, "priority", "normal"));
+      VFXRendererType renderer = json.has("renderer")
+         ? VFXRendererType.parse(GsonHelper.getAsString(json, "renderer", "billboard"))
+         : migratedRenderer(componentType);
+      VFXMaterialDefinition material = json.has("material")
+         ? parseMaterial(requiredObject(json, "material"))
+         : migratedMaterial(componentType, particleRole, blend);
+      VFXMotionDefinition motion = json.has("motion")
+         ? parseMotion(requiredObject(json, "motion"))
+         : migratedMotion(componentType);
       return new VFXEffectDefinition.EmitterDefinition(
          rate,
          particleLifetime,
@@ -198,8 +261,79 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
          enableTrail,
          parseStringList(optionalArray(json, "onStart")),
          parseStringList(optionalArray(json, "onTick")),
-         onEnd
+         onEnd,
+         priority,
+         renderer,
+         material,
+         motion
       );
+   }
+
+   private static VFXMaterialDefinition parseMaterial(JsonObject json) {
+      if (json == null) return VFXMaterialDefinition.DEFAULT;
+      requireOnly(json, "shader", "texture", "bloom", "soft_particles", "distortion");
+      String texture = GsonHelper.getAsString(json, "texture", "");
+      ResourceLocation textureId = texture.isBlank() ? null : ResourceLocation.parse(texture);
+      String shader = GsonHelper.getAsString(json, "shader", "vanilla");
+      if (!java.util.Set.of("vanilla", "vfx_energy", "vfx_polar", "vfx_sdf", "vfx_smoke").contains(shader)) {
+         TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX material shader '{}'; using vanilla fallback", shader);
+         shader = "vanilla";
+      }
+      return new VFXMaterialDefinition(
+         shader,
+         textureId,
+         GsonHelper.getAsFloat(json, "bloom", 0.0F),
+         GsonHelper.getAsBoolean(json, "soft_particles", false),
+         GsonHelper.getAsBoolean(json, "distortion", false)
+      );
+   }
+
+   private static VFXMotionDefinition parseMotion(JsonObject json) {
+      if (json == null) return VFXMotionDefinition.NONE;
+      requireOnly(json, "type", "amount", "frequency", "axis");
+      return new VFXMotionDefinition(
+         GsonHelper.getAsString(json, "type", "none"),
+         GsonHelper.getAsFloat(json, "amount", 0.0F),
+         GsonHelper.getAsFloat(json, "frequency", 0.0F),
+         vec(json, "axis", new Vector3f(0.0F, 1.0F, 0.0F))
+      );
+   }
+
+   /** Applies the VFX 2.0 defaults to legacy definitions without changing their schema. */
+   private static VFXRendererType migratedRenderer(String componentType) {
+      return switch (componentType) {
+         case "circle", "ellipse", "torus", "elliptic_torus", "polygon_face_ring",
+            "bicircle_star", "schlafli_star", "bicircle_star_torus" -> VFXRendererType.DECAL;
+         default -> VFXRendererType.SHADER_QUAD;
+      };
+   }
+
+   private static VFXMaterialDefinition migratedMaterial(String componentType, String particleRole, VFXBlendMode blend) {
+      String role = particleRole == null ? "" : particleRole.toLowerCase(Locale.ROOT);
+      String shader;
+      if (componentType.contains("star") || componentType.contains("polygon") || role.contains("sigil") || role.contains("circuit")) {
+         shader = "vfx_sdf";
+      } else if (componentType.equals("circle") || componentType.equals("ellipse") || componentType.contains("torus") || role.contains("ring") || role.contains("shockwave")) {
+         shader = "vfx_polar";
+      } else if (role.contains("smoke") || role.contains("fog") || role.contains("dust") || role.contains("ash") || role.contains("flame")) {
+         shader = "vfx_smoke";
+      } else {
+         shader = "vfx_energy";
+      }
+      float bloom = blend == VFXBlendMode.ADDITIVE ? 0.8F : 0.35F;
+      if (role.contains("core") || role.contains("beam") || role.contains("lightning")) bloom = 1.1F;
+      return new VFXMaterialDefinition(shader, null, bloom, true, true);
+   }
+
+   private static VFXMotionDefinition migratedMotion(String componentType) {
+      if (componentType.contains("lightning") || componentType.equals("parametric")
+         || componentType.equals("parametric_curve") || componentType.equals("helix")) {
+         return new VFXMotionDefinition("turbulence", 0.012F, 2.0F, new Vector3f(0.0F, 1.0F, 0.0F));
+      }
+      if (componentType.equals("circle") || componentType.equals("ellipse") || componentType.contains("torus")) {
+         return new VFXMotionDefinition("orbit", 0.006F, 1.0F, new Vector3f(0.0F, 1.0F, 0.0F));
+      }
+      return VFXMotionDefinition.NONE;
    }
 
    private static VFXEffectDefinition.BindingDefinition parseBinding(JsonObject json) {

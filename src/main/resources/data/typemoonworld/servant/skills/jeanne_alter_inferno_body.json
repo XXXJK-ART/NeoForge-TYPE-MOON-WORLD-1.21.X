@@ -1,0 +1,10 @@
+{
+  "id": "jeanne_alter_inferno_body",
+  "display_name": "Inferno Body",
+  "display_name_zh": "业火缠身",
+  "type": "active",
+  "mp_cost": 45,
+  "cooldown_ticks": 600,
+  "duration_ticks": 300,
+  "description_zh": "15秒内让复仇业火缠绕全身，将普通攻击触发炎柱的概率由12%提高至42%；炎柱造成52点范围伤害，同一黑贞每0.6秒最多触发一次。"
+}

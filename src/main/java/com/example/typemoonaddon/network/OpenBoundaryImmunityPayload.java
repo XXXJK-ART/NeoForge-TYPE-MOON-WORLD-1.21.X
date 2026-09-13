@@ -24,7 +24,7 @@ public record OpenBoundaryImmunityPayload(int entityId, String displayName, List
     );
 
     public OpenBoundaryImmunityPayload {
-        selectedBoundaryIds = List.copyOf(selectedBoundaryIds);
+        selectedBoundaryIds = selectedBoundaryIds == null ? List.of() : List.copyOf(selectedBoundaryIds);
     }
 
     @Override

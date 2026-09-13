@@ -37,11 +37,19 @@ public final class SummoningRelicRegistry {
       map("relic_apocalypse", "pale_rider");
       map("relic_apocalypse_page", "pale_rider");
       map("gem_necklace", "emiya_archer");
+      map("evil_bone", "cu_chulainn");
       map("sea_beast_bone", "cu_chulainn");
       map("oda_matchlock_catalyst", "oda_nobunaga");
       map("broken_bowstring", "arash");
       map("ancient_temple_stone", "heracles");
       map("age_of_gods_dirt", "enkidu");
+      map("excalibur", "artoria_pendragon");
+      map("excalibur2", "artoria_pendragon");
+      map("gae_bulg", "cu_chulainn");
+      map("gae_dearg", "diarmuid_ua_duibhne");
+      map("gae_buidhe", "diarmuid_ua_duibhne");
+      map("aroundight", "lancelot_berserker");
+      map("relic_iskandar_cloak_fragment", "iskandar");
    }
 
    private SummoningRelicRegistry() {
@@ -56,6 +64,9 @@ public final class SummoningRelicRegistry {
       ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
       return id == null ? List.of() : MAPPINGS.getOrDefault(id, List.of());
    }
+
+   /** Catalysts with an explicit interaction should invoke it before this registry is queried. */
+   public static boolean hasExplicitMapping(ItemStack stack) { return !candidates(stack).isEmpty(); }
 
    public static Set<ResourceLocation> mappedItems() {
       return Set.copyOf(MAPPINGS.keySet());

@@ -161,7 +161,11 @@ public final class MysticMagicianCombatController {
       level.sendParticles(ParticleTypes.FLASH, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, 8, 0.08, 0.08, 0.08, 0.03);
       level.playSound(null, npc.getX(), npc.getY(), npc.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 0.95F, 1.65F);
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(npc, new FirearmPoseMessage(npc.getUUID(), 12), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      try {
+         PacketDistributor.sendToPlayersTrackingEntityAndSelf(npc, new FirearmPoseMessage(npc.getUUID(), 12), new net.minecraft.network.protocol.common.custom.CustomPacketPayload[0]);
+      } catch (UnsupportedOperationException ignored) {
+         // Visual-only payload; ignore unavailable embedded clients.
+      }
    }
 
    private static boolean validTarget(MysticMagicianEntity npc, LivingEntity target) {

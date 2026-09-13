@@ -1,0 +1,82 @@
+{
+  "servant": "jeanne_alter",
+  "actions": [
+    {
+      "id": "typemoonworld:jeanne_alter_fire_pillar",
+      "tags": ["area", "control", "interrupt"],
+      "minimum_range": 2.5,
+      "maximum_range": 24.0,
+      "mana_cost": 22,
+      "stamina_cost": 0,
+      "terrain_impact": "small",
+      "timing": {"windup": 8, "active": 2, "recovery": 10},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 2, "approach_range": 24, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_cursed_lance",
+      "tags": ["projectile", "area", "control"],
+      "minimum_range": 5.0,
+      "maximum_range": 36.0,
+      "mana_cost": 35,
+      "stamina_cost": 0,
+      "terrain_impact": "medium",
+      "timing": {"windup": 10, "active": 2, "recovery": 12},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 2, "approach_range": 36, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_le_grondement_du_haine",
+      "tags": ["noble_phantasm", "area", "finisher"],
+      "minimum_range": 0.0,
+      "maximum_range": 32.0,
+      "mana_cost": 220,
+      "stamina_cost": 0,
+      "terrain_impact": "np",
+      "timing": {"windup": 20, "active": 4, "recovery": 24},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 4, "approach_range": 32, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_self_modification_ex",
+      "tags": ["guard", "melee"],
+      "minimum_range": 0.0,
+      "maximum_range": 20.0,
+      "mana_cost": 30,
+      "stamina_cost": 0,
+      "terrain_impact": "none",
+      "timing": {"windup": 6, "active": 1, "recovery": 8},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 20, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_dragon_witch_ex",
+      "tags": ["area", "control"],
+      "minimum_range": 0.0,
+      "maximum_range": 24.0,
+      "mana_cost": 42,
+      "stamina_cost": 0,
+      "terrain_impact": "none",
+      "timing": {"windup": 6, "active": 1, "recovery": 8},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 24, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_inferno_body",
+      "tags": ["guard", "evade"],
+      "minimum_range": 0.0,
+      "maximum_range": 24.0,
+      "mana_cost": 45,
+      "stamina_cost": 0,
+      "terrain_impact": "none",
+      "timing": {"windup": 6, "active": 1, "recovery": 8},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 24, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_ephemeral_dream_a",
+      "tags": ["evade", "gap_closer"],
+      "minimum_range": 0.0,
+      "maximum_range": 32.0,
+      "mana_cost": 55,
+      "stamina_cost": 0,
+      "terrain_impact": "none",
+      "timing": {"windup": 6, "active": 1, "recovery": 8},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 32, "damage_scale": 1.0}
+    }
+  ]
+}

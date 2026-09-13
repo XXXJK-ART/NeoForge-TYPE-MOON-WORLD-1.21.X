@@ -97,7 +97,6 @@ public final class ServantTrueSweepService {
       }
       data.putLong(NPC_LAST_ATTEMPT, now);
       long next = data.getLong(NPC_NEXT_SWEEP);
-      data.putLong(NPC_NEXT_SWEEP, now + interval);
       if (now < next) {
          return false;
       }
@@ -113,9 +112,26 @@ public final class ServantTrueSweepService {
       double range = primaryTarget != null
          ? Math.max(sweepRange(servant), ServantCombatTempoService.basicAttackReach(servant, primaryTarget))
          : sweepRange(servant);
+      Vec3 normalizedForward = forward.normalize();
+      // A sweep is an extension of the current basic attack, not an independent
+      // target scan.  If the locked target is behind the servant or through a
+      // wall, let the normal attack/approach logic retain control instead of
+      // spending the attack window on an empty area scan.
+      if (primaryTarget != null
+         && (!isSweepTarget(servant, primaryTarget)
+            || !isInsideSweepGeometry(servant, primaryTarget, normalizedForward, range))) {
+         return false;
+      }
       float damage = (float)attributeValue(servant, Attributes.ATTACK_DAMAGE, 5.0);
-      int hits = sweep(level, servant, forward.normalize(), range, damage, false);
-      spawnSweepFx(level, servant, forward.normalize(), range, hits);
+      int hits = sweep(level, servant, normalizedForward, range, damage, false);
+      // Empty sweeps must not consume the sweep cadence or report successful
+      // contact to the tempo/targeting systems.  This keeps ordinary attacks
+      // available when the arc misses because of movement or facing updates.
+      if (hits <= 0) {
+         return false;
+      }
+      data.putLong(NPC_NEXT_SWEEP, now + interval);
+      spawnSweepFx(level, servant, normalizedForward, range, hits);
       data.putLong(NPC_LAST_FIRED, now);
       return true;
    }
@@ -159,6 +175,15 @@ public final class ServantTrueSweepService {
          }
       }
       return hits;
+   }
+
+   private static boolean isInsideSweepGeometry(LivingEntity attacker, LivingEntity target,
+                                                 Vec3 forward, double range) {
+      Vec3 offset = target.position().subtract(attacker.position());
+      double distance = offset.horizontalDistance();
+      return distance <= range
+         && HeraclesCombatRules.isInsideBasicSweepArc(forward.x, forward.z, offset.x, offset.z)
+         && (attacker.hasLineOfSight(target) || attacker.distanceTo(target) <= 1.8F);
    }
 
    private static boolean isSweepTarget(LivingEntity attacker, LivingEntity target) {

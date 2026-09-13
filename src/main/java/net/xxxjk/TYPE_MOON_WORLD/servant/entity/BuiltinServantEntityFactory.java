@@ -31,6 +31,7 @@ public final class BuiltinServantEntityFactory {
             case "gilgamesh" -> ModEntities.GILGAMESH.get().create(level);
             case "gilgamesh_caster" -> ModEntities.GILGAMESH_CASTER.get().create(level);
             case "heracles" -> ModEntities.HERACLES.get().create(level);
+            case "jeanne_alter" -> ModEntities.JEANNE_ALTER.get().create(level);
             case "hundred_faces_hassan" -> ModEntities.HUNDRED_FACES_HASSAN.get().create(level);
             case "iskandar" -> ModEntities.ISKANDAR.get().create(level);
             case "lancelot_berserker" -> ModEntities.LANCELOT_BERSERKER.get().create(level);

@@ -29,6 +29,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
@@ -87,6 +88,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private int combatMovementStartTick;
    private int combatOrbitSign = 1;
    private int blockedCombatMoveTicks;
+   /** Smoothed horizontal input velocity for the player-controlled mount. */
+   private Vec3 controlledVelocity = Vec3.ZERO;
 
    public ZhaoYunHakuryuEntity(EntityType<? extends ZhaoYunHakuryuEntity> type, Level level) {
       super(type, level);
@@ -118,6 +121,13 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    @Override public void tick() {
       super.tick();
       if (!(level() instanceof ServerLevel level)) return;
+      if (BindingService.isBound(getUUID())) {
+         getNavigation().stop();
+         setDeltaMovement(Vec3.ZERO);
+         setMovingState(false);
+         fallDistance = 0.0F;
+         return;
+      }
       if (skillOwnerUuid != null) {
          refreshSkillOwnerMaster(level);
       }
@@ -179,11 +189,20 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             // right. Invert only the lateral component; forward/back stays
             // unchanged.
             Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
+            Vec3 desiredVelocity = Vec3.ZERO;
             if (intent.lengthSqr() > 1.0E-4) {
                intent = intent.normalize();
                double speed = mountSpeed * (owner.isSprinting() ? 1.35 : 1.0);
-               move(net.minecraft.world.entity.MoverType.SELF, intent.scale(speed));
-               setDeltaMovement(0.0, getDeltaMovement().y, 0.0);
+               desiredVelocity = intent.scale(speed);
+            }
+            // Smooth acceleration/deceleration for responsive but controllable
+            // steering. Delta movement remains vertical-only because Entity's
+            // base tick consumes horizontal velocity before this method.
+            double blend = desiredVelocity.lengthSqr() > 1.0E-6 ? 0.42 : 0.28;
+            controlledVelocity = controlledVelocity.lerp(desiredVelocity, blend);
+            if (controlledVelocity.lengthSqr() < 1.0E-5) controlledVelocity = Vec3.ZERO;
+            if (controlledVelocity.lengthSqr() > 1.0E-6) {
+               move(net.minecraft.world.entity.MoverType.SELF, controlledVelocity);
                if (horizontalCollision && onGround()) jumpWithZhaoYunPower();
                setMovingState(true);
             } else {
@@ -192,6 +211,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
             }
             fallDistance = 0.0F;
          } else {
+            controlledVelocity = Vec3.ZERO;
             jumpInputPrevious = false;
             if (onGround()) jumpCount = 0;
             setMovingState(isNpActive());

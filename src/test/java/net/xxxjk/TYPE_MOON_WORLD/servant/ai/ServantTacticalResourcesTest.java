@@ -13,6 +13,9 @@ import java.util.Set;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiControl;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiIntent;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.typemoonworld.api.AdvancedAiTacticProfile;
 import net.xxxjk.typemoonworld.api.AiCombatStyle;
@@ -70,6 +73,23 @@ class ServantTacticalResourcesTest {
    }
 
    @Test
+   void jeanneAlterUsesLancelotStyleClosePressure() throws Exception {
+      var profile = JsonParser.parseString(Files.readString(
+         RESOURCES.resolve("ai/jeanne_alter_ai.json"))).getAsJsonObject();
+      var tactical = profile.getAsJsonObject("tactical");
+      var combat = profile.getAsJsonObject("combat");
+      assertEquals("berserker_pressure", tactical.get("style").getAsString());
+      assertEquals(3.0, tactical.get("preferred_range").getAsDouble());
+      assertEquals(1.0, tactical.get("pursuit_aggression").getAsDouble());
+      assertEquals(1.0, combat.get("melee_preference").getAsDouble());
+      String entity = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/jeanne/JeanneAlterEntity.java"));
+      String pressure = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/jeanne/JeanneAlterClosePressureAi.java"));
+      assertTrue(entity.contains("JeanneAlterClosePressureAi.tick"));
+      assertTrue(pressure.contains("entity.getNavigation().moveTo(target, 1.62D)"));
+      assertTrue(pressure.contains("entity.doHurtTarget(target)"));
+   }
+
+   @Test
    void sharedMeleePressureKeepsCloseCombatAndRejectsRangedRepositioning() {
       assertEquals(100, ServantCombatTempoService.MELEE_PRESSURE_MIN);
       assertEquals(140, ServantCombatTempoService.MELEE_PRESSURE_MAX);
@@ -78,6 +98,23 @@ class ServantTacticalResourcesTest {
       assertTrue(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.HEAL)));
       assertFalse(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.PROJECTILE)));
       assertFalse(ServantTacticalController.allowedDuringMeleePressure(action(AiActionDescriptor.Tag.EVADE)));
+   }
+
+   @Test
+   void movementOnlyIntentLeavesCharacterAndAddonCombatAvailable() {
+      AiIntent movement = AiIntent.of(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "test/reposition"),
+         AiIntent.PRIORITY_POSITION, 10.0, 0, true, () -> { }, AiControl.MOVE, AiControl.LOOK);
+      AiIntent attack = AiIntent.of(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "test/attack"),
+         AiIntent.PRIORITY_ATTACK, 10.0, 1, true, () -> { }, AiControl.ATTACK, AiControl.LOOK);
+
+      assertFalse(ServantTacticalController.consumesLegacyCombat(
+         new AiBrain.Resolution(true, movement, List.of(), false)));
+      assertTrue(ServantTacticalController.consumesLegacyCombat(
+         new AiBrain.Resolution(true, attack, List.of(), false)));
+      assertTrue(ServantTacticalController.consumesLegacyCombat(
+         new AiBrain.Resolution(false, null, List.of(), true)));
    }
 
    private static AiActionDescriptor action(AiActionDescriptor.Tag tag) {

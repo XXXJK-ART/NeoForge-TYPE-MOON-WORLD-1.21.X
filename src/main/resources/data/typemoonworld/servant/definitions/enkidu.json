@@ -1,7 +1,7 @@
 {
   "id": "enkidu",
-  "display_name": "Enkidu (Lancer)",
-  "display_name_zh": "恩奇都(Lancer)",
+  "display_name": "Enkidu",
+  "display_name_zh": "恩奇都",
   "class_type": "lancer",
   "faction": "human",
   "traits": ["servant", "humanoid", "lancer", "neutral_alignment", "balanced", "divine", "celestial", "earth", "sapient"],

@@ -16,7 +16,13 @@ public final class ModNetwork {
 
    public static boolean sendToPlayer(ServerPlayer player, CustomPacketPayload payload) {
       if (payload == null || !supports(player, payload.type())) return false;
-      PacketDistributor.sendToPlayer(player, payload);
-      return true;
+      try {
+         PacketDistributor.sendToPlayer(player, payload);
+         return true;
+      } catch (UnsupportedOperationException ignored) {
+         // Embedded/GameTest connections may expose a channel without a
+         // client listener capable of receiving play-to-client payloads.
+         return false;
+      }
    }
 }

@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.mixin.LivingEntityInputAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -105,6 +106,12 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    public void tick() {
       super.tick();
       tickRearBodyPhysics();
+      if (BindingService.isBound(this.getUUID())) {
+         this.setDeltaMovement(Vec3.ZERO);
+         this.entityData.set(MOVING, false);
+         this.fallDistance = 0.0F;
+         return;
+      }
       if (this.level() instanceof ServerLevel level) {
          tickFlightAndDive(level);
          if (!isFlyingMode()) {
@@ -140,6 +147,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       // Server-side xxa is the player's left impulse, so invert the lateral vector.
       Vec3 desired = forward.scale(forwardInput).add(right.scale(-strafeInput));
       double speed = Math.max(0.0, getCombatSpeed() * 1.1 * (owner.isSprinting() ? 1.35 : 1.0));
+      Vec3 desiredVelocity = Vec3.ZERO;
       if (desired.lengthSqr() > 1.0E-4) {
          desired = desired.normalize();
          float yaw = (float)(Math.atan2(-desired.x, desired.z) * 180.0 / Math.PI);
@@ -151,7 +159,13 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
             && isCloseEnoughForTerrainBreak(level)) {
             breakGordiusChargeTerrain(level, owner, desired);
          }
-         this.move(MoverType.SELF, desired.scale(speed));
+         desiredVelocity = desired.scale(speed);
+      }
+      double blend = desiredVelocity.lengthSqr() > 1.0E-6 ? 0.46 : 0.30;
+      this.cardControlVelocity = this.cardControlVelocity.lerp(desiredVelocity, blend);
+      if (this.cardControlVelocity.lengthSqr() < 1.0E-5) this.cardControlVelocity = Vec3.ZERO;
+      if (this.cardControlVelocity.lengthSqr() > 1.0E-6) {
+         this.move(MoverType.SELF, this.cardControlVelocity);
       }
       this.setDeltaMovement(0.0, cardOwnerVerticalMotion(owner), 0.0);
       this.hasImpulse = true;

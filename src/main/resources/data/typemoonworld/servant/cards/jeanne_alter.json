@@ -1,0 +1,12 @@
+{
+  "servant_id": "typemoonworld:jeanne_alter",
+  "actions": [
+    {"slot":0,"action":"typemoonworld:jeanne_alter_fire_pillar","translation_key":"skill.typemoonworld.jeanne_alter.fire_pillar"},
+    {"slot":1,"action":"typemoonworld:jeanne_alter_cursed_lance","translation_key":"skill.typemoonworld.jeanne_alter.cursed_lance"},
+    {"slot":2,"action":"typemoonworld:jeanne_alter_self_modification_ex","translation_key":"skill.typemoonworld.jeanne_alter.self_modification_ex"},
+    {"slot":3,"action":"typemoonworld:jeanne_alter_dragon_witch_ex","translation_key":"skill.typemoonworld.jeanne_alter.dragon_witch_ex"},
+    {"slot":4,"action":"typemoonworld:jeanne_alter_inferno_body","translation_key":"skill.typemoonworld.jeanne_alter.inferno_body"},
+    {"slot":5,"action":"typemoonworld:jeanne_alter_ephemeral_dream_a","translation_key":"skill.typemoonworld.jeanne_alter.ephemeral_dream_a"},
+    {"slot":9,"action":"typemoonworld:jeanne_alter_le_grondement_du_haine","translation_key":"skill.typemoonworld.jeanne_alter.le_grondement_du_haine"}
+  ]
+}

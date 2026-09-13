@@ -94,7 +94,21 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
 
       ItemStack offhand = player.getOffhandItem();
       boolean hasPayload = !offhand.isEmpty();
-      ItemStack payload = hasPayload ? offhand.copy() : new ItemStack(net.minecraft.world.item.Items.ARROW);
+      ItemStack ammo = ItemStack.EMPTY;
+      if (!hasPayload) {
+         for (ItemStack candidate : player.getInventory().items) {
+            if (candidate.getItem() instanceof net.minecraft.world.item.ArrowItem) { ammo=candidate; break; }
+         }
+         if (ammo.isEmpty() && !player.getAbilities().instabuild) {
+            var vars=player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            // Servant transformations retain their intrinsic projected-arrow rule.
+            if (!(vars.servant_card_transformed && "emiya_archer".equals(vars.servant_card_id))) {
+               if (!vars.hasLearnedSelfMagic("projection") || !(player instanceof ServerPlayer sp)
+                  || !PlayerNoblePhantasmHelper.consumeStrict(sp,5.0)) return;
+            }
+         }
+      }
+      ItemStack payload = hasPayload ? offhand.copy() : ammo.isEmpty() ? new ItemStack(net.minecraft.world.item.Items.ARROW) : ammo.copy();
       payload.setCount(1);
 
       float charge = Math.min(1.0F, chargeTicks / (float)FULL_CHARGE_TICKS);
@@ -123,6 +137,7 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
       if (hasPayload && !player.getAbilities().instabuild) {
          offhand.shrink(1);
       }
+      if (!hasPayload && !player.getAbilities().instabuild && !ammo.isEmpty()) ammo.shrink(1);
       serverLevel.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 18, 0.16, 0.16, 0.16, 0.08);
       serverLevel.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.8F, 1.5F);
    }

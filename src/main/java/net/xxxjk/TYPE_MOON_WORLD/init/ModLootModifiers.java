@@ -15,6 +15,8 @@ public class ModLootModifiers {
    public static final DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<GemResonanceLootModifier>> GEM_RESONANCE_BONUS = LOOT_MODIFIERS.register(
       "gem_resonance_bonus", () -> GemResonanceLootModifier.CODEC
    );
+   public static final DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<net.xxxjk.TYPE_MOON_WORLD.loot.SurvivalLootModifier>> SURVIVAL = LOOT_MODIFIERS.register(
+      "survival_reward", () -> net.xxxjk.TYPE_MOON_WORLD.loot.SurvivalLootModifier.CODEC);
 
    public static void register(IEventBus eventBus) {
       LOOT_MODIFIERS.register(eventBus);

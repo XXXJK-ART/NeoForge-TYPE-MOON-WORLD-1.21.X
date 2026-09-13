@@ -1,7 +1,7 @@
 {
   "id": "li_shuwen",
   "display_name": "Li Shuwen",
-  "display_name_zh": "李书文(Assassin)",
+  "display_name_zh": "李书文",
   "class_type": "assassin",
   "faction": "human",
   "traits": ["servant", "humanoid", "living_human", "assassin", "male", "lawful", "evil", "earth"],

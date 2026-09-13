@@ -254,6 +254,15 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
    }
 
    private LivingEntity resolveTarget(ServerLevel level, LivingEntity owner) {
+      // Guardian spirits are autonomous, but should immediately assist the
+      // owner's current combat target instead of waiting for a local scan.
+      if (this.guardianMode && owner instanceof Mob mobOwner) {
+         LivingEntity ownerTarget = mobOwner.getTarget();
+         if (ownerTarget != null && canTarget(owner, ownerTarget)) {
+            this.entityData.set(TARGET_ID, ownerTarget.getId());
+            return ownerTarget;
+         }
+      }
       Entity stored = level.getEntity(this.entityData.get(TARGET_ID));
       if (stored instanceof LivingEntity living && canTarget(owner, living)) {
          return living;
@@ -266,7 +275,7 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       double bestDistance = Double.MAX_VALUE;
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, candidate -> canTarget(owner, candidate))) {
          double distance = living.distanceToSqr(this);
-         if (distance < bestDistance && hasRoughLineOfSight(living)) {
+         if (distance < bestDistance && (!this.guardianMode || hasRoughLineOfSight(living) || distance <= 8.0)) {
             best = living;
             bestDistance = distance;
          }

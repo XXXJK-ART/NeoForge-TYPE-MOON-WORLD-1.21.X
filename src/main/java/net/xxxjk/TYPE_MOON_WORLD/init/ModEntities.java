@@ -20,6 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SeaBeastEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
@@ -135,6 +136,8 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.church.ChurchExecutorEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.EnumaChainCrownEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainBindingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.chain.entity.HeavenChainEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterCursedLanceEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
@@ -523,6 +526,14 @@ public class ModEntities {
    public static final DeferredHolder<EntityType<?>, EntityType<HeraclesEntity>> HERACLES = ENTITY_TYPES.register(
       "heracles", () -> Builder.of(HeraclesEntity::new, MobCategory.CREATURE).sized(1.0F, 3.0F).build("heracles")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<JeanneAlterEntity>> JEANNE_ALTER = ENTITY_TYPES.register(
+      "jeanne_alter", () -> Builder.of(JeanneAlterEntity::new, MobCategory.CREATURE)
+         .sized(0.6F, 1.85F).clientTrackingRange(96).updateInterval(1).build("jeanne_alter")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<JeanneAlterCursedLanceEntity>> JEANNE_ALTER_CURSED_LANCE = ENTITY_TYPES.register(
+      "jeanne_alter_cursed_lance", () -> Builder.<JeanneAlterCursedLanceEntity>of(JeanneAlterCursedLanceEntity::new, MobCategory.MISC)
+         .sized(0.35F, 0.35F).fireImmune().clientTrackingRange(128).updateInterval(1).build("jeanne_alter_cursed_lance")
+   );
    public static final DeferredHolder<EntityType<?>, EntityType<GenericServantEntity>> GENERIC_SERVANT = ENTITY_TYPES.register(
       "generic_servant", () -> Builder.of(GenericServantEntity::new, MobCategory.CREATURE)
          .sized(0.6F, 1.8F).clientTrackingRange(64).build("generic_servant")
@@ -558,8 +569,10 @@ public class ModEntities {
       "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(2.4F, 2.4F).build("medusa_pegasus")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
-      "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")
+      "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.MONSTER).sized(0.6F, 1.9F).build("dragonfang_soldier")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<SeaBeastEntity>> SEA_BEAST = ENTITY_TYPES.register(
+      "sea_beast", () -> Builder.of(SeaBeastEntity::new, MobCategory.MONSTER).sized(1.4F, 2.4F).clientTrackingRange(64).build("sea_beast"));
    public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSoldierEntity>> MACEDONIAN_SOLDIER = ENTITY_TYPES.register(
       "macedonian_soldier", () -> Builder.of(MacedonianSoldierEntity::new, MobCategory.CREATURE)
          .sized(0.65F, 1.9F).clientTrackingRange(64).updateInterval(2).build("macedonian_soldier")

@@ -156,6 +156,7 @@ public final class PassiveService {
    }
 
    public static void reconcileAttributes(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      net.xxxjk.TYPE_MOON_WORLD.survival.MerlinGiftService.reconcile(player, effectsSuppressed(vars));
       PassiveRank divinity = effectsSuppressed(vars) ? null : rank(vars, DIVINITY);
       updateModifier(player.getAttribute(Attributes.MAX_HEALTH), DIVINITY_HEALTH_ID, divinity == null ? 0.0 : divinity.healthBonus());
       updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), DIVINITY_ATTACK_ID, divinity == null ? 0.0 : divinity.attackBonus());

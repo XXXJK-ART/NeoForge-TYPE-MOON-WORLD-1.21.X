@@ -31,6 +31,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusWorkshopHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusSpiritCannonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.registry.ServantAddonRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -75,12 +77,13 @@ public final class ParacelsusServantSkills {
    private static final int PHILOSOPHER_STONE_COOLDOWN = 900;
    private static final int NP_COOLDOWN = 900;
    private static final int NP_CHANT_TICKS = 140;
-   private static final int ELEMENTAL_MAGIC_COOLDOWN = 100;
+   private static final int ELEMENTAL_MAGIC_COOLDOWN = 20;
    private static final int TARGET_CANNON_COOLDOWN = 90;
    private static final int PHILOSOPHER_STONE_STARTING_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_MAX_CHARGES = 3;
    private static final int PHILOSOPHER_STONE_INVULN_TICKS = 60;
    private static final int ELEMENTAL_SPIRIT_DURATION = 220;
+   private static final int ELEMENTAL_SPIRIT_STRIKE_INTERVAL = 16;
    private static final int HIGH_SPEED_DURATION = 160;
    private static final int NP_BUFF_DURATION = 300;
    private static final DustParticleOptions FIRE = new DustParticleOptions(new Vector3f(1.0F, 0.28F, 0.28F), 1.2F);
@@ -190,7 +193,13 @@ public final class ParacelsusServantSkills {
       if (!(context.caster() instanceof ParacelsusEntity entity)) {
          return ServantExecutionResult.NOT_HANDLED;
       }
+      // Lifecycle context can briefly lose its shared target while the
+      // targeting module rescans. Keep the servant's target as a fallback so
+      // the orbiting spirits continue attacking during that transition.
       LivingEntity target = context.target();
+      if (target == null || !target.isAlive()) {
+         target = entity.getTarget();
+      }
       if (target == null || !target.isAlive() || !isHostileElementTarget(entity, target) || context.distance() > 32.0) {
          return ServantExecutionResult.NOT_HANDLED;
       }
@@ -223,20 +232,64 @@ public final class ParacelsusServantSkills {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 7.0));
 
       if (entity.level() instanceof ServerLevel level) {
+         // B-rank elemental magic is the same compact floating-spirit shot
+         // used by the player's Skill 2, rather than another large area spell.
+         if (element.endsWith("_b")) {
+            fireMinorSpirit(level, entity, target, now, Math.floorMod((int)(now / ELEMENTAL_SPIRIT_STRIKE_INTERVAL), 4));
+            markCombatAction(entity, now, 20L);
+            return ServantExecutionResult.SUCCESS.withMpCost(7.0);
+         }
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
          switch (element) {
             case "fire_a" -> castFireFurnace(level, entity, target, center, now);
-            case "fire_b" -> castFireRing(level, entity, target, center, now);
+            case "fire_b" -> castFireBurst(level, entity, target, center, now);
             case "water_a" -> castDeepSeaPressure(level, entity, target, center, now);
-            case "water_b" -> castWaterGeyser(level, entity, target, center, now);
+            case "water_b" -> castWaterBurst(level, entity, target, center, now);
             case "earth_a" -> castMountainRoar(level, entity, target, center, now);
-            case "earth_b" -> castEarthPrison(level, entity, target, center, now);
+            case "earth_b" -> castEarthBurst(level, entity, target, center, now);
             case "wind_a" -> castFirmamentCut(level, entity, target, center, now);
-            default -> castWindCut(level, entity, target, center, now);
+            default -> castWindBurst(level, entity, target, center, now);
          }
       }
+      // Registry callers outside the dedicated AI still receive a shared
+      // action gap; CombatModule replaces this with its current casting tempo.
       markCombatAction(entity, now, 20L);
       return ServantExecutionResult.SUCCESS.withMpCost(7.0);
+   }
+
+   private static void fireMinorSpirit(ServerLevel level, ParacelsusEntity entity, LivingEntity target, long now, int mode) {
+      Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.78, 0.0);
+      Vec3 targetPos = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
+      Vec3 direction = targetPos.subtract(origin);
+      if (direction.lengthSqr() < 1.0E-4) return;
+      direction = direction.normalize();
+      mode = Math.floorMod(mode, 4);
+      Vec3 side = new Vec3(-direction.z, 0.0, direction.x);
+      if (side.lengthSqr() < 1.0E-4) side = new Vec3(1.0, 0.0, 0.0);
+      else side = side.normalize();
+      Vec3 spawn = origin.add(side.scale((mode - 1.5) * 0.32))
+         .add(0.0, 0.18 * Math.sin(entity.tickCount * 0.3 + mode), 0.0);
+      float damage = paracelsusSkillDamage(mode == 2 ? 14.0F : 12.0F);
+      if (mode == 3) {
+         MedeaBeamEffectEntity beam = new MedeaBeamEffectEntity(level, entity, spawn, targetPos, damage, 6);
+         beam.setBreakBlocks(false);
+         level.addFreshEntity(beam);
+      } else {
+         MedeaMagicBoltEntity bolt = new MedeaMagicBoltEntity(level, entity);
+         bolt.setMode(switch (mode) {
+            case 0 -> MedeaMagicBoltEntity.Mode.FIRE_BOLT;
+            case 1 -> MedeaMagicBoltEntity.Mode.FROST_BOLT;
+            default -> MedeaMagicBoltEntity.Mode.SUPER_BOLT;
+         });
+         bolt.setMagicDamage(damage);
+         bolt.setPos(spawn.x, spawn.y, spawn.z);
+         bolt.shoot(direction.x, direction.y, direction.z, 2.45F, 0.08F);
+         level.addFreshEntity(bolt);
+      }
+      level.sendParticles(AETHER, spawn.x, spawn.y, spawn.z, 8, 0.12, 0.12, 0.12, 0.015);
+      level.playSound(null, entity.blockPosition(),
+         mode == 3 ? SoundEvents.BREEZE_SHOOT : SoundEvents.BLAZE_SHOOT,
+         SoundSource.HOSTILE, 0.55F, 1.25F + mode * 0.08F);
    }
 
    private static ServantExecutionResult tickParacelsus(ServantLifecycleContext context) {
@@ -256,6 +309,10 @@ public final class ParacelsusServantSkills {
       long now = entity.level().getGameTime();
       int phase = entity.computeCombatPhase();
       entity.setCombatPhase(phase);
+      // The four orbiting spirits are a permanent NPC combat subsystem. Keep
+      // their short-lived active window refreshed instead of relying on the
+      // one-time passive initialization tick.
+      entity.getPersistentData().putLong(TAG_ELEMENTAL_SPIRIT_ACTIVE_UNTIL, now + 40L);
       tickElementalMagicAuras(entity, now);
       tickNoblePhantasmChant(entity, now);
       if (entity.getPersistentData().getLong(TAG_HIGH_SPEED_UNTIL) > now) {
@@ -268,6 +325,20 @@ public final class ParacelsusServantSkills {
       }
 
       LivingEntity target = context.target();
+      if (target == null || !target.isAlive()) {
+         target = entity.getTarget();
+      }
+      if ((target == null || !target.isAlive()) && entity.level() instanceof ServerLevel level) {
+         double bestDistance = Double.MAX_VALUE;
+         for (LivingEntity candidate : level.getEntitiesOfClass(LivingEntity.class,
+            entity.getBoundingBox().inflate(32.0), e -> isHostileElementTarget(entity, e))) {
+            double distance = entity.distanceToSqr(candidate);
+            if (distance < bestDistance) {
+               bestDistance = distance;
+               target = candidate;
+            }
+         }
+      }
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          if (!spiritActive) {
             entity.setCombatPhase(entity.computeCombatPhase());
@@ -277,12 +348,12 @@ public final class ParacelsusServantSkills {
 
       entity.getLookControl().setLookAt(target, 35.0F, 35.0F);
       if (spiritActive
-         && entity.distanceTo(target) <= 20.0
-         && combatActionReady(entity, now)
-         && now - entity.getPersistentData().getLong(TAG_LAST_ELEMENTAL_STRIKE) >= 34L) {
+         && entity.distanceTo(target) <= 32.0
+         && isHostileElementTarget(entity, target)
+         && !isNoblePhantasmChanting(entity, now)
+         && now - entity.getPersistentData().getLong(TAG_LAST_ELEMENTAL_STRIKE) >= ELEMENTAL_SPIRIT_STRIKE_INTERVAL) {
          entity.getPersistentData().putLong(TAG_LAST_ELEMENTAL_STRIKE, now);
          releaseElementalStrike(entity, target, now);
-         markCombatAction(entity, now, 20L);
       }
 
       double distance = entity.distanceTo(target);
@@ -1025,38 +1096,11 @@ public final class ParacelsusServantSkills {
       if (!(entity.level() instanceof ServerLevel level) || target == null || !target.isAlive()) {
          return;
       }
-      int variant = (int)(now % 4L);
-      Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.78, 0.0);
-      Vec3 hitPoint = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
-      net.minecraft.core.particles.ParticleOptions element = switch (variant) {
-         case 0 -> FIRE;
-         case 1 -> WATER;
-         case 2 -> EARTH;
-         default -> WIND;
-      };
-      level.sendParticles(element, hitPoint.x, hitPoint.y, hitPoint.z, 18, 0.15, 0.15, 0.15, 0.02);
-      level.sendParticles(AETHER, origin.x, origin.y, origin.z, 8, 0.2, 0.2, 0.2, 0.01);
-      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y, origin.z, 8, 0.25, 0.25, 0.25, 0.02);
       if (!isHostileElementTarget(entity, target)) {
          return;
       }
-      target.invulnerableTime = 0;
-      target.hurt(entity.damageSources().magic(), paracelsusSkillDamage((float)(6.0 + entity.getCurrentMp() * 0.02)));
-      if (variant == 0) {
-         ParacelsusBalanceRules.applyFire(target, 80);
-      } else if (variant == 1) {
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
-      } else if (variant == 2) {
-         target.push(0.0, 0.18, 0.0);
-      } else {
-         Vec3 dir = target.position().subtract(entity.position());
-         Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
-         if (horizontal.lengthSqr() > 1.0E-4) {
-            horizontal = horizontal.normalize();
-            target.push(horizontal.x * 0.5, 0.22, horizontal.z * 0.5);
-         }
-      }
-      level.playSound(null, target.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 0.8F, 1.05F + variant * 0.08F);
+      int mode = Math.floorMod((int)(now / ELEMENTAL_SPIRIT_STRIKE_INTERVAL), 4);
+      fireMinorSpirit(level, entity, target, now, mode);
    }
 
    private static float paracelsusSkillDamage(float baseDamage) {

@@ -24,7 +24,8 @@ public final class ServantCombatTempoService {
    public static final int MELEE_PRESSURE_MIN = 100;
    public static final int MELEE_PRESSURE_MAX = 140;
    public static final int ORBIT_DETECTION_TICKS = 40;
-   public static final int MELEE_OVERRIDE_TICKS = 100;
+   /** Last-resort no-contact window for melee units only. */
+   public static final int MELEE_OVERRIDE_TICKS = 180;
 
    private static final String PREFIX = "TypeMoonCombatTempo";
    private static final String TARGET = PREFIX + "Target";
@@ -89,9 +90,13 @@ public final class ServantCombatTempoService {
       long lastContact = data.getLong(LAST_CONTACT);
       long disconnected = Math.max(0L, now - lastContact);
       boolean orbiting = data.getBoolean(ORBITING);
-      // Orbiting changes the movement choice immediately, but the hard melee
-      // takeover remains the explicit five-second no-contact deadline.
-      boolean override = disconnected >= MELEE_OVERRIDE_TICKS;
+      // Orbiting changes the movement choice immediately; melee takeover is a
+      // last-resort timeout and is disabled for ranged-capable servants.
+      // A ranged servant must be allowed to keep spacing and wait for its
+      // projectile/skill cooldowns.  The old unconditional takeover turned
+      // every stalled caster/archer into a melee unit.
+      boolean ranged = ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.RANGED;
+      boolean override = !ranged && disconnected >= MELEE_OVERRIDE_TICKS;
       data.putBoolean(MELEE_OVERRIDE, override);
       int stage = stageForDisconnectedTicks(disconnected);
       return new TempoState(target.getUUID(), lastContact, data.getLong(LAST_PROGRESS),
@@ -103,6 +108,11 @@ public final class ServantCombatTempoService {
       if (servant == null || target == null || brain == null || state == null || !target.isAlive()) return false;
       if (ServantPlannedActionExecutor.isActive(servant)) return false;
       boolean imminentContact = closingContactImminent(servant, target);
+      if (ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.RANGED
+         && ServantEngagementService.role(target) == ServantEngagementService.CombatRole.MELEE
+         && !imminentContact) {
+         return false;
+      }
       boolean closeEnough = canAttemptBasicAttack(servant, target) || imminentContact;
       // Before the first 40-tick deadline, yielding lets character-specific
       // helpers retain final execution authority.  The legacy tail guard still
@@ -131,7 +141,8 @@ public final class ServantCombatTempoService {
       if (tryBasicAttack(servant, target, now)) {
          return;
       }
-      if (state.stage() > 0) {
+      if (state.stage() > 0
+         && ServantEngagementService.role(servant) == ServantEngagementService.CombatRole.MELEE) {
          forceApproach(servant, target, now, state.stage());
       }
    }

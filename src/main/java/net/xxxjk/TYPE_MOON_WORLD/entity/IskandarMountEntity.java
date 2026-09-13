@@ -31,6 +31,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardIskandarSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
@@ -66,6 +67,8 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private int combatMovementTargetId = -1;
    private int combatMovementStartTick;
    private int combatOrbitSign = 1;
+   /** Smoothed horizontal input velocity for player controlled mounts. */
+   protected Vec3 cardControlVelocity = Vec3.ZERO;
 
    protected IskandarMountEntity(EntityType<? extends IskandarMountEntity> type, Level level) {
       super(type, level);
@@ -111,6 +114,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       if (!(this.level() instanceof ServerLevel level)) {
          return;
       }
+      if (BindingService.isBound(this.getUUID())) {
+         this.getNavigation().stop();
+         this.setDeltaMovement(Vec3.ZERO);
+         this.entityData.set(MOVING, false);
+         this.fallDistance = 0.0F;
+         return;
+      }
       for (Entity passenger : List.copyOf(this.getPassengers())) {
          if (passenger instanceof Player player && player.isShiftKeyDown() && !keepsShiftForCardControl(player)) {
             player.stopRiding();
@@ -151,11 +161,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private void tickCardOwnerMount(ServerLevel level, ServerPlayer owner) {
       TypeMoonWorldModVariables.PlayerVariables vars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!owner.isAlive() || !vars.servant_card_transformed || !ServantCardIskandarSkills.SERVANT_ID.equals(vars.servant_card_id)) {
+         this.cardControlVelocity = Vec3.ZERO;
          this.ejectPassengers();
          this.discard();
          return;
       }
       if (owner.getVehicle() != this) {
+         this.cardControlVelocity = Vec3.ZERO;
          if (this instanceof BucephalusEntity) {
             ServantCardIskandarSkills.storeAndDiscardBucephalus(owner, this, false);
          } else if (!this.hasPassenger(owner)) {
@@ -187,13 +199,25 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       // Server-side xxa is the player's left impulse, so invert the lateral vector.
       Vec3 desired = forward.scale(forwardInput).add(right.scale(-strafeInput));
       double speed = Math.max(0.0, getCombatSpeed() * 1.1);
+      Vec3 desiredVelocity = Vec3.ZERO;
       if (desired.lengthSqr() > 1.0E-4) {
          desired = desired.normalize();
          float yaw = (float)(Math.atan2(-desired.x, desired.z) * 180.0 / Math.PI);
          this.setYRot(yaw);
          this.setYBodyRot(yaw);
          this.setYHeadRot(yaw);
-         this.move(MoverType.SELF, desired.scale(speed));
+         desiredVelocity = desired.scale(speed);
+      }
+      // Blend toward the requested velocity so keyboard taps do not produce
+      // abrupt starts/stops. Keep this in a dedicated field because Entity's
+      // own delta movement is consumed by its tick before this method runs.
+      double blend = desiredVelocity.lengthSqr() > 1.0E-6 ? 0.38 : 0.24;
+      this.cardControlVelocity = this.cardControlVelocity.lerp(desiredVelocity, blend);
+      if (this.cardControlVelocity.lengthSqr() < 1.0E-5) {
+         this.cardControlVelocity = Vec3.ZERO;
+      }
+      if (this.cardControlVelocity.lengthSqr() > 1.0E-6) {
+         this.move(MoverType.SELF, this.cardControlVelocity);
       }
       this.setDeltaMovement(0.0, cardOwnerVerticalMotion(owner), 0.0);
       this.hasImpulse = true;

@@ -78,6 +78,8 @@ public final class CasterGilgameshCombatHelper {
    private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
    public static final int MELEE_DURATION_TICKS = 80;
    public static final int MELEE_REUSE_TICKS = 300;
+   private static final int NPC_MELEE_DURATION_TICKS = 40;
+   private static final int NPC_MELEE_REUSE_TICKS = 600;
 
    private CasterGilgameshCombatHelper() {}
 
@@ -160,16 +162,19 @@ public final class CasterGilgameshCombatHelper {
       double horizontalDistance = entity.position().multiply(1.0, 0.0, 1.0)
          .distanceTo(target.position().multiply(1.0, 0.0, 1.0));
       if (!active && entity.tickCount % 20 == 0 && data.getLong(LAST_MELEE_EVALUATION) != now
-         && horizontalDistance <= 5.0 && Math.abs(entity.getY() - target.getY()) <= 8.0
-         && now - data.getLong(LAST_MELEE) >= MELEE_REUSE_TICKS
+         && horizontalDistance <= 3.5
+         && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService.role(target)
+            == net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService.CombatRole.MELEE
+         && Math.abs(entity.getY() - target.getY()) <= 8.0
+         && now - data.getLong(LAST_MELEE) >= NPC_MELEE_REUSE_TICKS
          && !ServantCombatSystem.cannotAct(entity) && !entity.isPerformingAction()
          && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor.isActive(entity)
          && (entity.getMainHandItem().is(ModItems.GILGAMESH_SLATE.get()) || entity.getMainHandItem().isEmpty())) {
          data.putLong(LAST_MELEE_EVALUATION, now);
          float chance = ServantCombatSystem.getPhase(entity) == net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase.PROBING
-            ? 0.16F : 0.24F;
+            ? 0.02F : 0.04F;
          if (entity.getRandom().nextFloat() < chance) {
-            data.putLong(MELEE_UNTIL, now + MELEE_DURATION_TICKS);
+            data.putLong(MELEE_UNTIL, now + NPC_MELEE_DURATION_TICKS);
             data.putLong(LAST_MELEE, now);
             data.putLong(NEXT_MELEE_SWING, now + 8L);
             entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_FANGTIAN_HUAJI.get()));
@@ -231,25 +236,7 @@ public final class CasterGilgameshCombatHelper {
 
    private static void tickDivineShield(CasterGilgameshEntity entity, ServerLevel level) {
       GilgameshDivineShield.tick(entity);
-      CompoundTag data = entity.getPersistentData();
-      if (GilgameshDivineShield.isActive(entity)
-         || entity.getCurrentMp() < DIVINE_SHIELD_MP_COST
-         || GilgameshDivineShield.isOnCooldown(entity)) {
-         return;
-      }
-      if (entity.tickCount - data.getInt(LAST_DIVINE_SHIELD_SCAN) < DIVINE_SHIELD_SCAN_INTERVAL) {
-         return;
-      }
-      data.putInt(LAST_DIVINE_SHIELD_SCAN, entity.tickCount);
-      boolean incomingProjectile = !level.getEntitiesOfClass(
-         Projectile.class,
-         entity.getBoundingBox().inflate(DIVINE_SHIELD_DETECTION_RANGE),
-         projectile -> isIncomingHostileProjectile(entity, projectile)
-      ).isEmpty();
-      if (!incomingProjectile) return;
-
-      entity.setCurrentMp(entity.getCurrentMp() - DIVINE_SHIELD_MP_COST);
-      GilgameshDivineShield.activate(entity);
+      GilgameshDivineShield.maintainAlwaysOn(entity);
    }
 
    private static boolean isIncomingHostileProjectile(CasterGilgameshEntity entity, Projectile projectile) {
@@ -580,11 +567,11 @@ public final class CasterGilgameshCombatHelper {
    }
 
    private static double minimumCannonDistance(int phase) {
-      return phase >= 3 ? 6.0 : phase >= 2 ? 7.0 : 8.0;
+      return phase >= 3 ? 10.0 : phase >= 2 ? 11.0 : 12.0;
    }
 
    private static double preferredRange(int phase) {
-      return phase >= 3 ? 30.0 : phase >= 2 ? 25.0 : 20.0;
+      return phase >= 3 ? 36.0 : phase >= 2 ? 32.0 : 28.0;
    }
 
    public static void tryPlayVictory(CasterGilgameshEntity entity, LivingEntity victim) {

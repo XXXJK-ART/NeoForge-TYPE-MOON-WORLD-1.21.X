@@ -1,0 +1,42 @@
+{
+  "duration": 1.5,
+  "notes": "A repeating violet-black resentment flame while Jeanne Alter's health is locked.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.45,
+      "rate": 420,
+      "particle_lifetime": 0.82,
+      "binding": {"mode":"entity","offset":[0,0.8,0],"rotate_with_entity":false},
+      "component": {"type":"line","start":[0,-0.9,0],"end":[0,3.6,0],"segments":150},
+      "position_variance": 0.82,
+      "velocity": [0,0.28,0],
+      "velocity_variance": 0.16,
+      "color_over_life": [
+        {"t":0.0,"color":"#E8FFD8FF"},
+        {"t":0.25,"color":"#F3BC43FF"},
+        {"t":0.62,"color":"#D43C0C70"},
+        {"t":1.0,"color":"#00000000"}
+      ],
+      "size_over_life": [
+        {"t":0.0,"size":0.12},
+        {"t":0.55,"size":0.48},
+        {"t":1.0,"size":0.03}
+      ],
+      "blend":"ADDITIVE",
+      "enable_trail":true
+    },
+    {
+      "start_time":0.0,
+      "end_time":1.42,
+      "rate":180,
+      "particle_lifetime":0.72,
+      "binding":{"mode":"entity_yaw","offset":[0,0.2,0]},
+      "component":{"type":"parametric","mode":"EXPRESSION","expr_x":"1.25*cos(t*25.133+time*5)","expr_y":"3.2*t","expr_z":"1.25*sin(t*25.133+time*5)","t_start":0,"t_end":1,"segments":150},
+      "color_over_life":[{"t":0,"color":"#CCFF79FF"},{"t":0.6,"color":"#B9620E89"},{"t":1,"color":"#00000000"}],
+      "size_over_life":[{"t":0,"size":0.11},{"t":0.55,"size":0.28},{"t":1,"size":0.02}],
+      "blend":"ADDITIVE",
+      "enable_trail":true
+    }
+  ]
+}
