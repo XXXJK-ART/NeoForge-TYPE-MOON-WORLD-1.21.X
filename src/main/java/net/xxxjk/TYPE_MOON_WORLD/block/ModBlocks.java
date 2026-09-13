@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.block;
 
 import java.util.function.Supplier;
+import java.util.function.BiFunction;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
@@ -21,11 +22,16 @@ import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordBarrelBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.SummoningCircleBlock;
 import net.xxxjk.TYPE_MOON_WORLD.block.custom.RuneInscriptionBlock;
+import net.xxxjk.TYPE_MOON_WORLD.block.custom.SwordInStoneBlock;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MuramasaBlockItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.SwordInStoneBlockItem;
 
 public class ModBlocks {
    public static final Blocks BLOCKS = DeferredRegister.createBlocks("typemoonworld");
+   public static final DeferredBlock<SwordInStoneBlock> SWORD_IN_STONE = registerBlockWithCustomItem(
+      "sword_in_stone", () -> new SwordInStoneBlock(Properties.of().strength(-1.0F, 3600000.0F).noLootTable().noOcclusion()),
+      SwordInStoneBlockItem::new);
    public static final DeferredBlock<Block> MURAMASA_BLOCK = registerBlock("redswordblock", () -> new MuramasaBlock(Properties.of()));
    public static final DeferredBlock<SummoningCircleBlock> SUMMONING_CIRCLE = registerBlock(
       "summoning_circle",
@@ -202,8 +208,13 @@ public class ModBlocks {
    }
 
    private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block) {
+      return registerBlockWithCustomItem(name, block, MuramasaBlockItem::new);
+   }
+
+   private static <T extends Block> DeferredBlock<T> registerBlockWithCustomItem(String name, Supplier<T> block,
+         BiFunction<Block, net.minecraft.world.item.Item.Properties, net.minecraft.world.item.Item> itemFactory) {
       DeferredBlock<T> toReturn = BLOCKS.register(name, block);
-      ModItems.ITEMS.register(name, () -> new MuramasaBlockItem((Block)toReturn.get(), new net.minecraft.world.item.Item.Properties()));
+      ModItems.ITEMS.register(name, () -> itemFactory.apply(toReturn.get(), new net.minecraft.world.item.Item.Properties()));
       return toReturn;
    }
 

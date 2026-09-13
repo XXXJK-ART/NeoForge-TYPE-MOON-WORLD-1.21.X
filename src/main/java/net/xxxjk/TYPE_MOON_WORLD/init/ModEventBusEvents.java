@@ -15,6 +15,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.StoneManEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SeaBeastEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MacedonianSoldierEntity;
@@ -129,6 +130,7 @@ public class ModEventBusEvents {
       event.put(ModEntities.APOCALYPSE_HORSE.get(), net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity.createAttributes().build());
       event.put(ModEntities.MEDUSA_PEGASUS.get(), MedusaPegasusEntity.createAttributes().build());
       event.put(ModEntities.DRAGONFANG_SOLDIER.get(), DragonfangSoldierEntity.createAttributes().build());
+      event.put(ModEntities.SEA_BEAST.get(), SeaBeastEntity.createAttributes().build());
       event.put(ModEntities.MACEDONIAN_SOLDIER.get(), MacedonianSoldierEntity.createAttributes().build());
       event.put(ModEntities.HEAVEN_CHAIN_BINDING.get(), HeavenChainBindingEntity.createAttributes().build());
    }
@@ -140,6 +142,10 @@ public class ModEventBusEvents {
 
    @SubscribeEvent
    public static void registerSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+      event.register(ModEntities.DRAGONFANG_SOLDIER.get(), SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+         (t,l,reason,p,r) -> !l.getLevel().isDay() && l.getDifficulty()!=Difficulty.PEACEFUL
+            && net.minecraft.world.entity.monster.Monster.isDarkEnoughToSpawn(l,p,r) && Mob.checkMobSpawnRules(t,l,reason,p,r),
+         RegisterSpawnPlacementsEvent.Operation.REPLACE);
       event.register(ModEntities.MYSTIC_MAGICIAN.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkWildNpcSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
@@ -176,6 +182,8 @@ public class ModEventBusEvents {
       event.register(ModEntities.NIGHT_KIN.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkDeadApostleSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);
+      event.register(ModEntities.SEA_BEAST.get(), SpawnPlacementTypes.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+         SeaBeastEntity::checkSpawn, RegisterSpawnPlacementsEvent.Operation.REPLACE);
       event.register(ModEntities.CHURCH_EXECUTOR.get(), SpawnPlacementTypes.ON_GROUND,
          Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ModEventBusEvents::checkChurchSpawnRules,
          RegisterSpawnPlacementsEvent.Operation.REPLACE);

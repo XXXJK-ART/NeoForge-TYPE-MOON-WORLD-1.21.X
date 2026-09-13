@@ -34,6 +34,7 @@ public final class PaleRiderDesaturationRenderer {
          ensureChain(minecraft);
          if (chain != null) {
             RenderSystem.assertOnRenderThread();
+            chain.setUniform("Strength", strength);
             chain.process(event.getPartialTick().getGameTimeDeltaTicks());
             minecraft.getMainRenderTarget().bindWrite(false);
          }

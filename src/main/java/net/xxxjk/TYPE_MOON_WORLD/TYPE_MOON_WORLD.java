@@ -197,6 +197,7 @@ public class TYPE_MOON_WORLD {
       TypeMoonWorldModMenus.REGISTRY.register(modEventBus);
       modEventBus.addListener(this::addCreative);
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
+      modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
       new TypeMoonAddon(modEventBus, modContainer);

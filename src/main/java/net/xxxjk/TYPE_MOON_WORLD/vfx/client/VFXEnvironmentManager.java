@@ -23,6 +23,9 @@ import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEnvironmentDefinition;
 public final class VFXEnvironmentManager {
    private static final List<ActiveEnvironment> ACTIVE = new ArrayList<>();
    private static boolean forcedRainApplied;
+   private static float previousRain;
+   private static float previousThunder;
+   private static net.minecraft.client.multiplayer.ClientLevel weatherLevel;
 
    private VFXEnvironmentManager() {
    }
@@ -75,6 +78,11 @@ public final class VFXEnvironmentManager {
          }
       }
       if (rain > 0.0F) {
+         if (!forcedRainApplied) {
+            previousRain = minecraft.level.getRainLevel(1.0F);
+            previousThunder = minecraft.level.getThunderLevel(1.0F);
+            weatherLevel = minecraft.level;
+         }
          minecraft.level.setRainLevel(Math.min(1.0F, rain));
          minecraft.level.setThunderLevel(Math.min(1.0F, thunder));
          forcedRainApplied = true;
@@ -85,11 +93,12 @@ public final class VFXEnvironmentManager {
 
    private static void clearForcedRain() {
       Minecraft minecraft = Minecraft.getInstance();
-      if (minecraft.level != null) {
-         minecraft.level.setRainLevel(0.0F);
-         minecraft.level.setThunderLevel(0.0F);
+      if (minecraft.level != null && forcedRainApplied && weatherLevel == minecraft.level) {
+         minecraft.level.setRainLevel(previousRain);
+         minecraft.level.setThunderLevel(previousThunder);
       }
       forcedRainApplied = false;
+      weatherLevel = null;
    }
 
    @SubscribeEvent

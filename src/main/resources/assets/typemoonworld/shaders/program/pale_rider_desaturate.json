@@ -16,5 +16,6 @@
     { "name": "OutSize", "type": "float", "count": 2, "values": [1, 1] },
     { "name": "Time", "type": "float", "count": 1, "values": [0] },
     { "name": "ScreenSize", "type": "float", "count": 2, "values": [1, 1] }
+    ,{ "name": "Strength", "type": "float", "count": 1, "values": [0] }
   ]
 }

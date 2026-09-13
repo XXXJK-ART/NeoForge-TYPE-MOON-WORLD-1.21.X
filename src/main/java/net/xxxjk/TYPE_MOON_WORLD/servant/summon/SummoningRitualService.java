@@ -159,6 +159,10 @@ public final class SummoningRitualService {
 
    private static void complete(ServerPlayer master, ServerLevel level, BlockPos circle) {
       List<String> candidates = SummoningRelicRegistry.candidates(master.getMainHandItem());
+      if (!candidates.isEmpty() && master.getRandom().nextFloat() < 0.01F) {
+         candidates = new ArrayList<>(net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry.getAll().keySet()).stream()
+            .map(SummoningRelicRegistry::normalizeServantId).distinct().toList();
+      }
       ServerPlayer playerServant = findPlayerServant(master, candidates);
       boolean success = playerServant != null
          ? summonPlayer(master, playerServant, level, circle)

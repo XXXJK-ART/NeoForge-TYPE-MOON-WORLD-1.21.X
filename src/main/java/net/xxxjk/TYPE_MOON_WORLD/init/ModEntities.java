@@ -20,6 +20,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.SeaBeastEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.EmiyaArrowOrbProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BucephalusEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
@@ -568,8 +569,10 @@ public class ModEntities {
       "medusa_pegasus", () -> Builder.of(MedusaPegasusEntity::new, MobCategory.CREATURE).sized(2.4F, 2.4F).build("medusa_pegasus")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<DragonfangSoldierEntity>> DRAGONFANG_SOLDIER = ENTITY_TYPES.register(
-      "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.CREATURE).sized(0.6F, 1.9F).build("dragonfang_soldier")
+      "dragonfang_soldier", () -> Builder.of(DragonfangSoldierEntity::new, MobCategory.MONSTER).sized(0.6F, 1.9F).build("dragonfang_soldier")
    );
+   public static final DeferredHolder<EntityType<?>, EntityType<SeaBeastEntity>> SEA_BEAST = ENTITY_TYPES.register(
+      "sea_beast", () -> Builder.of(SeaBeastEntity::new, MobCategory.MONSTER).sized(1.4F, 2.4F).clientTrackingRange(64).build("sea_beast"));
    public static final DeferredHolder<EntityType<?>, EntityType<MacedonianSoldierEntity>> MACEDONIAN_SOLDIER = ENTITY_TYPES.register(
       "macedonian_soldier", () -> Builder.of(MacedonianSoldierEntity::new, MobCategory.CREATURE)
          .sized(0.65F, 1.9F).clientTrackingRange(64).updateInterval(2).build("macedonian_soldier")

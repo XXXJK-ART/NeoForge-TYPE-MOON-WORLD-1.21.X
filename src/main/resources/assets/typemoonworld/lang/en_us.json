@@ -17,6 +17,7 @@
   "item.typemoonworld.black_key.desc": "A conceptual weapon used by Executors. Right-click to throw the held keys.",
   "item.typemoonworld.blood_bottle": "Blood Bottle",
   "item.typemoonworld.broken_bowstring": "Broken Bowstring",
+  "item.typemoonworld.broken_excalibur": "Broken Excalibur",
   "item.typemoonworld.bullet": "Bullet",
   "item.typemoonworld.carved_black_shard": "Carved Obsidian Shard",
   "item.typemoonworld.carved_black_shard_full": "Full Mana Carved Obsidian Shard",
@@ -80,6 +81,7 @@
   "item.typemoonworld.diarmuid_ua_duibhne_spawn_egg": "Diarmuid Ua Duibhne (Lancer) Spawn Egg",
   "item.typemoonworld.dirk_small_knife": "Dirk Small Knife",
   "item.typemoonworld.dirk_small_knife.desc": "A compact throwing blade carried by Hassan of the Cursed Arm.",
+  "item.typemoonworld.divine_steel": "Divine Steel",
   "item.typemoonworld.dragon_fang": "Dragon Fang",
   "item.typemoonworld.dragonfang_soldier_spawn_egg": "Dragonfang Soldier Spawn Egg",
   "item.typemoonworld.dragons_reverse_scale": "Dragon's Reverse Scale",
@@ -158,6 +160,10 @@
   "item.typemoonworld.imaginary_space.anomaly": "Imaginary Anomaly",
   "item.typemoonworld.iskandar_shortsword": "Sword of Cyprus",
   "item.typemoonworld.iskandar_spawn_egg": "Iskandar (Rider) Spawn Egg",
+  "item.typemoonworld.jeanne_alter_cursed_lance_item": "Vengeance Flame Lance",
+  "item.typemoonworld.jeanne_alter_flag": "Jeanne Alter's Flag",
+  "item.typemoonworld.jeanne_alter_spawn_egg": "Jeanne d'Arc Alter (Avenger) Spawn Egg",
+  "item.typemoonworld.jeanne_alter_sword": "Jeanne Alter's Sword",
   "item.typemoonworld.katana": "Katana",
   "item.typemoonworld.kendo_apprentice_spawn_egg": "Kendo Apprentice Spawn Egg",
   "item.typemoonworld.kendo_master_spawn_egg": "Hokushin Itto-ryu Kendo Master Spawn Egg",
@@ -439,11 +445,12 @@
   "item.typemoonworld.ruby_staff.desc": "Amplifies ruby-related magecraft; crouch-charge to hold a 500-point shield.",
   "item.typemoonworld.rule_breaker": "Rule Breaker",
   "item.typemoonworld.rule_breaker.desc": "A ritual dagger that tears apart enchantments, contracts, and summoned bindings.",
+  "item.typemoonworld.rune_learning": "Rune Knowledge Fragment",
   "item.typemoonworld.ryougi_shiki_spawn_egg": "Ryougi Shiki Spawn Egg",
   "item.typemoonworld.sapphire_staff": "Sapphire Staff",
   "item.typemoonworld.sapphire_staff.desc": "Carries the staff and sapphire mana cost reduction effects.",
   "item.typemoonworld.sasaki_kojiro_spawn_egg": "Sasaki Kojirou (Assassin) Spawn Egg",
-  "item.typemoonworld.sea_beast_bone": "Sea Beast Bone",
+  "item.typemoonworld.sea_beast_spawn_egg": "Sea Beast Spawn Egg",
   "item.typemoonworld.seed_of_yggdrasil": "Yggdrasil Seed",
   "item.typemoonworld.self_geas_scroll": "Self-Geas Scroll",
   "item.typemoonworld.self_geas_scroll.desc": "Becomes active after the signer and target each complete one half of the signature.",
@@ -505,6 +512,11 @@
   "item.typemoonworld.servant_card_iskandar_chest": "Iskandar Armor",
   "item.typemoonworld.servant_card_iskandar_feet": "Iskandar Boots",
   "item.typemoonworld.servant_card_iskandar_legs": "Iskandar Pants",
+  "item.typemoonworld.servant_card_jeanne_alter": "Jeanne d'Arc Alter (Avenger) Servant Card",
+  "item.typemoonworld.servant_card_jeanne_alter_chest": "Jeanne Alter Armor",
+  "item.typemoonworld.servant_card_jeanne_alter_feet": "Jeanne Alter Boots",
+  "item.typemoonworld.servant_card_jeanne_alter_head": "Jeanne Alter Helm",
+  "item.typemoonworld.servant_card_jeanne_alter_legs": "Jeanne Alter Leggings",
   "item.typemoonworld.servant_card_lancelot_berserker": "Lancelot (Berserker)",
   "item.typemoonworld.servant_card_lancelot_berserker_chest": "Lancelot Berserker Armor",
   "item.typemoonworld.servant_card_lancelot_berserker_head": "Lancelot Berserker Helm",
@@ -628,6 +640,7 @@
   "block.typemoonworld.ruby_block_high": "Ruby Block (High)",
   "block.typemoonworld.ruby_block_poor": "Ruby Block (Poor)",
   "block.typemoonworld.ruby_mine": "Ruby Mine",
+  "block.typemoonworld.rune_inscription": "Rune Inscription",
   "block.typemoonworld.sapphire_block": "Sapphire Block",
   "block.typemoonworld.sapphire_block_high": "Sapphire Block (High)",
   "block.typemoonworld.sapphire_block_poor": "Sapphire Block (Poor)",
@@ -635,6 +648,7 @@
   "block.typemoonworld.spirit_vein_block": "Mana Crystal",
   "block.typemoonworld.spirit_vein_node": "Spirit Vein Node",
   "block.typemoonworld.summoning_circle": "Servant Summoning Circle",
+  "block.typemoonworld.sword_in_stone": "Sword in Stone",
   "block.typemoonworld.topaz_block": "Topaz Block",
   "block.typemoonworld.topaz_block_high": "Topaz Block (High)",
   "block.typemoonworld.topaz_block_poor": "Topaz Block (Poor)",
@@ -725,9 +739,6 @@
   "key.typemoonworld.magic.imaginary_space.short": "Imaginary Space",
   "key.typemoonworld.magic.imaginary_storage.selected": "Imaginary Storage",
   "key.typemoonworld.magic.imaginary_storage.short": "Imaginary Storage",
-  "key.typemoonworld.magic.spiritual_healing": "Spiritual Healing",
-  "key.typemoonworld.magic.spiritual_healing.selected": "Spiritual Healing",
-  "key.typemoonworld.magic.spiritual_healing.short": "Spiritual Heal",
   "key.typemoonworld.magic.jewel_machine_gun": "Jewel Machine Gun",
   "key.typemoonworld.magic.jewel_machine_gun.selected": "Jewel Machine Gun",
   "key.typemoonworld.magic.jewel_machine_gun.short": "Machine Gun",
@@ -764,11 +775,11 @@
   "key.typemoonworld.magic.reinforcement_self": "Reinforcement (Self)",
   "key.typemoonworld.magic.reinforcement_self.selected": "Reinforcement (Self)",
   "key.typemoonworld.magic.reinforcement_self.short": "Self Reinforce",
-  "key.typemoonworld.magic.time_alter": "Time Alter",
-  "key.typemoonworld.magic.time_alter.selected": "Time Alter",
-  "key.typemoonworld.magic.time_alter.short": "Time Alter",
   "key.typemoonworld.magic.spiritron_cannon.selected": "Spiritron Cannon",
   "key.typemoonworld.magic.spiritron_cannon.short": "Spiritron Cannon",
+  "key.typemoonworld.magic.spiritual_healing": "Spiritual Healing",
+  "key.typemoonworld.magic.spiritual_healing.selected": "Spiritual Healing",
+  "key.typemoonworld.magic.spiritual_healing.short": "Spiritual Heal",
   "key.typemoonworld.magic.stigma": "Stigma",
   "key.typemoonworld.magic.stigma.selected": "Stigma",
   "key.typemoonworld.magic.stigma.short": "Stigma",
@@ -784,6 +795,9 @@
   "key.typemoonworld.magic.sword_barrel_full_open.short": "Sword Barrel",
   "key.typemoonworld.magic.tennen_rishin_ryu.selected": "Tennen Rishin-ryu",
   "key.typemoonworld.magic.tennen_rishin_ryu.short": "Tennen Rishin-ryu",
+  "key.typemoonworld.magic.time_alter": "Time Alter",
+  "key.typemoonworld.magic.time_alter.selected": "Time Alter",
+  "key.typemoonworld.magic.time_alter.short": "Time Alter",
   "key.typemoonworld.magic.ubw_sword_control.short": "UBW: Sword Control",
   "key.typemoonworld.magic.unlimited_blade_works": "Unlimited Blade Works",
   "key.typemoonworld.magic.unlimited_blade_works.selected": "Unlimited Blade Works",
@@ -1102,6 +1116,138 @@
   "gui.typemoonworld.projection.title": "Analysis - Projection Library",
   "gui.typemoonworld.projection_preset": "Magic Preset",
   "gui.typemoonworld.radial_menu.title": "Magic Radial Menu",
+  "gui.typemoonworld.rune.add_wheel": "Add to Current Wheel",
+  "gui.typemoonworld.rune.clear": "Clear Slot",
+  "gui.typemoonworld.rune.config": "Rune Program Configuration",
+  "gui.typemoonworld.rune.config_hint": "Choose how this program is released",
+  "gui.typemoonworld.rune.copy": "Copy",
+  "gui.typemoonworld.rune.cost": "Estimated mana: %s",
+  "gui.typemoonworld.rune.delay": "Delay",
+  "gui.typemoonworld.rune.delete": "Delete",
+  "gui.typemoonworld.rune.drag_hint": "Drag known runes into program slots",
+  "gui.typemoonworld.rune.edit": "Edit",
+  "gui.typemoonworld.rune.editor": "Program Editor",
+  "gui.typemoonworld.rune.effect": "Effect: %s",
+  "gui.typemoonworld.rune.invalid": "Program invalid",
+  "gui.typemoonworld.rune.knowledge": "Rune Knowledge",
+  "gui.typemoonworld.rune.library": "Program Library",
+  "gui.typemoonworld.rune.mode": "Release mode: %s",
+  "gui.typemoonworld.rune.mode.armor": "Reinforcement mode - armor",
+  "gui.typemoonworld.rune.mode.block_trap": "Block trap",
+  "gui.typemoonworld.rune.mode.body": "Body",
+  "gui.typemoonworld.rune.mode.direct_air": "Direct release",
+  "gui.typemoonworld.rune.mode.rune_stone": "Inscription mode",
+  "gui.typemoonworld.rune.mode.tool": "Enchantment mode - tool",
+  "gui.typemoonworld.rune.mode.weapon": "Enchantment mode - weapon",
+  "gui.typemoonworld.rune.modifier": "Modifier: %s",
+  "gui.typemoonworld.rune.name": "Program name",
+  "gui.typemoonworld.rune.new": "New Program",
+  "gui.typemoonworld.rune.palette": "Known runes",
+  "gui.typemoonworld.rune.radius": "Radius",
+  "gui.typemoonworld.rune.release_mode_select": "Release mode: %s (click to cycle)",
+  "gui.typemoonworld.rune.semantic.accuracy": "Accuracy",
+  "gui.typemoonworld.rune.semantic.amplify": "Amplify",
+  "gui.typemoonworld.rune.semantic.anchor": "Anchor",
+  "gui.typemoonworld.rune.semantic.area": "Area",
+  "gui.typemoonworld.rune.semantic.awaken": "Awaken",
+  "gui.typemoonworld.rune.semantic.banish": "Banish",
+  "gui.typemoonworld.rune.semantic.barrier": "Barrier",
+  "gui.typemoonworld.rune.semantic.bind": "Bind",
+  "gui.typemoonworld.rune.semantic.bless": "Bless",
+  "gui.typemoonworld.rune.semantic.break": "Break",
+  "gui.typemoonworld.rune.semantic.burn": "Burn",
+  "gui.typemoonworld.rune.semantic.chance": "Chance",
+  "gui.typemoonworld.rune.semantic.change": "Change",
+  "gui.typemoonworld.rune.semantic.charge": "Charge",
+  "gui.typemoonworld.rune.semantic.command": "Command",
+  "gui.typemoonworld.rune.semantic.complete": "Complete",
+  "gui.typemoonworld.rune.semantic.control": "Control",
+  "gui.typemoonworld.rune.semantic.cost": "Cost",
+  "gui.typemoonworld.rune.semantic.create": "Create",
+  "gui.typemoonworld.rune.semantic.critical": "Critical",
+  "gui.typemoonworld.rune.semantic.cycle": "Cycle",
+  "gui.typemoonworld.rune.semantic.detonate": "Detonate",
+  "gui.typemoonworld.rune.semantic.discharge": "Discharge",
+  "gui.typemoonworld.rune.semantic.disperse": "Disperse",
+  "gui.typemoonworld.rune.semantic.dissolve": "Dissolve",
+  "gui.typemoonworld.rune.semantic.drain": "Drain",
+  "gui.typemoonworld.rune.semantic.duration": "Duration",
+  "gui.typemoonworld.rune.semantic.earth": "Earth",
+  "gui.typemoonworld.rune.semantic.endure": "Endure",
+  "gui.typemoonworld.rune.semantic.energy": "Energy",
+  "gui.typemoonworld.rune.semantic.escape": "Escape",
+  "gui.typemoonworld.rune.semantic.execute": "Execute",
+  "gui.typemoonworld.rune.semantic.fire": "Fire",
+  "gui.typemoonworld.rune.semantic.flow": "Flow",
+  "gui.typemoonworld.rune.semantic.focus": "Focus",
+  "gui.typemoonworld.rune.semantic.freeze": "Freeze",
+  "gui.typemoonworld.rune.semantic.fuse": "Fuse",
+  "gui.typemoonworld.rune.semantic.grow": "Grow",
+  "gui.typemoonworld.rune.semantic.guard": "Guard",
+  "gui.typemoonworld.rune.semantic.harvest": "Harvest",
+  "gui.typemoonworld.rune.semantic.heal": "Heal",
+  "gui.typemoonworld.rune.semantic.heat": "Heat",
+  "gui.typemoonworld.rune.semantic.ice": "Ice",
+  "gui.typemoonworld.rune.semantic.ignite": "Ignite",
+  "gui.typemoonworld.rune.semantic.impact": "Impact",
+  "gui.typemoonworld.rune.semantic.inherit": "Inherit",
+  "gui.typemoonworld.rune.semantic.joy": "Joy",
+  "gui.typemoonworld.rune.semantic.judge": "Judge",
+  "gui.typemoonworld.rune.semantic.light": "Light",
+  "gui.typemoonworld.rune.semantic.link": "Link",
+  "gui.typemoonworld.rune.semantic.luck": "Luck",
+  "gui.typemoonworld.rune.semantic.mind": "Mind",
+  "gui.typemoonworld.rune.semantic.mobility": "Mobility",
+  "gui.typemoonworld.rune.semantic.move": "Move",
+  "gui.typemoonworld.rune.semantic.nature": "Nature",
+  "gui.typemoonworld.rune.semantic.need": "Need",
+  "gui.typemoonworld.rune.semantic.path": "Path",
+  "gui.typemoonworld.rune.semantic.persist": "Persist",
+  "gui.typemoonworld.rune.semantic.pierce": "Pierce",
+  "gui.typemoonworld.rune.semantic.power": "Power",
+  "gui.typemoonworld.rune.semantic.protect": "Protect",
+  "gui.typemoonworld.rune.semantic.purify": "Purify",
+  "gui.typemoonworld.rune.semantic.random": "Random",
+  "gui.typemoonworld.rune.semantic.range": "Range",
+  "gui.typemoonworld.rune.semantic.reinforce": "Reinforce",
+  "gui.typemoonworld.rune.semantic.release": "Release",
+  "gui.typemoonworld.rune.semantic.renew": "Renew",
+  "gui.typemoonworld.rune.semantic.repeat": "Repeat",
+  "gui.typemoonworld.rune.semantic.resist": "Resist",
+  "gui.typemoonworld.rune.semantic.restore": "Restore",
+  "gui.typemoonworld.rune.semantic.return": "Return",
+  "gui.typemoonworld.rune.semantic.reveal": "Reveal",
+  "gui.typemoonworld.rune.semantic.sacrifice": "Sacrifice",
+  "gui.typemoonworld.rune.semantic.seal": "Seal",
+  "gui.typemoonworld.rune.semantic.self": "Self",
+  "gui.typemoonworld.rune.semantic.shadow": "Shadow",
+  "gui.typemoonworld.rune.semantic.share": "Share",
+  "gui.typemoonworld.rune.semantic.shatter": "Shatter",
+  "gui.typemoonworld.rune.semantic.shield": "Shield",
+  "gui.typemoonworld.rune.semantic.shine": "Shine",
+  "gui.typemoonworld.rune.semantic.slow": "Slow",
+  "gui.typemoonworld.rune.semantic.speak": "Speak",
+  "gui.typemoonworld.rune.semantic.speed": "Speed",
+  "gui.typemoonworld.rune.semantic.store": "Store",
+  "gui.typemoonworld.rune.semantic.storm": "Storm",
+  "gui.typemoonworld.rune.semantic.strength": "Strength",
+  "gui.typemoonworld.rune.semantic.strike": "Strike",
+  "gui.typemoonworld.rune.semantic.swift": "Swift",
+  "gui.typemoonworld.rune.semantic.transfer": "Transfer",
+  "gui.typemoonworld.rune.semantic.transform": "Transform",
+  "gui.typemoonworld.rune.semantic.travel": "Travel",
+  "gui.typemoonworld.rune.semantic.ward": "Ward",
+  "gui.typemoonworld.rune.semantic.water": "Water",
+  "gui.typemoonworld.rune.semantic.wealth": "Wealth",
+  "gui.typemoonworld.rune.slot.effect": "Effect",
+  "gui.typemoonworld.rune.slot.modifier": "Modifier",
+  "gui.typemoonworld.rune.slot.terminal": "Terminal",
+  "gui.typemoonworld.rune.slot.trigger": "Trigger",
+  "gui.typemoonworld.rune.slots": "Program slots",
+  "gui.typemoonworld.rune.terminal": "Terminal: %s",
+  "gui.typemoonworld.rune.trap_config": "Trap: radius %.1f, delay %s ticks",
+  "gui.typemoonworld.rune.trigger": "Trigger: %s",
+  "gui.typemoonworld.rune.valid": "Program valid",
   "gui.typemoonworld.screen.learned_magic": "Learned Magic",
   "gui.typemoonworld.section.affinities": "Magic Affinities",
   "gui.typemoonworld.section.equipment": "Body Equipment",
@@ -1186,10 +1332,10 @@
   "magic.option.typemoonworld.boundary_interference_effect.blindness": "Blindness",
   "magic.option.typemoonworld.boundary_interference_effect.darkness": "Darkness",
   "magic.option.typemoonworld.boundary_interference_effect.nausea": "Nausea",
+  "magic.option.typemoonworld.boundary_power": "Boundary Power",
   "magic.option.typemoonworld.boundary_shape": "Boundary Shape",
   "magic.option.typemoonworld.boundary_shape.hemisphere": "Upper Hemisphere",
   "magic.option.typemoonworld.boundary_shape.sphere": "Sphere",
-  "magic.option.typemoonworld.boundary_power": "Boundary Power",
   "magic.option.typemoonworld.boundary_side": "Boundary Range Diameter",
   "magic.option.typemoonworld.engraved_worm_operation_mode": "Engraved Worm Operation",
   "magic.option.typemoonworld.engraved_worm_operation_mode.collapse": "Collapse",
@@ -1348,6 +1494,7 @@
   "magic.typemoonworld.rock_earth_array.name": "Rock Earth Array",
   "magic.typemoonworld.ruby_flame_sword.name": "Ruby Flame Sword",
   "magic.typemoonworld.ruby_throw.name": "Ruby Throw",
+  "magic.typemoonworld.rune_origin.name": "Primordial Rune Magic",
   "magic.typemoonworld.sapphire_throw.name": "Sapphire Throw",
   "magic.typemoonworld.sapphire_winter_frost.name": "Sapphire Winter Frost",
   "magic.typemoonworld.sensing_boundary.desc": "Sense and mark blacklist-matching targets inside a square area.",
@@ -1640,6 +1787,8 @@
   "message.typemoonworld.kendo.master.invitation": "The master gives you a sparring invitation.",
   "message.typemoonworld.kendo.master.manual": "The master gives you the matching sword manual.",
   "message.typemoonworld.kendo.move_locked": "Your proficiency is too low for that move.",
+  "message.typemoonworld.king.denied": "The sword rejects you: you lack the qualification of a king.",
+  "message.typemoonworld.lake.invalid": "The lake ritual needs six connected source blocks and valid offerings.",
   "message.typemoonworld.lancelot.aroundight_seals_owner": "Knight of Owner is sealed while Aroundight is released",
   "message.typemoonworld.lancelot.no_weapon": "The target has no item that can be seized",
   "message.typemoonworld.lancelot.owner_limit": "Knight of Owner has reached its 30-item limit",
@@ -1791,11 +1940,11 @@
   "message.typemoonworld.mana.not_enough_health": "Insufficient Mana and Health...",
   "message.typemoonworld.mana.overload.death": "You died from mana overload.",
   "message.typemoonworld.mana.overload.warning": "Warning: Mana Overload! (%s/%s)",
+  "message.typemoonworld.mana_furnace.already_authorized": "You are already authorized to use the mana furnace.",
+  "message.typemoonworld.mana_furnace.authorization_busy": "Another authorization request is already waiting for confirmation.",
   "message.typemoonworld.mana_furnace.authorization_pending": "Authorization request sent; waiting for the furnace owner.",
   "message.typemoonworld.mana_furnace.authorization_request": "%s requests mana furnace access. Shift-right-click to confirm.",
-  "message.typemoonworld.mana_furnace.authorization_busy": "Another authorization request is already waiting for confirmation.",
   "message.typemoonworld.mana_furnace.authorized": "You are authorized to receive mana from the furnace.",
-  "message.typemoonworld.mana_furnace.already_authorized": "You are already authorized to use the mana furnace.",
   "message.typemoonworld.mana_furnace.binding": "Binding started: keep Shift-right-clicking for 3 seconds.",
   "message.typemoonworld.mana_furnace.binding_in_progress": "Another player is already binding this mana furnace.",
   "message.typemoonworld.mana_furnace.bound": "The mana furnace is now bound.",
@@ -1838,6 +1987,8 @@
   "message.typemoonworld.medea_subservant.rule_breaker": "Rule Breaker severed Medea's subordinate contract.",
   "message.typemoonworld.medea_subservant.target_occupied": "That Servant already has a master or contract.",
   "message.typemoonworld.medea_subservant.unbound": "Medea's subordinate Servant contract has been released.",
+  "message.typemoonworld.merlin.blessing": "Merlin grants two temporary blessings.",
+  "message.typemoonworld.merlin.hero_creation": "Merlin grants Hero Creation and the Qualification of a King.",
   "message.typemoonworld.mode.protection": "Imaginary Protection enabled.",
   "message.typemoonworld.mode.protection_broken": "Imaginary Protection broke and needs 10 seconds to recover.",
   "message.typemoonworld.mode.protection_cooldown": "Imaginary Protection cannot be toggled again yet.",
@@ -1908,6 +2059,13 @@
   "message.typemoonworld.rule_breaker.grail_dispelled": "Rule Breaker severed the Holy Grail Fragment. The expelled Crest Worm does not return, its granted attributes and skills remain unchanged, and you learned Forbidden Magic.",
   "message.typemoonworld.rule_breaker.protection_dispelled": "Rule Breaker shattered your Imaginary Protection.",
   "message.typemoonworld.rule_breaker.success": "Rule Breaker succeeded.",
+  "message.typemoonworld.rune.cast_failed": "Rune program failed to release: %s",
+  "message.typemoonworld.rune.cast_success": "Rune program released: %s",
+  "message.typemoonworld.rune.inscribed": "Rune program inscribed into medium",
+  "message.typemoonworld.rune.learned": "Learned rune: %s",
+  "message.typemoonworld.rune.release_external": "This program requires its configured release medium",
+  "message.typemoonworld.rune.save_failed": "Rune program was not saved. Check its release mode, learned runes, and program limit.",
+  "message.typemoonworld.rune.saved": "Rune program saved: %s",
   "message.typemoonworld.scroll.already_learned": "You have already learned all magics in this scroll.",
   "message.typemoonworld.scroll.cooldown": "This magic textbook is still on cooldown.",
   "message.typemoonworld.scroll.learn_failed": "Learning failed...",
@@ -2142,6 +2300,7 @@
   "entity.typemoonworld.imaginary_space.cat_arc": "Cat Arc",
   "entity.typemoonworld.imaginary_space.nao_mushroom": "Nao Mushroom",
   "entity.typemoonworld.iskandar": "Iskandar",
+  "entity.typemoonworld.jeanne_alter": "Jeanne d'Arc Alter",
   "entity.typemoonworld.kendo_apprentice": "Kendo Apprentice",
   "entity.typemoonworld.kendo_master": "Kendo Master",
   "entity.typemoonworld.lancelot_berserker": "Lancelot",
@@ -2482,6 +2641,7 @@
   "entity.typemoonworld.ryougi_shiki.speech.unknown_danger_3": "§7[Ryougi Shiki] Whatever it is, if it's an obstacle, I'll cut it.",
   "entity.typemoonworld.ryougi_shiki.speech.void_fall": "§c[Ryougi Shiki] §4The concept of death... this kind of thing doesn't work on me.",
   "entity.typemoonworld.sasaki_kojiro": "Sasaki Kojirou",
+  "entity.typemoonworld.sea_beast": "Sea Beast",
   "entity.typemoonworld.senko_muramasa": "Senko Muramasa",
   "entity.typemoonworld.shadow_hassan": "Hassan of the Shadow",
   "entity.typemoonworld.shadow_hassan_death_shadow": "Meditative Sensitivity",
@@ -2501,6 +2661,8 @@
   "entity.typemoonworld.zhao_yun_hakuryu": "Hakuryu",
   "entity.typemoonworld.zhao_yun_rider": "Zhao Yun",
 
+  "tooltip.typemoonworld.divine_steel.infuse": "Use with Mana to refine",
+  "tooltip.typemoonworld.divine_steel.progress": "Divine steel progress: %s/64",
   "tooltip.typemoonworld.gem.engraved.gravity.self_cast_hint": "Shift + Right Click: Open gravity tier selector (self only)",
   "tooltip.typemoonworld.gem.engraved.healing.self_cast_hint": "Sneak + Right Click: Cast healing on yourself",
   "tooltip.typemoonworld.gem.engraved.magic": "Engraved Magic: %s",
@@ -2514,6 +2676,9 @@
   "tooltip.typemoonworld.gem.engraved.reinforcement.part": "Reinforcement Part: %s",
   "tooltip.typemoonworld.leyline_map.snapshot": "Last snapshot: grid %s x %s chunks, player chunk (%s, %s), dimension %s",
   "tooltip.typemoonworld.leyline_map.usage": "Right-click: scan and display nearby chunk mana concentration.",
+  "tooltip.typemoonworld.necklace.mana": "Mana: %s/%s",
+  "tooltip.typemoonworld.rune.inscribed": "Inscribed rune: %s",
+  "tooltip.typemoonworld.rune.uses": "Releases remaining: %s",
   "tooltip.typemoonworld.self_geas_scroll.creator": "Creator: %s",
   "tooltip.typemoonworld.self_geas_scroll.force": "Force: %s",
   "tooltip.typemoonworld.self_geas_scroll.signer": "Signer: %s",
@@ -2626,7 +2791,6 @@
   "death.attack.spiritual_collapse.player": "%1$s's spiritual origin was destroyed while fighting %2$s",
   "death.attack.stigma_delayed": "%1$s succumbed to delayed pain",
   "death.attack.stigma_delayed.player": "%1$s succumbed to pain inflicted by %2$s",
-
 
   "hud.typemoonworld.gilgamesh.block_id": "Block ID: %s",
   "hud.typemoonworld.gilgamesh.distance": "Distance: %.1f blocks",
@@ -2827,6 +2991,13 @@
   "skill.typemoonworld.iskandar.ionioi_hetairoi": "Ionioi Hetairoi",
   "skill.typemoonworld.iskandar.leadership_a": "Leadership A",
   "skill.typemoonworld.iskandar.military_tactics_b": "Military Tactics B",
+  "skill.typemoonworld.jeanne_alter.cursed_lance": "Cursed Lance Array",
+  "skill.typemoonworld.jeanne_alter.dragon_witch_ex": "Dragon Witch EX",
+  "skill.typemoonworld.jeanne_alter.ephemeral_dream_a": "Ephemeral Dream A",
+  "skill.typemoonworld.jeanne_alter.fire_pillar": "Execution Flame",
+  "skill.typemoonworld.jeanne_alter.inferno_body": "Inferno Body",
+  "skill.typemoonworld.jeanne_alter.le_grondement_du_haine": "Le Grondement Du Haine",
+  "skill.typemoonworld.jeanne_alter.self_modification_ex": "Self-Modification EX",
   "skill.typemoonworld.jizaiten_eye_six_secret": "Six Secret Sight",
   "skill.typemoonworld.philosopher_stone_a": "Philosopher's Stone A",
   "skill.typemoonworld.servant_card.afterimage": "Image",
@@ -2886,8 +3057,8 @@
   "skill.typemoonworld.servant_card.cu_crouch_thrust": "Thrust",
   "skill.typemoonworld.servant_card.cu_disengage": "Disengage",
   "skill.typemoonworld.servant_card.cu_laguz": "Laguz",
-  "skill.typemoonworld.servant_card.cu_tiwaz": "Tiwaz",
   "skill.typemoonworld.servant_card.cu_rune_barrier": "Rune Barrier",
+  "skill.typemoonworld.servant_card.cu_tiwaz": "Tiwaz",
   "skill.typemoonworld.servant_card.cybele": "Eyes",
   "skill.typemoonworld.servant_card.detection": "Presence Detection",
   "skill.typemoonworld.servant_card.diarmuid_disengage": "Disengage",
@@ -2899,6 +3070,7 @@
   "skill.typemoonworld.servant_card.diarmuid_twin_spear_combo": "Twin Spear Combo",
   "skill.typemoonworld.servant_card.diarmuid_yellow_rose_focus": "Gae Buidhe Focus",
   "skill.typemoonworld.servant_card.dirk_throw": "Dirk",
+  "skill.typemoonworld.servant_card.dragon_core": "Dragon Core",
   "skill.typemoonworld.servant_card.earth": "Earth",
   "skill.typemoonworld.servant_card.earth_rend": "Rend",
   "skill.typemoonworld.servant_card.earth_spike": "Earth Spike Sprout",
@@ -2997,7 +3169,6 @@
   "skill.typemoonworld.servant_card.li_high_jump": "High Jump",
   "skill.typemoonworld.servant_card.lion_leap": "Leap",
   "skill.typemoonworld.servant_card.mana_burst": "Mana Burst (Toggle)",
-  "skill.typemoonworld.servant_card.dragon_core": "Dragon Core",
   "skill.typemoonworld.servant_card.mana_burst_beam": "Mana Burst: Light Cannon",
   "skill.typemoonworld.servant_card.maou": "Maou",
   "skill.typemoonworld.servant_card.matchlock": "Gun",
@@ -3161,166 +3332,5 @@
   "subtitles.typemoonworld.zhao_yun.attack": "Attack",
   "subtitles.typemoonworld.zhao_yun.fail": "Death",
   "subtitles.typemoonworld.zhao_yun.np": "Noble Phantasm",
-  "subtitles.typemoonworld.zhao_yun.victory": "Victory",
-  "item.typemoonworld.rune_learning": "Rune Knowledge Fragment",
-  "magic.typemoonworld.rune_origin.name": "Primordial Rune Magic",
-  "message.typemoonworld.rune.learned": "Learned rune: %s",
-  "message.typemoonworld.rune.cast_failed": "Rune program failed to release: %s",
-  "message.typemoonworld.rune.cast_success": "Rune program released: %s",
-  "message.typemoonworld.rune.saved": "Rune program saved: %s",
-  "message.typemoonworld.rune.save_failed": "Rune program was not saved. Check its release mode, learned runes, and program limit.",
-  "message.typemoonworld.rune.release_external": "This program requires its configured release medium",
-  "message.typemoonworld.rune.inscribed": "Rune program inscribed into medium",
-  "tooltip.typemoonworld.rune.inscribed": "Inscribed rune: %s",
-  "tooltip.typemoonworld.rune.uses": "Releases remaining: %s",
-  "gui.typemoonworld.rune.knowledge": "Rune Knowledge",
-  "gui.typemoonworld.rune.editor": "Program Editor",
-  "gui.typemoonworld.rune.library": "Program Library",
-  "gui.typemoonworld.rune.new": "New Program",
-  "gui.typemoonworld.rune.name": "Program name",
-  "gui.typemoonworld.rune.mode": "Release mode: %s",
-  "gui.typemoonworld.rune.cost": "Estimated mana: %s",
-  "gui.typemoonworld.rune.trigger": "Trigger: %s",
-  "gui.typemoonworld.rune.effect": "Effect: %s",
-  "gui.typemoonworld.rune.modifier": "Modifier: %s",
-  "gui.typemoonworld.rune.terminal": "Terminal: %s",
-  "gui.typemoonworld.rune.slots": "Program slots",
-  "gui.typemoonworld.rune.palette": "Known runes",
-  "gui.typemoonworld.rune.slot.trigger": "Trigger",
-  "gui.typemoonworld.rune.slot.effect": "Effect",
-  "gui.typemoonworld.rune.slot.modifier": "Modifier",
-  "gui.typemoonworld.rune.slot.terminal": "Terminal",
-  "gui.typemoonworld.rune.invalid": "Program invalid",
-  "gui.typemoonworld.rune.drag_hint": "Drag known runes into program slots",
-  "gui.typemoonworld.rune.mode.direct_air": "Direct release",
-  "gui.typemoonworld.rune.mode.rune_stone": "Inscription mode",
-  "gui.typemoonworld.rune.mode.weapon": "Enchantment mode - weapon",
-  "gui.typemoonworld.rune.mode.armor": "Reinforcement mode - armor",
-  "gui.typemoonworld.rune.mode.tool": "Enchantment mode - tool",
-  "gui.typemoonworld.rune.mode.block_trap": "Block trap",
-  "gui.typemoonworld.rune.mode.body": "Body",
-  "gui.typemoonworld.rune.config": "Rune Program Configuration",
-  "gui.typemoonworld.rune.config_hint": "Choose how this program is released",
-  "gui.typemoonworld.rune.release_mode_select": "Release mode: %s (click to cycle)"
-  ,"gui.typemoonworld.rune.trap_config": "Trap: radius %.1f, delay %s ticks"
-  ,"gui.typemoonworld.rune.semantic.wealth": "Wealth"
-  ,"gui.typemoonworld.rune.semantic.strength": "Strength"
-  ,"gui.typemoonworld.rune.semantic.break": "Break"
-  ,"gui.typemoonworld.rune.semantic.command": "Command"
-  ,"gui.typemoonworld.rune.semantic.move": "Move"
-  ,"gui.typemoonworld.rune.semantic.ignite": "Ignite"
-  ,"gui.typemoonworld.rune.semantic.bind": "Bind"
-  ,"gui.typemoonworld.rune.semantic.joy": "Joy"
-  ,"gui.typemoonworld.rune.semantic.storm": "Storm"
-  ,"gui.typemoonworld.rune.semantic.need": "Need"
-  ,"gui.typemoonworld.rune.semantic.freeze": "Freeze"
-  ,"gui.typemoonworld.rune.semantic.cycle": "Cycle"
-  ,"gui.typemoonworld.rune.semantic.ward": "Ward"
-  ,"gui.typemoonworld.rune.semantic.chance": "Chance"
-  ,"gui.typemoonworld.rune.semantic.protect": "Protect"
-  ,"gui.typemoonworld.rune.semantic.shine": "Shine"
-  ,"gui.typemoonworld.rune.semantic.judge": "Judge"
-  ,"gui.typemoonworld.rune.semantic.grow": "Grow"
-  ,"gui.typemoonworld.rune.semantic.travel": "Travel"
-  ,"gui.typemoonworld.rune.semantic.self": "Self"
-  ,"gui.typemoonworld.rune.semantic.flow": "Flow"
-  ,"gui.typemoonworld.rune.semantic.charge": "Charge"
-  ,"gui.typemoonworld.rune.semantic.transform": "Transform"
-  ,"gui.typemoonworld.rune.semantic.inherit": "Inherit"
-  ,"gui.typemoonworld.rune.semantic.create": "Create"
-  ,"gui.typemoonworld.rune.semantic.reinforce": "Reinforce"
-  ,"gui.typemoonworld.rune.semantic.impact": "Impact"
-  ,"gui.typemoonworld.rune.semantic.speak": "Speak"
-  ,"gui.typemoonworld.rune.semantic.path": "Path"
-  ,"gui.typemoonworld.rune.semantic.fire": "Fire"
-  ,"gui.typemoonworld.rune.semantic.share": "Share"
-  ,"gui.typemoonworld.rune.semantic.heal": "Heal"
-  ,"gui.typemoonworld.rune.semantic.ice": "Ice"
-  ,"gui.typemoonworld.rune.semantic.drain": "Drain"
-  ,"gui.typemoonworld.rune.semantic.barrier": "Barrier"
-  ,"gui.typemoonworld.rune.semantic.harvest": "Harvest"
-  ,"gui.typemoonworld.rune.semantic.shadow": "Shadow"
-  ,"gui.typemoonworld.rune.semantic.random": "Random"
-  ,"gui.typemoonworld.rune.semantic.shield": "Shield"
-  ,"gui.typemoonworld.rune.semantic.light": "Light"
-  ,"gui.typemoonworld.rune.semantic.pierce": "Pierce"
-  ,"gui.typemoonworld.rune.semantic.nature": "Nature"
-  ,"gui.typemoonworld.rune.semantic.speed": "Speed"
-  ,"gui.typemoonworld.rune.semantic.mind": "Mind"
-  ,"gui.typemoonworld.rune.semantic.water": "Water"
-  ,"gui.typemoonworld.rune.semantic.energy": "Energy"
-  ,"gui.typemoonworld.rune.semantic.change": "Change"
-  ,"gui.typemoonworld.rune.semantic.earth": "Earth"
-  ,"gui.typemoonworld.rune.semantic.amplify": "Amplify"
-  ,"gui.typemoonworld.rune.semantic.power": "Power"
-  ,"gui.typemoonworld.rune.semantic.shatter": "Shatter"
-  ,"gui.typemoonworld.rune.semantic.range": "Range"
-  ,"gui.typemoonworld.rune.semantic.swift": "Swift"
-  ,"gui.typemoonworld.rune.semantic.heat": "Heat"
-  ,"gui.typemoonworld.rune.semantic.link": "Link"
-  ,"gui.typemoonworld.rune.semantic.duration": "Duration"
-  ,"gui.typemoonworld.rune.semantic.area": "Area"
-  ,"gui.typemoonworld.rune.semantic.cost": "Cost"
-  ,"gui.typemoonworld.rune.semantic.slow": "Slow"
-  ,"gui.typemoonworld.rune.semantic.repeat": "Repeat"
-  ,"gui.typemoonworld.rune.semantic.resist": "Resist"
-  ,"gui.typemoonworld.rune.semantic.luck": "Luck"
-  ,"gui.typemoonworld.rune.semantic.guard": "Guard"
-  ,"gui.typemoonworld.rune.semantic.accuracy": "Accuracy"
-  ,"gui.typemoonworld.rune.semantic.critical": "Critical"
-  ,"gui.typemoonworld.rune.semantic.restore": "Restore"
-  ,"gui.typemoonworld.rune.semantic.mobility": "Mobility"
-  ,"gui.typemoonworld.rune.semantic.focus": "Focus"
-  ,"gui.typemoonworld.rune.semantic.control": "Control"
-  ,"gui.typemoonworld.rune.semantic.store": "Store"
-  ,"gui.typemoonworld.rune.semantic.fuse": "Fuse"
-  ,"gui.typemoonworld.rune.semantic.persist": "Persist"
-  ,"gui.typemoonworld.rune.semantic.release": "Release"
-  ,"gui.typemoonworld.rune.semantic.strike": "Strike"
-  ,"gui.typemoonworld.rune.semantic.detonate": "Detonate"
-  ,"gui.typemoonworld.rune.semantic.seal": "Seal"
-  ,"gui.typemoonworld.rune.semantic.return": "Return"
-  ,"gui.typemoonworld.rune.semantic.burn": "Burn"
-  ,"gui.typemoonworld.rune.semantic.transfer": "Transfer"
-  ,"gui.typemoonworld.rune.semantic.bless": "Bless"
-  ,"gui.typemoonworld.rune.semantic.disperse": "Disperse"
-  ,"gui.typemoonworld.rune.semantic.sacrifice": "Sacrifice"
-  ,"gui.typemoonworld.rune.semantic.endure": "Endure"
-  ,"gui.typemoonworld.rune.semantic.complete": "Complete"
-  ,"gui.typemoonworld.rune.semantic.banish": "Banish"
-  ,"gui.typemoonworld.rune.semantic.reveal": "Reveal"
-  ,"gui.typemoonworld.rune.semantic.purify": "Purify"
-  ,"gui.typemoonworld.rune.semantic.execute": "Execute"
-  ,"gui.typemoonworld.rune.semantic.renew": "Renew"
-  ,"gui.typemoonworld.rune.semantic.escape": "Escape"
-  ,"gui.typemoonworld.rune.semantic.awaken": "Awaken"
-  ,"gui.typemoonworld.rune.semantic.dissolve": "Dissolve"
-  ,"gui.typemoonworld.rune.semantic.discharge": "Discharge"
-  ,"gui.typemoonworld.rune.semantic.anchor": "Anchor"
-  ,"gui.typemoonworld.rune.clear": "Clear Slot"
-  ,"gui.typemoonworld.rune.valid": "Program valid"
-  ,"gui.typemoonworld.rune.edit": "Edit"
-  ,"gui.typemoonworld.rune.copy": "Copy"
-  ,"gui.typemoonworld.rune.delete": "Delete"
-  ,"gui.typemoonworld.rune.add_wheel": "Add to Current Wheel"
-  ,"gui.typemoonworld.rune.radius": "Radius"
-  ,"gui.typemoonworld.rune.delay": "Delay"
-  ,"block.typemoonworld.rune_inscription": "Rune Inscription"
-  ,"item.typemoonworld.servant_card_jeanne_alter": "Jeanne d'Arc Alter (Avenger) Servant Card"
-  ,"item.typemoonworld.servant_card_jeanne_alter_head": "Jeanne Alter Helm"
-  ,"item.typemoonworld.servant_card_jeanne_alter_chest": "Jeanne Alter Armor"
-  ,"item.typemoonworld.servant_card_jeanne_alter_legs": "Jeanne Alter Leggings"
-  ,"item.typemoonworld.servant_card_jeanne_alter_feet": "Jeanne Alter Boots"
-  ,"item.typemoonworld.jeanne_alter_sword": "Jeanne Alter's Sword"
-  ,"item.typemoonworld.jeanne_alter_flag": "Jeanne Alter's Flag"
-  ,"item.typemoonworld.jeanne_alter_spawn_egg": "Jeanne d'Arc Alter (Avenger) Spawn Egg"
-  ,"entity.typemoonworld.jeanne_alter": "Jeanne d'Arc Alter"
-  ,"skill.typemoonworld.jeanne_alter.fire_pillar": "Execution Flame"
-  ,"skill.typemoonworld.jeanne_alter.cursed_lance": "Cursed Lance Array"
-  ,"item.typemoonworld.jeanne_alter_cursed_lance_item": "Vengeance Flame Lance"
-  ,"skill.typemoonworld.jeanne_alter.self_modification_ex": "Self-Modification EX"
-  ,"skill.typemoonworld.jeanne_alter.dragon_witch_ex": "Dragon Witch EX"
-  ,"skill.typemoonworld.jeanne_alter.inferno_body": "Inferno Body"
-  ,"skill.typemoonworld.jeanne_alter.ephemeral_dream_a": "Ephemeral Dream A"
-  ,"skill.typemoonworld.jeanne_alter.le_grondement_du_haine": "Le Grondement Du Haine"
+  "subtitles.typemoonworld.zhao_yun.victory": "Victory"
 }

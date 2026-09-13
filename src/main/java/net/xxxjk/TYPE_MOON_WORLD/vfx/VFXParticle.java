@@ -65,6 +65,10 @@ public class VFXParticle {
       return this.totalLife <= 0.0F ? 1.0F : Math.min(1.0F, this.currentLife / this.totalLife);
    }
 
+   public float renderX(float partialTick) { return this.previousPosition.x + (this.position.x - this.previousPosition.x) * partialTick; }
+   public float renderY(float partialTick) { return this.previousPosition.y + (this.position.y - this.previousPosition.y) * partialTick; }
+   public float renderZ(float partialTick) { return this.previousPosition.z + (this.position.z - this.previousPosition.z) * partialTick; }
+
    public static int pooledCount() {
       return POOL.size();
    }

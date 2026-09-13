@@ -1,0 +1,17 @@
+﻿{
+    "conditions":  [
+                       {
+                           "condition":  "minecraft:location_check",
+                           "predicate":  {
+                                             "location":  {
+                                                              "structures":  [
+                                                                                 "minecraft:zombie_village"
+                                                                             ]
+                                                          }
+                                         }
+                       }
+                   ],
+    "chance":  0.2,
+    "item":  "typemoonworld:relic_old_man_mask",
+    "type":  "typemoonworld:survival_reward"
+}

@@ -23,6 +23,7 @@ import net.neoforged.neoforge.common.ModConfigSpec.IntValue;
 )
 public class Config {
    private static final Builder BUILDER = new Builder();
+   private static final Builder CLIENT_BUILDER = new Builder();
    private static final BooleanValue LOG_DIRT_BLOCK = BUILDER.comment("Whether to log the dirt block on common setup").define("logDirtBlock", true);
    private static final IntValue MAGIC_NUMBER = BUILDER.comment("A magic number").defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
    public static final ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER.comment("What you want the introduction message to be for the magic number")
@@ -82,6 +83,14 @@ public class Config {
    private static final ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER.comment("A list of items to log on common setup.")
       .defineList("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
    static final ModConfigSpec SPEC = BUILDER.build();
+   public static final ConfigValue<String> VFX_QUALITY = CLIENT_BUILDER.comment("VFX quality: AUTO, LOW, MEDIUM or HIGH")
+      .define("vfxQuality", "AUTO", value -> value instanceof String text && Set.of("AUTO", "LOW", "MEDIUM", "HIGH").contains(text.toUpperCase(java.util.Locale.ROOT)));
+   public static final BooleanValue VFX_BLOOM = CLIENT_BUILDER.comment("Enable VFX bloom post processing").define("vfxBloom", true);
+   public static final BooleanValue VFX_SCREEN_EFFECTS = CLIENT_BUILDER.comment("Enable VFX screen effects").define("vfxScreenEffects", true);
+   public static final BooleanValue VFX_DISTORTION = CLIENT_BUILDER.comment("Enable local VFX distortion").define("vfxDistortion", true);
+   public static final IntValue VFX_MAX_PARTICLES = CLIENT_BUILDER.comment("Optional VFX particle override; 0 uses the selected quality budget")
+      .defineInRange("vfxMaxParticles", 0, 0, 12000);
+   static final ModConfigSpec CLIENT_SPEC = CLIENT_BUILDER.build();
    public static boolean logDirtBlock;
    public static int magicNumber;
    public static String magicNumberIntroduction;
@@ -108,6 +117,11 @@ public class Config {
    public static int serverPressureMspt = 40;
    public static int serverCriticalMspt = 50;
    public static Set<ResourceLocation> legacyAiEntityTypes = Set.of();
+   public static String vfxQuality = "AUTO";
+   public static boolean vfxBloom = true;
+   public static boolean vfxScreenEffects = true;
+   public static boolean vfxDistortion = true;
+   public static int vfxMaxParticles = 0;
 
    private static boolean validateItemName(Object obj) {
       return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemName));
@@ -120,9 +134,15 @@ public class Config {
 
    @SubscribeEvent
    static void onLoad(ModConfigEvent event) {
-      if (event.getConfig().getSpec() != SPEC) {
+      if (event.getConfig().getSpec() == CLIENT_SPEC) {
+         vfxQuality = ((String)VFX_QUALITY.get()).toUpperCase(java.util.Locale.ROOT);
+         vfxBloom = VFX_BLOOM.get();
+         vfxScreenEffects = VFX_SCREEN_EFFECTS.get();
+         vfxDistortion = VFX_DISTORTION.get();
+         vfxMaxParticles = VFX_MAX_PARTICLES.get();
          return;
       }
+      if (event.getConfig().getSpec() != SPEC) return;
 
       logDirtBlock = (Boolean)LOG_DIRT_BLOCK.get();
       magicNumber = (Integer)MAGIC_NUMBER.get();

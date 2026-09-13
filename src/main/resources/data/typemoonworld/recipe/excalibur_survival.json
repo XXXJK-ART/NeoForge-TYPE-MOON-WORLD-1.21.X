@@ -1,0 +1,23 @@
+﻿{
+    "key":  {
+                "C":  {
+                          "item":  "minecraft:iron_ingot"
+                      },
+                "B":  {
+                          "item":  "minecraft:gold_ingot"
+                      },
+                "A":  {
+                          "item":  "minecraft:iron_ingot"
+                      }
+            },
+    "pattern":  [
+                    "ABA",
+                    "BCB",
+                    "ABA"
+                ],
+    "result":  {
+                   "id":  "typemoonworld:excalibur",
+                   "count":  1
+               },
+    "type":  "minecraft:crafting_shaped"
+}

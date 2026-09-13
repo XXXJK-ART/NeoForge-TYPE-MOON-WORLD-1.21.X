@@ -1,0 +1,17 @@
+﻿{
+    "conditions":  [
+                       {
+                           "condition":  "minecraft:location_check",
+                           "predicate":  {
+                                             "location":  {
+                                                              "structures":  [
+                                                                                 "minecraft:desert_pyramid"
+                                                                             ]
+                                                          }
+                                         }
+                       }
+                   ],
+    "chance":  0.05,
+    "item":  "typemoonworld:relic_iskandar_cloak_fragment",
+    "type":  "typemoonworld:survival_reward"
+}

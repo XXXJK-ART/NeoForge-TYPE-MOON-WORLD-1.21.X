@@ -98,6 +98,12 @@ public class MysteriousSwordsmanEntity extends HumanNpcEntity implements GeoEnti
          serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.master.manual"), false);
          return InteractionResult.CONSUME;
       }
+      if (vars.ganryu_tsubame_unlocked && !serverPlayer.getPersistentData().getBoolean("TypeMoonBizenTsubaClaimed") && serverPlayer.getMainHandItem().isEmpty()) {
+         serverPlayer.getInventory().add(new ItemStack(ModItems.RELIC_BIZEN_TSUBA.get()));
+         serverPlayer.getPersistentData().putBoolean("TypeMoonBizenTsubaClaimed", true);
+         serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.ganryu.tsuba_reward"), false);
+         return InteractionResult.CONSUME;
+      }
       long now = this.level().getGameTime();
       if (serverPlayer.getPersistentData().getLong(INVITE_COOLDOWN) <= now
          && !serverPlayer.getInventory().contains(new ItemStack(ModItems.SPARRING_INVITATION.get()))) {

@@ -29,6 +29,7 @@ import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.piglin.Piglin;
@@ -54,6 +55,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
@@ -97,6 +99,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
@@ -154,6 +158,14 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
    modid = "typemoonworld"
 )
 public class CommonEvents {
+   @SubscribeEvent
+   public static void onLivingTick(PlayerTickEvent.Post event) {
+      LivingEntity e = event.getEntity();
+      if (e.level().isClientSide || !(e instanceof Player p) || e.tickCount % 40 != 0) return;
+      boolean fleece = false;
+      for (ItemStack s : p.getInventory().items) if (s.is(ModItems.RELIC_GOLDEN_FLEECE.get())) { fleece = true; break; }
+      if (fleece || p.getOffhandItem().is(ModItems.RELIC_GOLDEN_FLEECE.get())) e.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 1, true, false));
+   }
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
    private static final String GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG = "GodHandHighDamageReviveUntil";
    private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
@@ -376,6 +388,7 @@ public class CommonEvents {
          if (player instanceof ServerPlayer serverPlayer) {
             TalentService.tick(serverPlayer);
             PassiveService.tick(serverPlayer);
+
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
             com.example.typemoonaddon.magic.SummoningMagicIntegration.tick(serverPlayer);

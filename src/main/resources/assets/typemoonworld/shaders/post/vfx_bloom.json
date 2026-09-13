@@ -1,0 +1,13 @@
+{
+  "targets":[
+    {"name":"bright","width":960,"height":540},
+    {"name":"blur","width":960,"height":540},
+    "swap"
+  ],
+  "passes":[
+    {"name":"typemoonworld:vfx_bloom_extract","intarget":"minecraft:main","outtarget":"bright"},
+    {"name":"typemoonworld:vfx_bloom_blur","intarget":"bright","outtarget":"blur"},
+    {"name":"typemoonworld:vfx_bloom_composite","intarget":"minecraft:main","outtarget":"swap","auxtargets":[{"name":"BloomSampler","id":"blur","bilinear":true}]},
+    {"name":"blit","intarget":"swap","outtarget":"minecraft:main"}
+  ]
+}

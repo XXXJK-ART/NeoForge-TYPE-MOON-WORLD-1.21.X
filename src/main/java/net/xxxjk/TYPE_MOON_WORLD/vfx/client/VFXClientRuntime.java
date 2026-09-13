@@ -30,6 +30,7 @@ public final class VFXClientRuntime {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
          return;
       }
+      VFXPostProcessManager.add(definition.screenEffects());
       for (VFXEnvironmentDefinition environment : definition.environments()) {
          VFXEnvironmentManager.add(environment, x, y, z, null);
       }
@@ -63,6 +64,7 @@ public final class VFXClientRuntime {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX effect '{}'", effectId);
          return;
       }
+      VFXPostProcessManager.add(definition.screenEffects());
       Minecraft mc = Minecraft.getInstance();
       Entity target = null;
       if (targetEntityUuid.isPresent() && mc.level != null) {

@@ -60,7 +60,6 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
 
    public DragonfangSoldierEntity(EntityType<? extends DragonfangSoldierEntity> type, Level level) {
       super(type, level);
-      this.setPersistenceRequired();
    }
 
    public static AttributeSupplier.Builder createAttributes() {
@@ -109,7 +108,8 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
       this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 8.0F));
       this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
       this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
+      this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, target -> this.summonerUuid==null));
+      this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false, target -> this.summonerUuid!=null));
    }
 
    @Override
@@ -180,6 +180,7 @@ public class DragonfangSoldierEntity extends PathfinderMob implements GeoEntity,
    }
 
    public void setSummoner(LivingEntity summoner) {
+      this.setPersistenceRequired();
       this.summonerUuid = summoner.getUUID();
       this.entityData.set(HAS_OWNER, true);
       this.getPersistentData().putBoolean(MedeaWorkshopHelper.TAG_MAGIC_SUMMON, true);

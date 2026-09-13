@@ -5,6 +5,8 @@ import java.util.List;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.IVFXComponent;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXBlendMode;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXEmitter;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXPriority;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXRendererType;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.condition.VFXConditionParser;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.ColorKeyFrame;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.SizeKeyFrame;
@@ -14,11 +16,17 @@ public class VFXEffectDefinition {
    private final float duration;
    private final List<EmitterDefinition> emitters;
    private final List<VFXEnvironmentDefinition> environments;
+   private final List<VFXScreenEffectDefinition> screenEffects;
 
    public VFXEffectDefinition(float duration, List<EmitterDefinition> emitters, List<VFXEnvironmentDefinition> environments) {
+      this(duration, emitters, environments, List.of());
+   }
+
+   public VFXEffectDefinition(float duration, List<EmitterDefinition> emitters, List<VFXEnvironmentDefinition> environments, List<VFXScreenEffectDefinition> screenEffects) {
       this.duration = duration;
       this.emitters = List.copyOf(emitters);
       this.environments = List.copyOf(environments);
+      this.screenEffects = List.copyOf(screenEffects);
    }
 
    public List<VFXEmitter> createEmitters(float x, float y, float z, long seed) {
@@ -43,6 +51,10 @@ public class VFXEffectDefinition {
             seed + i * 31L
          );
          emitter.setBinding(definition.binding);
+         emitter.setPriority(definition.priority);
+         emitter.setRendererType(definition.renderer);
+         emitter.setMaterial(definition.material);
+         emitter.setMotion(definition.motion);
          emitter.setOrigin(x, y, z);
          emitter.addComponent(definition.component);
          for (TransformKeyFrame keyFrame : definition.transformKeyFrames) {
@@ -70,8 +82,16 @@ public class VFXEffectDefinition {
       return this.duration;
    }
 
+   public List<EmitterDefinition> emitters() {
+      return this.emitters;
+   }
+
    public List<VFXEnvironmentDefinition> environments() {
       return this.environments;
+   }
+
+   public List<VFXScreenEffectDefinition> screenEffects() {
+      return this.screenEffects;
    }
 
    public record EmitterDefinition(
@@ -97,7 +117,11 @@ public class VFXEffectDefinition {
       boolean enableTrail,
       List<String> onStart,
       List<String> onTick,
-      List<String> onEnd
+      List<String> onEnd,
+      VFXPriority priority,
+      VFXRendererType renderer,
+      VFXMaterialDefinition material,
+      VFXMotionDefinition motion
    ) {
    }
 

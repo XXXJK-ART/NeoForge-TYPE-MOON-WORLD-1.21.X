@@ -30,7 +30,10 @@
         { "t": 1.0, "pos": [0, 0, 0], "rot": [0, 1.0, 0, 0], "scale": [1, 1, 1] }
       ],
       "visibility_condition": "true",
-      "blend": "ADDITIVE"
+      "blend": "ADDITIVE",
+      "priority": "critical",
+      "renderer": "shader_quad",
+      "material": { "shader": "vfx_sdf", "bloom": 0.85 }
     },
     {
       "rate": 240,

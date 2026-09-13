@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.condition.VFXCondition;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEffectDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXMaterialDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXMotionDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXVanillaParticleDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXVanillaParticleSpawn;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.keyframe.ColorKeyFrame;
@@ -57,6 +59,10 @@ public class VFXEmitter {
    private Supplier<Quaternionf> dynamicRotation;
    private VFXEffectDefinition.BindingDefinition binding = VFXEffectDefinition.BindingDefinition.NONE;
    private float uniformScale = 1.0F;
+   private VFXPriority priority = VFXPriority.NORMAL;
+   private VFXRendererType rendererType = VFXRendererType.BILLBOARD;
+   private VFXMaterialDefinition material = VFXMaterialDefinition.DEFAULT;
+   private VFXMotionDefinition motion = VFXMotionDefinition.NONE;
 
    public VFXEmitter(
       float duration,
@@ -115,6 +121,15 @@ public class VFXEmitter {
    public VFXEffectDefinition.BindingDefinition binding() {
       return this.binding;
    }
+
+   public void setPriority(VFXPriority priority) { this.priority = priority == null ? VFXPriority.NORMAL : priority; }
+   public VFXPriority priority() { return this.priority; }
+   public void setRendererType(VFXRendererType rendererType) { this.rendererType = rendererType == null ? VFXRendererType.BILLBOARD : rendererType; }
+   public VFXRendererType rendererType() { return this.rendererType; }
+   public void setMaterial(VFXMaterialDefinition material) { this.material = material == null ? VFXMaterialDefinition.DEFAULT : material; }
+   public VFXMaterialDefinition material() { return this.material; }
+   public void setMotion(VFXMotionDefinition motion) { this.motion = motion == null ? VFXMotionDefinition.NONE : motion; }
+   public VFXMotionDefinition motion() { return this.motion; }
 
    public void addComponent(IVFXComponent component) {
       if (component != null) {
@@ -296,6 +311,7 @@ public class VFXEmitter {
             .rotate(rotation)
             .add(new Vector3f(this.baseVelocity).rotate(rotation))
             .add(randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance, randomSigned() * this.velocityVariance);
+         applyMotion(particle, this.motion, progress);
          particle.color = color;
          float variance = this.sizeVariance <= 0.0F ? 1.0F : 1.0F + (this.random.nextFloat() * 2.0F - 1.0F) * this.sizeVariance;
          particle.size = Math.max(0.001F, size * this.uniformScale * variance);
@@ -418,6 +434,24 @@ public class VFXEmitter {
 
    private float randomSigned() {
       return this.random.nextFloat() * 2.0F - 1.0F;
+   }
+
+   private void applyMotion(VFXParticle particle, VFXMotionDefinition motion, float progress) {
+      if (motion == null || "none".equalsIgnoreCase(motion.type()) || motion.amount() == 0.0F) return;
+      String type = motion.type().toLowerCase(java.util.Locale.ROOT);
+      if ("radial".equals(type) || "direction_random".equals(type)) {
+         Vector3f direction = new Vector3f(particle.position).sub(this.origin);
+         if (direction.lengthSquared() > 1.0E-6F) particle.velocity.add(direction.normalize().mul(motion.amount()));
+      } else if ("turbulence".equals(type) || "turbulence_rise".equals(type)) {
+         float phase = progress * motion.frequency() * 6.2831855F;
+         particle.velocity.add((float)Math.sin(phase + particle.position.y) * motion.amount(), motion.amount() * ("turbulence_rise".equals(type) ? 1.0F : 0.25F), (float)Math.cos(phase + particle.position.x) * motion.amount());
+      } else if ("orbit".equals(type)) {
+         Vector3f axis = new Vector3f(motion.axis()).normalize();
+         Vector3f tangent = axis.cross(new Vector3f(particle.position).sub(this.origin));
+         if (tangent.lengthSquared() > 1.0E-6F) particle.velocity.add(tangent.normalize().mul(motion.amount()));
+      } else if ("arc".equals(type) || "arc_column".equals(type)) {
+         particle.velocity.add(0.0F, motion.amount() * (0.25F + progress), 0.0F);
+      }
    }
 
    private static int lerpArgb(int a, int b, float t) {

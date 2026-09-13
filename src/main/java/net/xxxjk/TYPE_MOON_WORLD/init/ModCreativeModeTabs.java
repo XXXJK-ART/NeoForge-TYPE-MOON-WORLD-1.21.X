@@ -173,10 +173,8 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_DIARMUID_YELLOW_ROSE_TIP);
                         output.accept(ModItems.RELIC_ISKANDAR_CLOAK_FRAGMENT);
                         output.accept(ModItems.RELIC_OKITA_KATANA);
-                        output.accept(ModItems.SEA_BEAST_BONE);
                         output.accept(ModItems.ODA_MATCHLOCK_CATALYST);
                         output.accept(ModItems.BROKEN_BOWSTRING);
-                        output.accept(ModBlocks.AGE_OF_GODS_DIRT);
                         output.accept(ModItems.GEM_NECKLACE);
                         output.accept(ModItems.AVALON);
                     }).build());
@@ -343,6 +341,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.MEDUSA_SPAWN_EGG);
                         output.accept(ModItems.CURSED_ARM_HASSAN_SPAWN_EGG);
                         output.accept(ModItems.DRAGONFANG_SOLDIER_SPAWN_EGG);
+                        output.accept(ModItems.SEA_BEAST_SPAWN_EGG);
                         output.accept(ModItems.EMIYA_ARCHER_SPAWN_EGG);
                         output.accept(ModItems.ARTORIA_PENDRAGON_SPAWN_EGG);
                         output.accept(ModItems.ODA_NOBUNAGA_SPAWN_EGG);
@@ -372,6 +371,8 @@ public class ModCreativeModeTabs {
                     //添加创造栏物品
                     .displayItems((itemDisplayParameters, output) -> {
                         output.accept(ModItems.MAGIC_FRAGMENTS);
+                        output.accept(ModBlocks.AGE_OF_GODS_DIRT);
+                        output.accept(ModBlocks.SWORD_IN_STONE);
                         output.accept(ModItems.RELIC_HAJIQUAN_MANUAL);
                         output.accept(ModItems.GANRYU_MANUAL);
                         output.accept(ModItems.HOKUSHIN_MANUAL);
@@ -382,6 +383,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.DRAGON_FANG);
                         output.accept(ModItems.DRAGONS_REVERSE_SCALE);
                         output.accept(ModItems.EVIL_BONE);
+                        output.accept(ModItems.DIVINE_STEEL);
                         output.accept(ModItems.HOLY_GRAIL);
                         output.accept(ModItems.PHOENIX_FEATHER);
                         output.accept(ModItems.PROOF_OF_HERO);
@@ -418,6 +420,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.TEMPLE_STONE_SWORD_AXE);
                         output.accept(ModItems.EXCALIBUR);
                         output.accept(ModItems.EXCALIBUR2);
+                        output.accept(ModItems.BROKEN_EXCALIBUR);
                         output.accept(ModItems.BIZEN_NAGAMITSU);
                         output.accept(ModItems.GAE_BULG);
                         output.accept(ModItems.GAE_DEARG);

@@ -1,0 +1,42 @@
+{
+  "credit": "Type-Moon World",
+  "textures": {
+    "stone": "minecraft:block/stone",
+    "sword": "typemoonworld:item/excalibur2",
+    "particle": "minecraft:block/stone"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0], "to": [16, 8, 16],
+      "faces": {
+        "down": {"texture": "#stone"}, "up": {"texture": "#stone"},
+        "north": {"texture": "#stone"}, "south": {"texture": "#stone"},
+        "west": {"texture": "#stone"}, "east": {"texture": "#stone"}
+      }
+    },
+    {
+      "from": [7, 5, 7], "to": [9, 15, 9],
+      "faces": {
+        "north": {"texture": "#sword"}, "south": {"texture": "#sword"},
+        "west": {"texture": "#sword"}, "east": {"texture": "#sword"},
+        "up": {"texture": "#sword"}
+      }
+    },
+    {
+      "from": [4, 11, 6], "to": [12, 13, 10],
+      "faces": {
+        "north": {"texture": "#sword"}, "south": {"texture": "#sword"},
+        "west": {"texture": "#sword"}, "east": {"texture": "#sword"},
+        "up": {"texture": "#sword"}, "down": {"texture": "#sword"}
+      }
+    },
+    {
+      "from": [7, 13, 7], "to": [9, 16, 9],
+      "faces": {
+        "north": {"texture": "#sword"}, "south": {"texture": "#sword"},
+        "west": {"texture": "#sword"}, "east": {"texture": "#sword"},
+        "up": {"texture": "#sword"}
+      }
+    }
+  ]
+}

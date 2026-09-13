@@ -1905,6 +1905,10 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
 
    protected InteractionResult mobInteract(Player pPlayer, InteractionHand pHand) {
       ItemStack itemstack = pPlayer.getItemInHand(pHand);
+      if (!this.isClone && this.getTarget()==null && itemstack.is(net.minecraft.tags.ItemTags.FLOWERS) && itemstack.getCount()>=10) {
+         if (pPlayer instanceof ServerPlayer sp) net.xxxjk.TYPE_MOON_WORLD.survival.MerlinGiftService.offer(sp,itemstack);
+         return InteractionResult.sidedSuccess(this.level().isClientSide);
+      }
       if (itemstack.isEmpty()) {
          return super.mobInteract(pPlayer, pHand);
       } else if (this.isClone) {

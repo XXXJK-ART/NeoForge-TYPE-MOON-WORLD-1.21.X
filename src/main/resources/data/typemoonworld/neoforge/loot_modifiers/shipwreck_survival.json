@@ -1,0 +1,17 @@
+﻿{
+    "conditions":  [
+                       {
+                           "condition":  "minecraft:location_check",
+                           "predicate":  {
+                                             "location":  {
+                                                              "structures":  [
+                                                                                 "minecraft:shipwreck"
+                                                                             ]
+                                                          }
+                                         }
+                       }
+                   ],
+    "chance":  0.05,
+    "item":  "typemoonworld:relic_golden_fleece",
+    "type":  "typemoonworld:survival_reward"
+}

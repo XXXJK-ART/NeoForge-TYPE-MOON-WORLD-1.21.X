@@ -55,6 +55,11 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
       }
       Level world = entity.level();
       if (world.isLoaded(entity.blockPosition()) && entity instanceof ServerPlayer player) {
+         if (type != 0 || pressed != 0 || !player.isAlive() || !ServerPacketRateLimiter.allow(player,"mana_x",4)) return;
+         if (player.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.GEM_NECKLACE.get())) {
+            net.xxxjk.TYPE_MOON_WORLD.item.custom.GemNecklaceItem.transfer(player,player.getMainHandItem(),true);
+            return;
+         }
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (!vars.is_magus) {
             boolean hasModItem = false;
