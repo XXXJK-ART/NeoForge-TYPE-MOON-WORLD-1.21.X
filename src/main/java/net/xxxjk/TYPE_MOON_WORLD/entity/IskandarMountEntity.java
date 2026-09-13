@@ -67,6 +67,8 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private int combatMovementTargetId = -1;
    private int combatMovementStartTick;
    private int combatOrbitSign = 1;
+   /** Smoothed horizontal input velocity for player controlled mounts. */
+   protected Vec3 cardControlVelocity = Vec3.ZERO;
 
    protected IskandarMountEntity(EntityType<? extends IskandarMountEntity> type, Level level) {
       super(type, level);
@@ -159,11 +161,13 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
    private void tickCardOwnerMount(ServerLevel level, ServerPlayer owner) {
       TypeMoonWorldModVariables.PlayerVariables vars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!owner.isAlive() || !vars.servant_card_transformed || !ServantCardIskandarSkills.SERVANT_ID.equals(vars.servant_card_id)) {
+         this.cardControlVelocity = Vec3.ZERO;
          this.ejectPassengers();
          this.discard();
          return;
       }
       if (owner.getVehicle() != this) {
+         this.cardControlVelocity = Vec3.ZERO;
          if (this instanceof BucephalusEntity) {
             ServantCardIskandarSkills.storeAndDiscardBucephalus(owner, this, false);
          } else if (!this.hasPassenger(owner)) {
@@ -195,13 +199,25 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       // Server-side xxa is the player's left impulse, so invert the lateral vector.
       Vec3 desired = forward.scale(forwardInput).add(right.scale(-strafeInput));
       double speed = Math.max(0.0, getCombatSpeed() * 1.1);
+      Vec3 desiredVelocity = Vec3.ZERO;
       if (desired.lengthSqr() > 1.0E-4) {
          desired = desired.normalize();
          float yaw = (float)(Math.atan2(-desired.x, desired.z) * 180.0 / Math.PI);
          this.setYRot(yaw);
          this.setYBodyRot(yaw);
          this.setYHeadRot(yaw);
-         this.move(MoverType.SELF, desired.scale(speed));
+         desiredVelocity = desired.scale(speed);
+      }
+      // Blend toward the requested velocity so keyboard taps do not produce
+      // abrupt starts/stops. Keep this in a dedicated field because Entity's
+      // own delta movement is consumed by its tick before this method runs.
+      double blend = desiredVelocity.lengthSqr() > 1.0E-6 ? 0.38 : 0.24;
+      this.cardControlVelocity = this.cardControlVelocity.lerp(desiredVelocity, blend);
+      if (this.cardControlVelocity.lengthSqr() < 1.0E-5) {
+         this.cardControlVelocity = Vec3.ZERO;
+      }
+      if (this.cardControlVelocity.lengthSqr() > 1.0E-6) {
+         this.move(MoverType.SELF, this.cardControlVelocity);
       }
       this.setDeltaMovement(0.0, cardOwnerVerticalMotion(owner), 0.0);
       this.hasImpulse = true;

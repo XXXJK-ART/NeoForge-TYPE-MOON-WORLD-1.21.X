@@ -600,7 +600,11 @@ public final class ServantCardZhaoYunSkills {
             }
             double distance = data.getDouble(TAG_NP_INITIAL_DISTANCE);
             boolean opening = !data.getBoolean(TAG_NP_INITIAL_DONE);
-            Vec3 dir = opening ? initialChargeDirection(data)
+            // During the opening dash retain the initial direction when the
+            // rider is hands-off, but allow steering with WASD. This keeps
+            // Changbanpo's impact while avoiding an uncontrollable 50-block
+            // lock-on charge.
+            Vec3 dir = opening ? openingChargeDirection(player, data)
                : PlayerNoblePhantasmHelper.horizontalLook(player);
             double speed = (opening ? 1.0 : 0.65) * cardMovementSpeedRatio(player);
             double step = Math.min(speed, opening ? 50.0 - distance : speed);
@@ -778,6 +782,21 @@ public final class ServantCardZhaoYunSkills {
       return direction.lengthSqr() < 1.0E-4
          ? new Vec3(0.0, 0.0, 1.0)
          : direction.normalize();
+   }
+
+   private static Vec3 openingChargeDirection(ServerPlayer player, CompoundTag data) {
+      float forwardInput = player.zza;
+      float strafeInput = player.xxa;
+      if (Math.abs(forwardInput) < 1.0E-3F && Math.abs(strafeInput) < 1.0E-3F) {
+         return initialChargeDirection(data);
+      }
+      Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
+      if (forward.lengthSqr() < 1.0E-4) {
+         return initialChargeDirection(data);
+      }
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
+      return intent.lengthSqr() < 1.0E-4 ? initialChargeDirection(data) : intent.normalize();
    }
 
    private static double cardMovementSpeedRatio(ServerPlayer player) {

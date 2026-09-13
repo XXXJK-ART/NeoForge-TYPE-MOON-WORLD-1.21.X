@@ -33,14 +33,19 @@ public final class BucephalusEntity extends IskandarMountEntity {
       forward = forward.normalize();
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
+      Vec3 desiredVelocity = Vec3.ZERO;
       if (intent.lengthSqr() > 1.0E-4) {
          intent = intent.normalize();
          double speed = Math.max(0.0, this.getCombatSpeed() * (owner.isSprinting() ? 1.35 : 1.0));
-         this.move(MoverType.SELF, intent.scale(speed));
-         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
-      } else {
-         this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+         desiredVelocity = intent.scale(speed);
       }
+      double blend = desiredVelocity.lengthSqr() > 1.0E-6 ? 0.42 : 0.28;
+      this.cardControlVelocity = this.cardControlVelocity.lerp(desiredVelocity, blend);
+      if (this.cardControlVelocity.lengthSqr() < 1.0E-5) this.cardControlVelocity = Vec3.ZERO;
+      if (this.cardControlVelocity.lengthSqr() > 1.0E-6) {
+         this.move(MoverType.SELF, this.cardControlVelocity);
+      }
+      this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
       this.hasImpulse = true;
       this.fallDistance = 0.0F;
    }
