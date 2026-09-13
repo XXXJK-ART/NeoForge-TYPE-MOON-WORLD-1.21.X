@@ -605,7 +605,7 @@ public final class ServantCardZhaoYunSkills {
             // Changbanpo's impact while avoiding an uncontrollable 50-block
             // lock-on charge.
             Vec3 dir = opening ? openingChargeDirection(player, data)
-               : PlayerNoblePhantasmHelper.horizontalLook(player);
+               : freeRideDirection(player);
             double speed = (opening ? 1.0 : 0.65) * cardMovementSpeedRatio(player);
             double step = Math.min(speed, opening ? 50.0 - distance : speed);
             boolean moved = moveMountHorizontally(player, mount, dir, step);
@@ -797,6 +797,19 @@ public final class ServantCardZhaoYunSkills {
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
       return intent.lengthSqr() < 1.0E-4 ? initialChargeDirection(data) : intent.normalize();
+   }
+
+   /** Horizontal NP steering that combines look direction with rider input. */
+   private static Vec3 freeRideDirection(ServerPlayer player) {
+      float forwardInput = player.zza;
+      float strafeInput = player.xxa;
+      Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
+      if (Math.abs(forwardInput) < 1.0E-3F && Math.abs(strafeInput) < 1.0E-3F) {
+         return forward;
+      }
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      Vec3 intent = forward.scale(forwardInput).add(right.scale(-strafeInput));
+      return intent.lengthSqr() < 1.0E-4 ? forward : intent.normalize();
    }
 
    private static double cardMovementSpeedRatio(ServerPlayer player) {
