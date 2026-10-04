@@ -18,11 +18,8 @@ public final class OriasEvents {
     private OriasEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            OriasService.tickCharge(player);
-        }
+    public static void tick(ServerPlayer player) {
+        OriasService.tickCharge(player);
     }
 
     @SubscribeEvent

@@ -15,11 +15,8 @@ public final class DetectionEvents {
     private DetectionEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            DetectionService.tick(player);
-        }
+    public static void tick(ServerPlayer player) {
+        DetectionService.tick(player);
     }
 
     @SubscribeEvent

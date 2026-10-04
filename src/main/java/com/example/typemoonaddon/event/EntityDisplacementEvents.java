@@ -13,11 +13,8 @@ public final class EntityDisplacementEvents {
     private EntityDisplacementEvents() {
     }
 
-    @SubscribeEvent
-    public static void onTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            EntityDisplacementService.tick(player);
-        }
+    public static void tick(ServerPlayer player) {
+        EntityDisplacementService.tick(player);
     }
 
     @SubscribeEvent

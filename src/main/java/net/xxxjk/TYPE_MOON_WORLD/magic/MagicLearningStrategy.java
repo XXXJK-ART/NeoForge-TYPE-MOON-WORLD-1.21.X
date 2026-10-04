@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
-import com.example.typemoonaddon.TypeMoonAddon;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 
 /** Central rules for magic complexity and acquisition. Values are intentionally stable for saves. */
@@ -254,7 +254,7 @@ public final class MagicLearningStrategy {
       ResourceLocation parsed = ResourceLocation.tryParse(normalized);
       if (parsed == null) return normalized;
       String namespace = parsed.getNamespace();
-      if (net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID.equals(namespace) || TypeMoonAddon.MOD_ID.equals(namespace)) {
+      if (TYPE_MOON_WORLD.MOD_ID.equals(namespace)) {
          return parsed.getPath();
       }
       return normalized;

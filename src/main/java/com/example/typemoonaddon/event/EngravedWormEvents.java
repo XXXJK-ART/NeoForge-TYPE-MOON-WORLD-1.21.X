@@ -35,10 +35,7 @@ public final class EngravedWormEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            WormMagicIntegration.tickCollapse(player);
-        }
+    public static void tick(ServerPlayer player) {
+        WormMagicIntegration.tickCollapse(player);
     }
 }

@@ -16,11 +16,8 @@ public final class AndrephiusEvents {
     private AndrephiusEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            AndrephiusService.tickCharge(player);
-        }
+    public static void tick(ServerPlayer player) {
+        AndrephiusService.tickCharge(player);
     }
 
     @SubscribeEvent

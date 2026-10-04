@@ -1642,91 +1642,16 @@ public final class NpcMagicCastBridge {
          double maxHealth = Math.max(1.0, (double)npc.getMaxHealth());
          double ratio = npc.getHealth() / maxHealth;
          double threshold = behavior == null ? RETREAT_HEALTH_RATIO : behavior.retreatHealthRatio();
-         if (threat != null) {
-            if (threat.strongTarget()) {
-               threshold += 0.07;
-            }
-
-            if (threat.enemyCount() >= 3) {
-               threshold += 0.08;
-            }
-         }
-
-         threshold = Mth.clamp(threshold, 0.16, 0.58);
-         return ratio <= threshold;
+         return NpcCombatDecision.shouldRetreat(ratio, threshold,
+            threat != null && threat.strongTarget(), threat == null ? 0 : threat.enemyCount());
       } else {
          return false;
       }
    }
 
-   private static NpcMagicCastBridge.ThreatProfile analyzeThreat(MysticMagicianEntity npc, LivingEntity target) {
-      if (npc != null && target != null && target.isAlive()) {
-         int enemyCount = countThreatEnemies(npc, target);
-         double selfPower = estimateEntityPower(npc);
-         double targetPower = estimateEntityPower(target);
-         boolean strongTarget = targetPower >= selfPower * 1.18;
-         double healthRatio = npc.getHealth() / Math.max(1.0, (double)npc.getMaxHealth());
-         boolean outnumbered = enemyCount >= 3;
-         boolean lowWhilePressured = enemyCount >= 2 && healthRatio <= 0.65;
-         return new NpcMagicCastBridge.ThreatProfile(enemyCount, strongTarget, lowWhilePressured);
-      } else {
-         return NpcMagicCastBridge.ThreatProfile.NONE;
-      }
-   }
-
    private static NpcMagicCastBridge.ThreatProfile getCachedThreat(MysticMagicianEntity npc, LivingEntity target, long gameTime) {
-      if (npc == null || target == null || !target.isAlive()) {
-         return NpcMagicCastBridge.ThreatProfile.NONE;
-      }
-      CompoundTag data = npc.getPersistentData();
-      String targetId = target.getUUID().toString();
-      if (data.contains(TAG_THREAT_CACHE_TICK)
-         && gameTime - data.getLong(TAG_THREAT_CACHE_TICK) < 5L
-         && targetId.equals(data.getString(TAG_THREAT_CACHE_TARGET))) {
-         return new NpcMagicCastBridge.ThreatProfile(
-            data.getInt(TAG_THREAT_CACHE_COUNT),
-            data.getBoolean(TAG_THREAT_CACHE_STRONG),
-            data.getBoolean(TAG_THREAT_CACHE_LOW)
-         );
-      }
-      NpcMagicCastBridge.ThreatProfile profile = analyzeThreat(npc, target);
-      data.putLong(TAG_THREAT_CACHE_TICK, gameTime);
-      data.putString(TAG_THREAT_CACHE_TARGET, targetId);
-      data.putInt(TAG_THREAT_CACHE_COUNT, profile.enemyCount());
-      data.putBoolean(TAG_THREAT_CACHE_STRONG, profile.strongTarget());
-      data.putBoolean(TAG_THREAT_CACHE_LOW, profile.lowWhilePressured());
-      return profile;
-   }
-
-   private static int countThreatEnemies(MysticMagicianEntity npc, LivingEntity currentTarget) {
-      int count = 0;
-      Set<UUID> seen = new HashSet<>();
-      if (currentTarget != null && currentTarget.isAlive()) {
-         UUID id = currentTarget.getUUID();
-         seen.add(id);
-         count++;
-      }
-
-      for (Mob mob : npc.level().getEntitiesOfClass(Mob.class, npc.getBoundingBox().inflate(20.0), m -> m != npc && m.isAlive() && m.getTarget() == npc)) {
-         UUID id = mob.getUUID();
-         if (seen.add(id)) {
-            count++;
-         }
-      }
-
-      return count;
-   }
-
-   private static double estimateEntityPower(LivingEntity entity) {
-      if (entity == null) {
-         return 1.0;
-      } else {
-         double maxHealth = Math.max(1.0, (double)entity.getMaxHealth());
-         double attack = readAttributeValue(entity, Attributes.ATTACK_DAMAGE, 1.0);
-         double armor = readAttributeValue(entity, Attributes.ARMOR, 0.0);
-         double toughness = readAttributeValue(entity, Attributes.ARMOR_TOUGHNESS, 0.0);
-         return maxHealth * 0.8 + attack * 6.0 + armor * 2.0 + toughness * 2.5;
-      }
+      NpcThreatAnalyzer.Profile profile = NpcThreatAnalyzer.cached(npc, target, gameTime);
+      return new NpcMagicCastBridge.ThreatProfile(profile.enemyCount(), profile.strongTarget(), profile.lowWhilePressured());
    }
 
    private static double readAttributeValue(LivingEntity entity, Holder<Attribute> attribute, double fallback) {

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -29,15 +30,22 @@ public final class MagicKnowledgeCompatibilityEvents {
     @SubscribeEvent
     public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            normalizeAndSync(player);
+            tick(player);
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 10 == 0) {
-            normalizeAndSync(player);
+    /** Called by the shared server-player tick coordinator. */
+    public static void tick(ServerPlayer player) {
+        if (player == null) {
+            return;
         }
+        // Compatibility normalization is a data migration, not a simulation tick.
+        CompoundTag data = player.getPersistentData();
+        if (data.getInt("TypeMoonMagicKnowledgeMigration") >= 1) {
+            return;
+        }
+        normalizeAndSync(player);
+        data.putInt("TypeMoonMagicKnowledgeMigration", 1);
     }
 
     private static void normalizeAndSync(ServerPlayer player) {

@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.EnumSet;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -43,6 +44,12 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimen
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.MagicState;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.MasterState;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.PassiveState;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.ProjectionState;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.RuneState;
+import net.xxxjk.TYPE_MOON_WORLD.network.state.ServantCardState;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries.Keys;
@@ -994,6 +1001,8 @@ public class TypeMoonWorldModVariables {
    }
 
    public static class PlayerVariables implements INBTSerializable<CompoundTag> {
+      /** Logical state domains used for incremental synchronization and ownership boundaries. */
+      public enum StateDomain { MAGIC, SERVANT_CARD, MASTER, PROJECTION, RUNE, PASSIVE }
       public static final String TRUSTED_STRUCTURE_SOURCE = "typemoonworld:analysis_v2";
       public static final int MAX_BLOCKS_PER_STRUCTURE = 8192;
       public static final int MAX_TOTAL_STRUCTURE_BLOCKS = 10000;
@@ -1011,7 +1020,27 @@ public class TypeMoonWorldModVariables {
       private transient int fullSyncSnapshotHash = 0;
       private transient boolean manaSyncSnapshotSent = false;
       private transient int manaSyncSnapshotHash = 0;
+      private transient EnumSet<StateDomain> dirtyDomains = EnumSet.allOf(StateDomain.class);
       private transient boolean magicSystemInitialized = false;
+
+      public MagicState magicState() { return new MagicState(this); }
+      public ServantCardState servantCardState() { return new ServantCardState(this); }
+      public MasterState masterState() { return new MasterState(this); }
+      public ProjectionState projectionState() { return new ProjectionState(this); }
+      public RuneState runeState() { return new RuneState(this); }
+      public PassiveState passiveState() { return new PassiveState(this); }
+
+      public void markDirty(StateDomain domain) {
+         if (domain != null) dirtyDomains.add(domain);
+      }
+
+      public boolean isDirty(StateDomain domain) {
+         return domain != null && dirtyDomains.contains(domain);
+      }
+
+      public void clearDirty() {
+         dirtyDomains.clear();
+      }
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
       public double player_mana_egenerated_every_moment = 0.0;
@@ -3254,6 +3283,7 @@ public class TypeMoonWorldModVariables {
                this.manaSyncSnapshotSent = true;
                this.manaSyncSnapshotHash = manaSnapshot.hashCode();
             }
+            this.clearDirty();
             PerformanceMonitor.recordPlayerFullSync(System.nanoTime() - syncStarted, snapshotChanged);
          }
       }
@@ -3287,6 +3317,7 @@ public class TypeMoonWorldModVariables {
          this.fullSyncSnapshotHash = 0;
          this.manaSyncSnapshotSent = false;
          this.manaSyncSnapshotHash = 0;
+         this.dirtyDomains = EnumSet.allOf(StateDomain.class);
       }
 
       public void syncServantCardRuntime(Entity entity) {

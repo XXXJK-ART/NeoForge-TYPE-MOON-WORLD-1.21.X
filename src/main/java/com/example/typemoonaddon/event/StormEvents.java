@@ -15,11 +15,8 @@ public final class StormEvents {
     private StormEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            StormService.tick(player);
-        }
+    public static void tick(ServerPlayer player) {
+        StormService.tick(player);
     }
 
     @SubscribeEvent

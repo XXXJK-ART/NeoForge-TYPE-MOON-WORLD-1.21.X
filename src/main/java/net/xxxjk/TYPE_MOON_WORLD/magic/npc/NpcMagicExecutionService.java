@@ -1,13 +1,13 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
 import com.example.typemoonaddon.magic.EntityDisplacementService;
-import com.example.typemoonaddon.TypeMoonAddon;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.TYPE_MOON_WORLD.entity.LeffLaynorFlaurosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
@@ -110,7 +110,7 @@ public final class NpcMagicExecutionService {
    private static net.xxxjk.typemoonworld.api.MagicDefinitionData definitionFor(String magicId) {
       var definition = MagicDefinitionRegistry.get(magicId);
       if (definition == null && magicId != null && magicId.indexOf(':') < 0) {
-         definition = MagicDefinitionRegistry.get(TypeMoonAddon.MOD_ID + ":" + magicId);
+         definition = MagicDefinitionRegistry.get(TYPE_MOON_WORLD.MOD_ID + ":" + magicId);
       }
       return definition;
    }

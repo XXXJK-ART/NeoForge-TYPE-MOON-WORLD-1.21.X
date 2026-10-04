@@ -158,13 +158,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
    modid = "typemoonworld"
 )
 public class CommonEvents {
-   @SubscribeEvent
-   public static void onLivingTick(PlayerTickEvent.Post event) {
-      LivingEntity e = event.getEntity();
-      if (e.level().isClientSide || !(e instanceof Player p) || e.tickCount % 40 != 0) return;
+   public static void tickGoldenFleece(Player p) {
+      if (p == null || p.level().isClientSide || p.tickCount % 40 != 0) return;
       boolean fleece = false;
       for (ItemStack s : p.getInventory().items) if (s.is(ModItems.RELIC_GOLDEN_FLEECE.get())) { fleece = true; break; }
-      if (fleece || p.getOffhandItem().is(ModItems.RELIC_GOLDEN_FLEECE.get())) e.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 1, true, false));
+      if (fleece || p.getOffhandItem().is(ModItems.RELIC_GOLDEN_FLEECE.get())) p.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 60, 1, true, false));
    }
    private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
    private static final String GOD_HAND_HIGH_DAMAGE_REVIVE_UNTIL_TAG = "GodHandHighDamageReviveUntil";
@@ -244,29 +242,44 @@ public class CommonEvents {
          }
          // Pass servantId from spawn eggs after entity creation.
          if (event.getEntity() instanceof Monster monster) {
-            try {
-               addTypeMoonTargetGoals(monster);
-            } catch (Exception var3) {
+            CompoundTag entityData = monster.getPersistentData();
+            if (!entityData.getBoolean("TypeMoonTargetGoalsInitialized")) {
+               try {
+                  addTypeMoonTargetGoals(monster);
+                  entityData.putBoolean("TypeMoonTargetGoalsInitialized", true);
+               } catch (Exception var3) {
+                  TYPE_MOON_WORLD.LOGGER.warn("Failed to add Type Moon target goals to {}", monster.getType(), var3);
+               }
             }
          }
          if (event.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity mage) {
-            try {
-               mage.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(mage,
-                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
-                  e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
-                     && s.getDefinition() != null
-                     && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
-            } catch (Exception ignored) {
+            CompoundTag entityData = mage.getPersistentData();
+            if (!entityData.getBoolean("TypeMoonMageBeastGoalInitialized")) {
+               try {
+                  mage.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(mage,
+                     net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
+                     e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
+                        && s.getDefinition() != null
+                        && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
+                  entityData.putBoolean("TypeMoonMageBeastGoalInitialized", true);
+               } catch (Exception exception) {
+                  TYPE_MOON_WORLD.LOGGER.warn("Failed to add beast target goal to Mystic Magician {}", mage.getUUID(), exception);
+               }
             }
          }
          if (event.getEntity() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity shiki) {
-            try {
-               shiki.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(shiki,
-                  net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
-                  e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
-                     && s.getDefinition() != null
-                     && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
-            } catch (Exception ignored) {
+            CompoundTag entityData = shiki.getPersistentData();
+            if (!entityData.getBoolean("TypeMoonShikiBeastGoalInitialized")) {
+               try {
+                  shiki.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(shiki,
+                     net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity.class, true,
+                     e -> e instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity s
+                        && s.getDefinition() != null
+                        && s.getDefinition().faction() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction.BEAST));
+                  entityData.putBoolean("TypeMoonShikiBeastGoalInitialized", true);
+               } catch (Exception exception) {
+                  TYPE_MOON_WORLD.LOGGER.warn("Failed to add beast target goal to Shiki {}", shiki.getUUID(), exception);
+               }
             }
          }
       }
@@ -355,10 +368,11 @@ public class CommonEvents {
       }
    }
 
-   @SubscribeEvent
-   public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
-      if (!event.getEntity().level().isClientSide) {
-         Player player = event.getEntity();
+   /** Called by {@link ServerPlayerTickCoordinator}; kept here so combat/event code remains local. */
+   public static void tickPlayer(Player player) {
+      if (!player.level().isClientSide) {
+         TypeMoonWorldModVariables.PlayerVariables tickVars = player instanceof ServerPlayer serverPlayer
+            ? serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES) : null;
          // Hakuryu accepts two passengers, so the vanilla dismount path can
          // occasionally leave the master attached when Zhao Yun occupies the
          // first seat. Handle the master's Shift request on the server as a
@@ -376,7 +390,7 @@ public class CommonEvents {
             player.stopUsingItem();
          }
          if (player instanceof ServerPlayer analysisPlayer) {
-            var analysisVars = analysisPlayer.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            var analysisVars = tickVars;
             boolean activeMovementLock = net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.isActive(analysisVars)
                && net.xxxjk.TYPE_MOON_WORLD.passive.AdvancedPassiveService.effectiveMagicAnalysisProficiency(analysisVars) < 75.0;
             if (activeMovementLock || analysisVars.analysis_lock_ticks > 0) {
@@ -386,12 +400,16 @@ public class CommonEvents {
             }
          }
          if (player instanceof ServerPlayer serverPlayer) {
-            TalentService.tick(serverPlayer);
-            PassiveService.tick(serverPlayer);
-
-            net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
-            net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
-            com.example.typemoonaddon.magic.SummoningMagicIntegration.tick(serverPlayer);
+            TypeMoonWorldModVariables.PlayerVariables vars = tickVars;
+            if (serverPlayer.tickCount % 20 == 0) {
+               TalentService.tick(serverPlayer);
+               PassiveService.tick(serverPlayer);
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
+            }
+            if (net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.isActive(vars)
+               || vars.analysis_lock_ticks > 0) {
+               net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.tick(serverPlayer);
+            }
             MuramasaDissolutionService.tick(serverPlayer);
             RubyStaffItem.tickActiveShield(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem.tick(serverPlayer);
@@ -401,17 +419,11 @@ public class CommonEvents {
             MagicGander.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.tick(serverPlayer);
             if (serverPlayer.tickCount % 20 == 0) {
-               TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
-                  TypeMoonWorldModVariables.PLAYER_VARIABLES
-               );
                TypeMoonAdvancementHelper.syncPassive(serverPlayer, vars);
             }
-            TypeMoonWorldModVariables.PlayerVariables cardVars = (TypeMoonWorldModVariables.PlayerVariables)serverPlayer.getData(
-               TypeMoonWorldModVariables.PLAYER_VARIABLES
-            );
-            ServantCardTransformManager.tick(serverPlayer, cardVars);
-            MasterStateManager.tick(serverPlayer, cardVars);
-            MasterServantLinkService.tick(serverPlayer, cardVars);
+            ServantCardTransformManager.tick(serverPlayer, vars);
+            MasterStateManager.tick(serverPlayer, vars);
+            MasterServantLinkService.tick(serverPlayer, vars);
             net.xxxjk.TYPE_MOON_WORLD.servant.card.MedeaSpecialContractService.tick(serverPlayer);
          }
 
@@ -422,7 +434,7 @@ public class CommonEvents {
                   && le.level().getEntity(le.getId()) instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant
                   && servant.isExemptFromStoneAxeDebuff();
                if (!skipDebuff && player instanceof ServerPlayer serverPlayer) {
-                  TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                  TypeMoonWorldModVariables.PlayerVariables vars = tickVars;
                   skipDebuff = vars.servant_card_transformed && "heracles".equals(vars.servant_card_id);
                }
                if (!skipDebuff) {

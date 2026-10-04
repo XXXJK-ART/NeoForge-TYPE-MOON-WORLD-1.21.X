@@ -159,8 +159,9 @@ import net.xxxjk.TYPE_MOON_WORLD.survival.LakeRitualService;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
-import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.network.AddonNetwork;
+import java.util.List;
+import java.util.ServiceLoader;
+import net.xxxjk.typemoonworld.api.AddonEntrypoint;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -175,8 +176,12 @@ public class TYPE_MOON_WORLD {
    private static final Map<Long, Queue<Runnable>> scheduledWork = new ConcurrentHashMap<>();
    private static final int MAX_SCHEDULED_WORK_PER_TICK = 128;
    private static volatile long serverTickCounter = 0L;
+   private final List<AddonEntrypoint> addonEntrypoints;
 
    public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
+      this.addonEntrypoints = ServiceLoader.load(AddonEntrypoint.class, TYPE_MOON_WORLD.class.getClassLoader()).stream()
+         .map(provider -> provider.get())
+         .toList();
       TypeMoonWorldApi.install(new InternalApiProvider());
       modEventBus.addListener(this::registerNetworking);
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
@@ -202,7 +207,9 @@ public class TYPE_MOON_WORLD {
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
-      new TypeMoonAddon(modEventBus, modContainer);
+      // Addon implementations are discovered through the stable API boundary;
+      // the core no longer constructs a concrete addon class directly.
+      this.addonEntrypoints.forEach(entrypoint -> entrypoint.initialize(modEventBus, modContainer));
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
@@ -271,8 +278,8 @@ public class TYPE_MOON_WORLD {
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld");
-      // Integrated addon payloads must share this registrar and protocol channel.
-      AddonNetwork.registerPayloads(registrar);
+      // Addon payloads are registered through the stable API boundary.
+      this.addonEntrypoints.forEach(entrypoint -> entrypoint.registerPayloads(registrar));
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);

@@ -36,9 +36,8 @@ public final class ImaginaryDisplacementEvents {
     private ImaginaryDisplacementEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || !player.isAlive()) {
+    public static void tick(ServerPlayer player) {
+        if (player == null || !player.isAlive()) {
             return;
         }
 

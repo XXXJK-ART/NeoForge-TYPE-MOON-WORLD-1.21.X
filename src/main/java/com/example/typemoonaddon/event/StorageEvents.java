@@ -15,11 +15,8 @@ public final class StorageEvents {
     private StorageEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            StorageService.tick(player);
-        }
+    public static void tick(ServerPlayer player) {
+        StorageService.tick(player);
     }
 
     @SubscribeEvent

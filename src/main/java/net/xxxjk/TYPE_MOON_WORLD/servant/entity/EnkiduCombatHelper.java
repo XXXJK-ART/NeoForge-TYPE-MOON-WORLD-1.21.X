@@ -9,6 +9,7 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -2408,20 +2409,37 @@ public final class EnkiduCombatHelper {
       double radius = ENUMA_GROUND_EXPLOSION_RADIUS;
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_ground_impact", impact, 192.0);
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_aftermath", impact, 192.0);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 14, 1.2, 0.8, 1.2, 0.0);
-      level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 1.2, impact.z, 76, radius * 0.34, radius * 0.22, radius * 0.34, 0.045);
-      level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 720, radius * 0.55, radius * 0.5, radius * 0.55, 0.34);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.35, impact.z, 420, radius * 0.5, radius * 0.34, radius * 0.5, 0.24);
-      level.sendParticles(ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, 380, radius * 0.48, radius * 0.42, radius * 0.48, 0.28);
-      level.sendParticles(ParticleTypes.CLOUD, impact.x, impact.y + 0.05, impact.z, 340, radius * 0.58, radius * 0.26, radius * 0.58, 0.18);
-      level.sendParticles(ParticleTypes.LARGE_SMOKE, impact.x, impact.y + 0.2, impact.z, 220, radius * 0.52, radius * 0.34, radius * 0.52, 0.12);
-      level.sendParticles(ParticleTypes.GUST, impact.x, impact.y + 0.1, impact.z, 180, radius * 0.62, 0.18, radius * 0.62, 0.16);
+      sendBudgetedParticles(level, ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 14, 1.2, 0.8, 1.2, 0.0);
+      sendBudgetedParticles(level, ParticleTypes.EXPLOSION, impact.x, impact.y + 1.2, impact.z, 76, radius * 0.34, radius * 0.22, radius * 0.34, 0.045);
+      sendBudgetedParticles(level, ParticleTypes.FLASH, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
+      sendBudgetedParticles(level, ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 720, radius * 0.55, radius * 0.5, radius * 0.55, 0.34);
+      sendBudgetedParticles(level, ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.35, impact.z, 420, radius * 0.5, radius * 0.34, radius * 0.5, 0.24);
+      sendBudgetedParticles(level, ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, 380, radius * 0.48, radius * 0.42, radius * 0.48, 0.28);
+      sendBudgetedParticles(level, ParticleTypes.CLOUD, impact.x, impact.y + 0.05, impact.z, 340, radius * 0.58, radius * 0.26, radius * 0.58, 0.18);
+      sendBudgetedParticles(level, ParticleTypes.LARGE_SMOKE, impact.x, impact.y + 0.2, impact.z, 220, radius * 0.52, radius * 0.34, radius * 0.52, 0.12);
+      sendBudgetedParticles(level, ParticleTypes.GUST, impact.x, impact.y + 0.1, impact.z, 180, radius * 0.62, 0.18, radius * 0.62, 0.16);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.5F, 0.82F);
       applyEnumaAreaDamage(entity, level, impact, radius,
          (float)ServantNoblePhantasmResourceService.scale(entity, 500.0F), directTarget);
       breakEnumaImpactTerrainInWaves(level, impact, radius);
       EnumaChainService.bindImpactTarget(entity, directTarget);
+   }
+
+   /** Distance-aware particle budget for the large Enuma ground impact. */
+   private static void sendBudgetedParticles(ServerLevel level, ParticleOptions type,
+                                             double x, double y, double z, int requested,
+                                             double dx, double dy, double dz, double speed) {
+      double nearestSqr = Double.POSITIVE_INFINITY;
+      for (net.minecraft.server.level.ServerPlayer player : level.players()) {
+         nearestSqr = Math.min(nearestSqr, player.distanceToSqr(x, y, z));
+      }
+      if (!Double.isFinite(nearestSqr) || nearestSqr > 128.0D * 128.0D) {
+         return;
+      }
+      double distance = Math.sqrt(nearestSqr);
+      double distanceScale = Mth.clamp(1.15D - distance / 160.0D, 0.2D, 1.0D);
+      int count = Math.min(180, Math.max(1, (int)Math.ceil(requested * distanceScale)));
+      level.sendParticles(type, x, y, z, count, dx, dy, dz, speed);
    }
 
    private static void applyEnumaAreaDamage(EnkiduEntity entity, ServerLevel level, Vec3 impact, double radius, float damage, LivingEntity directTarget) {

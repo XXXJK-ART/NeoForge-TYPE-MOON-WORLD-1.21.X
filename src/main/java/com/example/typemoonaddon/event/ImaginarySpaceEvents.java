@@ -38,11 +38,8 @@ public final class ImaginarySpaceEvents {
         ImaginarySpaceService.tickServer(event.getServer());
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            ImaginarySpaceService.tickPlayer(player);
-        }
+    public static void tick(ServerPlayer player) {
+        ImaginarySpaceService.tickPlayer(player);
     }
 
     @SubscribeEvent

@@ -29,13 +29,20 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
+import com.example.typemoonaddon.event.AddonPlayerTickServices;
+import net.xxxjk.typemoonworld.api.AddonEntrypoint;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-public final class TypeMoonAddon {
+public final class TypeMoonAddon implements AddonEntrypoint {
     /** Compatibility namespace for extensions retained by the core mod. */
     public static final String MOD_ID = "typemoonworld";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    public TypeMoonAddon(IEventBus modEventBus, ModContainer modContainer) {
+    public TypeMoonAddon() {
+    }
+
+    @Override
+    public void initialize(IEventBus modEventBus, ModContainer modContainer) {
         AddonBlocks.register(modEventBus);
         AddonBlockEntities.register(modEventBus);
         AddonItems.register(modEventBus);
@@ -54,7 +61,13 @@ public final class TypeMoonAddon {
         modEventBus.addListener(AddonEntities::registerSpawnPlacements);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreativeTabContents);
+        AddonPlayerTickServices.register();
         LOGGER.info("Integrated Type Moon addon systems initialized");
+    }
+
+    @Override
+    public void registerPayloads(PayloadRegistrar registrar) {
+        com.example.typemoonaddon.network.AddonNetwork.registerPayloads(registrar);
     }
 
     private void addCreativeTabContents(BuildCreativeModeTabContentsEvent event) {
