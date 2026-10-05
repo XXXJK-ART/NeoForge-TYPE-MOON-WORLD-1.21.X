@@ -483,7 +483,10 @@ public class TypeMoonWorldModKeyMappings {
                      && vars.current_magic_index >= 0
                      && vars.current_magic_index < vars.selected_magics.size()) {
                      String currentMagic = vars.selected_magics.get(vars.current_magic_index);
-                     if (vars.isCurrentSelectionFromCrest(currentMagic)) {
+                     if ("wraith_servitude".equals(currentMagic) || "evil_spirit_summoning".equals(currentMagic)) {
+                        PacketDistributor.sendToServer(new MagicModeSwitchMessage(13, -1), new CustomPacketPayload[0]);
+                        isModeSwitchDown = true;
+                     } else if (vars.isCurrentSelectionFromCrest(currentMagic)) {
                         player.displayClientMessage(Component.translatable("message.typemoonworld.crest.preset_runtime_locked"), true);
                      } else if ("sword_barrel_full_open".equals(currentMagic)) {
                         if (!suppressScreens && Minecraft.getInstance().screen == null) {
@@ -766,7 +769,7 @@ public class TypeMoonWorldModKeyMappings {
                if (fireDown && !machineGunCastKeyDown) {
                   machineGunCastPressStartMs = now;
                   if (vars.is_magus && EntityUtils.hasAnyEmptyHand(player)) {
-                     boolean likelyStopping = machineGunPoseLatched || vars.magic_cooldown > 0.0;
+                     boolean likelyStopping = machineGunPoseLatched || vars.magicState().cooldown() > 0.0;
                      machineGunPoseLatched = !likelyStopping;
                      machineGunPoseWarmupTicks = machineGunPoseLatched ? 30 : 0;
                      machineGunPoseNoCooldownTicks = 0;
@@ -1109,7 +1112,7 @@ public class TypeMoonWorldModKeyMappings {
             if (machineGunPoseWarmupTicks > 0) {
                machineGunPoseWarmupTicks--;
                machineGunPoseNoCooldownTicks = 0;
-            } else if (vars.magic_cooldown > 0.0) {
+            } else if (vars.magicState().cooldown() > 0.0) {
                machineGunPoseNoCooldownTicks = 0;
             } else {
                machineGunPoseNoCooldownTicks++;

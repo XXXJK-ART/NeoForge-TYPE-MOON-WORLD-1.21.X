@@ -82,12 +82,12 @@ public record Lose_health_regain_mana_Message(int eventType, int pressed) implem
 
             vars.is_magus = true;
             Random random = new Random();
-            vars.player_max_mana = Math.round((100.0 + random.nextDouble() * 900.0) * 10.0) / 10.0;
-            vars.player_mana = vars.player_max_mana;
+            vars.magicState().setMaxMana(Math.round((100.0 + random.nextDouble() * 900.0) * 10.0) / 10.0);
+            vars.magicState().setMana(vars.magicState().maxMana());
             double regen = 1.0 + random.nextDouble() * 9.0;
-            vars.player_mana_egenerated_every_moment = Math.round(regen * 10.0) / 10.0;
+            vars.magicState().setManaRegen(Math.round(regen * 10.0) / 10.0);
             double restore = 1.0 + random.nextDouble() * 9.0;
-            vars.player_restore_magic_moment = Math.round(restore * 10.0) / 10.0;
+            vars.magicState().setRestoreMagicMoment(Math.round(restore * 10.0) / 10.0);
             vars.player_magic_attributes_earth = false;
             vars.player_magic_attributes_water = false;
             vars.player_magic_attributes_fire = false;

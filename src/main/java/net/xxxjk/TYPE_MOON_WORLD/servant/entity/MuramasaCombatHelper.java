@@ -750,8 +750,8 @@ public final class MuramasaCombatHelper {
          ServerPlayer master = entity.getEntityMaster();
          if (remaining > 0.0 && master != null) {
             TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double masterCost = Math.min(vars.player_mana, remaining);
-            vars.player_mana -= masterCost;
+            double masterCost = Math.min(vars.magicState().mana(), remaining);
+            vars.magicState().tryConsume(masterCost);
             vars.syncMana(master);
             remaining -= masterCost;
          }

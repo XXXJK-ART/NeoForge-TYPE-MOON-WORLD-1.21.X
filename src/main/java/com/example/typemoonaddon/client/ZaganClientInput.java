@@ -37,7 +37,7 @@ public final class ZaganClientInput {
                 && selected
                 && vars.is_magus
                 && vars.is_magic_circuit_open
-                && vars.magic_cooldown <= 0.0D
+                && vars.magicState().cooldown() <= 0.0D
                 && player.isAlive()
                 && !player.isSpectator();
         boolean rawCastDown = TypeMoonWorldModKeyMappings.CAST_MAGIC.isDown();

@@ -543,11 +543,11 @@ public final class ServantCardPaleRiderSkills {
       long now = level.getGameTime();
       if (now - player.getPersistentData().getLong(LAST_CALAMITY_TICK_TAG) < 20L) return;
       player.getPersistentData().putLong(LAST_CALAMITY_TICK_TAG, now);
-      if (vars.servant_card_mana < 10.0) {
+      if (!vars.servantCardState().hasMana(10.0)) {
          toggleCalamity(player);
          return;
       }
-      vars.servant_card_mana -= 10.0;
+      vars.servantCardState().setMana(vars.servantCardState().mana() - 10.0);
       List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, domainAnchor.getBoundingBox().inflate(25.0),
          target -> target != player && target != domainAnchor && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));

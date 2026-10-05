@@ -12,6 +12,6 @@ public final class PassiveState {
    public Map<String, PassiveRank> ranks() { return vars.passive_ranks; }
    public int bodyStrength() { return vars.body_strength; }
    public int bodySpeed() { return vars.body_speed; }
-   public void setBodyStrength(int value) { vars.body_strength = Math.max(0, value); vars.markDirty(TypeMoonWorldModVariables.StateDomain.PASSIVE); }
-   public void setBodySpeed(int value) { vars.body_speed = Math.max(0, value); vars.markDirty(TypeMoonWorldModVariables.StateDomain.PASSIVE); }
+   public void setBodyStrength(int value) { vars.body_strength = Math.max(0, value); vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.PASSIVE); }
+   public void setBodySpeed(int value) { vars.body_speed = Math.max(0, value); vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.PASSIVE); }
 }

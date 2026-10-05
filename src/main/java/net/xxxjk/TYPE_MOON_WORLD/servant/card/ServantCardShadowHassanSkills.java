@@ -319,9 +319,9 @@ public final class ServantCardShadowHassanSkills {
    }
 
    private static void restoreMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
-      double before = vars.servant_card_mana;
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + amount);
-      if (vars.servant_card_mana != before) vars.syncMana(player);
+      double before = vars.servantCardState().mana();
+      vars.servantCardState().addMana(amount);
+      if (vars.servantCardState().mana() != before) vars.syncMana(player);
    }
 
    @Nullable

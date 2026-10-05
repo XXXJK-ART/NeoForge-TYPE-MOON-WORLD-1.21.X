@@ -14,7 +14,7 @@ public class ToggleMagicCircuit {
          if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
             vars.is_magic_circuit_open = false;
             vars.magic_circuit_open_timer = 0.0;
-            vars.player_mana = 0.0;
+            vars.magicState().setMana(0.0);
             vars.syncMana(entity);
             if (!player.level().isClientSide()) {
                player.displayClientMessage(Component.translatable("message.typemoonworld.origin_bullet.sealed"), true);

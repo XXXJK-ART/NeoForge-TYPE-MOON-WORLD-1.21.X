@@ -97,10 +97,10 @@ public final class MasterCardProfile {
 
       vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.is_magus = true;
-      vars.player_max_mana = profile.maxMana();
-      vars.player_mana = profile.maxMana();
-      vars.player_mana_egenerated_every_moment = profile.regenAmount();
-      vars.player_restore_magic_moment = profile.regenIntervalTicks();
+      vars.magicState().setMaxMana(profile.maxMana());
+      vars.magicState().setMana(profile.maxMana());
+      vars.magicState().setManaRegen(profile.regenAmount());
+      vars.magicState().setRestoreMagicMoment(profile.regenIntervalTicks());
       profile.applyMagic(vars);
       if (shouldGrantMasterMagecraft(profile.id())) {
          grantCommonMasterMagecraft(vars, profile.id());
@@ -383,9 +383,9 @@ public final class MasterCardProfile {
       vars.current_magic_index = 0;
       vars.active_wheel_index = 0;
       vars.clearAllWheelSlots();
-      vars.magic_cooldown = 0.0;
+      vars.magicState().setCooldown(0.0);
       vars.analysis_lock_ticks = 0;
-      vars.magic_analysis_active = false;
+      vars.magicState().setAnalysisActive(false);
       vars.crest_entries.clear();
       vars.crest_practice_count.clear();
       vars.mysticEyesInventory.setStackInSlot(0, ItemStack.EMPTY);
@@ -595,7 +595,6 @@ public final class MasterCardProfile {
 
    private static void learnJewelSuite(TypeMoonWorldModVariables.PlayerVariables vars, double proficiency) {
       learn(vars, "jewel_magic_shoot");
-      learn(vars, "jewel_random_shoot");
       learn(vars, "jewel_magic_release");
       vars.proficiency_jewel_magic_shoot = Math.max(vars.proficiency_jewel_magic_shoot, proficiency);
       vars.proficiency_jewel_magic_release = Math.max(vars.proficiency_jewel_magic_release, proficiency);

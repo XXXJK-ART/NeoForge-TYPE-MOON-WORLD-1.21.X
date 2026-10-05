@@ -88,7 +88,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private static final int PRESET_DIALOG_MAX_HEIGHT_PROJECTION = 300;
    private static final int PRESET_DIALOG_OPTION_HEIGHT = 18;
    private static final Set<String> CREST_ALLOWED_JEWEL_MAGIC_IDS = Set.of(
-      "jewel_random_shoot", "jewel_machine_gun", "jewel_magic_shoot", "jewel_magic_release"
+      "jewel_machine_gun", "jewel_magic_shoot", "jewel_magic_release"
    );
    private final Level world;
    private final int x;
@@ -161,7 +161,6 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private void initMagicCatalog() {
       this.addMagic("jewel_magic_shoot", "key.typemoonworld.magic.jewel_shoot.short", "jewel", -10837304);
       this.addMagic("jewel_magic_release", "key.typemoonworld.magic.jewel_release.short", "jewel", -4695462);
-      this.addMagic("jewel_random_shoot", "key.typemoonworld.magic.jewel_random_shoot.short", "jewel", -5197648);
       this.addMagic("jewel_machine_gun", "key.typemoonworld.magic.jewel_machine_gun.short", "jewel,nordic", -8727320);
       this.addMagic("projection", "key.typemoonworld.magic.projection.short", "basic,unlimited_blade_works", -11549464);
       this.addMagic("magic_analysis", "key.typemoonworld.magic.magic_analysis.short", "basic", -7829368);

@@ -9,6 +9,6 @@ public final class ProjectionState {
    public ProjectionState(TypeMoonWorldModVariables.PlayerVariables vars) { this.vars = vars; }
    public ItemStack selectedItem() { return vars.projection_selected_item; }
    public String selectedStructureId() { return vars.projection_selected_structure_id; }
-   public void setSelectedItem(ItemStack value) { vars.projection_selected_item = value == null ? ItemStack.EMPTY : value; vars.markDirty(TypeMoonWorldModVariables.StateDomain.PROJECTION); }
-   public void setSelectedStructureId(String value) { vars.projection_selected_structure_id = value == null ? "" : value; vars.markDirty(TypeMoonWorldModVariables.StateDomain.PROJECTION); }
+   public void setSelectedItem(ItemStack value) { vars.projection_selected_item = value == null ? ItemStack.EMPTY : value; vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.PROJECTION); }
+   public void setSelectedStructureId(String value) { vars.projection_selected_structure_id = value == null ? "" : value; vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.PROJECTION); }
 }

@@ -158,9 +158,9 @@ public final class EngravedWormService {
 
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
         double previousBonus = data.getAppliedManaBonus();
-        double baseMaximum = Math.max(0.0D, vars.player_max_mana - previousBonus);
-        vars.player_max_mana = baseMaximum + manaBonus;
-        vars.player_mana = Math.min(Math.max(0.0D, vars.player_mana), vars.player_max_mana);
+        double baseMaximum = Math.max(0.0D, vars.magicState().maxMana() - previousBonus);
+        vars.magicState().setMaxMana(baseMaximum + manaBonus);
+        vars.magicState().setMana(Math.min(vars.magicState().mana(), vars.magicState().maxMana()));
         data.setAppliedManaBonus(manaBonus);
         vars.syncMana(player);
     }

@@ -160,14 +160,15 @@ public final class InternalApiProvider implements ApiProvider {
       if (player == null) throw new IllegalArgumentException("player");
       var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return new ServantFormAccess() {
-         public boolean transformed() { return vars.servant_card_transformed; }
+         public boolean transformed() { return vars.servantCardState().transformed(); }
          public ResourceLocation servantId() {
-            if (!vars.servant_card_transformed || vars.servant_card_id == null || vars.servant_card_id.isBlank()) return null;
-            if (vars.servant_card_id.indexOf(':') >= 0) return ResourceLocation.tryParse(vars.servant_card_id);
-            return ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, vars.servant_card_id);
+            String servantId = vars.servantCardState().id();
+            if (!vars.servantCardState().transformed() || servantId == null || servantId.isBlank()) return null;
+            if (servantId.indexOf(':') >= 0) return ResourceLocation.tryParse(servantId);
+            return ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, servantId);
          }
-         public double mana() { return Math.max(0.0, vars.servant_card_mana); }
-         public double maximumMana() { return Math.max(0.0, vars.servant_card_max_mana); }
+         public double mana() { return vars.servantCardState().mana(); }
+         public double maximumMana() { return vars.servantCardState().maxMana(); }
          public boolean transform(ResourceLocation id) {
             if (id == null) return false;
             String storedId = net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID.equals(id.getNamespace()) ? id.getPath() : id.toString();
@@ -519,16 +520,16 @@ public final class InternalApiProvider implements ApiProvider {
          if (entity == null) throw new IllegalArgumentException("entity");
          var vars = entity.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
          return new ManaAccess() {
-            @Override public double current() { return vars.player_mana; }
-            @Override public double maximum() { return vars.player_max_mana; }
+            @Override public double current() { return vars.magicState().mana(); }
+            @Override public double maximum() { return vars.magicState().maxMana(); }
             @Override public boolean tryConsume(double amount) {
-               if (amount < 0.0 || vars.player_mana < amount) return false;
-               vars.player_mana -= amount;
+               if (amount < 0.0 || !vars.magicState().hasMana(amount)) return false;
+               vars.magicState().tryConsume(amount);
                vars.syncMana(entity);
                return true;
             }
             @Override public void add(double amount) {
-               vars.player_mana = Math.min(vars.player_max_mana, Math.max(0.0, vars.player_mana + amount));
+               vars.magicState().addMana(amount);
                vars.syncMana(entity);
             }
          };

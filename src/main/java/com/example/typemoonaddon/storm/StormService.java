@@ -248,14 +248,14 @@ public final class StormService {
 
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double rawMana = vars.player_mana;
+        double rawMana = vars.magicState().mana();
         double currentMana = sanitizeMana(vars);
         if (rawMana != currentMana) {
             state.manaDirty = true;
         }
         double injected = Math.min(MANA_PER_TICK, Math.min(currentMana, remaining));
         if (injected > 0.0D) {
-            vars.player_mana = Math.max(0.0D, currentMana - injected);
+            vars.magicState().setMana(currentMana - injected);
             state.injectedMana = Mth.clamp(
                     state.injectedMana + injected, 0.0D, MAX_INJECTED_MANA);
             state.manaDirty = true;
@@ -272,7 +272,7 @@ public final class StormService {
         }
 
         boolean depleted = injected < Math.min(MANA_PER_TICK, remaining)
-                || vars.player_mana <= 0.0D;
+                || vars.magicState().mana() <= 0.0D;
         if (state.activeTicks % MANA_SYNC_INTERVAL_TICKS == 0 || depleted) {
             syncManaIfDirty(player, state);
         }
@@ -907,7 +907,7 @@ public final class StormService {
         PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
         return vars.is_magus
                 && vars.is_magic_circuit_open
-                && vars.magic_cooldown <= 0.0D
+                && vars.magicState().cooldown() <= 0.0D
                 && PlayerMagicSelectionService.isCurrentSelection(vars, StormMagic.MAGIC_ID);
     }
 
@@ -949,10 +949,7 @@ public final class StormService {
     }
 
     private static double sanitizeMana(TypeMoonWorldModVariables.PlayerVariables vars) {
-        double sanitized = finiteNonNegative(vars.player_mana);
-        if (vars.player_mana != sanitized) {
-            vars.player_mana = sanitized;
-        }
+        double sanitized = vars.magicState().mana();
         return sanitized;
     }
 

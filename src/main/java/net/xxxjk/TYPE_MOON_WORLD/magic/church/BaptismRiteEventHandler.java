@@ -25,8 +25,6 @@ import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.monster.WitherSkeleton;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.monster.ZombifiedPiglin;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.BasicMagecraftHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
@@ -34,7 +32,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.joml.Vector3f;
 
-@EventBusSubscriber(modid = "typemoonworld")
 public final class BaptismRiteEventHandler {
    private static final String TAG_UNTIL = "TypeMoonBaptismRiteUntil";
    private static final String TAG_STARTED = "TypeMoonBaptismRiteStarted";
@@ -80,8 +77,6 @@ public final class BaptismRiteEventHandler {
          finish(player);
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) {
          return;

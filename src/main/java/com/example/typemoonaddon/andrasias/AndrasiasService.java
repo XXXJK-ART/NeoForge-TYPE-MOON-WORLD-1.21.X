@@ -498,7 +498,7 @@ public final class AndrasiasService {
         PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
         return vars.is_magus
                 && vars.is_magic_circuit_open
-                && (!requireReady || vars.magic_cooldown <= 0.0D)
+                && (!requireReady || vars.magicState().cooldown() <= 0.0D)
                 && PlayerMagicSelectionService.isCurrentSelection(vars, AndrasiasMagic.MAGIC_ID);
     }
 

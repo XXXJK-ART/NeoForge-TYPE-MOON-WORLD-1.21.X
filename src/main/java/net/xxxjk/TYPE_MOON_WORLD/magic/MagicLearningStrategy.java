@@ -61,19 +61,19 @@ public final class MagicLearningStrategy {
       ,Map.entry("reinforcement_item", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("jewel_magic_shoot", new Rule(35, true, true, true, true, false, false))
       ,Map.entry("jewel_magic_release", new Rule(50, true, true, true, true, false, false))
-      ,Map.entry("jewel_random_shoot", new Rule(40, true, true, true, true, false, false))
+      ,Map.entry("jewel_random_shoot", new Rule(40, false, false, false, false, false, false))
       ,Map.entry("jewel_machine_gun", new Rule(65, true, true, true, true, false, false))
       ,Map.entry("gandr_machine_gun", new Rule(70, true, false, false, false, false, false))
-      ,Map.entry("ruby_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("sapphire_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("emerald_use", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("topaz_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("cyan_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("ruby_flame_sword", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("sapphire_winter_frost", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("emerald_winter_river", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("topaz_reinforcement", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("cyan_wind", new Rule(55, true, false, false, false, false, false))
+      ,Map.entry("ruby_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("sapphire_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("emerald_use", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("topaz_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("cyan_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("ruby_flame_sword", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("sapphire_winter_frost", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("emerald_winter_river", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("topaz_reinforcement", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("cyan_wind", new Rule(55, false, false, false, false, false, false))
       ,Map.entry("absorption", new Rule(70, true, true, true, true, false, false))
       ,Map.entry("airflow_blade", new Rule(20, true, true, true, true, false, false))
       ,Map.entry("andrasias", new Rule(82, true, true, true, true, false, false))
@@ -116,7 +116,7 @@ public final class MagicLearningStrategy {
       Map.entry("gandr_machine_gun", "gander")
    );
 
-   /** Only these two jewel entries are actual magic-knowledge entries. */
+   /** Formal jewel knowledge entries shown in the magic knowledge page. */
    private static final Set<String> JEWEL_KNOWLEDGE_IDS = Set.of(
       "jewel_magic_shoot", "jewel_magic_release", "jewel_machine_gun"
    );
@@ -166,10 +166,10 @@ public final class MagicLearningStrategy {
       if ("magic_analysis".equals(id)) return 200 + (int)Math.round((100.0 - Math.max(0.0, Math.min(100.0, proficiency))) * 4.0);
       return 200 + complexity(id) * 4;
    }
-   public static boolean canAnalyze(String id) { return !TalentService.isTalent(id) && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
-   public static boolean canLearnFromMaterial(String id) { return !TalentService.isTalent(id) && rule(id).material(); }
-   public static boolean canResearch(String id) { return !TalentService.isTalent(id) && rule(id).research(); }
-   public static boolean canCopy(String id) { return !TalentService.isTalent(id) && rule(id).copy(); }
+   public static boolean canAnalyze(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
+   public static boolean canLearnFromMaterial(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).material(); }
+   public static boolean canResearch(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).research(); }
+   public static boolean canCopy(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).copy(); }
    public static boolean requiresSword(String id) { return rule(id).sword(); }
    public static boolean requiresImaginaryAttribute(String id) {
       return "absorption".equals(id)
@@ -266,8 +266,11 @@ public final class MagicLearningStrategy {
 
    public static boolean isRemovedMagic(String id) {
       if (id == null || id.isBlank()) return false;
+      String path = knowledgePath(id);
       String normalized = normalizeDisplayId(id);
-      return "black_key_fire_engraving".equals(normalized)
+      return JEWEL_RUNTIME_ACTION_IDS.contains(path)
+         || JEWEL_RUNTIME_ACTION_IDS.contains(normalized)
+         || "black_key_fire_engraving".equals(normalized)
          || "typemoonworld:black_key_fire_engraving".equals(id)
          || "typemoonaddon:black_key_fire_engraving".equals(id);
    }

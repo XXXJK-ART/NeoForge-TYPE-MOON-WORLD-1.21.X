@@ -112,8 +112,6 @@ public class GemTerrainEventHandler {
          }
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          if (player.level() instanceof ServerLevel level) {

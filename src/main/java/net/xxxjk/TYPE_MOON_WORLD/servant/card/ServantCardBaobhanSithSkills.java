@@ -65,7 +65,7 @@ public final class ServantCardBaobhanSithSkills {
       if (player.getPersistentData().getLong(TAG_BLESSED_UNTIL) > now && player.tickCount % 40 == 0) {
          int sealed = sealEnemies(player, now);
          if (sealed > 0) {
-            vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + sealed * 5.0);
+            vars.servantCardState().addMana(sealed * 5.0);
             vars.syncMana(player);
          }
       }
@@ -179,7 +179,7 @@ public final class ServantCardBaobhanSithSkills {
          return false;
       }
       if (!BaobhanSithCurseService.consumeMedium(player, target, normalized, 1)) {
-         ServantCardManaService.restore(player, vars, new ServantCardManaService.ManaSnapshot(vars.servant_card_mana + 4.0, null, 0.0));
+         ServantCardManaService.restore(player, vars, new ServantCardManaService.ManaSnapshot(vars.servantCardState().mana() + 4.0, null, 0.0));
          return false;
       }
       float damage = switch (normalized) {
@@ -305,7 +305,7 @@ public final class ServantCardBaobhanSithSkills {
       player.getPersistentData().putLong(TAG_BLESSED_UNTIL, now + 200L);
       int sealed = sealEnemies(player, now);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + sealed * 5.0);
+      vars.servantCardState().addMana(sealed * 5.0);
       vars.syncMana(player);
       playDominionFx(player);
       return true;
@@ -422,9 +422,9 @@ public final class ServantCardBaobhanSithSkills {
    }
 
    private static boolean checkFetchFailnaughtReady(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servantCardState().npCooldown() > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown",
-            String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
+            String.format(java.util.Locale.ROOT, "%.1f", vars.servantCardState().npCooldown() / 20.0F)), true);
          return false;
       }
       return true;
@@ -513,7 +513,7 @@ public final class ServantCardBaobhanSithSkills {
 
    private static boolean isActive(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.servant_card_transformed && SERVANT_ID.equals(vars.servant_card_id);
+      return vars.servantCardState().transformed() && SERVANT_ID.equals(vars.servantCardState().id());
    }
 
    private static boolean isVeryCloseTo(ServerPlayer player, LivingEntity target) {
@@ -567,7 +567,7 @@ public final class ServantCardBaobhanSithSkills {
             targetVars.syncMana(targetPlayer);
          }
       }
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + drained);
+      vars.servantCardState().addMana(drained);
       vars.syncMana(player);
    }
 

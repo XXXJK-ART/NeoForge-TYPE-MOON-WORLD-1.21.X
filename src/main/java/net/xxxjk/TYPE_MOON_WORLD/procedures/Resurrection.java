@@ -23,7 +23,7 @@ public class Resurrection {
    private static void execute(@Nullable Event event, LevelAccessor world, Entity entity) {
       if (entity != null) {
          TypeMoonWorldModVariables.PlayerVariables _vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         _vars.player_mana = 0.0;
+         _vars.magicState().setMana(0.0);
          _vars.syncPlayerVariables(entity);
          Restore_mana.execute(world, entity);
       }

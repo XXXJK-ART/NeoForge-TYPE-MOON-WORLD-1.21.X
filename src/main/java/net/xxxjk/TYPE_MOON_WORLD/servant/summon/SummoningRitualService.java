@@ -103,8 +103,6 @@ public final class SummoningRitualService {
          }
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       if (!player.getPersistentData().getBoolean(ACTIVE)) return;
@@ -286,7 +284,7 @@ public final class SummoningRitualService {
       double centerX = circle.getX() + 0.5;
       double centerY = circle.getY() + 0.3;
       double centerZ = circle.getZ() + 0.5;
-      level.sendParticles(RITUAL_RED, centerX, centerY + 0.8, centerZ, 180, 1.25, 1.15, 1.25, 0.08);
+      level.sendParticles(RITUAL_RED, centerX, centerY + 0.8, centerZ, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(180), 1.25, 1.15, 1.25, 0.08);
       level.sendParticles(RITUAL_DARK_RED, centerX, centerY + 0.45, centerZ, 90, 1.5, 0.7, 1.5, 0.04);
       level.sendParticles(ParticleTypes.END_ROD, centerX, centerY + 0.85, centerZ, 36, 0.9, 1.0, 0.9, 0.035);
       level.sendParticles(ParticleTypes.FLASH, centerX, centerY + 1.0, centerZ, 2, 0.1, 0.15, 0.1, 0.0);

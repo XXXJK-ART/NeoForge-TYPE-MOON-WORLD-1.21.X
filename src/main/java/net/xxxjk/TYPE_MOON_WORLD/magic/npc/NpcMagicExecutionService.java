@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
-import com.example.typemoonaddon.magic.EntityDisplacementService;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -10,6 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.api.InternalApiProvider;
+import net.xxxjk.typemoonworld.api.AddonMagicHooks;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicPresetRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
@@ -84,7 +84,7 @@ public final class NpcMagicExecutionService {
          case "spiritron_cannon" -> NpcMagicCastBridge.castSpiritronCannon(caster, target, vars, effectiveProficiency);
          case "imaginary_displacement" -> NpcMagicCastBridge.castLeffImaginaryDisplacement(caster, target, vars, effectiveProficiency);
          case "imaginary_space" -> NpcMagicCastBridge.castLeffImaginarySpace(caster, target, vars, effectiveProficiency);
-         case "entity_displacement" -> EntityDisplacementService.swapNpc(caster, target);
+         case "entity_displacement" -> AddonMagicHooks.swapNpc(caster, target);
          case "suggestion_magic" -> NpcMagicCastBridge.castSuggestionMagic(caster, target, vars, effectiveProficiency);
          case "binding_magic" -> NpcMagicCastBridge.castBindingMagic(caster, target, vars, effectiveProficiency);
          case "fire_magic" -> NpcMagicCastBridge.castFireMagic(caster, target, vars, payload, effectiveProficiency);

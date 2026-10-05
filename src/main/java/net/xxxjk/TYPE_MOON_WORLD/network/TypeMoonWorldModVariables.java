@@ -174,7 +174,7 @@ public class TypeMoonWorldModVariables {
 
          clone.magic_cooldown = original.magic_cooldown;
          clone.analysis_lock_ticks = original.analysis_lock_ticks;
-         clone.magic_analysis_active = original.magic_analysis_active;
+         clone.magicState().setAnalysisActive(original.magicState().analysisActive());
          clone.reinforcement_level = original.reinforcement_level;
          clone.proficiency_structural_analysis = original.proficiency_structural_analysis;
          clone.proficiency_magic_analysis = original.proficiency_magic_analysis;
@@ -550,15 +550,15 @@ public class TypeMoonWorldModVariables {
 
       public ManaSyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
          this(
-            vars.player_mana,
-            vars.player_max_mana,
-            vars.magic_cooldown,
+            vars.magicState().mana(),
+            vars.magicState().maxMana(),
+            vars.magicState().cooldown(),
             vars.magic_circuit_open_timer,
             vars.is_magic_circuit_open,
             vars.current_mana_regen_multiplier,
-            vars.servant_card_mana,
-            vars.servant_card_max_mana,
-            vars.servant_card_mana_regen,
+            vars.servantCardState().mana(),
+            vars.servantCardState().maxMana(),
+            vars.servantCardState().manaRegen(),
             vars.master_servant_link_partner_mana,
             vars.master_servant_link_partner_max_mana,
             vars.master_servant_link_partner_hp,
@@ -632,6 +632,8 @@ public class TypeMoonWorldModVariables {
                    vars.servant_card_medea_sub_servant_mana = Math.max(0.0, message.servant_card_medea_sub_servant_mana);
                    vars.servant_card_medea_sub_servant_max_mana = Math.max(0.0, message.servant_card_medea_sub_servant_max_mana);
                    vars.servant_card_medea_sub_servant_active = message.servant_card_medea_sub_servant_active;
+                   vars.magicState().refreshFromLegacy();
+                   vars.servantCardState().refreshFromLegacy();
                }
             );
          }
@@ -782,48 +784,48 @@ public class TypeMoonWorldModVariables {
 
       public ServantCardRuntimeSyncMessage(TypeMoonWorldModVariables.PlayerVariables vars) {
          this(
-            vars.servant_card_transformed,
-            vars.servant_card_id,
+            vars.servantCardState().transformed(),
+            vars.servantCardState().id(),
             vars.servant_card_master_uuid,
-            vars.servant_card_mana,
-            vars.servant_card_max_mana,
-            vars.servant_card_mana_regen,
-            vars.servant_card_jump_charges,
-            vars.servant_card_jump_recovery_ticks,
-            vars.servant_card_jump_recovery_end,
-            vars.servant_card_skill_cooldowns,
-            vars.servant_card_skill_cooldown_ends,
-            vars.servant_card_np_cooldown,
-            vars.servant_card_np_cooldown_end,
-            vars.servant_card_flying,
-            vars.servant_card_flight_mode,
-            vars.servant_card_high_flight_until,
-            vars.servant_card_high_flight_cooldown_until,
-            vars.servant_card_oda_flight_ticks,
-            vars.servant_card_oda_flight_cooldown_until,
-            vars.servant_card_oda_flight_recharge_at,
-            vars.servant_card_flight_forward,
-            vars.servant_card_flight_strafe,
-            vars.servant_card_flight_vertical,
-            vars.servant_card_flight_toggle_cooldown,
-            vars.servant_card_action_mode,
-            vars.servant_card_transform_cooldown,
-            vars.servant_card_release_cooldown,
-            vars.servant_card_death_release,
-            vars.servant_card_medea_dragonfang_stock,
-            vars.servant_card_medea_mana_charm_stock,
-            vars.servant_card_medea_heal_charm_stock,
-            vars.servant_card_paracelsus_stone_stock,
-            vars.servant_card_paracelsus_diamond_shield_stock,
-            vars.servant_card_arash_arrow_stock,
-            vars.servant_card_royal_cannon_ammo,
-            vars.servant_card_gilles_spellbook_mana,
-            vars.servant_card_gilles_spellbook_max_mana,
-            vars.servant_card_heracles_god_hand_lives,
-            vars.servant_card_enkidu_transfiguration_points,
-            vars.servant_card_medusa_mystic_eyes_active,
-            vars.servant_card_hassan_cloak_broken,
-            vars.servant_card_hassan_zabaniya_animation_until
+            vars.servantCardState().mana(),
+            vars.servantCardState().maxMana(),
+            vars.servantCardState().manaRegen(),
+            vars.servantCardState().jumpCharges(),
+            vars.servantCardState().jumpRecoveryTicks(),
+            vars.servantCardState().jumpRecoveryEnd(),
+            vars.servantCardState().skillCooldowns(),
+            vars.servantCardState().skillCooldownEnds(),
+            vars.servantCardState().npCooldown(),
+            vars.servantCardState().npCooldownEnd(),
+            vars.servantCardState().flying(),
+            vars.servantCardState().flightMode(),
+            vars.servantCardState().highFlightUntil(),
+            vars.servantCardState().highFlightCooldownUntil(),
+            vars.servantCardState().odaFlightTicks(),
+            vars.servantCardState().odaFlightCooldownUntil(),
+            vars.servantCardState().odaFlightRechargeAt(),
+            vars.servantCardState().flightForward(),
+            vars.servantCardState().flightStrafe(),
+            vars.servantCardState().flightVertical(),
+            vars.servantCardState().flightToggleCooldown(),
+            vars.servantCardState().actionMode(),
+            vars.servantCardState().transformCooldown(),
+            vars.servantCardState().releaseCooldown(),
+            vars.servantCardState().deathRelease(),
+            vars.servantCardState().medeaDragonfangStock(),
+            vars.servantCardState().medeaManaCharmStock(),
+            vars.servantCardState().medeaHealCharmStock(),
+            vars.servantCardState().paracelsusStoneStock(),
+            vars.servantCardState().paracelsusDiamondShieldStock(),
+            vars.servantCardState().arashArrowStock(),
+            vars.servantCardState().royalCannonAmmo(),
+            vars.servantCardState().gillesSpellbookMana(),
+            vars.servantCardState().gillesSpellbookMaxMana(),
+            vars.servantCardState().heraclesGodHandLives(),
+            vars.servantCardState().enkiduPoints(),
+            vars.servantCardState().medusaMysticEyesActive(),
+            vars.servantCardState().hassanCloakBroken(),
+            vars.servantCardState().hassanZabaniyaAnimationUntil()
          );
       }
 
@@ -881,6 +883,7 @@ public class TypeMoonWorldModVariables {
                   vars.servant_card_medusa_mystic_eyes_active = message.medusaMysticEyesActive;
                   vars.servant_card_hassan_cloak_broken = message.hassanCloakBroken;
                   vars.servant_card_hassan_zabaniya_animation_until = Math.max(0, message.hassanZabaniyaAnimationUntil);
+                  vars.servantCardState().refreshFromLegacy();
                }
             );
          }
@@ -1022,9 +1025,13 @@ public class TypeMoonWorldModVariables {
       private transient int manaSyncSnapshotHash = 0;
       private transient EnumSet<StateDomain> dirtyDomains = EnumSet.allOf(StateDomain.class);
       private transient boolean magicSystemInitialized = false;
+      private final net.xxxjk.TYPE_MOON_WORLD.network.state.MagicState.Data magicData = new net.xxxjk.TYPE_MOON_WORLD.network.state.MagicState.Data();
+      private final net.xxxjk.TYPE_MOON_WORLD.network.state.ServantCardState.Data servantCardData = new net.xxxjk.TYPE_MOON_WORLD.network.state.ServantCardState.Data();
 
       public MagicState magicState() { return new MagicState(this); }
+      public net.xxxjk.TYPE_MOON_WORLD.network.state.MagicState.Data magicData() { return magicData; }
       public ServantCardState servantCardState() { return new ServantCardState(this); }
+      public net.xxxjk.TYPE_MOON_WORLD.network.state.ServantCardState.Data servantCardData() { return servantCardData; }
       public MasterState masterState() { return new MasterState(this); }
       public ProjectionState projectionState() { return new ProjectionState(this); }
       public RuneState runeState() { return new RuneState(this); }
@@ -1040,6 +1047,41 @@ public class TypeMoonWorldModVariables {
 
       public void clearDirty() {
          dirtyDomains.clear();
+      }
+
+      public CompoundTag serializeDomain(StateDomain domain) {
+         return net.xxxjk.TYPE_MOON_WORLD.network.state.PlayerStateDomainCodec.encode(this, domain);
+      }
+
+      /**
+       * Sends only the wire representation owned by each dirty domain.  This
+       * is deliberately separate from {@link #syncPlayerVariables(Entity)}:
+       * the latter remains the compatibility/full-snapshot path for legacy
+       * callers that still mutate public fields directly.
+       */
+      public void syncDirtyDomains(Entity entity) {
+         if (!(entity instanceof ServerPlayer serverPlayer) || dirtyDomains.isEmpty()) {
+            return;
+         }
+         EnumSet<StateDomain> pending = EnumSet.copyOf(dirtyDomains);
+         if (pending.contains(StateDomain.MAGIC)) {
+            syncMana(serverPlayer);
+            syncModeState(serverPlayer);
+         }
+         if (pending.contains(StateDomain.SERVANT_CARD)) {
+            syncServantCardRuntime(serverPlayer);
+         }
+         if (pending.contains(StateDomain.PASSIVE)) {
+            syncProficiency(serverPlayer);
+         }
+         if (pending.contains(StateDomain.MASTER)) syncDomain(serverPlayer, StateDomain.MASTER);
+         if (pending.contains(StateDomain.PROJECTION)) syncDomain(serverPlayer, StateDomain.PROJECTION);
+         if (pending.contains(StateDomain.RUNE)) syncDomain(serverPlayer, StateDomain.RUNE);
+         dirtyDomains.removeAll(pending);
+      }
+
+      private void syncDomain(ServerPlayer player, StateDomain domain) {
+         sendIfSupported(player, new TypeMoonWorldModVariables.PlayerDomainSyncMessage(domain.name(), serializeDomain(domain)));
       }
       public double player_mana = 0.0;
       public double player_max_mana = 0.0;
@@ -1066,7 +1108,6 @@ public class TypeMoonWorldModVariables {
       public int magic_system_data_version = 0;
       public double magic_cooldown = 0.0;
       public int analysis_lock_ticks = 0;
-      public boolean magic_analysis_active = false;
       public int reinforcement_level = 1;
       public double proficiency_structural_analysis = 0.0;
       public double proficiency_magic_analysis = 0.0;
@@ -2367,7 +2408,7 @@ public class TypeMoonWorldModVariables {
          nbt.putDouble("magic_circuit_open_timer", this.magic_circuit_open_timer);
          nbt.putDouble("magic_cooldown", this.magic_cooldown);
          nbt.putInt("analysis_lock_ticks", this.analysis_lock_ticks);
-         nbt.putBoolean("magic_analysis_active", this.magic_analysis_active);
+         nbt.putBoolean("magic_analysis_active", this.magicState().analysisActive());
          nbt.putDouble("proficiency_structural_analysis", this.proficiency_structural_analysis);
          nbt.putDouble("proficiency_magic_analysis", this.proficiency_magic_analysis);
          nbt.putDouble("proficiency_projection", this.proficiency_projection);
@@ -2682,7 +2723,7 @@ public class TypeMoonWorldModVariables {
          this.magic_circuit_open_timer = nbt.getDouble("magic_circuit_open_timer");
          this.magic_cooldown = nbt.getDouble("magic_cooldown");
          this.analysis_lock_ticks = Math.max(0, nbt.getInt("analysis_lock_ticks"));
-         this.magic_analysis_active = nbt.getBoolean("magic_analysis_active");
+         this.magicData().setAnalysisActive(nbt.getBoolean("magic_analysis_active"));
          this.proficiency_structural_analysis = nbt.getDouble("proficiency_structural_analysis");
          this.proficiency_magic_analysis = nbt.contains("proficiency_magic_analysis") ? nbt.getDouble("proficiency_magic_analysis") : 0.0;
          this.proficiency_projection = nbt.getDouble("proficiency_projection");
@@ -3163,6 +3204,7 @@ public class TypeMoonWorldModVariables {
          long syncStarted = entity instanceof ServerPlayer ? System.nanoTime() : 0L;
          this.sanitizeAnalyzedStructures();
          this.ensureMagicSystemInitialized();
+         this.migrateLegacyJewelMagicIds();
          MagicCircuitColorHelper.ensureColor(this);
          if (this.player_magic_attributes_sword) {
             if (!this.learned_magics.contains("unlimited_blade_works")) {
@@ -3174,45 +3216,6 @@ public class TypeMoonWorldModVariables {
             } else if (!this.has_unlimited_blade_works) {
                this.has_unlimited_blade_works = true;
             }
-         }
-
-         boolean knowsOldJewelMagic = false;
-         String[] oldJewels = new String[]{
-            "ruby_throw",
-            "sapphire_throw",
-            "emerald_use",
-            "topaz_throw",
-            "cyan_throw",
-            "ruby_flame_sword",
-            "sapphire_winter_frost",
-            "emerald_winter_river",
-            "topaz_reinforcement",
-            "cyan_wind"
-         };
-
-         for (String old : oldJewels) {
-            if (this.learned_magics.contains(old)) {
-               knowsOldJewelMagic = true;
-               break;
-            }
-         }
-
-         if (knowsOldJewelMagic) {
-            if (!this.learned_magics.contains("jewel_magic_shoot")) {
-               this.learned_magics.add("jewel_magic_shoot");
-            }
-
-            if (!this.learned_magics.contains("jewel_magic_release")) {
-               this.learned_magics.add("jewel_magic_release");
-            }
-
-            if (!this.learned_magics.contains("jewel_random_shoot")) {
-               this.learned_magics.add("jewel_random_shoot");
-            }
-         }
-
-         if (this.learned_magics.contains("jewel_magic_shoot") && !this.learned_magics.contains("jewel_random_shoot")) {
-            this.learned_magics.add("jewel_random_shoot");
          }
 
          if ((this.learned_magics.contains("jewel_magic_release") || this.learned_magics.contains("jewel_machine_gun"))
@@ -3228,12 +3231,6 @@ public class TypeMoonWorldModVariables {
                   "message.typemoonworld.unlimited_blade_works.sword_control.awakened"), false);
             }
          }
-
-         this.ensureAdvancedJewelMagicPrerequisites("ruby_flame_sword", "ruby_throw");
-         this.ensureAdvancedJewelMagicPrerequisites("sapphire_winter_frost", "sapphire_throw");
-         this.ensureAdvancedJewelMagicPrerequisites("emerald_winter_river", "emerald_use");
-         this.ensureAdvancedJewelMagicPrerequisites("topaz_reinforcement", "topaz_throw");
-         this.ensureAdvancedJewelMagicPrerequisites("cyan_wind", "cyan_throw");
 
          if (this.learned_magics.contains("gandr_machine_gun") && !this.learned_magics.contains("gander")) {
             this.learned_magics.add("gander");
@@ -3352,19 +3349,38 @@ public class TypeMoonWorldModVariables {
          }
       }
 
-      private void ensureAdvancedJewelMagicPrerequisites(String advancedMagicId, String baseMagicId) {
-         if (advancedMagicId != null && !advancedMagicId.isEmpty() && this.learned_magics.contains(advancedMagicId)) {
-            this.ensureLearnedMagic(baseMagicId);
-            this.ensureLearnedMagic("jewel_magic_shoot");
-            this.ensureLearnedMagic("jewel_magic_release");
-            this.ensureLearnedMagic("jewel_random_shoot");
+      private void migrateLegacyJewelMagicIds() {
+         if (this.learned_magics == null || this.learned_magics.isEmpty()) return;
+         boolean hadBasic = false;
+         boolean hadAdvanced = false;
+         Set<String> legacyIds = Set.of(
+            "jewel_random_shoot", "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw",
+            "ruby_flame_sword", "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind"
+         );
+         for (String id : this.learned_magics) {
+            if ("jewel_random_shoot".equals(id)
+               || "ruby_throw".equals(id) || "sapphire_throw".equals(id) || "emerald_use".equals(id)
+               || "topaz_throw".equals(id) || "cyan_throw".equals(id)) {
+               hadBasic = true;
+            } else if (legacyIds.contains(id)) {
+               hadAdvanced = true;
+            }
          }
-      }
-
-      private void ensureLearnedMagic(String magicId) {
-         if (magicId != null && !magicId.isEmpty() && !this.learned_magics.contains(magicId)) {
-            this.learned_magics.add(magicId);
+         this.learned_magics.removeIf(legacyIds::contains);
+         if (this.magic_wheels != null) {
+            for (WheelSlotEntry entry : this.magic_wheels) {
+               if (entry != null && legacyIds.contains(entry.magicId)) entry.clear();
+            }
          }
+         if (this.crest_entries != null) {
+            this.crest_entries.removeIf(entry -> entry != null && legacyIds.contains(entry.magicId));
+         }
+         if (hadBasic) this.learned_magics.add("jewel_magic_shoot");
+         if (hadAdvanced) this.learned_magics.add("jewel_magic_release");
+         this.magic_proficiencies.keySet().removeIf(legacyIds::contains);
+         this.magic_learning_progress.keySet().removeIf(legacyIds::contains);
+         this.magic_learning_progress_last_gain_tick.keySet().removeIf(legacyIds::contains);
+         this.crest_practice_count.keySet().removeIf(legacyIds::contains);
       }
 
       private boolean tryAutoUnlockJewelMachineGun(Entity entity) {
@@ -3702,6 +3718,91 @@ public class TypeMoonWorldModVariables {
                   return null;
                });
          }
+      }
+   }
+
+   public record PlayerDomainSyncMessage(String domain, CompoundTag data) implements CustomPacketPayload {
+      public static final Type<TypeMoonWorldModVariables.PlayerDomainSyncMessage> TYPE = new Type<>(
+         ResourceLocation.fromNamespaceAndPath("typemoonworld", "player_domain_sync")
+      );
+      public static final StreamCodec<RegistryFriendlyByteBuf, TypeMoonWorldModVariables.PlayerDomainSyncMessage> STREAM_CODEC = StreamCodec.of(
+         (buffer, message) -> { buffer.writeUtf(message.domain == null ? "" : message.domain, 32); buffer.writeNbt(message.data == null ? new CompoundTag() : message.data); },
+         buffer -> new TypeMoonWorldModVariables.PlayerDomainSyncMessage(buffer.readUtf(32), Optional.ofNullable(buffer.readNbt()).orElseGet(CompoundTag::new))
+      );
+
+      @NotNull public Type<TypeMoonWorldModVariables.PlayerDomainSyncMessage> type() { return TYPE; }
+
+      public static void handleData(TypeMoonWorldModVariables.PlayerDomainSyncMessage message, IPayloadContext context) {
+         if (context.flow() != PacketFlow.CLIENTBOUND) return;
+         context.enqueueWork(() -> {
+            PlayerVariables vars = context.player().getData(PLAYER_VARIABLES);
+            if (message.domain == null) return;
+            try {
+               PlayerVariables.StateDomain domain = PlayerVariables.StateDomain.valueOf(message.domain);
+               CompoundTag tag = message.data == null ? new CompoundTag() : message.data;
+               switch (domain) {
+                  case MAGIC -> {
+                     var state = vars.magicState();
+                     state.setMana(tag.getDouble("mana"));
+                     state.setMaxMana(tag.getDouble("max_mana"));
+                     state.setManaRegen(tag.getDouble("mana_regen"));
+                     state.setRestoreMagicMoment(tag.getDouble("restore_magic_moment"));
+                     state.setCooldown(tag.getDouble("cooldown"));
+                     state.setCircuitOpen(tag.getBoolean("circuit_open"));
+                     state.setAnalysisActive(tag.getBoolean("analysis_active"));
+                  }
+                  case SERVANT_CARD -> {
+                     var state = vars.servantCardState();
+                     state.setTransformed(tag.getBoolean("transformed"));
+                     state.setId(tag.getString("id"));
+                     state.setMana(tag.getDouble("mana"));
+                     state.setMaxMana(tag.getDouble("max_mana"));
+                     state.setManaRegen(tag.getDouble("mana_regen"));
+                     state.setJumpCharges(tag.getInt("jump_charges"));
+                     state.setJumpRecoveryTicks(tag.getInt("jump_recovery_ticks"));
+                     state.setJumpRecoveryEnd(tag.getLong("jump_recovery_end"));
+                     state.setSkillCooldowns(tag.getString("skill_cooldowns"));
+                     state.setSkillCooldownEnds(tag.getString("skill_cooldown_ends"));
+                     state.setNpCooldown(tag.getInt("np_cooldown"));
+                     state.setNpCooldownEnd(tag.getLong("np_cooldown_end"));
+                     state.setFlying(tag.getBoolean("flying"));
+                     state.setFlightMode(tag.getInt("flight_mode"));
+                     state.setHighFlightUntil(tag.getLong("high_flight_until"));
+                     state.setHighFlightCooldownUntil(tag.getLong("high_flight_cooldown_until"));
+                     state.setOdaFlightTicks(tag.getInt("oda_flight_ticks"));
+                     state.setOdaFlightCooldownUntil(tag.getLong("oda_flight_cooldown_until"));
+                     state.setOdaFlightRechargeAt(tag.getLong("oda_flight_recharge_at"));
+                     state.setFlightInput(tag.getDouble("flight_forward"), tag.getDouble("flight_strafe"), tag.getDouble("flight_vertical"));
+                     state.setFlightToggleCooldown(tag.getInt("flight_toggle_cooldown"));
+                     state.setActionMode(tag.getInt("action_mode"));
+                     state.setTransformCooldown(tag.getInt("transform_cooldown"));
+                     state.setReleaseCooldown(tag.getInt("release_cooldown"));
+                     state.setDeathRelease(tag.getBoolean("death_release"));
+                     state.setMedeaDragonfangStock(tag.getInt("medea_dragonfang_stock"));
+                     state.setMedeaManaCharmStock(tag.getInt("medea_mana_charm_stock"));
+                     state.setMedeaHealCharmStock(tag.getInt("medea_heal_charm_stock"));
+                     state.setParacelsusStoneStock(tag.getInt("paracelsus_stone_stock"));
+                     state.setParacelsusDiamondShieldStock(tag.getInt("paracelsus_diamond_shield_stock"));
+                     state.setArashArrowStock(tag.getInt("arash_arrow_stock"));
+                     state.setRoyalCannonAmmo(tag.getInt("royal_cannon_ammo"));
+                     state.setGillesSpellbookMana(tag.getDouble("gilles_spellbook_mana"));
+                     state.setGillesSpellbookMaxMana(tag.getDouble("gilles_spellbook_max_mana"));
+                     state.setHeraclesGodHandLives(tag.getInt("heracles_god_hand_lives"));
+                     state.setEnkiduPoints(tag.getString("enkidu_points"));
+                     state.setMedusaMysticEyesActive(tag.getBoolean("medusa_mystic_eyes_active"));
+                     state.setHassanCloakBroken(tag.getBoolean("hassan_cloak_broken"));
+                     state.setHassanZabaniyaAnimationUntil(tag.getInt("hassan_zabaniya_animation_until"));
+                  }
+                  case MASTER -> { vars.masterState().setActive(tag.getBoolean("active")); vars.masterState().setServantUuid(tag.getString("servant_uuid")); vars.masterState().setCommandSpells(tag.getInt("command_spells")); }
+                  case PROJECTION -> vars.projectionState().setSelectedStructureId(tag.getString("structure_id"));
+                  case RUNE -> vars.runeState().setOriginUnlocked(tag.getBoolean("origin_unlocked"));
+                  case PASSIVE -> { vars.passiveState().setBodyStrength(tag.getInt("body_strength")); vars.passiveState().setBodySpeed(tag.getInt("body_speed")); }
+               }
+               vars.clearDirty();
+            } catch (IllegalArgumentException exception) {
+               TYPE_MOON_WORLD.LOGGER.warn("Ignoring unknown player state domain {}", message.domain);
+            }
+         }).exceptionally(error -> { TYPE_MOON_WORLD.LOGGER.error("Failed to handle PlayerDomainSyncMessage", error); return null; });
       }
    }
 

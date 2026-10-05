@@ -63,7 +63,7 @@ public final class MagicProficiencyContestHelper {
       if (vars.magic_proficiencies.containsKey(magicId)) {
          return clampProficiency(vars.magic_proficiencies.getOrDefault(magicId, 0.0));
       }
-      boolean eligible = entity instanceof Player || entity instanceof MysticMagicianEntity || vars.is_magus || vars.player_max_mana >= 100.0;
+      boolean eligible = entity instanceof Player || entity instanceof MysticMagicianEntity || vars.is_magus || vars.magicState().maxMana() >= 100.0;
       if (!eligible && fixedProficiency(vars, normalized) <= 0.0) {
          return null;
       }

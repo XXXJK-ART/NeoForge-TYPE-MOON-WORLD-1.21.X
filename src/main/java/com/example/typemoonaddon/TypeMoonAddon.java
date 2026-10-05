@@ -8,13 +8,17 @@ import com.example.typemoonaddon.registry.AddonBlocks;
 import com.example.typemoonaddon.block.entity.AddonBlockEntities;
 import com.example.typemoonaddon.registry.AddonSounds;
 import com.example.typemoonaddon.detection.DetectionAttachments;
+import com.example.typemoonaddon.detection.DetectionService;
+import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
 import com.example.typemoonaddon.engravedworm.EngravedWormAttachments;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceAttachments;
+import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService;
 import com.example.typemoonaddon.imaginary_space.ImaginarySpaceConfig;
 import com.example.typemoonaddon.kimaris.KimarisAttachments;
 import com.example.typemoonaddon.magic.WormMagicIntegration;
 import com.example.typemoonaddon.magic.SummoningMagicIntegration;
 import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
+import com.example.typemoonaddon.magic.EntityDisplacementService;
 import com.example.typemoonaddon.magic.MatouKariyaMasterIntegration;
 import com.example.typemoonaddon.magic.ImaginaryDisplacementAttachments;
 import com.example.typemoonaddon.storage.StorageAttachments;
@@ -30,6 +34,9 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModCreativeModeTabs;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import org.slf4j.Logger;
 import com.example.typemoonaddon.event.AddonPlayerTickServices;
+import net.xxxjk.typemoonworld.api.AddonManaSource;
+import net.xxxjk.typemoonworld.api.AddonMagicHooks;
+import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
 import net.xxxjk.typemoonworld.api.AddonEntrypoint;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -62,6 +69,26 @@ public final class TypeMoonAddon implements AddonEntrypoint {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreativeTabContents);
         AddonPlayerTickServices.register();
+        AddonManaSource.register(com.example.typemoonaddon.magic.ManaFurnaceService::hasInfiniteSupply);
+        AddonMagicHooks.register(new AddonMagicHooks.Provider() {
+            public double adjustNaturalManaRegen(net.minecraft.world.entity.LivingEntity entity, double value) {
+                return BoundaryMagicIntegration.adjustNaturalManaRegen(entity, value);
+            }
+            public boolean swapNpc(net.minecraft.world.entity.LivingEntity caster, net.minecraft.world.entity.LivingEntity target) {
+                return caster instanceof MysticMagicianEntity mage && EntityDisplacementService.swapNpc(mage, target);
+            }
+            public int bladeManaCost() { return (int) AirflowBladeService.BLADE_MANA_COST; }
+            public double bladeSpeed() { return AirflowBladeService.BLADE_SPEED; }
+            public boolean castNpcBlade(net.minecraft.world.entity.LivingEntity caster, net.minecraft.world.entity.LivingEntity target, double proficiency) {
+                return AirflowBladeService.castNpcBlade(caster, target, proficiency);
+            }
+            public boolean castNpcDetection(net.minecraft.world.entity.LivingEntity caster, net.minecraft.world.entity.LivingEntity target, double proficiency) {
+                return DetectionService.castNpcDetection(caster, target, proficiency);
+            }
+            public boolean castNpcImaginarySpace(net.minecraft.world.entity.LivingEntity caster, net.minecraft.world.entity.LivingEntity target) {
+                return ImaginarySpaceService.castNpcCreature(caster, target).status() == ImaginarySpaceService.CastStatus.SUCCESS;
+            }
+        });
         LOGGER.info("Integrated Type Moon addon systems initialized");
     }
 

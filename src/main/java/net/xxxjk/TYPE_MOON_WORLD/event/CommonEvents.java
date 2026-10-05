@@ -2048,7 +2048,7 @@ public class CommonEvents {
       if (target instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.is_magic_circuit_open) {
-            event.setAmount(event.getAmount() + (float)Math.max(0.0, vars.player_max_mana));
+            event.setAmount(event.getAmount() + (float)Math.max(0.0, vars.magicState().maxMana()));
          }
          OriginBulletHelper.sealPlayerUntilDeath(player);
       }

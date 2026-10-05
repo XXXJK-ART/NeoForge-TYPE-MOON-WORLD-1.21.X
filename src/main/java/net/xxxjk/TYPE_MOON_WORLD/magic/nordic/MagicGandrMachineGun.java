@@ -179,7 +179,7 @@ public final class MagicGandrMachineGun {
                         if (!fired) {
                            clearState(player);
                         } else {
-                           vars.magic_cooldown = BARRAGE_INTERVAL_TICKS;
+                           vars.magicState().setCooldown(BARRAGE_INTERVAL_TICKS);
                            if (!crestCast) {
                               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gander", getBarrageShotCount(effectiveProficiency) * 0.02);
                            }
@@ -194,7 +194,7 @@ public final class MagicGandrMachineGun {
                         if (!fired) {
                            clearState(player);
                         } else {
-                           vars.magic_cooldown = BURST_INTERVAL_TICKS;
+                           vars.magicState().setCooldown(BURST_INTERVAL_TICKS);
                            if (!crestCast) {
                               net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "gander", 0.05);
                            }
@@ -233,7 +233,7 @@ public final class MagicGandrMachineGun {
          return false;
       } else {
          int chargeSeconds = getEquivalentChargeSeconds(effectiveProficiency);
-         vars.player_mana = Math.max(0.0, vars.player_mana - getRapidBurstManaCost());
+         vars.magicState().tryConsume(getRapidBurstManaCost());
          Level level = player.level();
 
          for (int i = 0; i < BURST_COUNT; i++) {
@@ -284,11 +284,11 @@ public final class MagicGandrMachineGun {
    private static boolean fireGateBarrage(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double effectiveProficiency) {
       int shotCount = getBarrageShotCount(effectiveProficiency);
       double manaCost = shotCount * MANA_COST_PER_SHOT;
-      if (vars.player_mana < manaCost) {
+      if (!vars.magicState().hasMana(manaCost)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          return false;
       } else {
-         vars.player_mana = Math.max(0.0, vars.player_mana - manaCost);
+         vars.magicState().tryConsume(manaCost);
          Level level = player.level();
          int chargeSeconds = getEquivalentChargeSeconds(effectiveProficiency);
          Vec3 forward = player.getLookAngle().normalize();
@@ -391,11 +391,11 @@ public final class MagicGandrMachineGun {
    }
 
    private static boolean hasEnoughManaForMode(TypeMoonWorldModVariables.PlayerVariables vars, int mode, double effectiveProficiency) {
-      return mode == 1 ? vars.player_mana >= getBarrageManaCost(effectiveProficiency) : hasEnoughManaForRapidBurst(vars);
+      return mode == 1 ? vars.magicState().hasMana(getBarrageManaCost(effectiveProficiency)) : hasEnoughManaForRapidBurst(vars);
    }
 
    private static boolean hasEnoughManaForRapidBurst(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return vars.player_mana >= getRapidBurstManaCost();
+      return vars.magicState().hasMana(getRapidBurstManaCost());
    }
 
    private static double getRapidBurstManaCost() {
@@ -445,7 +445,7 @@ public final class MagicGandrMachineGun {
    private static void syncBurstState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, long now, boolean syncProficiency) {
       CompoundTag tag = player.getPersistentData();
       long lastManaSync = tag.getLong(TAG_LAST_MANA_SYNC_TICK);
-      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.player_mana <= 0.0) {
+      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.magicState().mana() <= 0.0) {
          vars.syncMana(player);
          tag.putLong(TAG_LAST_MANA_SYNC_TICK, now);
       }

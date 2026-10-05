@@ -176,13 +176,13 @@ class ArashResourcesTest {
       assertTrue(controller.contains("WorldBorder"));
       assertTrue(controller.contains("sealAt(profile.length())"));
       String manager = Files.readString(JAVA.resolve("servant/card/ServantCardTransformManager.java"));
-      assertTrue(manager.contains("\"arash\".equals(vars.servant_card_id) && slot == 9"));
+      assertTrue(manager.contains("\"arash\".equals(vars.servantCardState().id()) && slot == 9"));
       assertTrue(manager.contains("ServantCardArashSkills.requestPlayerStellaRelease(player)"));
       String cardSkills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       assertTrue(cardSkills.contains("player.setPos(anchorX, anchorY, anchorZ)"));
       assertTrue(cardSkills.contains("player.setDeltaMovement(Vec3.ZERO)"));
-      assertTrue(cardSkills.contains("data.putInt(REFUND_ARROWS, vars.servant_card_arash_arrow_stock)"));
-      assertTrue(cardSkills.contains("vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS)"));
+      assertTrue(cardSkills.contains("data.putInt(REFUND_ARROWS, vars.servantCardState().arashArrowStock())"));
+      assertTrue(cardSkills.contains("vars.servantCardState().setArashArrowStock(data.getInt(REFUND_ARROWS))"));
       assertTrue(cardSkills.contains("data.remove(REFUND_ARROWS)"));
       String terrain = Files.readString(JAVA.resolve("world/terrain/DeferredTerrainDestruction.java"));
       assertTrue(terrain.contains("sealAt(double distance)"));

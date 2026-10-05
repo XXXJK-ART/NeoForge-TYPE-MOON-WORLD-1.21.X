@@ -11,5 +11,5 @@ public final class RuneState {
    public boolean originUnlocked() { return vars.rune_origin_unlocked; }
    public List<String> learnedRunes() { return vars.learned_runes; }
    public List<RuneProgram> programs() { return vars.rune_programs; }
-   public void setOriginUnlocked(boolean value) { vars.rune_origin_unlocked = value; vars.markDirty(TypeMoonWorldModVariables.StateDomain.RUNE); }
+   public void setOriginUnlocked(boolean value) { vars.rune_origin_unlocked = value; vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.RUNE); }
 }

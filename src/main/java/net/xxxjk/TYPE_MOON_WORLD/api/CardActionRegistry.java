@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.typemoonworld.api.CardActionContext;
 import net.xxxjk.typemoonworld.api.CardActionExecutor;
 import net.xxxjk.typemoonworld.api.ExecutionResult;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 public final class CardActionRegistry {
    private static final Map<String, Entry> ACTIONS = new ConcurrentHashMap<>();
@@ -62,7 +63,8 @@ public final class CardActionRegistry {
       try {
          ExecutionResult result = entry.executor.execute(context);
          return result == null ? ExecutionResult.FAILED : result;
-      } catch (Exception ignored) {
+      } catch (Exception exception) {
+         TYPE_MOON_WORLD.LOGGER.error("Card action {} failed for provider {}", id, entry.provider, exception);
          return ExecutionResult.FAILED;
       }
    }

@@ -255,8 +255,8 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
             float manaScale = 1.0F;
             if (this.getOwner() instanceof Player p) {
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-               double maxMana = Math.max(vars.player_max_mana, 1.0);
-               double manaRatio = Math.max(0.0, Math.min(vars.player_mana / maxMana, 1.0));
+               double maxMana = Math.max(vars.magicState().maxMana(), 1.0);
+               double manaRatio = Math.max(0.0, Math.min(vars.magicState().mana() / maxMana, 1.0));
                manaScale = (float)(0.8 + 1.2 * manaRatio);
             }
 

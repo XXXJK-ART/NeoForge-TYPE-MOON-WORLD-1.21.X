@@ -47,7 +47,7 @@ public final class OriginBulletHelper {
       vars.origin_bullet_sealed = true;
       vars.is_magic_circuit_open = false;
       vars.magic_circuit_open_timer = 0.0;
-      vars.player_mana = 0.0;
+      vars.magicState().setMana(0.0);
       vars.syncPlayerVariables(player);
    }
 

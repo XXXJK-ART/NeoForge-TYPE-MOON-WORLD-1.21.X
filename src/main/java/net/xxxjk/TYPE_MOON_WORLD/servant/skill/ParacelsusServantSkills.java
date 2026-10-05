@@ -644,7 +644,7 @@ public final class ParacelsusServantSkills {
    }
 
    private static void castFireFurnace(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
-      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, 120, 3.6, 0.35, 3.6, 0.08);
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 3.6, 0.35, 3.6, 0.08);
       level.sendParticles(ParticleTypes.LAVA, center.x, center.y + 0.25, center.z, 34, 2.8, 0.18, 2.8, 0.02);
       level.sendParticles(FIRE, center.x, center.y + 0.5, center.z, 70, 2.6, 0.45, 2.6, 0.02);
       breakElementalTerrain(level, entity, center, 8.0, 4, 48, 0.72F, 0.52F);
@@ -665,8 +665,8 @@ public final class ParacelsusServantSkills {
    }
 
    private static void castDeepSeaPressure(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
-      level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.8, center.z, 160, 3.0, 2.1, 3.0, 0.10);
-      level.sendParticles(ParticleTypes.BUBBLE, center.x, center.y + 1.0, center.z, 120, 2.4, 1.7, 2.4, 0.08);
+      level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.8, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(160), 3.0, 2.1, 3.0, 0.10);
+      level.sendParticles(ParticleTypes.BUBBLE, center.x, center.y + 1.0, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 2.4, 1.7, 2.4, 0.08);
       level.sendParticles(WATER, center.x, center.y + 0.7, center.z, 76, 2.1, 1.1, 2.1, 0.02);
       breakElementalTerrain(level, entity, center, 7.5, 4, 38, 0.58F, 0.42F);
       AABB prison = new AABB(center, center).inflate(3.2, 3.2, 3.2);

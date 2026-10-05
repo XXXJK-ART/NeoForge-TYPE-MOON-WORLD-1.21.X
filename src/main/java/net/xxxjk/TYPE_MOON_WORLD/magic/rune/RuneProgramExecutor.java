@@ -52,9 +52,10 @@ public final class RuneProgramExecutor {
          failMessage(player, "release_external");
          return new MagicExecutionResult(true, false, 0.0D, -1, "release_external");
       }
-      if (vars.magic_cooldown > 0.0D) { failMessage(player, "cooldown"); return new MagicExecutionResult(true, false, 0.0D, -1, "cooldown"); }
+      var magic = vars.magicState();
+      if (magic.cooldown() > 0.0D) { failMessage(player, "cooldown"); return new MagicExecutionResult(true, false, 0.0D, -1, "cooldown"); }
       double cost = RuneProgramCostService.calculate(program);
-      if (vars.player_mana < cost) { player.displayClientMessage(Component.translatable("message.typemoonworld.magic.insufficient_mana"), true); return new MagicExecutionResult(true, false, 0.0D, -1, "insufficient_mana"); }
+      if (magic.mana() < cost) { player.displayClientMessage(Component.translatable("message.typemoonworld.magic.insufficient_mana"), true); return new MagicExecutionResult(true, false, 0.0D, -1, "insufficient_mana"); }
       int triggerCount = (int) program.sequence().stream().filter(id -> !id.isEmpty()).count();
       LivingEntity target = explicitTarget != null && explicitTarget.isAlive()
          ? explicitTarget : (!external ? rayTarget(player) : null);
@@ -74,11 +75,11 @@ public final class RuneProgramExecutor {
             vars.syncMana(player);
             return new MagicExecutionResult(true, false, cost, -1, reason);
          }
-         vars.player_mana = Math.max(0.0D, vars.player_mana - cost);
-         vars.magic_cooldown = Math.max(vars.magic_cooldown, 10.0D + triggerCount * 2.0D);
+         magic.setMana(Math.max(0.0D, magic.mana() - cost));
+         magic.setCooldown(Math.max(magic.cooldown(), 10.0D + triggerCount * 2.0D));
          vars.syncMana(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.rune.cast_success", program.displayName()), true);
-         return new MagicExecutionResult(true, true, cost, (int)vars.magic_cooldown, "");
+         return new MagicExecutionResult(true, true, cost, (int)magic.cooldown(), "");
       } catch (RuntimeException exception) {
          failMessage(player, "runtime_error");
          applyFailureEasterEgg(player, program);

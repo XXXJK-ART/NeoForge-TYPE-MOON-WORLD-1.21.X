@@ -23,7 +23,6 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent.Post;
    modid = "typemoonworld"
 )
 public class MagicReinforcementEventHandler {
-   @SubscribeEvent
    public static void onPlayerTick(Post event) {
       Player player = event.getEntity();
       if (!player.level().isClientSide()) {

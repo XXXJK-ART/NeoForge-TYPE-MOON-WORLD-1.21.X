@@ -81,7 +81,7 @@ public final class ServantCardTransformManager {
          return false;
       }
       if (NeoForge.EVENT_BUS.post(new ServantTransformEvent.Pre(player, publicId)).isCanceled()) return false;
-      if (vars.servant_card_transformed) {
+      if (vars.servantCardState().transformed()) {
          release(player, false);
       }
       if (vars.master_active) {
@@ -93,8 +93,8 @@ public final class ServantCardTransformManager {
       player.getPersistentData().remove("MasterLossDecayDamage");
       saveArmor(player, vars);
       saveFood(player, vars);
-      vars.servant_card_transformed = true;
-      vars.servant_card_id = servantId;
+      vars.servantCardState().setTransformed(true);
+      vars.servantCardState().setId(servantId);
       TalentService.suspendActiveEffects(player);
       PassiveService.suspendEffects(player);
       BodyTrainingService.stashForServantCard(player, vars);
@@ -105,26 +105,27 @@ public final class ServantCardTransformManager {
       MasterServantLinkService.clearMasterPosition(vars);
       MasterServantLinkService.clearSurvival(vars);
       vars.servant_card_last_combat_tick = player.level().getGameTime();
-      vars.servant_card_max_mana = ServantCardManaService.maxManaFor(servantId);
-      vars.servant_card_mana = vars.servant_card_max_mana;
-      vars.servant_card_mana_regen = ServantCardManaService.regenPerSecondFor(servantId);
-      vars.servant_card_jump_charges = SERVANT_CARD_DEFAULT_JUMP_CHARGES;
-      vars.servant_card_jump_recovery_ticks = 0;
-      vars.servant_card_jump_recovery_end = 0L;
-      vars.servant_card_np_cooldown = 0;
-      vars.servant_card_np_cooldown_end = 0L;
-      vars.servant_card_skill_cooldowns = "";
-      vars.servant_card_skill_cooldown_ends = "";
-      vars.servant_card_gilles_spellbook_mana = 0.0;
-      vars.servant_card_gilles_spellbook_max_mana = 0.0;
+      var card = vars.servantCardState();
+      card.setMaxMana(ServantCardManaService.maxManaFor(servantId));
+      card.setMana(card.maxMana());
+      card.setManaRegen(ServantCardManaService.regenPerSecondFor(servantId));
+      card.setJumpCharges(SERVANT_CARD_DEFAULT_JUMP_CHARGES);
+      card.setJumpRecoveryTicks(0);
+      card.setJumpRecoveryEnd(0L);
+      card.setNpCooldown(0);
+      card.setNpCooldownEnd(0L);
+      card.setSkillCooldowns("");
+      card.setSkillCooldownEnds("");
+      card.setGillesSpellbookMana(0.0);
+      card.setGillesSpellbookMaxMana(0.0);
       if ("medea".equals(servantId)) {
-         vars.servant_card_np_cooldown = 3600;
+         card.setNpCooldown(3600);
       }
-      vars.servant_card_transform_cooldown = 40;
-      vars.servant_card_release_cooldown = 40;
-      vars.servant_card_action_mode = 0;
+      card.setTransformCooldown(40);
+      card.setReleaseCooldown(40);
+      card.setActionMode(0);
       if ("enkidu".equals(servantId)) {
-         vars.servant_card_enkidu_transfiguration_points = "6,6,6,6,6";
+         card.setEnkiduPoints("6,6,6,6,6");
       }
       if ("gilgamesh".equals(servantId)) {
          ServantCardGilgameshSkills.reset(player);
@@ -141,19 +142,17 @@ public final class ServantCardTransformManager {
       if ("gilles_de_rais_caster".equals(servantId)) {
          ServantCardGillesDeRaisSkills.initialize(player);
       }
-      vars.servant_card_medusa_mystic_eyes_active = false;
-      vars.servant_card_hassan_cloak_broken = false;
-      vars.servant_card_hassan_zabaniya_animation_until = 0;
-      vars.servant_card_flying = false;
-      vars.servant_card_flight_mode = 0;
-      vars.servant_card_high_flight_until = 0L;
-      vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 100;
-      vars.servant_card_oda_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_recharge_at = 0L;
-      vars.servant_card_flight_forward = 0.0;
-      vars.servant_card_flight_strafe = 0.0;
-      vars.servant_card_flight_vertical = 0.0;
+      card.setMedusaMysticEyesActive(false);
+      card.setHassanCloakBroken(false);
+      card.setHassanZabaniyaAnimationUntil(0);
+      card.setFlying(false);
+      card.setFlightMode(0);
+      card.setHighFlightUntil(0L);
+      card.setHighFlightCooldownUntil(0L);
+      card.setOdaFlightTicks(100);
+      card.setOdaFlightCooldownUntil(0L);
+      card.setOdaFlightRechargeAt(0L);
+      card.setFlightInput(0.0, 0.0, 0.0);
       clearServantRuntimeState(player, vars);
       ServantCardTraitService.apply(player, definition);
       if ("jeanne_alter".equals(servantId)) {
@@ -190,67 +189,66 @@ public final class ServantCardTransformManager {
 
    public static boolean release(ServerPlayer player, boolean keepOneHp) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed) {
+      if (!vars.servantCardState().transformed()) {
          return false;
       }
-      ResourceLocation releasedId = publicServantId(vars.servant_card_id);
+      ResourceLocation releasedId = publicServantId(vars.servantCardState().id());
       removeAttributes(player);
       ServantCardFlightController.stop(player, vars, false);
       ServantCardDefenseHandler.clear(player);
       stopActiveNoblePhantasmVoices(player);
-      if ("ushiwakamaru_rider".equals(vars.servant_card_id)) ServantCardUshiwakamaruSkills.clear(player, vars);
+      if ("ushiwakamaru_rider".equals(vars.servantCardState().id())) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
-      if ("pale_rider".equals(vars.servant_card_id)) ServantCardPaleRiderSkills.clear(player);
-      if ("hundred_faces_hassan".equals(vars.servant_card_id)) ServantCardHundredFacesHassanSkills.clear(player);
-      if ("diarmuid_ua_duibhne".equals(vars.servant_card_id)) ServantCardDiarmuidSkills.clear(player);
-      if ("lancelot_berserker".equals(vars.servant_card_id)) ServantCardLancelotBerserkerSkills.clear(player, vars);
-      if ("iskandar".equals(vars.servant_card_id)) ServantCardIskandarSkills.clear(player);
-      if ("shadow_hassan".equals(vars.servant_card_id)) ServantCardShadowHassanSkills.clear(player);
-      if ("fanatic_assassin".equals(vars.servant_card_id)) ServantCardFanaticAssassinSkills.clear(player);
-      if ("senko_muramasa".equals(vars.servant_card_id)) ServantCardSenkoMuramasaSkills.clear(player, vars);
-      if ("zhao_yun_rider".equals(vars.servant_card_id)) ServantCardZhaoYunSkills.clear(player);
-      if ("gilgamesh_caster".equals(vars.servant_card_id)) ServantCardCasterGilgameshSkills.clear(player);
-      if ("okita_souji_saber".equals(vars.servant_card_id)) ServantCardOkitaSoujiSaberSkills.clear(player);
-      if ("gilles_de_rais_caster".equals(vars.servant_card_id)) ServantCardGillesDeRaisSkills.clear(player);
-      if ("jeanne_alter".equals(vars.servant_card_id)) {
+      if ("pale_rider".equals(vars.servantCardState().id())) ServantCardPaleRiderSkills.clear(player);
+      if ("hundred_faces_hassan".equals(vars.servantCardState().id())) ServantCardHundredFacesHassanSkills.clear(player);
+      if ("diarmuid_ua_duibhne".equals(vars.servantCardState().id())) ServantCardDiarmuidSkills.clear(player);
+      if ("lancelot_berserker".equals(vars.servantCardState().id())) ServantCardLancelotBerserkerSkills.clear(player, vars);
+      if ("iskandar".equals(vars.servantCardState().id())) ServantCardIskandarSkills.clear(player);
+      if ("shadow_hassan".equals(vars.servantCardState().id())) ServantCardShadowHassanSkills.clear(player);
+      if ("fanatic_assassin".equals(vars.servantCardState().id())) ServantCardFanaticAssassinSkills.clear(player);
+      if ("senko_muramasa".equals(vars.servantCardState().id())) ServantCardSenkoMuramasaSkills.clear(player, vars);
+      if ("zhao_yun_rider".equals(vars.servantCardState().id())) ServantCardZhaoYunSkills.clear(player);
+      if ("gilgamesh_caster".equals(vars.servantCardState().id())) ServantCardCasterGilgameshSkills.clear(player);
+      if ("okita_souji_saber".equals(vars.servantCardState().id())) ServantCardOkitaSoujiSaberSkills.clear(player);
+      if ("gilles_de_rais_caster".equals(vars.servantCardState().id())) ServantCardGillesDeRaisSkills.clear(player);
+      if ("jeanne_alter".equals(vars.servantCardState().id())) {
          net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.clear(player);
       }
       ServantCardLoadoutManager.restore(player, vars);
       MasterServantLinkService.onServantLost(player, vars);
-      vars.servant_card_transformed = false;
+      vars.servantCardState().setTransformed(false);
       BodyTrainingService.restoreFromServantCard(player, vars);
       clearServantCardTags(player);
-      vars.servant_card_id = "";
+      vars.servantCardState().setId("");
       vars.servant_card_master_uuid = "";
       vars.servant_card_contract_id = "";
       vars.servant_card_contract_state = MasterServantLinkService.SERVANT_CONTRACT_NATIVE;
-      vars.servant_card_mana = 0.0;
-      vars.servant_card_max_mana = 0.0;
-      vars.servant_card_mana_regen = 0.0;
-      vars.servant_card_jump_charges = 0;
-      vars.servant_card_jump_recovery_ticks = 0;
-      vars.servant_card_jump_recovery_end = 0L;
-      vars.servant_card_skill_cooldowns = "";
-      vars.servant_card_skill_cooldown_ends = "";
-      vars.servant_card_np_cooldown = 0;
-      vars.servant_card_np_cooldown_end = 0L;
-      vars.servant_card_gilles_spellbook_mana = 0.0;
-      vars.servant_card_gilles_spellbook_max_mana = 0.0;
-      vars.servant_card_action_mode = 0;
-      vars.servant_card_flying = false;
-      vars.servant_card_flight_mode = 0;
-      vars.servant_card_high_flight_until = 0L;
-      vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_ticks = 100;
-      vars.servant_card_oda_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_recharge_at = 0L;
-      vars.servant_card_flight_forward = 0.0;
-      vars.servant_card_flight_strafe = 0.0;
-      vars.servant_card_flight_vertical = 0.0;
-      vars.servant_card_release_cooldown = 40;
-      vars.servant_card_medusa_mystic_eyes_active = false;
-      vars.servant_card_hassan_cloak_broken = false;
-      vars.servant_card_hassan_zabaniya_animation_until = 0;
+      var card = vars.servantCardState();
+      card.setMana(0.0);
+      card.setMaxMana(0.0);
+      card.setManaRegen(0.0);
+      card.setJumpCharges(0);
+      card.setJumpRecoveryTicks(0);
+      card.setJumpRecoveryEnd(0L);
+      card.setSkillCooldowns("");
+      card.setSkillCooldownEnds("");
+      card.setNpCooldown(0);
+      card.setNpCooldownEnd(0L);
+      card.setGillesSpellbookMana(0.0);
+      card.setGillesSpellbookMaxMana(0.0);
+      card.setActionMode(0);
+      card.setFlying(false);
+      card.setFlightMode(0);
+      card.setHighFlightUntil(0L);
+      card.setHighFlightCooldownUntil(0L);
+      card.setOdaFlightTicks(100);
+      card.setOdaFlightCooldownUntil(0L);
+      card.setOdaFlightRechargeAt(0L);
+      card.setFlightInput(0.0, 0.0, 0.0);
+      card.setReleaseCooldown(40);
+      card.setMedusaMysticEyesActive(false);
+      card.setHassanCloakBroken(false);
+      card.setHassanZabaniyaAnimationUntil(0);
       clearServantRuntimeState(player, vars);
       ServantCardTraitService.clear(player);
       PassiveService.resumeEffects(player);
@@ -280,13 +278,14 @@ public final class ServantCardTransformManager {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.servant_card_transform_cooldown > 0) {
-         vars.servant_card_transform_cooldown--;
+      var card = vars.servantCardState();
+      if (card.transformCooldown() > 0) {
+         card.setTransformCooldown(card.transformCooldown() - 1);
       }
-      if (vars.servant_card_release_cooldown > 0) {
-         vars.servant_card_release_cooldown--;
+      if (card.releaseCooldown() > 0) {
+         card.setReleaseCooldown(card.releaseCooldown() - 1);
       }
-      if (!vars.servant_card_transformed) {
+      if (!vars.servantCardState().transformed()) {
          boolean bodyTrainingRestored = BodyTrainingService.restoreFromServantCard(player, vars);
          if (hasServantCardTag(player)) {
             clearServantCardTags(player);
@@ -294,7 +293,7 @@ public final class ServantCardTransformManager {
          if (bodyTrainingRestored) vars.syncPlayerVariables(player);
          return;
       }
-      ensureServantCardTags(player, vars.servant_card_id);
+      ensureServantCardTags(player, vars.servantCardState().id());
       normalizeFood(player);
       player.fallDistance = 0.0F;
       boolean timersChanged = tickNoblePhantasmCooldown(player, vars);
@@ -315,7 +314,7 @@ public final class ServantCardTransformManager {
    }
 
    private static void tickCurrentServant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      switch (vars.servant_card_id) {
+      switch (vars.servantCardState().id()) {
          case "artoria_pendragon" -> ServantCardArtoriaSkills.tick(player, vars);
          case "cu_chulainn" -> ServantCardCuChulainnSkills.tick(player, vars);
          case "heracles" -> ServantCardHeraclesSkills.tick(player, vars);
@@ -423,7 +422,7 @@ public final class ServantCardTransformManager {
          ItemStack stack = player.getItemBySlot(slot);
          if (!stack.isEmpty()) stack.enchant(vanishing, 1);
       }
-      boolean emiyaWeaponsSurvive = "emiya_archer".equals(vars.servant_card_id);
+      boolean emiyaWeaponsSurvive = "emiya_archer".equals(vars.servantCardState().id());
       if (!emiyaWeaponsSurvive) {
          for (InteractionHand hand : InteractionHand.values()) {
             ItemStack stack = player.getItemInHand(hand);
@@ -516,7 +515,7 @@ public final class ServantCardTransformManager {
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || slot < -1 || slot > 9) {
+      if (!vars.servantCardState().transformed() || slot < -1 || slot > 9) {
          return false;
       }
       if (ServantCardArashSkills.isPlayerChanting(player)) {
@@ -533,14 +532,14 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
-      String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servant_card_id, slot);
+      String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servantCardState().id(), slot);
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
-      ServantContext externalContext = new ServantContext(player, null, vars.servant_card_id, player.level(), 0.0, true, player.level().getGameTime());
-      boolean noblePhantasmAction = isNoblePhantasmAction(vars.servant_card_id, slot);
+      ServantContext externalContext = new ServantContext(player, null, vars.servantCardState().id(), player.level(), 0.0, true, player.level().getGameTime());
+      boolean noblePhantasmAction = isNoblePhantasmAction(vars.servantCardState().id(), slot);
       boolean externalUnlimited = ServantCardUnlimitedMode.isEnabled(player);
       int externalCooldownSlot = slot < 0 ? 6 : slot;
       int externalCooldown = externalUnlimited ? 0 : noblePhantasmAction
-         ? vars.servant_card_np_cooldown : getSkillCooldown(vars, externalCooldownSlot);
+         ? vars.servantCardState().npCooldown() : getSkillCooldown(vars, externalCooldownSlot);
       if (parsedActionId != null && externalCooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown",
             String.format(java.util.Locale.ROOT, "%.1f", externalCooldown / 20.0F)), true);
@@ -549,7 +548,7 @@ public final class ServantCardTransformManager {
       if (parsedActionId != null && NeoForge.EVENT_BUS.post(new ServantActionEvent.Pre(
          noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
       net.xxxjk.typemoonworld.api.ExecutionResult external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
-         player, vars.servant_card_id, slot, player.isCrouching(), player.level().getGameTime()
+         player, vars.servantCardState().id(), slot, player.isCrouching(), player.level().getGameTime()
       );
       if (external.handled()) {
          if (external.success() && external.resourceCost() > 0.0) {
@@ -570,7 +569,7 @@ public final class ServantCardTransformManager {
             noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext, external));
          return external.success();
       }
-      ServantCardSkillAction action = actionFor(vars.servant_card_id, slot, player.isCrouching());
+      ServantCardSkillAction action = actionFor(vars.servantCardState().id(), slot, player.isCrouching());
       if (action == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
@@ -578,12 +577,12 @@ public final class ServantCardTransformManager {
       if ("muramasa_forge".equals(action.effectId())) {
          return ServantCardSenkoMuramasaSkills.openForgeSelection(player);
       }
-      boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servant_card_id, slot);
+      boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servantCardState().id(), slot);
       boolean np = noblePhantasmAction;
       boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
-      if (np && "emiya_archer".equals(vars.servant_card_id) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
-         if (!unlimited && vars.servant_card_np_cooldown > 0) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
+      if (np && "emiya_archer".equals(vars.servantCardState().id()) && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
+         if (!unlimited && vars.servantCardState().npCooldown() > 0) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servantCardState().npCooldown() / 20.0F)), true);
             return false;
          }
          return PlayerNoblePhantasmHelper.useOneShotProjectionNoblePhantasm(player);
@@ -613,7 +612,7 @@ public final class ServantCardTransformManager {
       if ("gilgamesh_melee".equals(action.effectId())) {
          return ServantCardGilgameshSkills.performMelee(player);
       }
-      if ("pale_rider".equals(vars.servant_card_id)
+      if ("pale_rider".equals(vars.servantCardState().id())
          && ((slot == 1 && ServantCardPaleRiderSkills.isPossessing(player))
             || (slot == 8 && ServantCardPaleRiderSkills.isUnderworldActive(player))
             || (slot == 9 && ServantCardPaleRiderSkills.isCalamityActive(player)))) {
@@ -637,7 +636,7 @@ public final class ServantCardTransformManager {
          }
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
-      int currentCooldown = unlimited ? 0 : npSlot ? vars.servant_card_np_cooldown : getSkillCooldown(vars, cooldownSlot);
+      int currentCooldown = unlimited ? 0 : npSlot ? vars.servantCardState().npCooldown() : getSkillCooldown(vars, cooldownSlot);
       if (!unlimited && "zhao_yun_summon_hakuryu".equals(action.effectId())) {
          currentCooldown = Math.max(currentCooldown, ServantCardZhaoYunSkills.summonCooldownRemaining(player));
       }
@@ -654,7 +653,7 @@ public final class ServantCardTransformManager {
          return false;
       }
       if ("mana_burst".equals(action.effectId())
-         && "artoria_pendragon".equals(vars.servant_card_id)
+         && "artoria_pendragon".equals(vars.servantCardState().id())
          && ServantCardArtoriaSkills.isManaBurstActive(player)) {
          ServantCardArtoriaSkills.performManaBurst(player);
          vars.syncPlayerVariables(player);
@@ -675,7 +674,7 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
-      if ("wu_er_da".equals(action.effectId()) && "li_shuwen".equals(vars.servant_card_id)) {
+      if ("wu_er_da".equals(action.effectId()) && "li_shuwen".equals(vars.servantCardState().id())) {
          if (!ServantCardLiShuwenSkills.performLiWuErDa(player, vars)) {
             return false;
          }
@@ -688,11 +687,11 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
-      if ("escape".equals(action.effectId()) && "medea".equals(vars.servant_card_id) && !ServantCardMedeaSkills.hasMedeaWorkshop(player)) {
+      if ("escape".equals(action.effectId()) && "medea".equals(vars.servantCardState().id()) && !ServantCardMedeaSkills.hasMedeaWorkshop(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.medea_no_workshop"), true);
          return false;
       }
-      if ("paracelsus_workshop_teleport".equals(action.effectId()) && "paracelsus".equals(vars.servant_card_id) && !ServantCardParacelsusSkills.hasWorkshop(player)) {
+      if ("paracelsus_workshop_teleport".equals(action.effectId()) && "paracelsus".equals(vars.servantCardState().id()) && !ServantCardParacelsusSkills.hasWorkshop(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.paracelsus_no_workshop"), true);
          return false;
       }
@@ -733,11 +732,11 @@ public final class ServantCardTransformManager {
       }
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       boolean zhaoYunBreakthroughDiscount =
-         "zhao_yun_rider".equals(vars.servant_card_id)
+         "zhao_yun_rider".equals(vars.servantCardState().id())
             && ServantCardZhaoYunSkills.hasSevenInSevenOutDiscount(player)
             && ServantCardZhaoYunSkills.isMeleeSmallSkill(action.effectId());
       boolean ubwFreeLayeredProjection =
-         "emiya_archer".equals(vars.servant_card_id)
+         "emiya_archer".equals(vars.servantCardState().id())
             && "emiya_layered_projection".equals(action.effectId())
             && vars.is_in_ubw;
       if (zhaoYunBreakthroughDiscount) {
@@ -821,28 +820,28 @@ public final class ServantCardTransformManager {
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || ServantMasterCarryService.isCarryingMaster(player)) {
+      if (!vars.servantCardState().transformed() || ServantMasterCarryService.isCarryingMaster(player)) {
          return;
       }
-      if ("emiya_archer".equals(vars.servant_card_id) && slot == 1) {
+      if ("emiya_archer".equals(vars.servantCardState().id()) && slot == 1) {
          if (pressed) {
             triggerAction(player, slot);
          } else {
             ServantCardEmiyaSkills.stopRhoAias(player);
          }
-      } else if ("li_shuwen".equals(vars.servant_card_id) && slot == 2) {
+      } else if ("li_shuwen".equals(vars.servantCardState().id()) && slot == 2) {
          if (pressed) {
             triggerAction(player, slot);
          } else {
             player.getPersistentData().remove("ServantCardLiCounterUntil");
          }
-      } else if ("arash".equals(vars.servant_card_id) && slot == 9) {
+      } else if ("arash".equals(vars.servantCardState().id()) && slot == 9) {
          if (pressed) {
             triggerAction(player, slot);
          } else {
             ServantCardArashSkills.requestPlayerStellaRelease(player);
          }
-      } else if ("oda_nobunaga".equals(vars.servant_card_id)) {
+      } else if ("oda_nobunaga".equals(vars.servantCardState().id())) {
          if (slot == 4) {
             if (pressed) {
                triggerAction(player, slot);
@@ -878,14 +877,15 @@ public final class ServantCardTransformManager {
 
    public static boolean bigJump(ServerPlayer player, float forwardInput, float strafeInput) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || vars.servant_card_jump_charges <= 0) {
+      var card = vars.servantCardState();
+      if (!card.transformed() || card.jumpCharges() <= 0) {
          return false;
       }
-      if ("shadow_hassan".equals(vars.servant_card_id) && !ServantCardShadowHassanSkills.canAttack(player)) return false;
+      if ("shadow_hassan".equals(vars.servantCardState().id()) && !ServantCardShadowHassanSkills.canAttack(player)) return false;
       if (PlayerNoblePhantasmHelper.isChargingMovementLocked(player)) {
          return false;
       }
-      ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
+      ServantDefinition definition = ServantDataRegistry.get(vars.servantCardState().id());
       double scale = definition == null ? 1.0 : Mth.clamp(definition.parameters().movementSpeed() / 0.28, 0.8, 1.8);
       double yaw = Math.toRadians(player.getYRot());
       Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
@@ -899,7 +899,7 @@ public final class ServantCardTransformManager {
       player.setDeltaMovement(horizontal.scale(horizontalPower).add(0.0, verticalPower, 0.0));
       player.hurtMarked = true;
       player.fallDistance = 0.0F;
-      if ("heracles".equals(vars.servant_card_id)) {
+      if ("heracles".equals(vars.servantCardState().id())) {
          ServantCardHeraclesSkills.beginHeraclesAirborne(player, false);
       }
       if (player.level() instanceof ServerLevel level) {
@@ -907,9 +907,9 @@ public final class ServantCardTransformManager {
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, player.getX(), player.getY() + 0.35, player.getZ(), 10, 0.25, 0.18, 0.25, 0.06);
          level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 0.75F, 1.45F);
       }
-      vars.servant_card_jump_charges--;
-      vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
-      vars.servant_card_jump_recovery_end = 0L;
+      card.setJumpCharges(card.jumpCharges() - 1);
+      card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.recoveryTicksFor(card.jumpCharges()));
+      card.setJumpRecoveryEnd(0L);
       vars.syncPlayerVariables(player);
       return true;
    }
@@ -933,7 +933,7 @@ public final class ServantCardTransformManager {
    }
 
    private static void tickMovementRamp(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
+      ServantDefinition definition = ServantDataRegistry.get(vars.servantCardState().id());
       ServantParams params = definition == null ? null : definition.parameters();
       AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
       if (params == null || speed == null) {
@@ -1147,52 +1147,53 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean tickJumpRecovery(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      var card = vars.servantCardState();
       boolean eightBoatActive = ServantCardUshiwakamaruSkills.isEightBoatActive(player);
       int maxCharges = ServantCardUshiwakamaruRules.jumpLimit(eightBoatActive);
       long now = player.level().getGameTime();
       ServantCardJumpRecoveryRules.State normalized = ServantCardJumpRecoveryRules.normalize(
-         vars.servant_card_jump_charges,
-         vars.servant_card_jump_recovery_ticks,
-         vars.servant_card_jump_recovery_end,
+         card.jumpCharges(),
+         card.jumpRecoveryTicks(),
+         card.jumpRecoveryEnd(),
          eightBoatActive,
          now
       );
       boolean changed = normalized.changed();
-      vars.servant_card_jump_charges = normalized.charges();
-      vars.servant_card_jump_recovery_ticks = normalized.recoveryTicks();
-      vars.servant_card_jump_recovery_end = normalized.recoveryEnd();
-      if (vars.servant_card_jump_charges >= maxCharges) {
+      card.setJumpCharges(normalized.charges());
+      card.setJumpRecoveryTicks(normalized.recoveryTicks());
+      card.setJumpRecoveryEnd(normalized.recoveryEnd());
+      if (card.jumpCharges() >= maxCharges) {
          return changed;
       }
       if (!hasJumpRecoverySupport(player)) {
-         if (vars.servant_card_jump_recovery_end > 0L) {
-            vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.clampTicks(
-               remainingTicks(now, vars.servant_card_jump_recovery_end));
-            vars.servant_card_jump_recovery_end = 0L;
+         if (card.jumpRecoveryEnd() > 0L) {
+            card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.clampTicks(
+               remainingTicks(now, card.jumpRecoveryEnd())));
+            card.setJumpRecoveryEnd(0L);
             changed = true;
-         } else if (vars.servant_card_jump_recovery_ticks <= 0) {
-            vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
+         } else if (card.jumpRecoveryTicks() <= 0) {
+            card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.recoveryTicksFor(card.jumpCharges()));
             changed = true;
          }
          return changed;
       }
-      if (vars.servant_card_jump_recovery_end <= 0L && vars.servant_card_jump_recovery_ticks > 0) {
-         vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.clampTicks(vars.servant_card_jump_recovery_ticks);
-         vars.servant_card_jump_recovery_end = now + vars.servant_card_jump_recovery_ticks;
+      if (card.jumpRecoveryEnd() <= 0L && card.jumpRecoveryTicks() > 0) {
+         card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.clampTicks(card.jumpRecoveryTicks()));
+         card.setJumpRecoveryEnd(now + card.jumpRecoveryTicks());
          changed = true;
       }
-      vars.servant_card_jump_recovery_ticks = remainingTicks(now, vars.servant_card_jump_recovery_end);
-      if (vars.servant_card_jump_recovery_ticks > ServantCardJumpRecoveryRules.EMPTY_RECOVERY_TICKS) {
-         vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
-         vars.servant_card_jump_recovery_end = now + vars.servant_card_jump_recovery_ticks;
+      card.setJumpRecoveryTicks(remainingTicks(now, card.jumpRecoveryEnd()));
+      if (card.jumpRecoveryTicks() > ServantCardJumpRecoveryRules.EMPTY_RECOVERY_TICKS) {
+         card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.recoveryTicksFor(card.jumpCharges()));
+         card.setJumpRecoveryEnd(now + card.jumpRecoveryTicks());
          changed = true;
       }
-      if (vars.servant_card_jump_recovery_ticks > 0) {
+      if (card.jumpRecoveryTicks() > 0) {
          return true;
       }
-      vars.servant_card_jump_charges = Math.min(maxCharges, vars.servant_card_jump_charges + 1);
-      vars.servant_card_jump_recovery_ticks = ServantCardJumpRecoveryRules.recoveryTicksFor(vars.servant_card_jump_charges);
-      vars.servant_card_jump_recovery_end = vars.servant_card_jump_charges >= maxCharges ? 0L : now + vars.servant_card_jump_recovery_ticks;
+      card.setJumpCharges(Math.min(maxCharges, card.jumpCharges() + 1));
+      card.setJumpRecoveryTicks(ServantCardJumpRecoveryRules.recoveryTicksFor(card.jumpCharges()));
+      card.setJumpRecoveryEnd(card.jumpCharges() >= maxCharges ? 0L : now + card.jumpRecoveryTicks());
       return true;
    }
 
@@ -1204,8 +1205,8 @@ public final class ServantCardTransformManager {
          return true;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if ("oda_nobunaga".equals(vars.servant_card_id)
-         && !vars.servant_card_flying
+      if ("oda_nobunaga".equals(vars.servantCardState().id())
+         && !vars.servantCardState().flying()
          && ServantCardFlightController.hasGroundWithin(player, 2)) {
          return true;
       }
@@ -1214,6 +1215,7 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean tickSkillCooldowns(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      var card = vars.servantCardState();
       long now = player.level().getGameTime();
       long[] ends = parseSkillCooldownEnds(vars);
       int[] legacy = parseSkillCooldowns(vars);
@@ -1233,9 +1235,11 @@ public final class ServantCardTransformManager {
       }
       String serialized = serializeSkillCooldowns(remaining);
       String serializedEnds = serializeSkillCooldownEnds(ends);
-      changed |= !serialized.equals(vars.servant_card_skill_cooldowns) || !serializedEnds.equals(vars.servant_card_skill_cooldown_ends);
-      vars.servant_card_skill_cooldowns = serialized;
-      vars.servant_card_skill_cooldown_ends = serializedEnds;
+      changed |= !serialized.equals(card.skillCooldowns()) || !serializedEnds.equals(card.skillCooldownEnds());
+      if (changed) {
+         card.setSkillCooldowns(serialized);
+         card.setSkillCooldownEnds(serializedEnds);
+      }
       return changed;
    }
 
@@ -1255,8 +1259,8 @@ public final class ServantCardTransformManager {
       if (slot >= 0 && slot < cooldowns.length) {
          cooldowns[slot] = Math.max(0, ticks);
          ends[slot] = ticks > 0 ? player.level().getGameTime() + ticks : 0L;
-         vars.servant_card_skill_cooldowns = serializeSkillCooldowns(cooldowns);
-         vars.servant_card_skill_cooldown_ends = serializeSkillCooldownEnds(ends);
+         vars.servantCardState().setSkillCooldowns(serializeSkillCooldowns(cooldowns));
+         vars.servantCardState().setSkillCooldownEnds(serializeSkillCooldownEnds(ends));
       }
    }
 
@@ -1266,27 +1270,28 @@ public final class ServantCardTransformManager {
    }
 
    private static boolean tickNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      var card = vars.servantCardState();
       long now = player.level().getGameTime();
-      if (vars.servant_card_np_cooldown_end <= 0L && vars.servant_card_np_cooldown > 0) {
-         vars.servant_card_np_cooldown_end = now + vars.servant_card_np_cooldown;
+      if (card.npCooldownEnd() <= 0L && card.npCooldown() > 0) {
+         card.setNpCooldownEnd(now + card.npCooldown());
       }
-      int remaining = remainingTicks(now, vars.servant_card_np_cooldown_end);
-      boolean changed = remaining != vars.servant_card_np_cooldown;
-      vars.servant_card_np_cooldown = remaining;
+      int remaining = remainingTicks(now, card.npCooldownEnd());
+      boolean changed = remaining != card.npCooldown();
+      if (changed) card.setNpCooldown(remaining);
       if (remaining == 0) {
-         vars.servant_card_np_cooldown_end = 0L;
+         card.setNpCooldownEnd(0L);
       }
       return changed;
    }
 
    public static void setNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int ticks) {
       if (ServantCardUnlimitedMode.isEnabled(player)) {
-         vars.servant_card_np_cooldown = 0;
-         vars.servant_card_np_cooldown_end = 0L;
+         vars.servantCardState().setNpCooldown(0);
+         vars.servantCardState().setNpCooldownEnd(0L);
          return;
       }
-      vars.servant_card_np_cooldown = Math.max(0, ticks);
-      vars.servant_card_np_cooldown_end = ticks > 0 ? player.level().getGameTime() + ticks : 0L;
+      vars.servantCardState().setNpCooldown(Math.max(0, ticks));
+      vars.servantCardState().setNpCooldownEnd(ticks > 0 ? player.level().getGameTime() + ticks : 0L);
    }
 
    private static int remainingTicks(long now, long end) {
@@ -1295,7 +1300,7 @@ public final class ServantCardTransformManager {
 
    private static long[] parseSkillCooldownEnds(TypeMoonWorldModVariables.PlayerVariables vars) {
       long[] result = new long[10];
-      String raw = vars.servant_card_skill_cooldown_ends == null ? "" : vars.servant_card_skill_cooldown_ends;
+      String raw = vars.servantCardState().skillCooldownEnds();
       if (raw.isBlank()) {
          return result;
       }
@@ -1331,7 +1336,7 @@ public final class ServantCardTransformManager {
 
    private static int[] parseSkillCooldowns(TypeMoonWorldModVariables.PlayerVariables vars) {
       int[] result = new int[10];
-      String raw = vars.servant_card_skill_cooldowns == null ? "" : vars.servant_card_skill_cooldowns;
+      String raw = vars.servantCardState().skillCooldowns();
       if (raw.isBlank()) {
          return result;
       }
@@ -1480,7 +1485,7 @@ public final class ServantCardTransformManager {
          case "mana_burst" -> ServantCardArtoriaSkills.performManaBurst(player);
          case "charisma" -> ServantCardArtoriaSkills.performCharisma(player);
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);
-         case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, vars.servant_card_id);
+         case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, vars.servantCardState().id());
          case "circle_realm" -> ServantCardLiShuwenSkills.performCircleRealm(player);
          case "berkana" -> ServantCardCommonSkills.performBerkana(player);
          case "perfect_form" -> ServantCardEnkiduSkills.performEnkiduPerfectForm(player);

@@ -374,6 +374,11 @@ public class TYPE_MOON_WORLD {
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData
       );
       registrar.playToClient(
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage.TYPE,
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage::handleData
+      );
+      registrar.playToClient(
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.TYPE,
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.STREAM_CODEC,
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage::handleData

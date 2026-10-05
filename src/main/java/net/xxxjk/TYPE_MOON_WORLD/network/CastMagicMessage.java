@@ -71,7 +71,7 @@ public record CastMagicMessage(int eventType, int pressedms) implements CustomPa
                TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
-               vars.magic_cooldown = 10.0;
+               vars.magicState().setCooldownAtLeast(10.0);
                vars.syncMana(player);
             }
             break;

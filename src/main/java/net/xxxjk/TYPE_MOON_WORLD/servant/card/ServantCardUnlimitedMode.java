@@ -34,15 +34,16 @@ public final class ServantCardUnlimitedMode {
 
    public static void clearCooldowns(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.servant_card_skill_cooldowns = "";
-      vars.servant_card_skill_cooldown_ends = "";
-      vars.servant_card_np_cooldown = 0;
-      vars.servant_card_np_cooldown_end = 0L;
-      vars.servant_card_flight_toggle_cooldown = 0;
-      vars.servant_card_high_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_cooldown_until = 0L;
-      vars.servant_card_oda_flight_recharge_at = 0L;
-      vars.servant_card_oda_flight_ticks = 100;
+      var card = vars.servantCardState();
+      card.setSkillCooldowns("");
+      card.setSkillCooldownEnds("");
+      card.setNpCooldown(0);
+      card.setNpCooldownEnd(0L);
+      card.setFlightToggleCooldown(0);
+      card.setHighFlightCooldownUntil(0L);
+      card.setOdaFlightCooldownUntil(0L);
+      card.setOdaFlightRechargeAt(0L);
+      card.setOdaFlightTicks(100);
       for (String tag : CUSTOM_COOLDOWN_TAGS) {
          player.getPersistentData().remove(tag);
       }

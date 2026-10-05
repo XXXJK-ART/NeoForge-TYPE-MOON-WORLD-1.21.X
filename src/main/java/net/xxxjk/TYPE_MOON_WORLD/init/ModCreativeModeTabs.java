@@ -171,6 +171,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.RELIC_GILGAMESH_ASH_URN);
                         output.accept(ModItems.RELIC_BAOBHAN_SITH_HEELS);
                         output.accept(ModItems.RELIC_DIARMUID_YELLOW_ROSE_TIP);
+                        output.accept(ModItems.RELIC_DIARMUID_RED_ROSE_TIP);
                         output.accept(ModItems.RELIC_ISKANDAR_CLOAK_FRAGMENT);
                         output.accept(ModItems.RELIC_OKITA_KATANA);
                         output.accept(ModItems.ODA_MATCHLOCK_CATALYST);

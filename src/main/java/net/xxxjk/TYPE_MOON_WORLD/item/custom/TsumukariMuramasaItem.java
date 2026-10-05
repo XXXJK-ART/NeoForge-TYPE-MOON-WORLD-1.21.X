@@ -333,8 +333,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
 
    private static boolean consumePlayerMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (amount <= 0.0) return true;
-      if (vars.player_mana + 1.0E-6 < amount) return false;
-      vars.player_mana -= amount;
+      if (!vars.magicState().tryConsume(amount)) return false;
       vars.syncMana(player);
       return true;
    }

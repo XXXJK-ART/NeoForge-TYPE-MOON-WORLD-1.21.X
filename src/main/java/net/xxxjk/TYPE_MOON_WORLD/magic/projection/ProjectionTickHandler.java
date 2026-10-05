@@ -54,8 +54,6 @@ public class ProjectionTickHandler {
          }
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(Post event) {
       if (!event.getEntity().level().isClientSide) {
          Player player = event.getEntity();

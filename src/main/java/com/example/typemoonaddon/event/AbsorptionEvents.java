@@ -35,7 +35,7 @@ public final class AbsorptionEvents {
         if (damage > 0.0F) {
             TypeMoonWorldModVariables.PlayerVariables vars =
                     player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + damage);
+            vars.magicState().addMana(damage);
             vars.syncMana(player);
         }
 

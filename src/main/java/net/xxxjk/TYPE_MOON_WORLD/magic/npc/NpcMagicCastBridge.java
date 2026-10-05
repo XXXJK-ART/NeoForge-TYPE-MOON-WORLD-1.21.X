@@ -1,11 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
-import com.example.typemoonaddon.airflow_blade.AirflowBladeService;
-import com.example.typemoonaddon.detection.DetectionService;
-import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService;
-import com.example.typemoonaddon.imaginary_space.ImaginarySpaceService.CastStatus;
-import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
-import com.example.typemoonaddon.magic.EntityDisplacementService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,6 +45,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.typemoonworld.api.AddonMagicHooks;
 import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity;
@@ -280,39 +275,7 @@ public final class NpcMagicCastBridge {
    }
 
    public static boolean shouldUseMeleeGoal(MysticMagicianEntity npc) {
-      if (npc == null) {
-         return true;
-      } else {
-         CompoundTag data = npc.getPersistentData();
-         boolean hasRanged = data.getBoolean(TAG_CAP_HAS_RANGED);
-         boolean hasMeleeBurst = data.getBoolean(TAG_CAP_HAS_MELEE_BURST);
-         boolean onlyMelee = data.getBoolean(TAG_CAP_ONLY_MELEE);
-         NpcCombatTemperament temperament = npc.getCombatTemperament();
-         LivingEntity target = npc.getTarget();
-         if (target != null && target.isAlive()) {
-            double distanceSqr = npc.distanceToSqr(target);
-            if (onlyMelee) {
-               return distanceSqr <= 121.0;
-            } else if (hasRanged && hasMeleeBurst) {
-               return distanceSqr <= switch (temperament) {
-                  case TIMID -> 20.25;
-                  case BOLD -> 42.25;
-                  default -> 30.25;
-               };
-            } else if (hasRanged) {
-               // Ranged-only (typically no reinforcement): avoid committing to melee unless target is very close.
-               return distanceSqr <= switch (temperament) {
-                  case TIMID -> 2.25;
-                  case BOLD -> 6.25;
-                  default -> 4.0;
-               };
-            } else {
-               return distanceSqr <= 25.0;
-            }
-         } else {
-            return !hasRanged;
-         }
-      }
+      return NpcCombatDecision.shouldUseMelee(npc);
    }
 
    public static void tickServer(MysticMagicianEntity npc) {
@@ -322,16 +285,15 @@ public final class NpcMagicCastBridge {
          if (OriginBulletHelper.isNpcSealed(npc)) {
             vars.is_magic_circuit_open = false;
             vars.magic_circuit_open_timer = 0.0;
-            vars.player_mana = 0.0;
-            tickLocalCooldown(vars);
+            vars.magicState().setMana(0.0);
+            vars.magicState().tickCooldown();
             clearPendingMachineGun(npc);
             return;
          }
          long gameTime = npc.level().getGameTime();
          handleOnFireEmergency(npc, gameTime);
          tickProjectedHandItemExpiry(npc, gameTime);
-         tickManaRecovery(npc, vars);
-         tickLocalCooldown(vars);
+         NpcResourceManager.tick(npc, vars);
          cleanupTemporaryAnalyzedMagics(npc, vars, gameTime, false);
          NpcMagicCastBridge.MagicCapabilityProfile capabilities = getCachedMagicCapabilities(npc, vars, gameTime);
          syncCapabilityFlags(npc, capabilities);
@@ -393,7 +355,7 @@ public final class NpcMagicCastBridge {
                      if (gameTime - lastDecision >= 5L) {
                         npc.getPersistentData().putLong(TAG_LAST_DECISION_TICK, gameTime);
                         if (gameTime >= npc.getPersistentData().getLong(TAG_NEXT_GLOBAL_CAST_TICK)) {
-                           if (!(vars.player_mana <= 1.0)) {
+                           if (vars.magicState().hasMana(1.0)) {
                               if (!tryEmergencyHealingMagic(npc, vars, gameTime) && !tryUseJewelItemSkill(npc, target, vars, gameTime, threat)) {
                                  TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry slot = chooseNextMagic(npc, vars, target, gameTime, capabilities);
                                  if (slot == null || slot.magicId == null || slot.magicId.isEmpty()) {
@@ -405,7 +367,7 @@ public final class NpcMagicCastBridge {
                                        boolean castSuccess = NpcMagicExecutionService.castMagic(npc, target, vars, slot, effectiveProficiency, gameTime);
                                        if (castSuccess) {
                                           int gcd = NpcMagicExecutionService.getGlobalCooldownAfterCast(slot.magicId, slot.presetPayload);
-                                          vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+                                          vars.magicState().setCooldownAtLeast(gcd);
                                           npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                                           setMagicCooldown(npc, slot.magicId, gameTime + NpcMagicExecutionService.getPerMagicCooldown(slot.magicId, slot.presetPayload));
                                           recordResourceMagicUse(npc, slot.magicId, gameTime);
@@ -441,10 +403,10 @@ public final class NpcMagicCastBridge {
       vars.clearAllWheelSlots();
       vars.learned_magics.clear();
       vars.crest_entries.clear();
-      vars.player_max_mana = 1000.0;
-      vars.player_mana = 1000.0;
-      vars.player_mana_egenerated_every_moment = 8.0;
-      vars.player_restore_magic_moment = 4.0;
+      vars.magicState().setMaxMana(1000.0);
+      vars.magicState().setMana(1000.0);
+      vars.magicState().setManaRegen(8.0);
+      vars.magicState().setRestoreMagicMoment(4.0);
       vars.is_magus = true;
       vars.player_magic_attributes_earth = true;
       vars.player_magic_attributes_water = true;
@@ -543,10 +505,10 @@ public final class NpcMagicCastBridge {
       vars.selected_magic_display_names.clear();
       vars.current_magic_index = 0;
       vars.active_wheel_index = 0;
-      vars.player_max_mana = 800.0;
-      vars.player_mana = refillMana ? 800.0 : Mth.clamp(vars.player_mana, 0.0, 800.0);
-      vars.player_mana_egenerated_every_moment = 5.0;
-      vars.player_restore_magic_moment = 10.0;
+      vars.magicState().setMaxMana(800.0);
+      vars.magicState().setMana(refillMana ? 800.0 : Mth.clamp(vars.magicState().mana(), 0.0, 800.0));
+      vars.magicState().setManaRegen(5.0);
+      vars.magicState().setRestoreMagicMoment(10.0);
       vars.is_magus = true;
       vars.player_magic_attributes_earth = false;
       vars.player_magic_attributes_water = false;
@@ -947,7 +909,7 @@ public final class NpcMagicCastBridge {
          syncCapabilityFlags(npc, analyzeMagicCapabilities(vars));
       }
       if (force) {
-         vars.magic_analysis_active = false;
+         vars.magicState().setAnalysisActive(false);
       }
    }
 
@@ -1007,7 +969,7 @@ public final class NpcMagicCastBridge {
          vars.is_magus = true;
          vars.is_magic_circuit_open = false;
          vars.magic_circuit_open_timer = 0.0;
-         vars.magic_cooldown = 0.0;
+         vars.magicState().setCooldown(0.0);
          npc.setCombatStyle(NpcCombatStyle.fromAttributes(vars));
          data.putBoolean(TAG_MAGIC_INIT, true);
          data.putLong(TAG_LAST_DECISION_TICK, 0L);
@@ -1096,10 +1058,10 @@ public final class NpcMagicCastBridge {
    ) {
       vars.is_magus = true;
       MysticMagicianRank resolvedRank = rank == null ? MysticMagicianRank.ADEPT : rank;
-      vars.player_max_mana = round1(resolvedRank.rollMana(random));
-      vars.player_mana = vars.player_max_mana;
-      vars.player_mana_egenerated_every_moment = round1(1.0 + random.nextDouble() * 9.0);
-      vars.player_restore_magic_moment = round1(1.0 + random.nextDouble() * 9.0);
+      vars.magicState().setMaxMana(round1(resolvedRank.rollMana(random)));
+      vars.magicState().setMana(vars.magicState().maxMana());
+      vars.magicState().setManaRegen(round1(1.0 + random.nextDouble() * 9.0));
+      vars.magicState().setRestoreMagicMoment(round1(1.0 + random.nextDouble() * 9.0));
       vars.current_mana_regen_multiplier = 1.0;
    }
 
@@ -1528,26 +1490,7 @@ public final class NpcMagicCastBridge {
    }
 
    private static void tickManaRecovery(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (npc.level() instanceof ServerLevel serverLevel) {
-         double var9 = LeylineService.getRegenMultiplier(serverLevel, npc.blockPosition());
-         vars.current_mana_regen_multiplier = var9;
-         double interval = Math.max(1.0, vars.player_restore_magic_moment);
-         if (vars.is_magic_circuit_open) {
-            interval = Math.max(1.0, interval / 2.0);
-         }
-
-         double regenPerTick = vars.player_mana_egenerated_every_moment * var9 / interval;
-         regenPerTick = BoundaryMagicIntegration.adjustNaturalManaRegen(npc, regenPerTick);
-         if (vars.player_mana < vars.player_max_mana) {
-            vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + regenPerTick);
-         }
-      }
-   }
-
-   private static void tickLocalCooldown(TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.magic_cooldown > 0.0) {
-         vars.magic_cooldown = Math.max(0.0, vars.magic_cooldown - 1.0);
-      }
+      NpcResourceManager.tick(npc, vars);
    }
 
    private static void maybeCloseCircuit(MysticMagicianEntity npc, TypeMoonWorldModVariables.PlayerVariables vars, long gameTime) {
@@ -1555,7 +1498,7 @@ public final class NpcMagicCastBridge {
       if (vars.is_magic_circuit_open && gameTime - lastCombat >= 120L) {
          vars.is_magic_circuit_open = false;
          vars.magic_circuit_open_timer = 0.0;
-         vars.magic_analysis_active = false;
+         vars.magicState().setAnalysisActive(false);
       }
 
       if (gameTime - lastCombat >= 120L) {
@@ -1889,7 +1832,7 @@ public final class NpcMagicCastBridge {
             }
          }
 
-         if (gameTime >= getCastLockUntil(npc) && !(vars.player_mana <= 1.0)) {
+         if (gameTime >= getCastLockUntil(npc) && vars.magicState().hasMana(1.0)) {
             if (gameTime >= data.getLong(TAG_ENV_UTILITY_TICK)) {
                if (capabilities.hasBuff() && NpcMagicExecutionService.hasCastableMagic(vars, "reinforcement") && gameTime >= getMagicCooldownUntil(npc, "reinforcement")) {
                   CompoundTag payload = new CompoundTag();
@@ -2018,7 +1961,7 @@ public final class NpcMagicCastBridge {
             gravityPayload.putInt("gravity_mode", underPressure ? 2 : 1);
             if (castGravity(npc, target, vars, gravityPayload, Math.max(55.0, vars.proficiency_gravity_magic))) {
                int gcd = 18;
-               vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+               vars.magicState().setCooldownAtLeast(gcd);
                npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                setMagicCooldown(npc, "gravity_magic", gameTime + 50L);
                setCastLockUntil(npc, gameTime + 10L);
@@ -2121,7 +2064,7 @@ public final class NpcMagicCastBridge {
    ) {
       double chantMultiplier = AdvancedPassiveService.chantMultiplier(vars);
       int gcd = Math.max(1, (int)Math.round(NpcMagicExecutionService.getGlobalCooldownAfterCast(magicId, payload) * chantMultiplier));
-      vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+      vars.magicState().setCooldownAtLeast(gcd);
       npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
       long perMagicCooldown = Math.max(1L, Math.round(NpcMagicExecutionService.getPerMagicCooldown(magicId, payload) * chantMultiplier));
       setMagicCooldown(npc, magicId, gameTime + perMagicCooldown);
@@ -2137,7 +2080,7 @@ public final class NpcMagicCastBridge {
          return false;
       } else if (!hasJewelItemAccess(vars)) {
          return false;
-      } else if (!(vars.player_mana < 18.0) && gameTime >= getCastLockUntil(npc)) {
+      } else if (vars.magicState().hasMana(18.0) && gameTime >= getCastLockUntil(npc)) {
          if (gameTime < npc.getPersistentData().getLong(TAG_JEWEL_ITEM_NEXT_TICK)) {
             return false;
          } else {
@@ -2150,7 +2093,8 @@ public final class NpcMagicCastBridge {
                   return false;
                } else {
                   String usedSkillId = null;
-                  double manaRatio = vars.player_max_mana <= 0.0 ? 0.0 : Mth.clamp(vars.player_mana / vars.player_max_mana, 0.0, 1.0);
+                  double maxMana = vars.magicState().maxMana();
+                  double manaRatio = maxMana <= 0.0 ? 0.0 : Mth.clamp(vars.magicState().mana() / maxMana, 0.0, 1.0);
                   int advancedChance = highThreat ? 16 : 10;
                   if (closeControlWindow) {
                      advancedChance += 18;
@@ -2197,7 +2141,7 @@ public final class NpcMagicCastBridge {
                         case NPC_JEWEL_ITEM_ADVANCED -> 1800;
                         default -> 1200;
                      };
-                     vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+                     vars.magicState().setCooldownAtLeast(gcd);
                      npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                      setMagicCooldown(npc, usedSkillId, gameTime + perCd);
                      recordResourceMagicUse(npc, usedSkillId, gameTime);
@@ -3214,7 +3158,7 @@ public final class NpcMagicCastBridge {
          int lowerDepth = airborneCast ? radius : 2;
          if (level instanceof ServerLevel serverLevel) {
             double ySpread = airborneCast ? radius * 0.45 : radius * 0.35;
-            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, target.getX(), target.getY() + 1.0, target.getZ(), 140, radius * 0.5, ySpread, radius * 0.5, 0.05);
+            serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, target.getX(), target.getY() + 1.0, target.getZ(), net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(140), radius * 0.5, ySpread, radius * 0.5, 0.05);
             serverLevel.sendParticles(ParticleTypes.ITEM_SNOWBALL, target.getX(), target.getY() + 0.8, target.getZ(), 72, radius * 0.12, airborneCast ? 1.1 : 0.8, radius * 0.12, 0.03);
             serverLevel.sendParticles(ParticleTypes.CLOUD, target.getX(), target.getY() + 0.4, target.getZ(), 36, radius * 0.4, airborneCast ? 0.7 : 0.45, radius * 0.4, 0.01);
          }
@@ -3432,7 +3376,7 @@ public final class NpcMagicCastBridge {
       NpcMagicCastBridge.MagicCapabilityProfile capabilities
    ) {
       steerAwayFromTarget(npc, target);
-      if (gameTime >= getCastLockUntil(npc) && !(vars.player_mana <= 1.0)) {
+      if (gameTime >= getCastLockUntil(npc) && vars.magicState().hasMana(1.0)) {
          if (gameTime >= npc.getPersistentData().getLong(TAG_THREAT_UTILITY_TICK) && tryPreBuffForHighThreat(npc, vars, gameTime, threat, capabilities)) {
             npc.getPersistentData().putLong(TAG_THREAT_UTILITY_TICK, gameTime + 35L);
          }
@@ -3524,7 +3468,7 @@ public final class NpcMagicCastBridge {
             return false;
          } else {
             int gcd = 18;
-            vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+            vars.magicState().setCooldownAtLeast(gcd);
             npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
             setMagicCooldown(npc, "gravity_magic", gameTime + 55L);
             setCastLockUntil(npc, gameTime + 12L);
@@ -3551,7 +3495,7 @@ public final class NpcMagicCastBridge {
       }
 
       long lockUntil = getCastLockUntil(npc);
-      if (gameTime >= lockUntil && !(vars.player_mana <= 1.0)) {
+      if (gameTime >= lockUntil && vars.magicState().hasMana(1.0)) {
          if (trySelfGravityStabilize(npc, vars, gameTime, true)) {
             npc.getPersistentData().putLong(TAG_RETREAT_UTILITY_TICK, gameTime + 16L);
             return;
@@ -3570,7 +3514,7 @@ public final class NpcMagicCastBridge {
             boolean cast = castGander(npc, target, vars, payload, Math.max(40.0, vars.proficiency_gander));
             if (cast) {
                int gcd = 14;
-               vars.magic_cooldown = Math.max(vars.magic_cooldown, (double)gcd);
+               vars.magicState().setCooldownAtLeast(gcd);
                npc.getPersistentData().putLong(TAG_NEXT_GLOBAL_CAST_TICK, gameTime + gcd);
                setMagicCooldown(npc, "gander", gameTime + 26L);
                setCastLockUntil(npc, gameTime + 10L);
@@ -3586,7 +3530,7 @@ public final class NpcMagicCastBridge {
       if (target != null && target.isAlive() && npc.distanceToSqr(target) <= 144.0
          && hasCastableMagic(vars, "entity_displacement")
          && gameTime >= getMagicCooldownUntil(npc, "entity_displacement")
-         && EntityDisplacementService.swapNpc(npc, target)) {
+         && AddonMagicHooks.swapNpc(npc, target)) {
          applyPostCastCooldown(npc, vars, "entity_displacement", new CompoundTag(), gameTime, 12);
          return true;
       }
@@ -3770,7 +3714,8 @@ public final class NpcMagicCastBridge {
       if (forceRangedRetreat) {
          return null;
       } else {
-         double manaRatio = vars.player_max_mana <= 0.0 ? 0.0 : Mth.clamp(vars.player_mana / vars.player_max_mana, 0.0, 1.0);
+         double maxMana = vars.magicState().maxMana();
+         double manaRatio = maxMana <= 0.0 ? 0.0 : Mth.clamp(vars.magicState().mana() / maxMana, 0.0, 1.0);
          Provider lookup = npc.registryAccess();
 
          for (int slot = 0; slot < 12; slot++) {
@@ -4160,7 +4105,7 @@ public final class NpcMagicCastBridge {
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars != null && (vars.is_magus || vars.player_max_mana >= 100.0 || !vars.learned_magics.isEmpty());
+      return vars != null && (vars.is_magus || vars.magicState().maxMana() >= 100.0 || !vars.learned_magics.isEmpty());
    }
 
    private static boolean isSpiritLikeTarget(LivingEntity target) {
@@ -4213,7 +4158,7 @@ public final class NpcMagicCastBridge {
    }
 
    private static boolean canCastWithMana(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, CompoundTag payload, double proficiency) {
-      return vars.player_mana >= estimateManaCost(magicId, payload, proficiency);
+      return vars.magicState().hasMana(estimateManaCost(magicId, payload, proficiency));
    }
 
    private static double estimateManaCost(String magicId, CompoundTag payload, double proficiency) {
@@ -4230,7 +4175,7 @@ public final class NpcMagicCastBridge {
          case "spiritual_healing" -> 15.0;
          case "magic_analysis" -> 8.0;
          case "magic_bullet" -> 8.0 + proficiency * 0.06;
-         case "airflow_blade" -> AirflowBladeService.BLADE_MANA_COST;
+         case "airflow_blade" -> AddonMagicHooks.bladeManaCost();
          case "detection" -> 6.0;
          case "imaginary_displacement" -> 70.0 + Math.max(0.0, 100.0 - proficiency) * 0.25;
          case "imaginary_space" -> 100.0;
@@ -4367,9 +4312,8 @@ public final class NpcMagicCastBridge {
          return false;
       }
       markCastingPose(caster, 20);
-      var outcome = ImaginarySpaceService.castNpcCreature(caster, target);
-      if (outcome.status() != CastStatus.SUCCESS) {
-         vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + 100.0);
+      if (!AddonMagicHooks.castNpcImaginarySpace(caster, target)) {
+         vars.magicState().addMana(100.0);
          return false;
       }
       MagicProficiencyService.add(vars, "imaginary_space", 0.2);
@@ -4399,7 +4343,7 @@ public final class NpcMagicCastBridge {
       } else if (!consumeMana(vars, estimateManaCost("magic_analysis", new CompoundTag(), proficiency))) {
          return false;
       }
-      vars.magic_analysis_active = true;
+      vars.magicState().setAnalysisActive(true);
       vars.is_magic_circuit_open = true;
       markCastingPose(caster, 8);
       if (target != null && target.isAlive()) {
@@ -4428,16 +4372,16 @@ public final class NpcMagicCastBridge {
    ) {
       if (caster == null || target == null || !target.isAlive() || vars == null) {
          return false;
-      } else if (!hasProjectilePath(caster, target, AirflowBladeService.BLADE_SPEED, 0.0)) {
+      } else if (!hasProjectilePath(caster, target, AddonMagicHooks.bladeSpeed(), 0.0)) {
          repositionForClearShot(caster, target, 11.0, 1.12);
          return false;
       } else if (!consumeMana(vars, estimateManaCost("airflow_blade", new CompoundTag(), proficiency))) {
          return false;
       }
       markCastingPose(caster, 10);
-      Vec3 direction = getAimDirection(caster, target, AirflowBladeService.BLADE_SPEED, 0.0);
+      Vec3 direction = getAimDirection(caster, target, AddonMagicHooks.bladeSpeed(), 0.0);
       faceCasterToDirection(caster, direction);
-      return AirflowBladeService.castNpcBlade(caster, target, proficiency);
+      return AddonMagicHooks.castNpcBlade(caster, target, proficiency);
    }
 
    static boolean castDetection(
@@ -4452,7 +4396,7 @@ public final class NpcMagicCastBridge {
       if (target != null && target.isAlive()) {
          caster.lookAt(target, 45.0F, 45.0F);
       }
-      return DetectionService.castNpcDetection(caster, target, proficiency);
+      return AddonMagicHooks.castNpcDetection(caster, target, proficiency);
    }
 
    static boolean castSuggestionMagic(
@@ -4593,7 +4537,7 @@ public final class NpcMagicCastBridge {
       MysticMagicianEntity caster, LivingEntity target, TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag payload, double proficiency
    ) {
       boolean barrage = isBarrageMode(payload);
-      if (!barrage && target != null && target.isAlive() && caster.distanceToSqr(target) > 49.0 && vars.player_mana > 220.0 && caster.getRandom().nextFloat() < 0.35F) {
+      if (!barrage && target != null && target.isAlive() && caster.distanceToSqr(target) > 49.0 && vars.magicState().hasMana(220.0) && caster.getRandom().nextFloat() < 0.35F) {
          barrage = true;
       }
 
@@ -4792,7 +4736,7 @@ public final class NpcMagicCastBridge {
    ) {
       int mode = payload.contains("reinforcement_mode") ? Mth.clamp(payload.getInt("reinforcement_mode"), 0, 3) : 0;
       int requestedLevel = payload.contains("reinforcement_level") ? Mth.clamp(payload.getInt("reinforcement_level"), 1, 5) : 1;
-      int manaAffordableLevel = Mth.clamp((int)Math.floor(vars.player_mana / 20.0), 0, 5);
+      int manaAffordableLevel = Mth.clamp((int)Math.floor(vars.magicState().mana() / 20.0), 0, 5);
       int level = Math.min(requestedLevel, manaAffordableLevel);
       if (level <= 0) {
          return false;
@@ -5281,12 +5225,7 @@ public final class NpcMagicCastBridge {
 
    private static boolean consumeMana(TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       amount *= AdvancedPassiveService.manaMultiplier(vars);
-      if (vars.player_mana < amount) {
-         return false;
-      } else {
-         vars.player_mana = Math.max(0.0, vars.player_mana - amount);
-         return true;
-      }
+      return vars.magicState().tryConsume(amount);
    }
 
    private static int getGanderChargeSeconds(double proficiency) {

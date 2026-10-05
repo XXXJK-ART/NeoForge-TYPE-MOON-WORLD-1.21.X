@@ -26,6 +26,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 public class ServantEntitySpawnEggItem extends DeferredSpawnEggItem {
    public ServantEntitySpawnEggItem(Supplier<? extends EntityType<? extends Mob>> type, int primary, int secondary) {
@@ -54,15 +55,8 @@ public class ServantEntitySpawnEggItem extends DeferredSpawnEggItem {
 
       BlockPos spawnPos = clickedState.getCollisionShape(level, clickedPos).isEmpty() ? clickedPos : clickedPos.relative(direction);
       EntityType<?> type = this.getType(itemStack);
-      Entity spawned = type.spawn(
-         serverLevel,
-         itemStack,
-         context.getPlayer(),
-         spawnPos,
-         MobSpawnType.SPAWN_EGG,
-         true,
-         !Objects.equals(clickedPos, spawnPos) && direction == Direction.UP
-      );
+      Entity spawned = spawnSafely(type, serverLevel, itemStack, context.getPlayer(), spawnPos,
+            !Objects.equals(clickedPos, spawnPos) && direction == Direction.UP);
       if (spawned != null) {
          itemStack.shrink(1);
          level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, clickedPos);
@@ -91,7 +85,7 @@ public class ServantEntitySpawnEggItem extends DeferredSpawnEggItem {
       }
 
       EntityType<?> type = this.getType(itemStack);
-      Entity spawned = type.spawn(serverLevel, itemStack, player, blockPos, MobSpawnType.SPAWN_EGG, false, false);
+      Entity spawned = spawnSafely(type, serverLevel, itemStack, player, blockPos, false);
       if (spawned == null) {
          return InteractionResultHolder.pass(itemStack);
       }
@@ -100,5 +94,20 @@ public class ServantEntitySpawnEggItem extends DeferredSpawnEggItem {
       player.awardStat(Stats.ITEM_USED.get(this));
       level.gameEvent(player, GameEvent.ENTITY_PLACE, spawned.position());
       return InteractionResultHolder.consume(itemStack);
+   }
+
+   private static Entity spawnSafely(EntityType<?> type, ServerLevel level, ItemStack stack, Player owner,
+                                     BlockPos pos, boolean alignToBlock) {
+      try {
+         return type.spawn(level, stack, owner, pos, MobSpawnType.SPAWN_EGG, true, alignToBlock);
+      } catch (RuntimeException exception) {
+         // A malformed data-driven servant definition must not crash a world when its egg is used.
+         TYPE_MOON_WORLD.LOGGER.error("Servant spawn egg failed for {}", type, exception);
+         Entity fallback = type.create(level);
+         if (fallback == null) return null;
+         fallback.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, owner == null ? 0.0F : owner.getYRot(), 0.0F);
+         level.addFreshEntity(fallback);
+         return fallback;
+      }
    }
 }

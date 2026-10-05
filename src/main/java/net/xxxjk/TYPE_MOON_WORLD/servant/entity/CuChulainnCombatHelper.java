@@ -386,12 +386,12 @@ public final class CuChulainnCombatHelper {
             double top = bottom + entity.getBbHeight() + 0.1;
             for (int i = 0; i < 8; i++) {
                double t = i / 7.0, offset = -2.15 + t * 4.3;
-               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x - 2.15, bottom, z + offset, 1, 0, 0, 0, 0);
-               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + 2.15, top, z + offset, 1, 0, 0, 0, 0);
-               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + offset, bottom, z - 2.15, 1, 0, 0, 0, 0);
-               level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x + offset, top, z + 2.15, 1, 0, 0, 0, 0);
+               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x - 2.15, bottom, z + offset, 2, 0.02, 0.02, 0.02, 0.01);
+               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + 2.15, top, z + offset, 2, 0.02, 0.02, 0.02, 0.01);
+               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + offset, bottom, z - 2.15, 2, 0.02, 0.02, 0.02, 0.01);
+               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + offset, top, z + 2.15, 2, 0.02, 0.02, 0.02, 0.01);
             }
-            level.sendParticles(net.xxxjk.TYPE_MOON_WORLD.init.ModParticles.RUNE_BARRIER.get(), x, y, z, 6, 2.15, 0.9, 2.15, 0.0);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 18, 2.15, 0.9, 2.15, 0.015);
          }
       } else if (entity.getPersistentData().getFloat(RUNE_BARRIER_HP_TAG) > 0.0F) {
          clearRuneBarrier(entity);

@@ -320,8 +320,8 @@ public final class ArashStellaControllerEntity extends Entity {
          ServantCardArashSkills.finishPlayerChant(player);
          ServantCardArashSkills.beginPlayerStellaSacrifice(player);
       }
-      level.sendParticles(WHITE, origin.x, origin.y, origin.z, 140, 1.2, 1.2, 1.2, 0.28);
-      level.sendParticles(GREEN, origin.x, origin.y, origin.z, 220, 1.8, 1.8, 1.8, 0.34);
+      level.sendParticles(WHITE, origin.x, origin.y, origin.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(140), 1.2, 1.2, 1.2, 0.28);
+      level.sendParticles(GREEN, origin.x, origin.y, origin.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(220), 1.8, 1.8, 1.8, 0.34);
       level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0, 0, 0, 0);
       this.cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
          profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
@@ -395,9 +395,9 @@ public final class ArashStellaControllerEntity extends Entity {
                hurtStellaTarget(level, target, profile.coreDamage());
             }
          }
-         level.sendParticles(WHITE, center.x, center.y, center.z, 420, 4.0, 4.0, 4.0, 0.6);
-         level.sendParticles(GREEN, center.x, center.y, center.z, 520, 7.0, 7.0, 7.0, 0.75);
-         level.sendParticles(GOLD, center.x, center.y, center.z, 280, 5.0, 5.0, 5.0, 0.5);
+         level.sendParticles(WHITE, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(420), 4.0, 4.0, 4.0, 0.6);
+         level.sendParticles(GREEN, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(520), 7.0, 7.0, 7.0, 0.75);
+         level.sendParticles(GOLD, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(280), 5.0, 5.0, 5.0, 0.5);
          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 2.0, 2.0, 2.0, 0.0);
       }
       if (sphere == null) {

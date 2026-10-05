@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["DGD", "SS "],
+  "key": {
+    "D": {"item": "minecraft:poppy"},
+    "G": {"item": "typemoonworld:divine_steel"},
+    "S": {"item": "minecraft:nether_star"}
+  },
+  "result": {"id": "typemoonworld:relic_diarmuid_red_rose_tip", "count": 1}
+}

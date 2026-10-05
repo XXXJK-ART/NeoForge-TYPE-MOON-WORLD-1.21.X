@@ -165,7 +165,7 @@ public final class StorageService {
     private static boolean depositMana(ServerPlayer player, StorageData data) {
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double playerMana = finiteNonNegative(vars.player_mana);
+        double playerMana = vars.magicState().mana();
         double storedMana = data.getStoredMana();
         double freeCapacity = Math.max(0.0D, StorageData.MANA_CAPACITY - storedMana);
         double amount = Math.min(TRANSFER_AMOUNT, Math.min(playerMana, freeCapacity));
@@ -176,7 +176,7 @@ public final class StorageService {
             return false;
         }
 
-        vars.player_mana = Math.max(0.0D, playerMana - amount);
+        vars.magicState().setMana(playerMana - amount);
         data.setStoredMana(storedMana + amount);
         vars.syncMana(player);
         syncData(player, data);
@@ -192,8 +192,8 @@ public final class StorageService {
     private static void withdrawMana(ServerPlayer player, StorageData data) {
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double playerMana = finiteNonNegative(vars.player_mana);
-        double maxMana = finiteNonNegative(vars.player_max_mana);
+        double playerMana = vars.magicState().mana();
+        double maxMana = vars.magicState().maxMana();
         double storedMana = data.getStoredMana();
         double missingMana = Math.max(0.0D, maxMana - playerMana);
         double amount = Math.min(TRANSFER_AMOUNT, Math.min(storedMana, missingMana));
@@ -205,7 +205,7 @@ public final class StorageService {
         }
 
         data.setStoredMana(storedMana - amount);
-        vars.player_mana = Math.min(maxMana, playerMana + amount);
+        vars.magicState().setMana(Math.min(maxMana, playerMana + amount));
         vars.syncMana(player);
         syncData(player, data);
         player.displayClientMessage(Component.translatable(
@@ -255,7 +255,7 @@ public final class StorageService {
         return vars.is_magus
                 && vars.player_magic_attributes_imaginary_number
                 && vars.is_magic_circuit_open
-                && vars.magic_cooldown <= 0.0D
+                && vars.magicState().cooldown() <= 0.0D
                 && PlayerMagicSelectionService.isCurrentSelection(vars, StorageMagic.MAGIC_ID);
     }
 

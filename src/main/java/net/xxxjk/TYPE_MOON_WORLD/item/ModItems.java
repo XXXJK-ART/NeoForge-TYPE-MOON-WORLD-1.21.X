@@ -352,6 +352,7 @@ public class ModItems {
     public static final DeferredItem<Item> RELIC_GILGAMESH_ASH_URN = registerSummoningRelic("relic_gilgamesh_ash_urn");
     public static final DeferredItem<Item> RELIC_BAOBHAN_SITH_HEELS = registerSummoningRelic("relic_baobhan_sith_heels");
     public static final DeferredItem<Item> RELIC_DIARMUID_YELLOW_ROSE_TIP = registerSummoningRelic("relic_diarmuid_yellow_rose_tip");
+    public static final DeferredItem<Item> RELIC_DIARMUID_RED_ROSE_TIP = registerSummoningRelic("relic_diarmuid_red_rose_tip");
     public static final DeferredItem<Item> RELIC_ISKANDAR_CLOAK_FRAGMENT = registerSummoningRelic("relic_iskandar_cloak_fragment");
     public static final DeferredItem<Item> RELIC_OKITA_KATANA = ITEMS.register("relic_okita_katana",
             () -> new OkitaKatanaRelicItem(new Item.Properties().rarity(Rarity.RARE)));
@@ -713,11 +714,11 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, true, (String)null, 
-                    "jewel_magic_shoot", "jewel_random_shoot"));
+                    "jewel_magic_shoot"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL_BROKEN = ITEMS.register("magic_scroll_basic_jewel_broken",
             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null,
-                    "jewel_magic_shoot", "jewel_random_shoot"));
+                    "jewel_magic_shoot"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, "jewel_magic_shoot", // Require Basic Jewel Magic

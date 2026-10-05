@@ -65,7 +65,7 @@ public final class ServantCardSenkoMuramasaSkills {
       }
       refreshModifiers(player, now);
       if (now % 10L == 0L && data.getLong(FLAME_UNTIL) > now) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 1.0);
+         vars.servantCardState().addMana(1.0);
          vars.syncMana(player);
       }
       if (data.getBoolean(NP_PENDING)) {
@@ -171,7 +171,7 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean performFlame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 100.0);
+      vars.servantCardState().addMana(100.0);
       vars.syncMana(player);
       player.getPersistentData().putLong(FLAME_UNTIL, player.level().getGameTime() + 400L);
       return true;

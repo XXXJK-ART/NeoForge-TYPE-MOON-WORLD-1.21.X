@@ -53,7 +53,7 @@ public class MagicProjection {
                ResourceLocation executorId = ResourceLocation.tryParse(custom.getString("tmw_projection_executor"));
                if (executorId != null && net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry.hasProjectionItem(executorId)
                      && net.xxxjk.TYPE_MOON_WORLD.api.ExtensionApiRegistry.projectionItem(executorId,
-                        new net.xxxjk.typemoonworld.api.ProjectionItemContext(player, (net.minecraft.server.level.ServerLevel)player.level(), player.blockPosition(), target, vars.player_mana))) {
+                        new net.xxxjk.typemoonworld.api.ProjectionItemContext(player, (net.minecraft.server.level.ServerLevel)player.level(), player.blockPosition(), target, vars.magicState().mana()))) {
                   vars.syncPlayerVariables(player);
                   return;
                }

@@ -128,7 +128,9 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
          EmiyaArrowOrbProjectileEntity projectile = new EmiyaArrowOrbProjectileEntity(serverLevel, player, payload);
          projectile.setPos(spawn.x, spawn.y - 0.12, spawn.z);
          projectile.setDirectDamage(10.0F + charge * 10.0F);
-         projectile.setBrokenPhantasm(isNoblePhantasmPayload(payload));
+         // A projected payload only detonates after the caster has learned Broken Phantasm.
+         // Loading a Noble Phantasm into the bow is not itself permission to explode it.
+         projectile.setBrokenPhantasm(varsHasBrokenPhantasm(player) && isNoblePhantasmPayload(payload));
          projectile.setMaxLifeTicks(160);
          projectile.setDeltaMovement(player.getLookAngle().normalize().scale(2.4 + charge * 1.0));
          serverLevel.addFreshEntity(projectile);
@@ -200,6 +202,12 @@ public class NamelessBowItem extends net.minecraft.world.item.Item implements Ge
 
    private static boolean isNoblePhantasmPayload(ItemStack stack) {
       return stack.getItem() instanceof NoblePhantasmItem;
+   }
+
+   private static boolean varsHasBrokenPhantasm(Player player) {
+      if (player == null) return false;
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.hasLearnedSelfMagic("broken_phantasm");
    }
 
    @Override

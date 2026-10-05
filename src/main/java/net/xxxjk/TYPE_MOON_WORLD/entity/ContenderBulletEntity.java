@@ -143,7 +143,7 @@ public class ContenderBulletEntity extends ThrowableItemProjectile {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.is_magic_circuit_open) {
             player.invulnerableTime = 0;
-            player.hurt(this.damageSources().thrown(this, this.getOwner()), (float)Math.max(0.0, vars.player_max_mana));
+            player.hurt(this.damageSources().thrown(this, this.getOwner()), (float)Math.max(0.0, vars.magicState().maxMana()));
             player.invulnerableTime = 0;
          }
          if (player.isAlive()) {

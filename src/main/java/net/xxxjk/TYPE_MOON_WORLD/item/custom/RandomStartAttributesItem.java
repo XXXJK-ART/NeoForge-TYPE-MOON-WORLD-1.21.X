@@ -40,10 +40,10 @@ public class RandomStartAttributesItem extends Item {
    private static void reroll(Player player, RandomSource random) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       vars.is_magus = true;
-      vars.player_max_mana = Math.round((100.0 + random.nextDouble() * 900.0) * 10.0) / 10.0;
-      vars.player_mana = vars.player_max_mana;
-      vars.player_mana_egenerated_every_moment = Math.round((1.0 + random.nextDouble() * 9.0) * 10.0) / 10.0;
-      vars.player_restore_magic_moment = Math.round((1.0 + random.nextDouble() * 9.0) * 10.0) / 10.0;
+      vars.magicState().setMaxMana(Math.round((100.0 + random.nextDouble() * 900.0) * 10.0) / 10.0);
+      vars.magicState().setMana(vars.magicState().maxMana());
+      vars.magicState().setManaRegen(Math.round((1.0 + random.nextDouble() * 9.0) * 10.0) / 10.0);
+      vars.magicState().setRestoreMagicMoment(Math.round((1.0 + random.nextDouble() * 9.0) * 10.0) / 10.0);
       clearAttributes(vars);
       if (random.nextInt(100) < 10) {
          if (random.nextBoolean()) {
@@ -82,9 +82,9 @@ public class RandomStartAttributesItem extends Item {
       player.displayClientMessage(
          Component.translatable(
             "message.typemoonworld.random_start_attributes.applied",
-            String.format(java.util.Locale.ROOT, "%.1f", vars.player_max_mana),
-            String.format(java.util.Locale.ROOT, "%.1f", vars.player_mana_egenerated_every_moment),
-            String.format(java.util.Locale.ROOT, "%.1f", vars.player_restore_magic_moment / 20.0)
+            String.format(java.util.Locale.ROOT, "%.1f", vars.magicState().maxMana()),
+            String.format(java.util.Locale.ROOT, "%.1f", vars.magicState().manaRegen()),
+            String.format(java.util.Locale.ROOT, "%.1f", vars.magicState().restoreMagicMoment() / 20.0)
          ),
          true
       );

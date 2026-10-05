@@ -1008,8 +1008,8 @@ public final class MedusaCombatHelper {
       }
       if (victim instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.is_magus || vars.player_max_mana > 0.0) {
-            vars.player_mana = Math.max(0.0, vars.player_mana - manaDrain);
+         if (vars.is_magus || vars.magicState().maxMana() > 0.0) {
+            vars.magicState().tryConsume(manaDrain);
             vars.syncMana(player);
          }
       }

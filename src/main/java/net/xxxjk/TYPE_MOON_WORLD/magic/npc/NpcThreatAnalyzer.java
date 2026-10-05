@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -66,10 +65,11 @@ public final class NpcThreatAnalyzer {
          seen.add(currentTarget.getUUID());
          count++;
       }
-      for (Mob mob : npc.level().getEntitiesOfClass(Mob.class, npc.getBoundingBox().inflate(20.0D),
-         candidate -> candidate != npc && candidate.isAlive() && candidate.getTarget() == npc)) {
+      for (net.minecraft.world.entity.Mob mob : NpcNearbyEntityIndex.mobs(npc, 20.0D)) {
+         if (mob != npc && mob.isAlive() && mob.getTarget() == npc) {
          if (seen.add(mob.getUUID())) {
             count++;
+         }
          }
       }
       return count;

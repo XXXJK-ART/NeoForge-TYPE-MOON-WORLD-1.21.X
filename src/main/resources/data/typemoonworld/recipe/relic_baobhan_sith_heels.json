@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [" RD", "PPP", "   "],
+  "key": {
+    "R": {"item": "minecraft:red_dye"},
+    "D": {"item": "minecraft:leather"},
+    "P": {"item": "minecraft:leather"}
+  },
+  "result": {"id": "typemoonworld:relic_baobhan_sith_heels", "count": 1}
+}

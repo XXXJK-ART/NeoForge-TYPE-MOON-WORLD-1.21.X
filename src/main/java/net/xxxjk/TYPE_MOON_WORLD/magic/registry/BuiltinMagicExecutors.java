@@ -146,7 +146,7 @@ public final class BuiltinMagicExecutors {
    private static MagicExecutionResult executeMagicAnalysis(MagicExecutionContext context) {
       ServerPlayer player = context.asServerPlayer();
       TypeMoonWorldModVariables.PlayerVariables vars = context.vars();
-      vars.magic_analysis_active = !vars.magic_analysis_active;
+      vars.magicState().setAnalysisActive(!vars.magicState().analysisActive());
       vars.syncPlayerVariables(context.entity());
       return MagicExecutionResult.SUCCESS;
    }

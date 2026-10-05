@@ -508,7 +508,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.servant_card_transformed) return ServantCardManaService.consumeNoblePhantasm(player, vars, amount);
-         if (vars.player_mana < amount) return false; vars.player_mana -= amount; vars.syncMana(player); return true;
+         if (!vars.magicState().tryConsume(amount)) return false; vars.syncMana(player); return true;
       }
       return true;
    }

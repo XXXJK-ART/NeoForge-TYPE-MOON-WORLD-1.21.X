@@ -571,7 +571,7 @@ public final class ServantCardParacelsusSkills {
          spawnWorkshopHighlight(level, center, radius, false);
       }
       if (isInsideWorkshop(player) && player.tickCount % 10 == 0) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 5.5);
+         vars.servantCardState().addMana(5.5);
          vars.syncMana(player);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 25, 0, false, false, false));
       }

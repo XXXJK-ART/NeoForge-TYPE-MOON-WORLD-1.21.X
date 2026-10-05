@@ -384,10 +384,10 @@ public final class MagicResistanceHelper {
    private static MagicResistanceRank rankFromManaCapacity(LivingEntity entity) {
       if (!(entity instanceof Player) && !(entity instanceof MysticMagicianEntity)) {
          TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return (vars.is_magus || vars.player_max_mana >= 100.0) ? rankFromManaCapacity(vars.player_max_mana) : MagicResistanceRank.NONE;
+         return (vars.is_magus || vars.magicState().maxMana() >= 100.0) ? rankFromManaCapacity(vars.magicState().maxMana()) : MagicResistanceRank.NONE;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return (vars.is_magus || vars.player_max_mana >= 100.0) ? rankFromManaCapacity(vars.player_max_mana) : MagicResistanceRank.NONE;
+      return (vars.is_magus || vars.magicState().maxMana() >= 100.0) ? rankFromManaCapacity(vars.magicState().maxMana()) : MagicResistanceRank.NONE;
    }
 
    public static MagicResistanceRank rankFromManaCapacity(double maxMana) {

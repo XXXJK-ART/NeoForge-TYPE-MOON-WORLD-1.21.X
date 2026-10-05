@@ -137,7 +137,7 @@ public class MagicJewelMachineGun {
                      if (!fired) {
                         clearState(player);
                      } else {
-                        vars.magic_cooldown = BURST_INTERVAL_TICKS;
+                        vars.magicState().setCooldown(BURST_INTERVAL_TICKS);
                         boolean crestCast = vars.isCurrentSelectionFromCrest("jewel_machine_gun");
                         if (!crestCast) {
                            net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars, "jewel_magic_release", 0.1);
@@ -183,7 +183,7 @@ public class MagicJewelMachineGun {
    private static void syncBurstState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, long now, boolean syncProficiency) {
       CompoundTag state = player.getPersistentData();
       long lastManaSync = state.getLong(TAG_LAST_MANA_SYNC_TICK);
-      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.player_mana <= 0.0) {
+      if (now - lastManaSync >= MANA_SYNC_INTERVAL_TICKS || vars.magicState().mana() <= 0.0) {
          vars.syncMana(player);
          state.putLong(TAG_LAST_MANA_SYNC_TICK, now);
       }
@@ -203,7 +203,7 @@ public class MagicJewelMachineGun {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.jewel_machine_gun.not_enough_gems", MIN_GEMS_REQUIRED), true);
          return false;
       } else {
-         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, BURST_COUNT);
+         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.magicState().mana(), BURST_COUNT);
          if (shotPlans.size() < BURST_COUNT) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.magic.not_enough_mana"), true);
             return false;
@@ -217,7 +217,7 @@ public class MagicJewelMachineGun {
       if (!hasEnoughResourceForBurst(player, vars)) {
          return false;
       } else {
-         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.player_mana, BURST_COUNT);
+         List<MagicJewelMachineGun.ShotPlan> shotPlans = planShots(player, vars.magicState().mana(), BURST_COUNT);
          List<ItemStack> consumed = consumePlannedGems(player, shotPlans);
          if (consumed.size() < BURST_COUNT) {
             return false;
@@ -231,7 +231,7 @@ public class MagicJewelMachineGun {
             }
 
             if (emptyUsed > 0) {
-               vars.player_mana = Math.max(0.0, vars.player_mana - emptyUsed * EMPTY_GEM_MANA_COST);
+               vars.magicState().tryConsume(emptyUsed * EMPTY_GEM_MANA_COST);
             }
 
             for (int i = 0; i < consumed.size(); i++) {

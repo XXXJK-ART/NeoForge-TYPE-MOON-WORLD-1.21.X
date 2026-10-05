@@ -43,6 +43,8 @@ public final class AddonPlayerTickServices {
       OriasService.tickCharge(player);
       ImaginaryDisplacementEvents.tick(player);
       WormEvents.tick(player);
-      MagicKnowledgeCompatibilityEvents.tick(player);
+      // Knowledge normalization is a one-time login/data-migration task;
+      // keeping it off the simulation path avoids a per-player branch every
+      // tick and preserves the PlayerEvent handlers in that service.
    }
 }

@@ -31,6 +31,7 @@ public final class SummoningRelicRegistry {
       map("relic_gilgamesh_ash_urn", "gilles_de_rais_caster");
       map("relic_baobhan_sith_heels", "baobhan_sith");
       map("relic_diarmuid_yellow_rose_tip", "diarmuid_ua_duibhne");
+      map("relic_diarmuid_red_rose_tip", "diarmuid_ua_duibhne");
       map("relic_iskandar_cloak_fragment", "iskandar");
       map("relic_okita_katana", "okita_souji_saber");
       map("redsword", "senko_muramasa");

@@ -11,6 +11,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.constants.MagicConstants;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.minecraft.network.chat.Component;
+import com.example.typemoonaddon.magic.SummoningMagicIntegration;
 
 public record MagicModeSwitchMessage(int actionType, int value) implements CustomPacketPayload {
     public static final Type<MagicModeSwitchMessage> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "magic_mode_switch"));
@@ -51,7 +52,13 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 // 11: Set Mana Burst Mode - value is 0 weapon / 1 body / 2 direct
                 // 12: Set Mana Burst Level - value is 1..5
                 
-                if (message.actionType == 2) {
+                if (message.actionType == 13) {
+                    if (("wraith_servitude".equals(currentMagic) || "evil_spirit_summoning".equals(currentMagic))
+                            && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                        SummoningMagicIntegration.toggleMode(serverPlayer, currentMagic);
+                    }
+                    return;
+                } else if (message.actionType == 2) {
                     if (!isReinforcementMagic(currentMagic)) {
                         return;
                     }
@@ -409,7 +416,7 @@ public record MagicModeSwitchMessage(int actionType, int value) implements Custo
                 case 2: return vars.learned_magics.contains("emerald_use");
                 case 3: return vars.learned_magics.contains("topaz_throw");
                 case 4: return vars.learned_magics.contains("cyan_throw");
-                case 5: return true; // Random
+                case 5: return true;
                 default: return false;
             }
         } else if ("jewel_magic_release".equals(magicType)) {

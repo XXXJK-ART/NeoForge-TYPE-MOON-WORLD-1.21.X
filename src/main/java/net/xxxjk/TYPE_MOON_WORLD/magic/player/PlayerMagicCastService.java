@@ -9,7 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
-import com.example.typemoonaddon.magic.ManaFurnaceService;
+import net.xxxjk.typemoonworld.api.AddonManaSource;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
@@ -110,11 +110,11 @@ public final class PlayerMagicCastService {
       }
        // Stopping a running jewel machine gun is a toggle action and must not be
        // blocked by the cooldown applied between its bursts.
-       boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
+      boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
           && net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun.isActive(entity);
-       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
+       if (vars.magicState().cooldown() > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
        boolean infiniteMana = entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
-          && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
+          && AddonManaSource.hasInfiniteSupply(serverPlayer);
 
        var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
        if (!MagicDefinitionRegistry.meetsAttributeRequirements(entity instanceof LivingEntity living ? living : null, entry.magicId)) {
@@ -122,7 +122,7 @@ public final class PlayerMagicCastService {
           return;
        }
        double dynamicCost = dynamicDefinition != null ? adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost()) : 0.0;
-       if (dynamicDefinition != null && !infiniteMana && vars.player_mana < dynamicCost) {
+       if (dynamicDefinition != null && !infiniteMana && vars.magicState().mana() < dynamicCost) {
           displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
           return;
        }
@@ -174,12 +174,12 @@ public final class PlayerMagicCastService {
          return;
       }
 
-       if (!infiniteMana && result.manaCost() > 0.0) {
+      if (!infiniteMana && result.manaCost() > 0.0) {
           double cost = adjustedWheelCost(entity, vars, entry, result.manaCost());
-          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+          vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - cost));
        } else if (!infiniteMana && dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
           double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
-          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+          vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - cost));
       }
 
       addAddonProficiency(vars, entry.magicId);
@@ -217,7 +217,7 @@ public final class PlayerMagicCastService {
       if (entity instanceof LivingEntity living) {
          cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
       }
-      vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
+      vars.magicState().setCooldown(Math.max(vars.magicState().cooldown(), cooldown));
    }
 
    private static double adjustedWheelCost(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry, double cost) {

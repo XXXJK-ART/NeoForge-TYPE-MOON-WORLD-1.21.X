@@ -80,13 +80,13 @@ public final class ServantCardArashSkills {
    public static boolean isArash(ServerPlayer player) {
       if (player == null) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.servant_card_transformed && "arash".equals(vars.servant_card_id);
+      return vars.servantCardState().transformed() && "arash".equals(vars.servantCardState().id());
    }
 
    public static void initialize(ServerPlayer player) {
       clearRuntimeTags(player);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.servant_card_arash_arrow_stock = ArashCombatRules.INITIAL_ARROW_COUNT;
+      vars.servantCardState().setArashArrowStock(ArashCombatRules.INITIAL_ARROW_COUNT);
       applyStoutHealth(player, true);
    }
 
@@ -97,7 +97,7 @@ public final class ServantCardArashSkills {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!vars.servant_card_transformed || !"arash".equals(vars.servant_card_id)) {
+      if (!vars.servantCardState().transformed() || !"arash".equals(vars.servantCardState().id())) {
          clear(player);
          return;
       }
@@ -160,12 +160,12 @@ public final class ServantCardArashSkills {
    public static boolean performArrowCreation(ServerPlayer player) {
       if (!isArash(player)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_arash_arrow_stock >= ArashCombatRules.MAX_ARROW_COUNT) {
+      if (vars.servantCardState().arashArrowStock() >= ArashCombatRules.MAX_ARROW_COUNT) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_arrows_full"), true);
          return false;
       }
-      vars.servant_card_arash_arrow_stock = Math.min(ArashCombatRules.MAX_ARROW_COUNT,
-         vars.servant_card_arash_arrow_stock + ArashCombatRules.ARROW_CREATION_AMOUNT);
+      vars.servantCardState().setArashArrowStock(Math.min(ArashCombatRules.MAX_ARROW_COUNT,
+         vars.servantCardState().arashArrowStock() + ArashCombatRules.ARROW_CREATION_AMOUNT));
       vars.syncServantCardRuntime(player);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(),
@@ -181,17 +181,17 @@ public final class ServantCardArashSkills {
 
    public static boolean hasArrows(ServerPlayer player, int amount) {
       if (!isArash(player)) return true;
-      return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_arash_arrow_stock >= amount;
+      return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().arashArrowStock() >= amount;
    }
 
    private static boolean consumeArrows(ServerPlayer player, int amount) {
       if (!isArash(player) || amount <= 0) return amount <= 0;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_arash_arrow_stock < amount) {
+      if (vars.servantCardState().arashArrowStock() < amount) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_no_arrows"), true);
          return false;
       }
-      vars.servant_card_arash_arrow_stock -= amount;
+      vars.servantCardState().setArashArrowStock(vars.servantCardState().arashArrowStock() - amount);
       vars.syncServantCardRuntime(player);
       return true;
    }
@@ -413,15 +413,15 @@ public final class ServantCardArashSkills {
    private static void captureRefundSnapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(REFUND_READY, true);
-      data.putDouble(REFUND_MANA, vars.servant_card_mana);
-      data.putInt(REFUND_COOLDOWN, vars.servant_card_np_cooldown);
-      data.putLong(REFUND_COOLDOWN_END, vars.servant_card_np_cooldown_end);
-      data.putInt(REFUND_ARROWS, vars.servant_card_arash_arrow_stock);
+      data.putDouble(REFUND_MANA, vars.servantCardState().mana());
+      data.putInt(REFUND_COOLDOWN, vars.servantCardState().npCooldown());
+      data.putLong(REFUND_COOLDOWN_END, vars.servantCardState().npCooldownEnd());
+      data.putInt(REFUND_ARROWS, vars.servantCardState().arashArrowStock());
       ServerPlayer master = ServantCardManaService.getMaster(player, vars);
       if (master != null) {
          data.putUUID(REFUND_MASTER, master.getUUID());
          data.putDouble(REFUND_MASTER_MANA,
-            master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana);
+            master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana());
       }
    }
 
@@ -429,16 +429,16 @@ public final class ServantCardArashSkills {
       CompoundTag data = player.getPersistentData();
       if (!data.getBoolean(REFUND_READY)) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.servant_card_mana = data.getDouble(REFUND_MANA);
-      vars.servant_card_np_cooldown = data.getInt(REFUND_COOLDOWN);
-      vars.servant_card_np_cooldown_end = data.getLong(REFUND_COOLDOWN_END);
-      vars.servant_card_arash_arrow_stock = data.getInt(REFUND_ARROWS);
+      vars.servantCardState().setMana(data.getDouble(REFUND_MANA));
+      vars.servantCardState().setNpCooldown(data.getInt(REFUND_COOLDOWN));
+      vars.servantCardState().setNpCooldownEnd(data.getLong(REFUND_COOLDOWN_END));
+      vars.servantCardState().setArashArrowStock(data.getInt(REFUND_ARROWS));
       vars.syncPlayerVariables(player);
       if (data.hasUUID(REFUND_MASTER) && player.getServer() != null) {
          ServerPlayer master = player.getServer().getPlayerList().getPlayer(data.getUUID(REFUND_MASTER));
          if (master != null) {
             TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            masterVars.player_mana = data.getDouble(REFUND_MASTER_MANA);
+            masterVars.magicState().setMana(data.getDouble(REFUND_MASTER_MANA));
             masterVars.syncMana(master);
          }
       }
@@ -570,8 +570,6 @@ public final class ServantCardArashSkills {
          event.setCanceled(true);
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) tickPlayerStellaSacrifice(player);
    }

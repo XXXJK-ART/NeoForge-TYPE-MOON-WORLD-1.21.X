@@ -77,7 +77,7 @@ public final class ServantCardCasterGilgameshSkills {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!(player.level() instanceof ServerLevel level) || !"gilgamesh_caster".equals(vars.servant_card_id)) {
+      if (!(player.level() instanceof ServerLevel level) || !"gilgamesh_caster".equals(vars.servantCardState().id())) {
          clear(player);
          return;
       }
@@ -175,8 +175,8 @@ public final class ServantCardCasterGilgameshSkills {
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + 1.0, player.getZ(), 24, 0.5, 0.6, 0.5, 0.04);
          return true;
       }
-      if (vars.servant_card_mana <= vars.servant_card_max_mana * 0.50 && now >= data.getLong(LAST_MP) + 20L * 20L) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_max_mana * 0.30);
+      if (vars.servantCardState().mana() <= vars.servantCardState().maxMana() * 0.50 && now >= data.getLong(LAST_MP) + 20L * 20L) {
+         vars.servantCardState().addMana(vars.servantCardState().maxMana() * 0.30);
          vars.syncMana(player);
          data.putLong(LAST_MP, now);
          level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 0.9, player.getZ(), 28, 0.5, 0.6, 0.5, 0.08);
@@ -228,7 +228,7 @@ public final class ServantCardCasterGilgameshSkills {
 
    static boolean hasCannonResources(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
-      return data.getInt(AMMO_TAG) >= CANNON_SHOTS_PER_ROUND && vars.servant_card_mana >= CANNON_SHOTS_PER_ROUND;
+      return data.getInt(AMMO_TAG) >= CANNON_SHOTS_PER_ROUND && vars.servantCardState().hasMana(CANNON_SHOTS_PER_ROUND);
    }
 
    private static boolean fireSlateShots(ServerPlayer player, int shots) {
@@ -279,8 +279,8 @@ public final class ServantCardCasterGilgameshSkills {
 
    private static boolean syncRoyalCannonAmmo(TypeMoonWorldModVariables.PlayerVariables vars, CompoundTag data) {
       int ammo = Math.min(MAX_AMMO, Math.max(0, data.getInt(AMMO_TAG)));
-      if (vars.servant_card_royal_cannon_ammo == ammo) return false;
-      vars.servant_card_royal_cannon_ammo = ammo;
+      if (vars.servantCardState().royalCannonAmmo() == ammo) return false;
+      vars.servantCardState().setRoyalCannonAmmo(ammo);
       return true;
    }
 
@@ -306,18 +306,18 @@ public final class ServantCardCasterGilgameshSkills {
       if (!data.getBoolean(WORKSHOP_ACTIVE) || player.tickCount % 10 != 0) return;
       Vec3 center = new Vec3(data.getDouble(WORKSHOP_X), data.getDouble(WORKSHOP_Y), data.getDouble(WORKSHOP_Z));
       boolean playerInside = player.position().distanceToSqr(center) <= 15.0 * 15.0;
-      if (playerInside && vars.servant_card_mana < vars.servant_card_max_mana) {
+      if (playerInside && vars.servantCardState().mana() < vars.servantCardState().maxMana()) {
          double bonusRegen = ServantCardManaService.regenPerSecondFor("gilgamesh_caster") * 0.30 / 2.0;
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + bonusRegen);
+         vars.servantCardState().addMana(bonusRegen);
       }
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(18.0), e -> e.isAlive() && isAlly(player, e))) {
          if (living.position().distanceToSqr(center) <= 15.0 * 15.0) {
             ServantCardSkillUtils.addOrReplaceMultiplied(living.getAttribute(Attributes.ARMOR), WORKSHOP_ARMOR_ID, 0.20);
             if (living instanceof ServerPlayer allyPlayer) {
                TypeMoonWorldModVariables.PlayerVariables allyVars = allyPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-               if (allyVars.servant_card_transformed && allyVars.servant_card_mana < allyVars.servant_card_max_mana) {
-                  allyVars.servant_card_mana = Math.min(allyVars.servant_card_max_mana,
-                     allyVars.servant_card_mana + ServantCardManaService.regenPerSecondFor(allyVars.servant_card_id) * 0.30 / 2.0);
+               if (allyVars.servantCardState().transformed() && allyVars.servantCardState().mana() < allyVars.servantCardState().maxMana()) {
+                  allyVars.servantCardState().addMana(
+                     ServantCardManaService.regenPerSecondFor(allyVars.servantCardState().id()) * 0.30 / 2.0);
                }
             }
          } else {

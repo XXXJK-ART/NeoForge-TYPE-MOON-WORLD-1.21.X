@@ -308,7 +308,7 @@ public final class BeamClashManager {
       if (owner instanceof ServantEntity servant) return servant.getCurrentMp();
       if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return vars.servant_card_transformed ? vars.servant_card_mana : vars.player_mana;
+         return vars.servantCardState().transformed() ? vars.servantCardState().mana() : vars.magicState().mana();
       }
       return 0.0;
    }
@@ -317,7 +317,7 @@ public final class BeamClashManager {
       if (owner instanceof ServantEntity servant) return servant.getMaxMp();
       if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return Math.max(1.0, vars.servant_card_transformed ? vars.servant_card_max_mana : vars.player_max_mana);
+         return Math.max(1.0, vars.servantCardState().transformed() ? vars.servantCardState().maxMana() : vars.magicState().maxMana());
       }
       return 1.0;
    }
@@ -327,11 +327,11 @@ public final class BeamClashManager {
          servant.setCurrentMp(Math.max(0.0, servant.getCurrentMp() - amount));
       } else if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.servant_card_transformed) {
-            vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
+         if (vars.servantCardState().transformed()) {
+            vars.servantCardState().setMana(Math.max(0.0, vars.servantCardState().mana() - amount));
             vars.syncPlayerVariables(player);
          } else {
-            vars.player_mana = Math.max(0.0, vars.player_mana - amount);
+            vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - amount));
             vars.syncMana(player);
          }
       }

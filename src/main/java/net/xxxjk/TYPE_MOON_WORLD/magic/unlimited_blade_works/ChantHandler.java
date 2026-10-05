@@ -312,8 +312,6 @@ public class ChantHandler {
       double distance = 5.0 + random.nextDouble() * 5.0;
       return projectile.position().add(baseDirection.scale(distance)).add(lateralOffset).add(0.0, 0.4 + random.nextDouble() * 0.8, 0.0);
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(Post event) {
       if (!event.getEntity().level().isClientSide) {
          if (event.getEntity() instanceof ServerPlayer player) {
@@ -362,8 +360,7 @@ public class ChantHandler {
                   paid = true;
                } else if (vars.servant_card_transformed) {
                   paid = ServantCardManaService.consume(player, vars, cost);
-               } else if (vars.player_mana >= cost) {
-                  vars.player_mana -= cost;
+               } else if (vars.magicState().tryConsume(cost)) {
                   vars.syncMana(player);
                   paid = true;
                } else {

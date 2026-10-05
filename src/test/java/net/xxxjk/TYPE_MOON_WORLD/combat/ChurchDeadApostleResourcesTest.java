@@ -225,8 +225,10 @@ class ChurchDeadApostleResourcesTest {
       assertTrue(summoning.contains("SUMMON_SIZE"));
       assertTrue(summoning.contains("EVIL_SPIRIT_SMALL"));
       assertTrue(summoning.contains("registerControl(EVIL_SPIRIT_SUMMONING"));
-      assertTrue(summoning.contains("getEntitiesOfClass(SummonedSpiritEntity.class"));
-      assertTrue(summoning.contains("spirit instanceof WraithEntity || spirit instanceof EvilSpiritEntity"));
+      assertTrue(summoning.contains("ownedWraiths(ServerPlayer player)"));
+      assertTrue(summoning.contains("ownedEvilSpirits(ServerPlayer player)"));
+      assertTrue(summoning.contains("WRAITH_MODE_TAG"));
+      assertTrue(summoning.contains("EVIL_MODE_TAG"));
       assertTrue(entities.contains("register(\"evil_spirit_small\""));
       assertTrue(renderer.contains("ParticleTypes.SOUL"));
       assertTrue(renderer.contains("ParticleTypes.SOUL_FIRE_FLAME"));

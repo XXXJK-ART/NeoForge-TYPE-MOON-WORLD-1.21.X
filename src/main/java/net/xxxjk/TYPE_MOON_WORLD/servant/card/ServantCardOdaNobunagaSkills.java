@@ -569,8 +569,8 @@ public final class ServantCardOdaNobunagaSkills {
          vars.syncPlayerVariables(player);
          return true;
       }
-      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servant_card_np_cooldown > 0) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servant_card_np_cooldown / 20.0F)), true);
+      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servantCardState().npCooldown() > 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servantCardState().npCooldown() / 20.0F)), true);
          return false;
       }
       if (!ServantCardManaService.consume(player, vars, 35.0)) {
@@ -632,7 +632,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (!"oda_nobunaga".equals(vars.servant_card_id)) {
          return false;
       }
-      if (!vars.servant_card_flying) {
+      if (!vars.servantCardState().flying()) {
          return true;
       }
       if (!(player.level() instanceof ServerLevel level) || !(player.getVehicle() instanceof OdaMatchlockGunEntity mount) || !mount.isMountFor(player.getUUID())) {
@@ -646,11 +646,11 @@ public final class ServantCardOdaNobunagaSkills {
       if (player.tickCount % 10 == 0) {
          vars.syncMana(player);
       }
-      double verticalInput = vars.servant_card_flight_vertical;
-      if (vars.servant_card_flight_mode == 1 && !ServantCardFlightController.hasGroundWithin(player, 5)) {
+      double verticalInput = vars.servantCardState().flightVertical();
+      if (vars.servantCardState().flightMode() == 1 && !ServantCardFlightController.hasGroundWithin(player, 5)) {
          verticalInput = Math.min(verticalInput, -0.28);
       }
-      mount.setMountInput(vars.servant_card_flight_forward, vars.servant_card_flight_strafe, verticalInput);
+      mount.setMountInput(vars.servantCardState().flightForward(), vars.servantCardState().flightStrafe(), verticalInput);
       player.fallDistance = 0.0F;
       return true;
    }
@@ -668,11 +668,9 @@ public final class ServantCardOdaNobunagaSkills {
             mount.discard();
          }
       }
-      vars.servant_card_flying = false;
-      vars.servant_card_flight_mode = 0;
-      vars.servant_card_flight_forward = 0.0;
-      vars.servant_card_flight_strafe = 0.0;
-      vars.servant_card_flight_vertical = 0.0;
+      vars.servantCardState().setFlying(false);
+      vars.servantCardState().setFlightMode(0);
+      vars.servantCardState().setFlightInput(0.0, 0.0, 0.0);
       if (sync) {
          vars.syncPlayerVariables(player);
       }

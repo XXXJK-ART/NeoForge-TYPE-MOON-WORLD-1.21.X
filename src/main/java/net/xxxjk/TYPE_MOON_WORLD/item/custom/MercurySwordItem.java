@@ -86,11 +86,11 @@ public class MercurySwordItem extends SwordItem implements GeoItem, NoblePhantas
          boolean advanced = player.isShiftKeyDown();
          double cost = advanced ? 100.0 : 50.0;
          TypeMoonWorldModVariables.PlayerVariables vars = serverPlayer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.player_mana < cost) {
+         if (!vars.magicState().hasMana(cost)) {
             serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
             return InteractionResultHolder.fail(stack);
          }
-         vars.player_mana -= cost;
+         vars.magicState().tryConsume(cost);
          vars.syncMana(serverPlayer);
          releaseMercuryBeam(serverPlayer, advanced ? 10.0 : 5.0, advanced ? 50.0F : 25.0F);
          serverPlayer.getCooldowns().addCooldown(this, advanced ? 32 : 18);

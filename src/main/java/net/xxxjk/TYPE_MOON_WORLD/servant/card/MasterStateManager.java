@@ -66,7 +66,7 @@ public final class MasterStateManager {
       player.setHealth((float)MASTER_MAX_HEALTH);
       vars.syncPlayerVariables(player);
       MasterVisualStateSync.broadcast(player, vars);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.master.activated", (int)vars.player_max_mana), true);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.master.activated", (int)vars.magicState().maxMana()), true);
       return true;
    }
 
