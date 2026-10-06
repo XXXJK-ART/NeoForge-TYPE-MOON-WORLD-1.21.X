@@ -25,6 +25,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 
 /** Server-authoritative active dodge and guard state shared by cards and NPCs. */
 public final class ServantCombatDefenseService {
+   private static final long PLAYER_GUARD_PACKET_TIMEOUT_TICKS = 15L;
+   private static final int PLAYER_PARRY_GRACE_TICKS = 3;
    public static final String TAG_GUARDING = "TypeMoonDefenseGuarding";
    public static final String TAG_GUARD_START = "TypeMoonDefenseGuardStart";
    public static final String TAG_LAST_RESULT = "TypeMoonDefenseLastResult";
@@ -53,7 +55,7 @@ public final class ServantCombatDefenseService {
          data.remove(TAG_GUARDING);
       }
       if (entity instanceof ServerPlayer && data.getBoolean(TAG_GUARDING)
-         && now - data.getLong(TAG_LAST_GUARD_PACKET) > 10L) {
+         && now - data.getLong(TAG_LAST_GUARD_PACKET) > PLAYER_GUARD_PACKET_TIMEOUT_TICKS) {
          data.remove(TAG_GUARDING);
       }
       if (entity instanceof ServerPlayer player && isCardActive(player)
@@ -82,9 +84,15 @@ public final class ServantCombatDefenseService {
          servant.setCurrentMp(servant.getCurrentMp() - cost);
       }
       int cooldown = ServantCombatFormulas.dodgeCooldownTicks(params);
-      int invulnerability = ServantCombatFormulas.dodgeInvulnerabilityTicks(params);
+      int invulnerability = ServantCombatFormulas.dodgeInvulnerabilityTicks(params)
+         + (entity instanceof ServerPlayer ? 2 : 0);
       data.putLong(TAG_DODGE_COOLDOWN, now + cooldown);
       data.putLong(TAG_LAST_DODGE, now);
+      // Keep the legacy NPC reaction path from immediately spending a second
+      // dodge on the same incoming hit after a tactical dodge was committed.
+      if (entity instanceof ServantEntity) {
+         data.putLong("TypeMoonCombatLastDodgeTick", now);
+      }
       data.putLong(ServantCombatSystem.TAG_INVULN_UNTIL, now + invulnerability);
       if (entity instanceof ServerPlayer) data.putLong("ServantCardCombatInvulnUntil", now + invulnerability);
       data.putBoolean(TAG_GUARDING, false);
@@ -134,7 +142,9 @@ public final class ServantCombatDefenseService {
       if (params == null) return null;
       double cost = ServantCombatFormulas.blockStaminaCost(params);
       double stamina = stamina(defender);
-      boolean parry = now - data.getLong(TAG_GUARD_START) <= ServantCombatFormulas.parryWindowTicks(params);
+      int parryWindow = ServantCombatFormulas.parryWindowTicks(params)
+         + (defender instanceof ServerPlayer ? PLAYER_PARRY_GRACE_TICKS : 0);
+      boolean parry = now - data.getLong(TAG_GUARD_START) <= parryWindow;
       double actualCost = parry ? ServantCombatFormulas.parryStaminaCost(params) : cost;
       stamina = Math.max(0.0, stamina - actualCost);
       setStamina(defender, stamina);
@@ -180,9 +190,13 @@ public final class ServantCombatDefenseService {
       ServantParams p = params(player);
       double maxStamina = p == null ? 0.0 : ServantCombatFormulas.staminaMax(p);
       double maxPoise = p == null ? 0.0 : ServantCombatFormulas.poiseMax(p);
+      boolean gilgamesh = "gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id);
+      double shieldHp = gilgamesh ? Math.max(0.0, data.getFloat(GilgameshDivineShield.TAG_HP)) : 0.0;
+      double shieldMax = gilgamesh ? GilgameshDivineShield.MAX_HP : 0.0;
+      boolean shieldActive = gilgamesh && GilgameshDivineShield.isActive(player);
       ModNetwork.sendToPlayer(player, new ServantCardDefenseStateMessage(stamina(player), maxStamina, poise(player), maxPoise,
          isGuarding(player), data.getLong(TAG_DODGE_COOLDOWN), data.getLong(TAG_GUARD_BROKEN),
-         data.getString(TAG_LAST_RESULT), data.getLong(TAG_RESULT_UNTIL)));
+         data.getString(TAG_LAST_RESULT), data.getLong(TAG_RESULT_UNTIL), shieldHp, shieldMax, shieldActive));
    }
 
    public static void clear(LivingEntity entity) {
@@ -246,8 +260,10 @@ public final class ServantCombatDefenseService {
       Vec3 forwardVector = new Vec3(look.x, 0.0, look.z);
       if (forwardVector.lengthSqr() < 1.0E-4) forwardVector = new Vec3(0.0, 0.0, 1.0);
       forwardVector = forwardVector.normalize();
-      Vec3 right = new Vec3(-forwardVector.z, 0.0, forwardVector.x);
-      Vec3 result = forwardVector.scale(forward).add(right.scale(strafe));
+      // Minecraft's positive strafe impulse is the left key (A).  The old
+      // basis treated it as right, so A/D dodges were visibly reversed.
+      Vec3 left = new Vec3(forwardVector.z, 0.0, -forwardVector.x);
+      Vec3 result = forwardVector.scale(forward).add(left.scale(strafe));
       if (result.lengthSqr() < 1.0E-4) result = forwardVector.scale(-1.0);
       return result.normalize();
    }

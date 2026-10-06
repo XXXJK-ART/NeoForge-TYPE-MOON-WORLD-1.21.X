@@ -11,7 +11,8 @@ public final class ChainConfig {
     public static final double SKILL_GATE_RADIUS = 6.0D;
     public static final double SKILL_GATE_VERTICAL_OFFSET = 4.5D;
     public static final int SKILL_GATE_REFRESH_TICKS = 16;
-    public static final float CHAIN_MAX_HEALTH = 500.0F;
+    /** The normal Heaven's Chain lock can be broken with at most 100 durability. */
+    public static final float CHAIN_MAX_HEALTH = 100.0F;
     public static final double TARGET_RADIUS = 50.0D;
     public static final double TARGET_RADIUS_SQR = TARGET_RADIUS * TARGET_RADIUS;
     public static final double MAX_EXTENSION = 100.0D;
@@ -39,7 +40,8 @@ public final class ChainConfig {
     // Normal Heaven's Chain is represented by one physical lock with one
     // durability pool; Enuma keeps its own separate ten-chain aggregation.
     public static final int MAX_FUSED_CHAIN_COUNT = 1;
-    public static final float ENUMA_AGGREGATED_MAX_HEALTH = ENUMA_CHAIN_MAX_HEALTH * ENUMA_CHAIN_COUNT;
+    /** Keep every Heaven's Chain binding, including Enuma's merged lock, under the 100 HP cap. */
+    public static final float ENUMA_AGGREGATED_MAX_HEALTH = 100.0F;
     public static final int ENUMA_WINDUP_TICKS = 200;
     public static final int ENUMA_ASCENT_TICKS = 36;
     public static final int ENUMA_BIND_CONNECTION_TICKS = 12;

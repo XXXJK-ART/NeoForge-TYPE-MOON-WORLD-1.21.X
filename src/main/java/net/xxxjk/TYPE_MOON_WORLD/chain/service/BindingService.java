@@ -250,10 +250,8 @@ public final class BindingService {
             }
             holdTarget(target, state);
             prioritizeBindingTarget(level, target);
-            if (gameTime >= state.nextDamageAt()) {
-                state.setNextDamageAt(gameTime + ChainConfig.DAMAGE_INTERVAL_TICKS);
-                target.hurt(damageSource(owner, target), ChainConfig.DAMAGE_PER_INTERVAL);
-            }
+            // Heaven's Chain is a restraint.  It must hold the target in place
+            // without dealing periodic damage while the binding is active.
             applyEffects(target);
         }
     }

@@ -10,7 +10,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardDefenseClientState;
 
 public record ServantCardDefenseStateMessage(double stamina, double staminaMax, double poise, double poiseMax,
                                              boolean guarding, long dodgeCooldownEnd, long guardBrokenEnd,
-                                             String result, long resultUntil) implements CustomPacketPayload {
+                                             String result, long resultUntil,
+                                             double shieldHp, double shieldMax, boolean shieldActive) implements CustomPacketPayload {
    public static final Type<ServantCardDefenseStateMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "servant_card_defense_state"));
    public static final StreamCodec<RegistryFriendlyByteBuf, ServantCardDefenseStateMessage> STREAM_CODEC = StreamCodec.of(
@@ -20,15 +21,18 @@ public record ServantCardDefenseStateMessage(double stamina, double staminaMax, 
          buf.writeBoolean(msg.guarding); buf.writeVarLong(msg.dodgeCooldownEnd);
          buf.writeVarLong(msg.guardBrokenEnd); buf.writeUtf(msg.result == null ? "" : msg.result, 32);
          buf.writeVarLong(msg.resultUntil);
+         buf.writeDouble(msg.shieldHp); buf.writeDouble(msg.shieldMax); buf.writeBoolean(msg.shieldActive);
       },
       buf -> new ServantCardDefenseStateMessage(buf.readDouble(), buf.readDouble(), buf.readDouble(), buf.readDouble(),
-         buf.readBoolean(), buf.readVarLong(), buf.readVarLong(), buf.readUtf(32), buf.readVarLong()));
+         buf.readBoolean(), buf.readVarLong(), buf.readVarLong(), buf.readUtf(32), buf.readVarLong(),
+         buf.readDouble(), buf.readDouble(), buf.readBoolean()));
 
    @Override public Type<ServantCardDefenseStateMessage> type() { return TYPE; }
 
    public static void handleData(ServantCardDefenseStateMessage msg, IPayloadContext context) {
       if (context.flow() != PacketFlow.CLIENTBOUND) return;
       context.enqueueWork(() -> ServantCardDefenseClientState.apply(msg.stamina, msg.staminaMax, msg.poise, msg.poiseMax,
-         msg.guarding, msg.dodgeCooldownEnd, msg.guardBrokenEnd, msg.result, msg.resultUntil));
+         msg.guarding, msg.dodgeCooldownEnd, msg.guardBrokenEnd, msg.result, msg.resultUntil,
+         msg.shieldHp, msg.shieldMax, msg.shieldActive));
    }
 }

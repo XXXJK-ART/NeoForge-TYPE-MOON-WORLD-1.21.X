@@ -9,13 +9,17 @@ public final class ServantCardDefenseClientState {
    private static boolean guarding;
    private static long dodgeCooldownEnd;
    private static long guardBrokenEnd;
+   private static double shieldHp;
+   private static double shieldMax;
+   private static boolean shieldActive;
    private static String result = "";
    private static long resultUntil;
 
    private ServantCardDefenseClientState() { }
 
    public static void apply(double staminaValue, double staminaLimit, double poiseValue, double poiseLimit,
-                            boolean activeGuard, long dodgeEnd, long brokenEnd, String lastResult, long resultExpiry) {
+                            boolean activeGuard, long dodgeEnd, long brokenEnd, String lastResult, long resultExpiry,
+                            double shieldValue, double shieldLimit, boolean activeShield) {
       stamina = Math.max(0.0, staminaValue);
       staminaMax = Math.max(0.0, staminaLimit);
       poise = Math.max(0.0, poiseValue);
@@ -25,6 +29,9 @@ public final class ServantCardDefenseClientState {
       guardBrokenEnd = Math.max(0L, brokenEnd);
       result = lastResult == null ? "" : lastResult;
       resultUntil = Math.max(0L, resultExpiry);
+      shieldHp = Math.max(0.0, shieldValue);
+      shieldMax = Math.max(0.0, shieldLimit);
+      shieldActive = activeShield;
    }
 
    public static double stamina() { return stamina; }
@@ -34,10 +41,13 @@ public final class ServantCardDefenseClientState {
    public static boolean guarding() { return guarding; }
    public static long dodgeCooldownEnd() { return dodgeCooldownEnd; }
    public static long guardBrokenEnd() { return guardBrokenEnd; }
+   public static double shieldHp() { return shieldHp; }
+   public static double shieldMax() { return shieldMax; }
+   public static boolean shieldActive() { return shieldActive; }
    public static String result() { return result; }
    public static long resultUntil() { return resultUntil; }
 
    public static void clear() {
-      apply(0.0, 0.0, 0.0, 0.0, false, 0L, 0L, "", 0L);
+      apply(0.0, 0.0, 0.0, 0.0, false, 0L, 0L, "", 0L, 0.0, 0.0, false);
    }
 }

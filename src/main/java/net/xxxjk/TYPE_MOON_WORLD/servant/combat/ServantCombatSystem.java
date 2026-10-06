@@ -212,8 +212,26 @@ public final class ServantCombatSystem {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
          boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
+         // NPC servants keep their reaction-based defense.  Player cards use
+         // the explicit guard/dodge inputs handled by ServantCombatDefenseService.
+         if (!ushiwakamaruMelee && !unavoidable
+            && !PaleRiderDamageTypes.isInfection(source)
+            && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
+            && tryAutoDodge(servant, source, params, now)) {
+            if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+               event.setAmount(Math.min(event.getAmount(), event.getAmount() * 0.5F));
+            } else {
+               event.setCanceled(true);
+            }
+            return;
+         }
          Float reduced = LancelotCombatHelper.rollsEternalArmsGuardBypass(source)
             ? null : ServantCombatDefenseService.applyGuardHit(servant, source, event.getAmount());
+         if (reduced == null
+            && !LancelotCombatHelper.rollsEternalArmsGuardBypass(source)
+            && !ServantCombatDefenseService.isGuarding(servant)) {
+            reduced = tryAutoBlock(servant, source, event.getAmount(), params, now);
+         }
          if (reduced != null) {
             if (reduced <= 0.0F) {
                event.setCanceled(true);
@@ -596,6 +614,93 @@ public final class ServantCombatSystem {
       return false;
    }
 
+   /** Restored automatic NPC dodge reaction; player cards use their input action instead. */
+   private static boolean tryAutoDodge(ServantEntity servant, DamageSource source, ServantParams params, long now) {
+      if (params == null || EnkiduCombatHelper.isBoundByChainsOfHeaven(servant)
+         || !canReactTo(servant, source)
+         || now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + ServantCombatFormulas.dodgeCooldownTicks(params)) {
+         return false;
+      }
+      boolean emiya = servant instanceof EmiyaArcherEntity;
+      int cooldown = emiya ? Math.max(6, ServantCombatFormulas.dodgeCooldownTicks(params) / 2)
+         : ServantCombatFormulas.dodgeCooldownTicks(params);
+      if (LiShuwenCombatHelper.hasChineseMartialArts(servant)) {
+         cooldown = Math.max(1, cooldown / 2);
+      }
+      if (LancelotCombatHelper.hasEternalArmsMastership(servant)) {
+         cooldown = Math.max(1, (int)Math.ceil(cooldown / LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier()));
+      }
+      if (now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + cooldown) return false;
+      double cost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45)
+         : ServantCombatFormulas.dodgeMpCost(params);
+      if (servant.getCurrentMp() < cost) return false;
+      int agility = ServantCombatFormulas.agilityStep(params);
+      boolean urgent = servant.getHealth() <= servant.getMaxHealth() * (emiya ? 0.85F : 0.55F)
+         || source.getDirectEntity() instanceof Projectile
+         || getPhase(servant) == ServantCombatPhase.DECISIVE || emiya;
+      if (agility < 3 && !urgent) return false;
+      double chance = ServantCombatFormulas.baseDodgeChance(params, urgent) + (emiya ? 0.12 : 0.0);
+      if (servant.getRandom().nextDouble() > Math.min(0.92, chance)) return false;
+      CompoundTag data = servant.getPersistentData();
+      servant.setCurrentMp(servant.getCurrentMp() - cost);
+      data.putLong(TAG_LAST_DODGE_TICK, now);
+      data.putLong(TAG_INVULN_UNTIL, now + ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0));
+      Vec3 away = dodgeDirection(servant, source);
+      double distance = emiya ? 1.35 : 0.9;
+      servant.setDeltaMovement(away.x * distance, Math.max(servant.getDeltaMovement().y, emiya ? 0.14 : 0.08), away.z * distance);
+      servant.hurtMarked = true;
+      spawnGuardFx(servant, ParticleTypes.CLOUD, SoundEvents.PLAYER_ATTACK_SWEEP, 1.35F);
+      return true;
+   }
+
+   /** Restored automatic NPC guard reaction for attacks that were not dodged. */
+   private static Float tryAutoBlock(ServantEntity servant, DamageSource source, float amount, ServantParams params, long now) {
+      if (params == null || !canReactTo(servant, source) || now < servant.getPersistentData().getLong(TAG_GUARD_EXHAUST_UNTIL)) {
+         return null;
+      }
+      CompoundTag data = servant.getPersistentData();
+      double stamina = data.getDouble(TAG_STAMINA);
+      double cost = ServantCombatFormulas.blockStaminaCost(params);
+      if (stamina < cost) {
+         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
+         return null;
+      }
+      boolean emiya = servant instanceof EmiyaArcherEntity;
+      boolean shouldBlock = amount >= servant.getMaxHealth() * 0.04F
+         || getPhase(servant) != ServantCombatPhase.PROBING
+         || (emiya && servant.getHealth() <= servant.getMaxHealth() * 0.8F);
+      if (!shouldBlock) return null;
+      boolean parry = now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params);
+      data.putLong(TAG_LAST_GUARD_TICK, now);
+      data.putDouble(TAG_STAMINA, Math.max(0.0, stamina - (parry ? ServantCombatFormulas.parryStaminaCost(params) : cost)));
+      if (data.getDouble(TAG_STAMINA) <= 0.0) data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
+      spawnGuardFx(servant, parry ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, parry ? 1.65F : 1.1F);
+      if (parry && !source.is(DamageTypeTags.IS_EXPLOSION)) {
+         if (source.getEntity() instanceof ServantEntity attacker) applyStun(attacker, 10);
+         return 0.0F;
+      }
+      float reduced = amount * (float)(1.0 - ServantCombatFormulas.blockReduction(params));
+      return source.is(DamageTypeTags.IS_EXPLOSION) ? Math.max(reduced, amount * 0.5F) : reduced;
+   }
+
+   private static boolean canReactTo(ServantEntity servant, DamageSource source) {
+      if (source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+         || source.getEntity() == servant || source.getDirectEntity() == servant) return false;
+      if (source.is(DamageTypes.FELL_OUT_OF_WORLD) || source.is(DamageTypes.GENERIC_KILL)
+         || source.is(DamageTypes.FALL) || source.is(DamageTypes.DROWN) || source.is(DamageTypes.FREEZE)
+         || source.is(DamageTypes.IN_FIRE) || source.is(DamageTypes.ON_FIRE)
+         || source.is(DamageTypes.LAVA) || source.is(DamageTypes.IN_WALL)) return false;
+      return source.getEntity() != null || source.getDirectEntity() != null;
+   }
+
+   private static Vec3 dodgeDirection(ServantEntity servant, DamageSource source) {
+      Entity attacker = source.getEntity() != null ? source.getEntity() : source.getDirectEntity();
+      Vec3 away = attacker != null ? servant.position().subtract(attacker.position()) : servant.getLookAngle().scale(-1.0);
+      Vec3 horizontal = new Vec3(away.x, 0.0, away.z);
+      if (horizontal.lengthSqr() < 1.0E-4) horizontal = servant.getLookAngle().yRot((float)Math.PI / 2.0F).multiply(1.0, 0.0, 1.0);
+      return horizontal.lengthSqr() < 1.0E-4 ? new Vec3(1.0, 0.0, 0.0) : horizontal.normalize();
+   }
+
    private static void respondToNoblePhantasm(ServantEntity responder, ServantEntity caster, LivingEntity target, boolean ranged) {
       long now = responder.level().getGameTime();
       if (ranged
@@ -626,6 +731,16 @@ public final class ServantCombatSystem {
          return;
       }
       DamageSource responseSource = caster.damageSources().mobAttack(caster);
+      if (ServantCombatFormulas.agilityStep(params) >= 3
+         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(responseSource)
+         && tryAutoDodge(responder, responseSource, params, now)) {
+         return;
+      }
+      if (!LancelotCombatHelper.rollsEternalArmsGuardBypass(responseSource)
+         && !ServantCombatDefenseService.isGuarding(responder)
+         && tryAutoBlock(responder, responseSource, 20.0F, params, now) != null) {
+         return;
+      }
       if (ServantCombatDefenseService.isGuarding(responder)
          || now < responder.getPersistentData().getLong(TAG_INVULN_UNTIL)) {
          return;

@@ -25,6 +25,7 @@ import com.example.typemoonaddon.storage.StorageAttachments;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -128,22 +129,22 @@ public final class TypeMoonAddon implements AddonEntrypoint {
             event.accept(AddonItems.MAGIC_PAGE_INTERFERENCE_BOUNDARY);
         }
         if (event.getTab() == ModCreativeModeTabs.TYPE_MOON_WORLD_TAB.get()) {
-            // Creative tab contents can be rebuilt with a different feature/permission set;
-            // an anchor item is not guaranteed to be present in every rebuild.
-            event.accept(AddonItems.MANA_FURNACE.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.SILVERFISH_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.ENDERMITE_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.WINGED_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.FIREPROOF_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.DETECTION_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-            event.accept(AddonItems.ENGRAVED_WORM.toStack(),
-                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            CreativeModeTab.TabVisibility visibility = CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS;
+            event.accept(AddonItems.MANA_FURNACE.toStack(), visibility);
+
+            // Keep the worm magecraft materials together immediately after the origin bullet.
+            ItemStack anchor = ModItems.ORIGIN_BULLET.toStack();
+            event.insertAfter(anchor, AddonItems.SILVERFISH_WORM.toStack(), visibility);
+            anchor = AddonItems.SILVERFISH_WORM.toStack();
+            event.insertAfter(anchor, AddonItems.ENDERMITE_WORM.toStack(), visibility);
+            anchor = AddonItems.ENDERMITE_WORM.toStack();
+            event.insertAfter(anchor, AddonItems.WINGED_WORM.toStack(), visibility);
+            anchor = AddonItems.WINGED_WORM.toStack();
+            event.insertAfter(anchor, AddonItems.FIREPROOF_WORM.toStack(), visibility);
+            anchor = AddonItems.FIREPROOF_WORM.toStack();
+            event.insertAfter(anchor, AddonItems.DETECTION_WORM.toStack(), visibility);
+            anchor = AddonItems.DETECTION_WORM.toStack();
+            event.insertAfter(anchor, AddonItems.ENGRAVED_WORM.toStack(), visibility);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {
             event.accept(AddonItems.GILLES_DE_RAIS_CASTER_SPAWN_EGG);

@@ -155,9 +155,11 @@ public final class GilgameshDivineShield {
 
    private static void playHitFx(LivingEntity defender, boolean broken) {
       if (!(defender.level() instanceof ServerLevel level)) return;
-      level.sendParticles(broken ? ParticleTypes.FLASH : ParticleTypes.ENCHANT,
+      // A short gold/white burst makes an absorbed hit readable without
+      // turning every shield impact into a large explosion effect.
+      level.sendParticles(broken ? ParticleTypes.FLASH : ParticleTypes.WAX_ON,
          defender.getX(), defender.getY() + defender.getBbHeight() * 0.55, defender.getZ(),
-         broken ? 1 : 18, 0.55, 0.65, 0.55, 0.04);
+         broken ? 1 : 8, 0.55, 0.65, 0.55, 0.04);
       level.playSound(null, defender.blockPosition(), broken ? SoundEvents.SHIELD_BREAK : SoundEvents.SHIELD_BLOCK,
          soundSource(defender), 1.1F, broken ? 0.65F : 1.2F);
    }
