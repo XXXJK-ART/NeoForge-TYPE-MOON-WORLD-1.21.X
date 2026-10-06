@@ -12,13 +12,30 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.xxxjk.TYPE_MOON_WORLD.alchemy.AlchemyFurnaceService;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(AbstractFurnaceBlockEntity.class)
 public abstract class AbstractFurnaceBlockEntityMixin {
+   @Shadow private int cookingProgress;
+   @Invoker("isLit")
+   protected abstract boolean typemoonworld$invokeIsLit();
+
+   @Inject(method = "serverTick", at = @At("HEAD"))
+   private static void typemoonworld$sanctifiedProcessingSpeed(
+      Level level, BlockPos pos, BlockState state, AbstractFurnaceBlockEntity blockEntity, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci
+   ) {
+      AbstractFurnaceBlockEntityMixin self = (AbstractFurnaceBlockEntityMixin)(Object)blockEntity;
+      if (level instanceof net.minecraft.server.level.ServerLevel serverLevel
+         && net.xxxjk.TYPE_MOON_WORLD.magic.sanctification.SanctificationService.isSanctifiedBlock(serverLevel, pos)
+         && self.typemoonworld$invokeIsLit() && self.cookingProgress > 0 && (self.cookingProgress & 1) == 0) {
+         self.cookingProgress++;
+      }
+   }
    @Inject(method = "getBurnDuration", at = @At("HEAD"), cancellable = true)
    private void typemoonworld$alchemyContainerBurnTime(ItemStack fuel, CallbackInfoReturnable<Integer> cir) {
       AbstractFurnaceBlockEntity furnace = (AbstractFurnaceBlockEntity)(Object)this;

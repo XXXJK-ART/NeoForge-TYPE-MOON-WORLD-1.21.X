@@ -17,7 +17,7 @@ public final class AirflowBladeMagic {
             return MagicExecutionResult.NOT_HANDLED;
         }
         return MAGIC_ID.equals(context.magicId())
-                ? MagicExecutionResult.FAILED
+                ? MagicExecutionResult.STARTED
                 : MagicExecutionResult.NOT_HANDLED;
     }
 }

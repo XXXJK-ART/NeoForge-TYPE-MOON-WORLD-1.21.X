@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -18,6 +19,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.network.CombatThreatStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class CombatThreatService {
@@ -106,10 +110,25 @@ public final class CombatThreatService {
    @SubscribeEvent
    public static void tick(LevelTickEvent.Post event) {
       if (!(event.getLevel() instanceof ServerLevel level)) return;
-      if (level.getGameTime() % 20L != 0L) return;
+      long now = level.getGameTime();
+      if (now % 5L == 0L) {
+         for (ServerPlayer player : level.players()) {
+            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!vars.servant_card_transformed) continue;
+            List<CombatThreatStateMessage.ThreatEntry> entries = new ArrayList<>();
+            for (CombatThreat threat : nearby(level, player.position(), 32.0, now)) {
+               if (threat.sourceUuid().equals(player.getUUID())) continue;
+               Vec3 delta = threat.origin().subtract(player.position());
+               entries.add(new CombatThreatStateMessage.ThreatEntry(threat.actionId().toString(), (float)delta.x, (float)delta.z,
+                  threat.danger(), (int)Math.min(Integer.MAX_VALUE, threat.ticksToImpact(now)), threat.blockable(), threat.dodgeable()));
+               if (entries.size() >= 8) break;
+            }
+            ModNetwork.sendToPlayer(player, new CombatThreatStateMessage(entries));
+         }
+      }
+      if (now % 20L != 0L) return;
       List<CombatThreat> threats = THREATS.get(level.dimension());
       if (threats == null) return;
-      long now = level.getGameTime();
       threats.removeIf(threat -> threat.endTick() < now);
       if (threats.isEmpty()) THREATS.remove(level.dimension());
    }

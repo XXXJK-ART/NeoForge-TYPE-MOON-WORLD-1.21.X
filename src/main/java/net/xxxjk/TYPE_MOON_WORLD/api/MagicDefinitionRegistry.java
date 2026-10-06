@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.typemoonworld.api.MagicDefinitionData;
+import net.xxxjk.typemoonworld.api.MagicCanonMatrix;
+import net.xxxjk.typemoonworld.api.MagicIdMigration;
 
 public final class MagicDefinitionRegistry {
    private static final Map<String, MagicDefinitionData> PROGRAMMATIC = new ConcurrentHashMap<>();
@@ -24,27 +26,36 @@ public final class MagicDefinitionRegistry {
          ResourceLocation id = ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID, path);
          ResourceLocation school = ResourceLocation.fromNamespaceAndPath(net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID,
             net.xxxjk.TYPE_MOON_WORLD.magic.MagicClassification.getSchoolType(path).name().toLowerCase(java.util.Locale.ROOT));
-         MagicDefinitionData defaults = MagicDefinitionData.defaults(id);
+         MagicDefinitionData defaults = MagicCanonMatrix.decorate(MagicDefinitionData.defaults(id));
          PROGRAMMATIC.putIfAbsent(id.toString(), new MagicDefinitionData(id, defaults.nameKey(), defaults.category(), school,
             defaults.complexity(), defaults.chantSegments(), defaults.manaCost(), defaults.sustainedManaCost(),
             defaults.cooldownTicks(), defaults.learnable(), defaults.wheelSelectable(), defaults.crestAllowed(),
             defaults.npcAllowed(), defaults.knowledgeOnly(), defaults.copyable(), defaults.npcGlobalCooldown(),
             defaults.npcCooldown(), defaults.prerequisiteMagic(), defaults.prerequisiteProficiency(),
-            defaults.requiredAttributes(), defaults.resolvedResistanceComplexity()));
+            defaults.requiredAttributes(), defaults.resolvedResistanceComplexity(), defaults.canonStatus(), defaults.sourceKey(),
+            defaults.magicType(), defaults.requiredOrigin(), defaults.requiredFoundation(), defaults.requiredCatalyst(),
+            defaults.castMode(), defaults.resourceModel(), defaults.copyPolicy(), defaults.playerAllowed()));
       }
    }
 
    public static boolean register(MagicDefinitionData definition, String provider) {
       if (FROZEN.get() || definition == null) return false;
-      return PROGRAMMATIC.putIfAbsent(definition.id().toString(), definition) == null;
+      MagicDefinitionData normalized = MagicCanonMatrix.decorateIfKnown(definition);
+      return PROGRAMMATIC.putIfAbsent(normalized.id().toString(), normalized) == null;
    }
 
    public static void reload(Map<String, MagicDefinitionData> definitions) {
-      dataDefinitions = Collections.unmodifiableMap(new LinkedHashMap<>(definitions));
+      Map<String, MagicDefinitionData> normalized = new LinkedHashMap<>();
+      for (Map.Entry<String, MagicDefinitionData> entry : definitions.entrySet()) {
+         normalized.put(entry.getKey(), MagicCanonMatrix.decorateIfKnown(entry.getValue()));
+      }
+      dataDefinitions = Collections.unmodifiableMap(normalized);
    }
 
    public static MagicDefinitionData get(String id) {
       if (id == null) return null;
+      String migrated = MagicIdMigration.normalize(id);
+      if (!id.equals(migrated)) return get(migrated);
       MagicDefinitionData data = dataDefinitions.get(id);
       if (data != null) return data;
       data = PROGRAMMATIC.get(id);
@@ -84,6 +95,28 @@ public final class MagicDefinitionRegistry {
    public static boolean isCrestAllowed(String id) {
       MagicDefinitionData definition = get(id);
       return definition == null || definition.crestAllowed();
+   }
+
+   public static boolean isPlayerAllowed(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null || definition.playerAllowed();
+   }
+
+   public static boolean isNpcAllowed(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null || definition.npcAllowed();
+   }
+
+   public static String copyPolicy(String id) {
+      MagicDefinitionData definition = get(id);
+      return definition == null ? "copyable" : definition.copyPolicy();
+   }
+
+   public static boolean hasCanonRequirement(String id, String requirement) {
+      MagicDefinitionData definition = get(id);
+      if (definition == null || requirement == null || requirement.isBlank()) return false;
+      return requirement.equals(definition.requiredOrigin()) || requirement.equals(definition.requiredFoundation())
+         || requirement.equals(definition.requiredCatalyst());
    }
 
    public static boolean isWheelSelectable(String id) {

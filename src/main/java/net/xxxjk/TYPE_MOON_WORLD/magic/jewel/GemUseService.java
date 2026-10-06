@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class GemUseService {
@@ -66,6 +67,7 @@ public final class GemUseService {
                   int beforeCount = countFullGemCount(serverPlayer, type);
                   int beforeHighCount = countFullGemCountByQuality(serverPlayer, type, GemQuality.HIGH);
                   castBasicByType(serverPlayer, type);
+                  MagecraftRiskService.recordCast(serverPlayer, "jewel_magic_shoot", 18.0D, true);
                   int afterCount = countFullGemCount(serverPlayer, type);
                   int afterHighCount = countFullGemCountByQuality(serverPlayer, type, GemQuality.HIGH);
                   if (afterCount < beforeCount) {

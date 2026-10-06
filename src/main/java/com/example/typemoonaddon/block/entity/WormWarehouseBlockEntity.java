@@ -1,8 +1,8 @@
 package com.example.typemoonaddon.block.entity;
 
-import com.example.typemoonaddon.registry.AddonItems;
 import com.example.typemoonaddon.worm.WormStackData;
 import com.example.typemoonaddon.worm.WormType;
+import com.example.typemoonaddon.worm.WormCaptureService;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -31,12 +31,6 @@ public final class WormWarehouseBlockEntity extends BlockEntity implements MenuP
     private static final String KEY_MIN_Z = "MinZ";
     private static final String KEY_MAX_Z = "MaxZ";
     private static final int FEED_DRAW_COUNT = 3;
-    private static final int GU_GAIN_PER_FEED = 1;
-    private static final int MAX_GROWTH_ROLL_PERCENT = 30;
-    private static final int SPECIAL_MUTATION_MIN_GU = 50;
-    private static final int SPECIAL_MUTATION_ROLL_PERCENT = 8;
-    private static final int DETECTION_MUTATION_WEIGHT = 1;
-    private static final int FIREPROOF_MUTATION_WEIGHT = 1;
     private final ItemStackHandler items = new ItemStackHandler(com.example.typemoonaddon.worm.WormWarehouseService.MAX_SLOTS) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -50,7 +44,25 @@ public final class WormWarehouseBlockEntity extends BlockEntity implements MenuP
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return stack.getItem() == AddonItems.WORM.get();
+            return slot >= 0 && slot < capacity && WormStackData.isWormItem(stack);
+        }
+
+        @Override
+        public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            if (!isItemValid(slot, stack) || stack.isEmpty() || getStackInSlot(slot).getCount() >= 1) {
+                return stack;
+            }
+            ItemStack single = stack.copyWithCount(1);
+            ItemStack remainder = super.insertItem(slot, single, simulate);
+            if (!remainder.isEmpty()) {
+                return stack;
+            }
+            return stack.getCount() == 1 ? ItemStack.EMPTY : stack.copyWithCount(stack.getCount() - 1);
+        }
+
+        @Override
+        public void setStackInSlot(int slot, @NotNull ItemStack stack) {
+            super.setStackInSlot(slot, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));
         }
     };
     private int capacity = 1;
@@ -117,58 +129,76 @@ public final class WormWarehouseBlockEntity extends BlockEntity implements MenuP
     }
 
     public void dropContents(ServerLevel level) {
+        int width = getBounds() == null ? 20 : Math.max(1, getBounds().width() - 2);
         for (int i = 0; i < items.getSlots(); i++) {
             ItemStack stack = items.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                net.minecraft.world.Containers.dropItemStack(
-                        level,
-                        worldPosition.getX() + 0.5D,
-                        worldPosition.getY() + 0.5D,
-                        worldPosition.getZ() + 0.5D,
-                        stack.copy()
-                );
+                int slotX = i % width;
+                int slotZ = i / width;
+                double dropX = (getBounds() == null ? worldPosition.getX() : getBounds().minX() + 1 + slotX) + 0.5D;
+                double dropZ = (getBounds() == null ? worldPosition.getZ() : getBounds().minZ() + 1 + slotZ) + 0.5D;
+                int count = stack.getCount();
+                for (int worm = 0; worm < count; worm++) {
+                    WormCaptureService.release(level, null, stack.copyWithCount(1),
+                            dropX, worldPosition.getY() + 0.1D, dropZ);
+                }
                 items.setStackInSlot(i, ItemStack.EMPTY);
             }
         }
     }
 
     public void consumeGrowth(ServerLevel level, BlockPos pos, int capacity) {
-        if (capacity <= 0) {
+        consumeGrowth(level, pos, capacity, 20, Math.max(1, (capacity + 19) / 20));
+    }
+
+    public void consumeGrowth(ServerLevel level, BlockPos pos, int capacity, int width, int height) {
+        if (capacity <= 0 || items.getSlots() == 0) {
             return;
         }
-        List<Integer> candidates = new ArrayList<>();
-        for (int slot = 0; slot < Math.min(capacity, items.getSlots()); slot++) {
-            if (!items.getStackInSlot(slot).isEmpty()) {
-                candidates.add(slot);
-            }
-        }
-        if (candidates.isEmpty()) {
-            return;
-        }
-        int attempts = Math.min(FEED_DRAW_COUNT, candidates.size());
+        width = Math.max(1, Math.min(20, width));
+        height = Math.max(1, Math.min(20, height));
+        List<Integer> draws = new ArrayList<>();
+        for (int slot = 0; slot < Math.min(capacity, items.getSlots()); slot++) draws.add(slot);
+        int attempts = Math.min(FEED_DRAW_COUNT, draws.size());
         for (int i = 0; i < attempts; i++) {
-            int slot = candidates.remove(level.getRandom().nextInt(candidates.size()));
-            ItemStack stack = items.getStackInSlot(slot);
-            if (!stack.isEmpty() && stack.getItem() == AddonItems.WORM.get()) {
-                int gu = WormStackData.gu(stack);
-                if (level.getRandom().nextInt(100) >= Math.min(MAX_GROWTH_ROLL_PERCENT, gu)) {
-                    continue;
+            int selected = draws.remove(level.getRandom().nextInt(draws.size()));
+            ItemStack eater = items.getStackInSlot(selected);
+            if (!WormStackData.isWormItem(eater)) continue;
+            WormType eaterType = WormStackData.type(eater);
+            int eaterGu = WormStackData.gu(eater);
+            int totalGu = 0;
+            List<Integer> consumed = new ArrayList<>();
+            int centerX = selected % width;
+            int centerZ = selected / width;
+            for (int slot = 0; slot < Math.min(capacity, items.getSlots()); slot++) {
+                if (slot == selected) continue;
+                int x = slot % width;
+                int z = slot / width;
+                if (z >= height) continue;
+                if (Math.abs(x - centerX) > 1 || Math.abs(z - centerZ) > 1) continue;
+                ItemStack candidate = items.getStackInSlot(slot);
+                if (WormStackData.isWormItem(candidate) && WormStackData.gu(candidate) <= eaterGu) {
+                    consumed.add(slot);
+                    totalGu += WormStackData.gu(candidate);
                 }
-                WormStackData.set(stack, mutatedType(level, WormStackData.type(stack), gu),
-                        gu + GU_GAIN_PER_FEED, WormStackData.owner(stack));
             }
+            if (totalGu <= eaterGu) continue;
+            for (int slot : consumed) items.setStackInSlot(slot, ItemStack.EMPTY);
+            int gain = 1 + Math.floorDiv(totalGu - eaterGu, 5);
+            int newGu = Math.min(100, eaterGu + gain);
+            WormType resultType = mutate(level, eaterType);
+            ItemStack result = WormStackData.create(WormStackData.itemFor(resultType), resultType, newGu,
+                    WormStackData.owner(eater));
+            WormStackData.copyCustomData(eater, result);
+            WormStackData.set(result, resultType, newGu, WormStackData.owner(eater));
+            items.setStackInSlot(selected, result);
         }
     }
 
-    private static WormType mutatedType(ServerLevel level, WormType current, int gu) {
-        if (current == WormType.FIREPROOF || current == WormType.DETECTION || gu < SPECIAL_MUTATION_MIN_GU
-                || level.getRandom().nextInt(100) >= SPECIAL_MUTATION_ROLL_PERCENT) {
-            return current;
-        }
-        int totalWeight = Math.max(1, DETECTION_MUTATION_WEIGHT + FIREPROOF_MUTATION_WEIGHT);
-        return level.getRandom().nextInt(totalWeight) < DETECTION_MUTATION_WEIGHT
-                ? WormType.DETECTION
-                : WormType.FIREPROOF;
+    private static WormType mutate(ServerLevel level, WormType current) {
+        if (current == WormType.SILVERFISH && level.random.nextFloat() < 0.25F) return WormType.FIREPROOF;
+        if (current == WormType.ENDERMITE && level.random.nextFloat() < 0.50F) return WormType.DETECTION;
+        return current;
     }
 
     @Override

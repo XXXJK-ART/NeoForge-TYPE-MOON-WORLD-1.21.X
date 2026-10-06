@@ -12,7 +12,7 @@ public final class StormMagic {
 
     public static MagicExecutionResult execute(MagicExecutionContext context) {
         // The addon-owned press/release state machine performs this sustained cast.
-        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.FAILED;
+        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.STARTED;
     }
 
     public static boolean isRegistered() {

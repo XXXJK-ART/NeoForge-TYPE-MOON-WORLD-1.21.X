@@ -25,6 +25,8 @@ import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 import net.xxxjk.typemoonworld.api.MagicOption;
 import net.xxxjk.typemoonworld.api.MagicPresetHandler;
 import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
+import net.xxxjk.typemoonworld.api.MagicKnowledge;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 /** Public-API registrations for Matou-style worm magecraft. */
 public final class WormMagicIntegration {
@@ -43,12 +45,13 @@ public final class WormMagicIntegration {
 
     public static void register() {
         AddonRegistrar addon = TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID);
-        boolean definitions = addon.magics().registerDefinition(knowledgeDefinition(
+                boolean definitions = addon.magics().registerDefinition(knowledgeDefinition(
                         WORM_MAGIC, "magic.typemoonworld.worm_magic.name", 30))
                 & addon.magics().registerDefinition(operationDefinition(
                         WORM_CONTROL, "magic.typemoonworld.worm_control.name", 40, 4.0D, 4))
                 & addon.magics().registerDefinition(operationDefinition(
-                        ENGRAVED_WORM_OPERATION, "magic.typemoonworld.engraved_worm_operation.name", 55, 8.0D, 10));
+                        ENGRAVED_WORM_OPERATION, "magic.typemoonworld.engraved_worm_operation.name", 55, 8.0D, 10,
+                        50.0D));
         boolean presets = addon.magics().registerPreset(WORM_CONTROL, enumPreset(CONTROL_MODE, "follow", CONTROL_MODES))
                 & addon.magics().registerPreset(ENGRAVED_WORM_OPERATION, enumPreset(OPERATION_MODE, "collapse", OPERATION_MODES));
         boolean controls = addon.client().registerControl(WORM_CONTROL,
@@ -63,7 +66,17 @@ public final class WormMagicIntegration {
     }
 
     public static boolean isKnown(ServerPlayer player, ResourceLocation id) {
-        return player != null && TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().knowledge(player).isLearned(id);
+        if (player == null) return false;
+        MagicKnowledge knowledge = knowledge(player);
+        boolean known = knowledge.isLearned(id);
+        if (known && WORM_MAGIC.equals(id) && !knowledge.isLearned(WORM_CONTROL)) {
+            knowledge.learn(WORM_CONTROL);
+        }
+        return known;
+    }
+
+    public static MagicKnowledge knowledge(ServerPlayer player) {
+        return TypeMoonWorldApi.addon(TypeMoonAddon.MOD_ID).magics().knowledge(player);
     }
 
     public static boolean isCollapseActive(ServerPlayer player, long gameTime) {
@@ -126,8 +139,16 @@ public final class WormMagicIntegration {
         if (player == null || !isCollapseActive(player, player.level().getGameTime())) {
             return;
         }
-        if (player.tickCount % 20 == 0) {
-            player.hurt(player.damageSources().magic(), 8.0F);
+        // Directly apply the tick damage so vanilla hurt immunity does not
+        // reduce the specified every-tick effect to one hit per half-second.
+        float damage = 20.0F;
+        MobEffectInstance resistance = player.getEffect(MobEffects.DAMAGE_RESISTANCE);
+        if (resistance != null) {
+            damage *= Math.max(0.0F, 1.0F - 0.2F * (resistance.getAmplifier() + 1));
+        }
+        player.setHealth(Math.max(0.0F, player.getHealth() - damage));
+        if (player.getHealth() <= 0.0F) {
+            player.die(player.damageSources().magic());
         }
     }
 
@@ -139,9 +160,14 @@ public final class WormMagicIntegration {
 
     private static MagicDefinitionData operationDefinition(
             ResourceLocation id, String key, int complexity, double manaCost, int cooldown) {
+        return operationDefinition(id, key, complexity, manaCost, cooldown, 0.0D);
+    }
+
+    private static MagicDefinitionData operationDefinition(
+            ResourceLocation id, String key, int complexity, double manaCost, int cooldown, double prerequisiteProficiency) {
         return new MagicDefinitionData(id, key, TypeMoonAddon.id("special"), TypeMoonAddon.id("none"),
                 complexity, Math.max(1, (complexity + 19) / 20), manaCost, 0.0D, cooldown,
-                true, true, false, true, false, true, 0, cooldown, WORM_MAGIC, 0.0D, List.of());
+                true, true, false, true, false, true, 0, cooldown, WORM_MAGIC, prerequisiteProficiency, List.of());
     }
 
     private static MagicPresetHandler enumPreset(String key, String defaultValue, Set<String> allowed) {
@@ -193,6 +219,11 @@ public final class WormMagicIntegration {
             return castNpcEngravedWormOperation(context);
         }
         if (caster.level().isClientSide()) {
+            return ExecutionResult.FAILED;
+        }
+        if (isKariya(caster)) {
+            // Kariya's card grants the worms and their base arts, but never the
+            // command spell used to control another person's implanted worms.
             return ExecutionResult.FAILED;
         }
         String mode = context.preset() == null ? "" : context.preset().getString(OPERATION_MODE);
@@ -253,17 +284,14 @@ public final class WormMagicIntegration {
     }
 
     private static ExecutionResult collapse(ServerPlayer caster, ServerPlayer host) {
-        host.getPersistentData().putLong(COLLAPSE_UNTIL, host.level().getGameTime() + 20L * 8L);
+        host.getPersistentData().putLong(COLLAPSE_UNTIL, host.level().getGameTime() + 20L * 30L);
         return ExecutionResult.SUCCESS.withCost(12.0D).withCooldown(10);
     }
 
     private static ExecutionResult immobilize(ServerPlayer caster, ServerPlayer host) {
-        for (LivingEntity entity : host.serverLevel().getEntitiesOfClass(LivingEntity.class,
-                host.getBoundingBox().inflate(4.0D), LivingEntity::isAlive)) {
-            entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20 * 8, 255, false, true, true), caster);
-            entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20 * 8, 0, false, true, true), caster);
-            entity.setDeltaMovement(0.0D, entity.getDeltaMovement().y, 0.0D);
-        }
+        host.getPersistentData().putBoolean("TypeMoonAddonEngravedWormImmobilized", true);
+        host.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, Integer.MAX_VALUE, 1, false, true, true), caster);
+        host.addEffect(new MobEffectInstance(MobEffects.CONFUSION, Integer.MAX_VALUE, 1, false, true, true), caster);
         return ExecutionResult.SUCCESS.withCost(16.0D).withCooldown(20);
     }
 
@@ -272,12 +300,16 @@ public final class WormMagicIntegration {
         if (removed.isEmpty()) {
             return ExecutionResult.FAILED;
         }
-        for (net.minecraft.world.item.ItemStack stack : removed) {
-            if (!caster.getInventory().add(stack)) {
-                caster.drop(stack, false);
-            }
-        }
+        for (net.minecraft.world.item.ItemStack stack : removed) host.drop(stack, false);
+        clearImmobilizeState(host);
         return ExecutionResult.SUCCESS.withCost(8.0D).withCooldown(10);
+    }
+
+    public static void clearImmobilizeState(ServerPlayer player) {
+        if (player == null) return;
+        player.getPersistentData().remove("TypeMoonAddonEngravedWormImmobilized");
+        player.removeEffect(MobEffects.BLINDNESS);
+        player.removeEffect(MobEffects.CONFUSION);
     }
 
     private static ExecutionResult overdraw(ServerPlayer caster) {
@@ -294,6 +326,13 @@ public final class WormMagicIntegration {
     private static ServerPlayer findPlayerTarget(ServerPlayer player, double range) {
         LivingEntity target = findTarget(player, range);
         return target instanceof ServerPlayer serverPlayer ? serverPlayer : null;
+    }
+
+    private static boolean isKariya(ServerPlayer player) {
+        if (player == null) return false;
+        TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        return vars != null && ("matou_kariya".equals(vars.master_card_id)
+                || "typemoonworld:matou_kariya".equals(vars.master_card_id));
     }
 
     private static LivingEntity findTarget(LivingEntity caster, double range) {

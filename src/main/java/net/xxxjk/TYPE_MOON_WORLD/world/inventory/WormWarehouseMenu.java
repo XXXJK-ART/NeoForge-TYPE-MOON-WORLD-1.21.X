@@ -84,6 +84,11 @@ public final class WormWarehouseMenu extends AbstractContainerMenu {
                 }
 
                 @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return isActive() && super.mayPlace(stack);
+                }
+
+                @Override
                 public int getMaxStackSize() {
                     return 1;
                 }

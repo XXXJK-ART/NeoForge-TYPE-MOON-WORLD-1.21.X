@@ -23,7 +23,7 @@ public final class MagicDisplayMetadata {
    public static final String CATEGORY_SPAWN = "spawn";
    public static final String CATEGORY_WORM = "worm";
    public static final String CATEGORY_BOUNDARY = "boundary";
-   private static final Set<String> CHURCH_MAGICS = Set.of("theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma");
+   private static final Set<String> CHURCH_MAGICS = Set.of("theology", "black_key_making", "iron_armor_action", "cremation_rite", "baptism_rite", "stigma", "sanctification");
    private static final Set<String> SPAWN_MAGICS = Set.of("spirit_summoning", "wraith_servitude", "evil_spirit_summoning");
    private static final Set<String> WORM_MAGICS = Set.of("worm_magic", "worm_control", "engraved_worm_operation");
    private static final Set<String> BOUNDARY_MAGICS = Set.of(

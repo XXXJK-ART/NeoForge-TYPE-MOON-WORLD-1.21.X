@@ -108,6 +108,8 @@ public final class TypeMoonAddon implements AddonEntrypoint {
             event.accept(AddonItems.MAGIC_PAGE_WORM_CONTROL);
             event.accept(AddonItems.MAGIC_BOOK_ENGRAVED_WORM_OPERATION);
             event.accept(AddonItems.MAGIC_PAGE_ENGRAVED_WORM_OPERATION);
+            event.accept(AddonItems.MAGIC_BOOK_SANCTIFICATION);
+            event.accept(AddonItems.MAGIC_PAGE_SANCTIFICATION);
             event.accept(AddonItems.MAGIC_BOOK_BOUNDARY_ART);
             event.accept(AddonItems.MAGIC_PAGE_BOUNDARY_ART);
             event.accept(AddonItems.MAGIC_BOOK_SENSING_BOUNDARY);
@@ -129,6 +131,18 @@ public final class TypeMoonAddon implements AddonEntrypoint {
             // Creative tab contents can be rebuilt with a different feature/permission set;
             // an anchor item is not guaranteed to be present in every rebuild.
             event.accept(AddonItems.MANA_FURNACE.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.SILVERFISH_WORM.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.ENDERMITE_WORM.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.WINGED_WORM.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.FIREPROOF_WORM.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.DETECTION_WORM.toStack(),
+                CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(AddonItems.ENGRAVED_WORM.toStack(),
                 CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
         if (event.getTab() == ModCreativeModeTabs.SPAWN_EGGS_TAB.get()) {

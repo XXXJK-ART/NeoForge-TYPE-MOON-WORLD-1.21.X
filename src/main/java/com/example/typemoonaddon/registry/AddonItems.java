@@ -6,6 +6,7 @@ import com.example.typemoonaddon.item.CursedArmorRenderItem;
 import com.example.typemoonaddon.item.PrelatisSpellbookItem;
 import com.example.typemoonaddon.item.SeaMonsterSpawnEggItem;
 import com.example.typemoonaddon.item.WormItem;
+import com.example.typemoonaddon.worm.WormType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Rarity;
@@ -171,6 +172,38 @@ public final class AddonItems {
     public static final DeferredItem<Item> WORM = ITEMS.register(
             "worm",
             () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON))
+    );
+    public static final DeferredItem<Item> MAGIC_BOOK_SANCTIFICATION = ITEMS.register(
+            "magic_book_sanctification",
+            () -> new MagicScrollItem(new Item.Properties().durability(20).rarity(Rarity.EPIC), 1.0D,
+                    "church", "sanctification")
+    );
+    public static final DeferredItem<Item> MAGIC_PAGE_SANCTIFICATION = ITEMS.register(
+            "magic_page_sanctification",
+            () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3).rarity(Rarity.EPIC), 0.15D,
+                    "church", "sanctification")
+    );
+
+    /** Species are separate items; the legacy generic worm remains readable for old saves. */
+    public static final DeferredItem<Item> SILVERFISH_WORM = ITEMS.register(
+            "silverfish_worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON), WormType.SILVERFISH)
+    );
+    public static final DeferredItem<Item> ENDERMITE_WORM = ITEMS.register(
+            "endermite_worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON), WormType.ENDERMITE)
+    );
+    public static final DeferredItem<Item> WINGED_WORM = ITEMS.register(
+            "winged_worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON), WormType.WINGED)
+    );
+    public static final DeferredItem<Item> FIREPROOF_WORM = ITEMS.register(
+            "fireproof_worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON), WormType.FIREPROOF)
+    );
+    public static final DeferredItem<Item> DETECTION_WORM = ITEMS.register(
+            "detection_worm",
+            () -> new WormItem(new Item.Properties().rarity(Rarity.UNCOMMON), WormType.DETECTION)
     );
 
     public static final DeferredItem<Item> ENGRAVED_WORM = ITEMS.register(

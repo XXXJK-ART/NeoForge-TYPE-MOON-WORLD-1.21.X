@@ -59,6 +59,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UbwSwordControlService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.sanctification.MagicSanctification;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.util.NightVisionEffectSource;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -132,6 +133,7 @@ public final class BuiltinMagicExecutors {
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
       registry.register("mana_burst", ManaBurstService::execute, "typemoonworld_core");
       registry.register("stigma", ctx -> MagicExecutionResult.SUCCESS, "typemoonworld_core");
+      registry.register(MagicSanctification.MAGIC_ID, MagicSanctification::execute, "typemoonworld_core");
    }
 
    private static MagicExecutionResult executeKnowledgeOnly(MagicExecutionContext context) {

@@ -6,6 +6,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import com.example.typemoonaddon.engravedworm.OpenEngravedWormMenuPayload;
+import com.example.typemoonaddon.engravedworm.EngravedWormPagePayload;
 
 public final class AddonNetwork {
     private AddonNetwork() {
@@ -41,6 +43,25 @@ public final class AddonNetwork {
     }
 
     public static void registerPayloads(PayloadRegistrar registrar) {
+        // Both messages originate from the client magic configuration screen and
+        // are consumed by the server-owned menu.  Registering the open message
+        // clientbound used to make PacketDistributor.sendToServer fail with an
+        // UnsupportedOperationException before the menu could be opened.
+        registrar.playToServer(
+                OpenEngravedWormMenuPayload.TYPE,
+                OpenEngravedWormMenuPayload.STREAM_CODEC,
+                OpenEngravedWormMenuPayload::handle
+        );
+        registrar.playToServer(
+                EngravedWormPagePayload.TYPE,
+                EngravedWormPagePayload.STREAM_CODEC,
+                EngravedWormPagePayload::handle
+        );
+        registrar.playToServer(
+                SetDetectionWormControlPayload.TYPE,
+                SetDetectionWormControlPayload.STREAM_CODEC,
+                SetDetectionWormControlPayload::handle
+        );
         registrar.playToServer(
                 StorageCastInputPayload.TYPE,
                 StorageCastInputPayload.STREAM_CODEC,
@@ -130,6 +151,11 @@ public final class AddonNetwork {
                 DetectionEyeStatePayload.TYPE,
                 DetectionEyeStatePayload.STREAM_CODEC,
                 DetectionEyeStatePayload::handle
+        );
+        registrar.playToClient(
+                OpenDetectionWormControlPayload.TYPE,
+                OpenDetectionWormControlPayload.STREAM_CODEC,
+                OpenDetectionWormControlPayload::handle
         );
         registrar.playToClient(
                 EntityDisplacementTargetPayload.TYPE,

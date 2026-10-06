@@ -27,6 +27,11 @@ public class RandomStartAttributesItem extends Item {
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       if (!level.isClientSide) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (!vars.is_magus) {
+            player.displayClientMessage(Component.literal("随机属性物品不能替代魔术回路觉醒。请先取得模组触媒并使用觉醒按键。"), true);
+            return InteractionResultHolder.fail(stack);
+         }
          reroll(player, level.getRandom());
          level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 1.0F);
          if (level instanceof ServerLevel serverLevel) {

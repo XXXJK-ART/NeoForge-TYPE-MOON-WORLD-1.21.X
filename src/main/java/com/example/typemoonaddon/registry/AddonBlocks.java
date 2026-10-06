@@ -19,7 +19,8 @@ public final class AddonBlocks {
             () -> new WormWarehouseBlock(
                     BlockBehaviour.Properties.of()
                             .mapColor(MapColor.COLOR_BLACK)
-                            .strength(-1.0F, 3600000.0F)
+                            // Unbreakable by hand/tools, but explosions may remove it.
+                            .strength(-1.0F, 0.0F)
                             .noCollission()
                             .noOcclusion()
                             .noLootTable()

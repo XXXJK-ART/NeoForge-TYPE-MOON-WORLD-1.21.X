@@ -11,5 +11,12 @@
   "knowledge_only": false,
   "required_attributes": [
     "typemoonworld:imaginary_number"
-  ]
+  ],
+  "canon_status": "mod_original",
+  "source_key": "typemoonworld:absorption",
+  "magic_type": "mod_original",
+  "cast_mode": "sustained",
+  "resource_model": "personal_mana",
+  "copy_policy": "researchable",
+  "player_allowed": true
 }

@@ -25,6 +25,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.StateDefinition.Builder;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.BlockHitResult;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.WormWarehouseMenu;
 import org.jetbrains.annotations.NotNull;
@@ -76,7 +78,12 @@ public final class WormWarehouseBlock extends BaseEntityBlock {
             @NotNull InteractionHand hand,
             @NotNull BlockHitResult hitResult
     ) {
-        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+            WormWarehouseService.controllerEntity(level, pos).ifPresent(controller ->
+                    serverPlayer.openMenu(controller, controller.getBlockPos()));
+            return ItemInteractionResult.CONSUME;
+        }
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override
@@ -108,6 +115,14 @@ public final class WormWarehouseBlock extends BaseEntityBlock {
     @Override
     public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         return defaultBlockState().setValue(CONTROLLER, false);
+    }
+
+    @Override
+    public void animateTick(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+                            @NotNull net.minecraft.util.RandomSource random) {
+        if (random.nextInt(24) == 0) {
+            level.playLocalSound(pos, SoundEvents.SILVERFISH_STEP, SoundSource.BLOCKS, 0.35F, 1.0F, false);
+        }
     }
 
     @Override

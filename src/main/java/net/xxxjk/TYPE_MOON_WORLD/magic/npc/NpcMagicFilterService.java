@@ -23,6 +23,8 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemAttributeModifiers.Entry;
+import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
+import net.xxxjk.typemoonworld.api.MagicIdMigration;
 
 public final class NpcMagicFilterService {
    private static final Set<String> CANDIDATE_MAGIC_POOL = Set.of(
@@ -77,11 +79,21 @@ public final class NpcMagicFilterService {
    }
 
    public static Set<String> candidateMagicPool() {
-      return CANDIDATE_MAGIC_POOL;
+      java.util.LinkedHashSet<String> pool = new java.util.LinkedHashSet<>(CANDIDATE_MAGIC_POOL);
+      for (var definition : MagicDefinitionRegistry.all().values()) {
+         if (definition != null && definition.npcAllowed()) {
+            pool.add(definition.id().getPath());
+         }
+      }
+      return java.util.Collections.unmodifiableSet(pool);
    }
 
    public static boolean isMagicAllowedForNpc(String magicId) {
-      return magicId != null && !magicId.isEmpty() ? CANDIDATE_MAGIC_POOL.contains(magicId) && !HARD_EXCLUDED_MAGICS.contains(magicId) : false;
+      String normalized = MagicIdMigration.normalize(magicId);
+      return normalized != null && !normalized.isEmpty()
+         ? candidateMagicPool().contains(normalized) && !HARD_EXCLUDED_MAGICS.contains(normalized)
+            && MagicDefinitionRegistry.isNpcAllowed(normalized)
+         : false;
    }
 
    public static boolean isMagicHardExcluded(String magicId) {

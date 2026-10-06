@@ -11,6 +11,6 @@ public final class AndrephiusMagic {
 
     public static MagicExecutionResult execute(MagicExecutionContext context) {
         // Press/release charging is handled by the addon-owned server state machine.
-        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.FAILED;
+        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.STARTED;
     }
 }

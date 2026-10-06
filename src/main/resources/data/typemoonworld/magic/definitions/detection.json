@@ -9,4 +9,11 @@
   "crest_allowed": false,
   "npc_allowed": true,
   "knowledge_only": false
+  ,"canon_status": "mod_original"
+  ,"source_key": "typemoonworld:detection"
+  ,"magic_type": "mod_original"
+  ,"cast_mode": "sustained"
+  ,"resource_model": "personal_mana"
+  ,"copy_policy": "researchable"
+  ,"player_allowed": true
 }

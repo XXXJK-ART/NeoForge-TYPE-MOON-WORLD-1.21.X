@@ -59,6 +59,7 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Added;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Expired;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent.Remove;
@@ -101,6 +102,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.HolyGrailItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
@@ -114,6 +116,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGandrMachineGun;
@@ -402,6 +405,7 @@ public class CommonEvents {
          if (player instanceof ServerPlayer serverPlayer) {
             TypeMoonWorldModVariables.PlayerVariables vars = tickVars;
             if (serverPlayer.tickCount % 20 == 0) {
+               tickGrailMana(serverPlayer, vars);
                TalentService.tick(serverPlayer);
                PassiveService.tick(serverPlayer);
                net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningProgressService.tick(serverPlayer);
@@ -415,6 +419,7 @@ public class CommonEvents {
             net.xxxjk.TYPE_MOON_WORLD.item.custom.MedeaReinforcementCharmItem.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.tick(serverPlayer);
             MagicJewelMachineGun.tick(serverPlayer);
+            MagecraftRiskService.tick(serverPlayer);
             MagicGandrMachineGun.tick(serverPlayer);
             MagicGander.tick(serverPlayer);
             net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.tick(serverPlayer);
@@ -507,6 +512,15 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onLivingIncomingDamage(LivingIncomingDamageEvent event) {
       if (!event.getEntity().level().isClientSide) {
+         Entity sharedAttacker = event.getSource().getEntity();
+         if (sharedAttacker instanceof LivingEntity living
+            && living.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)) {
+            for (DamageContainer.Reduction reduction : DamageContainer.Reduction.values()) {
+               if (reduction.name().contains("ARMOR")) {
+                  event.addReductionModifier(reduction, (container, amount) -> 0.0F);
+               }
+            }
+         }
          // Creative and spectator players are globally non-combat targets.
          // Do this before servant damage redirection so custom effects cannot
          // transfer damage away from the protected player or otherwise mutate
@@ -600,7 +614,9 @@ public class CommonEvents {
                   net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes.QINGGANG_SECOND_HIT);
                if (!qinggangSecondHit) {
                   event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
-                  event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+                  if (!attacker.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)) {
+                     event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
+                  }
                }
             }
             boolean fanaticDefensePiercing = event.getSource().is(
@@ -1032,6 +1048,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.clear(player);
          net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
          net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
       }
@@ -1519,6 +1536,23 @@ public class CommonEvents {
       }
    }
 
+   private static void tickGrailMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      int count = 0;
+      for (int i = 0; i < 9; i++) {
+         ItemStack stack = player.getInventory().getItem(i);
+         if (stack.is(ModItems.HOLY_GRAIL.get())) count += stack.getCount();
+         if (stack.getItem() instanceof HolyGrailItem) HolyGrailItem.normalizeSoulCount(stack);
+      }
+      ItemStack offhand = player.getOffhandItem();
+      if (offhand.is(ModItems.HOLY_GRAIL.get())) count += offhand.getCount();
+      if (offhand.getItem() instanceof HolyGrailItem) HolyGrailItem.normalizeSoulCount(offhand);
+      if (count > 0 && vars != null && vars.magicState().maxMana() > 0.0) {
+         double before = vars.magicState().mana();
+         vars.magicState().setMana(Math.min(vars.magicState().maxMana(), before + count * 100.0));
+         if (vars.magicState().mana() != before) vars.syncMana(player);
+      }
+   }
+
    private static boolean tryRedirectIskandarMountDamage(LivingIncomingDamageEvent event) {
       if (event.getAmount() <= 0.0F) return false;
       if (BaobhanSithDamageTypes.isCurse(event.getSource())) return false;
@@ -1555,6 +1589,13 @@ public class CommonEvents {
          && event.getEntity() instanceof ServerPlayer player
          && ServantCardHundredFacesHassanSkills.tryTransferBodyOnLethalDamage(player)) {
          event.setCanceled(true);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onPlayerChangedDimension(PlayerChangedDimensionEvent event) {
+      if (event.getEntity() instanceof ServerPlayer player) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.clear(player);
       }
    }
 

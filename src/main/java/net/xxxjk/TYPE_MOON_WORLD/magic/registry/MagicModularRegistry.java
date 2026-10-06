@@ -38,17 +38,17 @@ public final class MagicModularRegistry implements IMagicRegistry {
    public static MagicExecutionResult execute(MagicExecutionContext context) {
       if (context != null && context.magicId() != null && !context.magicId().isEmpty()) {
          if (!MagicDefinitionRegistry.meetsAttributeRequirements(context.entity() instanceof net.minecraft.world.entity.LivingEntity living ? living : null, context.magicId())) {
-            return MagicExecutionResult.FAILED;
+            return MagicExecutionResult.rejected("missing_attribute");
          }
          String registeredId = resolveRegisteredId(context.magicId());
          MagicModularRegistry.RegisteredMagic registered = registeredId == null ? null : REGISTRY.get(registeredId);
          if (registered != null && registered.executor != null) {
             try {
                MagicExecutionResult result = registered.executor.execute(context);
-               return result == null ? MagicExecutionResult.FAILED : result;
+               return result == null ? MagicExecutionResult.rejected("null_result") : result;
             } catch (Exception var3) {
                TYPE_MOON_WORLD.LOGGER.error("Magic executor failed. magicId={}, provider={}", context.magicId(), registered.providerId, var3);
-               return MagicExecutionResult.FAILED;
+               return MagicExecutionResult.rejected("executor_error");
             }
          } else {
             return MagicExecutionResult.NOT_HANDLED;

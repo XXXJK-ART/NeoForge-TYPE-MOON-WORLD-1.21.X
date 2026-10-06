@@ -97,11 +97,17 @@ public final class ServantCardKeybindConfig {
    }
 
    public static boolean isReservedKey(Key key) {
-      if (key == null || key.getType() != Type.KEYSYM) {
+      if (key == null) {
          return false;
       }
+      if (key.getType() == Type.MOUSE) {
+         return key.getValue() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
+      }
+      if (key.getType() != Type.KEYSYM) return false;
       return key.getValue() == GLFW.GLFW_KEY_R
          || key.getValue() == GLFW.GLFW_KEY_O
+         || key.getValue() == GLFW.GLFW_KEY_LEFT_CONTROL
+         || key.getValue() == GLFW.GLFW_KEY_RIGHT_CONTROL
          || key.getValue() == GLFW.GLFW_KEY_LEFT_ALT
          || key.getValue() == GLFW.GLFW_KEY_RIGHT_ALT;
    }

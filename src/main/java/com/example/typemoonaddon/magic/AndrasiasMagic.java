@@ -16,6 +16,6 @@ public final class AndrasiasMagic {
         }
         // The normal one-shot CastMagicMessage is intentionally ignored. The
         // client-side press/release payload drives the server charge lifecycle.
-        return MagicExecutionResult.FAILED;
+        return MagicExecutionResult.STARTED;
     }
 }

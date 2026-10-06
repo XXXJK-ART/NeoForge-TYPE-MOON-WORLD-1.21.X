@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemNecklaceItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BandageItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DivineSteelItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.HolyGrailItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.IskandarShortswordItem;
@@ -241,7 +242,7 @@ public class ModItems {
     public static final DeferredItem<Item> CHALK = ITEMS.register("chalk",
             () -> new ChalkItem(new Item.Properties().stacksTo(64)));
     public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
-            () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
+            () -> new HolyGrailItem(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
     public static final DeferredItem<Item> PROOF_OF_HERO = registerSimpleItem("proof_of_hero");
     public static final DeferredItem<Item> QP = registerSimpleItem("qp");

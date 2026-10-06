@@ -35,7 +35,17 @@ public record MagicDefinitionData(
    ResourceLocation prerequisiteMagic,
    double prerequisiteProficiency,
    List<ResourceLocation> requiredAttributes,
-   MagicComplexity resistanceComplexity
+   MagicComplexity resistanceComplexity,
+   String canonStatus,
+   String sourceKey,
+   String magicType,
+   String requiredOrigin,
+   String requiredFoundation,
+   String requiredCatalyst,
+   String castMode,
+   String resourceModel,
+   String copyPolicy,
+   boolean playerAllowed
 ) {
    private static final ResourceLocation INVALID_ID = ResourceLocation.fromNamespaceAndPath("typemoonworld", "invalid");
    private static final ResourceLocation BASIC = ResourceLocation.fromNamespaceAndPath("typemoonworld", "basic");
@@ -60,6 +70,35 @@ public record MagicDefinitionData(
       prerequisiteProficiency = Math.max(0.0, Math.min(100.0, prerequisiteProficiency));
       requiredAttributes = requiredAttributes == null ? List.of() : requiredAttributes.stream()
          .filter(Objects::nonNull).distinct().limit(32).toList();
+      canonStatus = normalizeText(canonStatus, "mod_original");
+      sourceKey = normalizeText(sourceKey, id.toString());
+      magicType = normalizeText(magicType, category.getPath());
+      requiredOrigin = emptyToNull(requiredOrigin);
+      requiredFoundation = emptyToNull(requiredFoundation);
+      requiredCatalyst = emptyToNull(requiredCatalyst);
+      castMode = normalizeText(castMode, "instant");
+      resourceModel = normalizeText(resourceModel, "personal_mana");
+      copyPolicy = normalizeText(copyPolicy, copyable ? "copyable" : "knowledge_only");
+   }
+
+   /** Source-compatible form of the pre-canon 21-field constructor. */
+   public MagicDefinitionData(ResourceLocation id, String nameKey, ResourceLocation category, ResourceLocation school,
+         int complexity, int chantSegments, double manaCost, double sustainedManaCost, int cooldownTicks,
+         boolean learnable, boolean wheelSelectable, boolean crestAllowed, boolean npcAllowed, boolean knowledgeOnly,
+         boolean copyable, int npcGlobalCooldown, int npcCooldown, ResourceLocation prerequisiteMagic,
+         double prerequisiteProficiency, List<ResourceLocation> requiredAttributes, MagicComplexity resistanceComplexity) {
+      this(id, nameKey, category, school, complexity, chantSegments, manaCost, sustainedManaCost, cooldownTicks,
+         learnable, wheelSelectable, crestAllowed, npcAllowed, knowledgeOnly, copyable, npcGlobalCooldown, npcCooldown,
+         prerequisiteMagic, prerequisiteProficiency, requiredAttributes, resistanceComplexity,
+         null, null, null, null, null, null, null, null, null, true);
+   }
+
+   private static String normalizeText(String value, String fallback) {
+      return value == null || value.isBlank() ? fallback : value.trim().toLowerCase(java.util.Locale.ROOT);
+   }
+
+   private static String emptyToNull(String value) {
+      return value == null || value.isBlank() ? null : value.trim();
    }
 
    public MagicDefinitionData(ResourceLocation id, String nameKey, ResourceLocation category, ResourceLocation school,
@@ -70,7 +109,8 @@ public record MagicDefinitionData(
          List<ResourceLocation> requiredAttributes) {
       this(id, nameKey, category, school, complexity, chantSegments, manaCost, sustainedManaCost, cooldownTicks,
          learnable, wheelSelectable, crestAllowed, npcAllowed, knowledgeOnly, copyable, npcGlobalCooldown, npcCooldown,
-         prerequisiteMagic, prerequisiteProficiency, requiredAttributes, null);
+         prerequisiteMagic, prerequisiteProficiency, requiredAttributes, null,
+         null, null, null, null, null, null, null, null, null, true);
    }
 
    /** Source-compatible constructor for v1 addons that do not declare attribute requirements. */
@@ -80,7 +120,8 @@ public record MagicDefinitionData(
          boolean copyable, int npcGlobalCooldown, int npcCooldown) {
       this(id, nameKey, category, school, complexity, chantSegments, manaCost, sustainedManaCost, cooldownTicks,
          learnable, wheelSelectable, crestAllowed, npcAllowed, knowledgeOnly, copyable, npcGlobalCooldown, npcCooldown,
-         null, 0.0, List.of(), null);
+         null, 0.0, List.of(), null,
+         null, null, null, null, null, null, null, null, null, true);
    }
 
    /** Source-compatible constructor for v1 addons that do not declare attribute requirements. */
@@ -88,7 +129,8 @@ public record MagicDefinitionData(
          double manaCost, int cooldownTicks, boolean learnable, boolean wheelSelectable, boolean crestAllowed,
          boolean npcAllowed, boolean knowledgeOnly, int npcGlobalCooldown, int npcCooldown, List<ResourceLocation> requiredAttributes) {
       this(id, nameKey, category, school, 50, 1, manaCost, 0.0, cooldownTicks, learnable, wheelSelectable, crestAllowed,
-         npcAllowed, knowledgeOnly, true, npcGlobalCooldown, npcCooldown, null, 0.0, requiredAttributes, null);
+         npcAllowed, knowledgeOnly, true, npcGlobalCooldown, npcCooldown, null, 0.0, requiredAttributes, null,
+         null, null, null, null, null, null, null, null, null, true);
    }
 
    /** Source-compatible constructor for older addon registrations that only carried the v1 fields. */
@@ -96,7 +138,8 @@ public record MagicDefinitionData(
          double manaCost, int cooldownTicks, boolean learnable, boolean wheelSelectable, boolean crestAllowed,
          boolean npcAllowed, boolean knowledgeOnly, int npcGlobalCooldown, int npcCooldown) {
       this(id, nameKey, category, school, 50, 1, manaCost, 0.0, cooldownTicks, learnable, wheelSelectable, crestAllowed,
-         npcAllowed, knowledgeOnly, true, npcGlobalCooldown, npcCooldown, null, 0.0, List.of(), null);
+         npcAllowed, knowledgeOnly, true, npcGlobalCooldown, npcCooldown, null, 0.0, List.of(), null,
+         null, null, null, null, null, null, null, null, null, true);
    }
 
    public JsonObject toJson() {
@@ -128,6 +171,16 @@ public record MagicDefinitionData(
          json.add("required_attributes", array);
       }
       if (this.resistanceComplexity != null) json.addProperty("resistance_complexity", this.resistanceComplexity.name());
+      if (!"mod_original".equals(this.canonStatus)) json.addProperty("canon_status", this.canonStatus);
+      if (!this.id.toString().equals(this.sourceKey)) json.addProperty("source_key", this.sourceKey);
+      if (!this.magicType.equals(this.category.getPath())) json.addProperty("magic_type", this.magicType);
+      if (this.requiredOrigin != null) json.addProperty("required_origin", this.requiredOrigin);
+      if (this.requiredFoundation != null) json.addProperty("required_foundation", this.requiredFoundation);
+      if (this.requiredCatalyst != null) json.addProperty("required_catalyst", this.requiredCatalyst);
+      if (!"instant".equals(this.castMode)) json.addProperty("cast_mode", this.castMode);
+      if (!"personal_mana".equals(this.resourceModel)) json.addProperty("resource_model", this.resourceModel);
+      if (!this.copyPolicy.equals(this.copyable ? "copyable" : "knowledge_only")) json.addProperty("copy_policy", this.copyPolicy);
+      if (!this.playerAllowed) json.addProperty("player_allowed", false);
       return json;
    }
 
@@ -195,9 +248,21 @@ public record MagicDefinitionData(
             resistanceComplexity = null;
          }
       }
+      String canonStatus = json.has("canon_status") ? json.get("canon_status").getAsString() : null;
+      String sourceKey = json.has("source_key") ? json.get("source_key").getAsString() : null;
+      String magicType = json.has("magic_type") ? json.get("magic_type").getAsString() : null;
+      String requiredOrigin = json.has("required_origin") ? json.get("required_origin").getAsString() : null;
+      String requiredFoundation = json.has("required_foundation") ? json.get("required_foundation").getAsString() : null;
+      String requiredCatalyst = json.has("required_catalyst") ? json.get("required_catalyst").getAsString() : null;
+      String castMode = json.has("cast_mode") ? json.get("cast_mode").getAsString() : null;
+      String resourceModel = json.has("resource_model") ? json.get("resource_model").getAsString() : null;
+      String copyPolicy = json.has("copy_policy") ? json.get("copy_policy").getAsString() : null;
+      boolean playerAllowed = !json.has("player_allowed") || json.get("player_allowed").getAsBoolean();
       return new MagicDefinitionData(id, nameKey, category, school, complexity, chantSegments, manaCost, sustainedManaCost,
          cooldownTicks, learnable, wheelSelectable, crestAllowed, npcAllowed, knowledgeOnly, copyable, npcGlobalCooldown,
-         npcCooldown, prerequisiteMagic, prerequisiteProficiency, requiredAttributes, resistanceComplexity);
+         npcCooldown, prerequisiteMagic, prerequisiteProficiency, requiredAttributes, resistanceComplexity,
+         canonStatus, sourceKey, magicType, requiredOrigin, requiredFoundation, requiredCatalyst, castMode, resourceModel,
+         copyPolicy, playerAllowed);
    }
 
    private static ResourceLocation parseLocation(JsonObject json, String key, ResourceLocation fallback) {
@@ -210,15 +275,35 @@ public record MagicDefinitionData(
       return new MagicDefinitionData(id, "magic." + id.getNamespace() + "." + id.getPath() + ".name",
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "basic"),
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "none"), 50, 1, 0.0, 0.0, 10,
-         true, true, true, true, false, true, 12, 20, null, 0.0, List.of(), null);
+         true, true, true, true, false, true, 12, 20, null, 0.0, List.of(), null,
+         null, null, null, null, null, null, null, null, null, true);
    }
 
    public MagicDefinitionData withId(ResourceLocation newId) {
       String resolvedKey = this.nameKey.isBlank() ? "magic." + newId.getNamespace() + "." + newId.getPath() + ".name" : this.nameKey;
+      String resolvedSource = this.sourceKey.equals(this.id.toString()) || this.id.equals(INVALID_ID) ? newId.toString() : this.sourceKey;
       return new MagicDefinitionData(newId, resolvedKey, this.category, this.school, this.complexity, this.chantSegments,
          this.manaCost, this.sustainedManaCost, this.cooldownTicks, this.learnable, this.wheelSelectable, this.crestAllowed,
          this.npcAllowed, this.knowledgeOnly, this.copyable, this.npcGlobalCooldown, this.npcCooldown, this.prerequisiteMagic,
-         this.prerequisiteProficiency, this.requiredAttributes, this.resistanceComplexity);
+         this.prerequisiteProficiency, this.requiredAttributes, this.resistanceComplexity, this.canonStatus, resolvedSource,
+         this.magicType, this.requiredOrigin, this.requiredFoundation, this.requiredCatalyst, this.castMode, this.resourceModel,
+         this.copyPolicy, this.playerAllowed);
+   }
+
+   public MagicDefinitionData withCanonMetadata(String status, String source, String type, String origin,
+         String foundation, String catalyst, String mode, String resources, String policy, boolean allowedForPlayer) {
+      return withCanonMetadata(status, source, type, origin, foundation, catalyst, mode, resources, policy,
+         allowedForPlayer, this.npcAllowed);
+   }
+
+   public MagicDefinitionData withCanonMetadata(String status, String source, String type, String origin,
+         String foundation, String catalyst, String mode, String resources, String policy, boolean allowedForPlayer,
+         boolean allowedForNpc) {
+      return new MagicDefinitionData(this.id, this.nameKey, this.category, this.school, this.complexity, this.chantSegments,
+         this.manaCost, this.sustainedManaCost, this.cooldownTicks, this.learnable, this.wheelSelectable, this.crestAllowed,
+         allowedForNpc, this.knowledgeOnly, this.copyable, this.npcGlobalCooldown, this.npcCooldown, this.prerequisiteMagic,
+         this.prerequisiteProficiency, this.requiredAttributes, this.resistanceComplexity, status, source, type, origin,
+         foundation, catalyst, mode, resources, policy, allowedForPlayer);
    }
 
    public MagicComplexity resolvedResistanceComplexity() {

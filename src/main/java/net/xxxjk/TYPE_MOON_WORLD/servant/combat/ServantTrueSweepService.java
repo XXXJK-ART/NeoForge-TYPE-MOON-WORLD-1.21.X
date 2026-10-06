@@ -160,9 +160,16 @@ public final class ServantTrueSweepService {
          if (!HeraclesCombatRules.isInsideBasicSweepArc(forward.x, forward.z, offset.x, offset.z)) continue;
          if (!attacker.hasLineOfSight(target) && attacker.distanceTo(target) > 1.8F) continue;
          target.invulnerableTime = 0;
-         boolean hurt = target.hurt(playerSource && attacker instanceof ServerPlayer player
-            ? attacker.damageSources().playerAttack(player)
-            : attacker.damageSources().mobAttack(attacker), damage);
+         float resolvedDamage = (float)ServantCombatService.calculateDamage(attacker, target, 1.0, false, null, 1.0);
+         ServantCombatService.beginSharedHit(attacker);
+         boolean hurt;
+         try {
+            hurt = target.hurt(playerSource && attacker instanceof ServerPlayer player
+               ? attacker.damageSources().playerAttack(player)
+               : attacker.damageSources().mobAttack(attacker), resolvedDamage);
+         } finally {
+            ServantCombatService.endSharedHit(attacker);
+         }
          target.invulnerableTime = 0;
          if (hurt) {
             hits++;

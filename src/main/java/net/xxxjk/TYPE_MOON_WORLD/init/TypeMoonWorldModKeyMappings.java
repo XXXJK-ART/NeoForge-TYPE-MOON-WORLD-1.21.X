@@ -28,6 +28,8 @@ import net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardDefenseClientState;
+import net.xxxjk.TYPE_MOON_WORLD.client.CombatThreatClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ReplayUiSuppressor;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
 import net.xxxjk.TYPE_MOON_WORLD.client.gui.MagicModeSwitcherScreen;
@@ -63,6 +65,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardBasicAttackMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardFlightMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDodgeMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.SwitchMagicWheelMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ThompsonContenderUseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -94,8 +98,11 @@ public class TypeMoonWorldModKeyMappings {
    /** Opens the configuration/library for the currently selected wheel entry. */
    public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", GLFW.GLFW_KEY_TAB, "key.categories.typemoonworld");
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
-   public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", 341, "key.categories.typemoonworld");
-   public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", 342, "key.categories.typemoonworld");
+   // Left Ctrl is reserved for the active servant dodge. Move the older
+   // modifier-driven magic controls to the Alt modifiers to avoid overlap.
+   public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", GLFW.GLFW_KEY_LEFT_ALT, "key.categories.typemoonworld");
+   public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", GLFW.GLFW_KEY_RIGHT_ALT, "key.categories.typemoonworld");
+   public static final KeyMapping SERVANT_CARD_DODGE = new KeyMapping("key.typemoonworld.servant_card.dodge", GLFW.GLFW_KEY_LEFT_CONTROL, KEY_CATEGORY);
    public static final KeyMapping SERVANT_CARD_KEYBINDS = new KeyMapping("key.typemoonworld.servant_card.keybinds", GLFW.GLFW_KEY_O, KEY_CATEGORY);
    public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
       new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),
@@ -121,6 +128,7 @@ public class TypeMoonWorldModKeyMappings {
       event.register(CYCLE_MAGIC);
       event.register(MAGIC_MODE_SWITCH);
       event.register(MAGIC_WHEEL_SWITCH);
+      event.register(SERVANT_CARD_DODGE);
       event.register(SERVANT_CARD_KEYBINDS);
       for (KeyMapping mapping : SERVANT_CARD_SKILL_KEYS) {
          event.register(mapping);
@@ -139,6 +147,8 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isWheelSwitchDown = false;
       private static final boolean[] numpadWheelDown = new boolean[10];
       private static boolean servantJumpDown = false;
+      private static boolean servantGuardDown = false;
+      private static int servantGuardKeepalive = 0;
       private static final long SERVANT_FLIGHT_DASH_TAP_WINDOW_MS = 280L;
       private static final int SERVANT_FLIGHT_DASH_FORWARD = 0;
       private static final int SERVANT_FLIGHT_DASH_BACK = 1;
@@ -323,6 +333,17 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.getButton() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE && vars.servant_card_transformed) {
+            if (event.getAction() == GLFW.GLFW_PRESS && !servantGuardDown) {
+               servantGuardDown = true;
+               PacketDistributor.sendToServer(new ServantCardGuardMessage(true), new CustomPacketPayload[0]);
+            } else if (event.getAction() == GLFW.GLFW_RELEASE && servantGuardDown) {
+               servantGuardDown = false;
+               PacketDistributor.sendToServer(new ServantCardGuardMessage(false), new CustomPacketPayload[0]);
+            }
+            event.setCanceled(true);
+            return;
+         }
          if (ServantCardSkillInputController.handleMouseButton(minecraft.player, vars, event.getButton(), event.getAction())) {
             event.setCanceled(true);
          }
@@ -899,6 +920,12 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          long window = Minecraft.getInstance().getWindow().getWindow();
+         if (SERVANT_CARD_DODGE.consumeClick() && Minecraft.getInstance().player != null) {
+            float forward = Mth.clamp(Minecraft.getInstance().player.zza, -1.0F, 1.0F);
+            float strafe = Mth.clamp(Minecraft.getInstance().player.xxa, -1.0F, 1.0F);
+            if (Math.abs(forward) < 0.01F && Math.abs(strafe) < 0.01F) forward = -1.0F;
+            PacketDistributor.sendToServer(new ServantCardDodgeMessage(forward, strafe), new CustomPacketPayload[0]);
+         }
          if ("pale_rider".equals(vars.servant_card_id) && Minecraft.getInstance().player != null && PaleRiderClientState.possessing) {
             float forward = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_W) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_S) == 1 ? -1.0F : 0.0F);
             float strafe = (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_D) == 1 ? 1.0F : 0.0F) + (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == 1 ? -1.0F : 0.0F);
@@ -929,6 +956,10 @@ public class TypeMoonWorldModKeyMappings {
             clearPaleRiderInputState();
          }
          ServantCardSkillInputController.tick(Minecraft.getInstance().player, vars);
+         if (servantGuardDown && ++servantGuardKeepalive >= 5) {
+            servantGuardKeepalive = 0;
+            PacketDistributor.sendToServer(new ServantCardGuardMessage(true), new CustomPacketPayload[0]);
+         }
 
          boolean jumpDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == 1;
          boolean sneakDown = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == 1 || GLFW.glfwGetKey(window, GLFW.GLFW_KEY_RIGHT_SHIFT) == 1;
@@ -1004,6 +1035,13 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       public static void clearClientInputState() {
+         ServantCardDefenseClientState.clear();
+         CombatThreatClientState.clear();
+         if (servantGuardDown && Minecraft.getInstance().player != null) {
+            PacketDistributor.sendToServer(new ServantCardGuardMessage(false), new CustomPacketPayload[0]);
+         }
+         servantGuardDown = false;
+         servantGuardKeepalive = 0;
          clearServantCardInputState();
          clearManaBurstInputState();
          bajiquanJumpDown = false;

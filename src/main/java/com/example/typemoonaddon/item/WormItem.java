@@ -1,10 +1,10 @@
 package com.example.typemoonaddon.item;
 
 import com.example.typemoonaddon.registry.AddonItems;
-import com.example.typemoonaddon.engravedworm.EngravedWormService;
 import com.example.typemoonaddon.worm.WormCaptureService;
 import com.example.typemoonaddon.worm.WormStackData;
 import com.example.typemoonaddon.worm.WormWarehouseService;
+import com.example.typemoonaddon.magic.WormMagicIntegration;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,10 +16,22 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import com.example.typemoonaddon.worm.WormType;
 
 public final class WormItem extends Item {
+    private final WormType fixedType;
+
     public WormItem(Properties properties) {
+        this(properties, null);
+    }
+
+    public WormItem(Properties properties, WormType fixedType) {
         super(properties.stacksTo(16));
+        this.fixedType = fixedType;
+    }
+
+    public WormType fixedType() {
+        return fixedType;
     }
 
     @Override
@@ -29,9 +41,6 @@ public final class WormItem extends Item {
             if (!context.getLevel().isClientSide()
                     && context.getPlayer() instanceof ServerPlayer serverPlayer
                     && WormWarehouseService.activateFromFrame(context.getLevel(), context.getClickedPos(), serverPlayer, stack)) {
-                if (!serverPlayer.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
                 return InteractionResult.CONSUME;
             }
         }
@@ -44,20 +53,11 @@ public final class WormItem extends Item {
         if (!(player instanceof ServerPlayer serverPlayer) || !(level instanceof ServerLevel serverLevel)) {
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
+        if (!WormMagicIntegration.isKnown(serverPlayer, WormMagicIntegration.WORM_MAGIC)) {
+            serverPlayer.displayClientMessage(Component.translatable("message.typemoonworld.worm.requires_magic"), true);
+            return InteractionResultHolder.fail(stack);
+        }
         try {
-            if (player.isShiftKeyDown()) {
-                ItemStack engraved = EngravedWormService.createFromWorm(serverPlayer, stack);
-                if (engraved.isEmpty()) {
-                    return InteractionResultHolder.fail(stack);
-                }
-                if (!player.addItem(engraved)) {
-                    player.drop(engraved, false);
-                }
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
-                return InteractionResultHolder.success(stack);
-            }
             if (!WormCaptureService.release(serverLevel, serverPlayer, stack,
                     player.getX(), player.getEyeY() - 0.15D, player.getZ())) {
                 return InteractionResultHolder.fail(stack);

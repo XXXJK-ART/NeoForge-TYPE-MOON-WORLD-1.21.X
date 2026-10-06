@@ -451,6 +451,14 @@ public final class InternalApiProvider implements ApiProvider {
                    || vars.learned_magics.contains(magicId.toString())
                    || vars.learned_magics.contains(magicId.getPath())) return false;
                 vars.learned_magics.add(magicId.toString());
+                // Worm magecraft always includes the command discipline; it is not a
+                // separately acquired branch in the revised system.
+                if ("worm_magic".equals(magicId.getPath())) {
+                   ResourceLocation control = ResourceLocation.fromNamespaceAndPath(magicId.getNamespace(), "worm_control");
+                   if (MagicDefinitionRegistry.contains(control.toString()) && !vars.hasLearnedSelfMagic(control.toString())) {
+                      vars.learned_magics.add(control.toString());
+                   }
+                }
                 vars.syncPlayerVariables(entity);
                 return true;
              }

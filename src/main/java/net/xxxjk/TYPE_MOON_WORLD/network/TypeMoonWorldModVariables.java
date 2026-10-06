@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgramService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneLearningService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneReleaseMode;
+import net.xxxjk.typemoonworld.api.MagicIdMigration;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterStateManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService;
 import org.jetbrains.annotations.NotNull;
@@ -421,6 +422,17 @@ public class TypeMoonWorldModVariables {
             clone.master_card_id = original.master_card_id;
             clone.master_card_saved_variables = original.master_card_saved_variables.copy();
             clone.master_card_saved_inventory = original.master_card_saved_inventory.copy();
+         }
+
+         // Keep recoverable ordinary-magus risk across the vanilla player
+         // replacement used by respawn/death cloning.
+         CompoundTag originalRisk = event.getOriginal().getPersistentData();
+         CompoundTag clonedRisk = event.getEntity().getPersistentData();
+         if (originalRisk.contains("TypeMoonCircuitDisorder")) {
+            clonedRisk.putDouble("TypeMoonCircuitDisorder", originalRisk.getDouble("TypeMoonCircuitDisorder"));
+         }
+         if (originalRisk.contains("TypeMoonCircuitDisruptionTicks")) {
+            clonedRisk.putInt("TypeMoonCircuitDisruptionTicks", originalRisk.getInt("TypeMoonCircuitDisruptionTicks"));
          }
 
          event.getEntity().setData(TypeMoonWorldModVariables.PLAYER_VARIABLES, clone);
@@ -1592,7 +1604,11 @@ public class TypeMoonWorldModVariables {
       }
 
       public void ensureMagicSystemInitialized() {
+         migrateCanonicalMagicIds();
          normalizeLearnedRunes();
+         if (this.player_magic_attributes_sword && this.learned_magics != null && this.learned_magics.contains("unlimited_blade_works")) {
+            this.has_unlimited_blade_works = true;
+         }
          if (magicSystemInitialized && this.magic_wheels != null && this.magic_wheels.size() == MAGIC_WHEEL_COUNT * MAGIC_WHEEL_SLOT_COUNT
             && this.selected_magic_runtime_slot_indices != null && this.selected_magic_display_names != null
             && this.crest_entries != null && this.crest_practice_count != null && this.magicCrestInventory != null
@@ -1674,6 +1690,23 @@ public class TypeMoonWorldModVariables {
             normalizeCrestEntry(crestEntry);
          }
          magicSystemInitialized = true;
+      }
+
+      /** Migrates aliases without changing the serialized legacy field names or slot layout. */
+      private void migrateCanonicalMagicIds() {
+         MagicIdMigration.migratePlayerData(this.learned_magics, this.selected_magics, this.magic_wheels,
+            this.magic_proficiencies, this.magic_learning_progress, this.magic_learning_progress_last_gain_tick,
+            this.crest_practice_count);
+         if (this.magic_wheels != null) {
+            for (WheelSlotEntry entry : this.magic_wheels) {
+               if (entry != null) entry.magicId = MagicIdMigration.normalize(entry.magicId);
+            }
+         }
+         if (this.crest_entries != null) {
+            for (CrestEntry entry : this.crest_entries) {
+               if (entry != null) entry.magicId = MagicIdMigration.normalize(entry.magicId);
+            }
+         }
       }
 
       /** Canonicalizes legacy rune ids before any validation or persistence. */
@@ -3206,16 +3239,12 @@ public class TypeMoonWorldModVariables {
          this.ensureMagicSystemInitialized();
          this.migrateLegacyJewelMagicIds();
          MagicCircuitColorHelper.ensureColor(this);
-         if (this.player_magic_attributes_sword) {
-            if (!this.learned_magics.contains("unlimited_blade_works")) {
-               this.learned_magics.add("unlimited_blade_works");
-               this.has_unlimited_blade_works = true;
-               if (entity instanceof Player player && !player.level().isClientSide()) {
-                  player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.awakened"), false);
-               }
-            } else if (!this.has_unlimited_blade_works) {
-               this.has_unlimited_blade_works = true;
-            }
+         // An elemental/sword affinity is only an aptitude.  Awakening starts
+         // the circuit, but does not hand out a high-rank foundation such as
+         // Unlimited Blade Works; that knowledge still comes from study,
+         // crest inheritance, or its dedicated route.
+         if (this.player_magic_attributes_sword && this.learned_magics.contains("unlimited_blade_works")) {
+            this.has_unlimited_blade_works = true;
          }
 
          if ((this.learned_magics.contains("jewel_magic_release") || this.learned_magics.contains("jewel_machine_gun"))

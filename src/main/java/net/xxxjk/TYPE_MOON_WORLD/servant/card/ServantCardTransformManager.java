@@ -356,6 +356,7 @@ public final class ServantCardTransformManager {
    }
 
    static void clearServantRuntimeState(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantCardActionTimeline.clear(player);
       ServantCardEmiyaSkills.clear(player);
       ServantCardArtoriaSkills.clear(player);
       ServantCardCuChulainnSkills.clear(player);
@@ -518,6 +519,9 @@ public final class ServantCardTransformManager {
       if (!vars.servantCardState().transformed() || slot < -1 || slot > 9) {
          return false;
       }
+      if (ServantCardActionTimeline.isActive(player)) {
+         return false;
+      }
       if (ServantCardArashSkills.isPlayerChanting(player)) {
          return false;
       }
@@ -547,9 +551,17 @@ public final class ServantCardTransformManager {
       }
       if (parsedActionId != null && NeoForge.EVENT_BUS.post(new ServantActionEvent.Pre(
          noblePhantasmAction ? ServantActionEvent.Kind.NOBLE_PHANTASM : ServantActionEvent.Kind.SKILL, parsedActionId, externalContext)).isCanceled()) return false;
-      net.xxxjk.typemoonworld.api.ExecutionResult external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
-         player, vars.servantCardState().id(), slot, player.isCrouching(), player.level().getGameTime()
-      );
+      ServantCardActionTimeline.begin(player, externalActionId, 2, 1, 4);
+      ServantCardActionTimeline.active(player);
+      net.xxxjk.typemoonworld.api.ExecutionResult external;
+      try {
+         external = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.executeSlot(
+            player, vars.servantCardState().id(), slot, player.isCrouching(), player.level().getGameTime()
+         );
+      } finally {
+         ServantCardActionTimeline.recovery(player);
+         ServantCardActionTimeline.clear(player);
+      }
       if (external.handled()) {
          if (external.success() && external.resourceCost() > 0.0) {
             boolean paid = noblePhantasmAction
@@ -751,7 +763,16 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
-      if (!performAction(player, vars, action)) {
+      ServantCardActionTimeline.begin(player, action.effectId(), 2, 1, 4);
+      ServantCardActionTimeline.active(player);
+      boolean performed;
+      try {
+         performed = performAction(player, vars, action);
+      } finally {
+         ServantCardActionTimeline.recovery(player);
+      }
+      ServantCardActionTimeline.clear(player);
+      if (!performed) {
          ServantCardManaService.restore(player, vars, manaBeforeAction);
          return false;
       }

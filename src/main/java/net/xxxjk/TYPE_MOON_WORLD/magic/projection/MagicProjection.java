@@ -36,11 +36,15 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicProjection {
+   public static boolean hasUnlimitedBladeWorks(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars != null && (vars.has_unlimited_blade_works || vars.player_magic_attributes_sword);
+   }
+
    public static void execute(Entity entity) {
       if (entity instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          boolean crestProjectionCast = vars.isCurrentSelectionFromCrest("projection");
-         boolean swordAttributeActive = vars.player_magic_attributes_sword && !crestProjectionCast;
+         boolean swordAttributeActive = hasUnlimitedBladeWorks(vars) && !crestProjectionCast;
          ItemStack target = vars.projection_selected_item == null ? ItemStack.EMPTY : vars.projection_selected_item;
          if (isRhoAiasProjectionTarget(target)) {
             tryProjectRhoAias(player, vars, target, swordAttributeActive, !crestProjectionCast, true);
@@ -355,23 +359,7 @@ public class MagicProjection {
          }
       }
 
-      CompoundTag tag = new CompoundTag();
-      tag.putBoolean("is_projected", true);
-      if (swordAttributeActive) {
-         tag.putBoolean("is_infinite_projection", true);
-      }
-
-      tag.putLong("projection_time", gameTime);
-      CustomData existingData = (CustomData)projected.get(DataComponents.CUSTOM_DATA);
-      if (existingData != null) {
-         CompoundTag existingTag = existingData.copyTag();
-         existingTag.merge(tag);
-         projected.set(DataComponents.CUSTOM_DATA, CustomData.of(existingTag));
-      } else {
-         projected.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-      }
-
-      projected.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+      ProjectionDataHelper.markProjected(projected, gameTime, swordAttributeActive, swordAttributeActive ? 0.33D : 0.10D);
       return projected;
    }
 

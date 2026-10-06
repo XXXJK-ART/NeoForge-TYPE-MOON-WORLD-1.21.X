@@ -26,6 +26,20 @@ public final class ProjectionDataHelper {
       return tag == null ? Long.MIN_VALUE : tag.getLong("projection_time");
    }
 
+   /** Tags a newly created projection while preserving the single lifetime format used by tick handlers. */
+   public static void markProjected(ItemStack stack, long now, boolean infinite, double performanceFactor) {
+      if (stack == null || stack.isEmpty()) return;
+      CompoundTag merged = customTag(stack);
+      if (merged == null) merged = new CompoundTag();
+      merged.putBoolean("is_projected", true);
+      if (infinite) merged.putBoolean("is_infinite_projection", true);
+      else merged.remove("is_infinite_projection");
+      merged.putLong("projection_time", now);
+      merged.putDouble("projection_performance_factor", Math.max(0.05D, Math.min(1.0D, performanceFactor)));
+      stack.set(DataComponents.CUSTOM_DATA, CustomData.of(merged));
+      stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
+   }
+
    /** Copies projection metadata without replacing the destination item's identity. */
    public static void inherit(ItemStack source, ItemStack destination, long now) {
       if (source == null || destination == null || source.isEmpty() || !isProjected(source)) return;

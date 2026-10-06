@@ -22,9 +22,14 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.NoblePhantasmItem;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 
 public class MagicBrokenPhantasm {
    private static void executeMode(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection.hasUnlimitedBladeWorks(vars)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.broken_phantasm.requires_ubw_projection"), true);
+         return;
+      }
       ItemStack heldItem = player.getMainHandItem();
       boolean isMainHand = true;
       if (!isValidBPItem(heldItem)) {
@@ -49,6 +54,10 @@ public class MagicBrokenPhantasm {
       }
 
       double cost = calculateCost(heldItem, false);
+      if (!ManaHelper.consumeOneTimeMagicCost(player, cost)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.insufficient_mana"), true);
+         return;
+      }
       float explosionPower = (float)(cost / 20.0);
       BrokenPhantasmProjectileEntity projectile = new BrokenPhantasmProjectileEntity(player.level(), player, heldItem.copy());
       projectile.setItem(heldItem.copy());

@@ -31,6 +31,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 
 /** Common pre-emptive defense layer. Character combat remains the fallback until migrated. */
 public final class ServantTacticalController {
@@ -52,6 +54,9 @@ public final class ServantTacticalController {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive() || !AiMigrationPolicy.isArbitrated(entity)) return false;
       EvasionMovementService.tickAirState(entity);
       long now = level.getGameTime();
+      // NPC guard intent is recomputed from current threats every tick. This
+      // prevents a single telegraph from leaving the servant permanently guarded.
+      ServantCombatDefenseService.setGuarding(entity, false);
       AiBrain brain = AiBrain.begin(entity);
       ServantTargetingService.refreshOrRecover(entity, now);
       rememberTarget(entity, brain.blackboard(), now);
@@ -123,8 +128,11 @@ public final class ServantTacticalController {
                && !CombatMatchupEvaluator.canIgnoreProjectile(entity, gateProjectile)) {
                double utility = 100.0 - gateProjectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
-                     owner instanceof LivingEntity shooter ? shooter : null),
+                  () -> {
+                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                     EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
+                        owner instanceof LivingEntity shooter ? shooter : null);
+                  },
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          } else if (projectile != null) {
@@ -138,8 +146,11 @@ public final class ServantTacticalController {
                && !CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
                double utility = 100.0 - projectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
-                     owner instanceof LivingEntity shooter ? shooter : null),
+                  () -> {
+                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                     EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
+                        owner instanceof LivingEntity shooter ? shooter : null);
+                  },
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          }
@@ -159,11 +170,18 @@ public final class ServantTacticalController {
             || threat.shape() == CombatThreat.Shape.CONE && threat.length() > 6.0;
          brain.submit(AiIntent.of(EVADE_ACTION, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 5, false,
             () -> {
-               if (rangedPressure) {
-                  EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
-                     source instanceof LivingEntity shooter ? shooter : null);
+               int agility = ServantCombatFormulas.agilityStep(entity.getDefinition() == null ? null : entity.getDefinition().parameters());
+               boolean dodge = rangedPressure || agility >= 3 || threat.ticksToImpact(now) <= 6L;
+               if (dodge) {
+                  ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                  if (rangedPressure) {
+                     EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
+                        source instanceof LivingEntity shooter ? shooter : null);
+                  } else {
+                     EvasionMovementService.tryEvade(entity, threat.origin());
+                  }
                } else {
-                  EvasionMovementService.tryEvade(entity, threat.origin());
+                  ServantCombatDefenseService.setGuarding(entity, true);
                }
             },
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));

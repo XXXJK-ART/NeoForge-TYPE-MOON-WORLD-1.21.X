@@ -148,12 +148,9 @@ public class Restore_mana {
                   );
                }
 
-               if (currentMana > maxMana * 1.3 && entity instanceof LivingEntity living) {
-                  living.hurt(living.damageSources().magic(), Float.MAX_VALUE);
-                  if (entity instanceof Player player) {
-                     player.sendSystemMessage(Component.translatable("message.typemoonworld.mana.overload.death").withStyle(ChatFormatting.DARK_RED));
-                  }
-               }
+               // Overload damage and the 150% lethal threshold are handled by
+               // MagecraftRiskService on the normal player tick.  The mana
+               // loop only reports the current state here.
             } else {
             double effectiveRegen = manaRegen * leylineMultiplier;
             if (entity instanceof LivingEntity living) {

@@ -85,7 +85,7 @@ public final class ManaBurstService {
       if (data.getInt(MODE_TAG) == mode) {
          clear(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.off"), true);
-         return MagicExecutionResult.SUCCESS;
+         return MagicExecutionResult.stopped();
       }
       clear(player);
       if (!ManaHelper.consumeManaStrict(player, WheelCastingModifierService.adjustManaCost(player, UPKEEP[level - 1]), false)) {
@@ -101,7 +101,7 @@ public final class ManaBurstService {
       MagicProficiencyService.add(vars, MAGIC_ID, 0.25);
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.on", level), true);
-      return MagicExecutionResult.SUCCESS;
+      return MagicExecutionResult.STARTED;
    }
 
    private static MagicExecutionResult direct(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int level) {

@@ -211,6 +211,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("cremation_rite", "magic.typemoonworld.cremation_rite.name", "church", -865972);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
+      this.addMagic("sanctification", "magic.typemoonworld.sanctification.name", "church", -865972);
       this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "imaginary", -6697729);
       this.addMagic("airflow_blade", "key.typemoonworld.magic.airflow_blade.short", "elemental", -6684775);
       this.addMagic("andrasias", "key.typemoonworld.magic.andrasias.short", "solomon", -7119279);

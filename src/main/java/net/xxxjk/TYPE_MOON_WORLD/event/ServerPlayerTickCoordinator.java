@@ -14,6 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.summon.SummoningRitualService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.sanctification.MagicSanctification;
 
 /**
  * Single server-side entry point for player tick work.
@@ -43,6 +44,7 @@ public final class ServerPlayerTickCoordinator {
       runPhase("ubw_chant", () -> ChantHandler.onPlayerTick(new PlayerTickEvent.Post(player)), player);
       runPhase("time_alter", () -> TimeAlterEventHandler.onPlayerTick(new PlayerTickEvent.Post(player)), player);
       runPhase("baptism_rite", () -> BaptismRiteEventHandler.onPlayerTick(new PlayerTickEvent.Post(player)), player);
+      runPhase("sanctification", () -> MagicSanctification.tick(player), player);
       runPhase("projection", () -> ProjectionTickHandler.onPlayerTick(new PlayerTickEvent.Post(player)), player);
       runPhase("reinforcement", () -> MagicReinforcementEventHandler.onPlayerTick(new PlayerTickEvent.Post(player)), player);
       runPhase("bajiquan", () -> BajiquanEvents.onPlayerTick(new PlayerTickEvent.Post(player)), player);

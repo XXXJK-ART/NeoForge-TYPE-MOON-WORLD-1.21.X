@@ -55,6 +55,7 @@ public final class MagicLearningStrategy {
       Map.entry("stigma", new Rule(60, false, true, true, true, false, false)),
       Map.entry("iron_armor_action", new Rule(65, false, true, true, true, false, false)),
       Map.entry("cremation_rite", new Rule(70, false, true, true, true, false, false))
+      ,Map.entry("sanctification", new Rule(60, false, true, true, true, false, false))
       ,Map.entry("mana_burst", new Rule(65, false, true, false, false, false, false))
       ,Map.entry("reinforcement_self", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_other", new Rule(25, true, true, true, true, false, false))
@@ -166,10 +167,19 @@ public final class MagicLearningStrategy {
       if ("magic_analysis".equals(id)) return 200 + (int)Math.round((100.0 - Math.max(0.0, Math.min(100.0, proficiency))) * 4.0);
       return 200 + complexity(id) * 4;
    }
-   public static boolean canAnalyze(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
-   public static boolean canLearnFromMaterial(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).material(); }
-   public static boolean canResearch(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).research(); }
-   public static boolean canCopy(String id) { return !isRemovedMagic(id) && !TalentService.isTalent(id) && rule(id).copy(); }
+   public static boolean canAnalyze(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "analysis")
+         && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id));
+   }
+   public static boolean canLearnFromMaterial(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "material") && rule(id).material();
+   }
+   public static boolean canResearch(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "research") && rule(id).research();
+   }
+   public static boolean canCopy(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "copy") && rule(id).copy();
+   }
    public static boolean requiresSword(String id) { return rule(id).sword(); }
    public static boolean requiresImaginaryAttribute(String id) {
       return "absorption".equals(id)
@@ -179,6 +189,23 @@ public final class MagicLearningStrategy {
          || "storage".equals(id);
    }
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
+
+   private static boolean playerAllowed(String id) {
+      return MagicDefinitionRegistry.isPlayerAllowed(id);
+   }
+
+   private static boolean policyAllows(String id, String operation) {
+      String policy = MagicDefinitionRegistry.copyPolicy(id);
+      if (policy == null || policy.isBlank() || "copyable".equals(policy) || "researchable".equals(policy)) return true;
+      if ("knowledge_only".equals(policy) || "none".equals(policy)) return false;
+      return switch (operation) {
+         case "analysis" -> policy.contains("analys");
+         case "material" -> policy.contains("material") || policy.contains("learn");
+         case "research" -> policy.contains("research");
+         case "copy" -> policy.contains("copy");
+         default -> true;
+      };
+   }
    public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null) return false;
       id = normalizeDisplayId(id);
@@ -189,6 +216,7 @@ public final class MagicLearningStrategy {
          ? null
          : definition.prerequisiteMagic().getPath();
       double prerequisiteProficiency = definition == null ? 0.0D : definition.prerequisiteProficiency();
+      boolean canonRequirementsOk = canonRequirementsMet(vars, definition);
       if (isBoundaryMagic(id)) {
          prerequisiteId = "boundary_art";
          prerequisiteProficiency = 0.0D;
@@ -198,8 +226,25 @@ public final class MagicLearningStrategy {
             && MagicProficiencyService.get(vars, prerequisiteId) >= prerequisiteProficiency;
       return theologyPrerequisiteOk
          && prerequisiteMagicOk
+         && canonRequirementsOk
+         && (definition == null || definition.playerAllowed())
          && (!requiresSword(id) || vars.player_magic_attributes_sword)
          && (!requiresImaginaryAttribute(id) || vars.player_magic_attributes_imaginary_number);
+   }
+
+   private static boolean canonRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, MagicDefinitionData definition) {
+      if (vars == null || definition == null) return true;
+      String origin = definition.requiredOrigin();
+      String foundation = definition.requiredFoundation();
+      String catalyst = definition.requiredCatalyst();
+      if ("sword".equals(origin) && !vars.player_magic_attributes_sword) return false;
+      if ("sword".equals(catalyst) && !vars.player_magic_attributes_sword) return false;
+      if ("unlimited_blade_works".equals(foundation)
+         && !(vars.has_unlimited_blade_works || isLearned(vars, "unlimited_blade_works"))) return false;
+      if ("projection".equals(foundation)
+         && !"unlimited_blade_works".equals(definition.id().getPath())
+         && !isLearned(vars, "projection")) return false;
+      return true;
    }
    public static boolean materialAllowed(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       return canLearnFromMaterial(id) && learningRequirementsMet(vars, id);
@@ -232,6 +277,7 @@ public final class MagicLearningStrategy {
          case "black_key_making" -> "magic_page_black_key_making";
          case "iron_armor_action" -> "magic_page_iron_armor_action";
          case "cremation_rite" -> "magic_page_cremation_rite";
+         case "sanctification" -> "magic_page_sanctification";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
          case "gander" -> "magic_scroll_gander_broken";
          case "broken_phantasm" -> "magic_scroll_broken_phantasm_broken";
