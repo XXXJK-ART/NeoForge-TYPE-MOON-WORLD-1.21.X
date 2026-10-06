@@ -12,12 +12,14 @@ import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.entity.GordiusWheelEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.IskandarEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
 import java.util.function.Function;
@@ -123,12 +125,28 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.riding = false;
          }
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+         applyArtoriaCombatPose(entity, ageInTicks);
          if (isJeanneAlter(entity.getServantId())) {
             this.leftArm.xRot = -(float)Math.PI / 2.0F;
             this.leftArm.yRot = 0.0F;
             this.leftArm.zRot = 0.0F;
             this.leftSleeve.copyFrom(this.leftArm);
          }
+      }
+
+      private void applyArtoriaCombatPose(T entity, float ageInTicks) {
+         if (!(entity instanceof ArtoriaPendragonEntity artoria)
+            || (!artoria.isPerformingAction() && !artoria.isAttackSwinging())) {
+            return;
+         }
+         float phase = Mth.frac(ageInTicks * 0.11F);
+         float strike = Mth.sin(phase * (float)Math.PI);
+         float recoil = Mth.sin((phase + 0.5F) * (float)Math.PI);
+         this.rightArm.xRot = -1.05F + strike * 1.55F;
+         this.rightArm.yRot = -0.18F - strike * 0.32F;
+         this.rightArm.zRot = -0.16F + recoil * 0.12F;
+         this.leftArm.xRot = -0.18F - strike * 0.22F;
+         this.body.yRot = recoil * 0.14F;
       }
 
       private static boolean isJeanneAlter(String servantId) {

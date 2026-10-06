@@ -15,7 +15,12 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 /** Whitelist of clean-room GLSL 150 VFX materials. */
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class VFXMaterialShaders {
-   private static final String[] IDS = {"vfx_energy", "vfx_polar", "vfx_sdf", "vfx_smoke"};
+   /**
+    * The Gilgamesh material is deliberately kept in the same small whitelist
+    * as the generic VFX materials.  It is a procedural GLSL 150 shader, so it
+    * does not introduce a client-only dependency or a second particle system.
+    */
+   private static final String[] IDS = {"vfx_energy", "vfx_polar", "vfx_sdf", "vfx_smoke", "gilgamesh_energy"};
    private static final Map<String, ShaderInstance> SHADERS = new HashMap<>();
 
    private VFXMaterialShaders() { }

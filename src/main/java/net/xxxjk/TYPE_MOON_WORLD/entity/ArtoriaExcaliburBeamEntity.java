@@ -224,6 +224,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       return base * (0.28 + this.powerScale() * 0.72);
    }
 
+   public boolean isGoldenVariant() {
+      return this.entityData.get(GOLDEN_VARIANT);
+   }
+
    @Override
    public float clashPower() { return this.powerScale(); }
 

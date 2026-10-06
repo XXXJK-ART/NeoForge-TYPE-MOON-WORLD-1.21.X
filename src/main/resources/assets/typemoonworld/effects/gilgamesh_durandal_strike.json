@@ -20,7 +20,7 @@
         { "t": 0.3, "size": 0.3 },
         { "t": 1.0, "size": 0.02 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_UNBREAKABLE_BLADE_CORE",
       "enable_trail": true,
       "vanilla_particles": [
@@ -53,7 +53,7 @@
         { "t": 0.42, "size": 0.19 },
         { "t": 1.0, "size": 0.025 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_SACRED_FROST_COIL",
       "enable_trail": true
     },
@@ -87,7 +87,7 @@
         { "t": 0.7, "size": 0.38 },
         { "t": 1.0, "size": 0.03 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_HOLY_CLEAVE",
       "enable_trail": true,
       "vanilla_particles": [
@@ -123,7 +123,7 @@
         { "t": 0.45, "size": 0.28 },
         { "t": 1.0, "size": 0.025 }
       ],
-      "blend": "TRANSLUCENT",
+      "blend": "TRANSLUCENT", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_FROST_WAKE",
       "enable_trail": true,
       "vanilla_particles": [
@@ -153,7 +153,7 @@
         { "t": 0.48, "pos": [0.0, -0.1, 5.8], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.8, 3.8, 3.8], "easing": "ease_out_cubic" },
         { "t": 1.0, "pos": [0.0, -0.1, 5.8], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.2, 5.2, 5.2] }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_UNBREAKABLE_OATH_RING",
       "enable_trail": true
     },
@@ -180,7 +180,7 @@
         { "t": 0.0, "pos": [0.0, -0.15, 7.8], "scale": [0.5, 0.5, 0.5] },
         { "t": 1.0, "pos": [0.0, -0.05, 8.4], "scale": [3.6, 2.0, 3.6], "easing": "ease_out_cubic" }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "DURANDAL_FROZEN_IMPACT"
     }
   ]

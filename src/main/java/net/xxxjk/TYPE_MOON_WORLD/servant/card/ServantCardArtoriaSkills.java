@@ -141,7 +141,7 @@ public final class ServantCardArtoriaSkills {
       data.putLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_ACTIVE + "Until", now + Math.max(80, revealTicks));
       data.putLong(ArtoriaPendragonCombatHelper.TAG_WIND_REGATHER_UNTIL, now + Math.max(80, revealTicks));
       PlayerNoblePhantasmHelper.revealArtoriaWindVeiledExcalibur(player, Math.max(80, revealTicks));
-      VFXServerEffects.spawn(level, "artoria_strike_air", player, 128.0);
+      VFXServerEffects.spawn(level, "artoria_wind_hammer", player, 128.0);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
       Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
       Vec3 right = new Vec3(-look.z, 0.0, look.x);

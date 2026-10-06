@@ -1013,7 +1013,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    /**
     * 触发冲刺攻击动画    */
    public void triggerChargeAnimation() {
-      this.chargeAnimationTicks = 30; // 1.5s
+      this.triggerChargeAnimation(30);
+   }
+
+   public void triggerChargeAnimation(int durationTicks) {
+      this.chargeAnimationTicks = Math.max(this.chargeAnimationTicks, Math.max(1, durationTicks));
       playActionAnimation("charge");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,

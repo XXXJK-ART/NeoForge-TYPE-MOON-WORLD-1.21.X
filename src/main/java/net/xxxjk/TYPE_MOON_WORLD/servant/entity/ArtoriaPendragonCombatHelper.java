@@ -29,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -103,6 +104,7 @@ public final class ArtoriaPendragonCombatHelper {
    private static final double MANA_BURST_JET_GROUND_LIFT = 0.38;
    private static final double MANA_BURST_JET_AIR_LIFT = 0.065;
    private static final double MANA_BURST_JET_UP_CAP = 0.55;
+   private static final double MANA_BURST_JET_MAX_HEIGHT = 3.0;
    private static final ResourceLocation RIDING_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_speed");
    private static final ResourceLocation RIDING_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_riding_armor");
    private static final ResourceLocation MANA_BURST_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "artoria_mana_burst_attack");
@@ -520,12 +522,24 @@ public final class ArtoriaPendragonCombatHelper {
          next = new Vec3(next.x, next.y * 0.78, next.z);
          moved = true;
       }
+      double groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, entity.getBlockX(), entity.getBlockZ());
+      double maxY = groundY + MANA_BURST_JET_MAX_HEIGHT;
+      if (entity.getY() >= maxY && next.y > 0.0) {
+         next = new Vec3(next.x, 0.0, next.z);
+         moved = true;
+      } else if (entity.getY() > maxY) {
+         next = new Vec3(next.x, Math.min(next.y, -0.08), next.z);
+         moved = true;
+      }
       if (moved && !next.equals(motion)) {
          entity.setDeltaMovement(next);
          entity.hurtMarked = true;
       }
       if ((moved || desired.lengthSqr() > 1.0E-4) && entity.tickCount % 2 == 0) {
          spawnManaBurstJetFx(entity, level, desired);
+         if (entity.tickCount % 8 == 0) {
+            VFXServerEffects.spawn(level, "artoria_mana_burst_jet", entity, ARTORIA_VFX_RADIUS);
+         }
       }
    }
 
@@ -617,7 +631,7 @@ public final class ArtoriaPendragonCombatHelper {
       data.putUUID(TAG_EXCALIBUR_TARGET, target.getUUID());
       entity.getNavigation().stop();
       faceExcaliburTarget(entity, target);
-      entity.triggerHorizontalSwingAnimation();
+      entity.triggerChargeAnimation(EXCALIBUR_WINDUP);
       ServantVoiceHelper.tryPlayArtoriaExcalibur(entity);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, EXCALIBUR_WINDUP, true);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.4F, 1.2F);
@@ -821,7 +835,7 @@ public final class ArtoriaPendragonCombatHelper {
       entity.faceToward(target.position());
       entity.triggerHorizontalSwingAnimation();
       ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);
-      VFXServerEffects.spawn(level, "artoria_strike_air", entity, ARTORIA_VFX_RADIUS);
+      VFXServerEffects.spawn(level, "artoria_wind_hammer", entity, ARTORIA_VFX_RADIUS);
       performInvisibleAirCone(entity, level);
       return true;
    }
@@ -1066,12 +1080,13 @@ public final class ArtoriaPendragonCombatHelper {
    private static void spawnManaBurstJetFx(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 desired) {
       Vec3 exhaust = desired.lengthSqr() > 1.0E-4 ? desired.normalize().scale(-1.0) : horizontalLook(entity).scale(-1.0);
       Vec3 origin = entity.position().add(0.0, 0.16, 0.0);
-      int steps = entity.onGround() ? 2 : 3;
+      int steps = entity.onGround() ? 2 : 4;
       for (int i = 0; i < steps; i++) {
-         double distance = 0.18 + i * 0.24;
+         double distance = 0.18 + i * 0.30;
          Vec3 pos = origin.add(exhaust.scale(distance));
          double spread = Math.max(0.035, 0.13 - i * 0.02);
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, fxCount(4), spread, spread * 0.65, spread, 0.045);
+         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, fxCount(5), spread, spread * 0.65, spread, 0.045);
+         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.x, pos.y, pos.z, fxCount(1), spread * 0.4, spread * 0.3, spread * 0.4, 0.018);
          if (i == steps - 1) {
             level.sendParticles(ParticleTypes.CLOUD, pos.x, pos.y, pos.z, fxCount(2), spread * 0.9, spread * 0.55, spread * 0.9, 0.03);
          }

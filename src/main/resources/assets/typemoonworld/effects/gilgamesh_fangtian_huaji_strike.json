@@ -20,7 +20,7 @@
         { "t": 0.32, "size": 0.26 },
         { "t": 1.0, "size": 0.02 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_HALBERD_REVEAL",
       "enable_trail": true,
       "vanilla_particles": [
@@ -54,7 +54,7 @@
         { "t": 0.28, "size": 0.58 },
         { "t": 1.0, "size": 0.03 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_INNER_GOLD_SWEEP",
       "enable_trail": true
     },
@@ -87,7 +87,7 @@
         { "t": 0.72, "size": 0.34 },
         { "t": 1.0, "size": 0.025 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_OUTER_120_DEGREE_SWEEP",
       "enable_trail": true,
       "vanilla_particles": [
@@ -121,7 +121,7 @@
         { "t": 0.34, "size": 0.3 },
         { "t": 1.0, "size": 0.02 }
       ],
-      "blend": "TRANSLUCENT",
+      "blend": "TRANSLUCENT", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_GROUND_SHOCK_RIBBON",
       "enable_trail": true
     },
@@ -141,7 +141,7 @@
         { "t": 0.4, "size": 0.24 },
         { "t": 1.0, "size": 0.015 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_GROUND_FISSURE"
     },
     {
@@ -166,7 +166,7 @@
         { "t": 0.45, "pos": [0.0, -0.5, 7.0], "scale": [3.4, 3.4, 3.4], "easing": "ease_out_cubic" },
         { "t": 1.0, "pos": [0.0, -0.5, 7.0], "scale": [7.0, 7.0, 7.0] }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "FANGTIAN_SWEEP_IMPACT",
       "enable_trail": true
     }

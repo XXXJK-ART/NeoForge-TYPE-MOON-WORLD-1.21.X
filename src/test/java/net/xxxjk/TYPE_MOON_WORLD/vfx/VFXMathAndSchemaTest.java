@@ -100,7 +100,7 @@ class VFXMathAndSchemaTest {
             assertTrue(definition.emitters().stream().allMatch(emitter -> !"vanilla".equals(emitter.material().shader())), id);
             parsed++;
          }
-         assertEquals(181L, parsed);
+         assertEquals(183L, parsed);
       }
    }
 }

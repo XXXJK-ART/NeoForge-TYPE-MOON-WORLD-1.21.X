@@ -275,7 +275,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       String texture = GsonHelper.getAsString(json, "texture", "");
       ResourceLocation textureId = texture.isBlank() ? null : ResourceLocation.parse(texture);
       String shader = GsonHelper.getAsString(json, "shader", "vanilla");
-      if (!java.util.Set.of("vanilla", "vfx_energy", "vfx_polar", "vfx_sdf", "vfx_smoke").contains(shader)) {
+      if (!java.util.Set.of("vanilla", "vfx_energy", "vfx_polar", "vfx_sdf", "vfx_smoke", "gilgamesh_energy").contains(shader)) {
          TYPE_MOON_WORLD.LOGGER.warn("Unknown VFX material shader '{}'; using vanilla fallback", shader);
          shader = "vanilla";
       }

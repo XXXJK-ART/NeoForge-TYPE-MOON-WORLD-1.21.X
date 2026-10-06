@@ -24,7 +24,7 @@
         { "t": 0.55, "pos": [0.0, 0.6, 4.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [2.6, 2.6, 2.6], "easing": "ease_out_back" },
         { "t": 1.0, "pos": [0.0, 0.5, 7.4], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.6, 3.6, 3.6] }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "HARPE_DEATH_CRESCENT",
       "enable_trail": true
     },
@@ -55,7 +55,7 @@
         { "t": 0.26, "size": 0.65 },
         { "t": 1.0, "size": 0.025 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "HARPE_CURSED_SLASH",
       "enable_trail": true
     },
@@ -98,7 +98,7 @@
         { "t": 0.4, "size": 0.3 },
         { "t": 1.0, "size": 0.02 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "HARPE_REGENERATION_SEAL",
       "enable_trail": true,
       "vanilla_particles": [
@@ -126,7 +126,7 @@
         { "t": 0.0, "pos": [0.0, 0.3, 7.0], "scale": [0.4, 0.4, 0.4] },
         { "t": 1.0, "pos": [0.0, 0.3, 7.7], "scale": [3.2, 1.5, 3.2] }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "HARPE_WOUND_LOCK_IMPACT"
     }
   ]

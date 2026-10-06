@@ -30,7 +30,7 @@
         { "t": 0.42, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.5, 1.5, 1.5], "easing": "ease_out_back" },
         { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.16, 0.16, 0.16], "easing": "ease_in_cubic" }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GILGAMESH_GATE_OUTER_RING",
       "enable_trail": true,
       "vanilla_particles": [
@@ -66,7 +66,7 @@
         { "t": 0.5, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.22, 1.22, 1.22], "easing": "ease_out_cubic" },
         { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.12, 0.12, 0.12], "easing": "ease_in_cubic" }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GILGAMESH_GATE_INNER_RING",
       "enable_trail": true
     },
@@ -106,7 +106,7 @@
         { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.32, 0.32, 0.32], "easing": "ease_out_cubic" },
         { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.0, 1.0, 1.0], "easing": "ease_in_out_sine" }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GILGAMESH_GATE_CENTER_SWIRL",
       "enable_trail": true
     },
@@ -137,7 +137,7 @@
         { "t": 0.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.3, 0.3, 0.3], "easing": "ease_out_cubic" },
         { "t": 1.0, "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [1.15, 1.15, 1.15], "easing": "ease_out_cubic" }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GILGAMESH_GATE_WEAPON_FLASH",
       "enable_trail": true
     }
