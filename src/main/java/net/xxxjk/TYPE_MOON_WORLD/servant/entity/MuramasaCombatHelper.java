@@ -630,11 +630,17 @@ public final class MuramasaCombatHelper {
       data.putBoolean(NP_PENDING, true);
       data.putLong(NP_LAST, level.getGameTime());
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 50.0));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, 50);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "muramasa_summon", 1200, ticks -> entity.getPersistentData().putLong(NP_LAST, entity.level().getGameTime() - (1200) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.triggerNamedActionAnimation("np");
       ServantVoiceHelper.tryPlayMuramasaNp(entity);
       entity.getNavigation().stop();
       // The field starts at the same moment as the Noble Phantasm voice.
       finishTsumukariSummon(entity);
+
+      });
+      return;
    }
 
    private static void finishTsumukariSummon(SenkoMuramasaEntity entity) {
@@ -985,7 +991,7 @@ public final class MuramasaCombatHelper {
          if (!level.hasChunkAt(pos) || !level.getBlockState(pos).is(ModBlocks.UBW_WEAPON_BLOCK.get())) {
             continue;
          }
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
             pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 16, 0.18, 0.4, 0.18, 0.08);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,

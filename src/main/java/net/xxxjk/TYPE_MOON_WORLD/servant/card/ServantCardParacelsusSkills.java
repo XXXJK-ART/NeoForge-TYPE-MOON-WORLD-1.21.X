@@ -497,12 +497,14 @@ public final class ServantCardParacelsusSkills {
          return false;
       }
       double cost = advanced ? 140.0 : 80.0;
-      if (!ServantCardManaService.consume(player, vars, adjustedWorkshopCost(player, cost))) {
+      if (!ServantCardManaService.consumeNoblePhantasm(player, vars, adjustedWorkshopCost(player, cost))) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
       data.putLong(LAST_NP_TAG + (advanced ? "Advanced" : "Normal"), now);
-      releaseElementalSword(player, advanced);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "paracelsus_elemental_sword", cooldown,
+         ticks -> data.putLong(LAST_NP_TAG + (advanced ? "Advanced" : "Normal"), player.level().getGameTime() - cooldown + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseElementalSword(player, advanced));
       return true;
    }
 
@@ -714,7 +716,7 @@ public final class ServantCardParacelsusSkills {
       if (state.isAir() || hardness < 0.0F || hardness >= cap || state.getFluidState().isSource()) {
          return false;
       }
-      boolean removed = level.removeBlock(pos, false);
+      boolean removed = net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
       if (removed) {
          level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.15, 0.15, 0.15, 0.02);
       }

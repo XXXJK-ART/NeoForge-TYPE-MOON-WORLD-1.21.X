@@ -440,7 +440,7 @@ public final class ManaBurstService {
          || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
-      boolean destroyed = level.destroyBlock(pos, false, player);
+      boolean destroyed = net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.destroyBlock(level, pos, false, player);
       if (destroyed) {
          level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.16, 0.16, 0.16, 0.03);
          level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.12, 0.12, 0.12, 0.035);

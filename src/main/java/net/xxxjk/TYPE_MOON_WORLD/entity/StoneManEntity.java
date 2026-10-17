@@ -1054,7 +1054,7 @@ public class StoneManEntity extends PathfinderMob implements GeoEntity {
             BlockPos pos = this.blockPosition().offset(ox, oy, oz);
             BlockState state = serverLevel.getBlockState(pos);
             if (state.is(BlockTags.FIRE)) {
-               serverLevel.removeBlock(pos, false);
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(serverLevel, pos, false);
             }
          }
       }

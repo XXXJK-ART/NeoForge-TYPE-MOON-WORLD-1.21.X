@@ -1,4 +1,11 @@
 {
+  "rank": "A",
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "artoria_instinct"
+    ]
+  },
   "id": "artoria_instinct_a",
   "display_name": "Instinct A",
   "display_name_zh": "直感 A",

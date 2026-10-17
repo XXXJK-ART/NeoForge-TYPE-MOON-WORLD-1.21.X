@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "clairvoyance_a_arash", "display_name": "Clairvoyance A", "display_name_zh": "千里眼 A",
   "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0, "effects": []
 }

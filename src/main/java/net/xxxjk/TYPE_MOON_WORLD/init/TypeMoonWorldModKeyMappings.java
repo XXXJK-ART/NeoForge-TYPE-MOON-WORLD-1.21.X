@@ -1035,7 +1035,12 @@ public class TypeMoonWorldModKeyMappings {
       }
 
       public static void clearClientInputState() {
-         ServantCardDefenseClientState.clear();
+         // Opening a screen resets held keys every tick. Keep the last server
+         // snapshot while transformed, or the HUD disappears between packets.
+         if (Minecraft.getInstance().player == null
+            || !Minecraft.getInstance().player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed) {
+            ServantCardDefenseClientState.clear();
+         }
          CombatThreatClientState.clear();
          if (servantGuardDown && Minecraft.getInstance().player != null) {
             PacketDistributor.sendToServer(new ServantCardGuardMessage(false), new CustomPacketPayload[0]);

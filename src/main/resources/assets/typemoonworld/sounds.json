@@ -1621,5 +1621,165 @@
       {"name": "typemoonworld:jeanne_alter_defeat_1", "stream": true},
       {"name": "typemoonworld:jeanne_alter_defeat_2", "stream": true}
     ]
+  },
+  "np_chant_artoria_excalibur": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/artoria_pendragon/excalibur",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_gilgamesh_ea": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gilgamesh/ea_half",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_cu_gae_bolg": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cu_chulainn/gae_bolg",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_gawain_gallatin": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/gawain/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_muramasa_tsumukari": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/tsumukari",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_medusa_bellerophon": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/medusa/bellerophon",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_paracelsus_elemental_sword": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/paracelsus/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_jeanne_alter_np": {
+    "sounds": [
+      {
+        "name": "typemoonworld:jeanne_alter_np_3",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_nightingale_pledge": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/nightingale/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_okita_mumyoudan_zuki": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/okita_souji_saber/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_li_shuwen_wu_er_da": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/li_shuwen/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_cursed_arm_hassan_zabaniya": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/cursed_arm_hassan/zabaniya",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_baobhan_sith_failnaught": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/baobhan_sith/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_zhao_yun_changbanpo": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/zhao_yun/np",
+        "stream": true,
+        "pitch": 0.6808843537414966
+      }
+    ]
+  },
+  "np_chant_oda_three_thousand": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_lancelot_arondight": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/lancelot_berserker/np",
+        "stream": true,
+        "pitch": 1.0
+      }
+    ]
+  },
+  "np_chant_oda_hajun": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/hajun",
+        "stream": true
+      }
+    ]
+  },
+  "np_chant_muramasa_summon": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/senko_muramasa/np",
+        "stream": true
+      }
+    ]
   }
 }

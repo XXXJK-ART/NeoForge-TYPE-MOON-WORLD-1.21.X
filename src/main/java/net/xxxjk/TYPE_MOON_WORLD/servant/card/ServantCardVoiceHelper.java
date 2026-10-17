@@ -110,6 +110,7 @@ public final class ServantCardVoiceHelper {
       if (sound == null || !(player.level() instanceof ServerLevel level)) {
          return;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return;
       long now = level.getGameTime();
       long last = player.getPersistentData().getLong(LAST_VOICE_TICK);
       if (now - last < cooldownTicks) {

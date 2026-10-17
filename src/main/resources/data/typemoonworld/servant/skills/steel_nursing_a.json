@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "steel_nursing_a", "display_name": "Nursing of Steel A", "display_name_zh": "钢之看护 A",
   "type": "active", "mp_cost": 15, "cooldown_ticks": 200, "duration_ticks": 0,
   "effects": [{"effect_type": "heal_cleanse", "params": {"amount": 150.0, "range": 15.0}}],

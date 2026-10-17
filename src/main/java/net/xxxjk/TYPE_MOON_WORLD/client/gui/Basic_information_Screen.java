@@ -166,11 +166,8 @@ public class Basic_information_Screen extends AbstractContainerScreen<BasicInfor
             }
          }
       }
-      double effectivePerCycle = baseRegen * regenMultiplier;
-      double effectivePerSecond = effectivePerCycle;
-      if (effectiveIntervalTicks > 0.0) {
-         effectivePerSecond = effectivePerCycle * 20.0 / effectiveIntervalTicks;
-      }
+      effectiveIntervalTicks = net.xxxjk.TYPE_MOON_WORLD.utils.ManaRegenRules.intervalTicks(baseIntervalTicks, vars.is_magic_circuit_open);
+      double effectivePerSecond = net.xxxjk.TYPE_MOON_WORLD.utils.ManaRegenRules.perSecond(baseRegen, regenMultiplier, baseIntervalTicks, vars.is_magic_circuit_open);
 
       float manaRatio = maxMana <= 0.0 ? 0.0F : (float)(currentMana / maxMana);
       GuiUtils.renderProgressBar(guiGraphics, startX, 84, 282, 8, manaRatio, GuiUtils.ARCANE_CYAN);

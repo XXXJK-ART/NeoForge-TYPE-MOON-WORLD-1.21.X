@@ -39,21 +39,21 @@
       "component": {"type":"sphere","radius":1.0,"sample_count":220},
       "color_over_life":[{"t":0,"color":"#00FF0000"},{"t":0.2,"color":"#CCFF2020"},{"t":0.58,"color":"#FFFFFFFF"},{"t":1,"color":"#00000000"}],
       "size_over_life":[{"t":0,"size":0.12},{"t":0.55,"size":0.85},{"t":1,"size":0.08}],
-      "transform_over_life":[{"t":0,"scale":[8,8,8]},{"t":1,"scale":[0.35,0.35,0.35],"easing":"ease_in_cubic"}], "blend":"ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.25,"soft_particles":true,"distortion":true}
+      "transform_over_life":[{"t":0,"scale":[8,8,8]},{"t":1,"scale":[0.35,0.35,0.35],"easing":"ease_in_cubic"}], "blend":"ADDITIVE", "material": {"shader":"vfx_energy","bloom":1.25,"soft_particles":true,"distortion":true}
     },
     {
       "start_time":0.0,"end_time":2.1,"rate":520,"particle_lifetime":0.36,
       "binding":{"mode":"entity_yaw","offset":[0,0,0],"rotate_with_entity":false},
       "component":{"type":"fractal_lightning","start":[-18,1,-12],"end":[16,30,14],"iterations":5,"roughness":0.72,"period":3,"density":7,"randomize_start":true,"randomize_end":true,"random_radius_min":0.4,"random_radius_max":4.0,"segments":110},
       "color_over_life":[{"t":0,"color":"#00FFFFFF"},{"t":0.12,"color":"#FFFF3030"},{"t":0.48,"color":"#FFFF0808"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.04},{"t":0.28,"size":0.24},{"t":1,"size":0.015}],"blend":"ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.25,"soft_particles":true,"distortion":true}
+      "size_over_life":[{"t":0,"size":0.04},{"t":0.28,"size":0.24},{"t":1,"size":0.015}],"blend":"ADDITIVE", "material": {"shader":"vfx_energy","bloom":1.25,"soft_particles":true,"distortion":true}
     },
     {
       "start_time":0.25,"end_time":2.2,"rate":420,"particle_lifetime":0.3,
       "binding":{"mode":"entity_yaw","offset":[0,0,0],"rotate_with_entity":false},
       "component":{"type":"fractal_lightning","start":[20,24,-16],"end":[-14,3,12],"iterations":4,"roughness":0.68,"period":3,"density":6,"randomize_start":true,"randomize_end":true,"random_radius_min":0.25,"random_radius_max":3.0,"segments":96},
       "color_over_life":[{"t":0,"color":"#00FF5050"},{"t":0.18,"color":"#CCFF1818"},{"t":0.58,"color":"#FFFFA0A0"},{"t":1,"color":"#00000000"}],
-      "size_over_life":[{"t":0,"size":0.035},{"t":0.3,"size":0.2},{"t":1,"size":0.01}],"blend":"ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.25,"soft_particles":true,"distortion":true}
+      "size_over_life":[{"t":0,"size":0.035},{"t":0.3,"size":0.2},{"t":1,"size":0.01}],"blend":"ADDITIVE", "material": {"shader":"vfx_energy","bloom":1.25,"soft_particles":true,"distortion":true}
     }
   ]
 }

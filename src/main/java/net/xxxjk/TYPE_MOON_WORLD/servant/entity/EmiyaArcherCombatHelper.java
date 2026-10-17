@@ -2905,7 +2905,7 @@ public final class EmiyaArcherCombatHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 12.0F) {
             continue;
          }
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          broken++;
          if ((broken & 1) == 0) {
             level.sendParticles(ParticleTypes.CLOUD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.18, 0.18, 0.18, 0.02);
@@ -2994,7 +2994,7 @@ public final class EmiyaArcherCombatHelper {
          || hardness > maxHardness) {
          return false;
       }
-      return level.destroyBlock(pos, false, breaker);
+      return net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.destroyBlock(level, pos, false, breaker);
    }
 
    private static int nearbyEnemyCount(EmiyaArcherEntity entity, ServerLevel level, double radius) {

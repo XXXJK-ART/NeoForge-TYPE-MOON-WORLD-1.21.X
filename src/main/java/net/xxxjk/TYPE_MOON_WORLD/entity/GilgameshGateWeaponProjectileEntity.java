@@ -418,6 +418,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          int currentWave = wave;
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(currentWave - 1, () -> {
             double inner = Math.max(0.0, currentWave - 1.0);
+            DeferredTerrainDestruction.protectNextCombatJob();
             DeferredTerrainDestruction.queueShell(level, center, currentWave, inner, 8,
                (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
                   if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null) return false;

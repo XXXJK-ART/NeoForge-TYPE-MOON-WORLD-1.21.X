@@ -470,9 +470,11 @@ public final class ServantCardOdaNobunagaSkills {
       data.putBoolean(THREE_THOUSAND_FOLLOW, false);
       data.putBoolean(THREE_THOUSAND_RELEASED, false);
       data.putLong(THREE_THOUSAND_START, level.getGameTime());
-      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.ODA_NOBUNAGA_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "oda_three_thousand", 3600,
+         ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks),
+         () -> { data.remove(THREE_THOUSAND_ACTIVE); });
       VFXServerEffects.spawn(level, "servant_oda_three_thousand", player, 160.0);
-      TYPE_MOON_WORLD.queueServerWork(70, () -> releaseOdaThreeThousand(player));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseOdaThreeThousand(player));
    }
 
    public static void markOdaThreeThousandRelease(ServerPlayer player) {
@@ -590,6 +592,9 @@ public final class ServantCardOdaNobunagaSkills {
       if (data.getBoolean(HAJUN_ACTIVE)) {
          return;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "oda_hajun", 3600,
+         ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks),
+         () -> { data.remove(HAJUN_ACTIVE); data.remove(HAJUN_START); });
       data.putBoolean(HAJUN_ACTIVE, true);
       data.putLong(HAJUN_START, level.getGameTime());
       data.putInt(HAJUN_PROGRESS, 1);
@@ -677,6 +682,7 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static void activateOdaHajunField(ServerPlayer player, ServerLevel source) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> activateOdaHajunField(player, source))) return;
       CompoundTag data = player.getPersistentData();
       if (ModDimensions.isHajunDimension(source.dimension().location())) {
          data.putString(HAJUN_FIELD_RETURN_DIM, source.dimension().location().toString());

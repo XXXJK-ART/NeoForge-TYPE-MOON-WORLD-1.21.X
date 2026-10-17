@@ -3374,5 +3374,14 @@
   "message.typemoonworld.magic.sanctification.success": "圣别完成",
   "message.typemoonworld.magic.sanctification.lost_target": "圣别目标已失效",
   "message.typemoonworld.magic.sanctification.already_chanting": "你正在吟唱圣别",
-  "message.typemoonworld.magic.sanctification.no_entity": "圣别不能以实体为目标"
+  "message.typemoonworld.magic.sanctification.no_entity": "圣别不能以实体为目标",
+  "servant.typemoonworld.era.mythology": "神话",
+  "servant.typemoonworld.era.ancient": "古代",
+  "servant.typemoonworld.era.age_of_sail": "大航海",
+  "servant.typemoonworld.era.early_modern": "近现代",
+  "servant.typemoonworld.era.modern": "现代",
+  "servant.typemoonworld.era.future": "未来",
+  "tooltip.typemoonworld.servant.era": "时代：%s",
+  "tooltip.typemoonworld.necklace.transfer": "右键取出魔力；潜行右键存入魔力",
+  "hud.typemoonworld.servant_card.guard_broken": "破防"
 }

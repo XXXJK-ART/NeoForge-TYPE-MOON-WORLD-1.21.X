@@ -17,7 +17,7 @@ public final class ServantNoblePhantasmDefinitionLoader extends SimpleJsonResour
       Map<String, ServantNoblePhantasmDefinition> loaded = new LinkedHashMap<>();
       for (var entry : resources.entrySet()) ServantNoblePhantasmDefinition.CODEC.parse(JsonOps.INSTANCE, entry.getValue())
          .resultOrPartial(error -> net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.LOGGER.error("Invalid noble phantasm {}: {}", entry.getKey(), error))
-         .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantNoblePhantasmDefinition(entry.getKey().toString(), value.displayName(), value.displayNameZh(), value.type(), value.rank(), value.mpCost(), value.overChargeSupported(), value.overChargeLevels(), value.baseDamageMultiplier(), value.range(), value.effects(), value.specialAttackConditions(), value.classRestrictions())));
+         .ifPresent(value -> loaded.put(entry.getKey().toString(), new ServantNoblePhantasmDefinition(entry.getKey().toString(), value.displayName(), value.displayNameZh(), value.type(), value.rank(), value.mpCost(), value.overChargeSupported(), value.overChargeLevels(), value.baseDamageMultiplier(), value.range(), value.effects(), value.specialAttackConditions(), value.classRestrictions(), value.releasePolicy())));
       ServantNoblePhantasmDataRegistry.reload(loaded);
    }
 }

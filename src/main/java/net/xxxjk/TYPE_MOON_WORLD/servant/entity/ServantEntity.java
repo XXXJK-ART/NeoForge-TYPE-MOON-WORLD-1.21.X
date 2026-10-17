@@ -502,7 +502,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
-         boolean tacticalHandled = !combatHandled && ServantTacticalController.tick(this);
+         boolean pacingHandled = !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
+         boolean tacticalHandled = pacingHandled || !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
          if (!combatHandled && !tacticalHandled) {
             super.customServerAiStep();
@@ -802,7 +803,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       ServantSkillRegistry.ensureInitialized();
       ServantExecutionContext ctx = new ServantExecutionContext(this, null, params.manaPool(), 0);
       for (String skillId : def.skillIds()) {
-         ServantSkillRegistry.execute(skillId, ctx);
+         var skill = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDataRegistry.get(skillId);
+         if (skill == null || skill.type() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.SkillType.PASSIVE)
+            ServantSkillRegistry.execute(skillId, ctx);
       }
 
       this.refreshDimensions();

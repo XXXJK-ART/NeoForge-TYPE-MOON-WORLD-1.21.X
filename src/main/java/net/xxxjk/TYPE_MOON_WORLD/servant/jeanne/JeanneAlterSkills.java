@@ -280,6 +280,7 @@ public final class JeanneAlterSkills {
       }
       servant.getPersistentData().putLong(NOBLE_PHANTASM_COOLDOWN, c.gameTick() + 2400L);
       servant.setCurrentMp(Math.max(0.0D, servant.getCurrentMp() - 220.0D));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(servant, 220);
       servant.getNavigation().stop();
       servant.faceToward(c.target().position());
       servant.triggerNamedActionAnimation("cast");
@@ -446,11 +447,17 @@ public final class JeanneAlterSkills {
 
    private static void beginNoblePhantasm(LivingEntity caster, LivingEntity target, ServerLevel level) {
       if (caster == null || target == null) return;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(caster, "jeanne_alter_np", 2400, ticks -> {
+         if (caster instanceof ServerPlayer player) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks);
+         else caster.getPersistentData().putLong(NOBLE_PHANTASM_COOLDOWN, caster.level().getGameTime() + ticks);
+      }, () -> clearNoblePhantasm(caster.getPersistentData()));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(caster, () -> {
       CompoundTag data = caster.getPersistentData();
       data.putLong(NP_CAST_START, level.getGameTime());
       data.putUUID(NP_TARGET, target.getUUID());
       data.putInt(NP_PHASE, -1);
       if (caster instanceof net.minecraft.world.entity.Mob mob) mob.setTarget(target);
+      });
    }
 
    /** Three server-side phases keep the visual timeline and damage timeline together. */

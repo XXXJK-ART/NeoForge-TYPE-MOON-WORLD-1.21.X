@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "mind_eye_false_a_okita",
   "display_name": "Mind's Eye (False) A",
   "display_name_zh": "心眼（伪）A",
@@ -18,8 +19,20 @@
   ],
   "ai": {
     "facts": [
-      {"type": "prediction", "strength": 0.85},
-      {"type": "evasion", "strength": 0.8}
+      {
+        "type": "prediction",
+        "strength": 0.85
+      },
+      {
+        "type": "evasion",
+        "strength": 0.8
+      }
+    ]
+  },
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "okita_mind_eye"
     ]
   }
 }

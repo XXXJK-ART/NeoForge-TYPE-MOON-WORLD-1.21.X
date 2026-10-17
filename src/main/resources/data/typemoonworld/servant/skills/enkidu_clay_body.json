@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "enkidu_clay_body",
   "display_name": "Body of Clay",
   "display_name_zh": "泥人之躯",
@@ -18,5 +19,8 @@
     }
   ],
   "description": "When Enkidu takes a single heavy hit, the clay body shatters, becomes briefly untargetable, and reforms nearby with a small heal.",
-  "description_zh": "恩奇都受到超过当前生命值30%的单次重击时，神造粘土之躯短暂碎裂为粘土块，进入无法选中的无敌状态，随后在附近重聚并回复少量生命。"
+  "description_zh": "恩奇都受到超过当前生命值30%的单次重击时，神造粘土之躯短暂碎裂为粘土块，进入无法选中的无敌状态，随后在附近重聚并回复少量生命。",
+  "defense": {
+    "durability": true
+  }
 }

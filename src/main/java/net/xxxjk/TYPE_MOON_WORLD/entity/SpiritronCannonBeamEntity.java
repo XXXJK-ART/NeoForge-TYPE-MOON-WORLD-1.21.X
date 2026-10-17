@@ -222,7 +222,7 @@ public class SpiritronCannonBeamEntity extends Entity {
       if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 100.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
-      return level.removeBlock(pos, false);
+      return net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
    }
 
    private static Vec3 normalize(Vec3 direction) {

@@ -196,7 +196,7 @@ public class EnkiduEarthWeaponProjectileEntity extends ThrowableItemProjectile {
          || state.getExplosionResistance(level, pos, null) >= 60.0F) {
          return false;
       }
-      if (level.removeBlock(pos, false)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
          this.brokenBlocks++;
          level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 4, 0.18, 0.18, 0.18, 0.025);
          if (this.brokenBlocks % 2 == 0) {

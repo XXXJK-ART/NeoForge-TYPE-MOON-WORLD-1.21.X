@@ -29,6 +29,7 @@ public final class VFXPostProcessManager {
    private static int height;
    private static float time;
    private static volatile boolean resetPending;
+   private static boolean postProcessDisabled;
 
    private VFXPostProcessManager() { }
 
@@ -43,6 +44,7 @@ public final class VFXPostProcessManager {
    public static void clear() {
       ACTIVE.clear();
       time = 0.0F;
+      postProcessDisabled = false;
       close();
       closeBloom();
    }
@@ -71,6 +73,7 @@ public final class VFXPostProcessManager {
    public static void render(RenderGuiEvent.Pre event) {
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft.level == null) return;
+      if (postProcessDisabled) return;
       try {
          RenderSystem.assertOnRenderThread();
          if (Config.vfxBloom && VFXRenderManager.hasBloomEffects()) {
@@ -107,7 +110,13 @@ public final class VFXPostProcessManager {
          minecraft.getMainRenderTarget().bindWrite(true);
       } catch (Exception exception) {
          TYPE_MOON_WORLD.LOGGER.warn("Failed to render VFX screen effects", exception);
+         // A post chain can lose its projection matrix while another client
+         // mod is resizing or replacing the framebuffer. Do not recreate the
+         // same failing chain every frame; the emitter layers remain visible.
+         ACTIVE.clear();
+         postProcessDisabled = true;
          close();
+         closeBloom();
       } finally {
          // A failed/short-circuited pass may leave a temporary target bound.
          // Always hand the frame back to vanilla's main target before HUD

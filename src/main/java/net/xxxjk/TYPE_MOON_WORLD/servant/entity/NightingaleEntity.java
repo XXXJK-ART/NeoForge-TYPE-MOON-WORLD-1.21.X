@@ -91,6 +91,8 @@ public final class NightingaleEntity extends ServantEntity {
    private void tickNightingale(ServerLevel level) {
       long now = level.getGameTime();
       NightingaleSupportService.tickBuffs(this, now);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(this)) return;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.duel(this) && !isNoblePhantasmCasting()) return;
       if (isNoblePhantasmCasting()) {
          this.getNavigation().stop();
          this.setDeltaMovement(Vec3.ZERO);
@@ -218,10 +220,15 @@ public final class NightingaleEntity extends ServantEntity {
          return;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(this, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(this, "nightingale_pledge", NightingaleRules.NOBLE_PHANTASM_COOLDOWN, ticks -> this.getPersistentData().putLong(LAST_NP, this.level().getGameTime() - (NightingaleRules.NOBLE_PHANTASM_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(this, () -> {
       this.getPersistentData().putBoolean(NP_OVERDRAFT, resource.overdraft());
-      this.getPersistentData().putLong(NP_CAST_END, now + NightingaleRules.NOBLE_PHANTASM_WINDUP);
+      this.getPersistentData().putLong(NP_CAST_END, this.level().getGameTime() + NightingaleRules.NOBLE_PHANTASM_WINDUP);
       this.triggerNamedActionAnimation("noble_phantasm");
       ServantVoiceHelper.tryPlayNightingaleNp(this);
+
+      });
+      return;
    }
 
    private void finishNoblePhantasm(ServerLevel level, long now) {

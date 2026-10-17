@@ -596,7 +596,7 @@ public final class ParacelsusServantSkills {
       if (state.isAir() || state.is(net.minecraft.world.level.block.Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
          return false;
       }
-      if (level.removeBlock(pos, false)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
          level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, heavy ? 3 : 1, 0.12, 0.12, 0.12, 0.02);
          return true;
       }
@@ -915,7 +915,7 @@ public final class ParacelsusServantSkills {
          var state = level.getBlockState(pos);
          float hardness = state.getDestroySpeed(level, pos);
          float cap = hardness < 0.0F ? 0.0F : (hardness < 8.0F ? softMax : hardMax);
-         if (!state.isAir() && hardness >= 0.0F && hardness < cap && level.removeBlock(pos, false)) {
+         if (!state.isAir() && hardness >= 0.0F && hardness < cap && net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
             broken++;
             level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.15, 0.15, 0.15, 0.02);
          }

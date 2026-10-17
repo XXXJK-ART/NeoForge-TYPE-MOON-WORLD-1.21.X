@@ -1,4 +1,9 @@
 {
+  "rank": "A",
+  "defense": {
+    "durability": true,
+    "activation_actions": []
+  },
   "id": "battle_continuation_a",
   "display_name": "Battle Continuation A",
   "display_name_zh": "战斗续行 A",

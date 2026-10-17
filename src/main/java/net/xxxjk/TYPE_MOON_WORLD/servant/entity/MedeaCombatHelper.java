@@ -1852,7 +1852,7 @@ public final class MedeaCombatHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
             continue;
          }
-         if (level.removeBlock(pos, false)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
             broken++;
          }
       }

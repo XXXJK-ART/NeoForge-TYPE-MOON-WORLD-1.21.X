@@ -43,6 +43,7 @@ public final class TerrainImpactService {
       long debrisSeed = level.random.nextLong();
       Integer minimumSelfFootY = selfFootMinimumY(source, center, profile, shape);
       DeferredTerrainDestruction.BlockPredicate predicate = (serverLevel, pos, distanceSqr, radius, origin) -> {
+         if (!CombatTerrainProtection.canRemove(serverLevel, pos)) return false;
          BlockState state = serverLevel.getBlockState(pos);
          if (minimumSelfFootY != null && pos.getY() < minimumSelfFootY) return false;
          if (NeoForge.EVENT_BUS.post(new TerrainImpactBlockEvent(serverLevel, source, pos, state, profile, shape.name())).isCanceled()) return false;
@@ -113,6 +114,7 @@ public final class TerrainImpactService {
       double cutHeight = Math.max(1.0, height);
       Vec3 origin = center.add(horizontal.scale(wallTunnel ? 0.35 : 0.15))
          .add(0.0, wallTunnel ? 0.15 : 0.0, 0.0);
+      DeferredTerrainDestruction.protectNextCombatJob();
       DeferredTerrainDestruction.queueDirectionalCut(level, origin, horizontal,
          cutLength, cutWidth, cutHeight, false, profile.maximumHardness());
       return impact(level, source, center, profile, permission, Shape.AIR_SPHERE);

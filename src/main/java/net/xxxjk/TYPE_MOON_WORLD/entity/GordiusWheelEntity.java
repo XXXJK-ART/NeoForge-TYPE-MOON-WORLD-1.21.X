@@ -766,7 +766,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
-      return level.removeBlock(pos, false);
+      return net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
    }
 
    private static boolean isProtectedTerrain(BlockState state) {

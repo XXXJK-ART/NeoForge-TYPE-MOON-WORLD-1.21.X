@@ -360,8 +360,12 @@ public final class OdaNobunagaCombatHelper {
          return false;
       }
       entity.setCurrentMp(entity.getCurrentMp() - 80.0);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, 80.0);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "oda_three_thousand", THREE_THOUSAND_COOLDOWN,
+         ticks -> entity.getPersistentData().putLong(TAG_LAST_THREE_THOUSAND, entity.level().getGameTime() - THREE_THOUSAND_COOLDOWN + ticks), () -> { });
       entity.getPersistentData().putLong(TAG_LAST_THREE_THOUSAND, now);
-      entity.getPersistentData().putLong(TAG_THREE_THOUSAND_CHANT_END, now + THREE_THOUSAND_CHANT_TICKS);
+      entity.getPersistentData().putLong(TAG_THREE_THOUSAND_CHANT_END, net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.voiceEnd(entity));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> { });
       entity.getPersistentData().putLong(TAG_LAND_FOR_NP_UNTIL, now + THREE_THOUSAND_CHANT_TICKS + NP_LAND_TICKS);
       entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + THREE_THOUSAND_CHANT_TICKS + FLIGHT_HOLD_TICKS);
       entity.getPersistentData().putInt(TAG_THREE_THOUSAND_TARGET, target.getId());
@@ -839,17 +843,21 @@ public final class OdaNobunagaCombatHelper {
          return false;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "oda_hajun", HAJUN_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_LAST_HAJUN, entity.level().getGameTime() - (HAJUN_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.getPersistentData().putDouble(TAG_HAJUN_POWER_SCALE, resource.powerScale());
       entity.getPersistentData().putBoolean(TAG_HAJUN_OVERDRAFT, resource.overdraft());
-      entity.getPersistentData().putLong(TAG_LAST_HAJUN, now);
-      entity.getPersistentData().putLong(TAG_HAJUN_CHANT_END, now + HAJUN_CHANT_TICKS);
-      entity.getPersistentData().putLong(TAG_LAND_FOR_NP_UNTIL, now + HAJUN_CHANT_TICKS + NP_LAND_TICKS);
-      entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + HAJUN_CHANT_TICKS + HAJUN_DURATION);
+      entity.getPersistentData().putLong(TAG_LAST_HAJUN, entity.level().getGameTime());
+      entity.getPersistentData().putLong(TAG_HAJUN_CHANT_END, entity.level().getGameTime() + HAJUN_CHANT_TICKS);
+      entity.getPersistentData().putLong(TAG_LAND_FOR_NP_UNTIL, entity.level().getGameTime() + HAJUN_CHANT_TICKS + NP_LAND_TICKS);
+      entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, entity.level().getGameTime() + HAJUN_CHANT_TICKS + HAJUN_DURATION);
       entity.getPersistentData().putInt(TAG_HAJUN_CHANT_TARGET, target.getId());
       landForNoblePhantasm(entity);
       entity.triggerChargeAnimation();
       ServantVoiceHelper.tryPlayOdaNobunagaHajun(entity);
       level.playSound(null, entity.blockPosition(), SoundEvents.WITHER_SPAWN, SoundSource.HOSTILE, 0.8F, 0.6F);
+
+      });
       return true;
    }
 

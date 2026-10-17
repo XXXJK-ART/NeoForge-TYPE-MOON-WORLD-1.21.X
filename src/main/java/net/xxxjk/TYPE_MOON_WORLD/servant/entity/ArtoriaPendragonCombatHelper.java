@@ -626,8 +626,10 @@ public final class ArtoriaPendragonCombatHelper {
       data.putDouble(TAG_EXCALIBUR_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_EXCALIBUR_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
-      data.putLong(TAG_EXCALIBUR_WINDUP_UNTIL, now + EXCALIBUR_WINDUP);
-      data.putLong(TAG_EXCALIBUR_CHARGE_START, now + EXCALIBUR_CHANT);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "artoria_excalibur", EXCALIBUR_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_LAST_EXCALIBUR, entity.level().getGameTime() - (EXCALIBUR_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
+      data.putLong(TAG_EXCALIBUR_WINDUP_UNTIL, entity.level().getGameTime() + EXCALIBUR_WINDUP);
+      data.putLong(TAG_EXCALIBUR_CHARGE_START, entity.level().getGameTime() + EXCALIBUR_CHANT);
       data.putUUID(TAG_EXCALIBUR_TARGET, target.getUUID());
       entity.getNavigation().stop();
       faceExcaliburTarget(entity, target);
@@ -637,6 +639,8 @@ public final class ArtoriaPendragonCombatHelper {
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 1.4F, 1.2F);
       level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.75, entity.getZ(), fxCount(36), 0.75, 0.75, 0.75, 0.08);
       level.addFreshEntity(new ExpandingRingEffectEntity(level, entity.getX(), entity.getY() + 0.22, entity.getZ(), 0.35F, 3.4F, 0.08F, 24, 0xF7F7FF, 0.42F, 0.025F));
+
+      });
       return true;
    }
 
@@ -969,7 +973,7 @@ public final class ArtoriaPendragonCombatHelper {
                BlockState state = level.getBlockState(pos);
                float hardness = state.getDestroySpeed(level, pos);
                if (!state.isAir() && hardness >= 0.0F && hardness < (boosted ? 80.0F : 45.0F) && !state.is(Blocks.BEDROCK)) {
-                  if (level.removeBlock(pos, false)) {
+                  if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
                      broken++;
                   }
                }

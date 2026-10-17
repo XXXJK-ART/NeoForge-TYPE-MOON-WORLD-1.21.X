@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "human_understanding_a", "display_name": "Understanding of the Human Body A", "display_name_zh": "人体理解 A",
   "type": "passive", "mp_cost": 0, "cooldown_ticks": 0, "duration_ticks": 0,
   "effects": [{"effect_type": "humanoid_specialization", "params": {"damage_multiplier": 1.5, "defense_multiplier": 0.75}}],

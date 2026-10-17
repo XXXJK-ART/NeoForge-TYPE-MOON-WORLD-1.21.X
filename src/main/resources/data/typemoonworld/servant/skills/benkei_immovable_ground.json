@@ -1,1 +1,18 @@
-{"id":"benkei_immovable_ground","display_name":"Benkei Immovable Ground","display_name_zh":"\u5f01\u5e86\u00b7\u4e0d\u52a8\u7acb\u5730","type":"active","mp_cost":20,"cooldown_ticks":600,"duration_ticks":300,"effects":[]}
+{
+  "rank": "B",
+  "id": "benkei_immovable_ground",
+  "display_name": "Benkei Immovable Ground",
+  "display_name_zh": "弁庆·不动立地",
+  "type": "active",
+  "mp_cost": 20,
+  "cooldown_ticks": 600,
+  "duration_ticks": 300,
+  "effects": [],
+  "defense": {
+    "guard": true,
+    "activation_actions": [
+      "ushiwakamaru_benkei",
+      "ushiwakamaru_immovable_ground"
+    ]
+  }
+}

@@ -287,7 +287,7 @@ public class TYPE_MOON_WORLD {
    }
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
-      PayloadRegistrar registrar = event.registrar("typemoonworld");
+      PayloadRegistrar registrar = event.registrar("typemoonworld_combat_v2");
       // Addon payloads are registered through the stable API boundary.
       this.addonEntrypoints.forEach(entrypoint -> entrypoint.registerPayloads(registrar));
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
@@ -434,7 +434,7 @@ public class TYPE_MOON_WORLD {
       if (action != null) {
          int delay = Math.max(1, tick);
          long executeAt = serverTickCounter + delay;
-         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(action);
+         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.guardDelayedEffect(action));
       }
    }
 

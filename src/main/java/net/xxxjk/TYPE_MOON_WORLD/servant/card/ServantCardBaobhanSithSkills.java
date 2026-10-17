@@ -352,9 +352,14 @@ public final class ServantCardBaobhanSithSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "baobhan_sith_failnaught", FETCH_FAILNAUGHT_COOLDOWN_TICKS,
+         ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, ticks), () -> { });
+      ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, FETCH_FAILNAUGHT_COOLDOWN_TICKS);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> {
       executeFetchFailnaught(player, target);
       BaobhanSithCurseService.consumeAllMediums(player, target);
       finishFetchFailnaught(player, vars, 1);
+      });
       return true;
    }
 
@@ -379,6 +384,10 @@ public final class ServantCardBaobhanSithSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "baobhan_sith_failnaught", FETCH_FAILNAUGHT_COOLDOWN_TICKS,
+         ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, ticks), () -> { });
+      ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, FETCH_FAILNAUGHT_COOLDOWN_TICKS);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> {
       int detonated = 0;
       for (LivingEntity target : targets) {
          if (executeFetchFailnaught(player, target)) {
@@ -388,10 +397,11 @@ public final class ServantCardBaobhanSithSkills {
       }
       if (detonated <= 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.no_curse_payload"), true);
-         return false;
+         return;
       }
       finishFetchFailnaught(player, vars, detonated);
       player.displayClientMessage(Component.translatable("message.typemoonworld.baobhan_sith.fetch_all", detonated), true);
+      });
       return true;
    }
 

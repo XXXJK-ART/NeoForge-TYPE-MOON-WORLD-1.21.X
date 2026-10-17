@@ -1259,7 +1259,7 @@ public final class ServantCardEnkiduSkills {
       for (BlockPos pos : positions) {
          if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduTemporaryPlantHelper.unregister(level, pos)
             && net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduTemporaryPlantHelper.isTemporaryPlantState(level.getBlockState(pos))) {
-            level.removeBlock(pos, false);
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          }
       }
    }

@@ -742,7 +742,7 @@ public final class ServantCardZhaoYunSkills {
             var state = level.getBlockState(pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK)
                && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 75.0F) {
-               level.removeBlock(pos, false);
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
                if (++broken >= 96) break;
             }
          }

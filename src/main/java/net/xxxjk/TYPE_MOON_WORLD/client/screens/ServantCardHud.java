@@ -422,6 +422,12 @@ public class ServantCardHud {
       long broken = Math.max(0L, ServantCardDefenseClientState.guardBrokenEnd() - now);
       String dodgeText = dodge <= 0L ? Component.translatable("hud.typemoonworld.servant_card.ready").getString()
          : String.format(java.util.Locale.ROOT, "%.1fs", dodge / 20.0F);
+      if (ServantCardDefenseClientState.autoDodgeMax() > 0) {
+         long restore = Math.max(0, ServantCardDefenseClientState.autoRestore() - now);
+         dodgeText += " | " + ServantCardDefenseClientState.autoDodges() + "/" + ServantCardDefenseClientState.autoDodgeMax()
+            + (restore > 0 ? String.format(java.util.Locale.ROOT, " (%.1fs)", restore / 20.0) : "");
+      }
+      if (ServantCardDefenseClientState.guardBroken()) dodgeText += " | " + Component.translatable("hud.typemoonworld.servant_card.guard_broken").getString();
       drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.dodge_value", dodgeText),
          x, y + 18, broken > 0L ? 0xFFFF5555 : 0xFFE0E0E0, 0.58F);
    }

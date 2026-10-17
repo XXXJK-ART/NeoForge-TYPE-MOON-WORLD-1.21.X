@@ -2,6 +2,9 @@ package net.xxxjk.TYPE_MOON_WORLD.client;
 
 /** Client-side snapshot of the server-authoritative servant defense state. */
 public final class ServantCardDefenseClientState {
+   private static int autoDodges, autoDodgeMax;
+   private static long autoRestore;
+   private static boolean guardBroken;
    private static double stamina;
    private static double staminaMax;
    private static double poise;
@@ -19,7 +22,7 @@ public final class ServantCardDefenseClientState {
 
    public static void apply(double staminaValue, double staminaLimit, double poiseValue, double poiseLimit,
                             boolean activeGuard, long dodgeEnd, long brokenEnd, String lastResult, long resultExpiry,
-                            double shieldValue, double shieldLimit, boolean activeShield) {
+                            double shieldValue, double shieldLimit, boolean activeShield, int charges, int chargeMax, long restore, boolean broken) {
       stamina = Math.max(0.0, staminaValue);
       staminaMax = Math.max(0.0, staminaLimit);
       poise = Math.max(0.0, poiseValue);
@@ -32,8 +35,13 @@ public final class ServantCardDefenseClientState {
       shieldHp = Math.max(0.0, shieldValue);
       shieldMax = Math.max(0.0, shieldLimit);
       shieldActive = activeShield;
+      autoDodges = charges; autoDodgeMax = chargeMax; autoRestore = restore; guardBroken = broken;
    }
 
+   public static int autoDodges() { return autoDodges; }
+   public static int autoDodgeMax() { return autoDodgeMax; }
+   public static long autoRestore() { return autoRestore; }
+   public static boolean guardBroken() { return guardBroken; }
    public static double stamina() { return stamina; }
    public static double staminaMax() { return staminaMax; }
    public static double poise() { return poise; }
@@ -48,6 +56,6 @@ public final class ServantCardDefenseClientState {
    public static long resultUntil() { return resultUntil; }
 
    public static void clear() {
-      apply(0.0, 0.0, 0.0, 0.0, false, 0L, 0L, "", 0L, 0.0, 0.0, false);
+      apply(0.0, 0.0, 0.0, 0.0, false, 0L, 0L, "", 0L, 0.0, 0.0, false, 0, 0, 0L, false);
    }
 }

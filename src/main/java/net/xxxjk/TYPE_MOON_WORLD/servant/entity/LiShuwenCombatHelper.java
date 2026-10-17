@@ -320,6 +320,8 @@ public final class LiShuwenCombatHelper {
       data.putDouble(TAG_WU_ER_DA_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_WU_ER_DA_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "li_shuwen_wu_er_da", WU_ER_DA_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_LAST_WU_ER_DA, entity.level().getGameTime() - (WU_ER_DA_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.setWuErDaTargeting(true);
       entity.faceToward(target.position());
       entity.triggerWuErDaAnimation();
@@ -329,11 +331,13 @@ public final class LiShuwenCombatHelper {
          data.remove(TAG_WU_ER_DA_TARGET);
          entity.setWuErDaTargeting(false);
          resolveWuErDa(entity, target, level);
-         return true;
+         return;
       }
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, WU_ER_DA_WINDUP, false);
       VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_windup", entity, 96.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.HOSTILE, 0.55F, 0.45F);
+
+      });
       return true;
    }
 

@@ -148,7 +148,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          skillIds, noblePhantasmId,
          obedience, principle, morality, social, combat, specialPrinciples,
          startingFavor, aiConfigId,
-         primaryColor, secondaryColor
+         primaryColor, secondaryColor, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.fromKey(getStringOrDefault(json, "era", "modern"))
       );
    }
 

@@ -602,6 +602,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
@@ -627,6 +628,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG) && !"zhao_yun_np".equals(category)) {

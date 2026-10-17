@@ -45,6 +45,7 @@ public final class DefinitionSnapshotService {
       JsonObject magic = new JsonObject(); MagicDefinitionRegistry.all().forEach((id, def) -> magic.add(id, def.toJson()));
       root.add("magic", magic);
       JsonObject servants = new JsonObject(); ServantDataRegistry.getAll().keySet().forEach(id -> servants.addProperty(id, true)); root.add("servants", servants);
+      JsonObject eras = new JsonObject(); ServantDataRegistry.getAll().forEach((id, def) -> eras.addProperty(id, def.era().key())); root.add("servant_eras", eras);
       root.add("skills", encodeSkills()); root.add("noble_phantasms", encodeNps()); root.add("ai", encodeAi());
       JsonObject cards = new JsonObject(); CardActionRegistry.snapshotBindings().forEach(cards::addProperty); root.add("cards", cards);
       return GSON.create().toJson(root);

@@ -32,7 +32,6 @@ import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 @EventBusSubscriber
 public class Restore_mana {
-   private static final double MIN_NATURAL_REGEN_INTERVAL = 20.0;
    private static final double CRITICAL_MANA_THRESHOLD = 20.0;
    private static final double MAGIC_FRAGMENT_MANA = 10.0;
    private static final double SPIRIT_VEIN_BLOCK_MANA = 90.0;
@@ -93,6 +92,10 @@ public class Restore_mana {
             return;
          }
          double leylineMultiplier = currentLeylineMultiplier(entity);
+         if (entity instanceof LivingEntity living) {
+            if (living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) leylineMultiplier *= 0.5;
+            leylineMultiplier = com.example.typemoonaddon.magic.BoundaryMagicIntegration.adjustNaturalManaRegen(living, leylineMultiplier);
+         }
          vars.current_mana_regen_multiplier = leylineMultiplier;
          if (vars.servantCardState().transformed()) {
             if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
@@ -106,19 +109,10 @@ public class Restore_mana {
             TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
          } else {
             double manaRegen = vars.magicState().manaRegen();
-            double regenInterval = vars.magicState().restoreMagicMoment();
+            double regenInterval = net.xxxjk.TYPE_MOON_WORLD.utils.ManaRegenRules.intervalTicks(vars.magicState().restoreMagicMoment(), vars.is_magic_circuit_open);
             boolean syncImmediately = false;
-            if (entity instanceof net.minecraft.world.entity.LivingEntity living
-               && living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
-               leylineMultiplier *= 0.5;
-            }
 
             if (vars.is_magic_circuit_open) {
-               regenInterval /= 2.0;
-               if (regenInterval < 1.0) {
-                  regenInterval = 1.0;
-               }
-
                vars.magic_circuit_open_timer += regenInterval;
                if (vars.magic_circuit_open_timer >= 72000.0) {
                   vars.is_magic_circuit_open = false;
@@ -153,10 +147,6 @@ public class Restore_mana {
                // loop only reports the current state here.
             } else {
             double effectiveRegen = manaRegen * leylineMultiplier;
-            if (entity instanceof LivingEntity living) {
-               effectiveRegen = com.example.typemoonaddon.magic.BoundaryMagicIntegration.adjustNaturalManaRegen(living, effectiveRegen);
-            }
-            regenInterval = Math.max(MIN_NATURAL_REGEN_INTERVAL, regenInterval * 4.0);
                vars.magicState().setMana(Math.min(vars.magicState().mana() + effectiveRegen, vars.magicState().maxMana()));
             }
 

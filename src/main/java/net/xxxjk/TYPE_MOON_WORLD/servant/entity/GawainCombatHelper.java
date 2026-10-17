@@ -481,11 +481,15 @@ public final class GawainCombatHelper {
       data.putDouble(TAG_GALLATIN_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_GALLATIN_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "gawain_gallatin", cooldown, ticks -> entity.getPersistentData().putLong(TAG_LAST_GALLATIN, entity.level().getGameTime() - (cooldown) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.faceToward(target.position());
       entity.triggerNamedActionAnimation("gallatin_chant");
       ServantVoiceHelper.tryPlayGawainNp(entity);
       VFXServerEffects.spawnReplayable(level, "servant_gawain_gallatin_charge", entity, 5.2F);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.35F, 0.72F);
+
+      });
       return true;
    }
 

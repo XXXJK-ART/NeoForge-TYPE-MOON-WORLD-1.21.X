@@ -129,13 +129,18 @@ public final class PlayerNoblePhantasmHelper {
    public static boolean consumeStrict(ServerPlayer player, double amount) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
+         var before = ServantCardManaService.snapshot(player, vars);
          if (ServantCardManaService.consume(player, vars, amount)) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, true, before.servantMana() - vars.servantCardState().mana());
+            if (before.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, before.master(), false, before.masterMana() - before.master().getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana());
             return true;
          }
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          return false;
       }
+      double before = vars.magicState().mana();
       if (ManaHelper.consumeManaStrict(player, amount, false)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, false, before - vars.magicState().mana());
          return true;
       }
       player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
@@ -341,6 +346,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static void startGaeBulgDeathFlight(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "cu_gae_bolg", GAE_BULG_ARMY_PLAYER_COOLDOWN, ticks -> net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks), () -> { clearGaeBulgUseState(player); });
       CompoundTag data = player.getPersistentData();
       boolean hadLock = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
       LivingEntity target = resolveGaeBulgLockedTarget(player);
@@ -407,6 +413,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean releaseGaeBulg(ServerPlayer player) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseGaeBulg(player))) return true;
       CompoundTag data = player.getPersistentData();
       boolean lockedMelee = data.getBoolean(GAE_LOCKED_MELEE_CHARGE_TAG);
       boolean deathFlight = data.getBoolean(GAE_DEATH_FLIGHT_TAG);
@@ -551,6 +558,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static void startExcaliburCharge(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "artoria_excalibur", EXCALIBUR_PLAYER_COOLDOWN, ticks -> addExcaliburCooldown(player, ticks), () -> { player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG); });
       player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
@@ -589,6 +597,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static void releaseExcalibur(ServerPlayer player) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseExcalibur(player))) return;
       int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
       stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
@@ -669,6 +678,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static void startGallatinCharge(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "gawain_gallatin", GALLATIN_PLAYER_COOLDOWN, ticks -> addGallatinCooldown(player, ticks), () -> { player.getPersistentData().remove(GALLATIN_CHARGE_TAG); });
       player.getPersistentData().putInt(GALLATIN_CHARGE_TAG, 0);
       player.getPersistentData().remove(GALLATIN_LAST_CHARGE_VFX_TAG);
       player.getPersistentData().remove(GALLATIN_MIN_CHARGE_PAID_TAG);
@@ -709,6 +719,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static void releaseGallatin(ServerPlayer player) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseGallatin(player))) return;
       int charged = player.getPersistentData().getInt(GALLATIN_CHARGE_TAG);
       stopServantCardChargeVoice(player, "gawain", ModSounds.GAWAIN_VOICE_NP.get(), ModSounds.GAWAIN_VOICE_GALLATIN_SHORT.get());
       player.getPersistentData().remove(GALLATIN_CHARGE_TAG);
@@ -1544,7 +1555,7 @@ public final class PlayerNoblePhantasmHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > 50.0F || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
             continue;
          }
-         if (level.removeBlock(pos, false)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
             broken++;
          }
       }
@@ -1565,6 +1576,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void startServantCardChargeVoice(ServerPlayer player, String servantId, SoundEvent sound) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return;
       if (sound == null || !isServantCard(player, servantId) || !(player.level() instanceof ServerLevel level)) {
          return;
       }
@@ -1600,6 +1612,7 @@ public final class PlayerNoblePhantasmHelper {
    private static boolean stopServantCardChargeVoice(ServerPlayer player, String servantId, SoundEvent longSound, SoundEvent shortSound) {
       CompoundTag data = player.getPersistentData();
       String baseKey = chargeVoiceKey(servantId);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player) || player.getPersistentData().contains("TypeMoonNpCastAction")) return false;
       boolean active = data.getBoolean(baseKey + "_active");
       boolean playShort = false;
       long now = player.level() instanceof ServerLevel level ? level.getGameTime() : 0L;

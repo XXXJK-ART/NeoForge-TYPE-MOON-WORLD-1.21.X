@@ -282,7 +282,8 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
          BlockState state = serverLevel.getBlockState(pos);
          float hardness = state.getDestroySpeed(serverLevel, pos);
          if (!state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0.0F && hardness <= 8.0F) {
-            serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null);
+            if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.canRemove(serverLevel, pos))
+               serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null);
          }
       }
    }

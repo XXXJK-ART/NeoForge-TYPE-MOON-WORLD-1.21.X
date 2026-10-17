@@ -3373,5 +3373,14 @@
   "message.typemoonworld.magic.sanctification.success": "Sanctification complete",
   "message.typemoonworld.magic.sanctification.lost_target": "The sanctification target was lost",
   "message.typemoonworld.magic.sanctification.already_chanting": "You are already chanting sanctification",
-  "message.typemoonworld.magic.sanctification.no_entity": "Sanctification cannot target an entity"
+  "message.typemoonworld.magic.sanctification.no_entity": "Sanctification cannot target an entity",
+  "servant.typemoonworld.era.mythology": "Mythology",
+  "servant.typemoonworld.era.ancient": "Ancient",
+  "servant.typemoonworld.era.age_of_sail": "Age of Sail",
+  "servant.typemoonworld.era.early_modern": "Early Modern",
+  "servant.typemoonworld.era.modern": "Modern",
+  "servant.typemoonworld.era.future": "Future",
+  "tooltip.typemoonworld.servant.era": "Era: %s",
+  "tooltip.typemoonworld.necklace.transfer": "Right click to withdraw; sneak + right click to deposit",
+  "hud.typemoonworld.servant_card.guard_broken": "Guard broken"
 }

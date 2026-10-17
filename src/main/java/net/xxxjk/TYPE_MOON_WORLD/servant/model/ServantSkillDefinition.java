@@ -14,7 +14,9 @@ public record ServantSkillDefinition(
    int cooldownTicks,
    int durationTicks,
    List<SkillEffectEntry> effects,
-   AiProfile ai
+   AiProfile ai,
+   String rank,
+   SkillDefenseProfile defense
 ) {
    public static final Codec<ServantSkillDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
       Codec.STRING.optionalFieldOf("id", "").forGetter(ServantSkillDefinition::id),
@@ -25,12 +27,19 @@ public record ServantSkillDefinition(
       Codec.INT.optionalFieldOf("cooldown_ticks", 0).forGetter(ServantSkillDefinition::cooldownTicks),
       Codec.INT.optionalFieldOf("duration_ticks", 0).forGetter(ServantSkillDefinition::durationTicks),
       SkillEffectEntry.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(ServantSkillDefinition::effects),
-      AiProfile.CODEC.optionalFieldOf("ai", AiProfile.NONE).forGetter(ServantSkillDefinition::ai)
+      AiProfile.CODEC.optionalFieldOf("ai", AiProfile.NONE).forGetter(ServantSkillDefinition::ai),
+      Codec.STRING.optionalFieldOf("rank", "E").forGetter(ServantSkillDefinition::rank),
+      SkillDefenseProfile.CODEC.optionalFieldOf("defense", SkillDefenseProfile.NONE).forGetter(ServantSkillDefinition::defense)
    ).apply(instance, ServantSkillDefinition::new));
 
    public ServantSkillDefinition(String id, String displayName, String displayNameZh, SkillType type,
                                  int mpCost, int cooldownTicks, int durationTicks, List<SkillEffectEntry> effects) {
       this(id, displayName, displayNameZh, type, mpCost, cooldownTicks, durationTicks, effects, AiProfile.NONE);
+   }
+
+   public ServantSkillDefinition(String id, String displayName, String displayNameZh, SkillType type,
+      int mpCost, int cooldownTicks, int durationTicks, List<SkillEffectEntry> effects, AiProfile ai) {
+      this(id, displayName, displayNameZh, type, mpCost, cooldownTicks, durationTicks, effects, ai, "E", SkillDefenseProfile.NONE);
    }
 
    public ServantSkillDefinition {
@@ -43,6 +52,8 @@ public record ServantSkillDefinition(
       durationTicks = Math.max(0, durationTicks);
       effects = effects == null ? List.of() : List.copyOf(effects);
       ai = ai == null ? AiProfile.NONE : ai;
+      rank = rank == null ? "E" : rank;
+      defense = defense == null ? SkillDefenseProfile.NONE : defense;
    }
 
    public record AiProfile(List<CombatFact> facts) {

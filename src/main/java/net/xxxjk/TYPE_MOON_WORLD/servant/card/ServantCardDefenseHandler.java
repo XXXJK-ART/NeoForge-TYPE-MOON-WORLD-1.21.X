@@ -66,26 +66,6 @@ public final class ServantCardDefenseHandler {
          clear(player);
          return;
       }
-      CompoundTag data = player.getPersistentData();
-      initializeResources(data, params);
-      double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
-      double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
-      if ("arash".equals(vars.servant_card_id)) {
-         staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
-         poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
-      }
-      if ("lancelot_berserker".equals(vars.servant_card_id)) {
-         double recoveryMultiplier = LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
-         staminaRegen *= recoveryMultiplier;
-         poiseRegen *= recoveryMultiplier;
-      }
-      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
-         data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
-      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params),
-         data.getDouble(TAG_POISE) + poiseRegen / 20.0));
-      if (player.tickCount % 5 == 0) {
-         ServantCombatDefenseService.sync(player, false);
-      }
    }
 
    public static void clear(ServerPlayer player) {
@@ -96,14 +76,8 @@ public final class ServantCardDefenseHandler {
       data.remove(ServantCombatDefenseService.TAG_LAST_RESULT);
       data.remove(ServantCombatDefenseService.TAG_RESULT_UNTIL);
       ServantCombatDefenseService.sync(player, true);
-      data.remove(TAG_STAMINA);
-      data.remove(TAG_POISE);
-      data.remove(TAG_INVULN_UNTIL);
-      data.remove(TAG_LAST_DODGE_TICK);
-      data.remove(TAG_LAST_GUARD_TICK);
-      data.remove(TAG_GUARD_EXHAUST_UNTIL);
-      data.remove(TAG_GUARD_BROKEN_UNTIL);
-      data.remove(TAG_LI_PASSIVE_DODGE_COOLDOWN);
+      // Persistent resources and cooldowns survive form changes and relogging.
+
    }
 
    public static boolean handleIncomingDamage(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event) {
@@ -138,7 +112,7 @@ public final class ServantCardDefenseHandler {
          return false;
       }
       CompoundTag data = player.getPersistentData();
-      initializeResources(data, params);
+      ServantCombatDefenseService.initialize(player);
       long now = player.level().getGameTime();
       if (!defensePiercing && "artoria_pendragon".equals(vars.servant_card_id)) {
          event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(player, event.getSource(), event.getAmount()));
@@ -261,10 +235,15 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
+      if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && ServantCombatDefenseService.trySkillAutoDodge(player)) {
+         event.setCanceled(true); event.setAmount(0); return true;
+      }
       Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage && !elementalSwordDamage
          || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
          ? null : ServantCombatDefenseService.applyGuardHit(player, event.getSource(), event.getAmount());
       if (reduced != null) {
+         ServantCombatDefenseService.markGuarded(event);
          if (reduced <= 0.0F) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -272,7 +251,7 @@ public final class ServantCardDefenseHandler {
          }
          event.setAmount(reduced);
       }
-      consumePoise(player, params, event.getAmount(), now);
+
       if (!specialNoblePhantasmDamage && tryBattleContinuation(player, event, data)) {
          return true;
       }
@@ -440,23 +419,6 @@ public final class ServantCardDefenseHandler {
       player.hurtMarked = true;
       player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.8F);
       return true;
-   }
-
-   private static void consumePoise(ServerPlayer player, ServantParams params, float amount, long now) {
-      if (amount < player.getMaxHealth() * 0.08F || now < player.getPersistentData().getLong(TAG_GUARD_BROKEN_UNTIL)) {
-         return;
-      }
-      CompoundTag data = player.getPersistentData();
-      double poise = Math.max(0.0, data.getDouble(TAG_POISE) - 10.0);
-      data.putDouble(TAG_POISE, poise);
-      if (poise <= 0.0) {
-         int breakTicks = ServantCombatFormulas.guardBreakTicks(params);
-         data.putLong(TAG_GUARD_BROKEN_UNTIL, now + breakTicks);
-         data.putLong(ServantCombatDefenseService.TAG_GUARD_BROKEN, now + breakTicks);
-         data.putDouble(TAG_POISE, ServantCombatFormulas.poiseMax(params) * 0.5);
-         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, breakTicks, 0, false, true, true));
-         spawnDefenseFx(player, ParticleTypes.CRIT, SoundEvents.SHIELD_BREAK, 0.9F);
-      }
    }
 
    private static Vec3 dodgeDirection(ServerPlayer player, DamageSource source) {

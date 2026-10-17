@@ -742,7 +742,7 @@ public final class ServantCardMedusaSkills {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
       if (!state.isAir() && hardness >= 0.0F && hardness < (charging ? 75.0F : 30.0F) && !state.is(Blocks.BEDROCK)) {
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          return true;
       }
       return false;

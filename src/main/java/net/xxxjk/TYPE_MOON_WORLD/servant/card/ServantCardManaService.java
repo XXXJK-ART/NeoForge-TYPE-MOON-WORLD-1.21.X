@@ -124,7 +124,11 @@ public final class ServantCardManaService {
          clearNoblePhantasmPowerScale(player);
          return false;
       }
+      ManaSnapshot paymentBefore = snapshot(player, vars);
       consumeUpTo(player, vars, effectiveCost);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, true, paymentBefore.servantMana() - vars.servantCardState().mana());
+      if (paymentBefore.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, paymentBefore.master(), false,
+         paymentBefore.masterMana() - paymentBefore.master().getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana());
       player.getPersistentData().putDouble(NOBLE_PHANTASM_POWER_SCALE_TAG, 1.0);
       return true;
    }

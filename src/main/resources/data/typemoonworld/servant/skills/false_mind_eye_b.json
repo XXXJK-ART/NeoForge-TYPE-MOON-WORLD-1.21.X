@@ -1,4 +1,5 @@
 {
+  "rank": "B",
   "id": "false_mind_eye_b",
   "display_name": "False Eyes of the Mind B",
   "display_name_zh": "伪·心眼 B",
@@ -9,12 +10,31 @@
   "effects": [
     {
       "effect_type": "evasion",
-      "params": { "chance": 0.4, "duration_ticks": 200 }
+      "params": {
+        "chance": 0.4,
+        "duration_ticks": 200
+      }
     },
     {
       "effect_type": "crit_damage_boost",
-      "params": { "multiplier": 2.0, "duration_ticks": 200 }
+      "params": {
+        "multiplier": 2.0,
+        "duration_ticks": 200
+      }
     }
   ],
-  "ai": {"facts": [{"type": "prediction", "strength": 0.7}]}
+  "ai": {
+    "facts": [
+      {
+        "type": "prediction",
+        "strength": 0.7
+      }
+    ]
+  },
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "heracles_mind_eye"
+    ]
+  }
 }

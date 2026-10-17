@@ -1709,7 +1709,7 @@ public final class EnkiduCombatHelper {
       for (BlockPos pos : positions) {
          EnkiduTemporaryPlantHelper.unregister(level, pos);
          if (EnkiduTemporaryPlantHelper.isTemporaryPlantState(level.getBlockState(pos))) {
-            level.removeBlock(pos, false);
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          }
       }
    }

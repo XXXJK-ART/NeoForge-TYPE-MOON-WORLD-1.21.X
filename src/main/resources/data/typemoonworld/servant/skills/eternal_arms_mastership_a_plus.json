@@ -1,4 +1,9 @@
 {
+  "rank": "A+",
+  "defense": {
+    "guard": true,
+    "activation_actions": []
+  },
   "id": "eternal_arms_mastership_a_plus",
   "display_name": "Eternal Arms Mastership A+",
   "display_name_zh": "无穷的武练 A+",

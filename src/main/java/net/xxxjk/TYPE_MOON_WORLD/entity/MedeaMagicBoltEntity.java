@@ -311,7 +311,8 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= this.maxBreakHardness()) {
             continue;
          }
-         if (serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.canRemove(serverLevel, pos)
+            && serverLevel.destroyBlock(pos, false, this.getOwner() instanceof LivingEntity living ? living : null)) {
             brokeAny = true;
          }
       }

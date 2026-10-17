@@ -554,7 +554,9 @@ public final class GilgameshCombatHelper {
       data.putDouble("GilgameshEaPowerScale", resource.powerScale());
       data.putBoolean("GilgameshEaOverdraft", resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
-      beginNpcEaSummon(entity, level, target, now, look);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "gilgamesh_ea", 1200,
+         ticks -> data.putLong(LAST_EA, entity.level().getGameTime() - 1200 + ticks), () -> clearEaSummon(entity, data));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> beginNpcEaSummon(entity, level, target, level.getGameTime(), look));
       data.putLong(LAST_EA, now);
       return true;
    }

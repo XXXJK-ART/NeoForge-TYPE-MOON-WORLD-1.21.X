@@ -611,13 +611,17 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          || !hasMasterNoblePhantasmPermission()
          || level.getGameTime() < getPersistentData().getLong(TAG_NP_COOLDOWN)) return false;
       ServantNoblePhantasmResourceService.commitNpcCast(this, resource);
-      long now = level.getGameTime();
-      getPersistentData().putLong(TAG_NP_CHANT_UNTIL, now + NP_CHANT_DURATION);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(this, "zhao_yun_changbanpo", NP_COOLDOWN, ticks -> this.getPersistentData().putLong(TAG_NP_COOLDOWN, this.level().getGameTime() + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(this, () -> {
+
+      getPersistentData().putLong(TAG_NP_CHANT_UNTIL, this.level().getGameTime() + NP_CHANT_DURATION);
       getPersistentData().putLong(TAG_NP_COOLDOWN, level.getGameTime()
          + (resource.overdraft() ? NP_COOLDOWN * 2L : NP_COOLDOWN));
       getPersistentData().putBoolean(TAG_NP_OVERDRAFT, resource.overdraft());
       getPersistentData().putDouble(TAG_NP_POWER_SCALE, resource.powerScale());
       ServantVoiceHelper.tryPlayZhaoYunNp(this);
+
+      });
       return true;
    }
 
@@ -841,7 +845,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0.0F && hardness < 75.0F) {
-               level.removeBlock(pos, false);
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
                if (++broken >= maxBroken) break;
             }
          }

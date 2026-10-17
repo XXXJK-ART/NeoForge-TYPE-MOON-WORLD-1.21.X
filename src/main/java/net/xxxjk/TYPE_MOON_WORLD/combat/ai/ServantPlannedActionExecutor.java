@@ -153,6 +153,7 @@ public final class ServantPlannedActionExecutor {
     * and must be allowed to finish.
     */
    public static boolean cancelForMeleeOverride(ServantEntity entity, long now) {
+      if (entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)) return false;
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       if (runtime == null || runtime.stage != Stage.APPROACH) return false;
       clearApproachMovement(entity);
@@ -166,6 +167,7 @@ public final class ServantPlannedActionExecutor {
    }
 
    public static boolean interrupt(ServantEntity entity, int power, long now) {
+      if (entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)) return false;
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       if (runtime == null || runtime.stage != Stage.APPROACH && runtime.stage != Stage.WINDUP
          || runtime.stage == Stage.WINDUP && (!runtime.action.threat().interruptible()

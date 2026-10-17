@@ -28,6 +28,8 @@ import net.xxxjk.TYPE_MOON_WORLD.util.ModTags;
 /** Shared, round-robin terrain queue. Damage logic never waits for terrain work. */
 @EventBusSubscriber(modid = "typemoonworld")
 public final class DeferredTerrainDestruction {
+   private static boolean protectNextJob;
+   public static void protectNextCombatJob() { protectNextJob = true; }
    private static final Map<ResourceKey<Level>, ArrayDeque<Job>> JOBS = new HashMap<>();
    private static final Map<ResourceKey<Level>, TickMetrics> LAST_METRICS = new HashMap<>();
    private DeferredTerrainDestruction() { }
@@ -206,8 +208,8 @@ public final class DeferredTerrainDestruction {
    @SubscribeEvent public static void unload(LevelEvent.Unload event) { if (event.getLevel() instanceof Level level && !level.isClientSide()) { JOBS.remove(level.dimension()); LAST_METRICS.remove(level.dimension()); } }
 
    private abstract static class Job {
-      final ServerLevel level; final long queuedAt; boolean done; Runnable completion; int sliceLimit = 128;
-      Job(ServerLevel level) { this.level = level; this.queuedAt = level.getGameTime(); }
+      final boolean protectFloor; final ServerLevel level; final long queuedAt; boolean done; Runnable completion; int sliceLimit = 128;
+      Job(ServerLevel level) { this.level = level; this.queuedAt = level.getGameTime(); this.protectFloor = protectNextJob; protectNextJob = false; }
       abstract void advance();
       boolean ready() { return true; }
       boolean supersedes(Job other) { return false; }
@@ -217,6 +219,7 @@ public final class DeferredTerrainDestruction {
          return this;
       }
       boolean valid(BlockPos pos, float maxHardness) {
+         if (protectFloor && !CombatTerrainProtection.canRemove(level, pos)) return false;
          if (!Config.terrainDestructionEnabled || !level.getWorldBorder().isWithinBounds(pos)
             || !level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) return false;
          BlockState state = level.getBlockState(pos); float hardness = state.getDestroySpeed(level, pos);

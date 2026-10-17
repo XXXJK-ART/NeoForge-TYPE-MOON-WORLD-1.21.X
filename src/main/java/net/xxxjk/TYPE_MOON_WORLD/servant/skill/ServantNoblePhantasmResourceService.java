@@ -67,6 +67,7 @@ public final class ServantNoblePhantasmResourceService {
       if (caster == null || decision == null || !decision.allowed()) {
          return;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(caster, decision.actualMpCost());
       if (decision.overdraft()) {
          caster.setCurrentMp(0.0);
          caster.getPersistentData().putLong(

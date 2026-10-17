@@ -21,16 +21,20 @@ public class GemNecklaceItem extends Item {
       double mana=v.servant_card_transformed?v.servant_card_mana:v.player_mana;
       double cap=v.servant_card_transformed?v.servant_card_max_mana:v.player_max_mana;
       if(!Double.isFinite(mana) || !Double.isFinite(cap))return false;
-      if(deposit ? mana<TRANSFER || n>CAPACITY-TRANSFER : n<TRANSFER || mana+TRANSFER>cap)return false;
-      int delta=deposit?TRANSFER:-TRANSFER;
-      if(v.servant_card_transformed)v.servant_card_mana-=delta;else v.player_mana-=delta;
+      int amount=(int)Math.floor(Math.min(TRANSFER,deposit?Math.min(mana,CAPACITY-n):Math.min(n,cap-mana)));
+      if(amount<=0)return false;
+      int delta=deposit?amount:-amount;
+      if(v.servantCardState().transformed())v.servantCardState().setMana(mana-delta);else v.magicState().setMana(mana-delta);
       CompoundTag tag=s.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag();tag.putInt("mana",n+delta);
       s.set(DataComponents.CUSTOM_DATA,CustomData.of(tag));v.syncMana(p);p.getInventory().setChanged();return true;
    }
    @Override public InteractionResultHolder<ItemStack> use(Level l,Player p,InteractionHand h){
       ItemStack s=p.getItemInHand(h);
-      if(p instanceof ServerPlayer sp && !transfer(sp,s,false))return InteractionResultHolder.fail(s);
+      if(p instanceof ServerPlayer sp && !transfer(sp,s,p.isShiftKeyDown()))return InteractionResultHolder.fail(s);
       return InteractionResultHolder.sidedSuccess(s,l.isClientSide);
    }
-   @Override public void appendHoverText(ItemStack s,TooltipContext c,List<Component> l,TooltipFlag f){l.add(Component.translatable("tooltip.typemoonworld.necklace.mana",stored(s),CAPACITY));}
+   @Override public void appendHoverText(ItemStack s,TooltipContext c,List<Component> l,TooltipFlag f){
+      l.add(Component.translatable("tooltip.typemoonworld.necklace.mana",stored(s),CAPACITY));
+      l.add(Component.translatable("tooltip.typemoonworld.necklace.transfer"));
+   }
 }

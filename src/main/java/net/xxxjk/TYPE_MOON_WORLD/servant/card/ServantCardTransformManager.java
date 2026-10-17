@@ -536,6 +536,7 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)) return false;
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servantCardState().id(), slot);
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
       ServantContext externalContext = new ServantContext(player, null, vars.servantCardState().id(), player.level(), 0.0, true, player.level().getGameTime());
@@ -767,7 +768,13 @@ public final class ServantCardTransformManager {
       ServantCardActionTimeline.active(player);
       boolean performed;
       try {
-         performed = performAction(player, vars, action);
+         String policy = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.policyForAction(action.effectId());
+         if (!policy.isEmpty()) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, policy, action.cooldownTicks(),
+               ticks -> setNoblePhantasmCooldown(player, vars, ticks), () -> { });
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> performAction(player, vars, action));
+            performed = true;
+         } else performed = performAction(player, vars, action);
       } finally {
          ServantCardActionTimeline.recovery(player);
       }
@@ -776,6 +783,7 @@ public final class ServantCardTransformManager {
          ServantCardManaService.restore(player, vars, manaBeforeAction);
          return false;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits.activated(player, action.effectId());
       if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId()) && !"oda_charged_matchlock".equals(action.effectId())) {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }

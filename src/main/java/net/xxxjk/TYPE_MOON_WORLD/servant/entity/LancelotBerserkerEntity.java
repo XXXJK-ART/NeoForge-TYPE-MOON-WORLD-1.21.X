@@ -54,7 +54,9 @@ public class LancelotBerserkerEntity extends ServantEntity {
          return;
       }
       super.customServerAiStep();
-      safeLancelotTick(level, () -> LancelotBerserkerCombatAi.tick(this, level), "combat_ai");
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(this)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.duel(this))
+         safeLancelotTick(level, () -> LancelotBerserkerCombatAi.tick(this, level), "combat_ai");
    }
 
    private void safeLancelotTick(ServerLevel level, Runnable action, String stage) {

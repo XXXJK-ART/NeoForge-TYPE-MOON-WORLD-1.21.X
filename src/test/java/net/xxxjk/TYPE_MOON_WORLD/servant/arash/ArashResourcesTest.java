@@ -44,7 +44,7 @@ class ArashResourcesTest {
       String npc = Files.readString(JAVA.resolve("servant/entity/ArashEntity.java"));
       String card = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       String npcCombat = Files.readString(JAVA.resolve("servant/combat/ServantCombatSystem.java"));
-      String cardDefense = Files.readString(JAVA.resolve("servant/card/ServantCardDefenseHandler.java"));
+      String cardDefense = Files.readString(JAVA.resolve("servant/combat/ServantCombatDefenseService.java"));
       String commonSkills = Files.readString(JAVA.resolve("servant/skill/CommonServantSkills.java"));
       assertTrue(rules.contains("STOUT_DAMAGE_MULTIPLIER = 0.70F"));
       assertTrue(npc.contains("amount *= ArashCombatRules.STOUT_DAMAGE_MULTIPLIER"));
@@ -52,9 +52,9 @@ class ArashResourcesTest {
       assertTrue(npcCombat.contains("entity instanceof ArashEntity"));
       assertTrue(npcCombat.contains("ArashCombatRules.boostedDefenseRecovery"));
       assertTrue(npcCombat.contains("ArashCombatRules.boostedPoiseRecovery"));
-      assertTrue(cardDefense.contains("\"arash\".equals(vars.servant_card_id)"));
-      assertTrue(cardDefense.contains("ArashCombatRules.boostedDefenseRecovery"));
-      assertTrue(cardDefense.contains("ArashCombatRules.boostedPoiseRecovery"));
+      assertTrue(cardDefense.contains("id.equals(\"arash\")"));
+      assertTrue(cardDefense.contains("recoveryMultiplier(entity, false)"));
+      assertTrue(cardDefense.contains("recoveryMultiplier(entity, true)"));
       assertTrue(commonSkills.contains("StoutDefenseRecoveryMultiplier"));
       assertTrue(commonSkills.contains("StoutPoiseRecoveryMultiplier"));
       JsonObject skill = json("data/typemoonworld/servant/skills/stout_ex_arash.json");

@@ -279,7 +279,9 @@ public final class OkitaSoujiSaberCombatHelper {
       data.putDouble(TAG_MUMYOUDAN_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_MUMYOUDAN_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
-      data.putLong(TAG_MUMYOUDAN_COOLDOWN, now + cooldown);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "okita_mumyoudan_zuki", MUMYOUDAN_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
+      data.putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + cooldown);
       entity.faceToward(target.position());
       entity.triggerSlashAnimation();
       ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
@@ -294,13 +296,15 @@ public final class OkitaSoujiSaberCombatHelper {
          target.hurt(entity.damageSources().source(OkitaSoujiSaberDamageTypes.MUMYOUDAN_ZUKI, entity), damage);
          target.invulnerableTime = 0;
       }
-      target.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", now + 100L);
+      target.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", entity.level().getGameTime() + 100L);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 3, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 32, 0.25, 0.35, 0.25, 0.08);
       level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.25F, 1.55F);
       if (entity.getRandom().nextFloat() < 0.30F) {
-         triggerWeakConstitution(entity, now);
+         triggerWeakConstitution(entity, entity.level().getGameTime());
       }
+
+      });
       return true;
    }
 

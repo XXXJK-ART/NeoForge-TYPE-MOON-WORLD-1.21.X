@@ -588,19 +588,24 @@ public final class MedusaCombatHelper {
          return;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "medusa_bellerophon", BELLEROPHON_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_LAST_BELLEROPHON_TICK, entity.level().getGameTime() - (BELLEROPHON_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.getPersistentData().putDouble(TAG_BELLEROPHON_POWER_SCALE, resource.powerScale());
       entity.getPersistentData().putBoolean(TAG_BELLEROPHON_OVERDRAFT, resource.overdraft());
-      entity.getPersistentData().putLong(TAG_LAST_BELLEROPHON_TICK, now);
-      entity.getPersistentData().putLong(TAG_BELLEROPHON_LAUNCH_TICK, now + CHARGE_WINDUP_TICKS);
+      entity.getPersistentData().putLong(TAG_LAST_BELLEROPHON_TICK, entity.level().getGameTime());
+      entity.getPersistentData().putLong(TAG_BELLEROPHON_LAUNCH_TICK, entity.level().getGameTime() + CHARGE_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CHARGE_WINDUP_TICKS, false);
       entity.setCrouchPose(true);
-      releaseEyes(entity, now, CHARGE_WINDUP_TICKS + CHARGE_TICKS + 80);
+      releaseEyes(entity, entity.level().getGameTime(), CHARGE_WINDUP_TICKS + CHARGE_TICKS + 80);
       ServantVoiceHelper.tryPlayBellerophon(entity);
       if (entity.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_medusa_bellerophon", entity, 128.0);
-         startBellerophonSummonFx(level, entity, now);
+         startBellerophonSummonFx(level, entity, entity.level().getGameTime());
       }
       TYPE_MOON_WORLD.queueServerWork(CHARGE_WINDUP_TICKS, () -> launchBellerophon(entity, target));
+
+      });
+      return;
    }
 
    private static void launchBellerophon(MedusaEntity entity, LivingEntity target) {
@@ -1845,7 +1850,7 @@ public final class MedusaCombatHelper {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
       if (!state.isAir() && hardness >= 0.0F && hardness < (charging ? 75.0F : 30.0F) && !state.is(Blocks.BEDROCK)) {
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          return true;
       }
       return false;
