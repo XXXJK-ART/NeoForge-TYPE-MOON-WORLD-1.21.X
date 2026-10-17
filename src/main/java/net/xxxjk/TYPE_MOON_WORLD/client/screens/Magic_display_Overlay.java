@@ -300,15 +300,15 @@ public class Magic_display_Overlay {
         }
 
         String path = magicPath(magicId);
-        String selectedKey = "key.typemoonworld.magic." + path + ".selected";
+        String selectedKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.selectedName(magicId);
         MutableComponent selected = Component.translatable(selectedKey);
         if (!selected.getString().equals(selectedKey)) return selected;
 
-        String nameKey = "magic.typemoonworld." + path + ".name";
+        String nameKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.name(magicId);
         MutableComponent name = Component.translatable(nameKey);
         if (!name.getString().equals(nameKey)) return name;
 
-        String shortKey = "key.typemoonworld.magic." + path + ".short";
+        String shortKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.shortName(magicId);
         MutableComponent shortName = Component.translatable(shortKey);
         if (!shortName.getString().equals(shortKey)) return shortName;
         return Component.literal(path.replace('_', ' '));

@@ -502,6 +502,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
          boolean pacingHandled = !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
          boolean tacticalHandled = pacingHandled || !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
@@ -509,8 +510,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             super.customServerAiStep();
             this.aiEngine.tick(this);
          }
+         if (!combatHandled && !tacticalHandled
+            && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiMigrationPolicy.isArbitrated(this)) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(this, this.getTarget(), this.level().getGameTime());
+         }
          ServantFlightCombatService.tickIndependentController(this);
-         ServantFlightCombatService.tick(this);
          this.tickManaHealthConversion();
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         
@@ -1746,7 +1750,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       // 涓绘帶鍒跺櫒锛歩dle / walk
-      controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+      controllers.add(new AnimationController<>(this, "controller", 2, event -> {
+         event.getController().setAnimationSpeed(this.isSprinting() ? 1.4 : 1.0);
          var animations = this.getAnimationSet();
          String animation = null;
          if (this.isSpiritualTransitionLocked()) {
@@ -1767,7 +1772,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));
       // 鍔ㄤ綔鎺у埗鍣紙transition = 0锛屾壙杞芥妧鑳戒笌鏀诲嚮鍔ㄤ綔锛?
-      this.actionCtrl = new AnimationController<>(this, "action_controller", 0,
+      this.actionCtrl = new AnimationController<>(this, "action_controller", 2,
          event -> this.isSpiritualTransitionLocked() ? PlayState.STOP : PlayState.CONTINUE)
          .receiveTriggeredAnimations();
       controllers.add(this.actionCtrl);

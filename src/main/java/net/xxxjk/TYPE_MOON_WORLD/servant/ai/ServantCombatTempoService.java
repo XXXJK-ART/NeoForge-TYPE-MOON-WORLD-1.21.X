@@ -10,6 +10,7 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiControl;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiIntent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -137,6 +138,7 @@ public final class ServantCombatTempoService {
    /** Legacy AI calls this after its helpers; it supplies the same no-wait guarantee. */
    public static void enforceLegacy(ServantEntity servant, LivingEntity target, long now) {
       TempoState state = tick(servant, target, now);
+      if (servant != null && ServantCombatExchangeService.scripted(servant, target)) return;
       if (state == TempoState.EMPTY || ServantCombatSystem.cannotAct(servant) || servant.isPerformingAction()) return;
       if (tryBasicAttack(servant, target, now)) {
          return;
@@ -148,8 +150,19 @@ public final class ServantCombatTempoService {
    }
 
    public static boolean tryBasicAttack(ServantEntity servant, LivingEntity target, long now) {
+      if (servant != null && ServantCombatExchangeService.ordinary(servant, target)) {
+         return ServantCombatExchangeService.beginBasic(servant, target, now);
+      }
+      return resolveBasic(servant, target, now, false);
+   }
+
+   public static boolean resolveTelegraphedBasic(ServantEntity servant, LivingEntity target, long now) {
+      return resolveBasic(servant, target, now, true);
+   }
+
+   private static boolean resolveBasic(ServantEntity servant, LivingEntity target, long now, boolean telegraphed) {
       if (servant == null || target == null || !target.isAlive() || servant.level() != target.level()
-         || ServantCombatSystem.cannotAct(servant) || servant.isPerformingAction()
+         || ServantCombatSystem.cannotAct(servant) || !telegraphed && servant.isPerformingAction()
          || !canAttemptBasicAttack(servant, target) && !closingContactImminent(servant, target)) return false;
       CompoundTag data = servant.getPersistentData();
       if (now - data.getLong(LAST_BASIC) < BASIC_COOLDOWN) return false;
@@ -163,8 +176,10 @@ public final class ServantCombatTempoService {
       }
       boolean sweep = ServantTrueSweepService.tryNpcSweep(servant, target, now);
       boolean hit = sweep || servant.doBasicHurtTarget(target);
-      servant.triggerBasicAttackAnimation();
+      if (!telegraphed) servant.triggerBasicAttackAnimation();
       recordContact(servant, target, hit ? ContactType.DAMAGE : ContactType.BLOCKED, now);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSpectacleService.exchangeFx(
+         servant, target, false, !hit);
       return true;
    }
 
@@ -230,6 +245,7 @@ public final class ServantCombatTempoService {
       initializeOrbitMetrics(data, servant, target);
       data.putBoolean(ORBITING, false);
       data.putBoolean(MELEE_OVERRIDE, false);
+      ServantCombatExchangeService.recordContact(servant, target, now);
    }
 
    public static void clear(ServantEntity servant) {

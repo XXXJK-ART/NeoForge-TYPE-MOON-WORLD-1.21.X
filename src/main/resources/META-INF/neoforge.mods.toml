@@ -111,3 +111,28 @@ description='''An MC mod of TYPE-MOON'''
 
 [[mixins]]
 config="typemoonworld.mixins.json"
+
+[[mixins]]
+config="fatesupport.mixins.json"
+
+[[dependencies.typemoonworld]]
+    modId="fatesupport"
+    type="incompatible"
+    reason="Selected Fate Support features are built into Type Moon World; remove the standalone addon to avoid duplicate registrations."
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.typemoonworld]]
+    modId="voicechat"
+    type="optional"
+    versionRange="[1.21.1-2.6.20,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.typemoonworld]]
+    modId="superbwarfare"
+    type="optional"
+    versionRange="[0.8.9.1,)"
+    ordering="AFTER"
+    side="BOTH"

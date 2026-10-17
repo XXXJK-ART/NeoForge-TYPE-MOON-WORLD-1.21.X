@@ -352,6 +352,12 @@ public final class CombatModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.ordinary(entity, sharedTarget)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.skillDecisionAllowed(entity)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.nativeNpActive(entity)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(entity, sharedTarget, context.gameTick());
+         return;
+      }
       if (sharedTarget != null && sharedTarget.isAlive()
          && ServantCombatTempoService.isMeleeOverride(entity)
          && !(entity instanceof ParacelsusEntity)

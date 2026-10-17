@@ -360,6 +360,7 @@ public final class ServantNavigationHelper {
 
    /** Decelerates agile melee units near their opponent and removes excessive lateral drift. */
    public static void limitMeleeApproachMotion(ServantEntity entity, LivingEntity target) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.dashing(entity, entity.level().getGameTime())) return;
       boolean pressure = ServantCombatTempoService.inMeleePressure(entity, entity.level().getGameTime())
          || ServantCombatTempoService.isMeleeOverride(entity);
       if ((!ServantEngagementService.isMeleeDuel(entity, target) && !pressure)
@@ -387,18 +388,25 @@ public final class ServantNavigationHelper {
       double distance = entity.distanceTo(target);
       CompoundTag data = entity.getPersistentData();
       if (!data.contains(PRESSURE_SIDE) || gameTick >= data.getLong(PRESSURE_SIDE_UNTIL)) {
-         int side = data.contains(PRESSURE_SIDE) ? -data.getInt(PRESSURE_SIDE)
-            : (Math.floorMod(entity.getId(), 2) == 0 ? 1 : -1);
+         int side = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.side(entity, target, gameTick);
          data.putInt(PRESSURE_SIDE, side == 0 ? 1 : side);
-         data.putLong(PRESSURE_SIDE_UNTIL, gameTick + 18L);
+         data.putLong(PRESSURE_SIDE_UNTIL, gameTick + 12L);
       }
-      float forward = distance > 2.55 ? 0.58F : 0.12F;
-      float lateral = distance > 2.55 ? 0.0F : data.getInt(PRESSURE_SIDE) * 0.10F;
+      long beat = Math.floorMod(gameTick + entity.getId() * 3L, 36L);
+      boolean retreatBeat = distance <= 4.2 && beat < 6L;
+      float forward = retreatBeat ? -0.64F : distance > 2.55 ? 0.58F : 0.12F;
+      float lateral = data.getInt(PRESSURE_SIDE) * (retreatBeat ? 0.30F : distance > 2.55 ? 0.42F : 0.18F);
       entity.getMoveControl().strafe(forward, lateral);
       Vec3 motion = entity.getDeltaMovement();
       Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       Vec3 adjusted = stabilizePressureMotion(motion, toward, distance,
          entity.getAttributeValue(Attributes.MOVEMENT_SPEED), target.getDeltaMovement());
+      if (retreatBeat && toward.lengthSqr() > 1.0E-4) {
+         Vec3 direction = toward.normalize();
+         Vec3 lateralVector = new Vec3(-direction.z, 0.0, direction.x)
+            .scale(data.getInt(PRESSURE_SIDE) * 0.20);
+         adjusted = direction.scale(-0.42).add(lateralVector).add(0.0, motion.y, 0.0);
+      }
       if (adjusted.distanceToSqr(motion) > 1.0E-6) {
          entity.setDeltaMovement(adjusted);
          entity.hasImpulse = true;
@@ -424,7 +432,7 @@ public final class ServantNavigationHelper {
       if (distance <= 4.8) {
          forward = Math.min(forward, relativeForwardLimit(targetMotion, direction, 0.26, -0.03));
       }
-      double lateralLimit = distance > 2.55 ? 0.035 : 0.09;
+      double lateralLimit = distance > 2.55 ? 0.16 : 0.12;
       if (lateral.lengthSqr() > lateralLimit * lateralLimit) {
          lateral = lateral.normalize().scale(lateralLimit);
       }

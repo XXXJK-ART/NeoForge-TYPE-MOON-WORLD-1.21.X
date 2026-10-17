@@ -98,11 +98,10 @@ public class TypeMoonWorldModKeyMappings {
    /** Opens the configuration/library for the currently selected wheel entry. */
    public static final KeyMapping OPEN_PROJECTION_PRESET = new KeyMapping("key.typemoonworld.open_projection_preset", GLFW.GLFW_KEY_TAB, "key.categories.typemoonworld");
    public static final KeyMapping CYCLE_MAGIC = new KeyMapping("key.typemoonworld.cycle_magic", 90, "key.categories.typemoonworld");
-   // Left Ctrl is reserved for the active servant dodge. Move the older
-   // modifier-driven magic controls to the Alt modifiers to avoid overlap.
+   // Magic controls and servant-card controls use separate input modes.
    public static final KeyMapping MAGIC_MODE_SWITCH = new KeyMapping("key.typemoonworld.magic_mode_switch", GLFW.GLFW_KEY_LEFT_ALT, "key.categories.typemoonworld");
    public static final KeyMapping MAGIC_WHEEL_SWITCH = new KeyMapping("key.typemoonworld.magic_wheel_switch", GLFW.GLFW_KEY_RIGHT_ALT, "key.categories.typemoonworld");
-   public static final KeyMapping SERVANT_CARD_DODGE = new KeyMapping("key.typemoonworld.servant_card.dodge", GLFW.GLFW_KEY_LEFT_CONTROL, KEY_CATEGORY);
+   public static final KeyMapping SERVANT_CARD_DODGE = new KeyMapping("key.typemoonworld.servant_card.dodge", GLFW.GLFW_KEY_LEFT_ALT, KEY_CATEGORY);
    public static final KeyMapping SERVANT_CARD_KEYBINDS = new KeyMapping("key.typemoonworld.servant_card.keybinds", GLFW.GLFW_KEY_O, KEY_CATEGORY);
    public static final KeyMapping[] SERVANT_CARD_SKILL_KEYS = new KeyMapping[]{
       new KeyMapping("key.typemoonworld.servant_card.slot0", GLFW.GLFW_KEY_KP_0, KEY_CATEGORY),

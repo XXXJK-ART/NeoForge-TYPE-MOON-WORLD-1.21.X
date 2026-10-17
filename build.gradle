@@ -20,6 +20,11 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven {
+        name = 'Henkelmax'
+        url = 'https://maven.maxhenkel.de/repository/public'
+        content { includeGroup 'de.maxhenkel.voicechat' }
+    }
     exclusiveContent {
         forRepository {
             maven {
@@ -211,6 +216,9 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     implementation "maven.modrinth:terrablender:${terrablender_modrinth_version}" // NeoForge ${minecraft_version}-${terrablender_version}
+    // Compile the optional bridges without bundling or requiring either mod at runtime.
+    compileOnly 'de.maxhenkel.voicechat:voicechat-api:2.6.20'
+    compileOnly('maven.modrinth:superb-warfare:61I8C3YC') { transitive = false }
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 

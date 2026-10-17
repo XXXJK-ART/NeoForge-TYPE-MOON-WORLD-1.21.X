@@ -1,0 +1,36 @@
+// Isolated development runs. Modes: none (default), voice, warfare, both.
+allprojects {
+    afterEvaluate { project ->
+        def mode = project.findProperty('fateSupportCompat') ?: 'none'
+        if (!(mode in ['none', 'voice', 'warfare', 'both'])) {
+            throw new GradleException('fateSupportCompat must be none, voice, warfare or both')
+        }
+        if (mode in ['voice', 'both']) {
+            project.dependencies.add('localRuntime', 'maven.modrinth:simple-voice-chat:dbzBkplC') {
+                transitive = false
+            }
+        }
+        if (mode in ['warfare', 'both']) {
+            project.dependencies.add('localRuntime', 'maven.modrinth:superb-warfare:61I8C3YC') {
+                transitive = false
+            }
+            project.dependencies.add('localRuntime', 'maven.modrinth:kotlin-for-forge:uhJhCT7X') {
+                transitive = false
+            }
+        }
+        if (project.findProperty('fateSupportClientSmoke') == 'true') {
+            def smoke = project.sourceSets.create('fateSupportClientSmoke') {
+                java.srcDir 'tools/fatesupport-client-smoke/java'
+                resources.srcDir 'tools/fatesupport-client-smoke/resources'
+                compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+                runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+            }
+            project.runs.client.modSources.add('typemoonworld_support_smoke', smoke)
+        }
+        project.runs {
+            client { workingDirectory project.file("build/fatesupport-runs/${mode}/client") }
+            server { workingDirectory project.file("build/fatesupport-runs/${mode}/server") }
+            gameTestServer { workingDirectory project.file("build/fatesupport-runs/${mode}/gametest") }
+        }
+    }
+}

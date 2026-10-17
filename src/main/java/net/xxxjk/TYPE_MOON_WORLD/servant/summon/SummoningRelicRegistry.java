@@ -66,7 +66,7 @@ public final class SummoningRelicRegistry {
       return id == null ? List.of() : MAPPINGS.getOrDefault(id, List.of());
    }
 
-   /** Catalysts with an explicit interaction should invoke it before this registry is queried. */
+   /** Explicit catalysts take priority over their ordinary use while interacting with a summoning circle. */
    public static boolean hasExplicitMapping(ItemStack stack) { return !candidates(stack).isEmpty(); }
 
    public static Set<ResourceLocation> mappedItems() {

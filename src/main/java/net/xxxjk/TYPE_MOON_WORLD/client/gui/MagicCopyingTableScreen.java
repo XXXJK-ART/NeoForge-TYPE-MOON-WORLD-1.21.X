@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -138,7 +139,7 @@ public class MagicCopyingTableScreen extends AbstractContainerScreen<MagicCopyin
       if (MagicCopyingTableMenu.SELF_GEAS_COPY_ID.equals(magicId)) {
          return Component.translatable("item.typemoonworld.self_geas_scroll");
       }
-      return Component.translatable("magic.typemoonworld." + magicId + ".name");
+      return Component.translatable(MagicTranslationKeys.name(magicId));
    }
 
    private int readForce() {

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public final class GenericMagicOptionsScreen extends Screen {
 
    public GenericMagicOptionsScreen(Screen parent, ResourceLocation magicId, List<MagicOption> options) {
       super(Component.translatable("gui.typemoonworld.magic_options",
-         Component.translatable("magic.typemoonworld." + magicId.getPath() + ".name")));
+         Component.translatable(MagicTranslationKeys.name(magicId.toString()))));
       this.parent = parent; this.magicId = magicId; this.options = List.copyOf(options);
    }
 

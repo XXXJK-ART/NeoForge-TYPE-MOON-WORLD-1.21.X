@@ -14,13 +14,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteractSpecific;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.joml.Vector3f;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -42,6 +49,7 @@ public final class SummoningRitualService {
    private static final String INDEX = "TmwSummoningRitualIndex";
    private static final String CATALYST = "TmwSummoningRitualCatalyst";
    private static final int TICKS_PER_LINE = 20;
+   private static final int RITUAL_USE_DURATION = 72000;
    private static final DustParticleOptions RITUAL_RED = new DustParticleOptions(new Vector3f(1.0F, 0.025F, 0.02F), 1.35F);
    private static final DustParticleOptions RITUAL_DARK_RED = new DustParticleOptions(new Vector3f(0.48F, 0.0F, 0.015F), 1.8F);
 
@@ -67,13 +75,23 @@ public final class SummoningRitualService {
    }
 
    public static boolean begin(ServerPlayer player, BlockPos circle, ItemStack catalyst) {
+      if (isRitualUsing(player, catalyst)) return true;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.master_active || !isBlank(vars.master_servant_uuid)
+         || !player.level().getBlockState(circle).is(ModBlocks.SUMMONING_CIRCLE.get())
+         || player.distanceToSqr(circle.getCenter()) > 25.0
          || SummoningRelicRegistry.candidates(catalyst).isEmpty()
          || !player.getMainHandItem().is(catalyst.getItem())) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.summon.invalid"), true);
          return false;
       }
+      prepareRitual(player, circle, catalyst);
+      setCircleLit(player.level(), circle, true);
+      sendLine(player, 0);
+      return true;
+   }
+
+   private static void prepareRitual(Player player, BlockPos circle, ItemStack catalyst) {
       player.getPersistentData().putBoolean(ACTIVE, true);
       player.getPersistentData().putInt(X, circle.getX());
       player.getPersistentData().putInt(Y, circle.getY());
@@ -81,28 +99,105 @@ public final class SummoningRitualService {
       player.getPersistentData().putLong(START, player.level().getGameTime());
       player.getPersistentData().putInt(INDEX, -1);
       player.getPersistentData().putString(CATALYST, itemId(catalyst));
-      setCircleLit(player.level(), circle, true);
-      sendLine(player, 0);
-      return true;
    }
 
-   /** Handles block catalysts such as ancient temple stone, whose item class is BlockItem. */
-   @SubscribeEvent
+   /** Claim catalyst interactions before item abilities and other right-click handlers. */
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onRightClickCircle(RightClickBlock event) {
-      if (event.getHand() != InteractionHand.MAIN_HAND
-         || !event.getLevel().getBlockState(event.getPos()).is(ModBlocks.SUMMONING_CIRCLE.get())
-         || SummoningRelicRegistry.candidates(event.getItemStack()).isEmpty()) {
+      BlockPos circle = event.getLevel().getBlockState(event.getPos()).is(ModBlocks.SUMMONING_CIRCLE.get())
+         ? event.getPos() : circleUnderPlayer(event.getEntity());
+      if (!canClaimInteraction(event.getEntity(), circle)) {
          return;
       }
       event.setCanceled(true);
       event.setCancellationResult(InteractionResult.SUCCESS);
-      if (event.getLevel().isClientSide() || !(event.getEntity() instanceof ServerPlayer player)) return;
-      if (begin(player, event.getPos(), event.getItemStack())) {
-         if (!(event.getItemStack().getItem() instanceof BlockItem)) {
-            player.startUsingItem(event.getHand());
+      if (event.getHand() == InteractionHand.MAIN_HAND) startRitualUse(event.getEntity(), circle);
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onRightClickItem(RightClickItem event) {
+      BlockPos circle = circleUnderPlayer(event.getEntity());
+      if (!canClaimInteraction(event.getEntity(), circle)) return;
+      event.setCanceled(true);
+      event.setCancellationResult(InteractionResult.SUCCESS);
+      if (event.getHand() == InteractionHand.MAIN_HAND) startRitualUse(event.getEntity(), circle);
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onEntityInteract(EntityInteract event) {
+      BlockPos circle = circleUnderPlayer(event.getEntity());
+      if (!canClaimInteraction(event.getEntity(), circle)) return;
+      event.setCanceled(true);
+      event.setCancellationResult(InteractionResult.SUCCESS);
+      if (event.getHand() == InteractionHand.MAIN_HAND) startRitualUse(event.getEntity(), circle);
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onEntityInteractSpecific(EntityInteractSpecific event) {
+      BlockPos circle = circleUnderPlayer(event.getEntity());
+      if (!canClaimInteraction(event.getEntity(), circle)) return;
+      event.setCanceled(true);
+      event.setCancellationResult(InteractionResult.SUCCESS);
+      if (event.getHand() == InteractionHand.MAIN_HAND) startRitualUse(event.getEntity(), circle);
+   }
+
+   private static boolean canClaimInteraction(Player player, BlockPos circle) {
+      return circle != null && !SummoningRelicRegistry.candidates(player.getMainHandItem()).isEmpty();
+   }
+
+   private static BlockPos circleUnderPlayer(Player player) {
+      // The circle's visible shape covers the surrounding 3 x 3 blocks.
+      BlockPos feet = player.blockPosition();
+      for (int dy = 0; dy >= -1; dy--) {
+         for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+               BlockPos pos = feet.offset(dx, dy, dz);
+               if (player.level().getBlockState(pos).is(ModBlocks.SUMMONING_CIRCLE.get())) return pos;
+            }
          }
       }
+      return null;
    }
+
+   private static void startRitualUse(Player player, BlockPos circle) {
+      ItemStack catalyst = player.getMainHandItem();
+      if (player instanceof ServerPlayer serverPlayer) {
+         if (!begin(serverPlayer, circle, catalyst)) return;
+      } else {
+         prepareRitual(player, circle, catalyst);
+      }
+      if (!(catalyst.getItem() instanceof BlockItem)) player.startUsingItem(InteractionHand.MAIN_HAND);
+   }
+
+   public static boolean isRitualUsing(LivingEntity entity, ItemStack stack) {
+      return entity instanceof Player player && player.getPersistentData().getBoolean(ACTIVE)
+         && !stack.isEmpty() && itemId(stack).equals(player.getPersistentData().getString(CATALYST));
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onUseItemStart(LivingEntityUseItemEvent.Start event) {
+      if (event.getHand() == InteractionHand.MAIN_HAND && isRitualUsing(event.getEntity(), event.getItem())) {
+         // Functional catalysts may have a zero or very short normal use duration.
+         event.setDuration(RITUAL_USE_DURATION);
+      }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
+      if (!isRitualUsing(event.getEntity(), event.getItem())) return;
+      // Releasing the chant must not release the catalyst's charged ability.
+      event.setCanceled(true);
+      if (event.getEntity() instanceof ServerPlayer player) cancel(player);
+      else if (event.getEntity() instanceof Player player) clear(player);
+   }
+
+   @SubscribeEvent
+   public static void onClientPlayerTick(PlayerTickEvent.Post event) {
+      Player player = event.getEntity();
+      if (player.level().isClientSide() && player.getPersistentData().getBoolean(ACTIVE)
+         && !isRitualUsing(player, player.getUseItem())) clear(player);
+   }
+
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       if (!player.getPersistentData().getBoolean(ACTIVE)) return;
@@ -241,7 +336,8 @@ public final class SummoningRitualService {
       clear(player);
    }
 
-   private static void clear(ServerPlayer player) {
+   private static void clear(Player player) {
+      if (isRitualUsing(player, player.getUseItem())) player.stopUsingItem();
       player.getPersistentData().remove(ACTIVE);
       player.getPersistentData().remove(X);
       player.getPersistentData().remove(Y);

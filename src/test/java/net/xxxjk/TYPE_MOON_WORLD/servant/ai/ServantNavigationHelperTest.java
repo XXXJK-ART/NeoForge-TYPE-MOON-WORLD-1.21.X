@@ -13,7 +13,8 @@ class ServantNavigationHelperTest {
          new Vec3(0.0, 0.22, 1.4), new Vec3(1.0, 0.0, 0.0), 4.0, 0.32);
 
       assertTrue(adjusted.x >= 0.10, "outside weapon range must retain forward pressure");
-      assertTrue(Math.abs(adjusted.z) <= 0.0351, "excessive tangential speed must be removed");
+      assertTrue(Math.abs(adjusted.z) <= 0.1601, "excessive tangential speed must be removed");
+      assertTrue(Math.abs(adjusted.z) >= 0.10, "a diagonal approach must keep visible lateral movement");
       assertEquals(0.22, adjusted.y, 1.0E-6, "melee steering must not overwrite vertical motion");
    }
 
@@ -23,7 +24,7 @@ class ServantNavigationHelperTest {
          new Vec3(-0.8, 0.0, 0.8), new Vec3(1.0, 0.0, 0.0), 2.2, 0.32);
 
       assertTrue(adjusted.x >= -0.0301);
-      assertTrue(Math.abs(adjusted.z) <= 0.0901);
+      assertTrue(Math.abs(adjusted.z) <= 0.1201);
    }
 
    @Test

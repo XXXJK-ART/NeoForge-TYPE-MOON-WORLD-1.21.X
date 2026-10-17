@@ -204,6 +204,15 @@ public final class ServantCombatSystem {
 
       ServantDefinition definition = servant.getDefinition();
       ServantParams params = effectiveParams(servant, definition);
+      // Ordinary duel strikes are deliberately lighter than a player hit so
+      // the faster visual cadence extends the encounter instead of shortening
+      // it.  Skills and launchers keep their spectacle; this only softens the
+      // raw direct-contact damage used by the shared melee exchange.
+      if (source.getEntity() instanceof ServantEntity attacker
+         && source.getDirectEntity() == attacker
+         && ServantCombatExchangeService.ordinary(attacker, servant)) {
+         event.setAmount(event.getAmount() * 0.55F);
+      }
       if (now < data.getLong(TAG_STUN_UNTIL) && data.getBoolean(TAG_PREFIX + "GuardBroken")) {
          event.setAmount((float)(event.getAmount() * (1.0 + ServantCombatFormulas.guardBreakDamageBonus(params))));
       }

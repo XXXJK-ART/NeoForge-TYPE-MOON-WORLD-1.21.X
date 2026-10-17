@@ -51,6 +51,7 @@ public final class ServantCombatMotionService {
    private static final String PREVIOUS_POS_Y = PREFIX + "PreviousPosY";
    private static final String PREVIOUS_POS_Z = PREFIX + "PreviousPosZ";
    private static final String LAUNCH_TICK = PREFIX + "LaunchTick";
+   private static final String LAUNCH_START_Y = PREFIX + "LaunchStartY";
    private static final String LAUNCH_ENTITY_TICK = PREFIX + "LaunchEntityTick";
    private static final String TRAVEL_DISTANCE = PREFIX + "TravelDistance";
    private static final String PENDING_IMPACT_UNTIL = PREFIX + "PendingImpactUntil";
@@ -80,6 +81,11 @@ public final class ServantCombatMotionService {
 
       long now = target.level().getGameTime();
       CompoundTag data = target.getPersistentData();
+      // Do not refresh an upward launch while a servant victim is still
+      // airborne; overlapping timelines must wait for the landing beat.
+      if (target instanceof ServantEntity && !target.onGround() && isLaunched(target)) {
+         return LaunchResult.REJECTED;
+      }
       int depth = now - data.getLong(LAST_CONTROL) <= CONTROL_RESET_TICKS
          ? Math.min(4, data.getInt(CONTROL_DEPTH) + 1) : 1;
       double controlScale = controlScale(depth);
@@ -89,8 +95,9 @@ public final class ServantCombatMotionService {
       double launchScale = Math.max(0.45, Math.min(2.15, controlScale * impactScale));
 
       Vec3 motion = target.getDeltaMovement();
-      double appliedHorizontal = Math.max(0.0, horizontalPower) * launchScale;
-      double appliedVertical = Math.max(0.0, verticalPower) * (0.72 + launchScale * 0.18);
+      double appliedHorizontal = Math.max(0.0, horizontalPower) * launchScale * 1.12;
+      double appliedVertical = Math.min(1.35,
+         Math.max(0.0, verticalPower) * (0.72 + launchScale * 0.18));
       target.setDeltaMovement(
          direction.x * appliedHorizontal,
          Math.max(motion.y, appliedVertical),
@@ -117,6 +124,7 @@ public final class ServantCombatMotionService {
          data.putInt(CHAIN_IMPACTS_LEFT, 0);
       }
       data.putLong(LAUNCH_TICK, now);
+      data.putDouble(LAUNCH_START_Y, target.getY());
       data.putInt(LAUNCH_ENTITY_TICK, target.tickCount);
       data.putDouble(TRAVEL_DISTANCE, 0.0);
       data.remove(PENDING_IMPACT_UNTIL);
@@ -124,6 +132,7 @@ public final class ServantCombatMotionService {
       storePreviousMotion(data, target.getDeltaMovement());
       storePreviousPosition(data, target.position());
       if (attacker instanceof ServantEntity servant) {
+         ServantCombatExchangeService.increment(servant, ServantCombatExchangeService.LAUNCHES);
          ServantCombatTempoService.recordContact(servant, target,
             ServantCombatTempoService.ContactType.LAUNCH, now);
       }
@@ -140,7 +149,9 @@ public final class ServantCombatMotionService {
       if (attacker == null || target == null || !target.isAlive() || attacker.level() != target.level()) return false;
       CompoundTag data = target.getPersistentData();
       return data.contains(PURSUIT_UNTIL) && target.level().getGameTime() <= data.getLong(PURSUIT_UNTIL)
-         && data.hasUUID(ATTACKER) && attacker.getUUID().equals(data.getUUID(ATTACKER));
+         && data.hasUUID(ATTACKER) && attacker.getUUID().equals(data.getUUID(ATTACKER))
+         && (!(attacker instanceof ServantEntity servant) || !ServantCombatExchangeService.ordinary(servant, target)
+            || target.level().getGameTime() >= data.getLong(LAUNCH_TICK) + 8L);
    }
 
    public static boolean isRecovering(LivingEntity target) {
@@ -201,10 +212,22 @@ public final class ServantCombatMotionService {
       }
       Vec3 previous = previousMotion(data);
       Vec3 current = target.getDeltaMovement();
+      if (target instanceof ServantEntity && data.contains(LAUNCH_START_Y)
+         && target.getY() - data.getDouble(LAUNCH_START_Y) > 10.0) {
+         // Keep spectacle launches from becoming an accidental flight mode
+         // when several skills overlap before the first landing is resolved.
+         target.setDeltaMovement(current.x, Math.min(current.y, -0.25), current.z);
+         current = target.getDeltaMovement();
+      }
       double lostHorizontal = Math.max(0.0, previous.horizontalDistance() - current.horizontalDistance());
       Vec3 previousPosition = previousPosition(data);
       double moved = target.position().distanceTo(previousPosition);
       data.putDouble(TRAVEL_DISTANCE, data.getDouble(TRAVEL_DISTANCE) + moved);
+      LivingEntity launchOwner = resolveAttacker(level, data);
+      if (launchOwner instanceof ServantEntity servant) {
+         var ownerData = servant.getPersistentData();
+         ownerData.putDouble("TypeMoonCombatMaxLaunchTravel", Math.max(ownerData.getDouble("TypeMoonCombatMaxLaunchTravel"), data.getDouble(TRAVEL_DISTANCE)));
+      }
       boolean completedMovementTick = now >= data.getLong(LAUNCH_TICK)
          && target.tickCount > data.getInt(LAUNCH_ENTITY_TICK);
       boolean likelyWallStop = target.horizontalCollision

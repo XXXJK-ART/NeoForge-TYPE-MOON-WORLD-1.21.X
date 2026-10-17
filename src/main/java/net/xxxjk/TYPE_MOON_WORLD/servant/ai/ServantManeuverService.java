@@ -12,6 +12,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSpectacleService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor;
@@ -35,6 +37,146 @@ public final class ServantManeuverService {
    private static final String SIDE_REENGAGE_COOLDOWN = "TypeMoonSideReengageCooldown";
 
    private ServantManeuverService() { }
+
+   /** Close exchange path, independent of the old eight-block maneuver exclusion. */
+   public static boolean exchangeFootwork(ServantEntity servant, LivingEntity target, long now, int side, boolean ranged) {
+      return exchangeFootwork(servant, target, now, side, ranged, 1.0);
+   }
+
+   public static boolean exchangeFootwork(ServantEntity servant, LivingEntity target, long now, int side, boolean ranged, double pace) {
+      if (!servant.onGround() || ServantCombatExchangeService.dashing(servant, now)) return false;
+      if (servant.getPersistentData().contains("TypeMoonExchangeFootworkTick")
+         && servant.getPersistentData().getLong("TypeMoonExchangeFootworkTick") == now) return true;
+      Vec3 toward = target.position().subtract(servant.position()).multiply(1, 0, 1);
+      if (toward.lengthSqr() < 1.0E-5) toward = servant.getLookAngle().multiply(1, 0, 1);
+      if (toward.lengthSqr() < 1.0E-5) toward = new Vec3(0, 0, 1);
+      double distance = servant.distanceTo(target);
+      double radius = ranged ? 12 : 2.6;
+      var data = servant.getPersistentData();
+      // Keep a chosen velocity for a complete beat. In particular, crossing
+      // the range threshold must not cancel a backstep halfway through it.
+      boolean planReady = now < data.getLong("TypeMoonExchangeFootworkUntil");
+      long beat = Math.floorMod(now + servant.getId() * 3L, 48L);
+      boolean retreatBeat = planReady ? data.getBoolean("TypeMoonExchangeFootworkRetreat")
+         : !ranged && distance <= 4.2 && beat < 12L;
+      double forward = retreatBeat ? -0.82
+         : distance < (ranged ? 7 : 1.35) ? -0.30
+         : distance > radius + 3 ? 0.48
+         : distance > radius ? 0.32 : 0.0;
+      double lateral = distance > radius + 3 ? 0.36 : retreatBeat ? 0.18 : 0.24;
+      Vec3 direction = toward.normalize();
+      Vec3 across = new Vec3(-direction.z, 0, direction.x).scale(side * lateral);
+      Vec3 offset = null;
+      Vec3 planned = new Vec3(data.getDouble("TypeMoonExchangeFootworkX"), 0,
+         data.getDouble("TypeMoonExchangeFootworkZ"));
+      if (planReady) {
+         Vec3 smooth = servant.getDeltaMovement().multiply(1, 0, 1).lerp(planned.scale(pace), 0.65);
+         if (safeExchangeRoute(servant, smooth.scale(2))) offset = smooth;
+         else data.remove("TypeMoonExchangeFootworkUntil");
+      }
+      // At walls, remove the blocked forward component before trying a short backstep.
+      if (offset == null) for (Vec3 candidate : new Vec3[]{direction.scale(forward).add(across), direction.scale(forward).subtract(across),
+         across, across.scale(-1), direction.scale(-0.20), direction.scale(0.20)}) {
+         Vec3 wanted = candidate.scale(pace);
+         Vec3 smooth = servant.getDeltaMovement().multiply(1, 0, 1).lerp(wanted, 0.65);
+         if (safeExchangeRoute(servant, smooth.scale(2))) {
+            offset = smooth;
+            data.putDouble("TypeMoonExchangeFootworkX", candidate.x);
+            data.putDouble("TypeMoonExchangeFootworkZ", candidate.z);
+            data.putBoolean("TypeMoonExchangeFootworkRetreat", retreatBeat);
+            data.putLong("TypeMoonExchangeFootworkUntil", now + (retreatBeat ? 8 : ServantDuelPacing.DECISION_INTERVAL_TICKS));
+            break;
+         }
+      }
+      if (offset == null) return false;
+      servant.getNavigation().stop();
+      servant.getMoveControl().strafe(0, 0);
+      servant.faceToward(target.position()); servant.getLookControl().setLookAt(target, 65, 55);
+      servant.setSprinting(distance > radius + 1.5);
+      servant.setDeltaMovement(offset.x, servant.getDeltaMovement().y, offset.z);
+      servant.hasImpulse = true;
+      servant.getPersistentData().putLong("TypeMoonExchangeFootworkTick", now);
+      if (retreatBeat && now % 3L == 0L) {
+         ServantCombatSpectacleService.exchangeFx(servant, target, true, false);
+      }
+      ServantCombatExchangeService.increment(servant, ServantCombatExchangeService.FOOTWORK);
+      return true;
+   }
+
+   /** Predictive diagonal burst, always implemented by collision-resolved velocity. */
+   public static boolean tryExchangeDash(ServantEntity servant, LivingEntity target, long now, int side, boolean pursuit) {
+      if (!servant.onGround() || !ServantCombatExchangeService.dashReady(servant, now)
+         || !servant.hasLineOfSight(target) || servant.distanceTo(target) > 24) return false;
+      Vec3 lead = target.getDeltaMovement().multiply(1, 0, 1).scale(pursuit ? 3 : 2);
+      if (lead.lengthSqr() > 4) lead = lead.normalize().scale(2);
+      Vec3 toward = target.position().add(lead).subtract(servant.position()).multiply(1, 0, 1);
+      if (toward.lengthSqr() < 1.0E-5) toward = servant.getLookAngle().multiply(1, 0, 1);
+      double distance = servant.distanceTo(target);
+      boolean separate = distance < 1.25;
+      for (int sign : new int[]{side, -side}) {
+         Vec3 direction = sideForwardDirection(toward, sign * (pursuit ? 35 : 45));
+         if (separate) direction = direction.scale(-1);
+         double speed = separate ? 1.05
+            : Math.min(pursuit ? 1.75 : 1.45, Math.max(0.52, (distance - 1.25) / 2.8));
+         Vec3 velocity = direction.scale(speed);
+         if (!safeExchangeRoute(servant, velocity.scale(3))) continue;
+         servant.getNavigation().stop(); servant.getMoveControl().strafe(0, 0);
+         servant.faceToward(target.position()); servant.setSprinting(true);
+         servant.setDeltaMovement(velocity.x * 0.92,
+            Math.max(servant.getDeltaMovement().y, separate ? 0.16 : 0.08), velocity.z * 0.92);
+         servant.hasImpulse = true; servant.hurtMarked = true;
+         ServantCombatExchangeService.dashStarted(servant, now, pursuit);
+         servant.getPersistentData().putDouble("TypeMoonExchangeDashX", velocity.x);
+         servant.getPersistentData().putDouble("TypeMoonExchangeDashZ", velocity.z);
+         servant.getPersistentData().putLong("TypeMoonExchangeDashControlTick", now);
+         Vec3 forwardDirection = toward.normalize();
+         servant.getPersistentData().putDouble("TypeMoonExchangeDashForwardX", forwardDirection.x);
+         servant.getPersistentData().putDouble("TypeMoonExchangeDashForwardZ", forwardDirection.z);
+         servant.getPersistentData().putInt("TypeMoonExchangeDashSide", sign);
+         servant.getPersistentData().putDouble("TypeMoonExchangeDashSpeed", speed);
+         servant.getPersistentData().putLong("TypeMoonExchangeDashStart", now);
+         servant.getPersistentData().putBoolean("TypeMoonExchangeDashSeparate", separate);
+         servant.getPersistentData().putBoolean("TypeMoonExchangeDashPursuit", pursuit);
+         return true;
+      }
+      return false;
+   }
+
+   public static boolean continueExchangeDash(ServantEntity servant, long now) {
+      var d = servant.getPersistentData();
+      if (d.getLong("TypeMoonExchangeDashControlTick") == now) return true;
+      Vec3 wanted = new Vec3(d.getDouble("TypeMoonExchangeDashX"), servant.getDeltaMovement().y, d.getDouble("TypeMoonExchangeDashZ"));
+      if (!d.getBoolean("TypeMoonExchangeDashSeparate")) {
+         long elapsed = now - d.getLong("TypeMoonExchangeDashStart");
+         int side = d.getInt("TypeMoonExchangeDashSide") * (elapsed >= 2 && elapsed < 4 ? -1 : 1);
+         Vec3 forward = new Vec3(d.getDouble("TypeMoonExchangeDashForwardX"), 0, d.getDouble("TypeMoonExchangeDashForwardZ"));
+         Vec3 horizontal = sideForwardDirection(forward, side * (d.getBoolean("TypeMoonExchangeDashPursuit") ? 35 : 45))
+            .scale(d.getDouble("TypeMoonExchangeDashSpeed"));
+         wanted = new Vec3(horizontal.x, wanted.y, horizontal.z);
+      }
+      if (!safeExchangeRoute(servant, wanted.multiply(1, 0, 1).scale(1.25))) {
+         d.remove("TypeMoonExchangeDashUntil"); return false;
+      }
+      servant.setDeltaMovement(servant.getDeltaMovement().lerp(wanted, 0.75));
+      d.putLong("TypeMoonExchangeDashControlTick", now);
+      servant.hasImpulse = true;
+      return true;
+   }
+
+   /** Check the whole swept body and every support sample, including unloaded chunk boundaries. */
+   public static boolean safeExchangeRoute(ServantEntity servant, Vec3 travel) {
+      int steps = Math.max(1, (int)Math.ceil(travel.length() / 0.25));
+      for (int i = 1; i <= steps; i++) {
+         Vec3 offset = travel.scale((double)i / steps);
+         var bounds = servant.getBoundingBox().move(offset);
+         BlockPos feet = BlockPos.containing(servant.position().add(offset));
+         if (!servant.level().hasChunkAt(feet) || !servant.level().getWorldBorder().isWithinBounds(bounds)
+            || !servant.level().noCollision(servant, bounds)
+            || servant.level().containsAnyLiquid(bounds)
+            || !servant.level().getBlockCollisions(servant, bounds.move(0, -0.6, 0)).iterator().hasNext()) return false;
+      }
+      return true;
+   }
 
    public static boolean shouldManeuver(ServantEntity servant, LivingEntity target) {
       if (servant == null || target == null || !target.isAlive() || servant.isPerformingAction()) return false;

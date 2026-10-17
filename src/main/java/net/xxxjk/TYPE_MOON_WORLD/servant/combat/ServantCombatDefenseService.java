@@ -33,7 +33,8 @@ public final class ServantCombatDefenseService {
    private static final String NPC_PARRY_READY = "TypeMoonDefenseNpcParryReady";
    private static final String NPC_PARRY_USED = "TypeMoonDefenseNpcParryUsed";
    private static final java.util.Map<net.neoforged.neoforge.common.damagesource.DamageContainer, Boolean> GUARDED = new java.util.WeakHashMap<>();
-   private static final java.util.Map<LivingEntity, java.util.Deque<Boolean>> PENDING = new java.util.WeakHashMap<>();
+   private record PendingDamage(boolean exhausted, boolean guarded) { }
+   private static final java.util.Map<LivingEntity, java.util.Deque<PendingDamage>> PENDING = new java.util.WeakHashMap<>();
 
    public static void initialize(LivingEntity entity) {
       ServantParams p = params(entity);
@@ -108,19 +109,24 @@ public final class ServantCombatDefenseService {
       if (!(e instanceof ServantEntity) && !(e instanceof ServerPlayer p && isCardActive(p))) return;
       initialize(e);
       boolean guarded = GUARDED.remove(event.getContainer()) != null;
-      PENDING.computeIfAbsent(e, unused -> new java.util.ArrayDeque<>()).push(!guarded && stamina(e) <= 0);
+      PENDING.computeIfAbsent(e, unused -> new java.util.ArrayDeque<>()).push(new PendingDamage(!guarded && stamina(e) <= 0, guarded));
    }
 
    @net.neoforged.bus.api.SubscribeEvent
    public static void afterDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Post event) {
       LivingEntity e = event.getEntity();
-      java.util.Deque<Boolean> pending = PENDING.get(e);
+      java.util.Deque<PendingDamage> pending = PENDING.get(e);
       if (pending == null || pending.isEmpty()) return;
-      boolean exhausted = pending.pop();
+      PendingDamage hit = pending.pop();
       if (pending.isEmpty()) PENDING.remove(e);
       if (event.getNewDamage() <= 0) return;
       e.getPersistentData().putLong(LAST_HIT, e.level().getGameTime());
-      if (exhausted) losePoise(e, DefenseRules.poiseLoss(event.getNewDamage()));
+      if (hit.exhausted()) losePoise(e, DefenseRules.poiseLoss(event.getNewDamage()));
+      if (event.getSource().getEntity() instanceof ServantEntity attacker) {
+         ServantCombatExchangeService.recordContact(attacker, e, e.level().getGameTime());
+         if (!hit.guarded() && event.getSource().getDirectEntity() == attacker
+            && attacker.distanceTo(e) <= 5) ServantCombatExchangeService.meleeHit(attacker, e);
+      }
    }
 
    public static void losePoise(LivingEntity e, double amount) {
@@ -153,6 +159,9 @@ public final class ServantCombatDefenseService {
    public static final String TAG_LAST_RESULT = "TypeMoonDefenseLastResult";
    public static final String TAG_RESULT_UNTIL = "TypeMoonDefenseResultUntil";
    public static final String TAG_DODGE_COOLDOWN = "TypeMoonDefenseDodgeCooldown";
+   public static final String TAG_DODGE_UNTIL = "TypeMoonDefenseDodgeUntil";
+   private static final String TAG_DODGE_X = "TypeMoonDefenseDodgeX";
+   private static final String TAG_DODGE_Z = "TypeMoonDefenseDodgeZ";
    public static final String TAG_GUARD_BROKEN = "TypeMoonDefenseGuardBroken";
    public static final String TAG_LAST_SYNC = "TypeMoonDefenseLastSync";
    public static final String TAG_LAST_DODGE = "TypeMoonDefenseLastDodge";
@@ -171,6 +180,7 @@ public final class ServantCombatDefenseService {
       if (entity == null || entity.level().isClientSide()) return;
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
+      continueNpcDodge(entity, data, now);
       if (entity instanceof ServantEntity servant) ServantDefenseTraits.tickNpcActiveSkills(servant);
       initialize(entity);
       ServantParams p = params(entity);
@@ -193,10 +203,12 @@ public final class ServantCombatDefenseService {
       }
       if (entity instanceof ServantEntity servant && entity.level() instanceof ServerLevel level) {
          boolean imminent = net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService.nearby(level, servant.position(), 24, now).stream()
-            .anyMatch(threat -> threat.ticksToImpact(now) <= 10 && threat.ticksToImpact(now) >= 0
-               && !threat.sourceUuid().equals(servant.getUUID()) && threat.blockable());
+            .anyMatch(threat -> threat.ticksToImpact(now) <= 10 && threat.activeAt(now)
+               && !threat.sourceUuid().equals(servant.getUUID()) && threat.blockable()
+               && level.getEntity(threat.sourceUuid()) instanceof LivingEntity source && !servant.isAlliedTo(source)
+               && (servant.getUUID().equals(threat.targetUuid()) || threat.threatens(servant.getEyePosition(), servant.getBbWidth() * 0.65)));
          if (imminent && !isGuarding(servant)) setGuarding(servant, true);
-         else if (!imminent && now - data.getLong(TAG_GUARD_START) > 12) setGuarding(servant, false);
+         else if (!imminent) setGuarding(servant, false);
       }
       if (!entity.isAlive() || entity instanceof ServerPlayer player && !isCardActive(player)) {
          data.remove(TAG_GUARDING);
@@ -237,6 +249,7 @@ public final class ServantCombatDefenseService {
          + (entity instanceof ServerPlayer ? 2 : 0);
       data.putLong(TAG_DODGE_COOLDOWN, now + cooldown);
       data.putLong(TAG_LAST_DODGE, now);
+      ServantCombatExchangeService.activity(entity, now);
       data.putLong("TypeMoonCombatLastDodgeTick", now);
       // Keep the legacy NPC reaction path from immediately spending a second
       // dodge on the same incoming hit after a tactical dodge was committed.
@@ -247,9 +260,8 @@ public final class ServantCombatDefenseService {
       if (entity instanceof ServerPlayer) data.putLong("ServantCardCombatInvulnUntil", now + invulnerability);
       data.putBoolean(TAG_GUARDING, false);
       Vec3 direction = dodgeDirection(entity, forward, strafe);
-      double distance = 0.95 + ServantCombatFormulas.agilityStep(params) * 0.08;
-      entity.setDeltaMovement(direction.x * distance, Math.max(entity.getDeltaMovement().y, 0.08), direction.z * distance);
-      entity.hurtMarked = true;
+      double distance = 1.35 + ServantCombatFormulas.agilityStep(params) * 0.12;
+      beginDodgeMotion(entity, data, direction, distance, now);
       setResult(entity, RESULT_DODGE, now + 12L);
       fx(entity, ParticleTypes.CLOUD, SoundEvents.PLAYER_ATTACK_SWEEP, 1.35F);
       if (entity instanceof ServerPlayer player && player.connection != null) sync(player, true);
@@ -278,6 +290,7 @@ public final class ServantCombatDefenseService {
          }
       }
       data.putBoolean(TAG_GUARDING, true);
+      ServantCombatExchangeService.activity(entity, now);
       data.putLong(TAG_LAST_GUARD_PACKET, now);
       if (entity instanceof ServerPlayer player) sync(player, true);
       return true;
@@ -309,6 +322,27 @@ public final class ServantCombatDefenseService {
          data.putBoolean(NPC_PARRY_USED, true);
          setResult(defender, RESULT_PARRY, now + 16);
       } else setResult(defender, RESULT_GUARD, now + 12);
+      if (source.getEntity() instanceof ServantEntity attacker) {
+         ServantCombatExchangeService.recordContact(attacker, defender, now);
+         ServantCombatSpectacleService.exchangeFx(attacker, defender, false, true);
+         if (ServantCombatExchangeService.ordinary(attacker, defender)) {
+            Vec3 away = defender.position().subtract(attacker.position()).multiply(1, 0, 1).normalize();
+            if (perfect) {
+               attacker.push(-away.x * 0.28, 0, -away.z * 0.28);
+               attacker.hurtMarked = true;
+            } else {
+               int pressure = data.getInt("TypeMoonExchangeGuardPressure") + 1;
+               data.putInt("TypeMoonExchangeGuardPressure", pressure);
+               if (pressure % 3 == 0 && !ServantCombatMotionService.isLaunched(defender)) {
+                  ServantCombatMotionService.launch(attacker, defender, away, 1.05, 0.14,
+                     net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL, 24);
+               } else {
+                  defender.push(away.x * 0.42, 0, away.z * 0.42);
+                  defender.hurtMarked = true;
+               }
+            }
+         }
+      }
       fx(defender, perfect ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, perfect ? 1.65F : 1.1F);
       if (defender instanceof ServerPlayer player) sync(player, true);
       // The hit which empties defense still receives its reduction.
@@ -317,6 +351,10 @@ public final class ServantCombatDefenseService {
 
    public static boolean isGuarding(LivingEntity entity) {
       return entity != null && entity.getPersistentData().getBoolean(TAG_GUARDING);
+   }
+
+   public static boolean isDodgeActive(LivingEntity entity, long now) {
+      return entity != null && now < entity.getPersistentData().getLong(TAG_DODGE_UNTIL);
    }
 
    public static void sync(ServerPlayer player, boolean force) {
@@ -343,6 +381,7 @@ public final class ServantCombatDefenseService {
       CompoundTag data = entity.getPersistentData();
       data.remove(TAG_GUARDING); data.remove(TAG_GUARD_START); data.remove(TAG_LAST_GUARD_PACKET);
       data.remove(TAG_LAST_RESULT); data.remove(TAG_RESULT_UNTIL);
+      data.remove(TAG_DODGE_UNTIL); data.remove(TAG_DODGE_X); data.remove(TAG_DODGE_Z);
       data.remove("ServantCardCombatGuardBrokenUntil");
       if (entity instanceof ServerPlayer player) sync(player, true);
    }
@@ -404,6 +443,32 @@ public final class ServantCombatDefenseService {
       Vec3 result = forwardVector.scale(forward).add(left.scale(strafe));
       if (result.lengthSqr() < 1.0E-4) result = forwardVector.scale(-1.0);
       return result.normalize();
+   }
+
+   private static void beginDodgeMotion(LivingEntity entity, CompoundTag data, Vec3 direction,
+                                        double speed, long now) {
+      data.putDouble(TAG_DODGE_X, direction.x * speed);
+      data.putDouble(TAG_DODGE_Z, direction.z * speed);
+      data.putLong(TAG_DODGE_UNTIL, now + 4L);
+      entity.setDeltaMovement(direction.x * speed, Math.max(entity.getDeltaMovement().y, 0.14), direction.z * speed);
+      entity.hurtMarked = true;
+   }
+
+   /** Preserve the burst for a few frames so a dodge reads as a jump/backstep. */
+   private static void continueNpcDodge(LivingEntity entity, CompoundTag data, long now) {
+      if (!(entity instanceof ServantEntity) || now >= data.getLong(TAG_DODGE_UNTIL)) return;
+      Vec3 wanted = new Vec3(data.getDouble(TAG_DODGE_X), entity.getDeltaMovement().y,
+         data.getDouble(TAG_DODGE_Z));
+      if (entity.horizontalCollision) {
+         data.remove(TAG_DODGE_UNTIL);
+         return;
+      }
+      entity.setDeltaMovement(entity.getDeltaMovement().lerp(wanted, 0.78));
+      entity.hasImpulse = true;
+      if (entity.level() instanceof ServerLevel level && now % 2L == 0L) {
+         level.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.22, entity.getZ(),
+            5, 0.18, 0.08, 0.18, 0.035);
+      }
    }
 
    private static void setResult(LivingEntity entity, String result, long until) {

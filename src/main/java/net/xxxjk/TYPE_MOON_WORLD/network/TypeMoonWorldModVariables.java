@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.network;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2346,7 +2347,7 @@ public class TypeMoonWorldModVariables {
                      if (entity instanceof Player player && !player.level().isClientSide()) {
                         player.displayClientMessage(
                            Component.translatable(
-                              "message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + magicId + ".name")
+                              "message.typemoonworld.magic.learned", Component.translatable(MagicTranslationKeys.name(magicId))
                            ),
                            false
                         );

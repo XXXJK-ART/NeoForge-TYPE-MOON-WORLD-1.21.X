@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import java.util.Locale;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -45,7 +46,7 @@ public final class ToukoTravelPresetScreen extends Screen {
       super(Component.translatable("gui.typemoonworld.touko_travel.title"));
       this.parent = parent;
       this.magicId = entry.magicId == null ? "touko_travel" : entry.magicId;
-      this.nameKey = "magic.typemoonworld." + this.magicId + ".name";
+      this.nameKey = MagicTranslationKeys.name(this.magicId);
       this.sourceType = entry.sourceType == null ? "self" : entry.sourceType;
       this.crestEntryId = entry.crestEntryId == null ? "" : entry.crestEntryId;
       this.targetSlot = entry.slotIndex;

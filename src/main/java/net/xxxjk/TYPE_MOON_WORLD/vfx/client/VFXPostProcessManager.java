@@ -177,8 +177,12 @@ public final class VFXPostProcessManager {
    private static void ensureBloomChain(Minecraft minecraft) throws IOException {
       if (bloomChain == null) {
          bloomChain = new PostChain(minecraft.getTextureManager(), minecraft.getResourceManager(), minecraft.getMainRenderTarget(), BLOOM_EFFECT);
+         // PostChain initializes every pass's projection matrix in resize().
+         bloomChain.resize(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight());
       }
-      float scale = bloomScale();
+      // PostChain also uses these targets as sampler inputs. Keep all passes
+      // aligned with the main target to avoid exposing stale image regions.
+      float scale = 1.0F;
       int targetWidth = Math.max(1, Math.round(minecraft.getWindow().getWidth() * scale));
       int targetHeight = Math.max(1, Math.round(minecraft.getWindow().getHeight() * scale));
       var bright = bloomChain.getTempTarget("bright");
@@ -189,16 +193,6 @@ public final class VFXPostProcessManager {
       int screenWidth = minecraft.getWindow().getWidth();
       int screenHeight = minecraft.getWindow().getHeight();
       if (swap != null && (swap.width != screenWidth || swap.height != screenHeight)) swap.resize(screenWidth, screenHeight, Minecraft.ON_OSX);
-   }
-
-   private static float bloomScale() {
-      if ("HIGH".equalsIgnoreCase(Config.vfxQuality)) return 1.0F;
-      if ("MEDIUM".equalsIgnoreCase(Config.vfxQuality)) return 0.75F;
-      if ("LOW".equalsIgnoreCase(Config.vfxQuality)) return 0.5F;
-      return switch (VFXRenderManager.pressure()) {
-         case NORMAL -> 0.75F;
-         case PRESSURED, CRITICAL -> 0.5F;
-      };
    }
 
    private static void closeBloom() {

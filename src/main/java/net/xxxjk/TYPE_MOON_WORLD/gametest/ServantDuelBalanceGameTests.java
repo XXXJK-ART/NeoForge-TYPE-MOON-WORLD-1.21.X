@@ -82,11 +82,13 @@ public final class ServantDuelBalanceGameTests {
          int lost = 0;
          for (int x = -26; x <= 26; x++) for (int z = -26; z <= 26; z++)
             if (h.getLevel().getBlockState(center.offset(x, 0, z)).getCollisionShape(h.getLevel(), center.offset(x, 0, z)).isEmpty()) lost++;
-         TYPE_MOON_WORLD.LOGGER.info("TMW_DUEL left={} right={} seed={} seconds={} ended={} hpA={} hpB={} basic={} skills={} guards={} parries={} breaks={} groundLost={}",
+         TYPE_MOON_WORLD.LOGGER.info("TMW_DUEL left={} right={} seed={} seconds={} ended={} hpA={} hpB={} basic={} skills={} guards={} parries={} breaks={} groundLost={} dash={} launch={} pursuit={} maxIdle={}",
             left, right, seed, elapsed / 20.0, ended, a.getHealth(), b.getHealth(),
             metric(a, b, "TypeMoonDuelBasicAttacks"), metric(a, b, "TypeMoonDuelSkillDecisions"),
             metric(a, b, "TypeMoonDefenseGuardCount"), metric(a, b, "TypeMoonDefenseParryCount"),
-            metric(a, b, "TypeMoonDefenseBreakCount"), lost);
+            metric(a, b, "TypeMoonDefenseBreakCount"), lost,
+            metric(a, b, "TypeMoonCombatDashCount"), metric(a, b, "TypeMoonCombatLaunchCount"),
+            metric(a, b, "TypeMoonCombatPursuitCount"), Math.max(a.getPersistentData().getInt("TypeMoonCombatMaxIdleTicks"), b.getPersistentData().getInt("TypeMoonCombatMaxIdleTicks")));
          for (var e : h.getLevel().getEntities((net.minecraft.world.entity.Entity)null, new AABB(center).inflate(60), e -> !(e instanceof net.minecraft.world.entity.player.Player))) e.discard();
          a.discard(); b.discard();
          prepare(h.getLevel(), center);
