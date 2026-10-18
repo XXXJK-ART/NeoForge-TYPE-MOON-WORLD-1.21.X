@@ -1,1 +1,0 @@
-{"blend":{"func":"add","srcrgb":"one","dstrgb":"zero"},"vertex":"typemoonworld:vfx_bloom_pass","fragment":"typemoonworld:vfx_bloom_blur","attributes":["Position"],"samplers":[{"name":"DiffuseSampler"}],"uniforms":[{"name":"InSize","type":"float","count":2,"values":[1,1]},{"name":"OutSize","type":"float","count":2,"values":[1,1]}]}

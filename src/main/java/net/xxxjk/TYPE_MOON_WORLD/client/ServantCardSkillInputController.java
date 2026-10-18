@@ -125,7 +125,7 @@ public final class ServantCardSkillInputController {
       return ("emiya_archer".equals(servantId) && slot == 1)
          || ("li_shuwen".equals(servantId) && slot == 2)
          || ("arash".equals(servantId) && slot == 9)
-         || ("oda_nobunaga".equals(servantId) && (slot == 4 || slot == 8));
+         || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8));
    }
 
    public static boolean isHoldSkill(String servantId, int slot) {

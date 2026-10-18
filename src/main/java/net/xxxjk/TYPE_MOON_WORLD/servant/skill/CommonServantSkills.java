@@ -221,7 +221,7 @@ public final class CommonServantSkills {
       }
 
       entity.getPersistentData().putBoolean("IndependentActionActive", true);
-      entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.08F);
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents.isOda(entity)) entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.08F);
       return ServantExecutionResult.SUCCESS;
    }
 
@@ -345,7 +345,7 @@ public final class CommonServantSkills {
          return ServantExecutionResult.FAILED;
       }
       entity.getPersistentData().putBoolean("OdaTenkaFubuActive", true);
-      entity.getPersistentData().putFloat("OdaTenkaFubuDivineBaseMultiplier", 2.0F);
+      entity.getPersistentData().remove("OdaTenkaFubuDivineBaseMultiplier");
       return ServantExecutionResult.SUCCESS;
    }
 

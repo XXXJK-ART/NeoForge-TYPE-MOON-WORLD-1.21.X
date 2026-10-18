@@ -244,7 +244,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
             level.sendParticles(this.getVariant() == LARGE_ENERGY ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
                this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.15);
          }
-         level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(),
+         level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(),
             this.getVariant() == LARGE_ENERGY ? 3 : 1, 0, 0, 0, 0);
       }
       this.discard();

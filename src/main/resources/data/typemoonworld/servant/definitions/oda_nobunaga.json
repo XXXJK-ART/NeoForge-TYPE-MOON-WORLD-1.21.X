@@ -5,17 +5,28 @@
   "display_name_zh": "织田信长",
   "class_type": "archer",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "archer", "female", "human", "sapient", "lawful", "neutral_alignment", "balanced"],
+  "traits": [
+    "female",
+    "human",
+    "lawful",
+    "balanced",
+    "king",
+    "servant",
+    "humanoid",
+    "seven_knights",
+    "nobunaga",
+    "human_kind"
+  ],
   "parameters": {
     "endurance": "B",
     "endurance_plus": false,
-    "strength": "C",
+    "strength": "B",
     "strength_plus": false,
-    "agility": "C",
+    "agility": "B",
     "agility_plus": false,
-    "magic": "B",
+    "magic": "A",
     "magic_plus": false,
-    "luck": "B",
+    "luck": "A-",
     "luck_plus": false
   },
   "model": {
@@ -42,9 +53,7 @@
       "uppercut",
       "horizontal_swing",
       "charge",
-      "projection",
       "bow_shot",
-      "ubw_chant",
       "summon_guns",
       "fire_command",
       "maou",
@@ -53,42 +62,17 @@
       "strategy",
       "hajun_chant",
       "hajun_release",
-      "floating_matchlock",
-      "matchlock_volley",
-      "fire_barrage",
-      "atsumori_step",
-      "anti_mystery_spark",
-      "demon_king_pressure",
-      "hasebe_repel",
-      "hasebe_thrust",
-      "scorched_crosscut",
-      "close_counter",
-      "ash_field",
-      "scorched_banner",
-      "three_line_rotation"
+      "hasebe_thrust"
     ]
   },
   "skills": [
     "magic_resistance_b",
     "independent_action_b",
     "strategy_b",
-    "tenka_fubu_a",
     "maou_a",
-    "floating_matchlock",
-    "matchlock_volley",
-    "fire_barrage",
-    "atsumori_step",
-    "anti_mystery_spark",
-    "demon_king_pressure",
-    "hasebe_repel",
-    "hasebe_thrust",
-    "scorched_crosscut",
-    "close_counter",
-    "ash_field",
-    "scorched_banner",
-    "three_line_rotation"
+    "tenka_fubu_a"
   ],
-  "noble_phantasm": "",
+  "noble_phantasm": "oda_three_thousand",
   "personality": {
     "obedience": "cooperative",
     "principle": "orderly",
@@ -101,5 +85,9 @@
   "spawn_egg": {
     "primary": 7994661,
     "secondary": 15126824
-  }
+  },
+  "noble_phantasms": [
+    "oda_three_thousand",
+    "oda_hajun"
+  ]
 }

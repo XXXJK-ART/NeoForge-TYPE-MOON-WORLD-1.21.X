@@ -15,6 +15,7 @@
     "TranslatableContentsMixin"
   ],
   "client": [
+    "client.CombatLightningFlashMixin",
     "ItemRendererMixin",
     "client.GeoItemRendererMixin",
     "client.HumanoidArmorLayerMixin",

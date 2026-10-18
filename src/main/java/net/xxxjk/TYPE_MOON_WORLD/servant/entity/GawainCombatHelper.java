@@ -601,9 +601,11 @@ public final class GawainCombatHelper {
       }
       float before = target.getHealth();
       DamageSource source = entity.damageSources().mobAttack(entity);
+      source = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(source, "excalibur_gallatin");
       target.invulnerableTime = 0;
       target.hurt(source, damage);
       target.invulnerableTime = 0;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents.isOda(target)) return;
       if (target.getPersistentData().getBoolean("GodHandActive")) {
          return;
       }
@@ -701,7 +703,7 @@ public final class GawainCombatHelper {
    }
 
    private static void spawnSunTransitionFx(GawainEntity entity, ServerLevel level, boolean active) {
-      level.sendParticles(active ? ParticleTypes.FLASH : ParticleTypes.SMOKE, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), active ? 2 : 18, 0.18, 0.2, 0.18, 0.02);
+      level.sendParticles(active ? ParticleTypes.END_ROD : ParticleTypes.SMOKE, entity.getX(), entity.getY() + entity.getBbHeight() * 0.7, entity.getZ(), active ? 2 : 18, 0.18, 0.2, 0.18, 0.02);
       level.sendParticles(active ? ParticleTypes.FLAME : ParticleTypes.CLOUD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45, entity.getZ(), active ? 42 : 20, 0.45, 0.65, 0.45, active ? 0.08 : 0.03);
       level.playSound(null, entity.blockPosition(), active ? SoundEvents.BEACON_POWER_SELECT : SoundEvents.BEACON_DEACTIVATE, SoundSource.HOSTILE, 0.9F, active ? 1.45F : 0.8F);
    }
@@ -715,7 +717,7 @@ public final class GawainCombatHelper {
       level.sendParticles(ParticleTypes.FLAME, front.x, front.y, front.z, 5, 0.28, 0.24, 0.28, 0.035);
       level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() + 2.2, entity.getZ(), 4, 0.8, 0.24, 0.8, 0.02);
       if (entity.tickCount % 10 == 0) {
-         level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + entity.getBbHeight() + 2.2, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() + 2.2, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
       }
    }
 

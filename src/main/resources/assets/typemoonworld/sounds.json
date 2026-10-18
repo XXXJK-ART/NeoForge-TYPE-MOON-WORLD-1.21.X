@@ -1064,6 +1064,30 @@
       {
         "name": "typemoonworld:voice/oda_nobunaga/attack2",
         "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/attack3",
+        "stream": true
+      }
+    ]
+  },
+  "oda_nobunaga_voice_skill": {
+    "sounds": [
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/skill1",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/skill2",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/skill3",
+        "stream": true
+      },
+      {
+        "name": "typemoonworld:voice/oda_nobunaga/skill4",
+        "stream": true
       }
     ]
   },
@@ -1769,7 +1793,7 @@
   "np_chant_oda_hajun": {
     "sounds": [
       {
-        "name": "typemoonworld:voice/oda_nobunaga/hajun",
+        "name": "typemoonworld:voice/oda_nobunaga/hajun_release",
         "stream": true
       }
     ]

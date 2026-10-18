@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
@@ -200,24 +198,8 @@ public final class TimeAlterVisualClient {
       source.endBatch(renderType);
    }
 
-   @SubscribeEvent
-   public static void onRenderGui(RenderGuiEvent.Pre event) {
-      Minecraft minecraft = Minecraft.getInstance();
-      if (minecraft.player == null || !isActive(minecraft.player.getUUID())) {
-         return;
-      }
-      GuiGraphics graphics = event.getGuiGraphics();
-      RenderSystem.disableDepthTest();
-      RenderSystem.depthMask(false);
-      graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), 0x38FF1010);
-      RenderSystem.depthMask(true);
-      RenderSystem.enableDepthTest();
-   }
-
-   private static boolean isActive(UUID playerId) {
-      ActiveState state = ACTIVE.get(playerId);
-      return state != null && state.expiresAtTick > clientTick;
-   }
+   /** Legacy entry point; keep afterimages without tinting the player's screen. */
+   public static void onRenderGui(RenderGuiEvent.Pre event) { }
 
    private static AbstractClientPlayer findPlayer(Minecraft minecraft, UUID playerId) {
       if (minecraft.level == null) {

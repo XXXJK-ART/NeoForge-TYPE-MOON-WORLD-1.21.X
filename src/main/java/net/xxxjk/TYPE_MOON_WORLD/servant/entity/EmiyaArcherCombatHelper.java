@@ -1492,7 +1492,7 @@ public final class EmiyaArcherCombatHelper {
          sword.setDeltaMovement(dir.scale(3.15));
          level.addFreshEntity(sword);
       }
-      level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight(), target.getZ(), 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight(), target.getZ(), 2, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.7, target.getZ(), 36, 2.8, 1.0, 2.8, 0.14);
       level.playSound(null, target.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.75F, 0.62F);
    }
@@ -1714,7 +1714,7 @@ public final class EmiyaArcherCombatHelper {
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
       castPseudoSpiralSword(entity, level, target, now);
       level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight(), entity.getZ(), 36, 0.5, 0.5, 0.5, 0.08);
-      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + entity.getBbHeight() * 0.85, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.85, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.85F, 1.65F);
       return true;
    }
@@ -2308,6 +2308,7 @@ public final class EmiyaArcherCombatHelper {
          case E -> 1;
          case D -> 2;
          case C -> 3;
+         case A_MINUS -> 3;
          case B -> 4;
          case A -> 5;
          case A_PLUS_PLUS -> 5;

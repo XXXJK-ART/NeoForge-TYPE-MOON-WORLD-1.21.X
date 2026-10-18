@@ -171,7 +171,7 @@ public class EmiyaArcherEntity extends ServantEntity {
       this.invulnerableTime = 80;
       this.clearFire();
       this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE, FINAL_LOCK_TICKS, 4, false, false, true));
-      continuationParticles(ParticleTypes.FLASH, 3, 0.0);
+      continuationParticles(ParticleTypes.END_ROD, 3, 0.0);
       continuationParticles(ParticleTypes.SOUL_FIRE_FLAME, 48, 0.04);
       if (this.level() instanceof ServerLevel level) {
          level.playSound(null, this.blockPosition(), SoundEvents.RESPAWN_ANCHOR_DEPLETE.value(), SoundSource.HOSTILE, 1.0F, 0.55F);
@@ -187,7 +187,7 @@ public class EmiyaArcherEntity extends ServantEntity {
       this.setInvulnerable(false);
       this.setHealth(1.0F);
       if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.SOUL, this.getX(), this.getY() + 0.8, this.getZ(), 32, 0.35, 0.65, 0.35, 0.05);
          level.playSound(null, this.blockPosition(), SoundEvents.WITHER_DEATH, SoundSource.HOSTILE, 0.6F, 1.35F);
       }

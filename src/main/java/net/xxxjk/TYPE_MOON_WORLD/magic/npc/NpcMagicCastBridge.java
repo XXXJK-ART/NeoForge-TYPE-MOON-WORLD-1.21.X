@@ -2320,7 +2320,7 @@ public final class NpcMagicCastBridge {
       double cy = caster.getY() + 1.0;
       double cz = caster.getZ();
       int burstLevel = (int)Math.round(1.0 + powerNormalized * 2.0);
-      level.sendParticles(ParticleTypes.FLASH, cx, cy, cz, 4 + 3 * burstLevel, 0.2, 0.15, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy, cz, 4 + 3 * burstLevel, 0.2, 0.15, 0.2, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.06, cz, 8 + 6 * burstLevel, 0.25, 0.12, 0.25, 0.03);
       level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy, cz, 0.32F, (float)radius, 0.16F, 12, 0xFFFFFF, 0.76F, 0.0F));
       level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.06, cz, 0.18F, (float)(radius * 0.65), 0.1F, 18, 0xF2F2FF, 0.46F, 0.01F));

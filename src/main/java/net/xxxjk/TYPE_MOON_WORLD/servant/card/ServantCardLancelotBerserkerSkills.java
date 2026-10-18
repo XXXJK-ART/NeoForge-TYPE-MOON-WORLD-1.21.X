@@ -370,7 +370,7 @@ public final class ServantCardLancelotBerserkerSkills {
       vars.servant_card_action_mode = 1;
       if (player.level() instanceof ServerLevel level) {
          ServantCardVoiceHelper.tryPlaySkill(player, "lancelot_aroundight");
-         level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.0, player.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
          level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 1.0, player.getZ(), 46, 0.72, 0.82, 0.72, 0.18);
       }
       return true;

@@ -354,7 +354,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    }
 
    private void emitDiveImpact(ServerLevel level, Vec3 impactPos) {
-      level.sendParticles(ParticleTypes.FLASH, impactPos.x, impactPos.y + 1.0, impactPos.z, 6, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impactPos.x, impactPos.y + 1.0, impactPos.z, 6, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, impactPos.x, impactPos.y + 0.8, impactPos.z, 130, 4.6, 1.8, 4.6, 0.34);
       level.sendParticles(ParticleTypes.CLOUD, impactPos.x, impactPos.y + 0.2, impactPos.z, 46, 3.8, 0.3, 3.8, 0.12);
       for (int i = 0; i < 2 + this.getRandom().nextInt(3); i++) {
@@ -426,7 +426,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          emitZeusLightningAura(level);
       }
       if (this.tickCount % 8 == 0) {
-         level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 1.35, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 1.35, this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
       }
       if (this.tickCount % 50 == 0) {
          level.playSound(null, this.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 0.45F, 1.45F + this.getRandom().nextFloat() * 0.22F);
@@ -455,7 +455,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       Vec3 center = this.position().add(0.0, 1.0, 0.0);
       level.playSound(null, this.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 1.25F, 0.95F);
       level.playSound(null, this.blockPosition(), SoundEvents.RAVAGER_ROAR, SoundSource.HOSTILE, 0.72F, 0.64F);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.2, center.z, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.2, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 72, 3.2, 1.2, 3.2, 0.22);
       AABB area = this.getBoundingBox().inflate(8.0, 2.2, 8.0);
       for (LivingEntity enemy : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
@@ -520,7 +520,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
 
    private void emitZeusThunderStrike(ServerLevel level, Vec3 strikePos, boolean damagingStrike) {
       spawnVisualThunderbolt(level, strikePos);
-      level.sendParticles(ParticleTypes.FLASH, strikePos.x, strikePos.y + 1.0, strikePos.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, strikePos.x, strikePos.y + 1.0, strikePos.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, strikePos.x, strikePos.y + 0.55, strikePos.z, damagingStrike ? 62 : 34, 1.7, 0.65, 1.7, 0.22);
       level.sendParticles(ParticleTypes.CLOUD, strikePos.x, strikePos.y + 0.15, strikePos.z, damagingStrike ? 10 : 5, 1.4, 0.18, 1.4, 0.04);
       level.playSound(null, this.blockPosition(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, damagingStrike ? 0.95F : 0.45F, 0.86F + this.getRandom().nextFloat() * 0.16F);
@@ -578,9 +578,10 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       IskandarEntity iskandar = getIskandar(level);
       ServerPlayer owner = getCardOwner(level);
       if (owner != null) {
-         return owner.damageSources().playerAttack(owner);
+         return net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(owner.damageSources().playerAttack(owner), "gordius_wheel");
       }
-      return iskandar != null ? this.damageSources().mobAttack(iskandar) : this.damageSources().lightningBolt();
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(
+         iskandar != null ? this.damageSources().mobAttack(iskandar) : this.damageSources().lightningBolt(), "gordius_wheel");
    }
 
    private Vec3 randomThunderStrikePosition(ServerLevel level, LivingEntity target) {
@@ -610,6 +611,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          return;
       }
       lightning.moveTo(pos.x, pos.y, pos.z);
+      lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
       lightning.setVisualOnly(true);
       level.addFreshEntity(lightning);
    }
@@ -621,7 +623,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       }
       super.performCharge(level, source, damage, width);
       Vec3 burst = this.position().add(0.0, 1.0, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, burst.x, burst.y + 0.5, burst.z, 3, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, burst.x, burst.y + 0.5, burst.z, 3, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, burst.x, burst.y, burst.z, 140, 3.4, 1.35, 3.4, 0.34);
       level.sendParticles(ParticleTypes.CLOUD, burst.x, this.getY() + 0.12, burst.z, 28, 2.8, 0.18, 2.8, 0.08);
       spawnVisualThunderbolt(level, this.position());
@@ -649,7 +651,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
    @Override
    protected void onChargeHit(ServerLevel level, LivingEntity source, LivingEntity target) {
       Vec3 center = target.position();
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + target.getBbHeight() * 0.65, center.z, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + target.getBbHeight() * 0.65, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.75, center.z, 58, 1.6, 0.9, 1.6, 0.24);
       level.playSound(null, target.blockPosition(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.HOSTILE, 1.05F, 0.84F);
       if (canBreakTerrainFor(source)) {

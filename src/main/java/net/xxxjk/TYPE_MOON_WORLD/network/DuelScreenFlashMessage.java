@@ -8,7 +8,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 import org.jetbrains.annotations.NotNull;
 
-/** Small client-side white flash used by the Enkidu/EA terminal impact. */
+/** Legacy payload retained for network compatibility; clients ignore its flash request. */
 public record DuelScreenFlashMessage(int ticks, float strength) implements CustomPacketPayload {
    public static final Type<DuelScreenFlashMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "duel_screen_flash")

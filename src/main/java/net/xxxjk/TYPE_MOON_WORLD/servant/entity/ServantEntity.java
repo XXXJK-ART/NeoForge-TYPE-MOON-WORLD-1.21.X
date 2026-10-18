@@ -1488,7 +1488,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             this.getX(), this.getY() + 1.5, this.getZ(),
             20, 0.3, 1.2, 0.3, 0.05);
          // 鐢卞唴鍚戝鎵╂暎鐨勭櫧鑹插厜鐜?
-         sl.sendParticles(ParticleTypes.FLASH,
+         sl.sendParticles(ParticleTypes.END_ROD,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
             5, 0.0, 0.0, 0.0, 0.0);
          // 韬綋閫愭笎閫忔槑鐨勭伆鐑晥鏋?
@@ -1542,7 +1542,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          if (this.spiritualDissolveTicks >= SPIRITUAL_DISSOLVE_DURATION) {
-            sl.sendParticles(ParticleTypes.FLASH,
+            sl.sendParticles(ParticleTypes.END_ROD,
                this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
                1, 0.0, 0.0, 0.0, 0.0);
             sl.sendParticles(ParticleTypes.END_ROD,

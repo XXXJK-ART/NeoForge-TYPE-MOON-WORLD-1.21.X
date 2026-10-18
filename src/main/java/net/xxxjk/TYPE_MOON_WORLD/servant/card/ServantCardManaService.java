@@ -89,6 +89,7 @@ public final class ServantCardManaService {
          case A -> 60.0;
          case B -> 120.0;
          case C -> 180.0;
+         case A_MINUS -> 180.0;
          case D -> 240.0;
          case E -> 300.0;
       };

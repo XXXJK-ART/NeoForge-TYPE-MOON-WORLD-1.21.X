@@ -1329,7 +1329,7 @@ public class CommonEvents {
                event.setAmount(damage * (1.0F - resistanceNow));
             }
          } else if (servant.level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.FLASH,
+            sl.sendParticles(ParticleTypes.END_ROD,
                servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
                1, 0.0, 0.0, 0.0, 0.0);
             sl.sendParticles(ParticleTypes.FLAME,

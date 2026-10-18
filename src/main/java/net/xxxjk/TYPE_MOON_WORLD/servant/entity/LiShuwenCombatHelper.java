@@ -604,7 +604,7 @@ public final class LiShuwenCombatHelper {
 
    private static void spawnWuErDaImpact(ServerLevel level, LivingEntity target, boolean killed) {
       VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_impact", target.position(), 96.0);
-      level.sendParticles(killed ? ParticleTypes.FLASH : ParticleTypes.DAMAGE_INDICATOR, target.getX(), target.getY() + target.getBbHeight() * 0.58, target.getZ(), killed ? 2 : 8, 0.1, 0.18, 0.1, 0.0);
+      level.sendParticles(killed ? ParticleTypes.END_ROD : ParticleTypes.DAMAGE_INDICATOR, target.getX(), target.getY() + target.getBbHeight() * 0.58, target.getZ(), killed ? 2 : 8, 0.1, 0.18, 0.1, 0.0);
       level.sendParticles(INK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), killed ? 46 : 28, 0.45, 0.42, 0.45, 0.05);
       level.playSound(null, target.blockPosition(), killed ? SoundEvents.WITHER_DEATH : SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, killed ? 0.9F : 0.8F, killed ? 0.85F : 0.55F);
    }

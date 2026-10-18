@@ -171,7 +171,7 @@ public final class ServantCardArtoriaSkills {
             }
          }
       }
-      level.sendParticles(ParticleTypes.FLASH, origin.x + look.x * 2.4, origin.y, origin.z + look.z * 2.4, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, origin.x + look.x * 2.4, origin.y, origin.z + look.z * 2.4, 2, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_3.value(), SoundSource.PLAYERS, 1.35F, 1.2F);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.0F, 0.75F);
    }
@@ -228,7 +228,7 @@ public final class ServantCardArtoriaSkills {
             }
          }
       }
-      level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.56, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.56, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 1.05F, 1.45F);
       level.playSound(null, player.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.9F, 1.65F);
    }
@@ -329,7 +329,7 @@ public final class ServantCardArtoriaSkills {
             level.sendParticles(ParticleTypes.ELECTRIC_SPARK, point.x, point.y, point.z, 3, 0.18, 0.18, 0.18, 0.025);
          }
       }
-      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, end.x, end.y, end.z, 28, 0.65, 0.65, 0.65, 0.06);
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.25F, 1.55F);
       level.playSound(null, net.minecraft.core.BlockPos.containing(end), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.8F, 1.65F);
@@ -337,7 +337,7 @@ public final class ServantCardArtoriaSkills {
 
    private static void spawnManaBurstActivationFx(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.62, player.getZ(), 42, 0.42, 0.55, 0.42, 0.055);
          level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + player.getBbHeight() * 0.52, player.getZ(), 28, 0.38, 0.44, 0.38, 0.04);
          level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.25F, 1.28F);

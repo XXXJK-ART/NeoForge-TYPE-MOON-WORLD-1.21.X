@@ -102,6 +102,8 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       }
 
       String noblePhantasmId = getStringOrDefault(json, "noble_phantasm", "");
+      java.util.List<String> noblePhantasmIds = new java.util.ArrayList<>();
+      if (json.has("noble_phantasms")) for (JsonElement np : json.getAsJsonArray("noble_phantasms")) noblePhantasmIds.add(np.getAsString());
 
       ObedienceAxis obedience = ObedienceAxis.COOPERATIVE;
       PrincipleAxis principle = PrincipleAxis.NEUTRAL;
@@ -148,7 +150,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          skillIds, noblePhantasmId,
          obedience, principle, morality, social, combat, specialPrinciples,
          startingFavor, aiConfigId,
-         primaryColor, secondaryColor, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.fromKey(getStringOrDefault(json, "era", "modern"))
+         primaryColor, secondaryColor, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.fromKey(getStringOrDefault(json, "era", "modern")), noblePhantasmIds
       );
    }
 

@@ -795,7 +795,7 @@ public final class ServantCardBaobhanSithSkills {
       }
       spawnRing(targetLevel, BLOOD_DUST, target.position().add(0.0, 0.12, 0.0), 1.6, 42);
       spawnRoseBloom(targetLevel, targetCenter, 1.8, 52);
-      targetLevel.sendParticles(ParticleTypes.FLASH, targetCenter.x, targetCenter.y, targetCenter.z, 1, 0.0, 0.0, 0.0, 0.0);
+      targetLevel.sendParticles(ParticleTypes.END_ROD, targetCenter.x, targetCenter.y, targetCenter.z, 1, 0.0, 0.0, 0.0, 0.0);
       targetLevel.playSound(null, target.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.2F, 0.65F);
    }
 

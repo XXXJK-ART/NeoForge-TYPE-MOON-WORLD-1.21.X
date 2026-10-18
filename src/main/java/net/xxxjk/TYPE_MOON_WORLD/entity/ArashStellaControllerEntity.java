@@ -322,7 +322,7 @@ public final class ArashStellaControllerEntity extends Entity {
       }
       level.sendParticles(WHITE, origin.x, origin.y, origin.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(140), 1.2, 1.2, 1.2, 0.28);
       level.sendParticles(GREEN, origin.x, origin.y, origin.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(220), 1.8, 1.8, 1.8, 0.34);
-      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0, 0, 0, 0);
+      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y, origin.z, 3, 0, 0, 0, 0);
       this.cylinder = DeferredTerrainDestruction.queueAdvancingCylinder(level, origin, direction,
          profile.length(), profile.terrainRadius(), profile.scarRadius(), null);
       this.skyRift = DeferredTerrainDestruction.queueAdvancingSkyRift(level, origin, direction,
@@ -522,7 +522,7 @@ public final class ArashStellaControllerEntity extends Entity {
          for (double radius : new double[]{1.2, 2.4, 3.8}) {
             spawnCrossSectionRing(level, bow, radius * (0.7 + progress * 0.3), tick * 0.12, WHITE, 28);
          }
-         level.sendParticles(ParticleTypes.FLASH, bow.x, bow.y, bow.z, 1, 0, 0, 0, 0);
+         level.sendParticles(ParticleTypes.END_ROD, bow.x, bow.y, bow.z, 1, 0, 0, 0, 0);
       }
    }
 

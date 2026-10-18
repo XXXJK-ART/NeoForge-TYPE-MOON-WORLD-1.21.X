@@ -128,6 +128,7 @@ public final class HundredFacesHassanRules {
          case E -> 0;
          case D -> 1;
          case C -> 2;
+         case A_MINUS -> 2;
          case B -> 3;
          case A -> 4;
          case A_PLUS_PLUS -> 6;

@@ -670,7 +670,7 @@ public final class PlayerNoblePhantasmHelper {
       ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, GOLDEN_EXCALIBUR_RELEASE_TICKS, 0, powerScale, true);
       level.addFreshEntity(beam);
       VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150.0);
-      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, 2, 0.05, 0.05, 0.05, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 2, 0.05, 0.05, 0.05, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 70, 0.55, 0.55, 0.55, 0.18);
       addGoldenExcaliburCooldown(player, scaledCooldown(GOLDEN_EXCALIBUR_PLAYER_COOLDOWN, powerScale));
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.9F + powerScale, 1.35F);
@@ -949,7 +949,7 @@ public final class PlayerNoblePhantasmHelper {
       setKanshouBakuyaHand(player, InteractionHand.MAIN_HAND, true);
       setKanshouBakuyaHand(player, InteractionHand.OFF_HAND, true);
       if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.6, player.getZ(), 2, 0.1, 0.1, 0.1, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.6, player.getZ(), 2, 0.1, 0.1, 0.1, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.62, player.getZ(), 36, 0.45, 0.45, 0.45, 0.08);
          level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 1.0F, 0.75F);
       }
@@ -1425,7 +1425,7 @@ public final class PlayerNoblePhantasmHelper {
          }
       }
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 2, 0.2, 0.2, 0.2, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       breakSmallExplosionTerrain(level, owner, center);
    }
 
@@ -1476,9 +1476,11 @@ public final class PlayerNoblePhantasmHelper {
       }
       float before = target.getHealth();
       DamageSource source = player.damageSources().playerAttack(player);
+      source = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(source, "excalibur_gallatin");
       target.invulnerableTime = 0;
       target.hurt(source, damage);
       target.invulnerableTime = 0;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents.isOda(target)) return;
       if (target.getPersistentData().getBoolean("GodHandActive")) {
          return;
       }

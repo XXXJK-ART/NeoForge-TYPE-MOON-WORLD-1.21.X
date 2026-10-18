@@ -123,7 +123,7 @@ public class EmiyaArrowOrbProjectileEntity extends ThrowableItemProjectile {
 
    private void impact(Vec3 pos) {
       if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 20, 0.22, 0.22, 0.22, 0.08);
          level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.65F, 1.65F);
          if (this.entityData.get(BROKEN_PHANTASM)) {

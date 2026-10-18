@@ -538,7 +538,7 @@ public final class CasterGilgameshCombatHelper {
       }
       level.sendParticles(GOLD, center.x, center.y, center.z, 90 + shots * 6, 2.4, 1.8, 2.4, 0.12);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 34 + shots, 1.6, 1.25, 1.6, 0.065);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private static Vec3 workshopCenter(CompoundTag data) {

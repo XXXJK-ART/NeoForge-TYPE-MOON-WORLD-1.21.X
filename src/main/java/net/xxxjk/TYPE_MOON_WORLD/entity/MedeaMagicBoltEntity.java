@@ -200,7 +200,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
          switch (this.getMode()) {
             case SUPER_BOLT -> {
                serverLevel.sendParticles(BOLT_CORE, position.x, position.y, position.z, 24, 0.45, 0.45, 0.45, 0.0);
-               serverLevel.sendParticles(ParticleTypes.FLASH, position.x, position.y, position.z, 2, 0.1, 0.1, 0.1, 0.0);
+               serverLevel.sendParticles(ParticleTypes.END_ROD, position.x, position.y, position.z, 2, 0.1, 0.1, 0.1, 0.0);
                serverLevel.sendParticles(ParticleTypes.EXPLOSION, position.x, position.y, position.z, 6, 0.4, 0.4, 0.4, 0.0);
                serverLevel.sendParticles(ParticleTypes.END_ROD, position.x, position.y, position.z, 20, 0.32, 0.32, 0.32, 0.04);
             }

@@ -212,6 +212,7 @@ public final class ServantCombatSystem {
       // raw direct-contact damage used by the shared melee exchange.
       if (source.getEntity() instanceof ServantEntity attacker
          && source.getDirectEntity() == attacker
+         && !(source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource)
          && ServantCombatExchangeService.ordinary(attacker, servant)) {
          event.setAmount(event.getAmount() * 0.55F);
       }
@@ -658,7 +659,7 @@ public final class ServantCombatSystem {
       if (ranged && specialization.hasCombatAction("ranged_np") && canUseNoblePhantasm(responder) && responder.getCurrentMp() >= responder.getMaxMp() * 0.35) {
          responder.getPersistentData().putLong(TAG_DAMAGE_BOOST_UNTIL, now + 60L);
          responder.setCurrentMp(Math.max(0.0, responder.getCurrentMp() - responder.getMaxMp() * 0.25));
-         spawnGuardFx(responder, ParticleTypes.FLASH, SoundEvents.BEACON_ACTIVATE, 1.2F);
+         spawnGuardFx(responder, ParticleTypes.END_ROD, SoundEvents.BEACON_ACTIVATE, 1.2F);
          return;
       }
       DamageSource responseSource = caster.damageSources().mobAttack(caster);

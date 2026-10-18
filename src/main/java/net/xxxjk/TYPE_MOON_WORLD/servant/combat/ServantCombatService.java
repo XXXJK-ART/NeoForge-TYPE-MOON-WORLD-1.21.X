@@ -51,7 +51,7 @@ public final class ServantCombatService {
       double factionMultiplier = ServantDamageCalculator.computeFactionMultiplier(attackerFaction, getDefenderFaction(defender));
       java.util.List<ServantTraitTag> specialConditions = npSpecialConditions != null ? npSpecialConditions : attackerTraits;
       java.util.List<ServantTraitTag> defenderTraitList = ServantIdentityHelper.traitsOf(defender);
-      double traitMultiplier = ServantDamageCalculator.computeTraitMultiplier(specialConditions, defenderTraitList);
+      double traitMultiplier = attackerDef != null && "oda_nobunaga".equals(attackerDef.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(specialConditions, defenderTraitList);
       double zoneC = factionMultiplier * traitMultiplier;
 
       double defenderArmor = defender.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR);
@@ -80,7 +80,7 @@ public final class ServantCombatService {
          definition == null ? null : definition.faction(), getDefenderFaction(defender));
       List<ServantTraitTag> traits = specialConditions != null ? specialConditions
          : definition == null ? java.util.Collections.emptyList() : definition.traits();
-      double traitMultiplier = ServantDamageCalculator.computeTraitMultiplier(traits, ServantIdentityHelper.traitsOf(defender));
+      double traitMultiplier = definition != null && "oda_nobunaga".equals(definition.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(traits, ServantIdentityHelper.traitsOf(defender));
       double armor = defender.getAttributeValue(Attributes.ARMOR);
       return ServantDamageCalculator.computeFinalDamage(base, zoneABuffMultiplier, critMultiplier,
          factionMultiplier * traitMultiplier, armor);

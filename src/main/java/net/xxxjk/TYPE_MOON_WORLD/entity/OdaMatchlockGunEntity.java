@@ -1,6 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource.Ability;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -61,6 +64,38 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    private int shootDelay;
    private int volleyNoTargetTicks;
    private boolean dissolving;
+   private static final EntityDataAccessor<String> ABILITY = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.STRING);
+   private int shotInterval = 30;
+   private Vec3 fixedDirection;
+   private Vec3 fieldCenter;
+   private UUID pursuitId;
+   private int pursuitIndex = -1;
+   private boolean shotReported;
+   private boolean legacy;
+
+   public OdaMatchlockGunEntity configure(Ability ability, int shots, int interval, int life) {
+      this.entityData.set(ABILITY, ability.name());
+      this.entityData.set(SHOTS_LEFT, shots);
+      this.entityData.set(LIFE_TICKS, life);
+      this.shotInterval = interval;
+      return this;
+   }
+   public OdaMatchlockGunEntity fixedDirection(Vec3 direction) { this.fixedDirection = direction; return this; }
+   public OdaMatchlockGunEntity field(Vec3 center) { this.fieldCenter = center; return this; }
+   public OdaMatchlockGunEntity pursuit(UUID id, int index) { pursuitId = id; pursuitIndex = index; return this; }
+   public Ability ability() { try { return Ability.valueOf(this.entityData.get(ABILITY)); } catch (IllegalArgumentException e) { return Ability.ORBIT; } }
+   public boolean isOwnedBy(UUID id) { return id != null && id.equals(ownerUuid); }
+   public boolean isCombatFor(UUID id) { return isOwnedBy(id) && !isRemoved() && !isMountMode() && !this.entityData.get(FOOT_SUPPORT_MODE) && getGunHealth() > 0; }
+   public boolean isOrbitFor(UUID id) { return isCombatFor(id) && this.entityData.get(FOLLOW_MODE) && ability() == Ability.ORBIT; }
+   public float getGunHealth() { return this.entityData.get(HEALTH); }
+   public int getShotsLeft() { return this.entityData.get(SHOTS_LEFT); }
+   public int getPursuitIndex() { return pursuitIndex; }
+   public float absorb(float damage) {
+      float used = Math.min(Math.max(0, damage), getGunHealth());
+      this.entityData.set(HEALTH, getGunHealth() - used);
+      if (getGunHealth() <= 0 && level() instanceof ServerLevel level) dissolveAndDiscard(level);
+      return damage - used;
+   }
 
    public OdaMatchlockGunEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -84,6 +119,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       gun.entityData.set(ORBIT_COUNT, Math.max(1, orbitCount));
       gun.entityData.set(LIFE_TICKS, Math.max(20, lifeTicks));
       gun.entityData.set(SHOTS_LEFT, 40);
+      gun.configure(Ability.ORBIT, 40, 30, lifeTicks);
       return gun;
    }
 
@@ -92,6 +128,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       gun.entityData.set(VOLLEY_MODE, true);
       gun.entityData.set(VOLLEY_TARGET_ID, target == null ? -1 : target.getId());
       gun.entityData.set(SHOTS_LEFT, 3);
+      gun.configure(Ability.THREE_THOUSAND, 3, 20, 320);
       gun.entityData.set(LIFE_TICKS, 20 * 16);
       return gun;
    }
@@ -102,6 +139,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       gun.entityData.set(VOLLEY_MODE, true);
       gun.entityData.set(VOLLEY_TARGET_ID, target == null ? -1 : target.getId());
       gun.entityData.set(SHOTS_LEFT, 1);
+      gun.configure(Ability.PURSUIT, 1, 4, 80);
       gun.entityData.set(LIFE_TICKS, 20 * 4);
       return gun;
    }
@@ -111,6 +149,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       gun.entityData.set(VOLLEY_MODE, true);
       gun.entityData.set(VOLLEY_TARGET_ID, target == null ? -1 : target.getId());
       gun.entityData.set(SHOTS_LEFT, 3);
+      gun.configure(Ability.THREE_THOUSAND, 3, 20, 320);
       return gun;
    }
 
@@ -172,7 +211,8 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       builder.define(VOLLEY_TARGET_ID, -1);
       builder.define(FOOT_SUPPORT_MODE, false);
       builder.define(MOUNT_MODE, false);
-      builder.define(HEALTH, MOUNT_MAX_HEALTH);
+      builder.define(HEALTH, 30.0F);
+      builder.define(ABILITY, Ability.ORBIT.name());
       builder.define(MOVE_FORWARD, 0.0F);
       builder.define(MOVE_STRAFE, 0.0F);
       builder.define(MOVE_VERTICAL, 0.0F);
@@ -194,7 +234,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          return;
       }
       LivingEntity owner = getOwnerLiving(level);
-      if (owner == null && this.ownerUuid != null) {
+      if (legacy || owner == null || !owner.isAlive() || !OdaCombatEvents.isOda(owner)) {
          dissolveAndDiscard(level);
          return;
       }
@@ -233,8 +273,9 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          updateFollowPosition(owner);
       }
 
-      LivingEntity target = this.entityData.get(VOLLEY_MODE) ? getVolleyTarget(level, owner) : findTarget(level, owner);
-      if (this.entityData.get(VOLLEY_MODE)) {
+      LivingEntity target = fieldCenter != null ? findFieldTarget(level, owner) : this.entityData.get(VOLLEY_MODE) ? getVolleyTarget(level, owner) : findTarget(level, owner);
+      if (fixedDirection != null) target = null;
+      if (this.entityData.get(VOLLEY_MODE) && fixedDirection == null && fieldCenter == null && ability() != Ability.THREE_THOUSAND) {
          if (target == null) {
             this.volleyNoTargetTicks++;
             if (this.volleyNoTargetTicks >= 40) {
@@ -245,7 +286,9 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
             this.volleyNoTargetTicks = 0;
          }
       }
-      if (target != null) {
+      if (fixedDirection != null) {
+         setFacing(fixedDirection);
+      } else if (target != null) {
          setFacing(target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(this.position()));
       } else if (owner != null) {
          setFacing(owner.getLookAngle());
@@ -256,13 +299,14 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
          return;
       }
 
-      if (target == null) {
-         this.shootDelay = 8;
+      if (target == null && fixedDirection == null && ability() != Ability.THREE_THOUSAND) {
+         this.shootDelay = 1;
          return;
       }
       fireAt(level, owner, target);
       this.entityData.set(SHOTS_LEFT, this.entityData.get(SHOTS_LEFT) - 1);
-      this.shootDelay = this.entityData.get(VOLLEY_MODE) ? 20 : this.entityData.get(FOLLOW_MODE) ? 18 + this.random.nextInt(12) : 16 + this.random.nextInt(10);
+      this.shootDelay = Math.max(0, this.shotInterval - 1);
+      if (this.entityData.get(SHOTS_LEFT) <= 0) dissolveAndDiscard(level);
    }
 
    private void tickMount(ServerLevel level, LivingEntity owner) {
@@ -281,16 +325,21 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       double yaw = Math.toRadians(owner.getYRot());
       Vec3 forward = new Vec3(-Math.sin(yaw), 0.0, Math.cos(yaw));
       Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
-      Vec3 movement = forward.scale(this.entityData.get(MOVE_FORWARD)).add(right.scale(this.entityData.get(MOVE_STRAFE)));
+      Vec3 movement = forward.scale(this.entityData.get(MOVE_FORWARD) * .98).add(right.scale(this.entityData.get(MOVE_STRAFE) * .98));
       if (movement.lengthSqr() > 1.0) {
          movement = movement.normalize();
       }
-      Vec3 velocity = movement.scale(0.54).add(0.0, this.entityData.get(MOVE_VERTICAL) * 0.42, 0.0);
-      if (velocity.lengthSqr() < 0.0001) {
-         velocity = new Vec3(0.0, -0.015, 0.0);
-      }
+      // Vanilla flying uses .05 speed, sprint x2, .91 horizontal drag and .6 vertical drag.
+      double flyingSpeed = 0.05 * (owner.getPersistentData().getBoolean("OdaFlightSprint") ? 2 : 1);
+      Vec3 velocity = this.getDeltaMovement().add(movement.scale(flyingSpeed)).add(0, this.entityData.get(MOVE_VERTICAL) * .05 * 3, 0);
+      if (Math.abs(velocity.x) < .003) velocity = new Vec3(0, velocity.y, velocity.z);
+      if (Math.abs(velocity.y) < .003) velocity = new Vec3(velocity.x, 0, velocity.z);
+      if (Math.abs(velocity.z) < .003) velocity = new Vec3(velocity.x, velocity.y, 0);
       this.setDeltaMovement(velocity);
+      // Include the passenger's head in block collision, with the entity's origin at the box floor.
+      this.setBoundingBox(new AABB(getX() - .9, getY(), getZ() - .9, getX() + .9, getY() + player.getBbHeight() + .18, getZ() + .9));
       this.move(net.minecraft.world.entity.MoverType.SELF, velocity);
+      this.setDeltaMovement(this.getDeltaMovement().multiply(.91, .6, .91));
       setFacing(forward);
       owner.fallDistance = 0.0F;
       if (this.tickCount % MOUNT_TRAIL_PARTICLE_INTERVAL == 0 && velocity.lengthSqr() >= MOUNT_TRAIL_MIN_SPEED_SQR) {
@@ -317,12 +366,12 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    @Override
    public boolean isPickable() {
-      return this.entityData.get(MOUNT_MODE) || super.isPickable();
+      return !this.entityData.get(FOOT_SUPPORT_MODE) && !this.isRemoved();
    }
 
    @Override
    public boolean hurt(DamageSource source, float amount) {
-      if (this.level().isClientSide || !this.entityData.get(MOUNT_MODE) || amount <= 0.0F) {
+      if (this.level().isClientSide || this.entityData.get(FOOT_SUPPORT_MODE) || amount <= 0.0F) {
          return false;
       }
       Entity attacker = source.getEntity();
@@ -390,12 +439,18 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       return best;
    }
 
+   private LivingEntity findFieldTarget(ServerLevel level, LivingEntity owner) {
+      return level.getEntitiesOfClass(LivingEntity.class, new AABB(fieldCenter, fieldCenter).inflate(5, 2.5, 5),
+         target -> canTarget(owner, target) && target.position().subtract(fieldCenter).multiply(1, 0, 1).lengthSqr() <= 25 && hasRoughLineOfSight(target))
+         .stream().min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
+   }
+
    private LivingEntity getVolleyTarget(ServerLevel level, LivingEntity owner) {
       Entity target = level.getEntity(this.entityData.get(VOLLEY_TARGET_ID));
       if (target instanceof LivingEntity living && canTarget(owner, living)) {
          return living;
       }
-      return findTarget(level, owner);
+      return ability() == Ability.PURSUIT ? null : findTarget(level, owner);
    }
 
    private boolean canTarget(LivingEntity owner, LivingEntity target) {
@@ -415,11 +470,11 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    private void fireAt(ServerLevel level, LivingEntity owner, LivingEntity target) {
       Vec3 start = this.position();
-      Vec3 end = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
-      Vec3 shotDirection = end.subtract(start);
+      Vec3 shotDirection = fixedDirection != null ? fixedDirection : target == null ? owner.getLookAngle() : target.position().add(0.0, target.getBbHeight() * .55, 0).subtract(start);
       setFacing(shotDirection);
-      float damage = OdaNobunagaCombatHelper.scaleThreeThousandWorldsDamage(owner, target, 10.0F);
-      OdaMatchlockBulletEntity bullet = new OdaMatchlockBulletEntity(level, owner, this, damage);
+      OdaMatchlockBulletEntity bullet = new OdaMatchlockBulletEntity(level, owner, this, 10.0F)
+         .source(ability()).tracking(ability() == Ability.PURSUIT ? target : null).pursuit(pursuitId, pursuitIndex);
+      shotReported = true;
       bullet.setPos(start.x, start.y, start.z);
       bullet.shoot(shotDirection.x, shotDirection.y, shotDirection.z, 3.25F, 0.35F);
       level.addFreshEntity(bullet);
@@ -448,6 +503,11 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    @Override
    public void remove(RemovalReason reason) {
+      if (!shotReported && pursuitId != null && level() instanceof ServerLevel server) {
+         LivingEntity owner = getOwnerLiving(server);
+         if (owner != null) OdaAbilityService.report(owner, pursuitId, pursuitIndex, false);
+         shotReported = true;
+      }
       if (!this.level().isClientSide() && reason == RemovalReason.DISCARDED && !this.dissolving && this.level() instanceof ServerLevel level) {
          spawnDissolveEffect(level);
          this.dissolving = true;
@@ -506,7 +566,10 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       this.entityData.set(VOLLEY_TARGET_ID, tag.contains("VolleyTargetId") ? tag.getInt("VolleyTargetId") : -1);
       this.entityData.set(FOOT_SUPPORT_MODE, tag.getBoolean("FootSupportMode"));
       this.entityData.set(MOUNT_MODE, tag.getBoolean("MountMode"));
-      this.entityData.set(HEALTH, tag.contains("Health") ? tag.getFloat("Health") : MOUNT_MAX_HEALTH);
+      this.entityData.set(HEALTH, tag.contains("Health") ? tag.getFloat("Health") : (isMountMode() ? MOUNT_MAX_HEALTH : 30.0F));
+      legacy = !tag.contains("Ability") || !isMountMode();
+      this.entityData.set(ABILITY, tag.getString("Ability"));
+      shotInterval = tag.contains("ShotInterval") ? tag.getInt("ShotInterval") : 30;
       this.entityData.set(MOVE_FORWARD, tag.getFloat("MoveForward"));
       this.entityData.set(MOVE_STRAFE, tag.getFloat("MoveStrafe"));
       this.entityData.set(MOVE_VERTICAL, tag.getFloat("MoveVertical"));
@@ -536,6 +599,8 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       tag.putFloat("MoveStrafe", this.entityData.get(MOVE_STRAFE));
       tag.putFloat("MoveVertical", this.entityData.get(MOVE_VERTICAL));
       tag.putBoolean("StaticVolleyMode", this.entityData.get(STATIC_VOLLEY_MODE));
+      tag.putString("Ability", this.entityData.get(ABILITY));
+      tag.putInt("ShotInterval", shotInterval);
       tag.putInt("ShootDelay", this.shootDelay);
       tag.putInt("VolleyNoTargetTicks", this.volleyNoTargetTicks);
    }

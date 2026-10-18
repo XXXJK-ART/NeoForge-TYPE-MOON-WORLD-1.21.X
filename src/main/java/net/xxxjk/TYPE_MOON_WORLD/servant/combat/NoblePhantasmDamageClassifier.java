@@ -25,12 +25,50 @@ public final class NoblePhantasmDamageClassifier {
 
    private NoblePhantasmDamageClassifier() {}
 
+   private static final class TypedSource extends DamageSource {
+      final String npId;
+      TypedSource(DamageSource base, String npId) {
+         super(base.typeHolder(), base.getDirectEntity(), base.getEntity(), base.getSourcePosition());
+         this.npId = npId;
+      }
+   }
+   /** Attach an existing NP record without changing its base damage type or other servants' damage rules. */
+   public static DamageSource withNoblePhantasm(DamageSource base, String npId) { return new TypedSource(base, npId); }
+
+   /** Known NP provenance only; ordinary area attacks must not pass this classifier. */
+   public static net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType typeOf(DamageSource source) {
+      if (source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource oda) return oda.npType();
+      if (source == null) return null;
+      if (source instanceof TypedSource typed) {
+         var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(typed.npId);
+         return definition == null ? null : definition.type();
+      }
+      if (isParacelsusElementalSwordDamage(source) || source.is(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD))
+         return net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType.ARMY;
+      Entity direct = source.getDirectEntity();
+      if (direct instanceof ArtoriaExcaliburBeamEntity) return net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType.CASTLE;
+      if (direct instanceof GaeBulgArmyProjectileEntity
+         || direct instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity) return net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType.ARMY;
+      if (direct != null) {
+         String id = direct.getPersistentData().getString("NoblePhantasmId");
+         var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(id);
+         if (definition != null) return definition.type();
+      }
+      if (source.is(NOBLE_PHANTASM_DAMAGE)) {
+         String id = source.typeHolder().unwrapKey().map(key -> key.location().toString()).orElse("");
+         var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(id);
+         if (definition != null) return definition.type();
+      }
+      return null;
+   }
+
    public static boolean isParacelsusElementalSwordDamage(DamageSource source) {
       return source != null && source.is(ParacelsusDamageTypes.ELEMENTAL_SWORD);
    }
 
    public static boolean isNoblePhantasmDamage(DamageSource source, float originalDamage) {
       if (source == null) return false;
+      if (source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource oda) return oda.npType() != null;
       if (source.is(NOBLE_PHANTASM_DAMAGE) || source.is(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY)) return true;
       Entity direct = source.getDirectEntity();
       if (direct instanceof ArtoriaExcaliburBeamEntity

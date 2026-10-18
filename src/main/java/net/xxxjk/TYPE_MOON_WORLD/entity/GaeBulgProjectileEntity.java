@@ -301,7 +301,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          level.addFreshEntity(spear);
       }
       level.sendParticles(DEATH_THORN_TRAIL, origin.x, origin.y, origin.z, 46, 1.2, 1.0, 1.2, 0.06);
-      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y, origin.z, 3, 0.15, 0.15, 0.15, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y, origin.z, 3, 0.15, 0.15, 0.15, 0.0);
       level.playSound(null, BlockPos.containing(origin), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 1.8F, 0.52F);
    }
 
@@ -340,7 +340,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
       this.spawnArmyExplosionShellEffects(level, burstCenter, SPLIT_BURST_RADIUS);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.2, 0.2, 0.2, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
       level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 96, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, 0.16);
       level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 72, SPLIT_BURST_RADIUS * 0.42, SPLIT_BURST_RADIUS * 0.24, SPLIT_BURST_RADIUS * 0.42, 0.05);
       level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
@@ -553,7 +553,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          VFXServerEffects.spawn(sl, "gae_bolg_army_impact", center, 128.0);
          this.spawnArmyExplosionShellEffects(sl, center, radius);
          sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 0.3, 0.3, 0.3, 0.0);
-         sl.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
+         sl.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
          sl.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z, 40, 1.2, 0.4, 1.2, 0.04);
          sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.4, center.z, 24, 0.9, 0.6, 0.9, 0.03);
          sl.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 3.2F, 0.62F);
@@ -606,7 +606,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          double y = currentRadius * Math.cos(phi);
          double z = currentRadius * Math.sin(phi) * Math.sin(theta);
          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
-         level.sendParticles(ParticleTypes.FLASH, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.CRIT, center.x + x, center.y + y, center.z + z, 3, 0.2, 0.2, 0.2, 0.03);
          if (i % 2 == 0) {
             level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x + x, center.y + y, center.z + z, 4, 0.22, 0.22, 0.22, 0.04);

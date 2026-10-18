@@ -536,7 +536,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)) return false;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)
+         && !("oda_nobunaga".equals(vars.servantCardState().id()) && slot == 9 && player.getPersistentData().getBoolean("ServantCardOdaHajunCardActive"))) return false;
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servantCardState().id(), slot);
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
       ServantContext externalContext = new ServantContext(player, null, vars.servantCardState().id(), player.level(), 0.0, true, player.level().getGameTime());
@@ -650,6 +651,7 @@ public final class ServantCardTransformManager {
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
       int currentCooldown = unlimited ? 0 : npSlot ? vars.servantCardState().npCooldown() : getSkillCooldown(vars, cooldownSlot);
+      if (!unlimited && slot == -1 && "oda_nobunaga".equals(vars.servantCardState().id())) currentCooldown = (int)Math.max(0, player.getPersistentData().getLong("OdaThrustCooldown") - player.level().getGameTime());
       if (!unlimited && "zhao_yun_summon_hakuryu".equals(action.effectId())) {
          currentCooldown = Math.max(currentCooldown, ServantCardZhaoYunSkills.summonCooldownRemaining(player));
       }
@@ -719,6 +721,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.must_be_airborne"), true);
          return false;
       }
+      if ("oda_floating_refill".equals(action.effectId()) && net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService.orbitCount(player) >= 5) return false;
+      if ("oda_encircle_matchlocks".equals(action.effectId()) && net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService.lookTarget(player, 30) == null) return false;
       if (ServantCardActionPreconditions.requiresLookTarget(action.effectId())
          && isInvalidLookTarget(player, action.effectId())) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
@@ -794,7 +798,9 @@ public final class ServantCardTransformManager {
       if (ubwFreeLayeredProjection) {
          cooldownTicks = 0;
       }
-      if (npSlot) {
+      if (slot == -1 && "oda_nobunaga".equals(vars.servantCardState().id())) {
+         if (!unlimited) player.getPersistentData().putLong("OdaThrustCooldown", player.level().getGameTime() + cooldownTicks);
+      } else if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
          setSkillCooldown(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, cooldownTicks);
@@ -871,7 +877,7 @@ public final class ServantCardTransformManager {
             ServantCardArashSkills.requestPlayerStellaRelease(player);
          }
       } else if ("oda_nobunaga".equals(vars.servantCardState().id())) {
-         if (slot == 4) {
+         if (slot == 3) {
             if (pressed) {
                triggerAction(player, slot);
             } else {

@@ -486,7 +486,7 @@ public final class FanaticAssassinCombatHelper {
       Vec3 center = jinn.position().add(0.0, 0.8, 0.0);
       spawnSphere(level, center, 0.8, JINN_GRAY, 28);
       spawnSphere(level, center, 0.55, JINN_PURPLE, 18);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    public static void spawnJinnAura(ServerLevel level, FanaticAssassinJinnEntity jinn) {
@@ -604,7 +604,7 @@ public final class FanaticAssassinCombatHelper {
       });
       TYPE_MOON_WORLD.queueServerWork(8, () -> {
          spawnSphere(level, head, 1.15, COMPUTER_RED, 54);
-         level.sendParticles(ParticleTypes.FLASH, head.x, head.y, head.z, 2, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, head.x, head.y, head.z, 2, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.EXPLOSION, head.x, head.y, head.z, 4, 0.22, 0.22, 0.22, 0.01);
       });
       TYPE_MOON_WORLD.queueServerWork(12, () -> {
@@ -619,7 +619,7 @@ public final class FanaticAssassinCombatHelper {
       TYPE_MOON_WORLD.queueServerWork(3, () -> spawnSphere(level, center, 0.68, CRYSTAL, 42));
       TYPE_MOON_WORLD.queueServerWork(7, () -> {
          spawnSphere(level, center, 0.82, CRYSTAL, 52);
-         level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
          for (int i = 0; i < 8; i++) {
             double angle = Math.PI * 2.0 * i / 8.0;
             Vec3 low = entity.position().add(Math.cos(angle) * 0.35, 0.12, Math.sin(angle) * 0.35);

@@ -2,10 +2,10 @@
   "rank": "B",
   "id": "strategy_b",
   "display_name": "Strategy B",
-  "display_name_zh": "军略 B",
-  "type": "active",
-  "mp_cost": 15,
-  "cooldown_ticks": 400,
-  "duration_ticks": 500,
+  "display_name_zh": "战略 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
   "effects": []
 }

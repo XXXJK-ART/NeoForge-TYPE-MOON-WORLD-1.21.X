@@ -2,6 +2,11 @@ package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource.Ability;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -38,6 +43,21 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Integer> BULLET_KIND = SynchedEntityData.defineId(OdaMatchlockBulletEntity.class, EntityDataSerializers.INT);
    private static final int MAX_LIFE = 60;
    private static final int BREAK_BLOCK_COUNT = 4;
+   private Ability ability = Ability.WEAPON;
+   private UUID pursuitId;
+   private int pursuitIndex = -1;
+   private LivingEntity trackingTarget;
+   private boolean reported;
+   private float knockback;
+   public OdaMatchlockBulletEntity source(Ability value) { ability = value; return this; }
+   public Ability ability() { return ability; }
+   public OdaMatchlockBulletEntity tracking(LivingEntity target) { trackingTarget = target; return this; }
+   public OdaMatchlockBulletEntity pursuit(UUID id, int index) { pursuitId = id; pursuitIndex = index; return this; }
+   public OdaMatchlockBulletEntity knockback(float value) { knockback = value; return this; }
+   private void report(boolean hit) {
+      if (!reported && getOwner() instanceof LivingEntity owner) OdaAbilityService.report(owner, pursuitId, pursuitIndex, hit);
+      reported = true;
+   }
    public final List<Vec3> tracePos = new LinkedList<>();
 
    public OdaMatchlockBulletEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
@@ -88,9 +108,10 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
 
    @Override
    protected boolean canHitEntity(Entity entity) {
-      if (entity == null || entity == this.getOwner() || entity instanceof OdaMatchlockGunEntity || EntityUtils.isImmunePlayerTarget(entity)) {
+      if (entity == null || entity == this.getOwner() || EntityUtils.isImmunePlayerTarget(entity)) {
          return false;
       }
+      if (entity instanceof OdaMatchlockGunEntity gun && this.getOwner() != null && gun.isOwnedBy(this.getOwner().getUUID())) return false;
       if (entity.getId() == this.entityData.get(SOURCE_GUN_ID)) {
          return false;
       }
@@ -105,6 +126,14 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    @Override
    public void tick() {
       this.setNoGravity(true);
+      if (!level().isClientSide) {
+         if (!(getOwner() instanceof LivingEntity owner) || !owner.isAlive() || owner.level() != level() || !OdaCombatEvents.isOda(owner)) { discard(); return; }
+         if (trackingTarget != null) {
+            if (!trackingTarget.isAlive() || trackingTarget.level() != level()) { discard(); return; }
+            Vec3 dir = trackingTarget.getBoundingBox().getCenter().subtract(position()).normalize();
+            setDeltaMovement(dir.scale(getDeltaMovement().length()));
+         }
+      }
       super.tick();
       Vec3 motion = this.getDeltaMovement();
       if (motion.lengthSqr() > 1.0E-4) {
@@ -131,11 +160,17 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       super.onHitEntity(result);
       if (!this.level().isClientSide && result.getEntity() instanceof LivingEntity target) {
          target.invulnerableTime = 0;
-         target.hurt(this.damageSources().thrown(this, this.getOwner()), this.entityData.get(DIRECT_DAMAGE));
+         boolean accepted = getOwner() instanceof LivingEntity caster && target.hurt(new OdaDamageSource(this.damageSources().thrown(this, caster), this, caster, ability), this.entityData.get(DIRECT_DAMAGE));
+         report(accepted && (trackingTarget == null || target == trackingTarget));
+         if (accepted && knockback > 0) target.knockback(knockback, -getDeltaMovement().x, -getDeltaMovement().z);
          target.invulnerableTime = 0;
          if (this.getOwner() instanceof LivingEntity owner) {
             OdaNobunagaCombatHelper.applyDivineDefenseBreak(owner, target);
          }
+         impact(result.getLocation(), false);
+      } else if (!level().isClientSide) {
+         if (result.getEntity() instanceof OdaMatchlockGunEntity gun) gun.hurt(damageSources().thrown(this, getOwner()), entityData.get(DIRECT_DAMAGE));
+         report(false);
          impact(result.getLocation(), false);
       }
    }
@@ -143,6 +178,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    @Override
    protected void onHitBlock(BlockHitResult result) {
       super.onHitBlock(result);
+      report(false);
       if (!this.level().isClientSide) {
          breakBlocksFromImpact(result);
          impact(result.getLocation(), true);
@@ -158,7 +194,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       if (this.level() instanceof ServerLevel level) {
          int kind = this.entityData.get(BULLET_KIND);
          int intensity = kind == 2 ? 3 : kind == 3 ? 2 : 1;
-         level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, intensity, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, intensity, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 10 + intensity * 6, 0.12 * intensity, 0.12 * intensity, 0.12 * intensity, 0.04);
          level.sendParticles(blockImpact ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 8 + intensity * 8, 0.18 * intensity, 0.16 * intensity, 0.18 * intensity, 0.02);
          level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 4 + intensity * 5, 0.1 * intensity, 0.1 * intensity, 0.1 * intensity, 0.02);
@@ -202,16 +238,26 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    }
 
    @Override
+   public void remove(Entity.RemovalReason reason) {
+      if (!level().isClientSide) report(false);
+      super.remove(reason);
+   }
+
+   @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
+      try { ability = Ability.valueOf(tag.getString("Ability")); } catch (IllegalArgumentException e) { discard(); }
       this.entityData.set(DIRECT_DAMAGE, tag.contains("DirectDamage") ? tag.getFloat("DirectDamage") : 10.0F);
       this.entityData.set(SOURCE_GUN_ID, tag.getInt("SourceGunId"));
       this.entityData.set(BULLET_KIND, tag.getInt("BulletKind"));
+      // Projectiles belong to a live cast/session and are never resumed after loading a save.
+      this.discard();
    }
 
    @Override
    public void addAdditionalSaveData(CompoundTag tag) {
       super.addAdditionalSaveData(tag);
+      tag.putString("Ability", ability.name());
       tag.putFloat("DirectDamage", this.entityData.get(DIRECT_DAMAGE));
       tag.putInt("SourceGunId", this.entityData.get(SOURCE_GUN_ID));
       tag.putInt("BulletKind", this.entityData.get(BULLET_KIND));

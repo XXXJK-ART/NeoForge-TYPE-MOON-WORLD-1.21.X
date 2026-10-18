@@ -80,8 +80,8 @@
     "pitch": 1.0
   },
   "oda_hajun": {
-    "voice_ticks": 91,
-    "sound": "typemoonworld:voice/oda_nobunaga/hajun",
+    "voice_ticks": 95,
+    "sound": "typemoonworld:voice/oda_nobunaga/hajun_release",
     "pitch": 1.0
   },
   "muramasa_summon": {

@@ -10,7 +10,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardFlightController;
 import org.jetbrains.annotations.NotNull;
 
-public record ServantCardFlightMessage(boolean toggle, float forward, float strafe, float vertical) implements CustomPacketPayload {
+public record ServantCardFlightMessage(boolean toggle, float forward, float strafe, float vertical, boolean sprint) implements CustomPacketPayload {
+   public ServantCardFlightMessage(boolean toggle, float forward, float strafe, float vertical) { this(toggle, forward, strafe, vertical, false); }
    public static final Type<ServantCardFlightMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "servant_card_flight")
    );
@@ -20,8 +21,9 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
          buffer.writeByte(encodeUnit(message.forward));
          buffer.writeByte(encodeUnit(message.strafe));
          buffer.writeByte(encodeUnit(message.vertical));
+         buffer.writeBoolean(message.sprint);
       },
-      buffer -> new ServantCardFlightMessage(buffer.readBoolean(), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()))
+      buffer -> new ServantCardFlightMessage(buffer.readBoolean(), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()), decodeUnit(buffer.readByte()), buffer.readBoolean())
    );
 
    @Override
@@ -37,6 +39,8 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
          if (context.player() instanceof ServerPlayer player
             && ServerPacketRateLimiter.allow(player, message.toggle ? "servant_card_flight_toggle" : "servant_card_flight_input",
                message.toggle ? 4 : 1)) {
+            var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id)) player.getPersistentData().putBoolean("OdaFlightSprint", message.sprint);
             ServantCardFlightController.setInput(player, message.toggle, message.forward, message.strafe, message.vertical);
          }
       });

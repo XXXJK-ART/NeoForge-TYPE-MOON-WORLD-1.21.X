@@ -328,7 +328,7 @@ public final class ManaBurstService {
    private static void spawnToggleFx(ServerPlayer player, int mode, int level) {
       if (player.level() instanceof ServerLevel serverLevel) {
          double y = player.getY() + player.getBbHeight() * 0.55;
-         serverLevel.sendParticles(ParticleTypes.FLASH, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 34 + level * 8, 0.55, 0.65, 0.55, 0.12);
          serverLevel.sendParticles(mode == 1 ? ParticleTypes.CRIT : ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 18 + level * 5, 0.45, 0.55, 0.45, 0.08);
       }
@@ -385,7 +385,7 @@ public final class ManaBurstService {
    }
 
    private static void spawnDirectBeamFx(ServerLevel level, Vec3 eye, Vec3 look, double range, int levelRank) {
-      level.sendParticles(ParticleTypes.FLASH, eye.x + look.x * 0.8, eye.y + look.y * 0.8, eye.z + look.z * 0.8, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, eye.x + look.x * 0.8, eye.y + look.y * 0.8, eye.z + look.z * 0.8, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, eye.x + look.x * 1.1, eye.y + look.y * 1.1, eye.z + look.z * 1.1, 2, 0.12, 0.12, 0.12, 0.0);
       for (double d = 0.8; d <= range; d += 0.75) {
          Vec3 p = eye.add(look.scale(d));
@@ -401,7 +401,7 @@ public final class ManaBurstService {
    }
 
    private static void spawnDirectImpactFx(ServerLevel level, Vec3 pos, int levelRank) {
-      level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 2 + levelRank / 2, 0.25, 0.25, 0.25, 0.0);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y, pos.z, 14 + levelRank * 5, 0.45, 0.35, 0.45, 0.05);
       level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 18 + levelRank * 6, 0.32, 0.32, 0.32, 0.12);

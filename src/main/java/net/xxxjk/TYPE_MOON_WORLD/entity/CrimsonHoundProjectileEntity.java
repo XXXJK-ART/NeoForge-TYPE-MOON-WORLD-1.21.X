@@ -123,7 +123,7 @@ public class CrimsonHoundProjectileEntity extends ThrowableItemProjectile {
       target.hurt(this.damageSources().thrown(this, this.getOwner()), DIRECT_HIT_DAMAGE);
       target.invulnerableTime = 0;
       if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 32, 0.55, 0.45, 0.55, 0.12);
          level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 24, 0.45, 0.45, 0.45, 0.12);
       }

@@ -4,8 +4,8 @@
 //
 // The reference implementation uses several noisy layers and sends a bright
 // core to a bloom target.  This project keeps the material compatible with
-// Minecraft's single colour target: the emissive colour is pushed above the
-// bloom threshold and the existing post pass extracts it.  The same material
+// Minecraft's single colour target: emissive colour stays on the effect's
+// own geometry, without a fullscreen bloom pass. The same material
 // works for billboards, decals and trail samples, which keeps the server-side
 // effect definitions cheap and deterministic.
 uniform sampler2D Sampler0;

@@ -304,7 +304,7 @@ public final class ServantCardDefenseHandler {
             event.setAmount(damage * (1.0F - currentResistance));
          }
       } else if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + player.getBbHeight() * 0.45, player.getZ(), 18, 0.52, 0.45, 0.52, 0.045);
       }
 

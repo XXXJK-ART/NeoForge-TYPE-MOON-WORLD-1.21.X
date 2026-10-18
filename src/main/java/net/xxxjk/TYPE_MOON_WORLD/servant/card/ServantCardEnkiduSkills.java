@@ -710,7 +710,7 @@ public final class ServantCardEnkiduSkills {
    private static void applyEnumaSmallExplosion(ServerPlayer player, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_impact", impact, 192.0);
       level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 0.35, impact.z, 8, 1.2, 0.55, 1.2, 0.02);
-      level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y + 0.25, impact.z, 1, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y + 0.25, impact.z, 1, 0.08, 0.08, 0.08, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 80, 1.7, 1.0, 1.7, 0.16);
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.2, impact.z, 38, 1.5, 0.75, 1.5, 0.1);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.0F, 1.45F);
@@ -730,7 +730,7 @@ public final class ServantCardEnkiduSkills {
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_aftermath", impact, 192.0);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 10, 1.2, 0.8, 1.2, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 1.2, impact.z, 56, radius * 0.34, radius * 0.22, radius * 0.34, 0.045);
-      level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(520), radius * 0.55, radius * 0.5, radius * 0.55, 0.34);
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.35, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(320), radius * 0.5, radius * 0.34, radius * 0.5, 0.24);
       level.sendParticles(ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(280), radius * 0.48, radius * 0.42, radius * 0.48, 0.28);

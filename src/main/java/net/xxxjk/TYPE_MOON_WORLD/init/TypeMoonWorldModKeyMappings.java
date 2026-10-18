@@ -205,6 +205,7 @@ public class TypeMoonWorldModKeyMappings {
       private static float lastServantFlightForward = Float.NaN;
       private static float lastServantFlightStrafe = Float.NaN;
       private static float lastServantFlightVertical = Float.NaN;
+      private static boolean lastOdaFlightSprint;
       private static int manaBurstInputSendDelay = 0;
       private static int manaBurstInputKeepaliveChecks = 0;
       private static float lastManaBurstForward = Float.NaN;
@@ -315,6 +316,13 @@ public class TypeMoonWorldModKeyMappings {
             event.setSwingHand(false);
             return;
          }
+         if (event.isUseItem() && vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id)
+            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
+            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+            event.setCanceled(true);
+            event.setSwingHand(true);
+            return;
+         }
          if (event.isUseItem() && player.isCrouching() && vars.servant_card_transformed && "gilgamesh".equals(vars.servant_card_id)) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             event.setCanceled(true);
@@ -353,12 +361,7 @@ public class TypeMoonWorldModKeyMappings {
             event.setSwingHand(false);
             return;
          }
-         if (vars.servant_card_transformed
-            && "oda_nobunaga".equals(vars.servant_card_id)
-            && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.isHoldingHeshikiriClient(player)) {
-            event.setCanceled(true);
-            event.setSwingHand(true);
-         }
+
       }
 
       @SubscribeEvent
@@ -1046,12 +1049,14 @@ public class TypeMoonWorldModKeyMappings {
             float forward = (forwardDown ? 1.0F : 0.0F) + (backDown ? -1.0F : 0.0F);
             float strafe = (rightDown ? 1.0F : 0.0F) + (leftDown ? -1.0F : 0.0F);
             float vertical = (jumpDown ? 1.0F : 0.0F) + (sneakDown ? -1.0F : 0.0F);
-            boolean changed = forward != lastServantFlightForward || strafe != lastServantFlightStrafe || vertical != lastServantFlightVertical;
+            boolean sprint = Minecraft.getInstance().options.keySprint.isDown();
+            boolean changed = forward != lastServantFlightForward || strafe != lastServantFlightStrafe || vertical != lastServantFlightVertical || sprint != lastOdaFlightSprint;
             if (changed || ++servantFlightInputKeepaliveChecks >= 10) {
-               PacketDistributor.sendToServer(new ServantCardFlightMessage(false, forward, strafe, vertical), new CustomPacketPayload[0]);
+               PacketDistributor.sendToServer(new ServantCardFlightMessage(false, forward, strafe, vertical, sprint), new CustomPacketPayload[0]);
                lastServantFlightForward = forward;
                lastServantFlightStrafe = strafe;
                lastServantFlightVertical = vertical;
+               lastOdaFlightSprint = sprint;
                servantFlightInputKeepaliveChecks = 0;
                servantFlightInputSendDelay = 1;
             } else {

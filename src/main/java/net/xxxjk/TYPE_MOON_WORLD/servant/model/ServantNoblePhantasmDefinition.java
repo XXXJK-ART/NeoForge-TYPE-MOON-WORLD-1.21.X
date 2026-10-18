@@ -60,6 +60,7 @@ public record ServantNoblePhantasmDefinition(
       classRestrictions = classRestrictions == null ? List.of() : List.copyOf(classRestrictions);
    }
    public enum NpType {
+      ANTI_DIVINE("anti_divine"),
       ARMY("army"),
       CASTLE("castle"),
       WORLD("world"),
@@ -82,8 +83,12 @@ public record ServantNoblePhantasmDefinition(
             return ANTI_UNIT;
          }
 
+         key = key.toLowerCase(java.util.Locale.ROOT);
+         if (key.equals("anti_army") || key.equals("对军")) return ARMY;
+         if (key.equals("anti_castle") || key.equals("anti_fortress") || key.equals("对城")) return CASTLE;
+         if (key.equals("anti_god") || key.equals("对神")) return ANTI_DIVINE;
          for (NpType type : values()) {
-            if (type.key.equals(key.toLowerCase()) || ("anti_fortress".equals(key.toLowerCase()) && type == ANTI_UNIT)) {
+            if (type.key.equals(key.toLowerCase())) {
                return type;
             }
          }

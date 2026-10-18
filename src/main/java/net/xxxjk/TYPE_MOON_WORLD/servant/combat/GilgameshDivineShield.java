@@ -157,7 +157,7 @@ public final class GilgameshDivineShield {
       if (!(defender.level() instanceof ServerLevel level)) return;
       // A short gold/white burst makes an absorbed hit readable without
       // turning every shield impact into a large explosion effect.
-      level.sendParticles(broken ? ParticleTypes.FLASH : ParticleTypes.WAX_ON,
+      level.sendParticles(broken ? ParticleTypes.END_ROD : ParticleTypes.WAX_ON,
          defender.getX(), defender.getY() + defender.getBbHeight() * 0.55, defender.getZ(),
          broken ? 1 : 8, 0.55, 0.65, 0.55, 0.04);
       level.playSound(null, defender.blockPosition(), broken ? SoundEvents.SHIELD_BREAK : SoundEvents.SHIELD_BLOCK,

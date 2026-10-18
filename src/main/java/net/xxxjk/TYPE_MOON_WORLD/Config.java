@@ -85,8 +85,8 @@ public class Config {
    static final ModConfigSpec SPEC = BUILDER.build();
    public static final ConfigValue<String> VFX_QUALITY = CLIENT_BUILDER.comment("VFX quality: AUTO, LOW, MEDIUM or HIGH")
       .define("vfxQuality", "AUTO", value -> value instanceof String text && Set.of("AUTO", "LOW", "MEDIUM", "HIGH").contains(text.toUpperCase(java.util.Locale.ROOT)));
-   public static final BooleanValue VFX_BLOOM = CLIENT_BUILDER.comment("Enable VFX bloom post processing").define("vfxBloom", true);
-   public static final BooleanValue VFX_SCREEN_EFFECTS = CLIENT_BUILDER.comment("Enable VFX screen effects").define("vfxScreenEffects", true);
+   public static final BooleanValue VFX_BLOOM = CLIENT_BUILDER.comment("Legacy compatibility option; fullscreen bloom has been removed and this value is ignored").define("vfxBloom", false);
+   public static final BooleanValue VFX_SCREEN_EFFECTS = CLIENT_BUILDER.comment("Legacy compatibility option; fullscreen effects have been removed and this value is ignored").define("vfxScreenEffects", false);
    public static final BooleanValue VFX_DISTORTION = CLIENT_BUILDER.comment("Enable local VFX distortion").define("vfxDistortion", true);
    public static final IntValue VFX_MAX_PARTICLES = CLIENT_BUILDER.comment("Optional VFX particle override; 0 uses the selected quality budget")
       .defineInRange("vfxMaxParticles", 0, 0, 12000);
@@ -118,8 +118,8 @@ public class Config {
    public static int serverCriticalMspt = 50;
    public static Set<ResourceLocation> legacyAiEntityTypes = Set.of();
    public static String vfxQuality = "AUTO";
-   public static boolean vfxBloom = true;
-   public static boolean vfxScreenEffects = true;
+   public static boolean vfxBloom = false;
+   public static boolean vfxScreenEffects = false;
    public static boolean vfxDistortion = true;
    public static int vfxMaxParticles = 0;
 
@@ -136,8 +136,8 @@ public class Config {
    static void onLoad(ModConfigEvent event) {
       if (event.getConfig().getSpec() == CLIENT_SPEC) {
          vfxQuality = ((String)VFX_QUALITY.get()).toUpperCase(java.util.Locale.ROOT);
-         vfxBloom = VFX_BLOOM.get();
-         vfxScreenEffects = VFX_SCREEN_EFFECTS.get();
+         vfxBloom = false;
+         vfxScreenEffects = false;
          vfxDistortion = VFX_DISTORTION.get();
          vfxMaxParticles = VFX_MAX_PARTICLES.get();
          return;

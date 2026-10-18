@@ -816,7 +816,7 @@ public final class MuramasaCombatHelper {
    private static void spawnMuramasaFieldEffects(ServerLevel level, SenkoMuramasaEntity entity) {
       Vec3 origin = entity.position().add(0.0, 0.15, 0.0);
 
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          origin.x, origin.y + 0.8, origin.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
          origin.x, origin.y + 0.85, origin.z, 90, 0.9, 0.75, 0.9, 0.08);
@@ -1086,7 +1086,7 @@ public final class MuramasaCombatHelper {
       Vec3 forward = horizontalLook(entity);
       int length = Math.max(8, Math.min(25, 6 + percent / 5));
 
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          origin.x, origin.y, origin.z, 3, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
          origin.x, origin.y, origin.z, 120, 0.7, 0.65, 0.7, 0.12);

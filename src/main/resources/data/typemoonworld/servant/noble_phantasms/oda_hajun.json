@@ -1,0 +1,16 @@
+{
+  "id": "oda_hajun",
+  "display_name": "oda_hajun",
+  "display_name_zh": "第六天魔王波旬",
+  "type": "anti_divine",
+  "rank": "E～EX",
+  "mp_cost": 130,
+  "range": 25,
+  "base_damage_multiplier": 1,
+  "effects": [],
+  "special_attack_conditions": [],
+  "class_restrictions": [
+    "archer"
+  ],
+  "release_policy": "oda_hajun"
+}

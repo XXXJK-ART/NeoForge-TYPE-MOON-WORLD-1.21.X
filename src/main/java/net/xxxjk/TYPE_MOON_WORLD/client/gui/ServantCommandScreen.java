@@ -35,6 +35,9 @@ public class ServantCommandScreen extends Screen {
       int leftX = panelX + 12;
       int rightX = leftX + columnWidth + gap;
       int buttonY = panelY + 48;
+      if (getServant() != null && "oda_nobunaga".equals(getServant().getServantId()))
+         addRenderableWidget(new NeonButton(leftX, buttonY + 75, columnWidth, 20,
+            Component.translatable("gui.typemoonworld.oda_profile.title"), button -> minecraft.setScreen(new OdaProfileScreen(this)), GuiUtils.ARCANE_GOLD).setArcaneStyle(true));
 
       addRenderableWidget(new NeonButton(leftX, buttonY, columnWidth, 20,
          Component.translatable("gui.typemoonworld.master_command_spell.restore_mana"), button -> cast(0), GuiUtils.ARCANE_CREST).setArcaneStyle(true));

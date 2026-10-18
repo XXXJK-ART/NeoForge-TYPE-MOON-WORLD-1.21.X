@@ -76,6 +76,11 @@ public final class ServantCardVoiceHelper {
          case "rule_breaker" -> ModSounds.MEDEA_VOICE_RULE_BREAKER_SHORT.get();
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
          case "zhao_yun_changbanpo" -> ModSounds.ZHAO_YUN_VOICE_NP.get();
+         case "oda_hasebe_short_thrust", "oda_floating_refill", "oda_three_line",
+            "oda_encircle_matchlocks", "oda_charged_matchlock", "oda_crossfire_net",
+            "oda_scorched_earth", "oda_hasebe_breakthrough", "strategy", "maou",
+            "matchlock", "volley", "fire_barrage", "atsumori", "anti_mystery",
+            "ash_field", "hasebe_repel" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
          case "okita_mumyoudan_zuki" -> ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();

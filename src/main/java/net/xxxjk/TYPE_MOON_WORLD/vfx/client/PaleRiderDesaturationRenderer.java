@@ -1,80 +1,10 @@
 package net.xxxjk.TYPE_MOON_WORLD.vfx.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import java.io.IOException;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.PostChain;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
-import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
-@EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, value = Dist.CLIENT)
+/** Compatibility entry point; Pale Rider no longer recolors the entire scene. */
 public final class PaleRiderDesaturationRenderer {
-   private static final ResourceLocation EFFECT = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "shaders/post/pale_rider_desaturate.json");
-   private static PostChain chain;
-   private static int width;
-   private static int height;
+   private PaleRiderDesaturationRenderer() { }
 
-   private PaleRiderDesaturationRenderer() {
-   }
-
-   @SubscribeEvent
-   public static void render(RenderGuiEvent.Pre event) {
-      Minecraft minecraft = Minecraft.getInstance();
-      float strength = VFXEnvironmentManager.desaturationStrength();
-      if (minecraft.level == null || strength <= 0.001F) {
-         close();
-         return;
-      }
-      try {
-         ensureChain(minecraft);
-         if (chain != null) {
-            RenderSystem.assertOnRenderThread();
-            chain.setUniform("Strength", strength);
-            VFXPostProcessPass.process(chain, event.getPartialTick().getGameTimeDeltaTicks());
-            minecraft.getMainRenderTarget().bindWrite(true);
-         }
-      } catch (Exception exception) {
-         TYPE_MOON_WORLD.LOGGER.warn("Failed to render Pale Rider desaturation", exception);
-         close();
-      } finally {
-         // Keep the following HUD/overlay render on the main framebuffer even
-         // when PostChain creation or processing fails.
-         minecraft.getMainRenderTarget().bindWrite(true);
-         RenderSystem.enableDepthTest();
-         RenderSystem.depthFunc(515);
-         RenderSystem.depthMask(true);
-         RenderSystem.colorMask(true, true, true, true);
-         RenderSystem.disableBlend();
-         RenderSystem.defaultBlendFunc();
-         RenderSystem.enableCull();
-         RenderSystem.resetTextureMatrix();
-         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-      }
-   }
-
-   private static void ensureChain(Minecraft minecraft) throws IOException {
-      if (chain == null) {
-         chain = new PostChain(minecraft.getTextureManager(), minecraft.getResourceManager(), minecraft.getMainRenderTarget(), EFFECT);
-         width = 0;
-         height = 0;
-      }
-      int newWidth = minecraft.getMainRenderTarget().width;
-      int newHeight = minecraft.getMainRenderTarget().height;
-      if (newWidth != width || newHeight != height) {
-         width = newWidth;
-         height = newHeight;
-         chain.resize(width, height);
-      }
-   }
-
-   private static void close() {
-      if (chain != null) {
-         chain.close();
-         chain = null;
-      }
-   }
+   public static void render(RenderGuiEvent.Pre event) { }
 }

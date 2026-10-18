@@ -1,11 +1,10 @@
-# VFX 2.0 material and screen effects
+# VFX 2.0 world materials
 
 Existing effect JSON remains valid. New fields are optional and are resolved on the client.
 
 ```json
 {
   "screen_effects": [
-    {"type":"white_flash","intensity":0.4,"duration":0.25},
     {"type":"radial_blur","intensity":0.2,"duration":0.4}
   ],
   "emitters": [{
@@ -26,8 +25,10 @@ budgeting; `critical` effects are retained longest under pressure. `renderer` va
 `shader_quad` and `volume` currently use the safe billboard path until a dedicated
 geometry backend is available.
 
-Client controls are stored in the NeoForge client config: `vfxQuality`, `vfxBloom`,
-`vfxScreenEffects`, `vfxDistortion`, and `vfxMaxParticles`. Runtime inspection is
+Client controls are stored in the NeoForge client config: `vfxQuality`,
+`vfxDistortion`, and `vfxMaxParticles`. Legacy `vfxBloom` and `vfxScreenEffects`
+keys remain readable but are ignored; fullscreen post processing is removed.
+Runtime inspection is
 available through `/vfx client quality`, `/vfx debug stats`, and `/vfx debug profile`.
 
 ## Legacy effect migration
@@ -37,8 +38,17 @@ Shape components use the polar/SDF material where appropriate; beam, lightning,
 parametric and smoke-like roles use the energy/smoke material. The renderer falls
 back to a shader billboard or decal, and CPU turbulence/orbit motion is added for
 eligible legacy shapes. Explicit `material`, `renderer`, and `motion` fields always
-take precedence. Impact, explosion, teleport, rift and time-stop effect ids also
-receive a restrained screen preset unless `screen_effects` is declared explicitly.
+take precedence. All `screen_effects` and `environment` entries are accepted only
+as legacy metadata. They never change screen color, fog, weather, saturation,
+vignette or blur. Scene-wide bloom and duel flash packets are also disabled at
+their entry points, regardless of existing config values. No fullscreen shader
+chains are shipped. Legacy vanilla `flash` particles resolve to small `end_rod`
+particles. World-space particles, beams, decals and emissive materials remain.
+
+Mod-created lightning bolts carry the synced no-gravity flag (which does not
+affect stationary lightning). A client-only mixin skips only those bolts' calls
+to `Level.setSkyFlashTime`, retaining their geometry, damage, fire and lifetime.
+Vanilla has no per-bolt flash event; natural lightning remains unchanged.
 
 This compatibility pass keeps the existing JSON schema stable. It does not claim
 SSBO/GPU particles, world-position reconstruction, or a dedicated distortion

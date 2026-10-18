@@ -152,7 +152,7 @@ public class SpiritronCannonBeamEntity extends Entity {
       VFXServerEffects.spawnOriented(level, "leff_spiritron_cannon", this.position(), forward, 256.0);
       level.playSound(null, BlockPos.containing(this.position()), SoundEvents.BEACON_DEACTIVATE, SoundSource.HOSTILE, 2.3F, 0.42F);
       level.playSound(null, BlockPos.containing(this.position().add(forward.scale(16.0))), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.0F, 0.82F);
-      level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(), 3, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 3, 0.2, 0.2, 0.2, 0.0);
    }
 
    private void applyBeamDamage(ServerLevel level, LivingEntity owner) {

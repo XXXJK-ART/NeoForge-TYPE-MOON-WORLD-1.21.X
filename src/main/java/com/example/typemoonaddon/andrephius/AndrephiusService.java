@@ -555,6 +555,7 @@ public final class AndrephiusService {
             LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
             if (lightning != null) {
                 lightning.moveTo(strikePosition.x, strikePosition.y, strikePosition.z);
+                lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
                 lightning.setVisualOnly(true);
                 level.addFreshEntity(lightning);
             }

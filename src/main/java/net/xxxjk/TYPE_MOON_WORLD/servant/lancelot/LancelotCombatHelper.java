@@ -176,7 +176,7 @@ public final class LancelotCombatHelper {
       entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
       applyAroundightModifiers(entity);
 
-      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + 1.0, entity.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + 1.0, entity.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + 1.0, entity.getZ(), 40, 0.75, 0.8, 0.75, 0.2);
       });
       return true;

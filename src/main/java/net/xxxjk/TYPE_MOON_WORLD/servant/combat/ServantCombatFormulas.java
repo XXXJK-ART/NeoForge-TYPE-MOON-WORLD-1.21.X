@@ -24,6 +24,7 @@ public final class ServantCombatFormulas {
          case E -> 0;
          case D -> 1;
          case C -> 2;
+         case A_MINUS -> 2;
          case B -> 3;
          case A -> 4;
          // Keep A++ above A+ so the three-times rank remains distinguishable.

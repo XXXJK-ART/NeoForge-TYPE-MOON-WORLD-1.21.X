@@ -501,6 +501,12 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "oda_np", 1.1F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_NP.get());
    }
 
+   public static void tryPlayOdaNobunagaSkill(ServantEntity servant) {
+      if (isOdaNobunaga(servant)) {
+         playVoiceForced(servant, "oda_skill", 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
+      }
+   }
+
    public static void tryPlayMuramasaNp(ServantEntity servant) {
       if (isMuramasa(servant)) {
          playVoiceForced(servant, "muramasa_np", 1.15F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_NP.get());

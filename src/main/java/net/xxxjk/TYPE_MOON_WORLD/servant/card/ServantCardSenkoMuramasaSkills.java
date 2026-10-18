@@ -262,7 +262,7 @@ public final class ServantCardSenkoMuramasaSkills {
    private static void revealTsumukari(ServerPlayer player) {
       if (!player.isAlive() || !(player.level() instanceof ServerLevel level)) return;
       player.setItemInHand(InteractionHand.MAIN_HAND, MuramasaCombatHelper.projectedStack(ModItems.TSUMUKARI_MURAMASA.get()));
-      level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
+      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
       level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 120, 1.5, 1.2, 1.5, 0.15);
       level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 180, 12.0, 3.0, 12.0, 0.12);
       replaceTemporaryRedField(level, player, 16, 16 * 20);

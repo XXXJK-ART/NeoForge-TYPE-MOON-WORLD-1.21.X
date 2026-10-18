@@ -167,7 +167,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                Vec3 impact = this.position().lerp(counterpart.position(), 0.5);
                if ((token.hashCode() & 3) == 0) {
                   level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, 2, 0.22, 0.22, 0.22, 0.02);
-                  level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
+                  level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
                   level.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 8, 0.34, 0.34, 0.34, 0.12);
                   level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 4, 0.26, 0.26, 0.26, 0.06);
                }
@@ -414,7 +414,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       }
       level.sendParticles(VAJRA_PURPLE, center.x, center.y, center.z, empowered ? 220 : 42, radius * 0.48, radius * 0.48, radius * 0.48, empowered ? 0.24 : 0.1);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, empowered ? 180 : 34, radius * 0.6, radius * 0.6, radius * 0.6, empowered ? 0.32 : 0.14);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, empowered ? 8 : 2, 0.6, 0.6, 0.6, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, empowered ? 8 : 2, 0.6, 0.6, 0.6, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, empowered ? 3 : 1, 0.45, 0.45, 0.45, 0.0);
       level.playSound(null, center.x, center.y, center.z, net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, net.minecraft.sounds.SoundSource.PLAYERS, empowered ? 2.5F : 1.0F, 1.25F);
       level.playSound(null, center.x, center.y, center.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(), net.minecraft.sounds.SoundSource.PLAYERS, empowered ? 1.8F : 0.65F, 0.85F);

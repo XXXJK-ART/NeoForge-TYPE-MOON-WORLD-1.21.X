@@ -203,7 +203,7 @@ public final class RoyalCannonProjectileEntity extends Entity {
       level.sendParticles(PALE_GOLD, pos.x, pos.y, pos.z, 74, radius * 0.66, radius * 0.66, radius * 0.66, 0.055);
       level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 42, radius * 0.34, radius * 0.34, radius * 0.34, 0.052);
       level.sendParticles(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, 14, radius * 0.35, radius * 0.35, radius * 0.35, 0.045);
-      level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private void spawnGoldSphere(ServerLevel level, Vec3 center, float radius) {

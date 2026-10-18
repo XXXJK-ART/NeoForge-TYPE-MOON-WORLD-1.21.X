@@ -18,6 +18,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
@@ -38,6 +39,14 @@ public final class ClientUiVfxSmoke {
    private static final String WORLD = "UI-VFX-QA";
    private boolean opened, done;
    private int ticks;
+   private int[] skyBeforeFlash;
+   private int[] groundBeforeFlash;
+   private int[] skyBeforeTint;
+   private int[] groundBeforeTint;
+   private int[] stableScenePixels;
+   private int checkedFrames;
+   private int maximumSceneDelta;
+   private boolean receivedCombatLightning;
 
    public ClientUiVfxSmoke() { NeoForge.EVENT_BUS.register(this); }
 
@@ -54,7 +63,7 @@ public final class ClientUiVfxSmoke {
             opened = true;
             mc.options.pauseOnLostFocus = false;
             mc.options.renderDistance().set(4);
-            mc.options.simulationDistance().set(4);
+            mc.options.simulationDistance().set(6);
             mc.options.guiScale().set(2);
             mc.getWindow().setWindowed(1280, 720);
             mc.getLanguageManager().setSelected("zh_cn");
@@ -63,6 +72,9 @@ public final class ClientUiVfxSmoke {
          }
          if (mc.player == null || mc.getSingleplayerServer() == null) return;
          ticks++;
+         // Window changes can leave the pause menu open in an unattended run.
+         // The scene renderer skips VFX behind menus, so close it explicitly.
+         if (ticks < 320 && mc.screen != null) mc.setScreen(null);
          if (ticks == 1) initialize(mc);
          if (ticks == 20) {
             require(!mc.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed, "normal-form input test started transformed");
@@ -89,16 +101,90 @@ public final class ClientUiVfxSmoke {
             VFXRenderManager.clear();
             mc.getWindow().setWindowed(1280, 720);
          }
-         if (ticks == 180) VFXPostProcessManager.add(List.of(new VFXScreenEffectDefinition("white_flash", 0.15F, 3, 0)));
-         if (ticks == 190) capture(mc, "sky-screen-effect", true);
-         if (ticks == 220) VFXEnvironmentManager.add(new VFXEnvironmentDefinition("world_desaturation", -1, 0, 3, 0, 0, 0.7F, 128), 0, 105, 13);
-         if (ticks == 230) capture(mc, "sky-desaturation", true);
+         if (ticks == 179) {
+            require(!mc.player.hasEffect(net.minecraft.world.effect.MobEffects.NIGHT_VISION), "night vision contaminates the scene baseline");
+            skyBeforeFlash = sampleSky(mc);
+            groundBeforeFlash = sampleGround(mc);
+            stableScenePixels = sampleStableScene(mc);
+         }
+         if (ticks == 180) VFXPostProcessManager.add(List.of(new VFXScreenEffectDefinition("white_flash", 1.0F, 3, 0)));
+         // Exercise the independent legacy duel payload, including repeated
+         // 0.1-second requests that the old screen-effect-only check missed.
+         if (ticks >= 192 && ticks <= 212 && ticks % 2 == 0) mc.getSingleplayerServer().execute(() -> {
+            var p = mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+            net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork.sendToPlayer(p,
+               new net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage(2, 1.0F));
+         });
+         if (ticks == 205) {
+            for (String type : new String[]{"whiteout", "whiteout_wave", "chromatic_aberration", "color_split",
+               "time_stop", "timestop", "timestop_border", "radial_blur", "impact_blur", "vignette",
+               "glass_break", "glass_shatter", "portal_rift"}) {
+               VFXPostProcessManager.add(List.of(new VFXScreenEffectDefinition(type, 1.0F, 2, 128)));
+            }
+         }
+         if (ticks == 190) {
+            requireSimilar(skyBeforeFlash, sampleSky(mc), 8, "white flash changed sky");
+            requireSimilar(groundBeforeFlash, sampleGround(mc), 8, "white flash changed ground");
+            capture(mc, "sky-screen-effect", true);
+         }
+         if (ticks == 220) {
+            for (String type : new String[]{"world_desaturation", "world_darkness", "red_fog", "thunderstorm_hint",
+               "rain_weather", "thunderstorm_weather"}) {
+               VFXEnvironmentManager.add(new VFXEnvironmentDefinition(type, 0xFFFF0000, 0, 3, 0, 0, 1.0F, 128), 0, 105, 13);
+            }
+         }
+         if (ticks == 230) {
+            capture(mc, "sky-desaturation", true);
+            skyBeforeTint = sampleSky(mc);
+            groundBeforeTint = sampleGround(mc);
+         }
+         if (ticks == 235) {
+            VFXEnvironmentManager.add(new VFXEnvironmentDefinition("screen_tint", 0xFFFF0000, 0, 1, 0.0F, 0.0F, 1.0F, 128), 0, 105, 13);
+         }
+         if (ticks == 240) {
+            requireSimilar(skyBeforeTint, sampleSky(mc), 8, "screen tint changed sky");
+            requireSimilar(groundBeforeTint, sampleGround(mc), 8, "screen tint changed ground");
+            capture(mc, "screen-tint-disabled", true);
+         }
+         if (ticks == 242) mc.getSingleplayerServer().execute(() -> {
+            var bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(mc.getSingleplayerServer().overworld());
+            require(bolt != null, "combat lightning was not created");
+            bolt.moveTo(30, 105, 13);
+            bolt.setNoGravity(true);
+            bolt.setVisualOnly(true);
+            mc.getSingleplayerServer().overworld().addFreshEntity(bolt);
+         });
+         if (ticks == 250) {
+            require(net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXVanillaParticleDefinition.particleByName("flash")
+               == net.minecraft.core.particles.ParticleTypes.END_ROD, "legacy flash still expands over the view");
+            net.xxxjk.TYPE_MOON_WORLD.client.TimeAlterVisualClient.applyState(mc.player.getUUID(), true, 1, 12, 2.0);
+         }
          if (ticks == 260) VFXRenderManager.clear();
+         if (ticks == 265) {
+            net.xxxjk.TYPE_MOON_WORLD.client.TimeAlterVisualClient.applyState(mc.player.getUUID(), false, 1, 0, 1.0);
+            // Ordinary offscreen particles used to switch on bloom over the
+            // entire framebuffer even though none of their geometry was visible.
+            Config.vfxBloom = true;
+            Config.vfxScreenEffects = true;
+            VFXClientRuntime.spawn("ea_charge", 100, 106, 13, -1, 42);
+         }
+         if (ticks == 279) {
+            require(checkedFrames >= 50, "too few consecutive render frames checked: " + checkedFrames);
+            require(receivedCombatLightning, "combat lightning did not reach the client");
+            require(VFXRenderManager.hasActiveEffects(), "ordinary world VFX were disabled");
+            TYPE_MOON_WORLD.LOGGER.info("COMBAT_SCREEN_STABILITY_PASS frames={} maxChannelDelta={} duelPackets=11 screenTypes=14 environmentTypes=7 combatLightning=pass legacyConfig=true",
+               checkedFrames, maximumSceneDelta);
+         }
          if (ticks == 280) {
+            VFXRenderManager.clear();
             String[] effects = {"ea_charge", "ea_beam", "servant_exchange_clash", "gilgamesh_ea_tree"};
             for (int i = 0; i < effects.length; i++) VFXClientRuntime.spawn(effects[i], -3 + i * 2, 106, 8, -1, 42);
          }
-         if (ticks == 290) capture(mc, "sky-materials", true);
+         if (ticks == 290) {
+            require(VFXRenderManager.debugStats().matches(".*particles=[1-9][0-9]* .*"),
+               "world-space material VFX did not render: " + VFXRenderManager.debugStats());
+            capture(mc, "sky-materials", true);
+         }
          if (ticks == 320) {
             VFXRenderManager.clear();
             mc.getSingleplayerServer().execute(() -> {
@@ -160,7 +246,7 @@ public final class ClientUiVfxSmoke {
          if (ticks == 420) capture(mc, "player-mana", false);
          if (ticks >= 425) {
             done = true;
-            TYPE_MOON_WORLD.LOGGER.info("CLIENT_UI_VFX_SMOKE_PASS sky=bloom,resized,screen,desaturation,materials ui=small,scroll,large profiles=pass");
+            TYPE_MOON_WORLD.LOGGER.info("CLIENT_UI_VFX_SMOKE_PASS sky=bloom,resized,screen,desaturation,materials tint=off flash=off ui=small,scroll,large profiles=pass");
             mc.stop();
          }
       } catch (Throwable error) {
@@ -168,6 +254,50 @@ public final class ClientUiVfxSmoke {
          TYPE_MOON_WORLD.LOGGER.error("CLIENT_UI_VFX_SMOKE_FAIL ticks=" + ticks, error);
          mc.stop();
       }
+   }
+
+   /** Check every completed render frame, including transient onset and expiry. */
+   @SubscribeEvent
+   public void checkSceneFrame(RenderFrameEvent.Post event) {
+      if (done || ticks < 180 || ticks >= 279 || stableScenePixels == null) return;
+      Minecraft mc = Minecraft.getInstance();
+      try {
+         require(mc.screen == null, "screen stability check ran behind a menu");
+         int[] pixels = sampleStableScene(mc);
+         require(pixels.length == stableScenePixels.length, "scene sample dimensions changed");
+         for (int i = 0; i < pixels.length; i++) {
+            for (int shift : new int[]{0, 8, 16}) {
+               int delta = Math.abs(((pixels[i] >>> shift) & 255) - ((stableScenePixels[i] >>> shift) & 255));
+               maximumSceneDelta = Math.max(maximumSceneDelta, delta);
+               require(delta <= 4, "scene recolored at tick " + ticks + " sample " + i + " channel " + shift + " delta=" + delta
+                  + " pos=" + mc.player.position() + " rot=" + mc.player.getYRot() + "," + mc.player.getXRot()
+                  + " time=" + mc.level.getDayTime() + " effects=" + mc.player.getActiveEffects());
+            }
+         }
+         require(mc.level.getRainLevel(1) == 0 && mc.level.getThunderLevel(1) == 0, "VFX changed world weather");
+         require(mc.level.getSkyFlashTime() == 0, "combat lightning flashed the whole sky");
+         for (var entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof net.minecraft.world.entity.LightningBolt && entity.isNoGravity()) receivedCombatLightning = true;
+         }
+         checkedFrames++;
+      } catch (Throwable error) {
+         done = true;
+         capture(mc, "combat-stability-failure", false);
+         TYPE_MOON_WORLD.LOGGER.error("CLIENT_UI_VFX_SMOKE_FAIL frame ticks=" + ticks, error);
+         mc.stop();
+      }
+   }
+
+   private static int[] sampleStableScene(Minecraft mc) {
+      java.util.ArrayList<Integer> samples = new java.util.ArrayList<>();
+      try (var pixels = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
+         for (float[] region : new float[][]{{0.05F, 0.2F, 0.3F, 0.33F}, {0.05F, 0.65F, 0.25F, 0.82F}}) {
+            for (int x = (int)(pixels.getWidth() * region[0]); x < pixels.getWidth() * region[2]; x += 12)
+               for (int y = (int)(pixels.getHeight() * region[1]); y < pixels.getHeight() * region[3]; y += 8)
+                  samples.add(pixels.getPixelRGBA(x, y));
+         }
+      }
+      return samples.stream().mapToInt(Integer::intValue).toArray();
    }
 
    private void openWorld(Minecraft mc) {
@@ -186,6 +316,7 @@ public final class ClientUiVfxSmoke {
          var p = mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
          var level = p.serverLevel();
          ServantCardTransformManager.release(p, false);
+         p.removeAllEffects();
          var vars = p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          vars.master_active = false;
          vars.master_card_active = false;
@@ -273,6 +404,37 @@ public final class ClientUiVfxSmoke {
       output.mkdirs();
       Screenshot.grab(output, name + ".png", mc.getMainRenderTarget(), ignored -> { });
       TYPE_MOON_WORLD.LOGGER.info("CLIENT_UI_VFX_CAPTURE {}", name);
+   }
+
+   private static int[] sampleSky(Minecraft mc) {
+      return sampleRegion(mc, 0.05F, 0.2F, 0.3F, 0.33F);
+   }
+
+   private static int[] sampleGround(Minecraft mc) {
+      return sampleRegion(mc, 0.1F, 0.58F, 0.9F, 0.82F);
+   }
+
+   private static int[] sampleRegion(Minecraft mc, float left, float top, float right, float bottom) {
+      try (var pixels = Screenshot.takeScreenshot(mc.getMainRenderTarget())) {
+         long red = 0, green = 0, blue = 0, count = 0;
+         for (int x = (int)(pixels.getWidth() * left); x < pixels.getWidth() * right; x += 8) {
+            for (int y = (int)(pixels.getHeight() * top); y < pixels.getHeight() * bottom; y += 4) {
+               int rgba = pixels.getPixelRGBA(x, y);
+               red += rgba & 255;
+               green += (rgba >>> 8) & 255;
+               blue += (rgba >>> 16) & 255;
+               count++;
+            }
+         }
+         return new int[]{(int)(red / count), (int)(green / count), (int)(blue / count)};
+      }
+   }
+
+   private static void requireSimilar(int[] before, int[] after, int tolerance, String message) {
+      for (int channel = 0; channel < before.length; channel++) {
+         require(Math.abs(after[channel] - before[channel]) <= tolerance,
+            message + " channel " + channel + " from " + before[channel] + " to " + after[channel]);
+      }
    }
 
    private static void require(boolean value, String message) { if (!value) throw new AssertionError(message); }

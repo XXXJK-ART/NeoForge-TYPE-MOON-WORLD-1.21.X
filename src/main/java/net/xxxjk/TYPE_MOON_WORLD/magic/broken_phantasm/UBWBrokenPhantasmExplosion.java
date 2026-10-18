@@ -58,7 +58,7 @@ public class UBWBrokenPhantasmExplosion {
             spawnShellEffects(serverLevel, pos, damageRadius);
             queueTerrainFromCenter(serverLevel, pos, damageRadius, 32.0F, damageRadius >= 22.0 ? 80 : 45);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y, pos.z, 5, 0.35, 0.35, 0.35, 0.0);
-            serverLevel.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
+            serverLevel.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 7, 0.14, 0.14, 0.14, 0.0);
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y + 0.25, pos.z, 72, 1.45, 0.55, 1.45, 0.07);
             serverLevel.sendParticles(ParticleTypes.FLAME, pos.x, pos.y + 0.2, pos.z, 96, 1.35, 0.55, 1.35, 0.1);
             serverLevel.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y + 0.5, pos.z, 56, 1.1, 0.75, 1.1, 0.16);

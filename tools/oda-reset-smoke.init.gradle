@@ -1,0 +1,15 @@
+// Isolated client/dedicated-server smoke checks; never packaged in the release JAR.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('odaResetSmoke') {
+            java.srcDir 'tools/oda-reset-smoke/java'
+            resources.srcDir 'tools/oda-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_oda_smoke', smoke)
+        project.runs.server.modSources.add('typemoonworld_oda_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/oda-client-run')
+        project.runs.server.workingDirectory project.file('build/oda-server-run')
+    }
+}

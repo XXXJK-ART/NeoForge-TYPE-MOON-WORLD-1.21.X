@@ -366,7 +366,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          }
          VFXServerEffects.spawn(level, "ea_impact", center, 256.0);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 16, 2.5, 2.5, 2.5, 0.0);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.4, 0.4, 0.4, 0.0);
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.4, 0.4, 0.4, 0.0);
          queueImpactTerrainInWaves(level, center, radius);
          level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 6.0F, 0.45F);
       }
@@ -387,7 +387,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          center.x, center.y, center.z, 22, 2.8, 1.8, 2.8, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,
          center.x, center.y + 1.0, center.z, 120, radius * 0.35, radius * 0.2, radius * 0.35, 0.06);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          center.x, center.y + 0.5, center.z, 8, 0.8, 0.35, 0.8, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER,
          center.x, center.y + 1.5, center.z, 420, radius * 0.48, radius * 0.28, radius * 0.48, 0.2);

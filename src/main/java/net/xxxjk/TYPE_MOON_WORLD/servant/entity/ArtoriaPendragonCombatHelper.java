@@ -960,7 +960,7 @@ public final class ArtoriaPendragonCombatHelper {
             }
          }
       }
-      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + entity.getBbHeight() * 0.56, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + entity.getBbHeight() * 0.56, entity.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private static void breakWindConeBlocks(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 origin, Vec3 look, Vec3 right) {
@@ -987,7 +987,7 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static void spawnInvisibleAirWhiteFx(ServerLevel level, Vec3 origin, Vec3 look) {
-      level.sendParticles(ParticleTypes.FLASH, origin.x, origin.y + 0.2, origin.z, fxCount(2), 0.12, 0.08, 0.12, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y + 0.2, origin.z, fxCount(2), 0.12, 0.08, 0.12, 0.0);
       level.sendParticles(ParticleTypes.GUST, origin.x + look.x * 2.2, origin.y + 0.25, origin.z + look.z * 2.2, fxCount(18), 0.95, 0.45, 0.95, 0.12);
       for (int i = 0; i < fxCount(4); i++) {
          double dist = 2.2 + i * 1.9;
@@ -1023,7 +1023,7 @@ public final class ArtoriaPendragonCombatHelper {
          level.sendParticles(ParticleTypes.END_ROD, blade.x, blade.y, blade.z, fxCount(2), 0.06, 0.08, 0.06, 0.015);
       }
       if (entity.tickCount % 8 == 0) {
-         level.sendParticles(ParticleTypes.FLASH, front.x, front.y, front.z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, front.x, front.y, front.z, 1, 0.0, 0.0, 0.0, 0.0);
          level.addFreshEntity(new ExpandingRingEffectEntity(level, entity.getX(), entity.getY() + 0.25, entity.getZ(), 0.22F, 3.4F, 0.1F, 18, 0xF7F7FF, 0.5F, 0.045F));
          level.addFreshEntity(new ExpandingRingEffectEntity(level, front.x, front.y, front.z, 0.12F, 1.8F, 0.07F, 14, 0xFFFFE8, 0.44F, 0.02F, 80.0F, (entity.tickCount * 9) % 360));
       }
@@ -1031,7 +1031,7 @@ public final class ArtoriaPendragonCombatHelper {
 
    private static void spawnExcaliburReleaseFx(ArtoriaPendragonEntity entity, ServerLevel level, Vec3 start) {
       Vec3 look = excaliburLook(entity);
-      level.sendParticles(ParticleTypes.FLASH, start.x, start.y, start.z, fxCount(4), 0.05, 0.05, 0.05, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, fxCount(4), 0.05, 0.05, 0.05, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, fxCount(90), 0.9, 0.75, 0.9, 0.16);
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, fxCount(80), 0.75, 0.55, 0.75, 0.12);
       level.addFreshEntity(new ExpandingRingEffectEntity(level, start.x, start.y, start.z, 0.35F, 6.0F, 0.2F, 22, 0xFFFFE8, 0.72F, 0.04F));
@@ -1046,7 +1046,7 @@ public final class ArtoriaPendragonCombatHelper {
       double cx = entity.getX();
       double cy = entity.getY();
       double cz = entity.getZ();
-      level.sendParticles(ParticleTypes.FLASH, cx, cy + entity.getBbHeight() * 0.72, cz, fxCount(3), 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.72, cz, fxCount(3), 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.58, cz, fxCount(56), 0.32, 0.58, 0.32, 0.075);
       level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.18, cz, fxCount(38), 0.46, 0.08, 0.46, 0.075);
       level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.62, cz, fxCount(22), 0.26, 0.42, 0.26, 0.04);
