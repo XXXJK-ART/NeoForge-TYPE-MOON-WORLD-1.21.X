@@ -45,11 +45,14 @@ public final class ServantCombatDefenseService {
       double maxSt = ServantCombatFormulas.staminaMax(p);
       double maxPo = ServantCombatFormulas.poiseMax(p) * poiseMultiplier(entity);
       if (d.getInt(VERSION) < 2) {
-         if (d.contains(st)) d.putDouble(st, d.getDouble(st) * 2);
-         if (d.contains(po)) d.putDouble(po, d.getDouble(po) * 2);
          d.remove("ServantCardCombatGuardBrokenUntil");
          d.remove("TypeMoonCombatGuardBroken");
          d.putInt(VERSION, 2);
+      }
+      if (d.getInt(VERSION) < 3) {
+         if (d.contains(st)) d.putDouble(st, d.getDouble(st) * 0.75);
+         if (d.contains(po)) d.putDouble(po, d.getDouble(po) * 0.75);
+         d.putInt(VERSION, 3);
       }
       rescale(d, st, maxSt);
       rescale(d, po, maxPo);
@@ -138,7 +141,12 @@ public final class ServantCombatDefenseService {
       if (value <= 0) {
          d.putInt("TypeMoonDefenseBreakCount", d.getInt("TypeMoonDefenseBreakCount") + 1);
          d.putLong(TAG_GUARD_BROKEN, Long.MAX_VALUE);
+         d.putBoolean("TypeMoonCombatGuardBroken", true);
+         ServantParams brokenParams = params(e);
+         d.putLong(ServantCombatSystem.TAG_STUN_UNTIL,
+            e.level().getGameTime() + ServantCombatFormulas.guardBreakTicks(brokenParams));
          d.remove(TAG_GUARDING);
+         if (e instanceof ServantEntity servant) servant.setCombatPose(0, 0);
          setResult(e, RESULT_BREAK, e.level().getGameTime() + 20);
          fx(e, ParticleTypes.CRIT, SoundEvents.SHIELD_BREAK, 0.9F);
       }
@@ -198,7 +206,10 @@ public final class ServantCombatDefenseService {
             String po = entity instanceof ServerPlayer ? "ServantCardCombatPoise" : TAG_POISE;
             data.putDouble(st, Math.min(data.getDouble(st + "Max"), stamina(entity) + ServantCombatFormulas.staminaRegenPerSecond(p) * recoveryMultiplier(entity, false) / 20));
             data.putDouble(po, Math.min(data.getDouble(po + "Max"), poise(entity) + ServantCombatFormulas.poiseRegenPerSecond(p) * recoveryMultiplier(entity, true) / 20));
-            if (poise(entity) >= data.getDouble(po + "Max")) data.remove(TAG_GUARD_BROKEN);
+            if (poise(entity) >= data.getDouble(po + "Max")) {
+               data.remove(TAG_GUARD_BROKEN);
+               data.remove("TypeMoonCombatGuardBroken");
+            }
          }
       }
       if (entity instanceof ServantEntity servant && entity.level() instanceof ServerLevel level) {
@@ -259,6 +270,7 @@ public final class ServantCombatDefenseService {
       data.putLong(ServantCombatSystem.TAG_INVULN_UNTIL, now + invulnerability);
       if (entity instanceof ServerPlayer) data.putLong("ServantCardCombatInvulnUntil", now + invulnerability);
       data.putBoolean(TAG_GUARDING, false);
+      if (entity instanceof ServantEntity servant) servant.setCombatPose(1, 6);
       Vec3 direction = dodgeDirection(entity, forward, strafe);
       double distance = 1.35 + ServantCombatFormulas.agilityStep(params) * 0.12;
       beginDodgeMotion(entity, data, direction, distance, now);
@@ -274,6 +286,7 @@ public final class ServantCombatDefenseService {
       long now = entity.level().getGameTime();
       if (!active) {
          data.remove(TAG_GUARDING);
+         if (entity instanceof ServantEntity servant) servant.setCombatPose(0, 0);
          if (entity instanceof ServerPlayer player) sync(player, true);
          return true;
       }
@@ -290,6 +303,7 @@ public final class ServantCombatDefenseService {
          }
       }
       data.putBoolean(TAG_GUARDING, true);
+      if (entity instanceof ServantEntity servant) servant.setCombatPose(2, 3);
       ServantCombatExchangeService.activity(entity, now);
       data.putLong(TAG_LAST_GUARD_PACKET, now);
       if (entity instanceof ServerPlayer player) sync(player, true);
@@ -450,7 +464,10 @@ public final class ServantCombatDefenseService {
       data.putDouble(TAG_DODGE_X, direction.x * speed);
       data.putDouble(TAG_DODGE_Z, direction.z * speed);
       data.putLong(TAG_DODGE_UNTIL, now + 4L);
-      entity.setDeltaMovement(direction.x * speed, Math.max(entity.getDeltaMovement().y, 0.14), direction.z * speed);
+      // The dodge is a short hop, making projectile and skill evasion read in
+      // the vertical space as well as the side step.
+      entity.setDeltaMovement(direction.x * speed, Math.max(entity.getDeltaMovement().y,
+         entity instanceof ServantEntity ? 0.42 : 0.26), direction.z * speed);
       entity.hurtMarked = true;
    }
 
@@ -480,7 +497,7 @@ public final class ServantCombatDefenseService {
    private static void fx(LivingEntity entity, net.minecraft.core.particles.ParticleOptions particle,
                           net.minecraft.sounds.SoundEvent sound, float pitch) {
       if (entity.level() instanceof ServerLevel level) {
-         level.sendParticles(particle, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(), 12, 0.3, 0.35, 0.3, 0.03);
+         level.sendParticles(particle, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(), 8, 0.3, 0.35, 0.3, 0.03);
          level.playSound(null, entity.blockPosition(), sound, entity instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE, 0.75F, pitch);
       }
    }

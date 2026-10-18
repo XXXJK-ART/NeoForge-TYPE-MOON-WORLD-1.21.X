@@ -261,7 +261,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
          return false;
       }
       face(player, primary.position().add(0.0, primary.getBbHeight() * 0.5, 0.0));
-      level.playSound(null, player.blockPosition(), ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get(), SoundSource.PLAYERS, 1.15F, 1.05F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "okita_mumyoudan_zuki");
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0);
       DamageSource source = player.damageSources().source(OkitaSoujiSaberDamageTypes.MUMYOUDAN_ZUKI, player);
       for (int i = 0; i < 3 && primary.isAlive(); i++) {

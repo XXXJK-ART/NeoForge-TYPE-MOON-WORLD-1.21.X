@@ -139,6 +139,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final EntityDataAccessor<Integer> SPIRITUAL_MANIFEST_TICKS = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.INT
    );
+   private static final EntityDataAccessor<Integer> COMBAT_POSE = SynchedEntityData.defineId(
+      ServantEntity.class, EntityDataSerializers.INT
+   );
 
    private final ServantAiEngine aiEngine = new ServantAiEngine();
    @Nullable
@@ -180,6 +183,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
+   }
+
+   /** Bridges character-specific 1..3 phases to the shared encounter decision. */
+   protected int withSharedCombatPhase(int healthPhase) {
+      if (this.level().isClientSide() || this.getTarget() == null || !this.getTarget().isAlive()) return healthPhase;
+      return Math.max(healthPhase, ServantCombatSystem.getPhase(this).id() + 1);
    }
 
    protected ServantEntity(EntityType<? extends ServantEntity> entityType, Level level, String servantId) {
@@ -238,6 +247,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       builder.define(CURRENT_MP, 0.0F);
       builder.define(SPIRITUAL_DISSOLVING, false);
       builder.define(SPIRITUAL_MANIFEST_TICKS, 0);
+      builder.define(COMBAT_POSE, 0);
    }
 
    @Override
@@ -358,6 +368,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
       }
       super.tick();
+      if (!this.level().isClientSide) {
+         int pose = this.entityData.get(COMBAT_POSE);
+         if (pose % 1000 > 0) this.entityData.set(COMBAT_POSE, pose - 1);
+         else if (pose > 0) this.entityData.set(COMBAT_POSE, 0);
+      }
       if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
          this.entityData.set(SPIRITUAL_MANIFEST_TICKS, this.entityData.get(SPIRITUAL_MANIFEST_TICKS) - 1);
       }
@@ -1221,6 +1236,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public boolean isAttackSwinging() {
       return this.attackSwingTicks > 0;
    }
+
+   public void setCombatPose(int pose, int ticks) {
+      this.entityData.set(COMBAT_POSE, Math.max(0, Math.min(2, pose)) * 1000 + Math.max(0, Math.min(999, ticks)));
+      if (pose == 1) this.triggerNamedActionAnimation("dodge");
+      else if (pose == 2) this.triggerNamedActionAnimation("guard");
+   }
+
+   public int getCombatPose() { return this.entityData.get(COMBAT_POSE) / 1000; }
+   public int getCombatPoseTicks() { return this.entityData.get(COMBAT_POSE) % 1000; }
 
    public boolean isPerformingAction() {
       return this.jumpAttackAnimationTicks > 0 || this.chargeAnimationTicks > 0

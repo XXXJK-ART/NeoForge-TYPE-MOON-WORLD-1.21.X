@@ -88,7 +88,7 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
          }
          return;
       }
-      int next = UshiwakamaruCombatRules.phaseFor(this.getHealth(), this.getMaxHealth(), this.getCombatPhase());
+      int next = this.withSharedCombatPhase(UshiwakamaruCombatRules.phaseFor(this.getHealth(), this.getMaxHealth(), this.getCombatPhase()));
       if (next != this.getCombatPhase()) {
          this.setCombatPhase(next);
          VFXServerEffects.spawn(level, "servant_ushiwakamaru_phase", this, 96.0);

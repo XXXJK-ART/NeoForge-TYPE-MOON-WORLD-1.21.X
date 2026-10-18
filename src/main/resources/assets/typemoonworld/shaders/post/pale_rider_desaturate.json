@@ -7,7 +7,7 @@
       "outtarget": "swap"
     },
     {
-      "name": "blit",
+      "name": "typemoonworld:vfx_copy",
       "intarget": "swap",
       "outtarget": "minecraft:main"
     }

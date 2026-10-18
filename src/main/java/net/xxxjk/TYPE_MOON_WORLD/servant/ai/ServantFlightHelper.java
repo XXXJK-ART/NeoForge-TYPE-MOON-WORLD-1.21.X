@@ -47,7 +47,8 @@ public final class ServantFlightHelper {
       if (target != null && target.isAlive()) {
          double anchor = combatAnchorY(entity, target);
          long disconnected = ServantCombatTempoService.disconnectedTicks(entity, entity.level().getGameTime());
-         return clampToWorld(entity, desiredCombatY(anchor, target.getY(), target.getBbHeight(), disconnected));
+         boolean ranged = ServantEngagementService.role(entity) == ServantEngagementService.CombatRole.RANGED;
+         return clampToWorld(entity, desiredCombatY(anchor, target.getY(), target.getBbHeight(), disconnected, ranged));
       }
       double groundY = idleAnchorY(entity);
       double cruiseY = groundY + CRUISE_HEIGHT_ABOVE_GROUND;
@@ -93,6 +94,13 @@ public final class ServantFlightHelper {
       double offset = disconnectedTicks >= 100L ? 0.35
          : disconnectedTicks >= 40L ? 0.9 : Math.min(1.8, targetHeight + 0.5);
       return Mth.clamp(targetY + offset, anchorY - COMBAT_BAND_BELOW, anchorY + COMBAT_BAND_ABOVE);
+   }
+
+   public static double desiredCombatY(double anchorY, double targetY, double targetHeight,
+                                        long disconnectedTicks, boolean ranged) {
+      if (!ranged) return desiredCombatY(anchorY, targetY, targetHeight, disconnectedTicks);
+      return Mth.clamp(Math.max(anchorY + CRUISE_HEIGHT_ABOVE_GROUND,
+         targetY + Math.min(1.8, targetHeight + 0.5)), anchorY, anchorY + COMBAT_BAND_ABOVE);
    }
 
    public static double clampVerticalSpeed(double velocityY) {

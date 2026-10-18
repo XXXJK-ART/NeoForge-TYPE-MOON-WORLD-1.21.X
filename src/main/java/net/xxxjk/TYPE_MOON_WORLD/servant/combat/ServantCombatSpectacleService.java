@@ -43,21 +43,21 @@ public final class ServantCombatSpectacleService {
          (float)Mth.clamp(Config.combatSpectacleIntensity * (guard ? 0.85 : 0.65), 0.35, 1.4));
       if (dash) {
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
-            origin.x, origin.y, origin.z, 8, 0.28, 0.12, 0.28, 0.06);
+            origin.x, origin.y, origin.z, 5, 0.28, 0.12, 0.28, 0.06);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
-            origin.x, origin.y + 0.25, origin.z, 4, 0.2, 0.2, 0.2, 0.04);
+            origin.x, origin.y + 0.25, origin.z, 2, 0.2, 0.2, 0.2, 0.04);
       } else {
          // A clash gets a crisp flash even when the custom VFX budget is full.
          level.sendParticles(guard ? net.minecraft.core.particles.ParticleTypes.ENCHANT
                : net.minecraft.core.particles.ParticleTypes.CRIT,
-            origin.x, origin.y, origin.z, guard ? 7 : 10, 0.35, 0.28, 0.35, 0.08);
+            origin.x, origin.y, origin.z, guard ? 4 : 6, 0.35, 0.28, 0.35, 0.08);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
-            origin.x, origin.y - 0.65, origin.z, 6, 0.35, 0.08, 0.35, 0.04);
+            origin.x, origin.y - 0.65, origin.z, 3, 0.35, 0.08, 0.35, 0.04);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
-            origin.x, origin.y, origin.z, 3, 0.22, 0.22, 0.22, 0.05);
+            origin.x, origin.y, origin.z, 2, 0.22, 0.22, 0.22, 0.05);
          if (!actor.getMainHandItem().isEmpty() || !target.getMainHandItem().isEmpty()) {
             level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
-               origin.x, origin.y, origin.z, guard ? 16 : 12, 0.42, 0.36, 0.42, 0.12);
+               origin.x, origin.y, origin.z, guard ? 8 : 6, 0.42, 0.36, 0.42, 0.12);
          }
       }
       level.playSound(null, origin.x, origin.y, origin.z,

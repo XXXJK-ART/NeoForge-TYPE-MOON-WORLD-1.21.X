@@ -125,12 +125,32 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.riding = false;
          }
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+         applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
          if (isJeanneAlter(entity.getServantId())) {
             this.leftArm.xRot = -(float)Math.PI / 2.0F;
             this.leftArm.yRot = 0.0F;
             this.leftArm.zRot = 0.0F;
             this.leftSleeve.copyFrom(this.leftArm);
+         }
+      }
+
+      private void applyCombatPose(T entity) {
+         float phase = Mth.clamp(entity.getCombatPoseTicks() / 6.0F, 0.0F, 1.0F);
+         if (entity.getCombatPose() == 1) {
+            this.body.yRot += 0.24F * phase;
+            this.rightArm.xRot = -0.55F + 0.25F * phase;
+            this.leftArm.xRot = -0.15F - 0.30F * phase;
+            this.rightLeg.xRot = 0.22F * phase;
+            this.leftLeg.xRot = -0.12F * phase;
+         } else if (entity.getCombatPose() == 2) {
+            this.rightArm.xRot = -1.05F * phase;
+            this.leftArm.xRot = -1.05F * phase;
+            this.rightArm.yRot = -0.55F * phase;
+            this.leftArm.yRot = 0.55F * phase;
+            this.rightArm.zRot = 0.18F * phase;
+            this.leftArm.zRot = -0.18F * phase;
+            this.body.xRot = 0.10F * phase;
          }
       }
 

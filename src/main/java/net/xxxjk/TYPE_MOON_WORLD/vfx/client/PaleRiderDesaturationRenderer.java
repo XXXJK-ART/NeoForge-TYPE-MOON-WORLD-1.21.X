@@ -34,7 +34,7 @@ public final class PaleRiderDesaturationRenderer {
          if (chain != null) {
             RenderSystem.assertOnRenderThread();
             chain.setUniform("Strength", strength);
-            chain.process(event.getPartialTick().getGameTimeDeltaTicks());
+            VFXPostProcessPass.process(chain, event.getPartialTick().getGameTimeDeltaTicks());
             minecraft.getMainRenderTarget().bindWrite(true);
          }
       } catch (Exception exception) {
@@ -59,9 +59,11 @@ public final class PaleRiderDesaturationRenderer {
    private static void ensureChain(Minecraft minecraft) throws IOException {
       if (chain == null) {
          chain = new PostChain(minecraft.getTextureManager(), minecraft.getResourceManager(), minecraft.getMainRenderTarget(), EFFECT);
+         width = 0;
+         height = 0;
       }
-      int newWidth = minecraft.getWindow().getWidth();
-      int newHeight = minecraft.getWindow().getHeight();
+      int newWidth = minecraft.getMainRenderTarget().width;
+      int newHeight = minecraft.getMainRenderTarget().height;
       if (newWidth != width || newHeight != height) {
          width = newWidth;
          height = newHeight;

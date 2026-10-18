@@ -37,7 +37,9 @@ public final class NoblePhantasmCastService {
       final String action;
       final ResourceKey<Level> dimension;
       final String form;
+      final long voiceStart;
       final long voiceEnd;
+      final long releaseAt;
       final int cooldown;
       final IntConsumer setCooldown;
       final Runnable cleanup;
@@ -49,7 +51,9 @@ public final class NoblePhantasmCastService {
          this.setCooldown = setCooldown; this.cleanup = cleanup;
          dimension = caster.level().dimension();
          form = caster instanceof ServerPlayer p ? p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().id() : "";
-         voiceEnd = caster.level().getGameTime() + POLICIES.get(action).voiceTicks();
+         voiceStart = caster.level().getGameTime();
+         voiceEnd = voiceStart + POLICIES.get(action).voiceTicks();
+         releaseAt = NoblePhantasmCastRules.instant(action) ? voiceStart : NoblePhantasmCastRules.releaseAt(voiceStart, voiceEnd);
       }
    }
 
@@ -66,11 +70,10 @@ public final class NoblePhantasmCastService {
    }
 
    public static String policyForAction(String effect) {
-      return switch (effect) {
+      String policy = switch (effect) {
          case "bellerophon" -> "medusa_bellerophon";
          case "zabaniya" -> "cursed_arm_hassan_zabaniya";
          case "wu_er_da" -> "li_shuwen_wu_er_da";
-         case "okita_mumyoudan_zuki" -> "okita_mumyoudan_zuki";
          case "lancelot_aroundight" -> "lancelot_arondight";
          case "paracelsus_sword_np" -> "paracelsus_elemental_sword";
          case "muramasa_tsumukari" -> "muramasa_tsumukari";
@@ -78,6 +81,8 @@ public final class NoblePhantasmCastService {
          case "zhao_yun_changbanpo", "zhao_yun_np", "changbanpo_no_ikki_gake" -> "zhao_yun_changbanpo";
          default -> "";
       };
+      // Instant card actions keep their normal target validation, result and release voice.
+      return NoblePhantasmCastRules.instant(policy) ? "" : policy;
    }
    public static boolean cancelled(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
@@ -87,7 +92,7 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       if (cast == null) return false;
       if (!valid(cast)) return true;
-      if (caster.level().getGameTime() < cast.voiceEnd) return true;
+      if (caster.level().getGameTime() < cast.releaseAt) return true;
       cast.released = true;
       return false;
    }
@@ -96,6 +101,10 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       return cast == null ? 0 : cast.voiceEnd;
    }
+   public static long releaseAt(LivingEntity caster) {
+      Cast cast = CASTS.get(caster.getUUID());
+      return cast == null ? 0 : cast.releaseAt;
+   }
    public static boolean chanting(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
       return cast != null && !cast.cancelled && !cast.released;
@@ -103,7 +112,8 @@ public final class NoblePhantasmCastService {
    public static boolean inWindow(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
       long now = caster.level().getGameTime();
-      return cast != null && !cast.cancelled && !cast.released && now >= cast.voiceEnd - 20 && now < cast.voiceEnd;
+      if (cast == null || cast.cancelled || cast.released || !NoblePhantasmCastRules.interruptible(cast.action)) return false;
+      return NoblePhantasmCastRules.interruptibleAt(now, cast.voiceStart, cast.voiceEnd);
    }
 
    public static long begin(LivingEntity caster, String action, int cooldown, IntConsumer setCooldown, Runnable cleanup) {
@@ -119,7 +129,7 @@ public final class NoblePhantasmCastService {
       caster.getPersistentData().putInt("TypeMoonNpCastCount", caster.getPersistentData().getInt("TypeMoonNpCastCount") + 1);
       caster.getPersistentData().putString("TypeMoonNpCastAction", action);
       caster.getPersistentData().putLong("TypeMoonNpVoiceEnd", cast.voiceEnd);
-      if (caster.level() instanceof ServerLevel level) {
+      if (!NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
          SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + action));
          level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
       }
@@ -137,17 +147,25 @@ public final class NoblePhantasmCastService {
       } else PAYMENTS.computeIfAbsent(caster.getUUID(), unused -> new ArrayList<>()).add(credit);
    }
 
-   /** Returns true when the caller must return without creating its effect. */
+   /** Returns true when this service has taken ownership of the effect. */
    public static boolean deferEffect(LivingEntity caster, Runnable effect) {
       Cast cast = CASTS.get(caster.getUUID());
       if (cast == null) return false;
       if (!valid(cast)) return true;
       if (cast.released) return false;
       long now = caster.level().getGameTime();
-      if (now >= cast.voiceEnd) { cast.released = true; return false; }
+      if (now >= cast.releaseAt) {
+         cast.released = true;
+         if (NoblePhantasmCastRules.instant(cast.action)) {
+            EFFECT_CONTEXT.set(cast);
+            try { effect.run(); } finally { EFFECT_CONTEXT.remove(); }
+            return true;
+         }
+         return false;
+      }
       if (!cast.queued) {
          cast.queued = true;
-         TYPE_MOON_WORLD.queueServerWork((int)(cast.voiceEnd - now), () -> {
+         TYPE_MOON_WORLD.queueServerWork((int)(cast.releaseAt - now), () -> {
             if (CASTS.get(caster.getUUID()) != cast || !valid(cast)) return;
             cast.released = true;
             EFFECT_CONTEXT.set(cast);
@@ -229,8 +247,10 @@ public final class NoblePhantasmCastService {
    }
    public static boolean suppressLegacyVoice(LivingEntity entity, SoundEvent sound) {
       Cast cast = CASTS.get(entity.getUUID());
-      if (cast == null || cast.cancelled || sound == null) return false;
+      if (cast == null || cast.cancelled || sound == null || entity.level().getGameTime() >= cast.voiceEnd) return false;
+      if (NoblePhantasmCastRules.instant(cast.action)) return false;
       String key = BuiltInRegistries.SOUND_EVENT.getKey(sound).getPath();
+      if (key.endsWith("_short")) return false;
       return key.contains("voice_np") || key.contains("voice_excalibur") || key.contains("voice_gae_bolg")
          || key.contains("voice_zabaniya") || key.contains("voice_wu_er_da") || key.contains("voice_ea_") || key.contains("voice_bellerophon")
          || key.contains("voice_tsumukari") || key.contains("voice_gallatin") || key.contains("voice_hajun");

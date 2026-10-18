@@ -465,7 +465,7 @@ public final class ServantCardZhaoYunSkills {
       data.remove(TAG_NP_SAFE_Y);
       data.remove(TAG_NP_SAFE_Z);
       clearNpHitTags(data);
-      player.level().playSound(null, player.blockPosition(), ModSounds.ZHAO_YUN_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "zhao_yun_changbanpo");
       return true;
    }
 

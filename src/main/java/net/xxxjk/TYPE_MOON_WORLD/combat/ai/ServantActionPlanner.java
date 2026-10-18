@@ -30,17 +30,20 @@ public final class ServantActionPlanner {
          ? AiBlackboard.OpponentSnapshot.EMPTY
          : blackboard.opponent(target.getUUID());
       ServantAiDefinition.Tactical tactical = ServantTacticalProfileResolver.resolve(entity);
+      ServantCombatAssessment.Opportunity opportunity = ServantCombatAssessment.opportunity(entity, target);
       return profile.actions().stream()
+         .filter(action -> !action.tags().contains(AiActionDescriptor.Tag.NOBLE_PHANTASM)
+            || phase.ordinal() >= ServantCombatPhase.DECISIVE.ordinal())
          .filter(action -> ServantPlannedActionExecutor.canExecute(entity, target, action, entity.level().getGameTime()))
          .sorted(Comparator.comparingDouble((AiActionDescriptor action) ->
-            utility(entity, target, phase, profile, action, distance, memory, tactical)).reversed())
+            utility(entity, target, phase, profile, action, distance, memory, tactical, opportunity)).reversed())
          .toList();
    }
 
    private static double utility(ServantEntity entity, LivingEntity target, ServantCombatPhase phase,
                                  ServantActionProfile profile, AiActionDescriptor action, double distance,
                                  AiBlackboard.OpponentSnapshot memory,
-                                 ServantAiDefinition.Tactical tactical) {
+                                 ServantAiDefinition.Tactical tactical, ServantCombatAssessment.Opportunity opportunity) {
       double rangeCenter = (action.minimumRange() + action.maximumRange()) * 0.5;
       double score = 100.0 - Math.abs(distance - rangeCenter) * 5.0;
       double environmentComfort = entity.getPersistentData().getDouble("TypeMoonAiEnvironmentComfort");
@@ -48,6 +51,7 @@ public final class ServantActionPlanner {
       score -= action.manaCost() * 0.08 + action.staminaCost() * 0.12;
       score -= action.timing().windupTicks() * 0.25 + action.timing().recoveryTicks() * 0.18;
       score += action.threat().danger() * 4.0;
+      score += timingUtility(action, opportunity, distance);
       if (memory.repeatCount() >= 2 && (action.tags().contains(AiActionDescriptor.Tag.INTERRUPT)
          || action.tags().contains(AiActionDescriptor.Tag.CONTROL)
          || action.tags().contains(AiActionDescriptor.Tag.GUARD)
@@ -95,6 +99,23 @@ public final class ServantActionPlanner {
       }
       double matchup = CombatMatchupEvaluator.actionMultiplier(entity, target, action, memory);
       score += (matchup - 1.0) * 55.0;
+      return score;
+   }
+
+   static double timingUtility(AiActionDescriptor action, ServantCombatAssessment.Opportunity opportunity, double distance) {
+      var tags = action.tags();
+      boolean defensive = tags.contains(AiActionDescriptor.Tag.GUARD) || tags.contains(AiActionDescriptor.Tag.EVADE);
+      double score = opportunity.threatened() ? defensive ? 70.0 : -action.timing().windupTicks() * 1.5 : 0.0;
+      if (opportunity.exposed()) {
+         score += defensive ? -25.0 : 25.0;
+         if (tags.contains(AiActionDescriptor.Tag.NOBLE_PHANTASM) || tags.contains(AiActionDescriptor.Tag.FINISHER)) score += 45.0;
+      }
+      if (opportunity.targetCasting() && (tags.contains(AiActionDescriptor.Tag.INTERRUPT)
+         || tags.contains(AiActionDescriptor.Tag.CONTROL))) score += 65.0;
+      if (tags.contains(AiActionDescriptor.Tag.NOBLE_PHANTASM)
+         && !opportunity.favorsNoblePhantasm(distance, action.timing().windupTicks())) score -= 90.0;
+      if (tags.contains(AiActionDescriptor.Tag.HEAL)) score += opportunity.healthRatio() <= 0.35F ? 60.0 : -20.0;
+      if (!defensive && action.timing().windupTicks() <= 12 && opportunity.targetHealthRatio() <= 0.20F) score += 30.0;
       return score;
    }
 }

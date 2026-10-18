@@ -187,6 +187,12 @@ public final class TerrainImpactService {
             pos.getY() + 0.5, pos.getZ() + 0.5, count, 0.2, 0.15, 0.2, 0.08);
          dustRemaining -= count;
       }
+      // Keep terrain impacts readable after the block shards fade, without
+      // bringing back the former high-volume particle burst.
+      int smoke = Math.min(8, Math.max(2, debris.size() / 6));
+      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.2, center.z,
+         smoke, Math.min(1.2, profile.radius() * 0.22), 0.1,
+         Math.min(1.2, profile.radius() * 0.22), 0.028);
 
       TerrainDebrisMessage payload = new TerrainDebrisMessage(center, level.random.nextLong(), debris);
       double rangeSqr = 96.0 * 96.0;

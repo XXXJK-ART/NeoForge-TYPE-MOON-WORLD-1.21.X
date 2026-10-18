@@ -1,0 +1,13 @@
+// Launch with: gradlew runClient -I tools/client-ui-vfx-smoke.init.gradle
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('clientUiVfxSmoke') {
+            java.srcDir 'tools/client-ui-vfx-smoke/java'
+            resources.srcDir 'tools/client-ui-vfx-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_ui_vfx_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/client-ui-vfx-run')
+    }
+}

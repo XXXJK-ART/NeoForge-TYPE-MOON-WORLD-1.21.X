@@ -21,7 +21,7 @@ public final class TelepathyClient {
             "key.fatesupport.telepathy",
             InputConstants.Type.KEYSYM,
             InputConstants.KEY_Y,
-            "key.categories.fatesupport"
+            net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings.KEY_CATEGORY
     );
 
     @SubscribeEvent
@@ -42,6 +42,7 @@ public final class TelepathyClient {
 
         @SubscribeEvent
         public static void register(RegisterKeyMappingsEvent event) {
+            TELEPATHY_KEY.setKeyConflictContext(net.neoforged.neoforge.client.settings.KeyConflictContext.IN_GAME);
             event.register(TELEPATHY_KEY);
         }
     }

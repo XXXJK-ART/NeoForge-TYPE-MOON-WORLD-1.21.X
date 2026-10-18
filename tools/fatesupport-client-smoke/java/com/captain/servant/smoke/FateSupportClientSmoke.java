@@ -43,6 +43,15 @@ public final class FateSupportClientSmoke {
                 checkKey(mc, SpiritualizationClient.SPIRITUALIZATION_KEY, GLFW.GLFW_KEY_LEFT_CONTROL);
                 checkKey(mc, TypeMoonWorldModKeyMappings.SERVANT_CARD_DODGE, GLFW.GLFW_KEY_LEFT_ALT);
                 checkKey(mc, TypeMoonWorldModKeyMappings.MAGIC_MODE_SWITCH, GLFW.GLFW_KEY_LEFT_ALT);
+                checkKey(mc, TypeMoonWorldModKeyMappings.MAGIC_WHEEL_SWITCH, GLFW.GLFW_KEY_LEFT_ALT);
+                checkKey(mc, TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_SELECT, GLFW.GLFW_KEY_Z);
+                checkKey(mc, TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST, GLFW.GLFW_KEY_R);
+                checkKey(mc, TypeMoonWorldModKeyMappings.SERVANT_CARD_GUARD, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+                checkKey(mc, TypeMoonWorldModKeyMappings.SERVANT_CARD_FLIGHT, GLFW.GLFW_KEY_G);
+                if (!SpiritualizationClient.SPIRITUALIZATION_KEY.getCategory().equals(TypeMoonWorldModKeyMappings.KEY_CATEGORY)
+                        || !TelepathyClient.TELEPATHY_KEY.getCategory().equals(TypeMoonWorldModKeyMappings.KEY_CATEGORY)) {
+                    throw new AssertionError("support bindings must use the main mod category");
+                }
                 checkKey(mc, TelepathyClient.TELEPATHY_KEY, GLFW.GLFW_KEY_Y);
                 FateSupportNetwork.openArmoryScreen(KnightArmoryEntry.IRON_ROD.bit());
                 if (!(mc.screen instanceof KnightArmoryScreen)) throw new AssertionError("armory handler was not initialized");

@@ -528,7 +528,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "hajun");
       VFXServerEffects.spawn(level, "servant_oda_hajun", player, 192.0);
       RedSkeletonHajunEntity skeleton = new RedSkeletonHajunEntity(level, player, 260);
       skeleton.setPos(player.getX(), player.getY(), player.getZ());

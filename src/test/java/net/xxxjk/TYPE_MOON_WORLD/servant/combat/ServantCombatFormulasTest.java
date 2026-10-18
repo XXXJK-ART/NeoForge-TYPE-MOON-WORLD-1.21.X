@@ -39,8 +39,8 @@ class ServantCombatFormulasTest {
          < ServantCombatFormulas.baseDodgeChance(a, false));
       assertEquals(0.80, ServantCombatFormulas.blockReduction(e));
       assertEquals(0.80, ServantCombatFormulas.blockReduction(a));
-      assertEquals(120, ServantCombatFormulas.staminaMax(e));
-      assertEquals(112, ServantCombatFormulas.poiseMax(e));
+      assertEquals(90, ServantCombatFormulas.staminaMax(e));
+      assertEquals(84, ServantCombatFormulas.poiseMax(e));
       assertTrue(ServantCombatFormulas.poiseMax(e) < ServantCombatFormulas.poiseMax(a));
       assertEquals(ServantCombatFormulas.staminaRegenPerSecond(e), ServantCombatFormulas.staminaRegenPerSecond(a));
       assertEquals(ServantCombatFormulas.poiseRegenPerSecond(e), ServantCombatFormulas.poiseRegenPerSecond(a));

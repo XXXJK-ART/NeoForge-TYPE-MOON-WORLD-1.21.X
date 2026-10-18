@@ -29,7 +29,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantFlightCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
-import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -56,7 +55,6 @@ public final class GilgameshCombatHelper {
    private static final String CHAIN_OWNER = "GilgameshChainsOwner";
    private static final String NEXT_BOUND_GATE = "GilgameshNextBoundGate";
    private static final String MELEE_UNTIL = "GilgameshMeleeUntil";
-   private static final String LAST_MELEE = "GilgameshLastMelee";
    private static final String NEXT_MELEE_SWING = "GilgameshNextMeleeSwing";
    private static final String RETREAT_UNTIL = "GilgameshRetreatUntil";
    private static final String DAMAGE_WINDOW_START = "GilgameshDamageWindowStart";
@@ -85,17 +83,11 @@ public final class GilgameshCombatHelper {
    private static final double EA_ASCENT_HEIGHT = 8.0D;
    private static final double EA_ASCENT_MAX_SPEED = 0.12D;
    private static final int DIVINE_SHIELD_SCAN_INTERVAL = 5;
-   private static final int NPC_MELEE_DURATION_TICKS = 40;
-   private static final int NPC_MELEE_REUSE_TICKS = 600;
    private static final String LAST_CHARISMA = "GilgameshLastCharisma";
    private static final String ENKIDU_BARRAGE_REMAINING = "GilgameshEnkiduBarrageRemaining";
    private static final String ENKIDU_BARRAGE_NEXT = "GilgameshEnkiduBarrageNext";
    private static final String ENKIDU_BARRAGE_COOLDOWN = "GilgameshEnkiduBarrageCooldown";
-   private static final String FLIGHT_CYCLE_START = "GilgameshFlightCycleStart";
-   private static final String FLIGHT_CYCLE_TARGET = "GilgameshFlightCycleTarget";
    private static final String LAST_PERSISTENT_TICK = "GilgameshLastPersistentStateTick";
-   private static final int FLIGHT_CYCLE_TICKS = 18 * 20;
-   private static final long FLIGHT_STALLED_TICKS = 8 * 20L;
    private GilgameshCombatHelper() { }
 
    public static void tick(GilgameshEntity entity) {
@@ -130,18 +122,19 @@ public final class GilgameshCombatHelper {
          return;
       }
       clearEaEquipment(entity);
+      if (tryEa(entity, level, target, now, data)) return;
       if (isBoundByGilgamesh(entity, target, now)) {
          endMeleeMode(entity);
          updateFlight(entity, target, now);
          if (tryBoundGatePursuit(entity, level, target, now, data)) return;
       }
-      if (tickMeleeMode(entity, level, target, now, data)) return;
+      // Keep the treasury and aerial spacing as his normal combat loop.
+      endMeleeMode(entity);
       updateFlight(entity, target, now);
 
       if (target instanceof EnkiduEntity enkidu && tryEnkiduScaleBarrage(entity, level, enkidu, now, data)) return;
       if (tryChains(entity, level, target, now, data)) return;
       if (tryCrossSlash(entity, level, target, now, data)) return;
-      if (tryEa(entity, level, target, now, data)) return;
       if (now >= data.getLong(NEXT_GATE)) {
          ServantCombatPhase phase = ServantCombatSystem.getPhase(entity);
          boolean projection = isProjectionCounterTarget(target)
@@ -310,38 +303,35 @@ public final class GilgameshCombatHelper {
       return entity.isFlyingMode();
    }
 
+   /** Flight is maintained even when another AI intent owns this tick. */
+   public static void tickFlight(GilgameshEntity entity) {
+      long now = entity.level().getGameTime();
+      if (entity.level().isClientSide() || entity.isSpiritualTransitionLocked()
+         || ServantCombatSystem.cannotAct(entity)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.state(entity)
+            != net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService.MotionState.NONE
+         || net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)
+         || ownsEaFlight(entity)
+         || GilgameshDuelState.isActive(entity)
+         || isMeleeMode(entity)) return;
+      if (entity.getPersistentData().contains("GilgameshFlightMotionTick")
+         && entity.getPersistentData().getLong("GilgameshFlightMotionTick") == now) return;
+      updateFlight(entity, entity.getTarget(), now);
+   }
+
+   public static boolean ownsEaFlight(GilgameshEntity entity) {
+      return entity.getPersistentData().contains(EA_SUMMON_END)
+         || entity.getPersistentData().contains(EA_DRAW_END) || GilgameshEaBeamEntity.isEaActiveFor(entity);
+   }
+
    private static void updateFlight(GilgameshEntity entity, LivingEntity target, long now) {
       CompoundTag data = entity.getPersistentData();
+      data.putLong("GilgameshFlightMotionTick", now);
       if (target == null || !target.isAlive() || ServantCombatSystem.cannotAct(entity)) {
          enterGroundMode(entity);
-         data.remove(FLIGHT_CYCLE_START);
-         data.remove(FLIGHT_CYCLE_TARGET);
          return;
-      }
-      if (isProjectionCounterTarget(target)) {
-         enterGroundMode(entity);
-         data.remove(FLIGHT_CYCLE_START);
-         data.remove(FLIGHT_CYCLE_TARGET);
-         return;
-      }
-      if (!data.hasUUID(FLIGHT_CYCLE_TARGET) || !target.getUUID().equals(data.getUUID(FLIGHT_CYCLE_TARGET))) {
-         data.putUUID(FLIGHT_CYCLE_TARGET, target.getUUID());
-         data.putLong(FLIGHT_CYCLE_START, now);
       }
       double distance = entity.distanceTo(target);
-      if (entity.isFlyingMode()
-         && ServantCombatTempoService.disconnectedTicks(entity, now) >= FLIGHT_STALLED_TICKS) {
-         // Recover the flight controller without turning a stalled ranged NPC
-         // into a melee pursuer.
-         data.putLong(FLIGHT_CYCLE_START, now);
-         enterGroundMode(entity);
-         ServantEngagementService.RangeBand recoveryBand =
-            ServantEngagementService.rangedBand(target, 14.0, 26.0, 40.0);
-         Vec3 recoveryPosition = ServantEngagementService.rangedDestination(entity, target, now, recoveryBand);
-         ServantNavigationHelper.moveToPositionThrottled(
-            entity, recoveryPosition, 1.15, now, 2, 0.2, "GilgameshFlightStalled");
-         return;
-      }
       entity.setFlyingMode(true);
       if (!entity.isFlyingMode()) return;
       ServantFlightCombatService.markControlled(entity, now);
@@ -472,55 +462,6 @@ public final class GilgameshCombatHelper {
       return entity.level() != null && entity.getPersistentData().getLong(MELEE_UNTIL) > entity.level().getGameTime();
    }
 
-   private static boolean tickMeleeMode(GilgameshEntity entity, ServerLevel level, LivingEntity target, long now, CompoundTag data) {
-      boolean active = data.getLong(MELEE_UNTIL) > now;
-      double horizontalDistance = entity.position().multiply(1.0, 0.0, 1.0).distanceTo(target.position().multiply(1.0, 0.0, 1.0));
-      if (shouldRetreatFrom(entity, target, now)) {
-         if (active) endMeleeMode(entity);
-         return false;
-      }
-      if (!active && entity.tickCount % 20 == 0 && horizontalDistance <= 3.5
-         && ServantEngagementService.role(target) == ServantEngagementService.CombatRole.MELEE
-         && Math.abs(entity.getY() - target.getY()) <= 8.0
-         && now - data.getLong(LAST_MELEE) >= NPC_MELEE_REUSE_TICKS) {
-         float chance = ServantCombatSystem.getPhase(entity) == ServantCombatPhase.PROBING ? 0.02F : 0.04F;
-         if (entity.getRandom().nextFloat() < chance && entity.getMainHandItem().isEmpty()) {
-            data.putLong(MELEE_UNTIL, now + NPC_MELEE_DURATION_TICKS);
-            data.putLong(LAST_MELEE, now);
-            data.putLong(NEXT_MELEE_SWING, now + 8L);
-            entity.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GILGAMESH_DURANDAL.get()));
-            entity.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
-            level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.HOSTILE, 0.9F, 1.7F);
-            active = true;
-         }
-      }
-      if (!active) return false;
-      if (!target.isAlive() || horizontalDistance > 10.0 || now >= data.getLong(MELEE_UNTIL)) {
-         endMeleeMode(entity);
-         return false;
-      }
-      entity.setFlyingMode(false);
-      entity.fallDistance = 0.0F;
-      if (horizontalDistance > 2.8 || Math.abs(entity.getY() - target.getY()) > 1.8) {
-         entity.getNavigation().moveTo(target, 1.25);
-         if (!entity.onGround()) {
-            Vec3 approach = target.position().subtract(entity.position());
-            if (approach.lengthSqr() > 1.0E-4) {
-               Vec3 motion = approach.normalize().scale(0.16);
-               entity.setDeltaMovement(entity.getDeltaMovement().scale(0.72).add(motion.x, Math.min(-0.08, motion.y), motion.z));
-            }
-         }
-      } else {
-         entity.getNavigation().stop();
-         if (now >= data.getLong(NEXT_MELEE_SWING)) {
-            entity.triggerNamedActionAnimation("durandal_slash");
-            entity.doHurtTarget(target);
-            data.putLong(NEXT_MELEE_SWING, now + 12L);
-         }
-      }
-      return true;
-   }
-
    private static void endMeleeMode(GilgameshEntity entity) {
       CompoundTag data = entity.getPersistentData();
       data.remove(MELEE_UNTIL);
@@ -535,12 +476,20 @@ public final class GilgameshCombatHelper {
          ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 200.0);
       int previousCooldown = data.getBoolean("GilgameshEaOverdraft") ? 2400 : 1200;
       if (ServantCombatSystem.getPhase(entity) != ServantCombatPhase.DECISIVE
-         || now - data.getLong(LAST_EA) < previousCooldown
+         || data.contains(LAST_EA) && now - data.getLong(LAST_EA) < previousCooldown
          || data.contains(LAST_CROSS) && now - data.getLong(LAST_CROSS) < MAJOR_NP_SWITCH_LOCK_TICKS
          || !resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)) return false;
-      if (entity.tickCount % 20 != 0) return false;
+      if (now < data.getLong("GilgameshNextEaDecision") || !entity.hasLineOfSight(target)
+         || entity.distanceTo(target) > 96.0) return false;
+      data.putLong("GilgameshNextEaDecision", now + 20L);
+      var opportunity = net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatAssessment.opportunity(entity, target);
+      if (!opportunity.favorsNoblePhantasm(entity.distanceTo(target), EA_SUMMON_TICKS + EA_DRAW_TICKS)) return false;
       float chance = level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(18.0),
-         living -> living != entity && living.isAlive() && !living.isAlliedTo(entity)).size() >= 2 ? 0.16F : 0.08F;
+         living -> living != entity && living.isAlive() && !living.isAlliedTo(entity)).size() >= 2 ? 0.30F : 0.18F;
+      if (opportunity.exposed() || opportunity.targetCasting()) chance = 0.75F;
+      else if (opportunity.healthRatio() <= 0.35F
+         || net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatAssessment.strengthRatio(entity, target)
+            >= net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.OVERWHELMING_STRENGTH_RATIO) chance = 0.60F;
       if (entity.getRandom().nextFloat() > chance) return false;
       if (UBWInstanceManager.isUbwDimension(level)
          && (target instanceof EmiyaArcherEntity || target instanceof net.minecraft.server.level.ServerPlayer player
@@ -722,7 +671,7 @@ public final class GilgameshCombatHelper {
    }
 
    private static void fireGateVolley(GilgameshEntity entity, ServerLevel level, LivingEntity target, int count, float damage, boolean allowProjectionCounter) {
-      boolean projectionCounter = allowProjectionCounter && isProjectionCounterTarget(target);
+      boolean projectionCounter = count >= 10 && allowProjectionCounter && isProjectionCounterTarget(target);
       boolean ubw = projectionCounter && UBWInstanceManager.isUbwDimension(level);
       if (projectionCounter) {
          count = PROJECTION_WEAPONS_PER_ROUND * PROJECTION_DUEL_ROUNDS;
@@ -753,6 +702,7 @@ public final class GilgameshCombatHelper {
                float projectileDamage = projectionCounter ? damage : damage * GATE_PROJECTILE_DAMAGE_MULTIPLIER;
                GilgameshGateWeaponProjectileEntity projectile = new GilgameshGateWeaponProjectileEntity(level, entity, gate, aim, weapon, projectileDamage);
                projectile.setEffectStride(effectStride);
+               projectile.setVolleySize(totalCount);
                projectile.setLaunchDelay(projectionCounter
                   ? 8 + Math.min(6, (i / columns) * 2)
                   : 24 + Math.min(16, (i / columns) * 3));
@@ -969,6 +919,7 @@ public final class GilgameshCombatHelper {
          String weapon = weaponForSlot(emiya, waveIndex * waveSize + i);
          GilgameshGateWeaponProjectileEntity counter=new GilgameshGateWeaponProjectileEntity(level,emiya,gate,aim,weapon,0);
          counter.setLaunchDelay(8 + Math.min(6, (i / columns) * 2));
+         counter.setVolleySize(count);
          counter.setSourceStyle(1); counter.setDuelToken(gil.getUUID()+":projection:"+waveIndex+":"+i); level.addFreshEntity(counter);
       }
    }

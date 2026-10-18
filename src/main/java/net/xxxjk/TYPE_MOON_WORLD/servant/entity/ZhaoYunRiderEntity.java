@@ -892,7 +892,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    private int computeCombatPhase() {
       float ratio = getHealth() / Math.max(1.0F, getMaxHealth());
-      return ratio <= 0.333F ? 3 : ratio <= 0.666F ? 2 : 1;
+      return withSharedCombatPhase(ratio <= 0.333F ? 3 : ratio <= 0.666F ? 2 : 1);
    }
 
    @Override public boolean isAlliedTo(Entity other) {

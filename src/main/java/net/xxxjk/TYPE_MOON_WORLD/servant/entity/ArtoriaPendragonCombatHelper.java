@@ -613,8 +613,12 @@ public final class ArtoriaPendragonCombatHelper {
          ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 150.0);
       int previousCooldown = data.getBoolean(TAG_EXCALIBUR_OVERDRAFT) ? EXCALIBUR_COOLDOWN * 2 : EXCALIBUR_COOLDOWN;
       if (!resource.allowed() || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
-         || now - data.getLong(TAG_LAST_EXCALIBUR) < previousCooldown
+         || data.contains(TAG_LAST_EXCALIBUR) && now - data.getLong(TAG_LAST_EXCALIBUR) < previousCooldown
          || entity.distanceTo(target) > EXCALIBUR_RANGE) {
+         return false;
+      }
+      var opportunity = net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatAssessment.opportunity(entity, target);
+      if (!entity.hasLineOfSight(target) || !opportunity.favorsNoblePhantasm(entity.distanceTo(target), EXCALIBUR_WINDUP)) {
          return false;
       }
       boolean highHealth = target.getMaxHealth() >= 200.0F || target.getHealth() >= 150.0F;

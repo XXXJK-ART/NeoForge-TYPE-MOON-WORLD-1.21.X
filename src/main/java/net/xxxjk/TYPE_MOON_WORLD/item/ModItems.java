@@ -353,7 +353,6 @@ public class ModItems {
     public static final DeferredItem<Item> RELIC_GILGAMESH_ASH_URN = registerSummoningRelic("relic_gilgamesh_ash_urn");
     public static final DeferredItem<Item> RELIC_BAOBHAN_SITH_HEELS = registerSummoningRelic("relic_baobhan_sith_heels");
     public static final DeferredItem<Item> RELIC_DIARMUID_YELLOW_ROSE_TIP = registerSummoningRelic("relic_diarmuid_yellow_rose_tip");
-    public static final DeferredItem<Item> RELIC_DIARMUID_RED_ROSE_TIP = registerSummoningRelic("relic_diarmuid_red_rose_tip");
     public static final DeferredItem<Item> RELIC_ISKANDAR_CLOAK_FRAGMENT = registerSummoningRelic("relic_iskandar_cloak_fragment");
     public static final DeferredItem<Item> RELIC_OKITA_KATANA = ITEMS.register("relic_okita_katana",
             () -> new OkitaKatanaRelicItem(new Item.Properties().rarity(Rarity.RARE)));

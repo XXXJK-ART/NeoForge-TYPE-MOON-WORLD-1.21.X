@@ -236,6 +236,7 @@ public final class ServantCardGilgameshSkills {
          GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], 35.0F);
          p.setHomingTarget(target);
          p.setEffectStride(3);
+         p.setVolleySize(count);
          p.setLaunchDelay(16); level.addFreshEntity(p);
       }
    }
@@ -317,7 +318,7 @@ public final class ServantCardGilgameshSkills {
       Vec3 up = right.cross(look).normalize(); LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 40, 3);
       Vec3 point = target == null ? player.getEyePosition().add(look.scale(30)) : target.getEyePosition();
       int effectStride = count >= 48 ? 4 : count >= 18 ? 2 : 1;
-      for (int i = 0; i < count; i++) { double x = (level.random.nextDouble() - .5) * spread; double y = (level.random.nextDouble() - .5) * spread * .5; Vec3 start = player.getEyePosition().add(right.scale(x)).add(up.scale(y)); Vec3 aim = point.subtract(start).normalize(); GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], damage); p.setEffectStride(effectStride); p.setLaunchDelay(8 + i % 8 * 3); level.addFreshEntity(p); }
+      for (int i = 0; i < count; i++) { double x = (level.random.nextDouble() - .5) * spread; double y = (level.random.nextDouble() - .5) * spread * .5; Vec3 start = player.getEyePosition().add(right.scale(x)).add(up.scale(y)); Vec3 aim = point.subtract(start).normalize(); GilgameshGateWeaponProjectileEntity p = new GilgameshGateWeaponProjectileEntity(level, player, start, aim, WEAPONS[i % WEAPONS.length], damage); p.setVolleySize(count); p.setEffectStride(effectStride); p.setLaunchDelay(8 + i % 8 * 3); level.addFreshEntity(p); }
       level.playSound(null, player.blockPosition(), SoundEvents.PORTAL_TRIGGER, SoundSource.PLAYERS, 1.2F, 1.25F);
    }
 

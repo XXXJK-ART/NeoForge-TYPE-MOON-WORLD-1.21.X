@@ -445,6 +445,7 @@ public final class CasterGilgameshCombatHelper {
          projectile.setHomingTarget(target);
          projectile.setLaunchDelay(14 + (i / 6) * 4);
          projectile.setEffectStride(count >= 12 ? 2 : 1);
+         projectile.setVolleySize(count);
          level.addFreshEntity(projectile);
       }
       VFXServerEffects.spawnOriented(level, "gilgamesh_gate", center, forward, 128.0);

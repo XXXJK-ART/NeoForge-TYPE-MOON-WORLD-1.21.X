@@ -62,7 +62,8 @@ public final class ServantCombatMotionService {
    private static final String TERRAIN_PERMISSION = PREFIX + "TerrainPermission";
    private static final int CONTROL_RESET_TICKS = 60;
    private static final int RECOVERY_COOLDOWN_TICKS = 40;
-   private static final int MAX_ACTIVE_TICKS = 50;
+   private static final int MAX_ACTIVE_TICKS = 80;
+   private static final double HEAVY_MIN_TRAVEL = 20.0;
 
    private ServantCombatMotionService() { }
 
@@ -127,6 +128,7 @@ public final class ServantCombatMotionService {
       data.putDouble(LAUNCH_START_Y, target.getY());
       data.putInt(LAUNCH_ENTITY_TICK, target.tickCount);
       data.putDouble(TRAVEL_DISTANCE, 0.0);
+      data.remove(PREFIX + "AirActionRoll");
       data.remove(PENDING_IMPACT_UNTIL);
       data.remove(NPC_RECOVERY_ROLLED);
       storePreviousMotion(data, target.getDeltaMovement());
@@ -143,6 +145,20 @@ public final class ServantCombatMotionService {
       if (target == null) return false;
       CompoundTag data = target.getPersistentData();
       return data.contains(ACTIVE_UNTIL) && target.level().getGameTime() <= data.getLong(ACTIVE_UNTIL);
+   }
+
+   /** Small deterministic chance for a launched servant to start a charged action mid-air. */
+   public static boolean canActWhileAirborne(ServantEntity servant) {
+      if (servant == null || !isLaunched(servant) || servant.onGround()) return false;
+      CompoundTag data = servant.getPersistentData();
+      long now = servant.level().getGameTime();
+      long launchTick = data.getLong(LAUNCH_TICK);
+      if (now < launchTick + 10L) return false;
+      if (!data.contains(PREFIX + "AirActionRoll")) {
+         long seed = servant.getUUID().getLeastSignificantBits() ^ launchTick;
+         data.putBoolean(PREFIX + "AirActionRoll", Math.floorMod(seed, 5L) == 0L);
+      }
+      return data.getBoolean(PREFIX + "AirActionRoll") && now < launchTick + 24L;
    }
 
    public static boolean canPursue(LivingEntity attacker, LivingEntity target) {
@@ -255,7 +271,8 @@ public final class ServantCombatMotionService {
          return;
       }
 
-      if (now >= data.getLong(ACTIVE_UNTIL)
+      boolean heavyLaunch = impactTier(data).ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
+      if (now >= data.getLong(ACTIVE_UNTIL) && (!heavyLaunch || data.getDouble(TRAVEL_DISTANCE) >= HEAVY_MIN_TRAVEL)
          || target.onGround() && Math.abs(previous.y) < 0.2 && target.getDeltaMovement().horizontalDistanceSqr() < 0.05) {
          data.remove(ACTIVE_UNTIL);
          data.putString(STATE, MotionState.NONE.name());
@@ -344,6 +361,10 @@ public final class ServantCombatMotionService {
       }
       level.sendParticles(wallImpact ? ParticleTypes.POOF : ParticleTypes.CLOUD,
          center.x, center.y, center.z, heavy ? 24 : 14, profile.radius() * 0.35, 0.25, profile.radius() * 0.35, 0.08);
+      if (heavy) {
+         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.15, center.z,
+            10, Math.min(1.4, profile.radius() * 0.25), 0.12, Math.min(1.4, profile.radius() * 0.25), 0.035);
+      }
       level.playSound(null, target.blockPosition(), wallImpact ? SoundEvents.ZOMBIE_ATTACK_IRON_DOOR : SoundEvents.GENERIC_EXPLODE.value(),
          target instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE, heavy ? 1.1F : 0.75F, heavy ? 0.65F : 0.85F);
    }
@@ -394,6 +415,11 @@ public final class ServantCombatMotionService {
 
    private static TerrainImpactProfile.Tier cappedImpactTier(LivingEntity attacker, @Nullable TerrainImpactProfile.Tier requested) {
       TerrainImpactProfile.Tier value = requested == null ? TerrainImpactProfile.Tier.SMALL : requested;
+      // A committed heavy finisher is an explicit combat beat. Tactical
+      // collateral caution still governs ordinary skills, but must not turn
+      // the shared large knockback into a short shove.
+      if (value == TerrainImpactProfile.Tier.HEAVY && attacker instanceof ServantEntity servant
+         && servant.getPersistentData().getBoolean("TypeMoonHeavyBasic")) return value;
       if (!(attacker instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant)
          || servant.getDefinition() == null) return value;
       var tactical = net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver.resolve(servant);

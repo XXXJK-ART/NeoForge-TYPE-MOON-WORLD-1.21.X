@@ -179,6 +179,13 @@ public final class ServantCombatExchangeService {
       double distance = actor.distanceTo(target);
       boolean ranged = ServantEngagementService.role(actor) == ServantEngagementService.CombatRole.RANGED;
       if (ServantCombatMotionService.isLaunched(target) && !ServantCombatMotionService.canPursue(actor, target)) {
+         // A launch has a readable eight-tick pause. Once it opens, the
+         // attacker may commit to a diagonal pursuit instead of orbiting.
+         if (now >= target.getPersistentData().getLong("TypeMoonMotionLaunchTick") + 8L
+            && ServantManeuverService.tryExchangeDash(actor, target, now, side(actor, target, now), true)) {
+            increment(actor, PURSUITS);
+            return true;
+         }
          return ServantManeuverService.exchangeFootwork(actor, target, now, side(actor, target, now), true, 0.65);
       }
 
@@ -338,10 +345,21 @@ public final class ServantCombatExchangeService {
       // Every third or fourth clean hit can become a launcher.  The window is
       // short enough to read as a combo finisher, while still allowing a long
       // duel to show repeated knockback and wall impacts.
-      if (combo % 3 == 0 && now - d.getLong(P + "LastLaunch") >= 48) {
+      boolean guardBreakFinisher = ServantCombatDefenseService.broken(target);
+      if ((combo % 3 == 0 || guardBreakFinisher) && now - d.getLong(P + "LastLaunch") >= 32) {
          d.putLong(P + "LastLaunch", now);
-         ServantCombatMotionService.launch(actor, target, direction, 1.35, launcher ? 0.78 : 0.36,
-            TerrainImpactProfile.Tier.SMALL, 32);
+         // Heavy finisher: it travels until a wall/ground contact or twenty
+         // blocks of separation. Guard break makes this branch available on
+         // the very next clean hit.
+         actor.triggerUppercutAnimation();
+         actor.getPersistentData().putBoolean("TypeMoonHeavyBasic", true);
+         try {
+            ServantCombatMotionService.launch(actor, target, direction,
+               guardBreakFinisher ? 2.55 : 2.25, launcher ? 0.92 : 0.72,
+               TerrainImpactProfile.Tier.HEAVY, 48);
+         } finally {
+            actor.getPersistentData().remove("TypeMoonHeavyBasic");
+         }
       } else {
          double force = combo % 3 == 0 ? 0.34 : 0.18;
          target.push(direction.x * force, 0, direction.z * force);

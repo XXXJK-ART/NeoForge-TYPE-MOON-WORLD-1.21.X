@@ -109,7 +109,8 @@ public class MedeaEntity extends ServantEntity {
       if (this.isFlyingMode()) {
          if (!this.onGround()) {
             this.getPersistentData().putBoolean(TAG_FLIGHT_WAS_AIRBORNE, true);
-         } else if (this.getPersistentData().getBoolean(TAG_FLIGHT_WAS_AIRBORNE)) {
+         } else if (this.getPersistentData().getBoolean(TAG_FLIGHT_WAS_AIRBORNE)
+            && (this.getTarget() == null || !this.getTarget().isAlive())) {
             this.setFlyingMode(false);
             this.getPersistentData().putLong(TAG_FLIGHT_LANDED_UNTIL, this.level().getGameTime() + 80L);
             return;

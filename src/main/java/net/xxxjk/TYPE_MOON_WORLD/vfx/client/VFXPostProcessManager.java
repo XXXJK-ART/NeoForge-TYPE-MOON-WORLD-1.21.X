@@ -25,6 +25,8 @@ public final class VFXPostProcessManager {
    private static final List<ActiveScreenEffect> ACTIVE = new ArrayList<>();
    private static PostChain chain;
    private static PostChain bloomChain;
+   private static int bloomWidth;
+   private static int bloomHeight;
    private static int width;
    private static int height;
    private static float time;
@@ -81,7 +83,7 @@ public final class VFXPostProcessManager {
             if (bloomChain != null) {
                bloomChain.setUniform("Threshold", 0.72F);
                bloomChain.setUniform("Intensity", VFXRenderManager.pressure() == net.xxxjk.TYPE_MOON_WORLD.vfx.VFXPerformanceBudget.Pressure.CRITICAL ? 0.45F : 0.85F);
-               bloomChain.process(event.getPartialTick().getGameTimeDeltaTicks());
+               VFXPostProcessPass.process(bloomChain, event.getPartialTick().getGameTimeDeltaTicks());
                minecraft.getMainRenderTarget().bindWrite(true);
             }
          } else {
@@ -106,7 +108,7 @@ public final class VFXPostProcessManager {
          chain.setUniform("RadialBlur", Config.vfxDistortion ? radial : 0.0F);
          chain.setUniform("Vignette", vignette);
          chain.setUniform("Time", time);
-         chain.process(event.getPartialTick().getGameTimeDeltaTicks());
+         VFXPostProcessPass.process(chain, event.getPartialTick().getGameTimeDeltaTicks());
          minecraft.getMainRenderTarget().bindWrite(true);
       } catch (Exception exception) {
          TYPE_MOON_WORLD.LOGGER.warn("Failed to render VFX screen effects", exception);
@@ -158,8 +160,8 @@ public final class VFXPostProcessManager {
          width = 0;
          height = 0;
       }
-      int newWidth = minecraft.getWindow().getWidth();
-      int newHeight = minecraft.getWindow().getHeight();
+      int newWidth = minecraft.getMainRenderTarget().width;
+      int newHeight = minecraft.getMainRenderTarget().height;
       if (newWidth != width || newHeight != height) {
          width = newWidth;
          height = newHeight;
@@ -177,22 +179,18 @@ public final class VFXPostProcessManager {
    private static void ensureBloomChain(Minecraft minecraft) throws IOException {
       if (bloomChain == null) {
          bloomChain = new PostChain(minecraft.getTextureManager(), minecraft.getResourceManager(), minecraft.getMainRenderTarget(), BLOOM_EFFECT);
-         // PostChain initializes every pass's projection matrix in resize().
-         bloomChain.resize(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight());
+         bloomWidth = 0;
+         bloomHeight = 0;
       }
-      // PostChain also uses these targets as sampler inputs. Keep all passes
-      // aligned with the main target to avoid exposing stale image regions.
-      float scale = 1.0F;
-      int targetWidth = Math.max(1, Math.round(minecraft.getWindow().getWidth() * scale));
-      int targetHeight = Math.max(1, Math.round(minecraft.getWindow().getHeight() * scale));
-      var bright = bloomChain.getTempTarget("bright");
-      var blur = bloomChain.getTempTarget("blur");
-      var swap = bloomChain.getTempTarget("swap");
-      if (bright != null && (bright.width != targetWidth || bright.height != targetHeight)) bright.resize(targetWidth, targetHeight, Minecraft.ON_OSX);
-      if (blur != null && (blur.width != targetWidth || blur.height != targetHeight)) blur.resize(targetWidth, targetHeight, Minecraft.ON_OSX);
-      int screenWidth = minecraft.getWindow().getWidth();
-      int screenHeight = minecraft.getWindow().getHeight();
-      if (swap != null && (swap.width != screenWidth || swap.height != screenHeight)) swap.resize(screenWidth, screenHeight, Minecraft.ON_OSX);
+      int newWidth = minecraft.getMainRenderTarget().width;
+      int newHeight = minecraft.getMainRenderTarget().height;
+      if (bloomWidth != newWidth || bloomHeight != newHeight) {
+         bloomWidth = newWidth;
+         bloomHeight = newHeight;
+         // Resize the chain as a unit so every pass also receives a current
+         // projection matrix after a window/fullscreen resolution change.
+         bloomChain.resize(newWidth, newHeight);
+      }
    }
 
    private static void closeBloom() {

@@ -4,8 +4,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class ServantPhaseService {
-   /** Long engagements eventually force the third, decisive phase even at full health. */
-   public static final long PROLONGED_COMBAT_DECISIVE_TICKS = 3000L;
+   public static final long MAX_PROBING_TICKS = 30L * 20L;
+   /** A full-health stalemate must also reach the noble phantasm phase. */
+   public static final long PROLONGED_COMBAT_DECISIVE_TICKS = 60L * 20L;
+   public static final float OVERWHELMING_STRENGTH_RATIO = 1.65F;
    private static final String TAG_PHASE = "TypeMoonAiCombatPhase";
    private static final String TAG_PHASE_CHANGED = "TypeMoonAiPhaseChangedAt";
    private static final String TAG_COMBAT_STARTED = "TypeMoonAiCombatStartedAt";
@@ -17,7 +19,8 @@ public final class ServantPhaseService {
       var data = entity.getPersistentData();
       ServantCombatPhase current = ServantCombatPhase.byName(data.getString(TAG_PHASE));
       ServantCombatPhase desired = ServantCombatPhase.PROBING;
-      if (target == null || !target.isAlive()) {
+      boolean inCombat = target != null && target.isAlive() && target.level() == entity.level();
+      if (!inCombat) {
          if (now - data.getLong(TAG_LAST_COMBAT) < 120L) desired = current;
          else data.remove(TAG_COMBAT_STARTED);
       } else {
@@ -26,8 +29,22 @@ public final class ServantPhaseService {
          data.putLong(TAG_LAST_COMBAT, now);
          long elapsed = now - data.getLong(TAG_COMBAT_STARTED);
          float healthRatio = entity.getHealth() / Math.max(1.0F, entity.getMaxHealth());
-         desired = desiredPhase(healthRatio, elapsed, target.getMaxHealth() / Math.max(1.0F, entity.getMaxHealth()));
+         desired = desiredPhase(healthRatio, elapsed, (float)ServantCombatAssessment.strengthRatio(entity, target));
+         if (elapsed >= MAX_PROBING_TICKS
+            && (healthRatio <= 0.80F || target.getHealth() <= target.getMaxHealth() * 0.40F)
+            && desired.ordinal() < ServantCombatPhase.DECISIVE.ordinal()) {
+            desired = ServantCombatPhase.DECISIVE;
+         }
          desired = applyRivalMinimum(desired, target, profile);
+         int legacyMinimum = Math.min(ServantCombatPhase.DECISIVE.ordinal(), data.getInt("TypeMoonCombatPhase"));
+         if (entity.getDefinition() != null
+            && (entity.getDefinition().classType() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType.BERSERKER
+               || entity.getDefinition().classType() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType.AVENGER)) {
+            legacyMinimum = ServantCombatPhase.DECISIVE.ordinal();
+         }
+         if (desired.ordinal() < legacyMinimum) desired = ServantCombatPhase.values()[legacyMinimum];
+         // Healing, temporary target loss and buffs cannot restart probing mid-fight.
+         if (desired.ordinal() < current.ordinal()) desired = current;
       }
 
       boolean canDowngrade = now - data.getLong(TAG_PHASE_CHANGED) >= 100L;
@@ -44,10 +61,12 @@ public final class ServantPhaseService {
 
    public static ServantCombatPhase desiredPhase(float healthRatio, long combatTicks, float targetStrengthRatio) {
       if (healthRatio <= 0.25F) return ServantCombatPhase.LAST_STAND;
-      if (healthRatio <= 0.55F || targetStrengthRatio > 1.35F || combatTicks >= PROLONGED_COMBAT_DECISIVE_TICKS) {
+      if (healthRatio <= 0.55F || targetStrengthRatio >= OVERWHELMING_STRENGTH_RATIO
+         || combatTicks >= PROLONGED_COMBAT_DECISIVE_TICKS
+         || combatTicks >= MAX_PROBING_TICKS && targetStrengthRatio >= 1.15F) {
          return ServantCombatPhase.DECISIVE;
       }
-      if (combatTicks >= 60L) return ServantCombatPhase.NORMAL;
+      if (combatTicks >= MAX_PROBING_TICKS || healthRatio <= 0.80F || targetStrengthRatio >= 1.30F) return ServantCombatPhase.NORMAL;
       return ServantCombatPhase.PROBING;
    }
 

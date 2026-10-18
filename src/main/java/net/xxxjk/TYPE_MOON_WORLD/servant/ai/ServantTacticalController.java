@@ -98,7 +98,9 @@ public final class ServantTacticalController {
       ServantCombatExchangeService.submit(entity, brain, now);
       if (keepActionTimeline || (plannedActive && !meleeOverride)) submitActivePlannedAction(entity, brain, now);
       else if (!meleeOverride) {
-         for (var candidate : candidates) submitPlannedAction(entity, candidate, brain, now);
+         for (int rank = 0; rank < candidates.size(); rank++) {
+            submitPlannedAction(entity, candidates.get(rank), brain, now, rank);
+         }
          if (!orbiting) {
             submitCombatManeuver(entity, brain, now);
             submitTacticalReposition(entity, brain, now);
@@ -294,13 +296,13 @@ public final class ServantTacticalController {
    }
 
    private static void submitPlannedAction(ServantEntity entity, net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor action,
-                                           AiBrain brain, long now) {
+                                           AiBrain brain, long now, int rank) {
       LivingEntity target = entity.getTarget();
       if (!ServantPlannedActionExecutor.canExecute(entity, target, action, now)) return;
       boolean cast = action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.PROJECTILE)
          || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.NOBLE_PHANTASM);
       brain.submit(AiIntent.attempt(action.id(), AiIntent.PRIORITY_ATTACK,
-         action.threat().danger() * 20.0 + action.maneuver().interruptLevel() * 6.0 + 10.0,
+         200.0 - rank,
          Math.max(1, action.timing().windupTicks()), action.threat().interruptible(),
          () -> ServantPlannedActionExecutor.execute(entity, target, action, now),
          cast ? AiControl.CAST : AiControl.ATTACK, AiControl.LOOK));

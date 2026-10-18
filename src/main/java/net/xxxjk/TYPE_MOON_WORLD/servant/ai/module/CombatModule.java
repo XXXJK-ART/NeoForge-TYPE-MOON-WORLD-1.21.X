@@ -486,7 +486,6 @@ public final class CombatModule implements ServantAiModule {
                }
             }
             if (phase >= 3
-               && paracelsus.getHealth() <= paracelsus.getMaxHealth() / 3.0F
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && paracelsus.getCurrentMp() >= 150.0
                && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())

@@ -90,17 +90,17 @@ public class ServantCardHud {
       int manaY = guiHeight - 20;
       if (vars.master_active) {
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00656D, 0xFF0099A6);
+            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF48EDF5, 0xFF439DFF);
          }
       } else {
          int barY = manaY;
-         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00656D, 0xFF0099A6);
+         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF48EDF5, 0xFF439DFF);
          barY -= 11;
          if ("gilles_de_rais_caster".equals(vars.servant_card_id) && vars.servant_card_gilles_spellbook_max_mana > 0.0) {
             drawBar(gui, minecraft, manaX, barY, 120,
                Component.translatable("hud.typemoonworld.servant_card.gilles_spellbook_mana").getString(),
                vars.servant_card_gilles_spellbook_mana, vars.servant_card_gilles_spellbook_max_mana,
-               0xFF0A3478, 0xFF2E79B5);
+               0xFF559DFF, 0xFF54D0F5);
             barY -= 11;
          }
          if (vars.master_servant_link_partner_max_mana > 0.0) {
@@ -108,7 +108,7 @@ public class ServantCardHud {
             barY -= 11;
          }
           if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
-             drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF004A4D, 0xFF0099A6);
+             drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF48EDF5, 0xFF439DFF);
           }
           drawThreatStatus(gui, minecraft, manaX, barY - 22);
       }

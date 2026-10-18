@@ -65,7 +65,8 @@ public class GilgameshEntity extends ServantEntity {
          if (this.isFlyingMode()) {
             if (!this.onGround()) {
                this.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE_TAG, true);
-            } else if (this.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE_TAG)) {
+            } else if (this.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE_TAG)
+               && (this.getTarget() == null || !this.getTarget().isAlive())) {
                this.setFlyingMode(false);
                this.getPersistentData().putLong(FLIGHT_LANDED_UNTIL_TAG, this.level().getGameTime() + 80L);
             }
@@ -78,7 +79,8 @@ public class GilgameshEntity extends ServantEntity {
    }
 
    public void setFlyingMode(boolean flying) {
-      if (flying && !this.level().isClientSide() && this.getPersistentData().getLong(FLIGHT_LANDED_UNTIL_TAG) > this.level().getGameTime()) {
+      if (flying && !this.level().isClientSide() && (this.getTarget() == null || !this.getTarget().isAlive())
+         && this.getPersistentData().getLong(FLIGHT_LANDED_UNTIL_TAG) > this.level().getGameTime()) {
          return;
       }
       this.entityData.set(FLYING_MODE, flying);

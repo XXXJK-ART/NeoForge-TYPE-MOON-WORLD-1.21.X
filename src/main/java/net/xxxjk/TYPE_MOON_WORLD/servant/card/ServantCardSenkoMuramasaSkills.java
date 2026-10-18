@@ -238,7 +238,7 @@ public final class ServantCardSenkoMuramasaSkills {
       player.getPersistentData().putBoolean(NP_USED, true);
       player.getPersistentData().putBoolean(NP_PENDING, true);
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 293, 10, false, false, false));
-      level.playSound(null, player.blockPosition(), ModSounds.SENKO_MURAMASA_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "muramasa_no_gen_kensai");
       expandField(level, player, 0);
       TYPE_MOON_WORLD.queueServerWork(200, () -> revealTsumukari(player));
       return true;

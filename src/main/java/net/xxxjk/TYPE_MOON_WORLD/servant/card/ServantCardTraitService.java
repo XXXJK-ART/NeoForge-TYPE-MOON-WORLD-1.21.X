@@ -39,8 +39,12 @@ public final class ServantCardTraitService {
       CompoundTag data = player.getPersistentData();
       data.putString(CLASS_TAG, definition.classType().key());
       data.putString(FACTION_TAG, definition.faction().key());
-      data.putString(TRAIT_LIST_TAG, traitKeyList(definition.traits()));
-      for (ServantTraitTag trait : definition.traits()) {
+      List<ServantTraitTag> traits = new ArrayList<>(definition.traits());
+      if (!traits.contains(ServantTraitTag.SERVANT)) {
+         traits.add(ServantTraitTag.SERVANT);
+      }
+      data.putString(TRAIT_LIST_TAG, traitKeyList(traits));
+      for (ServantTraitTag trait : traits) {
          data.putBoolean(TRAIT_PREFIX + trait.key(), true);
       }
       data.putBoolean("TypeMoonLivingHuman", definition.traits().contains(ServantTraitTag.LIVING_HUMAN));

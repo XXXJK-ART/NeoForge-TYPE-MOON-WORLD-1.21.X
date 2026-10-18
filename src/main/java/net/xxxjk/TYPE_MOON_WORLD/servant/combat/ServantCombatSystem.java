@@ -122,7 +122,9 @@ public final class ServantCombatSystem {
       // is intentionally airborne, so the generic airborne gate must not
       // suppress her combat helper and leave the mount stationary.
       boolean medusaMounted = entity instanceof MedusaEntity medusa && medusa.isRidingPegasus();
-      if (!medusaMounted && (motionState == ServantCombatMotionService.MotionState.AIRBORNE
+      boolean airborneAction = motionState == ServantCombatMotionService.MotionState.AIRBORNE
+         && ServantCombatMotionService.canActWhileAirborne(entity);
+      if (!medusaMounted && !airborneAction && (motionState == ServantCombatMotionService.MotionState.AIRBORNE
          || motionState == ServantCombatMotionService.MotionState.WALL_STAGGER
          || motionState == ServantCombatMotionService.MotionState.GROUND_STAGGER
          || motionState == ServantCombatMotionService.MotionState.TECH_PROTECTED)) {
@@ -303,7 +305,6 @@ public final class ServantCombatSystem {
 
    public static ServantCombatPhase getPhase(ServantEntity entity) {
       ServantDefinition definition = entity.getDefinition();
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.duel(entity) && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.probing(entity, entity.level().getGameTime())) return ServantCombatPhase.PROBING;
       if (definition != null && isAlwaysDecisive(definition)) {
          return ServantCombatPhase.DECISIVE;
       }
@@ -387,67 +388,24 @@ public final class ServantCombatSystem {
 
    private static void updateCombatState(ServantEntity entity, ServantDefinition definition, CompoundTag data, long now) {
       LivingEntity target = entity.getTarget();
-      boolean inCombat = target != null && target.isAlive() && !EntityUtils.isImmunePlayerTarget(target) && entity.distanceToSqr(target) <= 24.0 * 24.0;
+      boolean inCombat = target != null && target.isAlive() && target.level() == entity.level()
+         && !EntityUtils.isImmunePlayerTarget(target);
+      var shared = net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.tick(entity,
+         inCombat ? target : null,
+         net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantActionRegistry.get(entity.getServantId()), now);
       if (inCombat) {
          long previousCombatTick = data.getLong(TAG_LAST_COMBAT_TICK);
-         if (previousCombatTick <= 0L || now - previousCombatTick > 120L) {
+         if (!data.contains(TAG_COMBAT_CONTROL_START) || now - previousCombatTick > 120L) {
             data.putLong(TAG_COMBAT_CONTROL_START, now);
          }
          data.putLong(TAG_LAST_COMBAT_TICK, now);
-         if (isAlwaysDecisive(definition)) {
-            data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
-            return;
-         }
-
-         // Do not let a healthy pair remain in an endless probing/normal loop.
-         // The tactical phase service has the same threshold; this mirrors it
-         // for legacy helpers that read the combat-system phase directly.
-         long combatDuration = now - data.getLong(TAG_COMBAT_CONTROL_START);
-         if (combatDuration >= net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.PROLONGED_COMBAT_DECISIVE_TICKS
-            && ServantCombatPhase.fromId(data.getInt(TAG_PHASE)).id() < ServantCombatPhase.DECISIVE.id()) {
-            data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
-         }
-
-         double healthRatio = entity.getHealth() / Math.max(1.0, entity.getMaxHealth());
-         if (!(entity instanceof GilgameshEntity) && target instanceof GilgameshEntity) {
-            ServantCombatPhase desired = healthRatio <= (entity instanceof EmiyaArcherEntity ? 0.40 : 0.60)
-               ? ServantCombatPhase.DECISIVE
-               : ServantCombatPhase.NORMAL;
-            ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
-            if (desired.id() > current.id()) {
-               data.putInt(TAG_PHASE, desired.id());
-            }
-            return;
-         }
-         if (entity instanceof EmiyaArcherEntity) {
-            if (healthRatio <= 0.40) {
-               data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
-            } else if (healthRatio <= 0.60) {
-               data.putInt(TAG_PHASE, ServantCombatPhase.NORMAL.id());
-            } else {
-               data.putInt(TAG_PHASE, ServantCombatPhase.PROBING.id());
-            }
-            return;
-         }
-         if (entity instanceof GilgameshEntity) {
-            ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
-            ServantCombatPhase desired = healthRatio <= 0.40
-               ? ServantCombatPhase.DECISIVE
-               : healthRatio <= 0.60 ? ServantCombatPhase.NORMAL : ServantCombatPhase.PROBING;
-            if (desired.id() > current.id()) {
-               data.putInt(TAG_PHASE, desired.id());
-            }
-            return;
-         }
-         ServantCombatPhase current = ServantCombatPhase.fromId(data.getInt(TAG_PHASE));
-         if (healthRatio <= 0.60 && current.id() < ServantCombatPhase.DECISIVE.id()) {
-            data.putInt(TAG_PHASE, ServantCombatPhase.DECISIVE.id());
-         } else if (healthRatio <= 0.80 && current.id() < ServantCombatPhase.NORMAL.id()) {
-            data.putInt(TAG_PHASE, ServantCombatPhase.NORMAL.id());
-         }
+         ServantCombatPhase desired = ServantCombatPhase.fromId(Math.min(ServantCombatPhase.DECISIVE.id(), shared.phase().ordinal()));
+         if (isAlwaysDecisive(definition)) desired = ServantCombatPhase.DECISIVE;
+         if (!(entity instanceof GilgameshEntity) && target instanceof GilgameshEntity
+            && desired == ServantCombatPhase.PROBING) desired = ServantCombatPhase.NORMAL;
+         forcePhaseAtLeast(entity, desired);
          return;
       }
-
       long lastCombat = data.getLong(TAG_LAST_COMBAT_TICK);
       if (lastCombat <= 0) {
          if (!(entity instanceof GilgameshEntity)

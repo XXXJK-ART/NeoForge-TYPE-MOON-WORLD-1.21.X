@@ -79,7 +79,8 @@ public final class ServantCardNightingaleSkills {
          ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, ticks), () -> { clearCastTags(player); clearRefundSnapshot(player); });
       long now = player.level().getGameTime();
       CompoundTag data = player.getPersistentData();
-      data.putLong(CAST_END, voiceEnd);
+      long releaseAt = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.releaseAt(player);
+      data.putLong(CAST_END, releaseAt > 0L ? releaseAt : voiceEnd);
       data.putDouble(CAST_X, player.getX());
       data.putDouble(CAST_Y, player.getY());
       data.putDouble(CAST_Z, player.getZ());

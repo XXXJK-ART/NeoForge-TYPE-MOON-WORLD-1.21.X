@@ -50,7 +50,14 @@ public final class ServantIdentityHelper {
    public static List<ServantTraitTag> traitsOf(LivingEntity entity) {
       ServantDefinition definition = definitionOf(entity);
       if (definition != null) {
-         return definition.traits();
+         List<ServantTraitTag> traits = new ArrayList<>(definition.traits());
+         // Servant entities and servant-card transformations always carry the
+         // SERVANT identity used by trait-targeted special attacks, even if a
+         // custom definition omitted the tag from its data file.
+         if (isServantIdentity(entity) && !traits.contains(ServantTraitTag.SERVANT)) {
+            traits.add(ServantTraitTag.SERVANT);
+         }
+         return traits;
       }
       if (entity == null) {
          return Collections.emptyList();
@@ -72,6 +79,17 @@ public final class ServantIdentityHelper {
          }
       }
       return traits;
+   }
+
+   private static boolean isServantIdentity(LivingEntity entity) {
+      if (entity instanceof ServantEntity) {
+         return true;
+      }
+      if (entity instanceof Player player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed;
+      }
+      return false;
    }
 
    public static List<String> skillIdsOf(LivingEntity entity) {

@@ -59,7 +59,6 @@ public final class SpiritualizationService {
 
     public static boolean toggle(ServerPlayer player) {
         if (!isServantCardPlayer(player)) {
-            player.displayClientMessage(Component.translatable("message.fatesupport.spiritualization.requires_servant_card"), true);
             return false;
         }
 

@@ -35,13 +35,6 @@ public class ServantCardItem extends Item {
       return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
    }
 
-   @Override
-   public void appendHoverText(ItemStack stack, TooltipContext context, java.util.List<Component> lines, net.minecraft.world.item.TooltipFlag flag) {
-      var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry.get(servantId(stack));
-      var era = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.lookup(servantId(stack));
-      lines.add(Component.translatable("tooltip.typemoonworld.servant.era", Component.translatable(era.translationKey())));
-   }
-
    public String servantId() {
       return this.servantId;
    }

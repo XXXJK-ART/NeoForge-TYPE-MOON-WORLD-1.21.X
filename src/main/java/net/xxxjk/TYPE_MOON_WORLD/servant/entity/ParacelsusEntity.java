@@ -136,9 +136,6 @@ public class ParacelsusEntity extends ServantEntity {
    public int computeCombatPhase() {
       float maxHealth = Math.max(1.0F, this.getMaxHealth());
       float ratio = this.getHealth() / maxHealth;
-      if (ratio <= 0.333F) {
-         return 3;
-      }
-      return ratio <= 0.666F ? 2 : 1;
+      return this.withSharedCombatPhase(ratio <= 0.333F ? 3 : ratio <= 0.666F ? 2 : 1);
    }
 }

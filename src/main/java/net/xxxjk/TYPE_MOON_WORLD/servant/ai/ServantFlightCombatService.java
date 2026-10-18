@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
@@ -46,6 +47,10 @@ public final class ServantFlightCombatService {
    }
 
    public static void tickIndependentController(ServantEntity entity) {
+      if (entity instanceof GilgameshEntity gilgamesh && gilgamesh.isAlive()
+         && !gilgamesh.isSpiritualTransitionLocked()) {
+         GilgameshCombatHelper.tickFlight(gilgamesh);
+      }
       if (entity instanceof CasterGilgameshEntity casterGilgamesh
          && casterGilgamesh.isAlive() && !casterGilgamesh.isSpiritualDissolving()) {
          boolean meleeHandled = CasterGilgameshCombatHelper.tickIndependentMelee(casterGilgamesh);
@@ -57,6 +62,7 @@ public final class ServantFlightCombatService {
 
    public static void tick(ServantEntity entity) {
       if (entity == null || entity.level().isClientSide()) return;
+      if (entity instanceof GilgameshEntity gilgamesh && GilgameshCombatHelper.ownsEaFlight(gilgamesh)) return;
       // Enuma Elish owns Enkidu's complete movement sequence, including the
       // aerial windup and the dive. Do not let generic flight correction
       // overwrite the noble phantasm's per-tick motion.
@@ -97,6 +103,7 @@ public final class ServantFlightCombatService {
       }
 
       long disconnected = ServantCombatTempoService.disconnectedTicks(entity, now);
+      boolean ranged = ServantEngagementService.role(entity) == ServantEngagementService.CombatRole.RANGED;
       boolean recentlyControlled = now - entity.getPersistentData().getLong(LAST_CONTROL_TICK) <= 1L;
       boolean actionOwnsMovement = actionOwnsMovement(entity);
       Vec3 motion = entity.getDeltaMovement();
@@ -105,14 +112,14 @@ public final class ServantFlightCombatService {
          entity.getY(), desiredY, 0.12, 0.025,
          ServantFlightHelper.MAX_VERTICAL_SPEED_UP, ServantFlightHelper.MAX_VERTICAL_SPEED_DOWN);
       double vertical = safeVerticalVelocity(entity.getY(), desiredY, motion.y, desiredVertical,
-         disconnected, recentlyControlled && !entity.wasTacticalAiHandledThisTick());
+         ranged ? 0L : disconnected, recentlyControlled);
       Vec3 corrected = new Vec3(motion.x, vertical, motion.z);
 
       boolean canRedirect = !actionOwnsMovement && !entity.isPerformingAction()
          && !ServantCombatSystem.cannotAct(entity);
-      if (canRedirect && shouldForceContact(disconnected)) {
+      if (canRedirect && !ranged && shouldForceContact(disconnected)) {
          corrected = contactMotion(entity, target, corrected, desiredY, 0.62);
-      } else if (canRedirect && shouldDescend(disconnected) && !recentlyControlled
+      } else if (canRedirect && !ranged && shouldDescend(disconnected) && !recentlyControlled
          && corrected.horizontalDistanceSqr() < 0.018) {
          corrected = contactMotion(entity, target, corrected, desiredY, 0.34);
       }
@@ -133,7 +140,9 @@ public final class ServantFlightCombatService {
    }
 
    public static boolean forceMeleeApproach(ServantEntity entity, LivingEntity target, long now) {
-      if (!isManagedFlight(entity, now) || target == null || !target.isAlive()
+      if (!isManagedFlight(entity, now)
+         || ServantEngagementService.role(entity) == ServantEngagementService.CombatRole.RANGED
+         || target == null || !target.isAlive()
          || target.level() != entity.level() || ServantCombatSystem.cannotAct(entity)
          || entity.isPerformingAction() || actionOwnsMovement(entity)) {
          return false;

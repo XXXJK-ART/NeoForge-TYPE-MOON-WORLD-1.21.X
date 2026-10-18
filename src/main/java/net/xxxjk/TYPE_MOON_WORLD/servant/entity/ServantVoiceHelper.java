@@ -309,12 +309,18 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayOkitaSoujiSaberNp(ServantEntity servant) {
       if (isOkitaSoujiSaber(servant)) {
-         playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+         SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+         if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
+            playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
+         }
       }
    }
 
    public static void tryPlayOkitaSoujiSaberNp(OkitaSoujiSaberEntity servant) {
-      playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+      SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
+         playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
+      }
    }
 
    public static void tryPlayIskandarIonioi(IskandarEntity servant) {

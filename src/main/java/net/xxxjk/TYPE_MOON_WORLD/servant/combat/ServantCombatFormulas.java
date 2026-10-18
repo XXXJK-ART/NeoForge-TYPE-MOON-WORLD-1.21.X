@@ -11,8 +11,8 @@ public final class ServantCombatFormulas {
    private static final double STAMINA_PER_STRENGTH_STEP = 8.0;
    private static final double BASE_POISE = 56.0;
    private static final double POISE_PER_ENDURANCE_STEP = 12.0;
-   private static final double DEFENSE_ARMOR_TOUGHNESS_BASE = 0.8;
-   private static final double DEFENSE_ARMOR_TOUGHNESS_PER_STEP = 0.3;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_BASE = 0.6;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_PER_STEP = 0.225;
    private static final double DEFENSE_RECOVERY_PER_SECOND = 6.0;
    private static final double POISE_RECOVERY_PER_SECOND = 6.0;
 
@@ -104,7 +104,7 @@ public final class ServantCombatFormulas {
    }
 
    public static double staminaMax(ServantParams params) {
-      return 2.0 * (BASE_STAMINA + defenseStep(params) * STAMINA_PER_STRENGTH_STEP);
+      return 1.5 * (BASE_STAMINA + defenseStep(params) * STAMINA_PER_STRENGTH_STEP);
    }
 
    public static double staminaRegenPerSecond(ServantParams params) {
@@ -128,7 +128,7 @@ public final class ServantCombatFormulas {
    }
 
    public static double poiseMax(ServantParams params) {
-      return 2.0 * (BASE_POISE + enduranceStep(params) * POISE_PER_ENDURANCE_STEP) * toughnessMultiplier(params);
+      return 1.5 * (BASE_POISE + enduranceStep(params) * POISE_PER_ENDURANCE_STEP) * toughnessMultiplier(params);
    }
 
    public static double poiseRegenPerSecond(ServantParams params) {

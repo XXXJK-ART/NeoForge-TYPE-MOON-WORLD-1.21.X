@@ -21,7 +21,7 @@ public final class SpiritualizationClient {
             "key.fatesupport.spiritualization",
             InputConstants.Type.KEYSYM,
             InputConstants.KEY_LCONTROL,
-            "key.categories.fatesupport"
+            net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings.KEY_CATEGORY
     );
     private static boolean hadLevel;
     private boolean controlledNoPhysics;
@@ -44,7 +44,8 @@ public final class SpiritualizationClient {
         }
         hadLevel = true;
 
-        if (SPIRITUALIZATION_KEY.consumeClick() && minecraft.screen == null) {
+        if (SPIRITUALIZATION_KEY.consumeClick() && minecraft.screen == null
+                && player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed) {
             PacketDistributor.sendToServer(new SpiritualizationTogglePayload());
         }
 
@@ -73,6 +74,7 @@ public final class SpiritualizationClient {
 
         @SubscribeEvent
         public static void register(RegisterKeyMappingsEvent event) {
+            SPIRITUALIZATION_KEY.setKeyConflictContext(net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModKeyMappings.SERVANT_CONTEXT);
             event.register(SPIRITUALIZATION_KEY);
         }
     }

@@ -9,6 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiBrain;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiIntent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiControl;
@@ -25,20 +26,25 @@ public final class ServantDuelPacing {
    private static final int COMBO_RECOVERY_TICKS = 6;
    private static final int RANGED_BASIC_RECOVERY_TICKS = 16;
    private static final int SKILL_RECOVERY_TICKS = 60;
+   private static final int SKILL_WINDOW_TICKS = 8;
    private static final String[] NP_TIMERS = {"ArtoriaExcaliburWindupUntil", "ArtoriaExcaliburReleaseUntil", "GawainGallatinWindupUntil",
       "CuGaeBolgWindupUntil", "CursedArmZabaniyaWindupUntil", "LiShuwenWuErDaRelease", "MedusaBellerophonLaunchTick",
       "OdaThreeThousandChantEnd", "OdaHajunChantEnd", "NightingaleNpCastEnd", "ZhaoYunNpChantUntil"};
    private ServantDuelPacing() { }
    public static boolean duel(ServantEntity servant) { return servant.getTarget() instanceof ServantEntity; }
    public static boolean skillDecisionAllowed(ServantEntity servant) {
+      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity) return true;
       if (!duel(servant)) return true;
       if (ServantCombatExchangeService.scripted(servant, servant.getTarget())) return true;
       var data = servant.getPersistentData();
       return !data.getBoolean(PREFIX + "Basic")
-         && data.getLong(PREFIX + "NextDecision") == servant.level().getGameTime() + DECISION_INTERVAL_TICKS;
+         && data.contains(PREFIX + "SkillWindowUntil")
+         && servant.level().getGameTime() < data.getLong(PREFIX + "SkillWindowUntil");
    }
    public static boolean probing(ServantEntity servant, long now) {
-      return now - servant.getPersistentData().getLong(PREFIX + "Start") < 300;
+      return net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatPhase.byName(
+         servant.getPersistentData().getString("TypeMoonAiCombatPhase"))
+         == net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatPhase.PROBING;
    }
    public static boolean useBasicDecision(long decision, boolean probing) {
       // Skills remain occasional set pieces, while the neutral loop is still
@@ -54,19 +60,28 @@ public final class ServantDuelPacing {
          data.putUUID(PREFIX + "Target", target.getUUID()); data.putLong(PREFIX + "Start", now);
          data.putLong(PREFIX + "Decision", 0);
          data.remove(PREFIX + "NextDecision"); data.remove(PREFIX + "NextBasic"); data.remove(PREFIX + "NextSkill");
+         data.remove(PREFIX + "SkillWindowUntil");
       }
       if (ServantCombatExchangeService.scripted(servant, target)) return false;
+      // His basic attack is the native treasury volley, with its own cadence,
+      // formations and mana cost. Generic darts must not replace that helper.
+      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity) return false;
       if (NoblePhantasmCastService.chanting(servant)) return true;
       if (nativeNpActive(servant) || ServantCombatExchangeService.protectedAction(servant)) return false;
       if (now >= data.getLong(PREFIX + "NextDecision")) {
          long decision = data.getLong(PREFIX + "Decision");
-         boolean chooseBasic = useBasicDecision(decision, probing(servant, now));
+         var opportunity = net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatAssessment.opportunity(servant, target);
+         boolean decisive = ServantCombatSystem.getPhase(servant)
+            == net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase.DECISIVE;
+         boolean chooseBasic = useBasicDecision(decision, probing(servant, now))
+            && !opportunity.urgent() && !(decisive && decision % 3L == 0L);
          if (!chooseBasic && now < data.getLong(PREFIX + "NextSkill")) chooseBasic = true;
          data.putLong(PREFIX + "Decision", decision + 1);
          data.putLong(PREFIX + "NextDecision", now + DECISION_INTERVAL_TICKS);
          data.putBoolean(PREFIX + "Basic", chooseBasic);
          if (!chooseBasic) {
-            data.putLong(PREFIX + "NextSkill", now + SKILL_RECOVERY_TICKS);
+            data.putLong(PREFIX + "NextSkill", now + (decisive ? 36L : SKILL_RECOVERY_TICKS));
+            data.putLong(PREFIX + "SkillWindowUntil", now + SKILL_WINDOW_TICKS);
             data.putInt(PREFIX + "SkillDecisions", data.getInt(PREFIX + "SkillDecisions") + 1);
             return false;
          }
@@ -75,6 +90,7 @@ public final class ServantDuelPacing {
    }
 
    public static void submitBasic(ServantEntity servant, AiBrain brain, long now) {
+      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity) return;
       if (!ServantCombatExchangeService.ordinary(servant, servant.getTarget())
          || ServantCombatExchangeService.protectedAction(servant) || !basicReady(servant, now)
          || skillDecisionAllowed(servant)) return;

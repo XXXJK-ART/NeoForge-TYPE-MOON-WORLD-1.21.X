@@ -2,6 +2,6 @@
   "targets": ["swap"],
   "passes": [
     {"name":"typemoonworld:vfx_screen","intarget":"minecraft:main","outtarget":"swap","auxtargets":[{"name":"DepthSampler","id":"minecraft:main:depth"}]},
-    {"name":"blit","intarget":"swap","outtarget":"minecraft:main"}
+    {"name":"typemoonworld:vfx_copy","intarget":"swap","outtarget":"minecraft:main"}
   ]
 }

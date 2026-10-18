@@ -49,7 +49,8 @@ public final class CasterGilgameshEntity extends ServantEntity {
          if (this.isFlyingMode()) {
             if (!this.onGround()) {
                this.getPersistentData().putBoolean(FLIGHT_WAS_AIRBORNE, true);
-            } else if (this.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE)) {
+            } else if (this.getPersistentData().getBoolean(FLIGHT_WAS_AIRBORNE)
+               && (this.getTarget() == null || !this.getTarget().isAlive())) {
                this.setFlyingMode(false);
                this.getPersistentData().putLong(FLIGHT_LANDED_UNTIL, this.level().getGameTime() + 80L);
             }
@@ -115,8 +116,7 @@ public final class CasterGilgameshEntity extends ServantEntity {
 
    public int computeCombatPhase() {
       float ratio = this.getHealth() / Math.max(1.0F, this.getMaxHealth());
-      if (ratio <= 0.333F) return 3;
-      return ratio <= 0.666F ? 2 : 1;
+      return this.withSharedCombatPhase(ratio <= 0.333F ? 3 : ratio <= 0.666F ? 2 : 1);
    }
 
    private void updateCombatPhase() {

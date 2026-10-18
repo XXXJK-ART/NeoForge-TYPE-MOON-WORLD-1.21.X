@@ -7,6 +7,14 @@ import org.junit.jupiter.api.Test;
 
 class ServantFlightCombatServiceTest {
    @Test
+   void rangedFlightKeepsAltitudeEvenWithoutRecentDamageContact() {
+      double initial = ServantFlightHelper.desiredCombatY(64, 64, 1.8, 0L, true);
+      assertEquals(68.35, initial, 1.0E-6);
+      assertEquals(initial, ServantFlightHelper.desiredCombatY(64, 64, 1.8, 200L, true), 1.0E-6);
+      assertEquals(64.35, ServantFlightHelper.desiredCombatY(64, 64, 1.8, 200L, false), 1.0E-6);
+   }
+
+   @Test
    void disconnectedCombatLowersFlightBandBeforeForcingContact() {
       assertEquals(67.8, ServantFlightHelper.desiredCombatY(64.0, 66.0, 1.8, 0L), 1.0E-6);
       assertEquals(66.9, ServantFlightHelper.desiredCombatY(64.0, 66.0, 1.8, 40L), 1.0E-6);
