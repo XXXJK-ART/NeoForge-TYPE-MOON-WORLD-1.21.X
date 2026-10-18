@@ -474,8 +474,7 @@ public final class AirflowBladeService {
         return vars.is_magus
                 && vars.is_magic_circuit_open
                 && PlayerMagicSelectionService.isCurrentSelection(vars, AirflowBladeMagic.MAGIC_ID)
-                && (!requireCooldown || (Double.isFinite(vars.magic_cooldown)
-                && vars.magic_cooldown <= 0.0D));
+                && (!requireCooldown || vars.magicState().cooldown() <= 0.0D);
     }
 
     private static boolean isActiveOwner(LivingEntity owner, ServerLevel level) {
@@ -519,8 +518,7 @@ public final class AirflowBladeService {
     private static double mana(ServerPlayer player) {
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double value = vars.player_mana;
-        return Double.isFinite(value) ? Math.max(0.0D, value) : 0.0D;
+        return vars.magicState().mana();
     }
 
     private static boolean consumeMana(ServerPlayer player, double amount) {
@@ -531,15 +529,15 @@ public final class AirflowBladeService {
             vars.syncMana(player);
             return false;
         }
-        vars.player_mana = Math.max(0.0D, current - amount);
-        vars.syncMana(player);
-        return true;
+        boolean consumed = vars.magicState().tryConsume(amount);
+        if (consumed) vars.syncMana(player);
+        return consumed;
     }
 
     private static void setCooldown(ServerPlayer player, int ticks) {
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        vars.magic_cooldown = Math.max(vars.magic_cooldown, ticks);
+        vars.magicState().setCooldownAtLeast(ticks);
     }
 
     private static float chargePower(int chargedTicks) {

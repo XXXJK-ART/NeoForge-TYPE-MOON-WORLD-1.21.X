@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.mojang.blaze3d.platform.InputConstants.Type;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -206,13 +207,13 @@ public class MagicRadialMenuScreen extends Screen {
       }
 
       String magicId = this.getMagicId(index);
-      String fullName = Component.translatable("magic.typemoonworld." + magicId + ".name").getString();
+      String fullName = Component.translatable(MagicTranslationKeys.name(magicId)).getString();
       if (baseDisplay.isBlank()) {
          baseDisplay = fullName;
       }
 
-      String shortName = Component.translatable("key.typemoonworld.magic." + magicId + ".short").getString();
-      String selectedName = Component.translatable("key.typemoonworld.magic." + magicId + ".selected").getString();
+      String shortName = Component.translatable(MagicTranslationKeys.shortName(magicId)).getString();
+      String selectedName = Component.translatable(MagicTranslationKeys.selectedName(magicId)).getString();
       baseDisplay = normalizeDisplayName(baseDisplay, fullName, shortName, selectedName, magicId);
       if (this.isCrestMagic(index)) {
          String hint = this.getCrestPresetHint(index);
@@ -235,7 +236,7 @@ public class MagicRadialMenuScreen extends Screen {
 
    private static String normalizeDisplayName(String current, String fullName, String shortName, String selectedName, String magicId) {
       String display = current == null ? "" : current.trim();
-      if (display.isEmpty()) {
+      if (display.isEmpty() || display.startsWith("magic.") || display.startsWith("key.")) {
          return fullName;
       } else if (display.equals(shortName) || display.equals(selectedName) || display.equals(magicId)) {
          return fullName;

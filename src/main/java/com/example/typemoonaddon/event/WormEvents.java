@@ -45,18 +45,15 @@ public final class WormEvents {
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (!WormMagicIntegration.isKnown(player, WormMagicIntegration.WORM_MAGIC)
-                    && !WormMagicIntegration.isKnown(player, WormMagicIntegration.WORM_CONTROL)) {
-                return;
-            }
-            if (player.tickCount % 20 == 0) {
-                bindOwnedWorms(player);
-            }
+    public static void tick(ServerPlayer player) {
+        if (player == null || player.tickCount % 20 != 0) {
+            return;
         }
+        if (!WormMagicIntegration.isKnown(player, WormMagicIntegration.WORM_MAGIC)
+                && !WormMagicIntegration.isKnown(player, WormMagicIntegration.WORM_CONTROL)) {
+            return;
+        }
+        bindOwnedWorms(player);
     }
 
     private static boolean canCapture(ServerPlayer player) {

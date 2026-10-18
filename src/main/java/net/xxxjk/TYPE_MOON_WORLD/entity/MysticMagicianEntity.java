@@ -97,8 +97,7 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
       "healing_magic", "gander", "fire_magic", "water_magic", "wind_magic", "earth_magic", "binding_magic", "suggestion_magic",
       "flame_array", "azure_water_array", "gale_wind_array", "rock_earth_array", "contract_magecraft", "touko_travel",
       "spiritual_healing", "magic_analysis", "storage", "time_alter", "jewel_magic_shoot", "jewel_magic_release",
-      "jewel_machine_gun", "ruby_throw", "sapphire_throw", "emerald_use", "topaz_throw", "cyan_throw", "ruby_flame_sword",
-      "sapphire_winter_frost", "emerald_winter_river", "topaz_reinforcement", "cyan_wind", "spiritron_cannon"
+      "jewel_machine_gun", "spiritron_cannon"
    };
    public static final int SKIN_VARIANT_COUNT = 6;
    public static final int MELEE_POSE_NONE = 0;
@@ -625,7 +624,7 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
 
       this.setCombatPersonality(spawnType == MobSpawnType.CONVERSION ? NpcCombatPersonality.GOOD : NpcCombatPersonality.random(this.random));
       this.setCombatTemperament(NpcCombatTemperament.random(this.random));
-      NpcMagicCastBridge.onSpawnInitialized(this);
+      net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcStateInitializer.initialize(this);
       initializeMartialLoadout();
       if (spawnType != MobSpawnType.NATURAL && spawnType != MobSpawnType.CHUNK_GENERATION) {
          this.setPersistenceRequired();
@@ -931,7 +930,7 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
          this.acquireAggressorTarget();
       }
 
-      if (!tactical) NpcMagicCastBridge.tickServer(this);
+      if (!tactical) net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcMagicActionExecutor.tick(this);
       this.refreshReinforcementVisualMask();
    }
 
@@ -963,7 +962,7 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
    }
 
    private boolean canTargetLiving(LivingEntity living) {
-      if (!NpcMagicCastBridge.isNpcTargetCandidate(this, living)) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatDecision.isTargetCandidate(this, living)) {
          return false;
       } else if (living instanceof Player player) {
          if (player.isCreative() || player.isSpectator()) {
@@ -988,12 +987,14 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
          Monster nearestThreat = null;
          double bestDist = Double.MAX_VALUE;
 
-         for (Monster monster : this.level()
-            .getEntitiesOfClass(Monster.class, this.getBoundingBox().inflate(range), m -> m.isAlive() && m.getTarget() == this && NpcMagicCastBridge.isNpcTargetCandidate(this, m))) {
-            double dist = this.distanceToSqr(monster);
-            if (dist < bestDist) {
-               bestDist = dist;
-               nearestThreat = monster;
+         for (net.minecraft.world.entity.Mob candidate : net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcNearbyEntityIndex.mobs(this, range)) {
+            if (candidate instanceof Monster monster && monster.isAlive() && monster.getTarget() == this
+               && net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatDecision.isTargetCandidate(this, monster)) {
+               double dist = this.distanceToSqr(monster);
+               if (dist < bestDist) {
+                  bestDist = dist;
+                  nearestThreat = monster;
+               }
             }
          }
 
@@ -1103,11 +1104,11 @@ public class MysticMagicianEntity extends HumanNpcEntity implements Merchant {
       }
 
       public boolean canUse() {
-         return !this.magician.hasPhysicalLoadout() && NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canUse();
+         return !this.magician.hasPhysicalLoadout() && net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatDecision.shouldUseMelee(this.magician) && super.canUse();
       }
 
       public boolean canContinueToUse() {
-         return !this.magician.hasPhysicalLoadout() && NpcMagicCastBridge.shouldUseMeleeGoal(this.magician) && super.canContinueToUse();
+         return !this.magician.hasPhysicalLoadout() && net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatDecision.shouldUseMelee(this.magician) && super.canContinueToUse();
       }
    }
 }

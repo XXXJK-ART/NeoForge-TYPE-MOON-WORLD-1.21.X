@@ -20,6 +20,11 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven {
+        name = 'Henkelmax'
+        url = 'https://maven.maxhenkel.de/repository/public'
+        content { includeGroup 'de.maxhenkel.voicechat' }
+    }
     exclusiveContent {
         forRepository {
             maven {
@@ -211,6 +216,9 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     implementation "maven.modrinth:terrablender:${terrablender_modrinth_version}" // NeoForge ${minecraft_version}-${terrablender_version}
+    // Compile the optional bridges without bundling or requiring either mod at runtime.
+    compileOnly 'de.maxhenkel.voicechat:voicechat-api:2.6.20'
+    compileOnly('maven.modrinth:superb-warfare:61I8C3YC') { transitive = false }
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
@@ -292,6 +300,29 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+// NeoGradle 7.1.38 can pass a null result from its cached collection stage when
+// this task is rerun. Generate the same library list directly from its inputs.
+tasks.matching { it.name == 'neoFormListTransformLibraries' }.configureEach {
+    actions.clear()
+    doLast {
+        def libraries = versionJsonLibraries.files.findAll { it.isFile() }.sort { left, right ->
+            left.absolutePath <=> right.absolutePath
+        }
+        if (libraries.isEmpty()) {
+            throw new GradleException('No NeoForge transform libraries were resolved.')
+        }
+
+        def outputFile = output.get().asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.withWriter('UTF-8') { writer ->
+            libraries.each { library ->
+                writer.write("-e=${library.absolutePath}")
+                writer.write(System.lineSeparator())
+            }
+        }
+    }
 }
 
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.

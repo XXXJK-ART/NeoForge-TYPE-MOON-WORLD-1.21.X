@@ -214,7 +214,7 @@ public class ThompsonContenderItem extends Item implements GeoItem {
       bullet.shoot(look.x, look.y, look.z, 4.8F, 0.0F);
       level.addFreshEntity(bullet);
 
-      level.sendParticles(ParticleTypes.FLASH, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(origin ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, origin ? 14 : 8, 0.08, 0.08, 0.08, 0.03);
       drawInitialTrail(level, spawn, look, origin);
       level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, origin ? 1.1F : 0.95F, origin ? 1.35F : 1.65F);

@@ -128,7 +128,7 @@ public class NightingaleGunItem extends Item implements GeoItem {
       bullet.setPos(spawn.x, spawn.y - 0.05, spawn.z);
       bullet.shoot(look.x, look.y, look.z, velocity, 0.0F);
       level.addFreshEntity(bullet);
-      level.sendParticles(ParticleTypes.FLASH, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, 10, 0.08, 0.08, 0.08, 0.03);
       level.sendParticles(ParticleTypes.SMOKE, spawn.x, spawn.y, spawn.z, 5, 0.05, 0.05, 0.05, 0.02);
       level.playSound(null, shooter.blockPosition(), SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 1.0F, 1.45F);

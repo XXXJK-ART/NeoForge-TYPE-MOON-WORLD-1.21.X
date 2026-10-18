@@ -95,12 +95,7 @@ public class ModPlayerEventHandler {
          if (isModItem(event.getItemStack()) && !checkMagus(event.getEntity())) {
             event.setCanceled(true);
          }
-         if (event.getEntity() instanceof ServerPlayer player) {
-            TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
-               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
-            }
-         }
+
       }
    }
 
@@ -251,9 +246,7 @@ public class ModPlayerEventHandler {
             event.setCanceled(true);
             return;
          }
-         if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && !player.isCrouching()) {
-            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardOdaNobunagaSkills.fireHeshikiriPrimary(player);
-         }
+
          if (vars.servant_card_transformed) {
             if ("baobhan_sith".equals(vars.servant_card_id)) {
                ServantCardBaobhanSithSkills.onNormalAttack(player, target);

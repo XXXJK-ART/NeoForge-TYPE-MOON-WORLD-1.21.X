@@ -29,9 +29,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.magic.AddonMagicRegistration;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RyougiShikiEntity;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BajiquanMasterEntity;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.martial.GanryuCombatService;
@@ -244,12 +243,6 @@ public class TypeMoonCommands {
             ids.add(normalized);
          }
       }
-      for (String magicId : AddonMagicRegistration.registeredMagicIds()) {
-         String normalized = normalizeMagicId(magicId);
-         if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) {
-            ids.add(normalized);
-         }
-      }
       for (String magicId : MagicDefinitionRegistry.ids()) {
          String normalized = normalizeMagicId(magicId);
          if (normalized != null && !normalized.isBlank() && MagicLearningStrategy.isKnowledgeVisible(normalized)) ids.add(normalized);
@@ -271,7 +264,7 @@ public class TypeMoonCommands {
       }
 
       ResourceLocation id = ResourceLocation.tryParse(value.toLowerCase(Locale.ROOT));
-      if (id == null || !TypeMoonAddon.MOD_ID.equals(id.getNamespace())) {
+      if (id == null || !TYPE_MOON_WORLD.MOD_ID.equals(id.getNamespace())) {
          return value;
       }
       return id.getPath();
@@ -905,10 +898,10 @@ public class TypeMoonCommands {
       try {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         vars.player_mana = 0.0;
-         vars.player_max_mana = 100.0;
-         vars.player_mana_egenerated_every_moment = 0.5;
-         vars.player_restore_magic_moment = 40.0;
+         vars.magicState().setMana(0.0);
+         vars.magicState().setMaxMana(100.0);
+         vars.magicState().setManaRegen(0.5);
+         vars.magicState().setRestoreMagicMoment(40.0);
          vars.player_magic_attributes_earth = false;
          vars.player_magic_attributes_water = false;
          vars.player_magic_attributes_fire = false;
@@ -917,7 +910,7 @@ public class TypeMoonCommands {
          vars.player_magic_attributes_none = false;
          vars.player_magic_attributes_imaginary_number = false;
          vars.player_magic_attributes_sword = false;
-         vars.magic_analysis_active = false;
+         vars.magicState().setAnalysisActive(false);
          vars.proficiency_structural_analysis = 0.0;
          vars.proficiency_magic_analysis = 0.0;
          vars.proficiency_projection = 0.0;
@@ -1031,10 +1024,10 @@ public class TypeMoonCommands {
       try {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         vars.player_max_mana = 100000.0;
-         vars.player_mana = vars.player_max_mana;
-         vars.player_mana_egenerated_every_moment = 100.0;
-         vars.player_restore_magic_moment = 1.0;
+         vars.magicState().setMaxMana(100000.0);
+         vars.magicState().setMana(vars.magicState().maxMana());
+         vars.magicState().setManaRegen(100.0);
+         vars.magicState().setRestoreMagicMoment(1.0);
          vars.player_magic_attributes_earth = true;
          vars.player_magic_attributes_water = true;
          vars.player_magic_attributes_fire = true;
@@ -1805,8 +1798,8 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          value = Math.max(0.0, Math.min(100000.0, value));
-         vars.player_mana = value;
-         vars.syncPlayerVariables(player);
+         vars.magicState().setMana(value);
+         vars.syncMana(player);
          double finalValue = value;
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Set Mana to " + finalValue), true);
          return 1;
@@ -1820,8 +1813,8 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          value = Math.max(0.0, Math.min(100000.0, value));
-         vars.player_max_mana = value;
-         vars.syncPlayerVariables(player);
+         vars.magicState().setMaxMana(value);
+         vars.syncMana(player);
          double finalValue = value;
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Set Max Mana to " + finalValue), true);
          return 1;
@@ -1888,8 +1881,8 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          value = Math.max(0.0, Math.min(60.0, value));
-         vars.player_mana_egenerated_every_moment = value;
-         vars.syncPlayerVariables(player);
+         vars.magicState().setManaRegen(value);
+         vars.syncDirtyDomains(player);
          double finalValue = value;
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Set Mana Regen Interval to " + finalValue + "s"), true);
          return 1;
@@ -1903,8 +1896,8 @@ public class TypeMoonCommands {
          ServerPlayer player = ((CommandSourceStack)ctx.getSource()).getPlayerOrException();
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          value = Math.max(0.0, Math.min(10000.0, value));
-         vars.player_restore_magic_moment = value;
-         vars.syncPlayerVariables(player);
+         vars.magicState().setRestoreMagicMoment(value);
+         vars.syncDirtyDomains(player);
          double finalValue = value;
          ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("Set Mana Restore Amount to " + finalValue), true);
          return 1;

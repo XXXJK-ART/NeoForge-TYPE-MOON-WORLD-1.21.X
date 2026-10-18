@@ -44,8 +44,7 @@ public final class EngravedWormMenu extends AbstractContainerMenu {
                         if (stack.isEmpty()) {
                             EngravedWormService.remove(player, getAbsoluteSlot());
                         } else if (stack.is(AddonItems.ENGRAVED_WORM.get()) && EngravedWormData.owner(stack) != null) {
-                            player.getData(EngravedWormAttachments.INVENTORY.get()).set(getAbsoluteSlot(), stack);
-                            EngravedWormService.recalculate(player);
+                            EngravedWormService.insert(player, getAbsoluteSlot(), stack);
                         }
                         updateWormSlotsFromAttachment();
                     }

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -56,7 +57,7 @@ public class MagicScrollItem extends Item {
             if (requiredMagic != null && !requiredMagic.isEmpty()) {
                 if (!MagicLearningStrategy.isLearned(vars, requiredMagic)) {
                     player.displayClientMessage(Component.translatable("message.typemoonworld.scroll.requirement_not_met", 
-                        Component.translatable("magic.typemoonworld." + requiredMagic + ".name")), true);
+                        Component.translatable(MagicTranslationKeys.name(requiredMagic))), true);
                     return InteractionResultHolder.fail(stack);
                 }
             }
@@ -102,7 +103,7 @@ public class MagicScrollItem extends Item {
         }
         player.displayClientMessage(Component.translatable(
             "message.typemoonworld.scroll.progress",
-            Component.translatable("magic.typemoonworld." + MagicLearningStrategy.normalizeDisplayId(magicId) + ".name"),
+            Component.translatable(MagicTranslationKeys.name(MagicLearningStrategy.normalizeDisplayId(magicId))),
             String.format(java.util.Locale.ROOT, "%.1f", result.afterPercent())), true);
     }
 

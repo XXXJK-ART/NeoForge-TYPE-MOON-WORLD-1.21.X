@@ -1,4 +1,9 @@
 {
+  "rank": "B",
+  "defense": {
+    "evasion": true,
+    "activation_actions": []
+  },
   "id": "true_mind_eye_b",
   "display_name": "Mind's Eye (True) B",
   "display_name_zh": "心眼(真) B",

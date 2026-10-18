@@ -81,7 +81,7 @@ public final class UbwSwordControlService {
          UbwControlledSwordEntity sword = new UbwControlledSwordEntity(
             level, player, source.weapon, source.position);
          if (level.addFreshEntity(sword)) {
-            level.removeBlock(pos, false);
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
             spawned++;
          }
       }

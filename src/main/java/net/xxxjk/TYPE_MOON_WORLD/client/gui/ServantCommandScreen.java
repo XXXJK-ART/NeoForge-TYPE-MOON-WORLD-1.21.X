@@ -35,6 +35,9 @@ public class ServantCommandScreen extends Screen {
       int leftX = panelX + 12;
       int rightX = leftX + columnWidth + gap;
       int buttonY = panelY + 48;
+      if (getServant() != null && "oda_nobunaga".equals(getServant().getServantId()))
+         addRenderableWidget(new NeonButton(leftX, buttonY + 75, columnWidth, 20,
+            Component.translatable("gui.typemoonworld.oda_profile.title"), button -> minecraft.setScreen(new OdaProfileScreen(this)), GuiUtils.ARCANE_GOLD).setArcaneStyle(true));
 
       addRenderableWidget(new NeonButton(leftX, buttonY, columnWidth, 20,
          Component.translatable("gui.typemoonworld.master_command_spell.restore_mana"), button -> cast(0), GuiUtils.ARCANE_CREST).setArcaneStyle(true));
@@ -78,6 +81,7 @@ public class ServantCommandScreen extends Screen {
       gui.fill(panelX + 10, infoY - 5, panelX + 434, infoY - 4, 0x5534404C);
       gui.drawString(font, Component.translatable("gui.typemoonworld.servant_command.behavior"), panelX + 14, infoY, GuiUtils.ARCANE_GOLD);
       if (servant != null) {
+         gui.drawString(font, Component.translatable(net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.lookup(servant.getServantId()).translationKey()), panelX + 225, infoY + 57, GuiUtils.ARCANE_TEXT_MUTED);
          drawInfo(gui, "obedience", servant.getObedienceAxis().key(), panelX + 14, infoY + 15);
          drawInfo(gui, "principle", servant.getPrincipleAxis().key(), panelX + 14, infoY + 29);
          drawInfo(gui, "social", servant.getSocialDisposition().key(), panelX + 225, infoY + 15);

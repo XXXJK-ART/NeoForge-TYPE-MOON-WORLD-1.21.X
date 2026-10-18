@@ -34,6 +34,7 @@ public final class PhysicalTerrainDebrisService {
                                 TerrainImpactProfile.Tier tier) {
       if (level == null || pos == null || state == null || center == null || !Config.physicalTerrainDebrisEnabled
          || Config.maxPhysicalTerrainDebris <= 0 || state.isAir() || level.getBlockEntity(pos) != null) return false;
+      if (tier != TerrainImpactProfile.Tier.NP && !CombatTerrainProtection.canRemove(level, pos)) return false;
       Set<UUID> active = ACTIVE.computeIfAbsent(level.dimension(), ignored -> new HashSet<>());
       active.removeIf(id -> level.getEntity(id) == null);
       if (active.size() >= Config.maxPhysicalTerrainDebris) return false;

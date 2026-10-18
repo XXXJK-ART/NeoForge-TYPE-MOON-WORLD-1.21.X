@@ -16,11 +16,8 @@ public final class AndrasiasEvents {
     private AndrasiasEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            AndrasiasService.tickCharge(player);
-        }
+    public static void tick(ServerPlayer player) {
+        AndrasiasService.tickCharge(player);
     }
 
     @SubscribeEvent

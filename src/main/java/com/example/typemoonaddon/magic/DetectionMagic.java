@@ -14,10 +14,9 @@ public final class DetectionMagic {
     public static MagicExecutionResult execute(MagicExecutionContext context) {
         ServerPlayer player = context.asServerPlayer();
         if (player == null || !MAGIC_ID.equals(context.magicId())) {
-            return player == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.FAILED;
+            return player == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.rejected("wrong_magic");
         }
         DetectionService.toggle(player);
-        // Detection owns its toggle and intentionally has no mana cost or cooldown.
-        return MagicExecutionResult.FAILED;
+        return MagicExecutionResult.STARTED;
     }
 }

@@ -51,6 +51,7 @@ public final class ServantCombatMotionService {
    private static final String PREVIOUS_POS_Y = PREFIX + "PreviousPosY";
    private static final String PREVIOUS_POS_Z = PREFIX + "PreviousPosZ";
    private static final String LAUNCH_TICK = PREFIX + "LaunchTick";
+   private static final String LAUNCH_START_Y = PREFIX + "LaunchStartY";
    private static final String LAUNCH_ENTITY_TICK = PREFIX + "LaunchEntityTick";
    private static final String TRAVEL_DISTANCE = PREFIX + "TravelDistance";
    private static final String PENDING_IMPACT_UNTIL = PREFIX + "PendingImpactUntil";
@@ -61,7 +62,8 @@ public final class ServantCombatMotionService {
    private static final String TERRAIN_PERMISSION = PREFIX + "TerrainPermission";
    private static final int CONTROL_RESET_TICKS = 60;
    private static final int RECOVERY_COOLDOWN_TICKS = 40;
-   private static final int MAX_ACTIVE_TICKS = 50;
+   private static final int MAX_ACTIVE_TICKS = 80;
+   private static final double HEAVY_MIN_TRAVEL = 20.0;
 
    private ServantCombatMotionService() { }
 
@@ -80,6 +82,11 @@ public final class ServantCombatMotionService {
 
       long now = target.level().getGameTime();
       CompoundTag data = target.getPersistentData();
+      // Do not refresh an upward launch while a servant victim is still
+      // airborne; overlapping timelines must wait for the landing beat.
+      if (target instanceof ServantEntity && !target.onGround() && isLaunched(target)) {
+         return LaunchResult.REJECTED;
+      }
       int depth = now - data.getLong(LAST_CONTROL) <= CONTROL_RESET_TICKS
          ? Math.min(4, data.getInt(CONTROL_DEPTH) + 1) : 1;
       double controlScale = controlScale(depth);
@@ -89,8 +96,9 @@ public final class ServantCombatMotionService {
       double launchScale = Math.max(0.45, Math.min(2.15, controlScale * impactScale));
 
       Vec3 motion = target.getDeltaMovement();
-      double appliedHorizontal = Math.max(0.0, horizontalPower) * launchScale;
-      double appliedVertical = Math.max(0.0, verticalPower) * (0.72 + launchScale * 0.18);
+      double appliedHorizontal = Math.max(0.0, horizontalPower) * launchScale * 1.12;
+      double appliedVertical = Math.min(1.35,
+         Math.max(0.0, verticalPower) * (0.72 + launchScale * 0.18));
       target.setDeltaMovement(
          direction.x * appliedHorizontal,
          Math.max(motion.y, appliedVertical),
@@ -117,13 +125,16 @@ public final class ServantCombatMotionService {
          data.putInt(CHAIN_IMPACTS_LEFT, 0);
       }
       data.putLong(LAUNCH_TICK, now);
+      data.putDouble(LAUNCH_START_Y, target.getY());
       data.putInt(LAUNCH_ENTITY_TICK, target.tickCount);
       data.putDouble(TRAVEL_DISTANCE, 0.0);
+      data.remove(PREFIX + "AirActionRoll");
       data.remove(PENDING_IMPACT_UNTIL);
       data.remove(NPC_RECOVERY_ROLLED);
       storePreviousMotion(data, target.getDeltaMovement());
       storePreviousPosition(data, target.position());
       if (attacker instanceof ServantEntity servant) {
+         ServantCombatExchangeService.increment(servant, ServantCombatExchangeService.LAUNCHES);
          ServantCombatTempoService.recordContact(servant, target,
             ServantCombatTempoService.ContactType.LAUNCH, now);
       }
@@ -136,11 +147,27 @@ public final class ServantCombatMotionService {
       return data.contains(ACTIVE_UNTIL) && target.level().getGameTime() <= data.getLong(ACTIVE_UNTIL);
    }
 
+   /** Small deterministic chance for a launched servant to start a charged action mid-air. */
+   public static boolean canActWhileAirborne(ServantEntity servant) {
+      if (servant == null || !isLaunched(servant) || servant.onGround()) return false;
+      CompoundTag data = servant.getPersistentData();
+      long now = servant.level().getGameTime();
+      long launchTick = data.getLong(LAUNCH_TICK);
+      if (now < launchTick + 10L) return false;
+      if (!data.contains(PREFIX + "AirActionRoll")) {
+         long seed = servant.getUUID().getLeastSignificantBits() ^ launchTick;
+         data.putBoolean(PREFIX + "AirActionRoll", Math.floorMod(seed, 5L) == 0L);
+      }
+      return data.getBoolean(PREFIX + "AirActionRoll") && now < launchTick + 24L;
+   }
+
    public static boolean canPursue(LivingEntity attacker, LivingEntity target) {
       if (attacker == null || target == null || !target.isAlive() || attacker.level() != target.level()) return false;
       CompoundTag data = target.getPersistentData();
       return data.contains(PURSUIT_UNTIL) && target.level().getGameTime() <= data.getLong(PURSUIT_UNTIL)
-         && data.hasUUID(ATTACKER) && attacker.getUUID().equals(data.getUUID(ATTACKER));
+         && data.hasUUID(ATTACKER) && attacker.getUUID().equals(data.getUUID(ATTACKER))
+         && (!(attacker instanceof ServantEntity servant) || !ServantCombatExchangeService.ordinary(servant, target)
+            || target.level().getGameTime() >= data.getLong(LAUNCH_TICK) + 8L);
    }
 
    public static boolean isRecovering(LivingEntity target) {
@@ -201,10 +228,22 @@ public final class ServantCombatMotionService {
       }
       Vec3 previous = previousMotion(data);
       Vec3 current = target.getDeltaMovement();
+      if (target instanceof ServantEntity && data.contains(LAUNCH_START_Y)
+         && target.getY() - data.getDouble(LAUNCH_START_Y) > 10.0) {
+         // Keep spectacle launches from becoming an accidental flight mode
+         // when several skills overlap before the first landing is resolved.
+         target.setDeltaMovement(current.x, Math.min(current.y, -0.25), current.z);
+         current = target.getDeltaMovement();
+      }
       double lostHorizontal = Math.max(0.0, previous.horizontalDistance() - current.horizontalDistance());
       Vec3 previousPosition = previousPosition(data);
       double moved = target.position().distanceTo(previousPosition);
       data.putDouble(TRAVEL_DISTANCE, data.getDouble(TRAVEL_DISTANCE) + moved);
+      LivingEntity launchOwner = resolveAttacker(level, data);
+      if (launchOwner instanceof ServantEntity servant) {
+         var ownerData = servant.getPersistentData();
+         ownerData.putDouble("TypeMoonCombatMaxLaunchTravel", Math.max(ownerData.getDouble("TypeMoonCombatMaxLaunchTravel"), data.getDouble(TRAVEL_DISTANCE)));
+      }
       boolean completedMovementTick = now >= data.getLong(LAUNCH_TICK)
          && target.tickCount > data.getInt(LAUNCH_ENTITY_TICK);
       boolean likelyWallStop = target.horizontalCollision
@@ -232,7 +271,8 @@ public final class ServantCombatMotionService {
          return;
       }
 
-      if (now >= data.getLong(ACTIVE_UNTIL)
+      boolean heavyLaunch = impactTier(data).ordinal() >= TerrainImpactProfile.Tier.HEAVY.ordinal();
+      if (now >= data.getLong(ACTIVE_UNTIL) && (!heavyLaunch || data.getDouble(TRAVEL_DISTANCE) >= HEAVY_MIN_TRAVEL)
          || target.onGround() && Math.abs(previous.y) < 0.2 && target.getDeltaMovement().horizontalDistanceSqr() < 0.05) {
          data.remove(ACTIVE_UNTIL);
          data.putString(STATE, MotionState.NONE.name());
@@ -321,6 +361,10 @@ public final class ServantCombatMotionService {
       }
       level.sendParticles(wallImpact ? ParticleTypes.POOF : ParticleTypes.CLOUD,
          center.x, center.y, center.z, heavy ? 24 : 14, profile.radius() * 0.35, 0.25, profile.radius() * 0.35, 0.08);
+      if (heavy) {
+         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.15, center.z,
+            10, Math.min(1.4, profile.radius() * 0.25), 0.12, Math.min(1.4, profile.radius() * 0.25), 0.035);
+      }
       level.playSound(null, target.blockPosition(), wallImpact ? SoundEvents.ZOMBIE_ATTACK_IRON_DOOR : SoundEvents.GENERIC_EXPLODE.value(),
          target instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE, heavy ? 1.1F : 0.75F, heavy ? 0.65F : 0.85F);
    }
@@ -371,6 +415,11 @@ public final class ServantCombatMotionService {
 
    private static TerrainImpactProfile.Tier cappedImpactTier(LivingEntity attacker, @Nullable TerrainImpactProfile.Tier requested) {
       TerrainImpactProfile.Tier value = requested == null ? TerrainImpactProfile.Tier.SMALL : requested;
+      // A committed heavy finisher is an explicit combat beat. Tactical
+      // collateral caution still governs ordinary skills, but must not turn
+      // the shared large knockback into a short shove.
+      if (value == TerrainImpactProfile.Tier.HEAVY && attacker instanceof ServantEntity servant
+         && servant.getPersistentData().getBoolean("TypeMoonHeavyBasic")) return value;
       if (!(attacker instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity servant)
          || servant.getDefinition() == null) return value;
       var tactical = net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantTacticalProfileResolver.resolve(servant);

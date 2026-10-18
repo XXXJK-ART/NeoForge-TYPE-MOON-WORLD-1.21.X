@@ -126,6 +126,10 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TimeAlterVisualStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardJumpMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDodgeMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.CombatThreatStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSelectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderCommandMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSpawnModeMessage;
@@ -152,6 +156,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.DefinitionSnapshotMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.RuneProgramMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CustomCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ConcealmentStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.GrailOpenPayload;
+import net.xxxjk.TYPE_MOON_WORLD.grail.GrailGameRules;
 import net.xxxjk.TYPE_MOON_WORLD.chain.network.ChainInputPayload;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.gametest.TypeMoonWorldGameTests;
@@ -159,8 +165,9 @@ import net.xxxjk.TYPE_MOON_WORLD.survival.LakeRitualService;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.xxxjk.TYPE_MOON_WORLD.world.gem.GemRegion;
 import net.xxxjk.TYPE_MOON_WORLD.world.city.CityRegion;
-import com.example.typemoonaddon.TypeMoonAddon;
-import com.example.typemoonaddon.network.AddonNetwork;
+import java.util.List;
+import java.util.ServiceLoader;
+import net.xxxjk.typemoonworld.api.AddonEntrypoint;
 import org.slf4j.Logger;
 import terrablender.api.Regions;
 import terrablender.api.SurfaceRuleManager;
@@ -175,9 +182,16 @@ public class TYPE_MOON_WORLD {
    private static final Map<Long, Queue<Runnable>> scheduledWork = new ConcurrentHashMap<>();
    private static final int MAX_SCHEDULED_WORK_PER_TICK = 128;
    private static volatile long serverTickCounter = 0L;
+   private final List<AddonEntrypoint> addonEntrypoints;
 
    public TYPE_MOON_WORLD(IEventBus modEventBus, ModContainer modContainer) {
+      this.addonEntrypoints = ServiceLoader.load(AddonEntrypoint.class, TYPE_MOON_WORLD.class.getClassLoader()).stream()
+         .map(provider -> provider.get())
+         .toList();
       TypeMoonWorldApi.install(new InternalApiProvider());
+      // GameRules.register is exposed by NeoForge's access transformer and
+      // must run while the mod class is loaded, before any level is created.
+      GrailGameRules.ALLOW_GRAIL_WISH.getId();
       modEventBus.addListener(this::registerNetworking);
       TypeMoonWorldModVariables.ATTACHMENT_TYPES.register(modEventBus);
       NeoForge.EVENT_BUS.register(this);
@@ -202,7 +216,9 @@ public class TYPE_MOON_WORLD {
       modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, Config.CLIENT_SPEC);
       modEventBus.addListener(this::commonSetup);
       modEventBus.addListener((RegisterGameTestsEvent event) -> event.register(TypeMoonWorldGameTests.class));
-      new TypeMoonAddon(modEventBus, modContainer);
+      // Addon implementations are discovered through the stable API boundary;
+      // the core no longer constructs a concrete addon class directly.
+      this.addonEntrypoints.forEach(entrypoint -> entrypoint.initialize(modEventBus, modContainer));
    }
 
    private void commonSetup(FMLCommonSetupEvent event) {
@@ -212,6 +228,7 @@ public class TYPE_MOON_WORLD {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.class);
             MagicModularRegistry.ensureInitialized();
             MagicDefinitionRegistry.bootstrapBuiltins();
+            net.xxxjk.TYPE_MOON_WORLD.magic.sanctification.MagicSanctification.registerDefinition();
             ServantSkillRegistry.ensureInitialized();
             ServantAddonRegistry.ensureInitialized();
             MagicModularRegistry.freeze();
@@ -270,10 +287,11 @@ public class TYPE_MOON_WORLD {
    }
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
-      PayloadRegistrar registrar = event.registrar("typemoonworld");
-      // Integrated addon payloads must share this registrar and protocol channel.
-      AddonNetwork.registerPayloads(registrar);
+      PayloadRegistrar registrar = event.registrar("typemoonworld_combat_v2");
+      // Addon payloads are registered through the stable API boundary.
+      this.addonEntrypoints.forEach(entrypoint -> entrypoint.registerPayloads(registrar));
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
+      registrar.playBidirectional(GrailOpenPayload.TYPE, GrailOpenPayload.STREAM_CODEC, GrailOpenPayload::handle);
       registrar.playToServer(BajiquanInputMessage.TYPE, BajiquanInputMessage.STREAM_CODEC, BajiquanInputMessage::handleData);
       registrar.playToServer(GanryuInputMessage.TYPE, GanryuInputMessage.STREAM_CODEC, GanryuInputMessage::handleData);
       registrar.playToServer(HakuryuRideMessage.TYPE, HakuryuRideMessage.STREAM_CODEC, HakuryuRideMessage::handleData);
@@ -320,6 +338,10 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardHoldActionMessage.TYPE, ServantCardHoldActionMessage.STREAM_CODEC, ServantCardHoldActionMessage::handleData);
       registrar.playToServer(ServantCardJumpMessage.TYPE, ServantCardJumpMessage.STREAM_CODEC, ServantCardJumpMessage::handleData);
       registrar.playToServer(ServantCardReleaseMessage.TYPE, ServantCardReleaseMessage.STREAM_CODEC, ServantCardReleaseMessage::handleData);
+      registrar.playToServer(ServantCardDodgeMessage.TYPE, ServantCardDodgeMessage.STREAM_CODEC, ServantCardDodgeMessage::handleData);
+      registrar.playToServer(ServantCardGuardMessage.TYPE, ServantCardGuardMessage.STREAM_CODEC, ServantCardGuardMessage::handleData);
+      registrar.playToClient(ServantCardDefenseStateMessage.TYPE, ServantCardDefenseStateMessage.STREAM_CODEC, ServantCardDefenseStateMessage::handleData);
+      registrar.playToClient(CombatThreatStateMessage.TYPE, CombatThreatStateMessage.STREAM_CODEC, CombatThreatStateMessage::handleData);
       registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
       registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);
       registrar.playToServer(PaleRiderSpawnModeMessage.TYPE, PaleRiderSpawnModeMessage.STREAM_CODEC, PaleRiderSpawnModeMessage::handleData);
@@ -367,6 +389,11 @@ public class TYPE_MOON_WORLD {
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage::handleData
       );
       registrar.playToClient(
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage.TYPE,
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage.STREAM_CODEC,
+         TypeMoonWorldModVariables.PlayerDomainSyncMessage::handleData
+      );
+      registrar.playToClient(
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.TYPE,
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage.STREAM_CODEC,
          TypeMoonWorldModVariables.RuntimeSelectionSyncMessage::handleData
@@ -407,7 +434,7 @@ public class TYPE_MOON_WORLD {
       if (action != null) {
          int delay = Math.max(1, tick);
          long executeAt = serverTickCounter + delay;
-         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(action);
+         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.guardDelayedEffect(action));
       }
    }
 

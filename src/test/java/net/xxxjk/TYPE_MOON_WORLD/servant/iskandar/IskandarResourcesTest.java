@@ -299,7 +299,9 @@ class IskandarResourcesTest {
       assertTrue(wheel.contains("lightning.setVisualOnly(true)"));
       assertTrue(wheel.contains("emitZeusLightningAura"));
       assertTrue(wheel.contains("emitZeusThunderStrike"));
-      assertTrue(wheel.contains("ParticleTypes.FLASH"));
+      assertTrue(wheel.contains("ParticleTypes.END_ROD"));
+      assertTrue(!wheel.contains("ParticleTypes.FLASH"), "combat effects must not expand a flash over the view");
+      assertTrue(wheel.contains("lightning.setNoGravity(true)"), "combat lightning must suppress whole-sky flashes");
       assertTrue(wheel.contains("ParticleTypes.CLOUD"));
       assertTrue(wheel.contains("SoundEvents.LIGHTNING_BOLT_IMPACT"));
       assertTrue(wheel.contains("THUNDER_STRIKE_MIN_DELAY = 24"));

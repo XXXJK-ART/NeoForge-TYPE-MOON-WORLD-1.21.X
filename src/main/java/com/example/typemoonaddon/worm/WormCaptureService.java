@@ -22,9 +22,6 @@ public final class WormCaptureService {
             return false;
         }
         if (target instanceof WormEntity worm) {
-            if (player.getUUID().equals(worm.getOwnerId())) {
-                return true;
-            }
             return worm.getOwnerId() == null && isControlledForCapture(worm);
         }
         WormType type = typeOf(target);
@@ -38,10 +35,9 @@ public final class WormCaptureService {
         }
         WormType type = typeOf(target) == null ? WormType.SILVERFISH : typeOf(target);
         int gu = defaultGu(type, target);
-        ItemStack stack = WormStackData.create(AddonItems.WORM.get(), type, gu, player.getUUID());
-        WormStackData.setCaptureEligible(stack, true);
-        if (target instanceof WormEntity worm && worm.getOwnerId() != null) {
-            WormStackData.set(stack, worm.getVariant(), worm.getGuPower(), worm.getOwnerId());
+        ItemStack stack = WormStackData.create(WormStackData.itemFor(type), type, gu, player.getUUID());
+        if (target instanceof WormEntity worm) {
+            WormStackData.set(stack, worm.getVariant(), worm.getGuPower(), player.getUUID());
         }
         target.discard();
         return stack;
@@ -86,6 +82,10 @@ public final class WormCaptureService {
             return worm.getVariant();
         }
         return null;
+    }
+
+    public static boolean isWormItem(ItemStack stack) {
+        return WormStackData.isWormItem(stack);
     }
 
     private static int defaultGu(WormType type, LivingEntity target) {

@@ -19,11 +19,8 @@ public final class AirflowBladeEvents {
     private AirflowBladeEvents() {
     }
 
-    @SubscribeEvent
-    public static void onPlayerTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            AirflowBladeService.tickCharge(player);
-        }
+    public static void tick(ServerPlayer player) {
+        AirflowBladeService.tickCharge(player);
     }
 
     @SubscribeEvent

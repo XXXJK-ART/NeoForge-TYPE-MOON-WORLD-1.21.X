@@ -57,6 +57,7 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
 
       try {
          ServantExecutionResult result = registered.executor.execute(context);
+         if (result != null && result.success()) net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits.activated(context.caster(), skillId);
          return result == null ? ServantExecutionResult.FAILED : result;
       } catch (Exception e) {
          TYPE_MOON_WORLD.LOGGER.error("Servant skill executor failed. skillId={}, provider={}", skillId, registered.providerId, e);

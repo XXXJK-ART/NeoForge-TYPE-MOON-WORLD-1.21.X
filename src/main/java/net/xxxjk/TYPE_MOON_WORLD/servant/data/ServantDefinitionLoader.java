@@ -102,6 +102,8 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       }
 
       String noblePhantasmId = getStringOrDefault(json, "noble_phantasm", "");
+      java.util.List<String> noblePhantasmIds = new java.util.ArrayList<>();
+      if (json.has("noble_phantasms")) for (JsonElement np : json.getAsJsonArray("noble_phantasms")) noblePhantasmIds.add(np.getAsString());
 
       ObedienceAxis obedience = ObedienceAxis.COOPERATIVE;
       PrincipleAxis principle = PrincipleAxis.NEUTRAL;
@@ -148,7 +150,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          skillIds, noblePhantasmId,
          obedience, principle, morality, social, combat, specialPrinciples,
          startingFavor, aiConfigId,
-         primaryColor, secondaryColor
+         primaryColor, secondaryColor, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantEra.fromKey(getStringOrDefault(json, "era", "modern")), noblePhantasmIds
       );
    }
 
@@ -197,7 +199,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       String idle = getStringOrDefault(animationsJson, "idle", "");
       String walk = getStringOrDefault(animationsJson, "walk", "");
       java.util.Map<String, String> actions = new java.util.LinkedHashMap<>();
-      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "float_idle", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "np", "spear_strike", "spear_spin", "spear_sweep", "spear_flourish", "spear_dance", "spear_lunging_thrust", "spear_driving_slash", "spear_sweeping_advance", "mounted_lance_charge", "mounted_sweeping_pass", "mounted_dragon_rein", "qinggang_sword", "riding", "dragon_gall", "riding_burst", "rescue", "seven_out", "changbanpo_no_ikki_gake"}) {
+      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "dodge", "guard", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "float_idle", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "np", "spear_strike", "spear_spin", "spear_sweep", "spear_flourish", "spear_dance", "spear_lunging_thrust", "spear_driving_slash", "spear_sweeping_advance", "mounted_lance_charge", "mounted_sweeping_pass", "mounted_dragon_rein", "qinggang_sword", "riding", "dragon_gall", "riding_burst", "rescue", "seven_out", "changbanpo_no_ikki_gake"}) {
          if (animationsJson.has(key)) {
             String value = animationsJson.get(key).getAsString();
             if (value != null && !value.isBlank()) {

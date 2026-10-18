@@ -68,11 +68,14 @@ class MagicLearningSystemTest {
       assertEquals("magic_scroll_gravity_broken", MagicLearningStrategy.pageItemPath("gravity_magic"));
       assertEquals("magic_scroll_gander_broken", MagicLearningStrategy.pageItemPath("gander"));
       assertEquals("magic_scroll_broken_phantasm_broken", MagicLearningStrategy.pageItemPath("broken_phantasm"));
-      for (String id : new String[]{"jewel_magic_shoot", "jewel_magic_release", "jewel_random_shoot", "jewel_machine_gun"}) {
+      for (String id : new String[]{"jewel_magic_shoot", "jewel_magic_release", "jewel_machine_gun"}) {
          assertTrue(MagicLearningStrategy.canLearnFromMaterial(id));
          assertTrue(MagicLearningStrategy.canResearch(id));
          assertTrue(MagicLearningStrategy.canCopy(id));
       }
+      assertFalse(MagicLearningStrategy.canLearnFromMaterial("jewel_random_shoot"));
+      assertFalse(MagicLearningStrategy.canResearch("jewel_random_shoot"));
+      assertFalse(MagicLearningStrategy.canCopy("jewel_random_shoot"));
    }
 
    @Test

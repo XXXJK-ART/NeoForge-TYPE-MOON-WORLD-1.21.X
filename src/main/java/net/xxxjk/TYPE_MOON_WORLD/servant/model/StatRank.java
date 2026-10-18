@@ -6,7 +6,8 @@ public enum StatRank {
    C(30),
    B(40),
    A(50),
-   A_PLUS_PLUS(150, "A++");
+   A_PLUS_PLUS(150, "A++"),
+   A_MINUS(25, "A-");
 
    private final int coefficient;
    private final String displayKey;
@@ -34,7 +35,7 @@ public enum StatRank {
 
    /** Multiplier represented by this rank when it is used as a base parameter. */
    public double parameterMultiplier() {
-      return this == A_PLUS_PLUS ? 3.0 : 1.0;
+      return this == A_PLUS_PLUS ? 3.0 : this == A_MINUS ? 0.5 : 1.0;
    }
 
    public String displayKey(boolean plus) {
@@ -74,6 +75,7 @@ public enum StatRank {
       }
 
       String normalized = key.trim().toUpperCase().replace('＋', '+');
+      if ("A-".equals(normalized) || "A_MINUS".equals(normalized) || "A−".equals(normalized)) return A_MINUS;
       if ("A++".equals(normalized) || "A_PLUS_PLUS".equals(normalized) || "A PLUS PLUS".equals(normalized)) {
          return A_PLUS_PLUS;
       }

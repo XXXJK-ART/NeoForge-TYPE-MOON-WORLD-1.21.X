@@ -31,6 +31,7 @@ public final class ServantConcealment {
    }
 
    public static boolean isFullyConcealed(LivingEntity entity) {
+      if (entity == null || entity.isSpectator()) return false;
       if (entity instanceof ShadowHassanEntity hassan) return hassan.isPresenceConcealed();
       if (entity instanceof ServantEntity) {
          return entity.hasEffect(MobEffects.INVISIBILITY)
@@ -48,6 +49,14 @@ public final class ServantConcealment {
    }
 
    public static void tick(LivingEntity entity) {
+      if (entity.isSpectator()) {
+         // Spectator invisibility belongs to vanilla, not presence concealment.
+         entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
+         entity.getPersistentData().remove(TAG_MANAGED_INVISIBLE);
+         manageSilence(entity, false);
+         ConcealmentStateSync.update(entity, false);
+         return;
+      }
       boolean concealed = isFullyConcealed(entity);
       manageVanillaInvisibility(entity, concealed);
       ConcealmentStateSync.update(entity, concealed);

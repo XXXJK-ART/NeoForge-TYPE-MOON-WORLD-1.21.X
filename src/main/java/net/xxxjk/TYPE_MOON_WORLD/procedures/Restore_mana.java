@@ -32,7 +32,6 @@ import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 @EventBusSubscriber
 public class Restore_mana {
-   private static final double MIN_NATURAL_REGEN_INTERVAL = 20.0;
    private static final double CRITICAL_MANA_THRESHOLD = 20.0;
    private static final double MAGIC_FRAGMENT_MANA = 10.0;
    private static final double SPIRIT_VEIN_BLOCK_MANA = 90.0;
@@ -84,7 +83,7 @@ public class Restore_mana {
       if (entity != null && entity.isAlive()) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (entity instanceof Player player && OriginBulletHelper.isSealed(player)) {
-            vars.player_mana = 0.0;
+            vars.magicState().setMana(0.0);
             vars.is_magic_circuit_open = false;
             vars.magic_circuit_open_timer = 0.0;
             vars.current_mana_regen_multiplier = currentLeylineMultiplier(entity);
@@ -93,10 +92,14 @@ public class Restore_mana {
             return;
          }
          double leylineMultiplier = currentLeylineMultiplier(entity);
+         if (entity instanceof LivingEntity living) {
+            if (living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) leylineMultiplier *= 0.5;
+            leylineMultiplier = com.example.typemoonaddon.magic.BoundaryMagicIntegration.adjustNaturalManaRegen(living, leylineMultiplier);
+         }
          vars.current_mana_regen_multiplier = leylineMultiplier;
-         if (vars.servant_card_transformed) {
+         if (vars.servantCardState().transformed()) {
             if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
-               && vars.servant_card_mana < CRITICAL_MANA_THRESHOLD) {
+               && vars.servantCardState().mana() < CRITICAL_MANA_THRESHOLD) {
                ServantCardManaService.restoreFromInventory(serverPlayer, vars);
             }
             TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
@@ -105,20 +108,11 @@ public class Restore_mana {
          if (!vars.is_magus) {
             TYPE_MOON_WORLD.queueServerWork(100, () -> runManaLoop(null, world, entity, loopId));
          } else {
-            double manaRegen = vars.player_mana_egenerated_every_moment;
-            double regenInterval = vars.player_restore_magic_moment;
+            double manaRegen = vars.magicState().manaRegen();
+            double regenInterval = net.xxxjk.TYPE_MOON_WORLD.utils.ManaRegenRules.intervalTicks(vars.magicState().restoreMagicMoment(), vars.is_magic_circuit_open);
             boolean syncImmediately = false;
-            if (entity instanceof net.minecraft.world.entity.LivingEntity living
-               && living.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
-               leylineMultiplier *= 0.5;
-            }
 
             if (vars.is_magic_circuit_open) {
-               regenInterval /= 2.0;
-               if (regenInterval < 1.0) {
-                  regenInterval = 1.0;
-               }
-
                vars.magic_circuit_open_timer += regenInterval;
                if (vars.magic_circuit_open_timer >= 72000.0) {
                   vars.is_magic_circuit_open = false;
@@ -132,8 +126,8 @@ public class Restore_mana {
                vars.magic_circuit_open_timer = 0.0;
             }
 
-            double maxMana = vars.player_max_mana;
-            double currentMana = vars.player_mana;
+            double maxMana = vars.magicState().maxMana();
+            double currentMana = vars.magicState().mana();
             if (currentMana > maxMana) {
                if (entity instanceof Player player && !player.level().isClientSide()) {
                   ChatFormatting color = ChatFormatting.YELLOW;
@@ -148,24 +142,15 @@ public class Restore_mana {
                   );
                }
 
-               if (currentMana > maxMana * 1.3 && entity instanceof LivingEntity living) {
-                  living.hurt(living.damageSources().magic(), Float.MAX_VALUE);
-                  if (entity instanceof Player player) {
-                     player.sendSystemMessage(Component.translatable("message.typemoonworld.mana.overload.death").withStyle(ChatFormatting.DARK_RED));
-                  }
-               }
+               // Overload damage and the 150% lethal threshold are handled by
+               // MagecraftRiskService on the normal player tick.  The mana
+               // loop only reports the current state here.
             } else {
             double effectiveRegen = manaRegen * leylineMultiplier;
-            if (entity instanceof LivingEntity living) {
-               effectiveRegen = com.example.typemoonaddon.magic.BoundaryMagicIntegration.adjustNaturalManaRegen(living, effectiveRegen);
-            }
-            regenInterval = Math.max(MIN_NATURAL_REGEN_INTERVAL, regenInterval * 4.0);
-               vars.player_mana = Math.min(vars.player_mana + effectiveRegen, vars.player_max_mana);
+               vars.magicState().setMana(Math.min(vars.magicState().mana() + effectiveRegen, vars.magicState().maxMana()));
             }
 
-            if (vars.magic_cooldown > 0.0) {
-               vars.magic_cooldown = Math.max(0.0, vars.magic_cooldown - regenInterval);
-            }
+            if (vars.magicState().cooldown() > 0.0) vars.magicState().setCooldown(Math.max(0.0, vars.magicState().cooldown() - regenInterval));
 
             if (shouldTriggerEmergencyMana(vars)) {
                boolean restoredByItem = false;
@@ -203,16 +188,16 @@ public class Restore_mana {
    }
 
    private static boolean shouldTriggerEmergencyMana(TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (vars.player_max_mana < 20.0) {
+      if (vars.magicState().maxMana() < 20.0) {
          return false;
       } else {
-         return vars.player_mana >= 20.0 ? false : vars.player_mana < vars.player_max_mana;
+         return vars.magicState().mana() >= 20.0 ? false : vars.magicState().mana() < vars.magicState().maxMana();
       }
    }
 
    private static boolean tryRestoreManaFromInventory(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
       Restore_mana.SourceCandidate best = null;
-      double need = vars.player_max_mana - vars.player_mana;
+      double need = vars.magicState().maxMana() - vars.magicState().mana();
       if (need <= 0.0) {
          return false;
       } else {
@@ -242,7 +227,7 @@ public class Restore_mana {
             return false;
          } else {
             consumeCandidate(player, best);
-            vars.player_mana = Math.min(vars.player_mana + best.mana, vars.player_max_mana);
+            vars.magicState().addMana(best.mana);
             return true;
          }
       }
@@ -282,7 +267,7 @@ public class Restore_mana {
    private static boolean tryRestoreManaByHealth(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (entity instanceof LivingEntity living) {
          if (!(living.getHealth() <= 2.0F)) {
-            vars.player_mana = Math.min(vars.player_mana + 20.0, vars.player_max_mana);
+            vars.magicState().addMana(20.0);
             living.setHealth(living.getHealth() - 2.0F);
             return true;
          }

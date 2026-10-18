@@ -1,0 +1,92 @@
+{
+  "artoria_excalibur": {
+    "voice_ticks": 212,
+    "sound": "typemoonworld:voice/artoria_pendragon/excalibur",
+    "pitch": 1.0
+  },
+  "gilgamesh_ea": {
+    "voice_ticks": 228,
+    "sound": "typemoonworld:voice/gilgamesh/ea_half",
+    "pitch": 1.0
+  },
+  "cu_gae_bolg": {
+    "voice_ticks": 97,
+    "sound": "typemoonworld:voice/cu_chulainn/gae_bolg",
+    "pitch": 1.0
+  },
+  "gawain_gallatin": {
+    "voice_ticks": 166,
+    "sound": "typemoonworld:voice/gawain/np",
+    "pitch": 1.0
+  },
+  "muramasa_tsumukari": {
+    "voice_ticks": 282,
+    "sound": "typemoonworld:voice/senko_muramasa/tsumukari",
+    "pitch": 1.0
+  },
+  "medusa_bellerophon": {
+    "voice_ticks": 97,
+    "sound": "typemoonworld:voice/medusa/bellerophon",
+    "pitch": 1.0
+  },
+  "paracelsus_elemental_sword": {
+    "voice_ticks": 202,
+    "sound": "typemoonworld:voice/paracelsus/np",
+    "pitch": 1.0
+  },
+  "jeanne_alter_np": {
+    "voice_ticks": 216,
+    "sound": "typemoonworld:jeanne_alter_np_3",
+    "pitch": 1.0
+  },
+  "nightingale_pledge": {
+    "voice_ticks": 260,
+    "sound": "typemoonworld:voice/nightingale/np",
+    "pitch": 1.0
+  },
+  "okita_mumyoudan_zuki": {
+    "voice_ticks": 177,
+    "sound": "typemoonworld:voice/okita_souji_saber/np",
+    "pitch": 1.0
+  },
+  "li_shuwen_wu_er_da": {
+    "voice_ticks": 230,
+    "sound": "typemoonworld:voice/li_shuwen/np",
+    "pitch": 1.0
+  },
+  "cursed_arm_hassan_zabaniya": {
+    "voice_ticks": 123,
+    "sound": "typemoonworld:voice/cursed_arm_hassan/zabaniya",
+    "pitch": 1.0
+  },
+  "baobhan_sith_failnaught": {
+    "voice_ticks": 230,
+    "sound": "typemoonworld:voice/baobhan_sith/np",
+    "pitch": 1.0
+  },
+  "zhao_yun_changbanpo": {
+    "voice_ticks": 20,
+    "sound": "typemoonworld:voice/zhao_yun/np",
+    "pitch": 0.6808843537414966
+  },
+  "oda_three_thousand": {
+    "voice_ticks": 200,
+    "sound": "typemoonworld:voice/oda_nobunaga/np",
+    "pitch": 1.0
+  },
+  "lancelot_arondight": {
+    "voice_ticks": 60,
+    "sound": "typemoonworld:voice/lancelot_berserker/np",
+    "pitch": 1.0
+  },
+  "oda_hajun": {
+    "voice_ticks": 95,
+    "sound": "typemoonworld:voice/oda_nobunaga/hajun_release",
+    "pitch": 1.0
+  },
+  "muramasa_summon": {
+    "voice_ticks": 302,
+    "sound": "typemoonworld:voice/senko_muramasa/np",
+    "pitch": 1.0
+  }
+}

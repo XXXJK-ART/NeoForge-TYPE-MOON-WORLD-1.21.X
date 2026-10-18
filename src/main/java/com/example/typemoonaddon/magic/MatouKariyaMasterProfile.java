@@ -33,10 +33,8 @@ public final class MatouKariyaMasterProfile {
         com.example.typemoonaddon.engravedworm.EngravedWormService.recalculate(player);
         context.magicKnowledge().learn(WormMagicIntegration.WORM_MAGIC);
         context.magicKnowledge().learn(WormMagicIntegration.WORM_CONTROL);
-        context.magicKnowledge().learn(WormMagicIntegration.ENGRAVED_WORM_OPERATION);
-        context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_MAGIC, 45.0D);
-        context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_CONTROL, 35.0D);
-        context.magicKnowledge().setProficiency(WormMagicIntegration.ENGRAVED_WORM_OPERATION, 25.0D);
+        context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_MAGIC, 50.0D);
+        context.magicKnowledge().setProficiency(WormMagicIntegration.WORM_CONTROL, 50.0D);
         giveStarterWorms(player);
     }
 
@@ -80,7 +78,7 @@ public final class MatouKariyaMasterProfile {
     }
 
     private static void giveWormStack(ServerPlayer player, WormType type, int gu) {
-        ItemStack stack = WormStackData.create(AddonItems.WORM.get(), type, gu, player.getUUID());
+        ItemStack stack = WormStackData.create(WormStackData.itemFor(type), type, gu, player.getUUID());
         stack.setCount(16);
         give(player, stack);
     }

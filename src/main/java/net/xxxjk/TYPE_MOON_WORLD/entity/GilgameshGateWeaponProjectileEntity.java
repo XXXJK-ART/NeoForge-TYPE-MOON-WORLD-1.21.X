@@ -47,6 +47,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    private static final EntityDataAccessor<Boolean> EMPOWERED = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Integer> HOMING_TARGET_ID = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Integer> EFFECT_STRIDE = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
+   private static final EntityDataAccessor<Integer> VOLLEY_SIZE = SynchedEntityData.defineId(GilgameshGateWeaponProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions VAJRA_PURPLE = new DustParticleOptions(new Vector3f(0.62F, 0.12F, 1.0F), 1.45F);
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
    private UUID ownerUuid;
@@ -89,6 +90,8 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    public void setDuelToken(String token) { this.entityData.set(DUEL_TOKEN, token == null ? "" : token); }
    public void setLaunchDelay(int ticks) { this.entityData.set(LAUNCH_DELAY, Math.max(0, ticks)); }
    public void setEffectStride(int stride) { this.entityData.set(EFFECT_STRIDE, Math.max(1, stride)); }
+   public void setVolleySize(int count) { this.entityData.set(VOLLEY_SIZE, Math.max(1, count)); }
+   public boolean preservesFullEffects() { return this.entityData.get(VOLLEY_SIZE) < 10; }
    public void setEmpowered(boolean empowered) { this.entityData.set(EMPOWERED, empowered); }
    public void setHomingTarget(LivingEntity target) {
       if (target == null || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
@@ -111,6 +114,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
    @Override
    public void tick() {
       super.tick();
+      this.noCulling = this.preservesFullEffects();
       Vec3 old = this.position();
       Vec3 next = old.add(this.getDeltaMovement());
       if (!(this.level() instanceof net.minecraft.server.level.ServerLevel level)) return;
@@ -131,9 +135,9 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          if (this.tickCount == 1) {
             String duelToken = this.entityData.get(DUEL_TOKEN);
             int effectStride = this.entityData.get(EFFECT_STRIDE);
-            boolean showDuelFx = duelToken.isBlank()
+            boolean showDuelFx = this.preservesFullEffects() || (duelToken.isBlank()
                ? Math.floorMod(this.getId(), effectStride) == 0
-               : (duelToken.hashCode() & 3) == 0;
+               : (duelToken.hashCode() & 3) == 0);
             if (showDuelFx) {
                if (this.getSourceStyle() == SOURCE_STYLE_ENKIDU) {
                   VFXServerEffects.spawn(level, "servant_enkidu_age_of_babylon_gate", this.position(), 160.0);
@@ -163,7 +167,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                Vec3 impact = this.position().lerp(counterpart.position(), 0.5);
                if ((token.hashCode() & 3) == 0) {
                   level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y, impact.z, 2, 0.22, 0.22, 0.22, 0.02);
-                  level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
+                  level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 1, 0.04, 0.04, 0.04, 0.0);
                   level.sendParticles(ParticleTypes.CRIT, impact.x, impact.y, impact.z, 8, 0.34, 0.34, 0.34, 0.12);
                   level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 4, 0.26, 0.26, 0.26, 0.06);
                }
@@ -212,9 +216,9 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          }
          if ((this.tickCount & 1) == 0) {
             int effectStride = this.entityData.get(EFFECT_STRIDE);
-            boolean showTrail = token.isBlank()
+            boolean showTrail = this.preservesFullEffects() || (token.isBlank()
                ? Math.floorMod(this.getId(), effectStride) == 0
-               : (token.hashCode() & 3) == 0;
+               : (token.hashCode() & 3) == 0);
             if (showTrail) spawnTrail(level);
          }
       this.setPos(next);
@@ -284,6 +288,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       builder.define(EMPOWERED, false);
       builder.define(HOMING_TARGET_ID, 0);
       builder.define(EFFECT_STRIDE, 1);
+      builder.define(VOLLEY_SIZE, 1);
    }
 
    @Override
@@ -296,6 +301,8 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       this.entityData.set(EMPOWERED, tag.getBoolean("Empowered"));
       this.entityData.set(HOMING_TARGET_ID, tag.getInt("HomingTargetId"));
       this.entityData.set(EFFECT_STRIDE, Math.max(1, tag.getInt("EffectStride")));
+      this.setVolleySize(tag.contains("VolleySize") ? tag.getInt("VolleySize")
+         : this.entityData.get(EFFECT_STRIDE) > 1 || !tag.getString("DuelToken").isBlank() ? 10 : 1);
       if (tag.hasUUID("HomingTarget")) this.homingTargetUuid = tag.getUUID("HomingTarget");
       this.damage = tag.contains("Damage") ? tag.getFloat("Damage") : 18.0F;
       this.lancelotOriginX = tag.getDouble("LancelotMaxFlightOriginX");
@@ -315,6 +322,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       tag.putBoolean("Empowered", this.entityData.get(EMPOWERED));
       tag.putInt("HomingTargetId", this.entityData.get(HOMING_TARGET_ID));
       tag.putInt("EffectStride", this.entityData.get(EFFECT_STRIDE));
+      tag.putInt("VolleySize", this.entityData.get(VOLLEY_SIZE));
       if (this.homingTargetUuid != null) tag.putUUID("HomingTarget", this.homingTargetUuid);
       tag.putFloat("Damage", this.damage);
       tag.putDouble("LancelotMaxFlightOriginX", this.lancelotOriginX);
@@ -406,7 +414,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       }
       level.sendParticles(VAJRA_PURPLE, center.x, center.y, center.z, empowered ? 220 : 42, radius * 0.48, radius * 0.48, radius * 0.48, empowered ? 0.24 : 0.1);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, empowered ? 180 : 34, radius * 0.6, radius * 0.6, radius * 0.6, empowered ? 0.32 : 0.14);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, empowered ? 8 : 2, 0.6, 0.6, 0.6, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, empowered ? 8 : 2, 0.6, 0.6, 0.6, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, empowered ? 3 : 1, 0.45, 0.45, 0.45, 0.0);
       level.playSound(null, center.x, center.y, center.z, net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, net.minecraft.sounds.SoundSource.PLAYERS, empowered ? 2.5F : 1.0F, 1.25F);
       level.playSound(null, center.x, center.y, center.z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(), net.minecraft.sounds.SoundSource.PLAYERS, empowered ? 1.8F : 0.65F, 0.85F);
@@ -418,6 +426,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
          int currentWave = wave;
          net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(currentWave - 1, () -> {
             double inner = Math.max(0.0, currentWave - 1.0);
+            DeferredTerrainDestruction.protectNextCombatJob();
             DeferredTerrainDestruction.queueShell(level, center, currentWave, inner, 8,
                (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
                   if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null) return false;

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -93,7 +94,7 @@ public class MagicResearchTableScreen extends AbstractContainerScreen<MagicResea
          var vars = minecraft.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double proficiency = MagicProficiencyService.get(vars, id);
          int magicColor = MagicUiColors.colorFor(id, false);
-         g.drawCenteredString(font, Component.translatable("magic.typemoonworld." + id + ".name"), 122, 58, magicColor);
+         g.drawCenteredString(font, Component.translatable(MagicTranslationKeys.name(id)), 122, 58, magicColor);
          g.drawCenteredString(font, Component.literal(String.format("%.1f%%", proficiency)), 122, 72, GuiUtils.ARCANE_TEXT_MUTED);
          GuiUtils.renderProgressBar(g, 80, 84, 84, 6, (float)proficiency / 100.0F, magicColor);
          if (menu.isResearching()) {

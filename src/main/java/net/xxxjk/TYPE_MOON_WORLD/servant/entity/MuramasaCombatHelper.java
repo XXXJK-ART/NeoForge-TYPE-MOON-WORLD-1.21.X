@@ -630,11 +630,17 @@ public final class MuramasaCombatHelper {
       data.putBoolean(NP_PENDING, true);
       data.putLong(NP_LAST, level.getGameTime());
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 50.0));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, 50);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "muramasa_summon", 1200, ticks -> entity.getPersistentData().putLong(NP_LAST, entity.level().getGameTime() - (1200) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.triggerNamedActionAnimation("np");
       ServantVoiceHelper.tryPlayMuramasaNp(entity);
       entity.getNavigation().stop();
       // The field starts at the same moment as the Noble Phantasm voice.
       finishTsumukariSummon(entity);
+
+      });
+      return;
    }
 
    private static void finishTsumukariSummon(SenkoMuramasaEntity entity) {
@@ -750,8 +756,8 @@ public final class MuramasaCombatHelper {
          ServerPlayer master = entity.getEntityMaster();
          if (remaining > 0.0 && master != null) {
             TypeMoonWorldModVariables.PlayerVariables vars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            double masterCost = Math.min(vars.player_mana, remaining);
-            vars.player_mana -= masterCost;
+            double masterCost = Math.min(vars.magicState().mana(), remaining);
+            vars.magicState().tryConsume(masterCost);
             vars.syncMana(master);
             remaining -= masterCost;
          }
@@ -810,7 +816,7 @@ public final class MuramasaCombatHelper {
    private static void spawnMuramasaFieldEffects(ServerLevel level, SenkoMuramasaEntity entity) {
       Vec3 origin = entity.position().add(0.0, 0.15, 0.0);
 
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          origin.x, origin.y + 0.8, origin.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
          origin.x, origin.y + 0.85, origin.z, 90, 0.9, 0.75, 0.9, 0.08);
@@ -985,7 +991,7 @@ public final class MuramasaCombatHelper {
          if (!level.hasChunkAt(pos) || !level.getBlockState(pos).is(ModBlocks.UBW_WEAPON_BLOCK.get())) {
             continue;
          }
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
             pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 16, 0.18, 0.4, 0.18, 0.08);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
@@ -1080,7 +1086,7 @@ public final class MuramasaCombatHelper {
       Vec3 forward = horizontalLook(entity);
       int length = Math.max(8, Math.min(25, 6 + percent / 5));
 
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          origin.x, origin.y, origin.z, 3, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
          origin.x, origin.y, origin.z, 120, 0.7, 0.65, 0.7, 0.12);

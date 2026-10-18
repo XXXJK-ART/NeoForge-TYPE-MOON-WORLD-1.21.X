@@ -158,7 +158,7 @@ public final class MysticMagicianCombatController {
       bullet.setPos(spawn.x, spawn.y - 0.05, spawn.z);
       bullet.shoot(look.x, look.y, look.z, 4.8F, 0.0F);
       level.addFreshEntity(bullet);
-      level.sendParticles(ParticleTypes.FLASH, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, spawn.x, spawn.y, spawn.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.CRIT, spawn.x, spawn.y, spawn.z, 8, 0.08, 0.08, 0.08, 0.03);
       level.playSound(null, npc.getX(), npc.getY(), npc.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.HOSTILE, 0.95F, 1.65F);
       try {

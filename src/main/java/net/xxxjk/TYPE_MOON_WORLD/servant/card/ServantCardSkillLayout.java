@@ -155,20 +155,10 @@ public final class ServantCardSkillLayout {
             case 5 -> new ServantCardSkillAction("Transparency", "sasaki_transparency", 20.0, 600);
             default -> null;
          };
-         case "oda_nobunaga" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Heshikiri Hasebe Short Thrust", "oda_hasebe_short_thrust", 10.0, 24);
-            case 0 -> new ServantCardSkillAction("Floating Matchlock Refill", "oda_floating_refill", 20.0, 80);
-            case 1 -> new ServantCardSkillAction("Three Line Rotation", "oda_three_line", 32.0, 220);
-            case 2 -> new ServantCardSkillAction("Demon King", "maou", 42.0, 500);
-            case 3 -> new ServantCardSkillAction("Encircling Matchlocks", "oda_encircle_matchlocks", 34.0, 180);
-            case 4 -> new ServantCardSkillAction("Charged Matchlock", "oda_charged_matchlock", 55.0, 320);
-            case 5 -> new ServantCardSkillAction("Crossfire Net", "oda_crossfire_net", 36.0, 260);
-            case 6 -> new ServantCardSkillAction("Scorched Earth Formation", "oda_scorched_earth", 38.0, 420);
-            case 7 -> new ServantCardSkillAction("Heshikiri Hasebe Fire Breakthrough", "oda_hasebe_breakthrough", 28.0, 160);
-            case 8 -> new ServantCardSkillAction("Three Thousand Worlds", "three_thousand", 95.0, 3600);
-            case 9 -> new ServantCardSkillAction("Dairokuten Maou Hajun", "hajun", 130.0, 3600);
-            default -> null;
-         };
+         case "oda_nobunaga" -> {
+            var skill = net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaRules.skill(slot);
+            yield skill == null ? null : new ServantCardSkillAction(skill.name(), skill.effect(), skill.mp(), skill.cooldown());
+         }
          case "enkidu" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Morphing Melee Combo", "enkidu_morph_melee", 0.0, 18);
             case 0 -> new ServantCardSkillAction("Transfiguration", "transfiguration", 0.0, 0);

@@ -25,19 +25,19 @@ public class ManaHelper {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
-      } else if (vars.player_mana >= amount) {
-         vars.player_mana -= amount;
+      } else if (vars.magicState().hasMana(amount)) {
+         vars.magicState().tryConsume(amount);
          vars.syncMana(player);
          return true;
       } else {
-         double missingMana = amount - vars.player_mana;
+         double missingMana = amount - vars.magicState().mana();
          double healthCost = missingMana / 10.0;
          if (healthCost < 0.5) {
             healthCost = 0.5;
          }
 
          if (player.getHealth() > healthCost) {
-            vars.player_mana = 0.0;
+            vars.magicState().setMana(0.0);
             vars.syncMana(player);
             DamageSource source = player.damageSources().magic();
             player.hurt(source, (float)healthCost);
@@ -57,14 +57,14 @@ public class ManaHelper {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
-      } else if (vars.player_mana >= amount) {
-         vars.player_mana -= amount;
+      } else if (vars.magicState().hasMana(amount)) {
+         vars.magicState().tryConsume(amount);
          vars.syncMana(player);
          return true;
       } else {
          refillFromInventoryForCost(player, vars, amount);
-         if (vars.player_mana >= amount) {
-            vars.player_mana -= amount;
+         if (vars.magicState().hasMana(amount)) {
+            vars.magicState().tryConsume(amount);
             vars.syncMana(player);
             return true;
          } else {
@@ -111,13 +111,13 @@ public class ManaHelper {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.is_magus) {
          return false;
-      } else if (vars.player_mana >= amount) {
-         vars.player_mana -= amount;
+      } else if (vars.magicState().hasMana(amount)) {
+         vars.magicState().tryConsume(amount);
          vars.syncMana(player);
          return true;
       } else {
-         if (drainOnFail && vars.player_mana > 0.0) {
-            vars.player_mana = 0.0;
+         if (drainOnFail && vars.magicState().mana() > 0.0) {
+            vars.magicState().setMana(0.0);
             vars.syncMana(player);
          }
 
@@ -143,14 +143,14 @@ public class ManaHelper {
    }
 
    private static void refillFromInventoryForCost(Player player, TypeMoonWorldModVariables.PlayerVariables vars, double requiredCost) {
-      for (double need = requiredCost - vars.player_mana; need > 1.0E-4; need = requiredCost - vars.player_mana) {
+      for (double need = requiredCost - vars.magicState().mana(); need > 1.0E-4; need = requiredCost - vars.magicState().mana()) {
          ManaHelper.SourceCandidate best = findBestCandidate(player, need);
          if (best == null) {
             return;
          }
 
          consumeCandidate(player, best);
-         vars.player_mana = Math.min(vars.player_mana + best.mana, vars.player_max_mana);
+         vars.magicState().addMana(best.mana);
       }
    }
 

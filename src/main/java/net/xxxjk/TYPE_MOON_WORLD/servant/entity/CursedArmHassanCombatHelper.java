@@ -311,18 +311,22 @@ public final class CursedArmHassanCombatHelper {
       data.putDouble(ZABANIYA_POWER_SCALE, resource.powerScale());
       data.putBoolean(ZABANIYA_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
-      data.putLong(LAST_ZABANIYA_TICK, now);
-      data.putLong(ZABANIYA_WINDUP_UNTIL, now + ZABANIYA_WINDUP);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "cursed_arm_hassan_zabaniya", ZABANIYA_COOLDOWN, ticks -> entity.getPersistentData().putLong(LAST_ZABANIYA_TICK, entity.level().getGameTime() - (ZABANIYA_COOLDOWN) + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
+      data.putLong(LAST_ZABANIYA_TICK, entity.level().getGameTime());
+      data.putLong(ZABANIYA_WINDUP_UNTIL, entity.level().getGameTime() + ZABANIYA_WINDUP);
       data.putInt(ZABANIYA_TARGET_ID, target.getId());
       entity.setZabaniyaTargetId(target.getId());
       entity.setNoBandages(true);
-      entity.getPersistentData().putLong("CursedArmBandagesRestoreTick", now + ZABANIYA_WINDUP + 100L);
+      entity.getPersistentData().putLong("CursedArmBandagesRestoreTick", entity.level().getGameTime() + ZABANIYA_WINDUP + 100L);
       entity.triggerZabaniyaAnimation();
       entity.getNavigation().stop();
       if (entity.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_cursed_arm_zabaniya_windup", entity, 96.0);
       }
       spawnZabaniyaWindupFx(entity, target);
+
+      });
       return true;
    }
 

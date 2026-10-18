@@ -24,7 +24,7 @@ public final class ServantCardSkillInputController {
    }
 
    public static boolean handleScroll(Player player, TypeMoonWorldModVariables.PlayerVariables vars, double scrollDelta) {
-      if (player == null || vars == null || !vars.servant_card_transformed || !TypeMoonWorldModKeyMappings.MAGIC_WHEEL_SWITCH.isDown()) {
+      if (player == null || vars == null || !vars.servant_card_transformed || !TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_SELECT.isDown()) {
          return false;
       }
       ensureSelection(vars);
@@ -70,7 +70,7 @@ public final class ServantCardSkillInputController {
          }
       }
 
-      if (selectedSlot >= 0 && TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.consumeClick() && !anyDirectSkillDown) {
+      if (selectedSlot >= 0 && TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST.consumeClick() && !anyDirectSkillDown) {
          if (isForcedHoldSkill(vars.servant_card_id, selectedSlot)) {
             PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, true), new CustomPacketPayload[0]);
             selectedHoldDown = true;
@@ -78,7 +78,7 @@ public final class ServantCardSkillInputController {
             PacketDistributor.sendToServer(new ServantCardActionMessage(selectedSlot), new CustomPacketPayload[0]);
          }
       }
-      if (selectedHoldDown && !TypeMoonWorldModKeyMappings.BASIC_INFORMATION_GUI.isDown()) {
+      if (selectedHoldDown && !TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST.isDown()) {
          PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
          selectedHoldDown = false;
       }
@@ -125,7 +125,7 @@ public final class ServantCardSkillInputController {
       return ("emiya_archer".equals(servantId) && slot == 1)
          || ("li_shuwen".equals(servantId) && slot == 2)
          || ("arash".equals(servantId) && slot == 9)
-         || ("oda_nobunaga".equals(servantId) && (slot == 4 || slot == 8));
+         || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8));
    }
 
    public static boolean isHoldSkill(String servantId, int slot) {
@@ -134,6 +134,14 @@ public final class ServantCardSkillInputController {
    }
 
    public static void clear() {
+      if (selectedHoldDown && selectedSlot >= 0 && Minecraft.getInstance().player != null) {
+         PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
+      }
+      for (int slot = 0; slot < SLOT_DOWN.length; slot++) {
+         if (SLOT_DOWN[slot] && isForcedHoldSkill(selectedServantId, slot) && Minecraft.getInstance().player != null) {
+            PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, false), new CustomPacketPayload[0]);
+         }
+      }
       for (int slot = 0; slot < SLOT_DOWN.length; slot++) {
          SLOT_DOWN[slot] = false;
       }

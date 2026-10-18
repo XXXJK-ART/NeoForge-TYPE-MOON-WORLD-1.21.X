@@ -11,6 +11,6 @@ public final class StorageMagic {
 
     public static MagicExecutionResult execute(MagicExecutionContext context) {
         // Storage input is handled by the addon-owned press/release state machine.
-        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.FAILED;
+        return context.asServerPlayer() == null ? MagicExecutionResult.NOT_HANDLED : MagicExecutionResult.STARTED;
     }
 }

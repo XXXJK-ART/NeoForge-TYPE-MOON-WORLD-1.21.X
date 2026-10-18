@@ -214,10 +214,10 @@ public class StructureProjectionBuildHandler {
                break;
             }
 
-            if (vars.player_mana < placement.cost) {
+            if (!vars.magicState().hasMana(placement.cost)) {
                layer.blocks.addFirst(placement);
-               if (vars.player_mana > 0.0) {
-                  vars.player_mana = 0.0;
+               if (vars.magicState().mana() > 0.0) {
+                  vars.magicState().setMana(0.0);
                   changedMana = true;
                }
 
@@ -236,7 +236,7 @@ public class StructureProjectionBuildHandler {
             if (!placement.state.canSurvive(level, placement.worldPos)) {
                layer.blocks.addLast(placement);
             } else {
-               vars.player_mana = vars.player_mana - placement.cost;
+               vars.magicState().tryConsume(placement.cost);
                changedMana = true;
                placedAnyThisTick = true;
                placementsBudget--;
@@ -260,10 +260,10 @@ public class StructureProjectionBuildHandler {
                return;
             }
 
-            if (vars.player_mana < forced.cost) {
+            if (!vars.magicState().hasMana(forced.cost)) {
                layer.blocks.addFirst(forced);
-               if (vars.player_mana > 0.0) {
-                  vars.player_mana = 0.0;
+               if (vars.magicState().mana() > 0.0) {
+                  vars.magicState().setMana(0.0);
                   changedMana = true;
                }
 
@@ -279,7 +279,7 @@ public class StructureProjectionBuildHandler {
                return;
             }
 
-            vars.player_mana = vars.player_mana - forced.cost;
+            vars.magicState().tryConsume(forced.cost);
             changedMana = true;
             level.setBlock(forced.worldPos, forced.state, 2);
             clearContainerContents(level, forced.worldPos);

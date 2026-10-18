@@ -39,8 +39,12 @@ public final class ServantCardTraitService {
       CompoundTag data = player.getPersistentData();
       data.putString(CLASS_TAG, definition.classType().key());
       data.putString(FACTION_TAG, definition.faction().key());
-      data.putString(TRAIT_LIST_TAG, traitKeyList(definition.traits()));
-      for (ServantTraitTag trait : definition.traits()) {
+      List<ServantTraitTag> traits = new ArrayList<>(definition.traits());
+      if (!traits.contains(ServantTraitTag.SERVANT)) {
+         traits.add(ServantTraitTag.SERVANT);
+      }
+      data.putString(TRAIT_LIST_TAG, traitKeyList(traits));
+      for (ServantTraitTag trait : traits) {
          data.putBoolean(TRAIT_PREFIX + trait.key(), true);
       }
       data.putBoolean("TypeMoonLivingHuman", definition.traits().contains(ServantTraitTag.LIVING_HUMAN));
@@ -115,7 +119,7 @@ public final class ServantCardTraitService {
       if (data.getBoolean("MadEnhancementActive")) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("MadEnhancementDamageBonus"));
       }
-      if (data.getBoolean("IndependentActionActive") && attacker.getRandom().nextFloat() < 0.18F) {
+      if (!"oda_nobunaga".equals(attackerDefinition.id()) && data.getBoolean("IndependentActionActive") && attacker.getRandom().nextFloat() < 0.18F) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("IndependentActionCritDamageBonus"));
       }
       if (data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
@@ -199,7 +203,7 @@ public final class ServantCardTraitService {
       if (hasSkill(definition, "independent_action_a")) {
          data.putBoolean("IndependentActionActive", true);
          data.putFloat("IndependentActionCritDamageBonus", 0.12F);
-      } else if (hasSkill(definition, "independent_action_b")) {
+      } else if (hasSkill(definition, "independent_action_b") && !"oda_nobunaga".equals(definition.id())) {
          data.putBoolean("IndependentActionActive", true);
          data.putFloat("IndependentActionCritDamageBonus", 0.08F);
       } else if (hasSkill(definition, "independent_action_c")) {
@@ -262,13 +266,7 @@ public final class ServantCardTraitService {
    private static List<ServantTraitTag> specialAttackConditions(ServantDefinition definition) {
       EnumSet<ServantTraitTag> conditions = EnumSet.noneOf(ServantTraitTag.class);
       switch (definition.id()) {
-         case "oda_nobunaga" -> {
-            conditions.add(ServantTraitTag.DIVINE);
-            conditions.add(ServantTraitTag.DEMONIC);
-            conditions.add(ServantTraitTag.FAIRY_TALE);
-            conditions.add(ServantTraitTag.MOUNTED);
-            conditions.add(ServantTraitTag.RIDING);
-         }
+         case "oda_nobunaga" -> { }
          case "enkidu" -> {
             conditions.add(ServantTraitTag.DIVINE);
             conditions.add(ServantTraitTag.CELESTIAL);

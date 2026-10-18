@@ -21,7 +21,7 @@ public class GilgameshGateWeaponRenderer extends GeoEntityRenderer<GilgameshGate
    @Override public void render(GilgameshGateWeaponProjectileEntity e, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
       // Inventory and other screens still render the world behind the GUI. Do
       // not spend a GeckoLib model pass on every gate while the screen is open.
-      if (Minecraft.getInstance().screen != null) return;
+      if (!e.preservesFullEffects() && Minecraft.getInstance().screen != null) return;
       Vec3 motion = e.getDeltaMovement();
       if (motion.lengthSqr() < 1.0E-6) motion = new Vec3(0.0, 0.0, 1.0);
       motion = motion.normalize();

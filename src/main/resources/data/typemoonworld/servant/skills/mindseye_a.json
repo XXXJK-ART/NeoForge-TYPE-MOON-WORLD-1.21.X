@@ -1,4 +1,5 @@
 {
+  "rank": "A",
   "id": "mindseye_a",
   "display_name": "Mind's Eye A",
   "display_name_zh": "心眼 A",
@@ -9,11 +10,29 @@
   "effects": [
     {
       "effect_type": "damage_resistance",
-      "params": { "duration_ticks": 60, "amplifier": 3.0 }
+      "params": {
+        "duration_ticks": 60,
+        "amplifier": 3.0
+      }
     }
   ],
-  "ai": {"facts": [
-    {"type": "prediction", "strength": 0.8},
-    {"type": "shield", "strength": 0.7}
-  ]}
+  "ai": {
+    "facts": [
+      {
+        "type": "prediction",
+        "strength": 0.8
+      },
+      {
+        "type": "shield",
+        "strength": 0.7
+      }
+    ]
+  },
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "mind_eye",
+      "sasaki_mind_eye"
+    ]
+  }
 }

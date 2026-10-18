@@ -20,6 +20,9 @@ import java.util.UUID;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.xxxjk.TYPE_MOON_WORLD.world.inventory.MagicResearchTableMenu;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
+import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +45,17 @@ public class MagicResearchTableBlockEntity extends BlockEntity implements MenuPr
       if (!be.isResearcherUsingTable(player)) return;
       if (--be.remainingTicks > 0) { if (be.remainingTicks % 20 == 0) be.setChanged(); return; }
       var vars=player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if ("magic_analysis".equals(be.researchMagicId)) {
+      double proficiency = MagicProficiencyService.get(vars, be.researchMagicId);
+      double leyline = server.getServer() == null ? 1.0D : LeylineService.getRegenMultiplier(server, be.worldPosition);
+      double successChance = Math.max(0.35D, Math.min(0.96D,
+         0.82D + proficiency * 0.0015D + Math.max(0.0D, leyline - 1.0D) * 0.12D
+            - MagicLearningStrategy.complexity(be.researchMagicId) * 0.001D));
+      if (server.random.nextDouble() > successChance) {
+         ItemStack waste = new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_WASTE_PAPER.get());
+         if (!player.addItem(waste)) player.drop(waste, false);
+         MagecraftRiskService.onResearchFailure(player, be.researchMagicId);
+         player.displayClientMessage(Component.literal("研究失败：纸张、墨水与魔力被消耗，回路出现紊乱。"), true);
+      } else if ("magic_analysis".equals(be.researchMagicId)) {
          ItemStack out;
          if (player.getRandom().nextDouble() < .10) out=new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_WASTE_PAPER.get());
          else {
@@ -50,7 +63,7 @@ public class MagicResearchTableBlockEntity extends BlockEntity implements MenuPr
             out=pages.isEmpty()?new ItemStack(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.MAGIC_PAGE_PROJECTION.get()):new ItemStack(pages.get(player.getRandom().nextInt(pages.size())));
          }
          if(!player.addItem(out)) player.drop(out,false);
-      } else net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService.add(vars,be.researchMagicId,Math.max(.1,5.0-net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy.complexity(be.researchMagicId)*.03));
+      } else MagicProficiencyService.add(vars,be.researchMagicId,Math.max(.1,5.0-MagicLearningStrategy.complexity(be.researchMagicId)*.03));
       vars.syncPlayerVariables(player);
       be.researchMagicId=""; be.researcher=null; be.totalTicks=0; be.setChanged();
    }

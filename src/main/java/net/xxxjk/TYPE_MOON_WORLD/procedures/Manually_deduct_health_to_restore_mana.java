@@ -15,7 +15,7 @@ public class Manually_deduct_health_to_restore_mana {
                TypeMoonWorldModVariables.PlayerVariables _vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(
                   TypeMoonWorldModVariables.PLAYER_VARIABLES
                );
-               _vars.player_mana = ((TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).player_mana + 10.0;
+               _vars.magicState().addMana(10.0);
                _vars.syncMana(entity);
                LivingEntity _entity = (LivingEntity)entity;
                LivingEntity _livEntx = (LivingEntity)entity;

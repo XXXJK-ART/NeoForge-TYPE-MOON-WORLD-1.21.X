@@ -17,7 +17,8 @@ public record ServantNoblePhantasmDefinition(
    double range,
    List<SkillEffectEntry> effects,
    List<ServantTraitTag> specialAttackConditions,
-   List<ServantClassType> classRestrictions
+   List<ServantClassType> classRestrictions,
+   String releasePolicy
 ) {
    public static final Codec<ServantNoblePhantasmDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
       Codec.STRING.optionalFieldOf("id", "").forGetter(ServantNoblePhantasmDefinition::id),
@@ -32,10 +33,19 @@ public record ServantNoblePhantasmDefinition(
       Codec.DOUBLE.optionalFieldOf("range", 16.0).forGetter(ServantNoblePhantasmDefinition::range),
       SkillEffectEntry.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(ServantNoblePhantasmDefinition::effects),
       Codec.STRING.listOf().xmap(values -> values.stream().map(ServantTraitTag::fromKey).toList(), values -> values.stream().map(ServantTraitTag::key).toList()).optionalFieldOf("special_attack_conditions", List.of()).forGetter(ServantNoblePhantasmDefinition::specialAttackConditions),
-      Codec.STRING.listOf().xmap(values -> values.stream().map(ServantClassType::fromKey).toList(), values -> values.stream().map(ServantClassType::key).toList()).optionalFieldOf("class_restrictions", List.of()).forGetter(ServantNoblePhantasmDefinition::classRestrictions)
+      Codec.STRING.listOf().xmap(values -> values.stream().map(ServantClassType::fromKey).toList(), values -> values.stream().map(ServantClassType::key).toList()).optionalFieldOf("class_restrictions", List.of()).forGetter(ServantNoblePhantasmDefinition::classRestrictions),
+      Codec.STRING.optionalFieldOf("release_policy", "").forGetter(ServantNoblePhantasmDefinition::releasePolicy)
    ).apply(instance, ServantNoblePhantasmDefinition::new));
 
+   public ServantNoblePhantasmDefinition(String id, String displayName, String displayNameZh, NpType type, String rank,
+      int mpCost, boolean overChargeSupported, int overChargeLevels, double baseDamageMultiplier, double range,
+      List<SkillEffectEntry> effects, List<ServantTraitTag> specialAttackConditions, List<ServantClassType> classRestrictions) {
+      this(id, displayName, displayNameZh, type, rank, mpCost, overChargeSupported, overChargeLevels,
+         baseDamageMultiplier, range, effects, specialAttackConditions, classRestrictions, "");
+   }
+
    public ServantNoblePhantasmDefinition {
+      releasePolicy = releasePolicy == null ? "" : releasePolicy;
       id = id == null ? "" : id;
       displayName = displayName == null ? "" : displayName;
       displayNameZh = displayNameZh == null ? "" : displayNameZh;
@@ -50,6 +60,7 @@ public record ServantNoblePhantasmDefinition(
       classRestrictions = classRestrictions == null ? List.of() : List.copyOf(classRestrictions);
    }
    public enum NpType {
+      ANTI_DIVINE("anti_divine"),
       ARMY("army"),
       CASTLE("castle"),
       WORLD("world"),
@@ -72,8 +83,12 @@ public record ServantNoblePhantasmDefinition(
             return ANTI_UNIT;
          }
 
+         key = key.toLowerCase(java.util.Locale.ROOT);
+         if (key.equals("anti_army") || key.equals("对军")) return ARMY;
+         if (key.equals("anti_castle") || key.equals("anti_fortress") || key.equals("对城")) return CASTLE;
+         if (key.equals("anti_god") || key.equals("对神")) return ANTI_DIVINE;
          for (NpType type : values()) {
-            if (type.key.equals(key.toLowerCase()) || ("anti_fortress".equals(key.toLowerCase()) && type == ANTI_UNIT)) {
+            if (type.key.equals(key.toLowerCase())) {
                return type;
             }
          }

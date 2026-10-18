@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -151,6 +153,7 @@ public final class ServantPlannedActionExecutor {
     * and must be allowed to finish.
     */
    public static boolean cancelForMeleeOverride(ServantEntity entity, long now) {
+      if (entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)) return false;
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       if (runtime == null || runtime.stage != Stage.APPROACH) return false;
       clearApproachMovement(entity);
@@ -164,6 +167,7 @@ public final class ServantPlannedActionExecutor {
    }
 
    public static boolean interrupt(ServantEntity entity, int power, long now) {
+      if (entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)) return false;
       ActionRuntime runtime = entity == null ? null : ACTIVE.get(entity);
       if (runtime == null || runtime.stage != Stage.APPROACH && runtime.stage != Stage.WINDUP
          || runtime.stage == Stage.WINDUP && (!runtime.action.threat().interruptible()
@@ -273,10 +277,17 @@ public final class ServantPlannedActionExecutor {
 
       boolean terrainTriggered = false;
       for (LivingEntity victim : victims) {
+         if (!runtime.hitTargets.add(victim.getUUID())) continue;
          if (requiresLineOfSight(action.threat().shape()) && !entity.getSensing().hasLineOfSight(victim)) continue;
-         float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE)
-            * action.maneuver().effectiveDamageScale(action.tags().contains(AiActionDescriptor.Tag.FINISHER)));
-         boolean damaged = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+         float damage = (float)net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.calculateDamage(entity, victim,
+            action.maneuver().effectiveDamageScale(action.tags().contains(AiActionDescriptor.Tag.FINISHER)), false, null, 1.0);
+         boolean damaged;
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.beginSharedHit(entity);
+         try {
+            damaged = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+         } finally {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.endSharedHit(entity);
+         }
          ServantCombatTempoService.recordContact(entity, victim,
             damaged ? ServantCombatTempoService.ContactType.DAMAGE
                : ServantCombatTempoService.ContactType.BLOCKED, now);
@@ -435,6 +446,7 @@ public final class ServantPlannedActionExecutor {
       float lastHealth;
       Vec3 snapshotDirection = Vec3.ZERO;
       CombatThreat threat;
+      final Set<UUID> hitTargets = new HashSet<>();
 
       ActionRuntime(AiActionDescriptor action, UUID targetUuid, net.minecraft.resources.ResourceLocation dimension,
                     long approachDeadline, float health) {

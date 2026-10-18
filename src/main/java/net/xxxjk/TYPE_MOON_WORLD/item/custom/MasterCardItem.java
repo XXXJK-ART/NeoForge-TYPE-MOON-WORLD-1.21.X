@@ -13,8 +13,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MasterProfileApiRegistry;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterCardProfile;
-import com.example.typemoonaddon.TypeMoonAddon;
 
 public class MasterCardItem extends Item {
    private final String masterId;
@@ -33,7 +33,7 @@ public class MasterCardItem extends Item {
          } catch (RuntimeException exception) {
             // A malformed legacy card must fail the action, not take down the server
             // tick and leave the current world unable to load.
-            TypeMoonAddon.LOGGER.error("Master card activation failed for {}", masterId(stack), exception);
+            TYPE_MOON_WORLD.LOGGER.error("Master card activation failed for {}", masterId(stack), exception);
             return InteractionResultHolder.fail(stack);
          }
       }

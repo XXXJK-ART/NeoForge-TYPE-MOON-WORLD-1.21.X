@@ -65,7 +65,7 @@ public final class ServantCardSenkoMuramasaSkills {
       }
       refreshModifiers(player, now);
       if (now % 10L == 0L && data.getLong(FLAME_UNTIL) > now) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 1.0);
+         vars.servantCardState().addMana(1.0);
          vars.syncMana(player);
       }
       if (data.getBoolean(NP_PENDING)) {
@@ -171,7 +171,7 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean performFlame(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 100.0);
+      vars.servantCardState().addMana(100.0);
       vars.syncMana(player);
       player.getPersistentData().putLong(FLAME_UNTIL, player.level().getGameTime() + 400L);
       return true;
@@ -238,7 +238,7 @@ public final class ServantCardSenkoMuramasaSkills {
       player.getPersistentData().putBoolean(NP_USED, true);
       player.getPersistentData().putBoolean(NP_PENDING, true);
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 293, 10, false, false, false));
-      level.playSound(null, player.blockPosition(), ModSounds.SENKO_MURAMASA_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "muramasa_no_gen_kensai");
       expandField(level, player, 0);
       TYPE_MOON_WORLD.queueServerWork(200, () -> revealTsumukari(player));
       return true;
@@ -262,7 +262,7 @@ public final class ServantCardSenkoMuramasaSkills {
    private static void revealTsumukari(ServerPlayer player) {
       if (!player.isAlive() || !(player.level() instanceof ServerLevel level)) return;
       player.setItemInHand(InteractionHand.MAIN_HAND, MuramasaCombatHelper.projectedStack(ModItems.TSUMUKARI_MURAMASA.get()));
-      level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
+      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
       level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 120, 1.5, 1.2, 1.5, 0.15);
       level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 180, 12.0, 3.0, 12.0, 0.12);
       replaceTemporaryRedField(level, player, 16, 16 * 20);

@@ -131,13 +131,13 @@ public final class MagicAnalysisService {
    }
 
    public static boolean isActive(TypeMoonWorldModVariables.PlayerVariables vars) {
-      return vars != null && vars.magic_analysis_active && vars.is_magic_circuit_open && isAnalysisSelected(vars);
+      return vars != null && vars.magicState().analysisActive() && vars.is_magic_circuit_open && isAnalysisSelected(vars);
    }
 
    public static boolean isActive(LivingEntity analyst, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (analyst instanceof MysticMagicianEntity) {
          return vars != null
-            && vars.magic_analysis_active
+            && vars.magicState().analysisActive()
             && vars.is_magic_circuit_open
             && vars.learned_magics.contains("magic_analysis");
       }

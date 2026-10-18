@@ -38,6 +38,7 @@ public final class ServantCardCuChulainnSkills {
    private static final String CU_RUNE_BERKANA_NEXT_HEAL_TAG = "ServantCardCuBerkanaNextHeal";
    private static final String CU_RECAST_USED_TAG = "ServantCardCuRecastUsed";
    private static final String CU_LAST_COMBAT_TICK_TAG = "ServantCardCuLastCombatTick";
+   private static final String CU_RUNE_BARRIER_COOLDOWN_TAG = "ServantCardCuRuneBarrierCooldown";
    private static final int CU_OUT_OF_COMBAT_RECOVERY_TICKS = 1200;
    private static final double CU_RECAST_MP_COST = 35.0;
 
@@ -45,7 +46,7 @@ public final class ServantCardCuChulainnSkills {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!"cu_chulainn".equals(vars.servant_card_id)) {
+      if (!"cu_chulainn".equals(vars.servantCardState().id())) {
          clear(player);
          return;
       }
@@ -128,6 +129,7 @@ public final class ServantCardCuChulainnSkills {
       data.remove(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG);
       PlayerNoblePhantasmHelper.clearGaeBulgUseState(player);
       clearCuTiwaz(player);
+      player.getPersistentData().remove(CU_RUNE_BARRIER_COOLDOWN_TAG);
    }
 
    public static void markCombat(ServerPlayer player) {
@@ -141,7 +143,7 @@ public final class ServantCardCuChulainnSkills {
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      return vars.servant_card_transformed && "cu_chulainn".equals(vars.servant_card_id);
+      return vars.servantCardState().transformed() && "cu_chulainn".equals(vars.servantCardState().id());
    }
 
    private static void restoreOutOfCombat(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -156,7 +158,7 @@ public final class ServantCardCuChulainnSkills {
       ServantCardSkillUtils.clearHarmfulEffects(player);
       player.setHealth(player.getMaxHealth());
       player.clearFire();
-      vars.servant_card_mana = vars.servant_card_max_mana;
+      vars.servantCardState().setMana(vars.servantCardState().maxMana());
       vars.syncMana(player);
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.HAPPY_VILLAGER, player.getX(), player.getY() + player.getBbHeight() * 0.65, player.getZ(), 16, 0.45, 0.55, 0.45, 0.04);
@@ -269,6 +271,15 @@ public final class ServantCardCuChulainnSkills {
       markCombat(player);
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
+      if (data.getLong(CU_RUNE_BARRIER_UNTIL_TAG) > now) {
+         clearRuneBarrier(player);
+         data.putLong(CU_RUNE_BARRIER_COOLDOWN_TAG, now + 300L);
+         if (player.level() instanceof ServerLevel level) {
+            level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.5, player.getZ(), 24, 1.6, 0.8, 1.6, 0.04);
+         }
+         return;
+      }
+      if (data.getLong(CU_RUNE_BARRIER_COOLDOWN_TAG) > now) return;
       data.putFloat(CU_RUNE_BARRIER_HP_TAG, 2000.0F);
       data.putLong(CU_RUNE_BARRIER_UNTIL_TAG, now + 300L);
       data.putDouble(CU_RUNE_BARRIER_X_TAG, player.getX());
@@ -295,22 +306,22 @@ public final class ServantCardCuChulainnSkills {
       for (int i = 0; i < 13; i++) {
          double t = i / 12.0, offset = -half + t * half * 2.0;
          for (double y : new double[]{minY, maxY}) {
-            level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx - half, y, cz + offset, 1, 0, 0, 0, 0);
-            level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx + half, y, cz + offset, 1, 0, 0, 0, 0);
-            level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx + offset, y, cz - half, 1, 0, 0, 0, 0);
-            level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx + offset, y, cz + half, 1, 0, 0, 0, 0);
+            level.sendParticles(ParticleTypes.END_ROD, cx - half, y, cz + offset, 2, 0.02, 0.02, 0.02, 0.01);
+            level.sendParticles(ParticleTypes.END_ROD, cx + half, y, cz + offset, 2, 0.02, 0.02, 0.02, 0.01);
+            level.sendParticles(ParticleTypes.END_ROD, cx + offset, y, cz - half, 2, 0.02, 0.02, 0.02, 0.01);
+            level.sendParticles(ParticleTypes.END_ROD, cx + offset, y, cz + half, 2, 0.02, 0.02, 0.02, 0.01);
          }
          double y = minY + t * (maxY - minY);
-         level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx - half, y, cz - half, 1, 0, 0, 0, 0);
-         level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx + half, y, cz - half, 1, 0, 0, 0, 0);
-         level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx - half, y, cz + half, 1, 0, 0, 0, 0);
-         level.sendParticles(ModParticles.RUNE_BARRIER.get(), cx + half, y, cz + half, 1, 0, 0, 0, 0);
+         level.sendParticles(ParticleTypes.END_ROD, cx - half, y, cz - half, 2, 0.02, 0.02, 0.02, 0.01);
+         level.sendParticles(ParticleTypes.END_ROD, cx + half, y, cz - half, 2, 0.02, 0.02, 0.02, 0.01);
+         level.sendParticles(ParticleTypes.END_ROD, cx - half, y, cz + half, 2, 0.02, 0.02, 0.02, 0.01);
+         level.sendParticles(ParticleTypes.END_ROD, cx + half, y, cz + half, 2, 0.02, 0.02, 0.02, 0.01);
       }
       for (int i = 0; i < 8; i++) {
          double x = cx - half + ((player.tickCount * 0.013 + i * 0.17) % 1.0) * half * 2.0;
          double y = minY + ((i * 0.61) % 1.0) * (maxY - minY);
          double z = cz - half + ((i * 0.37) % 1.0) * half * 2.0;
-         level.sendParticles(ModParticles.RUNE_BARRIER.get(), x, y, z, 1, 0, 0, 0, 0);
+         level.sendParticles(ParticleTypes.END_ROD, x, y, z, 2, 0.02, 0.02, 0.02, 0.01);
       }
    }
 

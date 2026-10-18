@@ -90,6 +90,7 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
    }
 
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.summon.SummoningRitualService.isRitualUsing(living, stack)) return;
       int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
       PlayerNoblePhantasmHelper.tickExcaliburCharge(level, living, useTicks);
    }

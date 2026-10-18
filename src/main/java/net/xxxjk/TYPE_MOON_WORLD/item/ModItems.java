@@ -70,6 +70,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.custom.GemNecklaceItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.BandageItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DivineSteelItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.YajiaoQiangItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.HolyGrailItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianRoundShieldItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.MacedonianSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.IskandarShortswordItem;
@@ -241,7 +242,7 @@ public class ModItems {
     public static final DeferredItem<Item> CHALK = ITEMS.register("chalk",
             () -> new ChalkItem(new Item.Properties().stacksTo(64)));
     public static final DeferredItem<Item> HOLY_GRAIL = ITEMS.register("holy_grail",
-            () -> new Item(new Item.Properties().rarity(Rarity.EPIC)));
+            () -> new HolyGrailItem(new Item.Properties().rarity(Rarity.EPIC)));
     public static final DeferredItem<Item> PHOENIX_FEATHER = registerSimpleItem("phoenix_feather");
     public static final DeferredItem<Item> PROOF_OF_HERO = registerSimpleItem("proof_of_hero");
     public static final DeferredItem<Item> QP = registerSimpleItem("qp");
@@ -713,11 +714,11 @@ public class ModItems {
 
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL = ITEMS.register("magic_scroll_basic_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, true, (String)null, 
-                    "jewel_magic_shoot", "jewel_random_shoot"));
+                    "jewel_magic_shoot"));
                     
     public static final DeferredItem<Item> MAGIC_SCROLL_BASIC_JEWEL_BROKEN = ITEMS.register("magic_scroll_basic_jewel_broken",
             () -> new RandomMagicScrollItem(new Item.Properties().stacksTo(3), 0.5, (String)null,
-                    "jewel_magic_shoot", "jewel_random_shoot"));
+                    "jewel_magic_shoot"));
 
     public static final DeferredItem<Item> MAGIC_SCROLL_ADVANCED_JEWEL = ITEMS.register("magic_scroll_advanced_jewel",
             () -> new MagicScrollItem(new Item.Properties().durability(20), 0.8, "jewel_magic_shoot", // Require Basic Jewel Magic

@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemCompatibilityService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.GemEngravingService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicProjection;
 import net.xxxjk.TYPE_MOON_WORLD.magic.projection.MagicStructuralAnalysis;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import org.jetbrains.annotations.NotNull;
 
@@ -301,6 +302,7 @@ public class GemCarvingTableMenu extends AbstractContainerMenu {
                   }
 
                   int failCount = attempts - successCount;
+                  MagecraftRiskService.onGemEngravingFailure(player, failCount);
                   if (successCount > 0) {
                      Item normalizedGem = ModItems.getNormalizedCarvedGem(carvedGem.getType());
                      ItemStack engravedStack = new ItemStack(normalizedGem, successCount);

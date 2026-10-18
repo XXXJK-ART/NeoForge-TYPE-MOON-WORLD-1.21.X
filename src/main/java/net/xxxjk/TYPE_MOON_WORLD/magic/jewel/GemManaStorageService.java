@@ -18,15 +18,15 @@ public final class GemManaStorageService {
    public static ItemStack storeIntoGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item fullGemItem, GemType type, GemQuality quality) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int manaAmount = getStorageManaAmount(heldStack, type, quality);
-      double availableMana = vars.servant_card_transformed ? vars.servant_card_mana : vars.player_mana;
+      double availableMana = vars.servantCardState().transformed() ? vars.servantCardState().mana() : vars.magicState().mana();
       if (availableMana < manaAmount) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
          return heldStack;
       } else {
-         if (vars.servant_card_transformed) {
-            vars.servant_card_mana -= manaAmount;
+         if (vars.servantCardState().transformed()) {
+            vars.servantCardState().setMana(vars.servantCardState().mana() - manaAmount);
          } else {
-            vars.player_mana -= manaAmount;
+            vars.magicState().setMana(vars.magicState().mana() - manaAmount);
          }
          vars.syncMana(player);
          Item targetFullGem = fullGemItem;
@@ -45,10 +45,10 @@ public final class GemManaStorageService {
    public static ItemStack withdrawFromGem(ServerPlayer player, InteractionHand hand, ItemStack heldStack, Item emptyGemItem, GemType type, GemQuality quality) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int manaAmount = getStorageManaAmount(heldStack, type, quality);
-      if (vars.servant_card_transformed) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + manaAmount);
+      if (vars.servantCardState().transformed()) {
+         vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), vars.servantCardState().mana() + manaAmount));
       } else {
-         vars.player_mana += manaAmount;
+         vars.magicState().setMana(vars.magicState().mana() + manaAmount);
       }
       vars.syncMana(player);
       Item targetEmptyGem = emptyGemItem;
@@ -59,16 +59,16 @@ public final class GemManaStorageService {
       ItemStack emptied = new ItemStack(targetEmptyGem);
       GemEngravingService.copyEngravingData(heldStack, emptied);
       ItemStack result = replaceHeldSingle(player, hand, heldStack, emptied);
-      if (!vars.servant_card_transformed && vars.player_mana > vars.player_max_mana) {
+      if (!vars.servantCardState().transformed() && vars.magicState().mana() > vars.magicState().maxMana()) {
          ChatFormatting color = ChatFormatting.YELLOW;
-         if (vars.player_mana > vars.player_max_mana * 1.25) {
+         if (vars.magicState().mana() > vars.magicState().maxMana() * 1.25) {
             color = ChatFormatting.DARK_RED;
-         } else if (vars.player_mana > vars.player_max_mana * 1.2) {
+         } else if (vars.magicState().mana() > vars.magicState().maxMana() * 1.2) {
             color = ChatFormatting.RED;
          }
 
          player.displayClientMessage(
-            Component.translatable("message.typemoonworld.mana.overload.warning", (int)vars.player_mana, (int)vars.player_max_mana)
+            Component.translatable("message.typemoonworld.mana.overload.warning", (int)vars.magicState().mana(), (int)vars.magicState().maxMana())
                .withStyle(color),
             true
          );

@@ -88,7 +88,21 @@ public final class MagicClassification {
    }
 
    public static MagicClassification.ManaCostType getManaCostType(String magicId) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      if (definition != null && definition.sustainedManaCost() > 0.0D) {
+         return MagicClassification.ManaCostType.SUSTAINED_OR_INDIRECT;
+      }
       return MAGIC_COST_TYPES.getOrDefault(magicId, MagicClassification.ManaCostType.ONE_TIME);
+   }
+
+   public static String castMode(String magicId) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      return definition == null ? "instant" : definition.castMode();
+   }
+
+   public static String resourceModel(String magicId) {
+      var definition = MagicDefinitionRegistry.get(magicId);
+      return definition == null ? "personal_mana" : definition.resourceModel();
    }
 
    public static Set<String> getAllMagicIds() {

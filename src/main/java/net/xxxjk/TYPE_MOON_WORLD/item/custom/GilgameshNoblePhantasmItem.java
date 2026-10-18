@@ -328,8 +328,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       if (vars.servant_card_transformed) {
          return ServantCardManaService.consumeNoblePhantasm(player, vars, amount);
       }
-      if (vars.player_mana < amount) return false;
-      vars.player_mana -= amount;
+      if (!vars.magicState().tryConsume(amount)) return false;
       vars.syncMana(player);
       return true;
    }
@@ -340,7 +339,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
       if (vars.servant_card_transformed) {
          vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + amount);
       } else {
-         vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + amount);
+         vars.magicState().addMana(amount);
       }
       vars.syncMana(player);
    }

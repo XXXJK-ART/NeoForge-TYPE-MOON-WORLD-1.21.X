@@ -32,7 +32,7 @@ public final class WormWarehouseService {
     }
 
     public static boolean activateFromFrame(Level level, BlockPos clickedPos, @Nullable ServerPlayer player, ItemStack wormStack) {
-        if (!(level instanceof ServerLevel serverLevel) || player == null || !wormStack.is(AddonItems.WORM.get())) {
+        if (!(level instanceof ServerLevel serverLevel) || player == null || !WormStackData.isWormItem(wormStack)) {
             return false;
         }
         Bounds bounds = scanFrameBounds(serverLevel, clickedPos);
@@ -107,7 +107,7 @@ public final class WormWarehouseService {
         if (level.getGameTime() % Math.max(20L, FEED_INTERVAL_TICKS / Math.max(1, blockEntity.getCapacity())) != 0) {
             return;
         }
-        blockEntity.consumeGrowth(level, controllerPos, bounds.capacity());
+        blockEntity.consumeGrowth(level, controllerPos, bounds.capacity(), bounds.width() - 2, bounds.height() - 2);
     }
 
     public static Optional<WormWarehouseBlockEntity> controllerEntity(Level level, BlockPos pos) {

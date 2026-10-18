@@ -4,6 +4,10 @@ import java.util.List;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatMotionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
@@ -12,24 +16,41 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 /** Final per-tick safety pass for servant flight, independent of tactical arbitration. */
+@EventBusSubscriber(modid = "typemoonworld")
 public final class ServantFlightCombatService {
    public static final int DESCENT_TICKS = 40;
    public static final int FORCE_CONTACT_TICKS = 100;
    private static final String LAST_CONTROL_TICK = "TypeMoonFlightControlTick";
+   private static final String SAFETY_GROUND_Y = "TypeMoonFlightSafetyGroundY";
+   private static final String SAFETY_GROUND_UPDATE = "TypeMoonFlightSafetyGroundUpdate";
 
    private ServantFlightCombatService() { }
+
+   @SubscribeEvent(priority = EventPriority.LOWEST)
+   public static void afterEntityTick(EntityTickEvent.Post event) {
+      if (event.getEntity() instanceof ServantEntity entity && entity.isAlive()
+         && !entity.isSpiritualTransitionLocked()
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.scripted(entity, entity.getTarget())) {
+         tick(entity);
+      }
+   }
 
    public static void markControlled(ServantEntity entity, long now) {
       if (entity != null) entity.getPersistentData().putLong(LAST_CONTROL_TICK, now);
    }
 
    public static void tickIndependentController(ServantEntity entity) {
+      if (entity instanceof GilgameshEntity gilgamesh && gilgamesh.isAlive()
+         && !gilgamesh.isSpiritualTransitionLocked()) {
+         GilgameshCombatHelper.tickFlight(gilgamesh);
+      }
       if (entity instanceof CasterGilgameshEntity casterGilgamesh
          && casterGilgamesh.isAlive() && !casterGilgamesh.isSpiritualDissolving()) {
          boolean meleeHandled = CasterGilgameshCombatHelper.tickIndependentMelee(casterGilgamesh);
@@ -41,6 +62,7 @@ public final class ServantFlightCombatService {
 
    public static void tick(ServantEntity entity) {
       if (entity == null || entity.level().isClientSide()) return;
+      if (entity instanceof GilgameshEntity gilgamesh && GilgameshCombatHelper.ownsEaFlight(gilgamesh)) return;
       // Enuma Elish owns Enkidu's complete movement sequence, including the
       // aerial windup and the dive. Do not let generic flight correction
       // overwrite the noble phantasm's per-tick motion.
@@ -48,24 +70,40 @@ public final class ServantFlightCombatService {
          return;
       }
       long now = entity.level().getGameTime();
+      // Launch physics owns the whole airborne beat, including gravity. Flight
+      // resumes after landing instead of erasing knockback with hover motion.
+      if (ServantCombatMotionService.state(entity) != ServantCombatMotionService.MotionState.NONE) {
+         entity.setNoGravity(false);
+         return;
+      }
       if (!isManagedFlight(entity, now)) {
          if (shouldForceGroundedGravity(entity, now)) {
             entity.setNoGravity(false);
          }
          ServantFlightHelper.clearAllAnchors(entity);
          entity.getPersistentData().remove(LAST_CONTROL_TICK);
+         entity.getPersistentData().remove(SAFETY_GROUND_Y);
+         entity.getPersistentData().remove(SAFETY_GROUND_UPDATE);
          return;
       }
 
       entity.setNoGravity(true);
       entity.fallDistance = 0.0F;
+      var flightData = entity.getPersistentData();
+      if (!flightData.contains(SAFETY_GROUND_Y) || now >= flightData.getLong(SAFETY_GROUND_UPDATE)) {
+         flightData.putDouble(SAFETY_GROUND_Y, ServantFlightHelper.groundY(entity));
+         flightData.putLong(SAFETY_GROUND_UPDATE, now + ServantDuelPacing.DECISION_INTERVAL_TICKS);
+      }
+      double safetyCeiling = flightData.getDouble(SAFETY_GROUND_Y) + 12.0;
       LivingEntity target = validTarget(entity);
       if (target == null) {
          stabilizeWithoutTarget(entity);
+         enforceCeiling(entity, safetyCeiling);
          return;
       }
 
       long disconnected = ServantCombatTempoService.disconnectedTicks(entity, now);
+      boolean ranged = ServantEngagementService.role(entity) == ServantEngagementService.CombatRole.RANGED;
       boolean recentlyControlled = now - entity.getPersistentData().getLong(LAST_CONTROL_TICK) <= 1L;
       boolean actionOwnsMovement = actionOwnsMovement(entity);
       Vec3 motion = entity.getDeltaMovement();
@@ -74,14 +112,14 @@ public final class ServantFlightCombatService {
          entity.getY(), desiredY, 0.12, 0.025,
          ServantFlightHelper.MAX_VERTICAL_SPEED_UP, ServantFlightHelper.MAX_VERTICAL_SPEED_DOWN);
       double vertical = safeVerticalVelocity(entity.getY(), desiredY, motion.y, desiredVertical,
-         disconnected, recentlyControlled && !entity.wasTacticalAiHandledThisTick());
+         ranged ? 0L : disconnected, recentlyControlled);
       Vec3 corrected = new Vec3(motion.x, vertical, motion.z);
 
       boolean canRedirect = !actionOwnsMovement && !entity.isPerformingAction()
          && !ServantCombatSystem.cannotAct(entity);
-      if (canRedirect && shouldForceContact(disconnected)) {
+      if (canRedirect && !ranged && shouldForceContact(disconnected)) {
          corrected = contactMotion(entity, target, corrected, desiredY, 0.62);
-      } else if (canRedirect && shouldDescend(disconnected) && !recentlyControlled
+      } else if (canRedirect && !ranged && shouldDescend(disconnected) && !recentlyControlled
          && corrected.horizontalDistanceSqr() < 0.018) {
          corrected = contactMotion(entity, target, corrected, desiredY, 0.34);
       }
@@ -89,11 +127,22 @@ public final class ServantFlightCombatService {
       corrected = capHorizontal(corrected, shouldForceContact(disconnected) ? 0.82 : 0.68);
       corrected = collisionLimited(entity, corrected);
       entity.setDeltaMovement(corrected);
+      enforceCeiling(entity, safetyCeiling);
       entity.hasImpulse = true;
    }
 
+   private static void enforceCeiling(ServantEntity entity, double ceiling) {
+      if (entity.getY() > ceiling) {
+         Vec3 current = entity.getDeltaMovement();
+         entity.setDeltaMovement(current.x, Math.min(current.y, -ServantFlightHelper.MAX_VERTICAL_SPEED_DOWN), current.z);
+         entity.hasImpulse = true;
+      }
+   }
+
    public static boolean forceMeleeApproach(ServantEntity entity, LivingEntity target, long now) {
-      if (!isManagedFlight(entity, now) || target == null || !target.isAlive()
+      if (!isManagedFlight(entity, now)
+         || ServantEngagementService.role(entity) == ServantEngagementService.CombatRole.RANGED
+         || target == null || !target.isAlive()
          || target.level() != entity.level() || ServantCombatSystem.cannotAct(entity)
          || entity.isPerformingAction() || actionOwnsMovement(entity)) {
          return false;

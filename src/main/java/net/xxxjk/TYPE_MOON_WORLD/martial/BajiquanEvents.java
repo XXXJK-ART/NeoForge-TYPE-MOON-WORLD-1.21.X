@@ -28,8 +28,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 @EventBusSubscriber(modid = "typemoonworld")
 public final class BajiquanEvents {
    private BajiquanEvents() {}
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          MartialHighJumpService.tick(player);

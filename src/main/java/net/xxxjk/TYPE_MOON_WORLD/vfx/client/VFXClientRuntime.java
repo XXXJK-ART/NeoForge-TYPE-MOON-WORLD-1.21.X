@@ -109,30 +109,9 @@ public final class VFXClientRuntime {
       return new Quaternionf().rotationTo(new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f((float)f.x, (float)f.y, (float)f.z));
    }
 
-   /** Gives legacy effects a restrained event preset while explicit JSON wins. */
+   /** Legacy JSON metadata never activates fullscreen processing. */
    private static List<VFXScreenEffectDefinition> screenEffectsFor(
       String effectId, VFXEffectDefinition definition) {
-      if (!definition.screenEffects().isEmpty()) return definition.screenEffects();
-      String id = effectId == null ? "" : effectId.toLowerCase(java.util.Locale.ROOT);
-      if (id.contains("timestop") || id.contains("time_stop")) {
-         return List.of(new VFXScreenEffectDefinition("timestop_border", 0.32F, 0.34F, 32.0F));
-      }
-      if (id.contains("rift") || id.contains("glass") || id.contains("imaginary_space_enter") || id.contains("imaginary_space_exit")) {
-         return List.of(new VFXScreenEffectDefinition("glass_break", 0.2F, 0.3F, 0.0F));
-      }
-      if (id.contains("teleport") || id.contains("summon") || id.contains("transfiguration") || id.contains("projection") || id.contains("phase")) {
-         return List.of(
-            new VFXScreenEffectDefinition("white_flash", 0.12F, 0.18F, 0.0F),
-            new VFXScreenEffectDefinition("chromatic_aberration", 0.05F, 0.24F, 0.0F)
-         );
-      }
-      if (id.contains("impact") || id.contains("explosion") || id.contains("shock") || id.contains("slam") || id.contains("burst")
-         || id.contains("beam") || id.contains("lightning") || id.contains("slash")) {
-         return List.of(
-            new VFXScreenEffectDefinition("white_flash", id.contains("beam") ? 0.06F : 0.1F, 0.16F, 0.0F),
-            new VFXScreenEffectDefinition("radial_blur", id.contains("beam") ? 0.05F : 0.08F, 0.24F, 0.0F)
-         );
-      }
       return List.of();
    }
 

@@ -424,10 +424,10 @@ public final class ArcaneMobilityService {
          return false;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = caster.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.player_mana + 1.0E-6 < perTick) {
+      if (vars.magicState().mana() + 1.0E-6 < perTick) {
          return false;
       }
-      vars.player_mana = Math.max(0.0, vars.player_mana - perTick);
+      vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - perTick));
       vars.syncMana(caster);
       return true;
    }
@@ -436,10 +436,10 @@ public final class ArcaneMobilityService {
       if (cost <= 1.0E-6) {
          return true;
       }
-      if (vars == null || vars.player_mana + 1.0E-6 < cost) {
+      if (vars == null || vars.magicState().mana() + 1.0E-6 < cost) {
          return false;
       }
-      vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+      vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - cost));
       if (caster != null) {
          vars.syncMana(caster);
       }

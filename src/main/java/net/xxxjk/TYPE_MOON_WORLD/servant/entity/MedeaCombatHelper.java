@@ -645,7 +645,7 @@ public final class MedeaCombatHelper {
          level.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), center.x, y, center.z, 14, 0.18, 0.22, 0.18, 0.04);
          level.sendParticles(ParticleTypes.END_ROD, center.x, y, center.z, 6, 0.16, 0.2, 0.16, 0.03);
       }
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.3, center.z, 2, 0.15, 0.15, 0.15, 0.0);
       level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 18, 0.45, 0.7, 0.45, 0.02);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 12, 0.3, 0.55, 0.3, 0.03);
       fractureTerrain(level, entity, center, 2.2, 4.8, 55.0F, 34);
@@ -683,7 +683,7 @@ public final class MedeaCombatHelper {
          }
          Vec3 center = victim.position().add(0.0, victim.getBbHeight() * 0.5, 0.0);
          level.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
-         level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
          victim.invulnerableTime = 0;
          victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
          victim.invulnerableTime = 0;
@@ -969,7 +969,7 @@ public final class MedeaCombatHelper {
       Vec3 direction = getAimDirection(entity, target);
       Vec3 spawnPos = entity.getEyePosition().add(direction.scale(0.95));
       spawnMagicCircle(level, spawnPos.subtract(direction.scale(0.75)), direction, 1.2F);
-      level.sendParticles(ParticleTypes.FLASH, spawnPos.x, spawnPos.y, spawnPos.z, 2, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, spawnPos.x, spawnPos.y, spawnPos.z, 2, 0.08, 0.08, 0.08, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, spawnPos.x, spawnPos.y, spawnPos.z, 24, 0.35, 0.35, 0.35, 0.03);
       level.sendParticles(CIRCLE_PRIMARY, spawnPos.x, spawnPos.y, spawnPos.z, 12, 0.18, 0.18, 0.18, 0.0);
       spawnBoltProjectile(level, entity, spawnPos, direction, MedeaMagicBoltEntity.Mode.SUPER_BOLT, MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 50.0F), 1.45F, 0.0F);
@@ -1201,7 +1201,7 @@ public final class MedeaCombatHelper {
          level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 10, 0.14, 0.14, 0.14, 0.03);
          level.sendParticles(CIRCLE_PRIMARY, start.x, start.y, start.z, 4, 0.08, 0.08, 0.08, 0.0);
       }
-      level.sendParticles(ParticleTypes.FLASH, end.x, end.y, end.z, 1, 0.1, 0.1, 0.1, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, end.x, end.y, end.z, 1, 0.1, 0.1, 0.1, 0.0);
       fractureTerrain(level, entity, end, 1.75, 2.0, 50.0F, 24);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.85F, 1.55F);
       queueStaffClear(entity, 16);
@@ -1852,7 +1852,7 @@ public final class MedeaCombatHelper {
          if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
             continue;
          }
-         if (level.removeBlock(pos, false)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
             broken++;
          }
       }
@@ -1890,6 +1890,7 @@ public final class MedeaCombatHelper {
          double angle = count <= 1 ? 0.0 : (Math.PI * 2.0 * i) / count;
          double radius = i == 0 ? 0.0 : 1.4;
          lightning.moveTo(center.x + Math.cos(angle) * radius, center.y, center.z + Math.sin(angle) * radius);
+         lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
          lightning.setVisualOnly(i != 0);
          level.addFreshEntity(lightning);
       }

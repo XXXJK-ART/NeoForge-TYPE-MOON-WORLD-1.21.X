@@ -34,10 +34,10 @@ public final class SpiritronCannonService {
          return false;
       }
       if (consumeMana) {
-         if (vars.player_mana < MANA_COST) {
+         if (vars.magicState().mana() < MANA_COST) {
             return false;
          }
-         vars.player_mana = Math.max(0.0, vars.player_mana - MANA_COST);
+         vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - MANA_COST));
       }
       Vec3 direction = aimDirection(caster, target);
       faceCasterToDirection(caster, direction);

@@ -45,6 +45,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicHealing;
 import net.xxxjk.TYPE_MOON_WORLD.magic.basic.MagicSuggestion;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.other.MagicGravityEffectHandler;
@@ -143,6 +144,7 @@ public final class GemEngravingService {
                      );
                      player.level().playSound(null, player.blockPosition(), SoundEvents.UI_STONECUTTER_TAKE_RESULT, SoundSource.PLAYERS, 0.8F, 1.2F);
                   } else {
+                     MagecraftRiskService.onGemEngravingFailure(player, 1);
                      offhandStack.shrink(1);
                      player.displayClientMessage(Component.translatable("message.typemoonworld.gem.engrave.failed"), true);
                      player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 0.8F, 1.0F);
@@ -174,6 +176,9 @@ public final class GemEngravingService {
                yield MagicModularRegistry.execute(new MagicExecutionContext(player, vars, magicId, false)).success();
             }
          };
+         double engravedCost = getEngravedManaCost(gemStack);
+         MagecraftRiskService.recordCast(player, magicId, engravedCost, success);
+         if (!success) MagecraftRiskService.onMagicFailure(player, magicId);
          if (!success) {
             return GemEngravingService.CastResult.FAILED;
          } else {

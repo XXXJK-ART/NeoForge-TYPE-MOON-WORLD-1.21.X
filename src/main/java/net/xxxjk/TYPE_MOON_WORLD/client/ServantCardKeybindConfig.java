@@ -35,7 +35,8 @@ public final class ServantCardKeybindConfig {
          return InputConstants.UNKNOWN;
       }
       Profile profile = profile(servantId);
-      return profile.custom ? profile.slotKeys[slot] : TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].getKey();
+      Key key = profile.custom ? profile.slotKeys[slot] : TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[slot].getKey();
+      return isReservedKey(key) ? InputConstants.UNKNOWN : key;
    }
 
    public static void setKey(String servantId, int slot, Key key) {
@@ -49,6 +50,11 @@ public final class ServantCardKeybindConfig {
          return;
       }
       Profile profile = profile(servantId);
+      if (!profile.custom) {
+         for (int other = 0; other < SLOT_COUNT; other++) {
+            profile.slotKeys[other] = TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_KEYS[other].getKey();
+         }
+      }
       profile.custom = true;
       if (!key.equals(InputConstants.UNKNOWN)) {
          for (int other = 0; other < SLOT_COUNT; other++) {
@@ -97,13 +103,19 @@ public final class ServantCardKeybindConfig {
    }
 
    public static boolean isReservedKey(Key key) {
-      if (key == null || key.getType() != Type.KEYSYM) {
+      if (key == null) {
          return false;
       }
-      return key.getValue() == GLFW.GLFW_KEY_R
-         || key.getValue() == GLFW.GLFW_KEY_O
-         || key.getValue() == GLFW.GLFW_KEY_LEFT_ALT
-         || key.getValue() == GLFW.GLFW_KEY_RIGHT_ALT;
+      if (key.equals(InputConstants.UNKNOWN)) return false;
+      return key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_KEYBINDS.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_SKILL_SELECT.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_GUARD.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_DODGE.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_FLIGHT.getKey())
+         || key.equals(TypeMoonWorldModKeyMappings.SERVANT_CARD_JUMP.getKey())
+         || key.equals(com.captain.servant.client.SpiritualizationClient.SPIRITUALIZATION_KEY.getKey())
+         || key.equals(com.captain.servant.client.TelepathyClient.TELEPATHY_KEY.getKey());
    }
 
    public static String keyName(Key key) {
@@ -133,11 +145,6 @@ public final class ServantCardKeybindConfig {
          JsonArray rawKeys = json.getAsJsonArray("slot_keys");
          boolean legacyDefaults = readKeys(rawKeys, profile.slotKeys);
          readBooleans(json.getAsJsonArray("hold_slots"), profile.holdSlots);
-         for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            if (isReservedKey(profile.slotKeys[slot])) {
-               profile.slotKeys[slot] = InputConstants.UNKNOWN;
-            }
-         }
          profile.custom = !legacyDefaults;
       } catch (IOException | RuntimeException ignored) {
       }

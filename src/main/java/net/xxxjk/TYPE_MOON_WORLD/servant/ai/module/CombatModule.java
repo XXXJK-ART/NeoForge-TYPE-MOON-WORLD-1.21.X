@@ -154,7 +154,7 @@ public final class CombatModule implements ServantAiModule {
          || state.getExplosionResistance(level, pos, null) >= 1200) {
          return false;
       }
-      if (!level.removeBlock(pos, false)) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
          return false;
       }
       return true;
@@ -352,6 +352,12 @@ public final class CombatModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.ordinary(entity, sharedTarget)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.skillDecisionAllowed(entity)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.nativeNpActive(entity)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(entity, sharedTarget, context.gameTick());
+         return;
+      }
       if (sharedTarget != null && sharedTarget.isAlive()
          && ServantCombatTempoService.isMeleeOverride(entity)
          && !(entity instanceof ParacelsusEntity)
@@ -480,7 +486,6 @@ public final class CombatModule implements ServantAiModule {
                }
             }
             if (phase >= 3
-               && paracelsus.getHealth() <= paracelsus.getMaxHealth() / 3.0F
                && !ParacelsusServantSkills.isNoblePhantasmChanting(paracelsus, context.gameTick())
                && paracelsus.getCurrentMp() >= 150.0
                && ParacelsusServantSkills.combatActionReady(paracelsus, context.gameTick())
@@ -2311,6 +2316,8 @@ public final class CombatModule implements ServantAiModule {
          return;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "cu_gae_bolg", 600, ticks -> entity.getPersistentData().putLong(CuChulainnCombatHelper.LAST_GAE_BOLG_TICK_TAG, entity.level().getGameTime() - 600 + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       CuChulainnCombatHelper.markSingleGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
@@ -2318,6 +2325,7 @@ public final class CombatModule implements ServantAiModule {
       Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
          releaseSingleGaeBolg(entity, target, meleeMode, fallbackAim);
+      });
       });
    }
 
@@ -2331,6 +2339,8 @@ public final class CombatModule implements ServantAiModule {
       }
       float armyDamage = 500.0F * (float)resource.powerScale();
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "cu_gae_bolg", 1200, ticks -> entity.getPersistentData().putLong(CuChulainnCombatHelper.LAST_GAE_BOLG_ARMY_TICK_TAG, entity.level().getGameTime() - 1200 + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
@@ -2342,6 +2352,7 @@ public final class CombatModule implements ServantAiModule {
       Vec3 fallbackAim = target.position().add(0.0, target.getBbHeight() * 0.3, 0.0);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, () -> {
          releaseArmyGaeBolg(entity, target, fallbackAim, armyDamage);
+      });
       });
    }
 

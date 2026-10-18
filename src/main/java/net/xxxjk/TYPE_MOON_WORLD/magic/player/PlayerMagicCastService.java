@@ -7,9 +7,10 @@ import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
-import com.example.typemoonaddon.magic.ManaFurnaceService;
+import net.xxxjk.typemoonworld.api.AddonManaSource;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.magic.registry.MagicModularRegistry;
@@ -108,21 +109,33 @@ public final class PlayerMagicCastService {
          displayClientMessage(entity, "message.typemoonworld.magic.circuit_not_open");
          return;
       }
+      if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+         && MagecraftRiskService.isDisrupted(serverPlayer)) {
+         serverPlayer.displayClientMessage(Component.literal("魔术回路紊乱中，暂时无法稳定施法。"), true);
+         return;
+      }
        // Stopping a running jewel machine gun is a toggle action and must not be
        // blocked by the cooldown applied between its bursts.
-       boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
+      boolean stoppingMachineGun = "jewel_machine_gun".equals(entry.magicId)
           && net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun.isActive(entity);
-       if (vars.magic_cooldown > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
+       if (vars.magicState().cooldown() > 0.0 && !isCooldownFreeElementalArray(entry.magicId) && !stoppingMachineGun) return;
        boolean infiniteMana = entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer
-          && ManaFurnaceService.hasInfiniteSupply(serverPlayer);
+          && AddonManaSource.hasInfiniteSupply(serverPlayer);
 
-       var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
+      var dynamicDefinition = MagicDefinitionRegistry.get(entry.magicId);
+      if (dynamicDefinition != null && !dynamicDefinition.playerAllowed()) {
+         displayClientMessage(entity, "message.typemoonworld.magic.not_learned");
+         return;
+      }
        if (!MagicDefinitionRegistry.meetsAttributeRequirements(entity instanceof LivingEntity living ? living : null, entry.magicId)) {
           displayClientMessage(entity, "message.typemoonworld.magic.missing_attribute");
           return;
        }
        double dynamicCost = dynamicDefinition != null ? adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost()) : 0.0;
-       if (dynamicDefinition != null && !infiniteMana && vars.player_mana < dynamicCost) {
+       if (dynamicDefinition != null && !infiniteMana && vars.magicState().mana() < dynamicCost) {
+          if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+             MagecraftRiskService.onInsufficientMana(serverPlayer);
+          }
           displayClientMessage(entity, "message.typemoonworld.magic.insufficient_mana");
           return;
        }
@@ -166,7 +179,10 @@ public final class PlayerMagicCastService {
          NeoForge.EVENT_BUS.post(new MagicCastEvent.Post(publicMagicId, publicContext,
             result.handled() ? new ExecutionResult(true, result.success(), result.manaCost(), result.cooldownTicks()) : ExecutionResult.NOT_HANDLED));
       }
-      if (!result.handled() || !result.success()) {
+      if (!result.accepted()) {
+         if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer && result.handled()) {
+            MagecraftRiskService.onMagicFailure(serverPlayer, entry.magicId);
+         }
          if (fullSyncNeeded) {
             vars.syncPlayerVariables(entity);
          }
@@ -174,16 +190,21 @@ public final class PlayerMagicCastService {
          return;
       }
 
-       if (!infiniteMana && result.manaCost() > 0.0) {
+      if (!infiniteMana && result.manaCost() > 0.0) {
           double cost = adjustedWheelCost(entity, vars, entry, result.manaCost());
-          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+          vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - cost));
        } else if (!infiniteMana && dynamicDefinition != null && dynamicDefinition.manaCost() > 0.0) {
           double cost = adjustedWheelCost(entity, vars, entry, dynamicDefinition.manaCost());
-          vars.player_mana = Math.max(0.0, vars.player_mana - cost);
+          vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - cost));
       }
 
-      addAddonProficiency(vars, entry.magicId);
-      applyPostCastState(entity, vars, entry.magicId);
+      if (!result.stopsContinuous()) {
+         addAddonProficiency(vars, entry.magicId);
+         applyPostCastState(entity, vars, entry.magicId, result);
+      }
+      if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+         MagecraftRiskService.recordCast(serverPlayer, entry.magicId, result.manaCost(), result.success());
+      }
       fullSyncNeeded |= vars.recordCrestCastPractice(entity, entry.magicId);
       if (fullSyncNeeded) {
          vars.syncPlayerVariables(entity);
@@ -193,8 +214,8 @@ public final class PlayerMagicCastService {
       }
    }
 
-   private static void applyPostCastState(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId) {
-      if (isCooldownFreeElementalArray(magicId)) {
+   private static void applyPostCastState(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, String magicId, MagicExecutionResult result) {
+      if (isCooldownFreeElementalArray(magicId) || !result.shouldApplyCooldown()) {
          return;
       }
       double cooldown = DEFAULT_COOLDOWN;
@@ -217,14 +238,18 @@ public final class PlayerMagicCastService {
       if (entity instanceof LivingEntity living) {
          cooldown = MercurySwordMagicAmplifier.amplifyCooldown(living, cooldown);
       }
-      vars.magic_cooldown = Math.max(vars.magic_cooldown, cooldown);
+      vars.magicState().setCooldown(Math.max(vars.magicState().cooldown(), cooldown));
    }
 
    private static double adjustedWheelCost(Entity entity, TypeMoonWorldModVariables.PlayerVariables vars, TypeMoonWorldModVariables.PlayerVariables.WheelSlotEntry entry, double cost) {
       if (cost <= 0.0 || !(entity instanceof Player) || entry == null || "crest".equals(entry.sourceType)) {
          return cost;
       }
-      return Math.max(0.0, cost * AdvancedPassiveService.manaMultiplier(vars) * MercurySwordMagicAmplifier.manaCostMultiplier((LivingEntity)entity));
+      double adjusted = cost * AdvancedPassiveService.manaMultiplier(vars) * MercurySwordMagicAmplifier.manaCostMultiplier((LivingEntity)entity);
+      if (entity instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+         adjusted *= MagecraftRiskService.castingEfficiency(serverPlayer);
+      }
+      return Math.max(0.0, adjusted);
    }
 
    private static boolean isLegacyJewelMagic(String magicId) {

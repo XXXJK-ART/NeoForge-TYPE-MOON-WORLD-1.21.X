@@ -170,7 +170,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
          }
       }
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 3, 0.35, 0.35, 0.35, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 4, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 4, 0.08, 0.08, 0.08, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 120, 2.3, 1.8, 2.3, 0.2);
       level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 80, 2.1, 1.4, 2.1, 0.16);
       level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.2F, 0.58F);

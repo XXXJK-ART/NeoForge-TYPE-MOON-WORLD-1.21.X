@@ -1,4 +1,304 @@
-{"servant":"oda_nobunaga","actions":[
-  {"id":"typemoonworld:nobunaga/matchlock_volley","tags":["projectile","area","interrupt"],"minimum_range":5,"maximum_range":46,"mana_cost":10,"stamina_cost":4,"timing":{"windup":7,"active":10,"recovery":7},"threat":{"shape":"cone","radius":6,"length":46,"danger":3,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":6},"terrain_impact":"small"},
-  {"id":"typemoonworld:nobunaga/three_line_formation","tags":["noble_phantasm","projectile","area"],"minimum_range":8,"maximum_range":64,"mana_cost":150,"stamina_cost":14,"timing":{"windup":38,"active":32,"recovery":24},"threat":{"shape":"cone","radius":12,"length":64,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":12},"terrain_impact":"heavy"}
-]}
+{
+  "servant": "oda_nobunaga",
+  "actions": [
+    {
+      "id": "typemoonworld:nobunaga/oda_hasebe_short_thrust",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4.5,
+      "mana_cost": 8,
+      "cooldown_ticks": 40,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_floating_refill",
+      "tags": [
+        "projectile"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 20,
+      "cooldown_ticks": 200,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_three_line",
+      "tags": [
+        "projectile"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 30,
+      "cooldown_ticks": 200,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_encircle_matchlocks",
+      "tags": [
+        "projectile"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 40,
+      "cooldown_ticks": 160,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_charged_matchlock",
+      "tags": [
+        "projectile"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 50,
+      "cooldown_ticks": 300,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 40,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_crossfire_net",
+      "tags": [
+        "projectile"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 35,
+      "cooldown_ticks": 240,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_scorched_earth",
+      "tags": [
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 40,
+      "cooldown_ticks": 400,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 7,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/oda_hasebe_breakthrough",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 25,
+      "cooldown_ticks": 150,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/maou",
+      "tags": [
+        "heal"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 45,
+      "cooldown_ticks": 500,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/three_thousand",
+      "tags": [
+        "noble_phantasm",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 95,
+      "cooldown_ticks": 3600,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 38,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 5,
+        "length": 30,
+        "danger": 5,
+        "blockable": false,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:nobunaga/hajun",
+      "tags": [
+        "noble_phantasm",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 30,
+      "mana_cost": 130,
+      "cooldown_ticks": 3600,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 38,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5,
+        "length": 30,
+        "danger": 5,
+        "blockable": false,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    }
+  ]
+}

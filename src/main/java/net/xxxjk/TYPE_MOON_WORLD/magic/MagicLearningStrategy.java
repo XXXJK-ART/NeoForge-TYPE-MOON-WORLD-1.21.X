@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.talent.TalentService;
-import com.example.typemoonaddon.TypeMoonAddon;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.typemoonworld.api.MagicDefinitionData;
 
 /** Central rules for magic complexity and acquisition. Values are intentionally stable for saves. */
@@ -55,25 +55,26 @@ public final class MagicLearningStrategy {
       Map.entry("stigma", new Rule(60, false, true, true, true, false, false)),
       Map.entry("iron_armor_action", new Rule(65, false, true, true, true, false, false)),
       Map.entry("cremation_rite", new Rule(70, false, true, true, true, false, false))
+      ,Map.entry("sanctification", new Rule(60, false, true, true, true, false, false))
       ,Map.entry("mana_burst", new Rule(65, false, true, false, false, false, false))
       ,Map.entry("reinforcement_self", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_other", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("reinforcement_item", new Rule(25, true, true, true, true, false, false))
       ,Map.entry("jewel_magic_shoot", new Rule(35, true, true, true, true, false, false))
       ,Map.entry("jewel_magic_release", new Rule(50, true, true, true, true, false, false))
-      ,Map.entry("jewel_random_shoot", new Rule(40, true, true, true, true, false, false))
+      ,Map.entry("jewel_random_shoot", new Rule(40, false, false, false, false, false, false))
       ,Map.entry("jewel_machine_gun", new Rule(65, true, true, true, true, false, false))
       ,Map.entry("gandr_machine_gun", new Rule(70, true, false, false, false, false, false))
-      ,Map.entry("ruby_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("sapphire_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("emerald_use", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("topaz_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("cyan_throw", new Rule(30, true, false, false, false, false, false))
-      ,Map.entry("ruby_flame_sword", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("sapphire_winter_frost", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("emerald_winter_river", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("topaz_reinforcement", new Rule(55, true, false, false, false, false, false))
-      ,Map.entry("cyan_wind", new Rule(55, true, false, false, false, false, false))
+      ,Map.entry("ruby_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("sapphire_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("emerald_use", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("topaz_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("cyan_throw", new Rule(30, false, false, false, false, false, false))
+      ,Map.entry("ruby_flame_sword", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("sapphire_winter_frost", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("emerald_winter_river", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("topaz_reinforcement", new Rule(55, false, false, false, false, false, false))
+      ,Map.entry("cyan_wind", new Rule(55, false, false, false, false, false, false))
       ,Map.entry("absorption", new Rule(70, true, true, true, true, false, false))
       ,Map.entry("airflow_blade", new Rule(20, true, true, true, true, false, false))
       ,Map.entry("andrasias", new Rule(82, true, true, true, true, false, false))
@@ -116,7 +117,7 @@ public final class MagicLearningStrategy {
       Map.entry("gandr_machine_gun", "gander")
    );
 
-   /** Only these two jewel entries are actual magic-knowledge entries. */
+   /** Formal jewel knowledge entries shown in the magic knowledge page. */
    private static final Set<String> JEWEL_KNOWLEDGE_IDS = Set.of(
       "jewel_magic_shoot", "jewel_magic_release", "jewel_machine_gun"
    );
@@ -166,10 +167,19 @@ public final class MagicLearningStrategy {
       if ("magic_analysis".equals(id)) return 200 + (int)Math.round((100.0 - Math.max(0.0, Math.min(100.0, proficiency))) * 4.0);
       return 200 + complexity(id) * 4;
    }
-   public static boolean canAnalyze(String id) { return !TalentService.isTalent(id) && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id)); }
-   public static boolean canLearnFromMaterial(String id) { return !TalentService.isTalent(id) && rule(id).material(); }
-   public static boolean canResearch(String id) { return !TalentService.isTalent(id) && rule(id).research(); }
-   public static boolean canCopy(String id) { return !TalentService.isTalent(id) && rule(id).copy(); }
+   public static boolean canAnalyze(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "analysis")
+         && rule(id).analysis() && (RULES.containsKey(id) || DEFAULT_ANALYZABLE.contains(id));
+   }
+   public static boolean canLearnFromMaterial(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "material") && rule(id).material();
+   }
+   public static boolean canResearch(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "research") && rule(id).research();
+   }
+   public static boolean canCopy(String id) {
+      return !isRemovedMagic(id) && !TalentService.isTalent(id) && playerAllowed(id) && policyAllows(id, "copy") && rule(id).copy();
+   }
    public static boolean requiresSword(String id) { return rule(id).sword(); }
    public static boolean requiresImaginaryAttribute(String id) {
       return "absorption".equals(id)
@@ -179,6 +189,23 @@ public final class MagicLearningStrategy {
          || "storage".equals(id);
    }
    public static boolean isDivine(String id) { return rule(id).divine() || complexity(id) >= 90; }
+
+   private static boolean playerAllowed(String id) {
+      return MagicDefinitionRegistry.isPlayerAllowed(id);
+   }
+
+   private static boolean policyAllows(String id, String operation) {
+      String policy = MagicDefinitionRegistry.copyPolicy(id);
+      if (policy == null || policy.isBlank() || "copyable".equals(policy) || "researchable".equals(policy)) return true;
+      if ("knowledge_only".equals(policy) || "none".equals(policy)) return false;
+      return switch (operation) {
+         case "analysis" -> policy.contains("analys");
+         case "material" -> policy.contains("material") || policy.contains("learn");
+         case "research" -> policy.contains("research");
+         case "copy" -> policy.contains("copy");
+         default -> true;
+      };
+   }
    public static boolean learningRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       if (vars == null) return false;
       id = normalizeDisplayId(id);
@@ -189,6 +216,7 @@ public final class MagicLearningStrategy {
          ? null
          : definition.prerequisiteMagic().getPath();
       double prerequisiteProficiency = definition == null ? 0.0D : definition.prerequisiteProficiency();
+      boolean canonRequirementsOk = canonRequirementsMet(vars, definition);
       if (isBoundaryMagic(id)) {
          prerequisiteId = "boundary_art";
          prerequisiteProficiency = 0.0D;
@@ -198,8 +226,25 @@ public final class MagicLearningStrategy {
             && MagicProficiencyService.get(vars, prerequisiteId) >= prerequisiteProficiency;
       return theologyPrerequisiteOk
          && prerequisiteMagicOk
+         && canonRequirementsOk
+         && (definition == null || definition.playerAllowed())
          && (!requiresSword(id) || vars.player_magic_attributes_sword)
          && (!requiresImaginaryAttribute(id) || vars.player_magic_attributes_imaginary_number);
+   }
+
+   private static boolean canonRequirementsMet(TypeMoonWorldModVariables.PlayerVariables vars, MagicDefinitionData definition) {
+      if (vars == null || definition == null) return true;
+      String origin = definition.requiredOrigin();
+      String foundation = definition.requiredFoundation();
+      String catalyst = definition.requiredCatalyst();
+      if ("sword".equals(origin) && !vars.player_magic_attributes_sword) return false;
+      if ("sword".equals(catalyst) && !vars.player_magic_attributes_sword) return false;
+      if ("unlimited_blade_works".equals(foundation)
+         && !(vars.has_unlimited_blade_works || isLearned(vars, "unlimited_blade_works"))) return false;
+      if ("projection".equals(foundation)
+         && !"unlimited_blade_works".equals(definition.id().getPath())
+         && !isLearned(vars, "projection")) return false;
+      return true;
    }
    public static boolean materialAllowed(TypeMoonWorldModVariables.PlayerVariables vars, String id) {
       return canLearnFromMaterial(id) && learningRequirementsMet(vars, id);
@@ -232,6 +277,7 @@ public final class MagicLearningStrategy {
          case "black_key_making" -> "magic_page_black_key_making";
          case "iron_armor_action" -> "magic_page_iron_armor_action";
          case "cremation_rite" -> "magic_page_cremation_rite";
+         case "sanctification" -> "magic_page_sanctification";
          case "gravity_magic" -> "magic_scroll_gravity_broken";
          case "gander" -> "magic_scroll_gander_broken";
          case "broken_phantasm" -> "magic_scroll_broken_phantasm_broken";
@@ -254,7 +300,7 @@ public final class MagicLearningStrategy {
       ResourceLocation parsed = ResourceLocation.tryParse(normalized);
       if (parsed == null) return normalized;
       String namespace = parsed.getNamespace();
-      if (net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.MOD_ID.equals(namespace) || TypeMoonAddon.MOD_ID.equals(namespace)) {
+      if (TYPE_MOON_WORLD.MOD_ID.equals(namespace)) {
          return parsed.getPath();
       }
       return normalized;
@@ -266,8 +312,11 @@ public final class MagicLearningStrategy {
 
    public static boolean isRemovedMagic(String id) {
       if (id == null || id.isBlank()) return false;
+      String path = knowledgePath(id);
       String normalized = normalizeDisplayId(id);
-      return "black_key_fire_engraving".equals(normalized)
+      return JEWEL_RUNTIME_ACTION_IDS.contains(path)
+         || JEWEL_RUNTIME_ACTION_IDS.contains(normalized)
+         || "black_key_fire_engraving".equals(normalized)
          || "typemoonworld:black_key_fire_engraving".equals(id)
          || "typemoonaddon:black_key_fire_engraving".equals(id);
    }

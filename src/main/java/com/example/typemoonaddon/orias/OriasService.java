@@ -119,7 +119,7 @@ public final class OriasService {
 
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double currentMana = finiteNonNegative(vars.player_mana);
+        double currentMana = vars.magicState().mana();
         double injected = Math.min(MANA_PER_TICK, currentMana);
         if (injected <= 0.0D) {
             CHARGES.remove(player.getUUID());
@@ -129,7 +129,7 @@ public final class OriasService {
         }
 
         double previousChargedMana = state.chargedMana;
-        vars.player_mana = Math.max(0.0D, currentMana - injected);
+            vars.magicState().setMana(currentMana - injected);
         state.chargedMana = Math.min(MAX_CHARGE_MANA, state.chargedMana + injected);
         state.chargedTicks++;
 
@@ -138,7 +138,7 @@ public final class OriasService {
             showMaxChargeSubtitle(player);
         }
 
-        boolean exhausted = injected < MANA_PER_TICK || vars.player_mana <= 0.0D;
+        boolean exhausted = injected < MANA_PER_TICK || vars.magicState().mana() <= 0.0D;
         if (state.chargedTicks % MANA_SYNC_INTERVAL_TICKS == 0
                 || state.chargedTicks >= MAX_CHARGE_TICKS
                 || exhausted) {
@@ -485,7 +485,7 @@ public final class OriasService {
         PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
         return vars.is_magus
                 && vars.is_magic_circuit_open
-                && vars.magic_cooldown <= 0.0D
+                && vars.magicState().cooldown() <= 0.0D
                 && PlayerMagicSelectionService.isCurrentSelection(vars, OriasMagic.MAGIC_ID);
     }
 
@@ -649,10 +649,10 @@ public final class OriasService {
         }
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double current = finiteNonNegative(vars.player_mana);
-        double maximum = finiteNonNegative(vars.player_max_mana);
+        double current = vars.magicState().mana();
+        double maximum = vars.magicState().maxMana();
         double refunded = Math.min(amount, Math.max(0.0D, maximum - current));
-        vars.player_mana = Math.min(maximum, current + refunded);
+        vars.magicState().setMana(Math.min(maximum, current + refunded));
         vars.syncMana(player);
         return refunded;
     }

@@ -22,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
 
 public final class ManaFurnaceBlock extends BaseEntityBlock {
+    private static final String ACTION_COOLDOWN = "TypeMoonManaFurnaceActionCooldown";
     public static final MapCodec<ManaFurnaceBlock> CODEC = simpleCodec(ManaFurnaceBlock::new);
 
     public ManaFurnaceBlock(Properties properties) {
@@ -47,6 +48,10 @@ public final class ManaFurnaceBlock extends BaseEntityBlock {
         if (level.isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.SUCCESS;
         }
+        long now = level.getGameTime();
+        if (serverPlayer.getPersistentData().getLong(ACTION_COOLDOWN) > now) {
+            return InteractionResult.CONSUME;
+        }
         if (serverPlayer.isShiftKeyDown()) {
             if (furnace.isOwner(serverPlayer)) {
                 if (furnace.hasPendingAuthorization()) {
@@ -59,6 +64,7 @@ public final class ManaFurnaceBlock extends BaseEntityBlock {
             } else {
                 furnace.requestAuthorization(serverPlayer);
             }
+            serverPlayer.getPersistentData().putLong(ACTION_COOLDOWN, now + 10L);
         } else {
             serverPlayer.displayClientMessage(Component.translatable(
                     furnace.isBound()

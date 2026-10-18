@@ -9,6 +9,24 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModSounds {
    public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(Registries.SOUND_EVENT, "typemoonworld");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_ODA_HAJUN = register("np_chant_oda_hajun");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_MURAMASA_SUMMON = register("np_chant_muramasa_summon");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_ARTORIA_EXCALIBUR = register("np_chant_artoria_excalibur");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_GILGAMESH_EA = register("np_chant_gilgamesh_ea");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_CU_GAE_BOLG = register("np_chant_cu_gae_bolg");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_GAWAIN_GALLATIN = register("np_chant_gawain_gallatin");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_MURAMASA_TSUMUKARI = register("np_chant_muramasa_tsumukari");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_MEDUSA_BELLEROPHON = register("np_chant_medusa_bellerophon");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_PARACELSUS_ELEMENTAL_SWORD = register("np_chant_paracelsus_elemental_sword");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_JEANNE_ALTER_NP = register("np_chant_jeanne_alter_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_NIGHTINGALE_PLEDGE = register("np_chant_nightingale_pledge");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_OKITA_MUMYOUDAN_ZUKI = register("np_chant_okita_mumyoudan_zuki");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_LI_SHUWEN_WU_ER_DA = register("np_chant_li_shuwen_wu_er_da");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_CURSED_ARM_HASSAN_ZABANIYA = register("np_chant_cursed_arm_hassan_zabaniya");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_BAOBHAN_SITH_FAILNAUGHT = register("np_chant_baobhan_sith_failnaught");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_ZHAO_YUN_CHANGBANPO = register("np_chant_zhao_yun_changbanpo");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_ODA_THREE_THOUSAND = register("np_chant_oda_three_thousand");
+   public static final DeferredHolder<SoundEvent, SoundEvent> NP_CHANT_LANCELOT_ARONDIGHT = register("np_chant_lancelot_arondight");
    public static final DeferredHolder<SoundEvent, SoundEvent> CYM_GEM_BIUBIUBIU = register("cym_gem_biubiubiu");
    public static final DeferredHolder<SoundEvent, SoundEvent> CYQ_GEM_SHOOT_STAR = register("cyq_gem_shoot_star");
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_ATTACK = register("sasaki_kojiro_voice_attack");
@@ -85,6 +103,7 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR_RELEASE = register("artoria_voice_excalibur_release");
    public static final DeferredHolder<SoundEvent, SoundEvent> ARTORIA_VOICE_EXCALIBUR = register("artoria_voice_excalibur");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_ATTACK = register("oda_nobunaga_voice_attack");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_SKILL = register("oda_nobunaga_voice_skill");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_FAIL = register("oda_nobunaga_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_VICTORY = register("oda_nobunaga_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> ODA_NOBUNAGA_VOICE_NP = register("oda_nobunaga_voice_np");

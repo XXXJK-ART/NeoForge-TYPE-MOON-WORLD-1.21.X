@@ -2,7 +2,6 @@ package net.xxxjk.TYPE_MOON_WORLD.vfx;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
@@ -60,7 +59,7 @@ class VFXMathAndSchemaTest {
    }
 
    @Test
-   void legacyImpactPresetIsAvailableThroughRuntimeDefaults() throws Exception {
+   void legacyCombatEffectsDoNotAddScreenWideFlashes() throws Exception {
       Method defaults = net.xxxjk.TYPE_MOON_WORLD.vfx.client.VFXClientRuntime.class.getDeclaredMethod(
          "screenEffectsFor", String.class, net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEffectDefinition.class);
       defaults.setAccessible(true);
@@ -76,8 +75,21 @@ class VFXMathAndSchemaTest {
             null, ResourceLocation.fromNamespaceAndPath("typemoonworld", "beam_clash_impact"), json);
          @SuppressWarnings("unchecked")
          var effects = (java.util.List<net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXScreenEffectDefinition>)defaults.invoke(null, "beam_clash_impact", definition);
-         assertNotEquals(0, effects.size());
-         assertEquals("white_flash", effects.get(0).type());
+         assertTrue(effects.isEmpty());
+
+         for (String id : new String[]{"player_projection", "time_stop", "timestop", "glass_rift", "imaginary_space_enter"}) {
+            @SuppressWarnings("unchecked")
+            var transitionEffects = (java.util.List<net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXScreenEffectDefinition>)defaults.invoke(null, id, definition);
+            assertTrue(transitionEffects.isEmpty(), id);
+         }
+
+         json.add("screen_effects", new Gson().fromJson(
+            "[{\"type\":\"vignette\",\"intensity\":1.0,\"duration\":0.2},{\"type\":\"white_flash\",\"intensity\":1.0,\"duration\":0.5}]",
+            com.google.gson.JsonArray.class));
+         var explicit = (net.xxxjk.TYPE_MOON_WORLD.vfx.data.VFXEffectDefinition)parseEffect.invoke(
+            null, ResourceLocation.fromNamespaceAndPath("typemoonworld", "explicit_screen_effects"), json);
+         assertEquals(2, explicit.screenEffects().size(), "legacy pack metadata must still parse");
+         assertTrue(((java.util.List<?>)defaults.invoke(null, "explicit_screen_effects", explicit)).isEmpty());
       }
    }
 
@@ -100,7 +112,7 @@ class VFXMathAndSchemaTest {
             assertTrue(definition.emitters().stream().allMatch(emitter -> !"vanilla".equals(emitter.material().shader())), id);
             parsed++;
          }
-         assertEquals(181L, parsed);
+         assertEquals(185L, parsed);
       }
    }
 }

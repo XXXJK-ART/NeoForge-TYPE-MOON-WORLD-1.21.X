@@ -80,6 +80,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private boolean autoReleaseAtFull;
    private boolean beamVisualStarted;
    private boolean duelFinale;
+   private boolean castStarted;
    private int stageTicks;
    private float clashDamageScale = 1.0F;
    private Vec3 lastDamageDirection;
@@ -142,6 +143,14 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          cancelNpcEa(level, owner);
          return;
       }
+      if (!castStarted) {
+         castStarted = true;
+         if (!(owner instanceof GilgameshEntity) && !drainMana(owner, 250.0)) { discard(); return; }
+         if (!(owner instanceof GilgameshEntity) || net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.voiceEnd(owner) == 0)
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(owner, "gilgamesh_ea", 1200, ticks -> applyCooldown(owner, ticks), () -> { clearNpcEquipment(owner); discard(); });
+      }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancelled(owner)) { discard(); return; }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.awaitVoice(owner)) return;
       syncPositionToOwner(owner);
       if (getStage() != Stage.BEAM) owner.setDeltaMovement(Vec3.ZERO);
       owner.getPersistentData().putLong("GilgameshEaProtectedUntil", level.getGameTime() + 2);
@@ -157,17 +166,10 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private void tickWind(ServerLevel level, LivingEntity owner) {
-      if (!drainMana(owner, 2.5)) {
-         clearNpcEquipment(owner); setStage(Stage.FINISHED); discard(); return;
-      }
+
       if (stageTicks == 1) {
          level.setWeatherParameters(0, EA_THUNDER_TICKS, true, true);
          VFXServerEffects.spawn(level, "ea_wind", owner, 192.0);
-         if (owner instanceof GilgameshEntity && !isDuelTarget(level, owner)) {
-            level.playSound(null, owner.blockPosition(), ModSounds.GILGAMESH_VOICE_EA_NPC.get(), SoundSource.HOSTILE, 3.0F, 1.0F);
-         } else if (canPlayEaVoice(owner)) {
-            level.playSound(null, owner.blockPosition(), ModSounds.GILGAMESH_VOICE_EA_DRAW.get(), SoundSource.HOSTILE, 2.0F, 0.9F);
-         }
          DeferredTerrainDestruction.queueUpperHemisphere(level, owner.position(), WIND_RADIUS, this.windOriginY, 80.0F);
       }
       if (stageTicks % 4 == 0) applyWindDamage(level, owner);
@@ -179,7 +181,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          if (windOnly) { applyCooldown(owner, 600); setStage(Stage.FINISHED); discard(); return; }
          setStage(Stage.ORB_CHARGE);
          VFXServerEffects.spawn(level, "ea_charge", owner, 192.0);
-         if (canPlayEaVoice(owner)) level.playSound(null, owner.blockPosition(), ModSounds.GILGAMESH_VOICE_EA.get(), SoundSource.HOSTILE, 3.0F, 1.0F);
+
       }
    }
 
@@ -187,7 +189,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       int charged = Math.min(ORB_CHARGE_TICKS, stageTicks);
       float scale = Math.max(0.35F, charged / (float)ORB_CHARGE_TICKS);
       this.entityData.set(POWER, scale);
-      if (charged < ORB_CHARGE_TICKS && !releaseRequested && !drainMana(owner, 1.5)) releaseRequested = true;
+
       LivingEntity trackedTarget = getTrackedTarget(level);
       boolean duelFinale = trackedTarget != null && GilgameshDuelState.areDuelPartners(owner, trackedTarget);
       boolean synchronizedRush = duelFinale && GilgameshDuelState.isEnkiduRushStarted(owner, trackedTarget);
@@ -364,7 +366,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          }
          VFXServerEffects.spawn(level, "ea_impact", center, 256.0);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 16, 2.5, 2.5, 2.5, 0.0);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.4, 0.4, 0.4, 0.0);
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.4, 0.4, 0.4, 0.0);
          queueImpactTerrainInWaves(level, center, radius);
          level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 6.0F, 0.45F);
       }
@@ -385,7 +387,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          center.x, center.y, center.z, 22, 2.8, 1.8, 2.8, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,
          center.x, center.y + 1.0, center.z, 120, radius * 0.35, radius * 0.2, radius * 0.35, 0.06);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
          center.x, center.y + 0.5, center.z, 8, 0.8, 0.35, 0.8, 0.0);
       level.sendParticles(net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER,
          center.x, center.y + 1.5, center.z, 420, radius * 0.48, radius * 0.28, radius * 0.48, 0.2);
@@ -508,7 +510,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.servant_card_transformed) return ServantCardManaService.consumeNoblePhantasm(player, vars, amount);
-         if (vars.player_mana < amount) return false; vars.player_mana -= amount; vars.syncMana(player); return true;
+         if (!vars.magicState().tryConsume(amount)) return false; net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, false, amount); vars.syncMana(player); return true;
       }
       return true;
    }

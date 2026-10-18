@@ -115,8 +115,6 @@ public final class ServantMasterCarryService {
          event.setCanceled(true);
       }
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       if (isCarriedMaster(player)) {

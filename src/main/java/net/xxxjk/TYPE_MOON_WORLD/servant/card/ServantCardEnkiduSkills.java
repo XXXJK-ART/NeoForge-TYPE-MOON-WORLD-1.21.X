@@ -146,11 +146,11 @@ public final class ServantCardEnkiduSkills {
 
    public static void setTransfigurationPoints(ServerPlayer player, int[] requested) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || !"enkidu".equals(vars.servant_card_id)) {
+      if (!vars.servantCardState().transformed() || !"enkidu".equals(vars.servantCardState().id())) {
          return;
       }
       int[] normalized = normalizeTransfigurationPoints(requested);
-      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(normalized);
+      vars.servantCardState().setEnkiduPoints(serializeTransfigurationPoints(normalized));
       applyTransfigurationAttributes(player, vars, normalized);
       vars.syncPlayerVariables(player);
       if (player.level() instanceof ServerLevel level) {
@@ -188,14 +188,14 @@ public final class ServantCardEnkiduSkills {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       int[] points = parseTransfigurationPoints(vars);
       int[] normalized = normalizeTransfigurationPoints(points);
-      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(normalized);
+      vars.servantCardState().setEnkiduPoints(serializeTransfigurationPoints(normalized));
       applyTransfigurationAttributes(player, vars, normalized);
       vars.syncPlayerVariables(player);
    }
 
    public static void adjustTransfigurationPoint(ServerPlayer player, int stat, int delta) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (!vars.servant_card_transformed || !"enkidu".equals(vars.servant_card_id) || stat < 0 || stat >= 5 || delta == 0) {
+      if (!vars.servantCardState().transformed() || !"enkidu".equals(vars.servantCardState().id()) || stat < 0 || stat >= 5 || delta == 0) {
          return;
       }
       int[] points = parseTransfigurationPoints(vars);
@@ -211,7 +211,7 @@ public final class ServantCardEnkiduSkills {
          return;
       }
       points[stat] = next;
-      vars.servant_card_enkidu_transfiguration_points = serializeTransfigurationPoints(points);
+      vars.servantCardState().setEnkiduPoints(serializeTransfigurationPoints(points));
       applyTransfigurationAttributes(player, vars, points);
       vars.syncPlayerVariables(player);
    }
@@ -246,9 +246,9 @@ public final class ServantCardEnkiduSkills {
       addModifier(player.getAttribute(Attributes.ARMOR_TOUGHNESS), TRANSFIG_TOUGHNESS_ID, armorToughnessFor(targetArmor, targetAttack) - armorToughnessFor(base.armor(), base.attackDamage()), AttributeModifier.Operation.ADD_VALUE);
       addModifier(player.getAttribute(Attributes.JUMP_STRENGTH), TRANSFIG_JUMP_ID, jumpStrengthFor(targetSpeed) - jumpStrengthFor(base.movementSpeed()), AttributeModifier.Operation.ADD_VALUE);
       addModifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), TRANSFIG_LUCK_ID, Mth.clamp((coefficientFor(luck) - effectiveLuckCoefficient(base)) * 0.004, -0.16, 0.28), AttributeModifier.Operation.ADD_VALUE);
-      double ratio = vars.servant_card_max_mana <= 0.0 ? 1.0 : vars.servant_card_mana / vars.servant_card_max_mana;
-      vars.servant_card_max_mana = Math.max(50.0, manaPoolFor(mana));
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, Math.max(0.0, vars.servant_card_max_mana * ratio));
+      double ratio = vars.servantCardState().maxMana() <= 0.0 ? 1.0 : vars.servantCardState().mana() / vars.servantCardState().maxMana();
+      vars.servantCardState().setMaxMana(Math.max(50.0, manaPoolFor(mana)));
+      vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), Math.max(0.0, vars.servantCardState().maxMana() * ratio)));
       if (player.getHealth() > player.getMaxHealth()) {
          player.setHealth(player.getMaxHealth());
       }
@@ -329,7 +329,7 @@ public final class ServantCardEnkiduSkills {
 
    public static int[] parseTransfigurationPoints(TypeMoonWorldModVariables.PlayerVariables vars) {
       int[] points = new int[]{6, 6, 6, 6, 6};
-      String raw = vars.servant_card_enkidu_transfiguration_points == null ? "" : vars.servant_card_enkidu_transfiguration_points;
+      String raw = vars.servantCardState().enkiduPoints();
       String[] parts = raw.split(",");
       for (int i = 0; i < points.length && i < parts.length; i++) {
          try {
@@ -710,7 +710,7 @@ public final class ServantCardEnkiduSkills {
    private static void applyEnumaSmallExplosion(ServerPlayer player, ServerLevel level, Vec3 impact, LivingEntity directTarget) {
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_impact", impact, 192.0);
       level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 0.35, impact.z, 8, 1.2, 0.55, 1.2, 0.02);
-      level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y + 0.25, impact.z, 1, 0.08, 0.08, 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y + 0.25, impact.z, 1, 0.08, 0.08, 0.08, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 80, 1.7, 1.0, 1.7, 0.16);
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.2, impact.z, 38, 1.5, 0.75, 1.5, 0.1);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 2.0F, 1.45F);
@@ -730,11 +730,11 @@ public final class ServantCardEnkiduSkills {
       VFXServerEffects.spawn(level, "servant_enkidu_enuma_elish_aftermath", impact, 192.0);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, impact.x, impact.y, impact.z, 10, 1.2, 0.8, 1.2, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + 1.2, impact.z, 56, radius * 0.34, radius * 0.22, radius * 0.34, 0.045);
-      level.sendParticles(ParticleTypes.FLASH, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 520, radius * 0.55, radius * 0.5, radius * 0.55, 0.34);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.35, impact.z, 320, radius * 0.5, radius * 0.34, radius * 0.5, 0.24);
-      level.sendParticles(ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, 280, radius * 0.48, radius * 0.42, radius * 0.48, 0.28);
-      level.sendParticles(ParticleTypes.CLOUD, impact.x, impact.y + 0.05, impact.z, 260, radius * 0.58, radius * 0.26, radius * 0.58, 0.18);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y + 0.4, impact.z, 5, 0.4, 0.25, 0.4, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(520), radius * 0.55, radius * 0.5, radius * 0.55, 0.34);
+      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, impact.x, impact.y + 0.35, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(320), radius * 0.5, radius * 0.34, radius * 0.5, 0.24);
+      level.sendParticles(ParticleTypes.ENCHANTED_HIT, impact.x, impact.y + 0.45, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(280), radius * 0.48, radius * 0.42, radius * 0.48, 0.28);
+      level.sendParticles(ParticleTypes.CLOUD, impact.x, impact.y + 0.05, impact.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(260), radius * 0.58, radius * 0.26, radius * 0.58, 0.18);
       level.playSound(null, BlockPos.containing(impact), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 5.0F, 0.82F);
       applyEnumaAreaDamage(player, level, impact, radius,
          (float)(500.0F * ServantCardManaService.noblePhantasmPowerScale(player)), directTarget);
@@ -851,7 +851,7 @@ public final class ServantCardEnkiduSkills {
       if (player.tickCount % 20 != 0 || !isOnEarth(player, level)) {
          return;
       }
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 6.0);
+      vars.servantCardState().addMana(6.0);
       if (player.getHealth() < player.getMaxHealth()) {
          player.heal(6.0F);
       }
@@ -1259,7 +1259,7 @@ public final class ServantCardEnkiduSkills {
       for (BlockPos pos : positions) {
          if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduTemporaryPlantHelper.unregister(level, pos)
             && net.xxxjk.TYPE_MOON_WORLD.servant.entity.EnkiduTemporaryPlantHelper.isTemporaryPlantState(level.getBlockState(pos))) {
-            level.removeBlock(pos, false);
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          }
       }
    }

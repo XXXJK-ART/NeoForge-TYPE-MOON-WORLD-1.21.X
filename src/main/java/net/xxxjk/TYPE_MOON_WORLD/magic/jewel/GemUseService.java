@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazReinforcement;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.topaz.MagicTopazThrow;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class GemUseService {
@@ -66,6 +67,7 @@ public final class GemUseService {
                   int beforeCount = countFullGemCount(serverPlayer, type);
                   int beforeHighCount = countFullGemCountByQuality(serverPlayer, type, GemQuality.HIGH);
                   castBasicByType(serverPlayer, type);
+                  MagecraftRiskService.recordCast(serverPlayer, "jewel_magic_shoot", 18.0D, true);
                   int afterCount = countFullGemCount(serverPlayer, type);
                   int afterHighCount = countFullGemCountByQuality(serverPlayer, type, GemQuality.HIGH);
                   if (afterCount < beforeCount) {
@@ -171,7 +173,7 @@ public final class GemUseService {
       double cy = player.getY() + 1.0;
       double cz = player.getZ();
       int burstLevel = (int)Math.round(1.0 + powerNormalized * 2.0);
-      level.sendParticles(ParticleTypes.FLASH, cx, cy, cz, 6 + 4 * burstLevel, 0.25, 0.18, 0.25, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, cx, cy, cz, 6 + 4 * burstLevel, 0.25, 0.18, 0.25, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.05, cz, 10 + 6 * burstLevel, 0.3, 0.15, 0.3, 0.04);
       level.sendParticles(ParticleTypes.WAX_ON, cx, cy + 0.1, cz, 8 + 4 * burstLevel, 0.24, 0.12, 0.24, 0.02);
       level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy, cz, 0.4F, (float)radius, 0.18F, 14, 0xFFFFFF, 0.92F, 0.0F));

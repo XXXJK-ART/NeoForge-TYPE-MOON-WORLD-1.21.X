@@ -47,7 +47,7 @@ public final class MagicLearningService {
       applyImmediateGrantBonuses(vars, id);
       awardAnalysisKnowledge(vars, id);
       if (MagicLearningStrategy.canAnalyze(id)) unlockAnalysisChance(player, vars);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable("magic.typemoonworld." + id + ".name")), true);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned", Component.translatable(MagicTranslationKeys.name(id))), true);
       player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0F, 1.0F);
       vars.syncPlayerVariables(player);
       return true;
@@ -68,7 +68,7 @@ public final class MagicLearningService {
       awardAnalysisKnowledge(vars, id);
       if (MagicLearningStrategy.canAnalyze(id)) unlockAnalysisChance(player, vars);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.learned",
-         Component.translatable("magic.typemoonworld." + id + ".name")), true);
+         Component.translatable(MagicTranslationKeys.name(id))), true);
       player.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0F, 1.0F);
       vars.syncPlayerVariables(player);
       return true;

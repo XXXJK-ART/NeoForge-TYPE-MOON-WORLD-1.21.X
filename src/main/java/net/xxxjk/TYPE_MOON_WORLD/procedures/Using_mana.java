@@ -12,13 +12,13 @@ public class Using_mana {
    public static void execute(Entity entity) {
       if (entity != null) {
          TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         vars.player_mana += 10.0;
+         vars.magicState().addMana(10.0);
          vars.syncMana(entity);
          if (entity instanceof Player player) {
             ItemStack toRemove = new ItemStack(ModItems.MAGIC_FRAGMENTS.get());
             player.getInventory().clearOrCountMatchingItems(p -> toRemove.getItem() == p.getItem(), 1, player.inventoryMenu.getCraftSlots());
-            double current = vars.player_mana;
-            double max = vars.player_max_mana;
+            double current = vars.magicState().mana();
+            double max = vars.magicState().maxMana();
             if (current > max && !player.level().isClientSide()) {
                ChatFormatting color = ChatFormatting.YELLOW;
                if (current > max * 1.25) {

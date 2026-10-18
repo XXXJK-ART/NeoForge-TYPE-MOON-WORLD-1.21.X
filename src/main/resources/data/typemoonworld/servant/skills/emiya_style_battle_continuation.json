@@ -1,4 +1,9 @@
 {
+  "rank": "E",
+  "defense": {
+    "durability": true,
+    "activation_actions": []
+  },
   "id": "emiya_style_battle_continuation",
   "display_name": "Emiya-Style Battle Continuation",
   "display_name_zh": "卫宫式战斗续航",

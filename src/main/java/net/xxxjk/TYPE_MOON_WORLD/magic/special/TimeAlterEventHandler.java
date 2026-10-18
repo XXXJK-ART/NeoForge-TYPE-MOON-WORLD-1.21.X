@@ -145,8 +145,6 @@ public final class TimeAlterEventHandler {
    public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
       SERVER_ITEM_USE_PROGRESS.remove(event.getEntity().getUUID());
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) {
          return;

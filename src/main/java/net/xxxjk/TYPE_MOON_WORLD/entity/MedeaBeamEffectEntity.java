@@ -181,7 +181,7 @@ public class MedeaBeamEffectEntity extends Entity {
             if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness >= 85.0F) {
                continue;
             }
-            level.destroyBlock(pos, false, owner);
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.destroyBlock(level, pos, false, owner);
          }
       }
    }

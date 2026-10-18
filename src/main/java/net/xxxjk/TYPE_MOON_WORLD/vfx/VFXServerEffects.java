@@ -8,7 +8,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.VFXTriggerEntity;
-import net.xxxjk.TYPE_MOON_WORLD.network.DuelScreenFlashMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.network.VFXSpawnEffectMessage;
 
@@ -91,9 +90,8 @@ public final class VFXServerEffects {
       level.addFreshEntity(trigger);
    }
 
-   public static void screenFlash(ServerLevel level, Vec3 origin, double radius, int ticks, float strength) {
-      sendToSupportedPlayersNear(level, origin, radius, new DuelScreenFlashMessage(ticks, strength));
-   }
+   /** Legacy addon entry point. Fullscreen combat flashes have been removed. */
+   public static void screenFlash(ServerLevel level, Vec3 origin, double radius, int ticks, float strength) { }
 
    private static void sendToSupportedPlayersNear(ServerLevel level, Vec3 origin, double radius,
                                                    CustomPacketPayload payload) {

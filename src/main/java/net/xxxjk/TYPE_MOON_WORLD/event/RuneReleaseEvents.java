@@ -180,11 +180,11 @@ public final class RuneReleaseEvents {
       if (player.getPersistentData().getLong("tmwRuneProjectileCostTick") == now) return true;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double cost = RuneProgramCostService.calculate(program);
-      if (!vars.is_magic_circuit_open || vars.player_mana < cost) {
+      if (!vars.is_magic_circuit_open || !vars.magicState().hasMana(cost)) {
          player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.magic.insufficient_mana"), true);
          return false;
       }
-      vars.player_mana = Math.max(0.0D, vars.player_mana - cost);
+      vars.magicState().tryConsume(cost);
       player.getPersistentData().putLong("tmwRuneProjectileCostTick", now);
       vars.syncMana(player);
       return true;
@@ -287,8 +287,6 @@ public final class RuneReleaseEvents {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       triggerInscribed(player, event.getItemStack(), RuneReleaseMode.TOOL, null);
    }
-
-   @SubscribeEvent
    public static void onPlayerTick(PlayerTickEvent.Post event) {
       if (!(event.getEntity() instanceof ServerPlayer player)) return;
       tickRunePortal(player);
@@ -415,9 +413,9 @@ public final class RuneReleaseEvents {
       if (data == null || data.medium() != mode) return false;
       RuneProgram program = RuneProgram.fromNBT(data.snapshot());
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      double manaBefore = vars.player_mana;
+      double manaBefore = vars.magicState().mana();
       if (!RuneReleaseService.triggerProgram(player, program, mode, stack, target)) {
-         vars.player_mana = manaBefore;
+         vars.magicState().setMana(manaBefore);
          vars.syncMana(player);
          return false;
       }

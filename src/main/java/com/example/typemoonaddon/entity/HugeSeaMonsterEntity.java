@@ -531,7 +531,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             living.hurtMarked = true;
         }
         level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 1.0, center.z, 28, 9.0, 1.4, 9.0, 0.04);
-        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 1.2, center.z, 120, 11.0, 2.0, 11.0, 0.06);
+        level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 1.2, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 11.0, 2.0, 11.0, 0.06);
         level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.4, center.z, 90, 10.0, 2.0, 10.0, 0.045);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.8, center.z, 70, 10.0, 1.7, 10.0, 0.04);
     }
@@ -557,8 +557,8 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         spit.setDeltaMovement(direction.scale(1.95));
         level.addFreshEntity(spit);
         level.playSound(null, this.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 1.7F, 0.5F);
-        level.sendParticles(ParticleTypes.SQUID_INK, spawn.x, spawn.y, spawn.z, 180, 4.5, 2.2, 4.5, 0.08);
-        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), spawn.x, spawn.y, spawn.z, 120, 3.8, 1.8, 3.8, 0.07);
+        level.sendParticles(ParticleTypes.SQUID_INK, spawn.x, spawn.y, spawn.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(180), 4.5, 2.2, 4.5, 0.08);
+        level.sendParticles(ModParticles.ELEMENTAL_FOAM.get(), spawn.x, spawn.y, spawn.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 3.8, 1.8, 3.8, 0.07);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, spawn.x, spawn.y, spawn.z, 70, 4.0, 2.0, 4.0, 0.05);
         return true;
     }

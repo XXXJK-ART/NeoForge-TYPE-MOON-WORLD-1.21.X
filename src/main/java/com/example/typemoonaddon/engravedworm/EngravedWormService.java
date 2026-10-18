@@ -1,12 +1,10 @@
 package com.example.typemoonaddon.engravedworm;
 
 import com.example.typemoonaddon.registry.AddonItems;
-import com.example.typemoonaddon.worm.WormStackData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -17,7 +15,6 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class EngravedWormService {
     public static final int PAGE_SIZE = 54;
-    public static final int MINIMUM_GU_POWER = 51;
     public static final double HEALTH_PER_WORM = 10.0D;
     private static final ResourceLocation HEALTH_MODIFIER_ID =
             ResourceLocation.fromNamespaceAndPath("typemoonworld", "engraved_worm_health");
@@ -26,25 +23,17 @@ public final class EngravedWormService {
     }
 
     public static ItemStack createFromWorm(ServerPlayer player, ItemStack source) {
-        if (player == null || source.isEmpty() || !source.is(AddonItems.WORM.get())) {
-            return ItemStack.EMPTY;
-        }
-        int gu = WormStackData.gu(source);
-        if (gu < MINIMUM_GU_POWER) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.engraved_worm.gu_too_low", MINIMUM_GU_POWER), true);
-            return ItemStack.EMPTY;
-        }
-        UUID owner = WormStackData.owner(source);
-        if (owner != null && !owner.equals(player.getUUID())) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.engraved_worm.owner_only"), true);
-            return ItemStack.EMPTY;
-        }
-        return EngravedWormData.create(AddonItems.ENGRAVED_WORM.get(), gu, player.getUUID());
+        // Legacy worm-to-crest conversion was removed. This item is creative-only.
+        return ItemStack.EMPTY;
     }
 
     public static boolean insert(ServerPlayer player, int slot, ItemStack stack) {
         if (player == null || slot < 0 || stack.isEmpty() || !stack.is(AddonItems.ENGRAVED_WORM.get())
                 || EngravedWormData.owner(stack) == null) {
+            return false;
+        }
+        AttributeInstance health = player.getAttribute(Attributes.MAX_HEALTH);
+        if (health != null && player.getMaxHealth() <= 1.0F) {
             return false;
         }
         EngravedWormInventoryData data = player.getData(EngravedWormAttachments.INVENTORY.get());
@@ -143,7 +132,9 @@ public final class EngravedWormService {
         AttributeInstance health = player.getAttribute(Attributes.MAX_HEALTH);
         if (health != null) {
             AttributeModifier old = health.getModifier(HEALTH_MODIFIER_ID);
-            double penalty = -HEALTH_PER_WORM * count;
+            double penalty = count == 0
+                    ? 0.0D
+                    : Math.max(-HEALTH_PER_WORM * count, 1.0D - health.getBaseValue());
             if (old != null && Double.compare(old.amount(), penalty) != 0) {
                 health.removeModifier(old);
             }
@@ -157,10 +148,25 @@ public final class EngravedWormService {
         }
 
         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+        if (count > 0) {
+            vars.player_magic_attributes_earth = false;
+            vars.player_magic_attributes_water = true;
+            vars.player_magic_attributes_fire = false;
+            vars.player_magic_attributes_wind = false;
+            vars.player_magic_attributes_ether = false;
+            vars.player_magic_attributes_none = false;
+            vars.player_magic_attributes_imaginary_number = false;
+            vars.player_magic_attributes_sword = false;
+            var knowledge = com.example.typemoonaddon.magic.WormMagicIntegration.knowledge(player);
+            knowledge.learn(com.example.typemoonaddon.magic.WormMagicIntegration.WORM_MAGIC);
+            knowledge.learn(com.example.typemoonaddon.magic.WormMagicIntegration.WORM_CONTROL);
+        } else {
+            com.example.typemoonaddon.magic.WormMagicIntegration.clearImmobilizeState(player);
+        }
         double previousBonus = data.getAppliedManaBonus();
-        double baseMaximum = Math.max(0.0D, vars.player_max_mana - previousBonus);
-        vars.player_max_mana = baseMaximum + manaBonus;
-        vars.player_mana = Math.min(Math.max(0.0D, vars.player_mana), vars.player_max_mana);
+        double baseMaximum = Math.max(0.0D, vars.magicState().maxMana() - previousBonus);
+        vars.magicState().setMaxMana(baseMaximum + manaBonus);
+        vars.magicState().setMana(Math.min(vars.magicState().mana(), vars.magicState().maxMana()));
         data.setAppliedManaBonus(manaBonus);
         vars.syncMana(player);
     }

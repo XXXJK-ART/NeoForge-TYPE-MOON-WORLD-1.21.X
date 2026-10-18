@@ -1,0 +1,16 @@
+{
+  "id": "oda_three_thousand",
+  "display_name": "oda_three_thousand",
+  "display_name_zh": "三千世界",
+  "type": "army",
+  "rank": "E～EX",
+  "mp_cost": 95,
+  "range": 32,
+  "base_damage_multiplier": 1,
+  "effects": [],
+  "special_attack_conditions": [],
+  "class_restrictions": [
+    "archer"
+  ],
+  "release_policy": "oda_three_thousand"
+}

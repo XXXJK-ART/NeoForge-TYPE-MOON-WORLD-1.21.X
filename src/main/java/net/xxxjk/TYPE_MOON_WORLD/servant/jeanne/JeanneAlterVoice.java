@@ -26,7 +26,7 @@ public final class JeanneAlterVoice {
    }
 
    public static void noblePhantasm(LivingEntity entity) {
-      play(entity, ModSounds.JEANNE_ALTER_VOICE_NP.get(), 0, true);
+      // The shared cast record selects one long variant and owns its timer.
    }
 
    public static void defeat(LivingEntity entity) {

@@ -141,20 +141,22 @@ public final class WormEntity extends PathfinderMob {
         if (!(level() instanceof ServerLevel level) || !(player instanceof ServerPlayer serverPlayer)) {
             return InteractionResult.FAIL;
         }
+        if (!WormMagicIntegration.isKnown(serverPlayer, WormMagicIntegration.WORM_MAGIC)) {
+            player.displayClientMessage(Component.translatable("message.typemoonworld.worm.requires_magic"), true);
+            return InteractionResult.FAIL;
+        }
         if (ownerId != null) {
-            if (!ownerId.equals(player.getUUID())) {
-                return InteractionResult.FAIL;
-            }
-            if (variant == WormType.DETECTION && player.isShiftKeyDown()) {
+            if (ownerId.equals(player.getUUID()) && variant == WormType.DETECTION && player.isShiftKeyDown()) {
                 WormMagicIntegration.openDetectionControl(serverPlayer, this);
                 return InteractionResult.CONSUME;
             }
+            return InteractionResult.FAIL;
         } else if (!WormCaptureService.isControlledForCapture(this)) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.worm.capture_need_control"), true);
             return InteractionResult.FAIL;
         }
         UUID capturedOwner = ownerId == null ? player.getUUID() : ownerId;
-        ItemStack captured = WormStackData.create(AddonItems.WORM.get(), variant, guPower, capturedOwner);
+        ItemStack captured = WormStackData.create(WormStackData.itemFor(variant), variant, guPower, capturedOwner);
         if (!player.addItem(captured)) {
             player.drop(captured, false);
         }
@@ -193,9 +195,10 @@ public final class WormEntity extends PathfinderMob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         setVariant(WormType.byId(tag.getString(WormStackData.TYPE)));
-        guPower = Math.max(1, tag.getInt(WormStackData.GU));
+        guPower = WormType.clampGu(tag.getInt(WormStackData.GU));
         ownerId = tag.hasUUID(WormStackData.OWNER) ? tag.getUUID(WormStackData.OWNER) : null;
         manuallyControlled = tag.getBoolean("Manual");
+        applyScaledAttributes();
     }
 
     public WormType getVariant() {
@@ -205,15 +208,7 @@ public final class WormEntity extends PathfinderMob {
     public void setVariant(WormType variant) {
         this.variant = variant == null ? WormType.SILVERFISH : variant;
         entityData.set(DATA_VARIANT, this.variant.ordinal());
-        if (getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.variant == WormType.DETECTION ? 0.65D : 0.35D);
-        }
-        if (getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.variant == WormType.WINGED ? 8.0D : 2.0D);
-        }
-        if (getAttribute(Attributes.ATTACK_SPEED) != null) {
-            getAttribute(Attributes.ATTACK_SPEED).setBaseValue(this.variant == WormType.WINGED ? 4.0D : 2.0D);
-        }
+        applyScaledAttributes();
         if (this.variant != WormType.DETECTION) {
             this.setNoGravity(false);
         }
@@ -225,7 +220,8 @@ public final class WormEntity extends PathfinderMob {
     }
 
     public void setGuPower(int guPower) {
-        this.guPower = Math.max(1, guPower);
+        this.guPower = WormType.clampGu(guPower);
+        applyScaledAttributes();
     }
 
     @Nullable
@@ -299,5 +295,28 @@ public final class WormEntity extends PathfinderMob {
     private static WormType bySyncedOrdinal(int ordinal) {
         WormType[] values = WormType.values();
         return ordinal >= 0 && ordinal < values.length ? values[ordinal] : WormType.SILVERFISH;
+    }
+
+    /** Reference formulas from the worm magecraft specification. */
+    public static double attributeRatio(WormType type, int guPower) {
+        WormType resolved = type == null ? WormType.SILVERFISH : type;
+        double ratio = 1.0D + (WormType.clampGu(guPower) - resolved.initialGu()) / 100.0D;
+        return Math.clamp(ratio, 0.9D, 2.0D);
+    }
+
+    public static double speedRatio(WormType type, int guPower) {
+        WormType resolved = type == null ? WormType.SILVERFISH : type;
+        double ratio = 1.0D + (WormType.clampGu(guPower) - resolved.initialGu()) / 200.0D;
+        return Math.clamp(ratio, 0.95D, 1.5D);
+    }
+
+    private void applyScaledAttributes() {
+        if (getAttribute(Attributes.MAX_HEALTH) == null) return;
+        double ratio = attributeRatio(variant, guPower);
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(variant.baseHealth() * ratio);
+        getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(variant.baseDamage() * ratio);
+        getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(variant.baseSpeed() * speedRatio(variant, guPower));
+        getAttribute(Attributes.ATTACK_SPEED).setBaseValue(variant.baseAttackSpeed() * speedRatio(variant, guPower));
+        if (isAlive()) setHealth(Math.min(getHealth(), getMaxHealth()));
     }
 }

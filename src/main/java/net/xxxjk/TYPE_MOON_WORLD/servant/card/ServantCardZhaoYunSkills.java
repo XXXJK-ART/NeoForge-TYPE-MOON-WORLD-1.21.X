@@ -465,7 +465,7 @@ public final class ServantCardZhaoYunSkills {
       data.remove(TAG_NP_SAFE_Y);
       data.remove(TAG_NP_SAFE_Z);
       clearNpHitTags(data);
-      player.level().playSound(null, player.blockPosition(), ModSounds.ZHAO_YUN_VOICE_NP.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      ServantCardVoiceHelper.tryPlaySkill(player, "zhao_yun_changbanpo");
       return true;
    }
 
@@ -742,7 +742,7 @@ public final class ServantCardZhaoYunSkills {
             var state = level.getBlockState(pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK)
                && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 75.0F) {
-               level.removeBlock(pos, false);
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
                if (++broken >= 96) break;
             }
          }

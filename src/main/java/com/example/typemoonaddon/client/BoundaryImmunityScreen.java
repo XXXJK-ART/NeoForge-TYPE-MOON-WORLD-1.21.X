@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.client;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.example.typemoonaddon.magic.BoundaryMagicIntegration;
 import com.example.typemoonaddon.network.OpenBoundaryImmunityPayload;
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public final class BoundaryImmunityScreen extends Screen {
     }
 
     private static Component labelFor(ResourceLocation id) {
-        return Component.translatable("magic.typemoonworld." + id.getPath() + ".name");
+        return Component.translatable(MagicTranslationKeys.name(id.toString()));
     }
 
     @Override

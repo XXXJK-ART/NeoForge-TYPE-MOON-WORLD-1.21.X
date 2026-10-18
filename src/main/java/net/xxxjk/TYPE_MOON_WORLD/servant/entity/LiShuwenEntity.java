@@ -37,7 +37,7 @@ public class LiShuwenEntity extends ServantEntity {
       super.tick();
       if (!this.level().isClientSide()) {
          LiShuwenCombatHelper.applyChineseMartialArtsAttributes(this);
-         int phase = this.computeHealthPhase();
+         int phase = this.withSharedCombatPhase(this.computeHealthPhase());
          if (phase != this.getCombatPhase()) {
             this.setCombatPhase(phase);
             if (this.level() instanceof ServerLevel level) {

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["DGD", "C C"],
+  "key": {
+    "D": {"item": "minecraft:dandelion"},
+    "G": {"item": "typemoonworld:divine_steel"},
+    "C": {"item": "minecraft:cactus"}
+  },
+  "result": {"id": "typemoonworld:relic_diarmuid_yellow_rose_tip", "count": 1}
+}

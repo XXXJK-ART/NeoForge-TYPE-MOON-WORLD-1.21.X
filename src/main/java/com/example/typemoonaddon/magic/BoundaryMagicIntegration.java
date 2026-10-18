@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.magic;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.BoundaryMarkEntity;
 import com.example.typemoonaddon.network.AddonNetwork;
@@ -257,7 +258,7 @@ public final class BoundaryMagicIntegration {
         if (existing != null && !player.isShiftKeyDown()) {
             deactivateBoundary(player.serverLevel(), existing.getBoundaryId());
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.deactivated",
-                    Component.translatable("magic.typemoonworld." + type + ".name")), true);
+                    Component.translatable(MagicTranslationKeys.name(type))), true);
             return ExecutionResult.SUCCESS.withCost(0.0D).withCooldown(10);
         }
         HitResult rawHit = player.pick(64.0D, 0.0F, false);
@@ -296,7 +297,7 @@ public final class BoundaryMagicIntegration {
             }
         }
         player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.activated",
-                Component.translatable("magic.typemoonworld." + type + ".name"), required), true);
+                Component.translatable(MagicTranslationKeys.name(type)), required), true);
         return ExecutionResult.SUCCESS.withCost(Math.max(10.0D, required * 0.05D)).withCooldown(20);
     }
 
@@ -678,13 +679,13 @@ public final class BoundaryMagicIntegration {
         boolean revealed = owner || player.getRandom().nextDouble() <= revealChance;
         if (revealed) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.analysis_identified",
-                    Component.translatable("magic.typemoonworld." + targetMagic + ".name"), complexity), false);
+                    Component.translatable(MagicTranslationKeys.name(targetMagic)), complexity), false);
         } else {
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.analysis_unknown", complexity), true);
         }
         if (MagicLearningStrategy.isLearned(vars, targetMagic)) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.analysis_already_known",
-                    Component.translatable("magic.typemoonworld." + targetMagic + ".name")), true);
+                    Component.translatable(MagicTranslationKeys.name(targetMagic))), true);
             MagicProficiencyService.add(vars, "magic_analysis", 0.08D);
             vars.syncPlayerVariables(player);
             return;
@@ -701,13 +702,13 @@ public final class BoundaryMagicIntegration {
                     .learn(TypeMoonAddon.id(targetMagic));
             if (learned) {
                 player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.analysis_learned",
-                        Component.translatable("magic.typemoonworld." + targetMagic + ".name")), false);
+                        Component.translatable(MagicTranslationKeys.name(targetMagic))), false);
             }
         } else {
             MagicLearningProgressService.addWithLearningCheck(player, targetMagic,
                     MagicLearningProgressService.maxProgress(targetMagic) * Math.max(0.02D, revealChance * 0.08D));
             player.displayClientMessage(Component.translatable("message.typemoonworld.boundary.analysis_failed",
-                    Component.translatable("magic.typemoonworld." + targetMagic + ".name")), true);
+                    Component.translatable(MagicTranslationKeys.name(targetMagic))), true);
         }
         MagicProficiencyService.add(vars, "magic_analysis", Math.max(0.1D, 0.8D - complexity / 150.0D));
         vars.syncPlayerVariables(player);

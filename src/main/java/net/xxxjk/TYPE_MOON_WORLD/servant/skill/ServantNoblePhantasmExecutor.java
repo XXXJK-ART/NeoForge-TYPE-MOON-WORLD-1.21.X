@@ -18,6 +18,7 @@ public final class ServantNoblePhantasmExecutor {
       ServantNoblePhantasmDefinition npDef,
       int overChargeLevel
    ) {
+      if (caster != null && caster.level().getGameTime() < caster.getPersistentData().getLong("TypeMoonNpAddonCooldown")) return ServantExecutionResult.FAILED;
       if (npDef == null) {
          return ServantExecutionResult.FAILED;
       }
@@ -40,6 +41,21 @@ public final class ServantNoblePhantasmExecutor {
          return ServantExecutionResult.SUCCESS.withMpCost(decision.actualMpCost());
       }
 
+      String releasePolicy = npDef.releasePolicy().isBlank() ? switch (npDef.id().replace("typemoonworld:", "")) {
+         case "fetch_failnaught" -> "baobhan_sith_failnaught";
+         case "sword_of_paracelsus", "elemental_sword", "paracelsus_sword", "paracelsus_sword_np" -> "paracelsus_elemental_sword";
+         default -> "";
+      } : npDef.releasePolicy();
+      if (!releasePolicy.isEmpty()) {
+         ServantNoblePhantasmResourceService.commitNpcCast(caster, decision);
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(caster, releasePolicy, 600,
+            ticks -> caster.getPersistentData().putLong("TypeMoonNpAddonCooldown", caster.level().getGameTime() + ticks), () -> { });
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(caster, () -> {
+            ServantAddonRegistry.executeNoblePhantasm(new ServantNoblePhantasmContext(
+               caster, target, caster.getDefinition(), npDef, overChargeLevel, currentMp, decision.powerScale(), decision.overdraft()));
+         });
+         return ServantExecutionResult.SUCCESS.withMpCost(decision.actualMpCost());
+      }
       ServantExecutionResult addonResult = ServantAddonRegistry.executeNoblePhantasm(
          new ServantNoblePhantasmContext(
             caster, target, caster.getDefinition(), npDef, overChargeLevel, currentMp,

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -88,7 +89,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private static final int PRESET_DIALOG_MAX_HEIGHT_PROJECTION = 300;
    private static final int PRESET_DIALOG_OPTION_HEIGHT = 18;
    private static final Set<String> CREST_ALLOWED_JEWEL_MAGIC_IDS = Set.of(
-      "jewel_random_shoot", "jewel_machine_gun", "jewel_magic_shoot", "jewel_magic_release"
+      "jewel_machine_gun", "jewel_magic_shoot", "jewel_magic_release"
    );
    private final Level world;
    private final int x;
@@ -161,7 +162,6 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private void initMagicCatalog() {
       this.addMagic("jewel_magic_shoot", "key.typemoonworld.magic.jewel_shoot.short", "jewel", -10837304);
       this.addMagic("jewel_magic_release", "key.typemoonworld.magic.jewel_release.short", "jewel", -4695462);
-      this.addMagic("jewel_random_shoot", "key.typemoonworld.magic.jewel_random_shoot.short", "jewel", -5197648);
       this.addMagic("jewel_machine_gun", "key.typemoonworld.magic.jewel_machine_gun.short", "jewel,nordic", -8727320);
       this.addMagic("projection", "key.typemoonworld.magic.projection.short", "basic,unlimited_blade_works", -11549464);
       this.addMagic("magic_analysis", "key.typemoonworld.magic.magic_analysis.short", "basic", -7829368);
@@ -212,6 +212,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       this.addMagic("cremation_rite", "magic.typemoonworld.cremation_rite.name", "church", -865972);
       this.addMagic("baptism_rite", "magic.typemoonworld.baptism_rite.name", "church", -865972);
       this.addMagic("stigma", "key.typemoonworld.magic.stigma.short", "church", -865972);
+      this.addMagic("sanctification", "magic.typemoonworld.sanctification.name", "church", -865972);
       this.addMagic("absorption", "key.typemoonworld.magic.absorption.short", "imaginary", -6697729);
       this.addMagic("airflow_blade", "key.typemoonworld.magic.airflow_blade.short", "elemental", -6684775);
       this.addMagic("andrasias", "key.typemoonworld.magic.andrasias.short", "solomon", -7119279);
@@ -275,7 +276,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
             Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(displayMagicId);
             Magical_attributes_Screen.MagicEntry entry = base == null
                ? new Magical_attributes_Screen.MagicEntry(
-                  displayMagicId, "magic.typemoonworld." + displayMagicId + ".name", this.resolveFallbackCategory(displayMagicId), -11557889
+                  displayMagicId, MagicTranslationKeys.name(displayMagicId), this.resolveFallbackCategory(displayMagicId), -11557889
                )
                : base.copy();
             rebuilt.add(entry);
@@ -293,7 +294,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
                    && !shouldHideCrestMagic(displayMagicId, basex)) {
                   Magical_attributes_Screen.MagicEntry entry = basex == null
                      ? new Magical_attributes_Screen.MagicEntry(
-                        displayMagicId, "key.typemoonworld.magic." + displayMagicId + ".short", this.resolveFallbackCategory(displayMagicId), -1811878
+                        displayMagicId, MagicTranslationKeys.shortName(displayMagicId), this.resolveFallbackCategory(displayMagicId), -1811878
                      )
                      : basex.copy();
                   entry.sourceType = "crest";
@@ -995,6 +996,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
          guiGraphics.drawString(this.font, String.valueOf(slot + 1), slotX + 2, slotY + 2, GuiUtils.ARCANE_TEXT_MUTED, false);
          if (!empty) {
             String name = wheelEntry.displayNameCache != null && !wheelEntry.displayNameCache.isEmpty()
+               && !wheelEntry.displayNameCache.startsWith("magic.") && !wheelEntry.displayNameCache.startsWith("key.")
                ? wheelEntry.displayNameCache
                : this.getFallbackMagicName(wheelEntry.magicId);
             String shortName = this.clampTextToWidth(name, WHEEL_SLOT_SIZE - 5);
@@ -1032,7 +1034,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
    private String getMagicFullName(Magical_attributes_Screen.MagicEntry entry) {
       String id = entry == null ? "" : entry.id;
       if (id != null && !id.isEmpty()) {
-         String nameKey = "magic.typemoonworld." + id + ".name";
+         String nameKey = MagicTranslationKeys.name(id);
          String full = Component.translatable(nameKey).getString();
          if (!full.equals(nameKey)) {
             return full;
@@ -1080,8 +1082,8 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
 
    private String getFallbackMagicName(String magicId) {
       if (magicId != null && !magicId.isEmpty()) {
-         String byName = Component.translatable("magic.typemoonworld." + magicId + ".name").getString();
-         return !byName.equals("magic.typemoonworld." + magicId + ".name") ? byName : magicId;
+         String byName = Component.translatable(MagicTranslationKeys.name(magicId)).getString();
+         return !byName.equals(MagicTranslationKeys.name(magicId)) ? byName : magicId;
       } else {
          return "";
       }
@@ -1323,7 +1325,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       }
 
       this.appendPresetPayloadLines(lines, entry.id, entry.presetPayload);
-      String descKey = "magic.typemoonworld." + entry.id + ".desc";
+      String descKey = MagicTranslationKeys.description(entry.id);
       this.appendDescriptionLines(lines, descKey, ChatFormatting.GRAY);
       double proficiency = this.getMagicProficiency(entry);
       if (proficiency >= 0.0) {
@@ -1859,7 +1861,7 @@ public class Magical_attributes_Screen extends AbstractContainerScreen<Magicalat
       Magical_attributes_Screen.MagicEntry base = this.magicCatalogById.get(wheelEntry.magicId);
       Magical_attributes_Screen.MagicEntry entry = base == null
          ? new Magical_attributes_Screen.MagicEntry(
-            wheelEntry.magicId, "key.typemoonworld.magic." + wheelEntry.magicId + ".short", this.resolveFallbackCategory(wheelEntry.magicId), -11557889
+            wheelEntry.magicId, MagicTranslationKeys.shortName(wheelEntry.magicId), this.resolveFallbackCategory(wheelEntry.magicId), -11557889
          )
          : base.copy();
       entry.sourceType = wheelEntry.sourceType == null ? "self" : wheelEntry.sourceType;

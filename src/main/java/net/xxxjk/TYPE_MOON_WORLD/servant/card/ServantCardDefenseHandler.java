@@ -18,7 +18,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
-import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.BrokenPhantasmProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
@@ -27,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.PseudoSpiralSwordProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.SwordBarrelProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -60,40 +60,24 @@ public final class ServantCardDefenseHandler {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantCombatDefenseService.tick(player);
       ServantParams params = paramsFor(vars);
       if (params == null) {
          clear(player);
          return;
       }
-      CompoundTag data = player.getPersistentData();
-      initializeResources(data, params);
-      double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
-      double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
-      if ("arash".equals(vars.servant_card_id)) {
-         staminaRegen = ArashCombatRules.boostedDefenseRecovery(staminaRegen);
-         poiseRegen = ArashCombatRules.boostedPoiseRecovery(poiseRegen);
-      }
-      if ("lancelot_berserker".equals(vars.servant_card_id)) {
-         double recoveryMultiplier = LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier();
-         staminaRegen *= recoveryMultiplier;
-         poiseRegen *= recoveryMultiplier;
-      }
-      data.putDouble(TAG_STAMINA, Math.min(ServantCombatFormulas.staminaMax(params),
-         data.getDouble(TAG_STAMINA) + staminaRegen / 20.0));
-      data.putDouble(TAG_POISE, Math.min(ServantCombatFormulas.poiseMax(params),
-         data.getDouble(TAG_POISE) + poiseRegen / 20.0));
    }
 
    public static void clear(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
-      data.remove(TAG_STAMINA);
-      data.remove(TAG_POISE);
-      data.remove(TAG_INVULN_UNTIL);
-      data.remove(TAG_LAST_DODGE_TICK);
-      data.remove(TAG_LAST_GUARD_TICK);
-      data.remove(TAG_GUARD_EXHAUST_UNTIL);
-      data.remove(TAG_GUARD_BROKEN_UNTIL);
-      data.remove(TAG_LI_PASSIVE_DODGE_COOLDOWN);
+      data.remove(ServantCombatDefenseService.TAG_GUARDING);
+      data.remove(ServantCombatDefenseService.TAG_GUARD_START);
+      data.remove(ServantCombatDefenseService.TAG_LAST_GUARD_PACKET);
+      data.remove(ServantCombatDefenseService.TAG_LAST_RESULT);
+      data.remove(ServantCombatDefenseService.TAG_RESULT_UNTIL);
+      ServantCombatDefenseService.sync(player, true);
+      // Persistent resources and cooldowns survive form changes and relogging.
+
    }
 
    public static boolean handleIncomingDamage(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event) {
@@ -128,7 +112,7 @@ public final class ServantCardDefenseHandler {
          return false;
       }
       CompoundTag data = player.getPersistentData();
-      initializeResources(data, params);
+      ServantCombatDefenseService.initialize(player);
       long now = player.level().getGameTime();
       if (!defensePiercing && "artoria_pendragon".equals(vars.servant_card_id)) {
          event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(player, event.getSource(), event.getAmount()));
@@ -241,7 +225,7 @@ public final class ServantCardDefenseHandler {
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
          && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(event.getSource())
-         && (tryLiShuwenPassiveDodge(player, vars, event, now) || tryAutoDodge(player, vars, event, params, now))) {
+         && tryLiShuwenPassiveDodge(player, vars, event, now)) {
          if (event.getSource().is(DamageTypeTags.IS_EXPLOSION)) {
             event.setAmount(event.getAmount() * 0.5F);
             return false;
@@ -251,10 +235,15 @@ public final class ServantCardDefenseHandler {
          return true;
       }
 
+      if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
+         && ServantCombatDefenseService.trySkillAutoDodge(player)) {
+         event.setCanceled(true); event.setAmount(0); return true;
+      }
       Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage && !elementalSwordDamage
          || LancelotCombatHelper.rollsEternalArmsGuardBypass(event.getSource())
-         ? null : tryAutoGuard(player, event.getSource(), event.getAmount(), params, now);
+         ? null : ServantCombatDefenseService.applyGuardHit(player, event.getSource(), event.getAmount());
       if (reduced != null) {
+         ServantCombatDefenseService.markGuarded(event);
          if (reduced <= 0.0F) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -262,7 +251,7 @@ public final class ServantCardDefenseHandler {
          }
          event.setAmount(reduced);
       }
-      consumePoise(player, params, event.getAmount(), now);
+
       if (!specialNoblePhantasmDamage && tryBattleContinuation(player, event, data)) {
          return true;
       }
@@ -315,7 +304,7 @@ public final class ServantCardDefenseHandler {
             event.setAmount(damage * (1.0F - currentResistance));
          }
       } else if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + player.getBbHeight() * 0.45, player.getZ(), 18, 0.52, 0.45, 0.52, 0.045);
       }
 
@@ -383,27 +372,6 @@ public final class ServantCardDefenseHandler {
       return source != null && (source.is(NeoForgeMod.POISON_DAMAGE) || source.is(DamageTypes.WITHER));
    }
 
-   private static boolean canReactTo(ServerPlayer player, DamageSource source) {
-      if (source == null || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-         return false;
-      }
-      if (source.getEntity() == player || source.getDirectEntity() == player) {
-         return false;
-      }
-      if (source.is(DamageTypes.FELL_OUT_OF_WORLD)
-         || source.is(DamageTypes.GENERIC_KILL)
-         || source.is(DamageTypes.FALL)
-         || source.is(DamageTypes.DROWN)
-         || source.is(DamageTypes.FREEZE)
-         || source.is(DamageTypes.IN_FIRE)
-         || source.is(DamageTypes.ON_FIRE)
-         || source.is(DamageTypes.LAVA)
-         || source.is(DamageTypes.IN_WALL)) {
-         return false;
-      }
-      return source.getEntity() != null || source.getDirectEntity() != null;
-   }
-
    private static ServantParams paramsFor(TypeMoonWorldModVariables.PlayerVariables vars) {
       ServantDefinition definition = ServantDataRegistry.get(vars.servant_card_id);
       return definition == null ? null : definition.parameters();
@@ -451,118 +419,6 @@ public final class ServantCardDefenseHandler {
       player.hurtMarked = true;
       player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.8F);
       return true;
-   }
-
-   private static boolean tryAutoDodge(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, LivingIncomingDamageEvent event, ServantParams params, long now) {
-      if (BindingService.isBound(player.getUUID())) {
-         return false;
-      }
-      if (!canReactTo(player, event.getSource())) {
-         return false;
-      }
-      int agility = ServantCombatFormulas.agilityStep(params);
-      int cooldown = ServantCombatFormulas.dodgeCooldownTicks(params);
-      if ("emiya_archer".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id)) {
-         cooldown = Math.max(4, cooldown / 2);
-      }
-      if ("lancelot_berserker".equals(vars.servant_card_id)) {
-         cooldown = Math.max(1, (int)Math.ceil(cooldown / LancelotCombatHelper.eternalArmsMastershipRecoveryMultiplier()));
-      }
-      CompoundTag data = player.getPersistentData();
-      if (now < data.getLong(TAG_LAST_DODGE_TICK) + cooldown) {
-         return false;
-      }
-      boolean urgent = event.getAmount() >= player.getMaxHealth() * 0.08F
-         || event.getSource().getDirectEntity() instanceof Projectile
-         || event.getSource().is(DamageTypeTags.IS_EXPLOSION)
-         || player.getHealth() <= player.getMaxHealth() * 0.55F;
-      if (agility < 3 && !urgent) {
-         return false;
-      }
-      double chance = ServantCombatFormulas.baseDodgeChance(params, urgent);
-      if ("emiya_archer".equals(vars.servant_card_id)) {
-         chance += 0.12;
-      }
-      if (data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)) {
-         chance = Math.max(chance, Math.max(0.0F, data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG)));
-      }
-      if (data.getBoolean("ArtoriaInstinctAActive") && event.getSource().getDirectEntity() instanceof Projectile) {
-         chance = Math.max(chance, 0.90);
-      }
-      chance = Math.min(0.92, chance);
-      if (player.getRandom().nextDouble() > chance) {
-         return false;
-      }
-      double cost = Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * ("emiya_archer".equals(vars.servant_card_id) ? 0.55 : 1.0));
-      if (!ServantCardManaService.consume(player, vars, cost)) {
-         return false;
-      }
-      data.putLong(TAG_LAST_DODGE_TICK, now);
-      int invuln = ServantCombatFormulas.dodgeInvulnerabilityTicks(params);
-      if ("li_shuwen".equals(vars.servant_card_id)) {
-         invuln *= 2;
-      } else if ("emiya_archer".equals(vars.servant_card_id)) {
-         invuln += 5;
-      }
-      data.putLong(TAG_INVULN_UNTIL, now + invuln);
-      Vec3 away = dodgeDirection(player, event.getSource());
-      double distance = "emiya_archer".equals(vars.servant_card_id) ? 1.35 : 0.95;
-      player.setDeltaMovement(away.x * distance, Math.max(player.getDeltaMovement().y, "emiya_archer".equals(vars.servant_card_id) ? 0.14 : 0.08), away.z * distance);
-      player.hurtMarked = true;
-      spawnDefenseFx(player, ParticleTypes.CLOUD, SoundEvents.PLAYER_ATTACK_SWEEP, 1.35F);
-      return true;
-   }
-
-   private static Float tryAutoGuard(ServerPlayer player, DamageSource source, float amount, ServantParams params, long now) {
-      if (!canReactTo(player, source)) {
-         return null;
-      }
-      CompoundTag data = player.getPersistentData();
-      if (now < data.getLong(TAG_GUARD_EXHAUST_UNTIL)) {
-         return null;
-      }
-      double stamina = data.getDouble(TAG_STAMINA);
-      double cost = ServantCombatFormulas.blockStaminaCost(params);
-      if (stamina < cost) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
-         return null;
-      }
-      boolean shouldGuard = player.isBlocking()
-         || amount >= player.getMaxHealth() * 0.04F
-         || (data.getBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG)
-            && player.getRandom().nextFloat() < Math.max(0.0F, data.getFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG)));
-      if (!shouldGuard) {
-         return null;
-      }
-      boolean parry = player.isBlocking() && now - data.getLong(TAG_LAST_GUARD_TICK) <= ServantCombatFormulas.parryWindowTicks(params);
-      data.putLong(TAG_LAST_GUARD_TICK, now);
-      data.putDouble(TAG_STAMINA, Math.max(0.0, stamina - (parry ? ServantCombatFormulas.parryStaminaCost(params) : cost)));
-      if (data.getDouble(TAG_STAMINA) <= 0.0) {
-         data.putLong(TAG_GUARD_EXHAUST_UNTIL, now + 60L);
-      }
-      spawnDefenseFx(player, parry ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, parry ? 1.65F : 1.1F);
-      if (parry && !source.is(DamageTypeTags.IS_EXPLOSION)) {
-         return 0.0F;
-      }
-      float reduction = (float)ServantCombatFormulas.blockReduction(params);
-      float reduced = amount * (1.0F - reduction);
-      return source.is(DamageTypeTags.IS_EXPLOSION) ? Math.max(reduced, amount * 0.5F) : reduced;
-   }
-
-   private static void consumePoise(ServerPlayer player, ServantParams params, float amount, long now) {
-      if (amount < player.getMaxHealth() * 0.08F || now < player.getPersistentData().getLong(TAG_GUARD_BROKEN_UNTIL)) {
-         return;
-      }
-      CompoundTag data = player.getPersistentData();
-      double poise = Math.max(0.0, data.getDouble(TAG_POISE) - 10.0);
-      data.putDouble(TAG_POISE, poise);
-      if (poise <= 0.0) {
-         int breakTicks = ServantCombatFormulas.guardBreakTicks(params);
-         data.putLong(TAG_GUARD_BROKEN_UNTIL, now + breakTicks);
-         data.putDouble(TAG_POISE, ServantCombatFormulas.poiseMax(params) * 0.5);
-         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, breakTicks, 0, false, true, true));
-         spawnDefenseFx(player, ParticleTypes.CRIT, SoundEvents.SHIELD_BREAK, 0.9F);
-      }
    }
 
    private static Vec3 dodgeDirection(ServerPlayer player, DamageSource source) {

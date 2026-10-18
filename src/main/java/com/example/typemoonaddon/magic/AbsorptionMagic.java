@@ -22,7 +22,6 @@ public final class AbsorptionMagic {
                 ? "message.typemoonworld.magic.absorption.enabled"
                 : "message.typemoonworld.magic.absorption.disabled"), true);
 
-        // Handled without success prevents the main mod from adding its generic cast cooldown.
-        return MagicExecutionResult.FAILED;
+        return active ? MagicExecutionResult.STARTED : MagicExecutionResult.STOPPED;
     }
 }

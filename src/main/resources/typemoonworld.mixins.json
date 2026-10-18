@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "AbstractFurnaceBlockEntityMixin",
+    "PrimedTntMixin",
     "EntityPassengerPositionMixin",
     "AttributesMixin",
     "FurnaceFuelSlotMixin",
@@ -14,6 +15,7 @@
     "TranslatableContentsMixin"
   ],
   "client": [
+    "client.CombatLightningFlashMixin",
     "ItemRendererMixin",
     "client.GeoItemRendererMixin",
     "client.HumanoidArmorLayerMixin",

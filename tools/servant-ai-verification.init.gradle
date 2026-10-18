@@ -1,0 +1,17 @@
+// Keep AI verification independent of IDE builds and existing development worlds.
+allprojects {
+    layout.buildDirectory.set(file('build/servant-ai-verification'))
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/servant-ai-gametest-run')
+        if (project.findProperty('servantAiClientSmoke') == 'true') {
+            def smoke = project.sourceSets.create('servantAiClientSmoke') {
+                java.srcDir 'tools/servant-ai-client-smoke/java'
+                resources.srcDir 'tools/servant-ai-client-smoke/resources'
+                compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+                runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+            }
+            project.runs.client.modSources.add('typemoonworld_ai_smoke', smoke)
+            project.runs.client.workingDirectory project.file('build/servant-ai-client-run')
+        }
+    }
+}

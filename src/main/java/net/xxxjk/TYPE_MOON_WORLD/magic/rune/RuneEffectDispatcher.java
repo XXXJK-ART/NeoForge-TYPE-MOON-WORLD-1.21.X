@@ -965,6 +965,7 @@ public final class RuneEffectDispatcher {
    private static void lightning(RuneExecutionContext c, Vec3 point) {
       LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(c.level());
       if (bolt == null) { c.fail("lightning_unavailable"); return; }
+      bolt.setNoGravity(true); // Synced marker: retain lightning damage without whole-sky flash.
       bolt.moveTo(point); bolt.setCause(c.caster()); c.level().addFreshEntity(bolt);
       // The vanilla bolt remains authoritative; this adds the custom impact sprite.
       c.emit(ModParticles.ELEMENTAL_LIGHTNING.get(), point.add(0.0D, 1.0D, 0.0D), 8);

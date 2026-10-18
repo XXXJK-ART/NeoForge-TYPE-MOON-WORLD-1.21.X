@@ -445,6 +445,7 @@ public final class CasterGilgameshCombatHelper {
          projectile.setHomingTarget(target);
          projectile.setLaunchDelay(14 + (i / 6) * 4);
          projectile.setEffectStride(count >= 12 ? 2 : 1);
+         projectile.setVolleySize(count);
          level.addFreshEntity(projectile);
       }
       VFXServerEffects.spawnOriented(level, "gilgamesh_gate", center, forward, 128.0);
@@ -537,7 +538,7 @@ public final class CasterGilgameshCombatHelper {
       }
       level.sendParticles(GOLD, center.x, center.y, center.z, 90 + shots * 6, 2.4, 1.8, 2.4, 0.12);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 34 + shots, 1.6, 1.25, 1.6, 0.065);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
    }
 
    private static Vec3 workshopCenter(CompoundTag data) {

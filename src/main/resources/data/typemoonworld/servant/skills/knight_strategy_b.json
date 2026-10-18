@@ -1,4 +1,5 @@
 {
+  "rank": "B",
   "id": "knight_strategy_b",
   "display_name": "Knight Strategy B",
   "display_name_zh": "Knight Strategy B",
@@ -15,5 +16,11 @@
         "guarded_target_damage_bonus": 0.3
       }
     }
-  ]
+  ],
+  "defense": {
+    "guard": true,
+    "activation_actions": [
+      "diarmuid_knight_strategy"
+    ]
+  }
 }

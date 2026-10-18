@@ -1091,7 +1091,7 @@ public final class BaobhanSithServantSkills {
       spawnBurstParticles(level, victim, 1.8, 80);
       spawnRing(level, BLOOD_DUST, victim, 1.2, 36);
       spawnRing(level, PURPLE_DUST, victim, 2.2, 48);
-      level.sendParticles(ParticleTypes.FLASH, victim.x, victim.y, victim.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, victim.x, victim.y, victim.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, target.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.2F, 0.6F);
    }
 }

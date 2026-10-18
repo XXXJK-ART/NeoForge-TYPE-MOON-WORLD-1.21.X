@@ -84,7 +84,7 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
          }
          if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.FIREWORK, this.getX(), this.getY(), this.getZ(), 50, 2.0, 2.0, 2.0, 0.1);
-            serverLevel.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY(), this.getZ(), 5, 1.0, 1.0, 1.0, 0.0);
+            serverLevel.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 5, 1.0, 1.0, 1.0, 0.0);
          }
 
          AABB aabb = this.getBoundingBox().inflate(radius);

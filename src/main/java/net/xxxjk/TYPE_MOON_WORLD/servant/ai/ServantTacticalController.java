@@ -31,6 +31,9 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GawainEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantCommandMode;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
 
 /** Common pre-emptive defense layer. Character combat remains the fallback until migrated. */
 public final class ServantTacticalController {
@@ -43,15 +46,20 @@ public final class ServantTacticalController {
    private static final ResourceLocation DISTANT_PURSUIT = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/distant_pursuit");
    private static final ResourceLocation COMBAT_MANEUVER = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/combat_maneuver");
    private static final ResourceLocation TACTICAL_REPOSITION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/tactical_reposition");
-   private static final int ACTION_DECISION_INTERVAL = 4;
+   /** Expensive action scoring is a deliberate beat; active timelines still tick every frame. */
+   private static final int ACTION_DECISION_INTERVAL = 12;
    private static final Map<ServantEntity, CachedActionCandidates> ACTION_CACHE = new WeakHashMap<>();
 
    private ServantTacticalController() { }
 
    public static boolean tick(ServantEntity entity) {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive() || !AiMigrationPolicy.isArbitrated(entity)) return false;
+      if (ServantCombatExchangeService.scripted(entity, entity.getTarget())) return false;
       EvasionMovementService.tickAirState(entity);
       long now = level.getGameTime();
+      // NPC guard intent is recomputed from current threats every tick. This
+      // prevents a single telegraph from leaving the servant permanently guarded.
+      // DefenseService releases guard when the current telegraph ends.
       AiBrain brain = AiBrain.begin(entity);
       ServantTargetingService.refreshOrRecover(entity, now);
       rememberTarget(entity, brain.blackboard(), now);
@@ -76,6 +84,7 @@ public final class ServantTacticalController {
       boolean keepActionTimeline = plannedActive
          && ServantPlannedActionExecutor.stage(entity) != ServantPlannedActionExecutor.Stage.APPROACH;
       java.util.List<net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor> candidates = plannedActive
+         || ServantCombatExchangeService.ordinary(entity, entity.getTarget()) && !ServantDuelPacing.skillDecisionAllowed(entity)
          ? java.util.List.of()
           : cachedActionCandidates(entity, entity.getTarget(), phase.phase(), actionProfile, brain.blackboard(), now);
       if (tempo.meleePressure() && entity.getTarget() != null && entity.distanceTo(entity.getTarget()) <= 6.0) {
@@ -85,9 +94,13 @@ public final class ServantTacticalController {
       if (selected == null) entity.getPersistentData().remove("TypeMoonAiSelectedAction");
       else entity.getPersistentData().putString("TypeMoonAiSelectedAction", selected.id().toString());
       submitMasterCommand(entity, brain);
+      ServantDuelPacing.submitBasic(entity, brain, now);
+      ServantCombatExchangeService.submit(entity, brain, now);
       if (keepActionTimeline || (plannedActive && !meleeOverride)) submitActivePlannedAction(entity, brain, now);
       else if (!meleeOverride) {
-         for (var candidate : candidates) submitPlannedAction(entity, candidate, brain, now);
+         for (int rank = 0; rank < candidates.size(); rank++) {
+            submitPlannedAction(entity, candidates.get(rank), brain, now, rank);
+         }
          if (!orbiting) {
             submitCombatManeuver(entity, brain, now);
             submitTacticalReposition(entity, brain, now);
@@ -123,8 +136,11 @@ public final class ServantTacticalController {
                && !CombatMatchupEvaluator.canIgnoreProjectile(entity, gateProjectile)) {
                double utility = 100.0 - gateProjectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
-                     owner instanceof LivingEntity shooter ? shooter : null),
+                  () -> {
+                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                     EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
+                        owner instanceof LivingEntity shooter ? shooter : null);
+                  },
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          } else if (projectile != null) {
@@ -138,8 +154,11 @@ public final class ServantTacticalController {
                && !CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
                double utility = 100.0 - projectile.impactTicks() * 8.0;
                brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
-                     owner instanceof LivingEntity shooter ? shooter : null),
+                  () -> {
+                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                     EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
+                        owner instanceof LivingEntity shooter ? shooter : null);
+                  },
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          }
@@ -159,11 +178,18 @@ public final class ServantTacticalController {
             || threat.shape() == CombatThreat.Shape.CONE && threat.length() > 6.0;
          brain.submit(AiIntent.of(EVADE_ACTION, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 5, false,
             () -> {
-               if (rangedPressure) {
-                  EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
-                     source instanceof LivingEntity shooter ? shooter : null);
+               int agility = ServantCombatFormulas.agilityStep(entity.getDefinition() == null ? null : entity.getDefinition().parameters());
+               boolean dodge = rangedPressure || agility >= 3 || threat.ticksToImpact(now) <= 6L;
+               if (dodge) {
+                  ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
+                  if (rangedPressure) {
+                     EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
+                        source instanceof LivingEntity shooter ? shooter : null);
+                  } else {
+                     EvasionMovementService.tryEvade(entity, threat.origin());
+                  }
                } else {
-                  EvasionMovementService.tryEvade(entity, threat.origin());
+                  ServantCombatDefenseService.setGuarding(entity, true);
                }
             },
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
@@ -270,13 +296,13 @@ public final class ServantTacticalController {
    }
 
    private static void submitPlannedAction(ServantEntity entity, net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor action,
-                                           AiBrain brain, long now) {
+                                           AiBrain brain, long now, int rank) {
       LivingEntity target = entity.getTarget();
       if (!ServantPlannedActionExecutor.canExecute(entity, target, action, now)) return;
       boolean cast = action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.PROJECTILE)
          || action.tags().contains(net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiActionDescriptor.Tag.NOBLE_PHANTASM);
       brain.submit(AiIntent.attempt(action.id(), AiIntent.PRIORITY_ATTACK,
-         action.threat().danger() * 20.0 + action.maneuver().interruptLevel() * 6.0 + 10.0,
+         200.0 - rank,
          Math.max(1, action.timing().windupTicks()), action.threat().interruptible(),
          () -> ServantPlannedActionExecutor.execute(entity, target, action, now),
          cast ? AiControl.CAST : AiControl.ATTACK, AiControl.LOOK));

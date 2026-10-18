@@ -484,7 +484,7 @@ public final class ServantCardMedeaSkills {
          Vec3 strike = center.add((player.getRandom().nextDouble() - 0.5) * radius * 1.65, 0.0, (player.getRandom().nextDouble() - 0.5) * radius * 1.65);
          spawnMedeaLightning(level, strike, true);
       }
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 1.0, center.z, 2, 1.4, 0.5, 1.4, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1.0, center.z, 2, 1.4, 0.5, 1.4, 0.0);
       for (int i = 0; i < 7; i++) {
          level.sendParticles(
             ParticleTypes.ELECTRIC_SPARK,
@@ -538,6 +538,7 @@ public final class ServantCardMedeaSkills {
          return;
       }
       lightning.moveTo(center.x, center.y, center.z);
+      lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
       lightning.setVisualOnly(visualOnly);
       level.addFreshEntity(lightning);
    }
@@ -645,7 +646,7 @@ public final class ServantCardMedeaSkills {
          spawnMedeaWorkshopHighlight(level, center, radius, false);
       }
       if (isInsideMedeaWorkshop(player) && player.tickCount % 10 == 0) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + 5.0);
+         vars.servantCardState().addMana(5.0);
          vars.syncMana(player);
          player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 25, 0, false, false, false));
       }

@@ -1,5 +1,7 @@
 # 从零制作一个英灵：完整示范流程
 
+能力设计先阅读 [英灵设计规则](servant_design_rules.md)，需要交给其他 AI 时使用 [设计提示词与输出模板](servant_design_template.md)。本示例说明代码接入，不代替角色设计规范。
+
 这份文档参考 `MagicAddonTemplateExample.java` 的写法：先给一个能照着改名的最小示例，再解释每个文件为什么需要、放在哪里、怎么验证。
 
 示例英灵使用虚构角色 `Example Saber`，文件 id 使用 `example_saber`。你做自己的英灵时，把所有 `example_saber`、`ExampleSaber`、`EXAMPLE_SABER` 换成你的角色名即可。

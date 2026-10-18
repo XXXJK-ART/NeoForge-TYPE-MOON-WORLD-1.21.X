@@ -126,7 +126,7 @@ public final class AndrephiusService {
 
         TypeMoonWorldModVariables.PlayerVariables vars =
                 player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-        double rawMana = vars.player_mana;
+        double rawMana = vars.magicState().mana();
         double currentMana = sanitizeMana(vars);
         if (!Double.isFinite(rawMana) || rawMana < 0.0D) {
             state.manaDirty = true;
@@ -135,7 +135,7 @@ public final class AndrephiusService {
         double expected = Math.min(MANA_PER_TICK, remaining);
         double injected = Math.min(expected, currentMana);
         if (injected > 0.0D) {
-            vars.player_mana = Math.max(0.0D, currentMana - injected);
+            vars.magicState().setMana(currentMana - injected);
             state.injectedMana = Mth.clamp(
                     state.injectedMana + injected, 0.0D, MAX_INJECTED_MANA);
             state.chargedTicks++;
@@ -148,7 +148,7 @@ public final class AndrephiusService {
 
         boolean reachedMaximum = state.injectedMana >= MAX_INJECTED_MANA
                 || state.chargedTicks >= MAX_CHARGE_TICKS;
-        boolean manaDepleted = injected < expected || vars.player_mana <= 0.0D;
+        boolean manaDepleted = injected < expected || vars.magicState().mana() <= 0.0D;
         if (state.chargedTicks % MANA_SYNC_INTERVAL_TICKS == 0
                 || reachedMaximum
                 || manaDepleted) {
@@ -385,15 +385,15 @@ public final class AndrephiusService {
         PlayerMagicSelectionService.prepareCurrentSelection(player, vars);
         return vars.is_magus
                 && vars.is_magic_circuit_open
-                && vars.magic_cooldown <= 0.0D
+                && vars.magicState().cooldown() <= 0.0D
                 && PlayerMagicSelectionService.isCurrentSelection(
                         vars, AndrephiusMagic.MAGIC_ID);
     }
 
     private static double sanitizeMana(TypeMoonWorldModVariables.PlayerVariables vars) {
-        double current = vars.player_mana;
+        double current = vars.magicState().mana();
         if (!Double.isFinite(current) || current < 0.0D) {
-            vars.player_mana = 0.0D;
+            vars.magicState().setMana(0.0D);
             return 0.0D;
         }
         return current;
@@ -555,6 +555,7 @@ public final class AndrephiusService {
             LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(level);
             if (lightning != null) {
                 lightning.moveTo(strikePosition.x, strikePosition.y, strikePosition.z);
+                lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
                 lightning.setVisualOnly(true);
                 level.addFreshEntity(lightning);
             }

@@ -11,8 +11,8 @@ public final class ServantCombatFormulas {
    private static final double STAMINA_PER_STRENGTH_STEP = 8.0;
    private static final double BASE_POISE = 56.0;
    private static final double POISE_PER_ENDURANCE_STEP = 12.0;
-   private static final double DEFENSE_ARMOR_TOUGHNESS_BASE = 0.8;
-   private static final double DEFENSE_ARMOR_TOUGHNESS_PER_STEP = 0.3;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_BASE = 0.6;
+   private static final double DEFENSE_ARMOR_TOUGHNESS_PER_STEP = 0.225;
    private static final double DEFENSE_RECOVERY_PER_SECOND = 6.0;
    private static final double POISE_RECOVERY_PER_SECOND = 6.0;
 
@@ -24,6 +24,7 @@ public final class ServantCombatFormulas {
          case E -> 0;
          case D -> 1;
          case C -> 2;
+         case A_MINUS -> 2;
          case B -> 3;
          case A -> 4;
          // Keep A++ above A+ so the three-times rank remains distinguishable.
@@ -92,7 +93,7 @@ public final class ServantCombatFormulas {
    }
 
    public static int dodgeCooldownTicks(ServantParams params) {
-      return secondsToTicks(Math.max(0.70, 1.0 - agilityStep(params) * 0.05) / agilityMultiplier(params));
+      return DefenseRules.safeDodgeCooldown(secondsToTicks(Math.max(0.70, 1.0 - agilityStep(params) * 0.05) / agilityMultiplier(params)), Math.max(dodgeInvulnerabilityTicks(params), perfectDodgeInvulnerabilityTicks(params)));
    }
 
    public static int perfectDodgeWindowTicks(ServantParams params) {
@@ -104,7 +105,7 @@ public final class ServantCombatFormulas {
    }
 
    public static double staminaMax(ServantParams params) {
-      return BASE_STAMINA + defenseStep(params) * STAMINA_PER_STRENGTH_STEP;
+      return 1.5 * (BASE_STAMINA + defenseStep(params) * STAMINA_PER_STRENGTH_STEP);
    }
 
    public static double staminaRegenPerSecond(ServantParams params) {
@@ -112,7 +113,7 @@ public final class ServantCombatFormulas {
    }
 
    public static double blockReduction(ServantParams params) {
-      return Math.min(0.46, 0.28 + defenseStep(params) * 0.025);
+      return 0.80;
    }
 
    public static int parryWindowTicks(ServantParams params) {
@@ -124,11 +125,11 @@ public final class ServantCombatFormulas {
    }
 
    public static double parryStaminaCost(ServantParams params) {
-      return 5.0;
+      return 0.0;
    }
 
    public static double poiseMax(ServantParams params) {
-      return (BASE_POISE + enduranceStep(params) * POISE_PER_ENDURANCE_STEP) * toughnessMultiplier(params);
+      return 1.5 * (BASE_POISE + enduranceStep(params) * POISE_PER_ENDURANCE_STEP) * toughnessMultiplier(params);
    }
 
    public static double poiseRegenPerSecond(ServantParams params) {

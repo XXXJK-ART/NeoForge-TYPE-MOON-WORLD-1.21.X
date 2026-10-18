@@ -75,9 +75,12 @@ public final class ServantCardNightingaleSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
+      long voiceEnd = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "nightingale_pledge", NightingaleRules.NOBLE_PHANTASM_COOLDOWN,
+         ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, ticks), () -> { clearCastTags(player); clearRefundSnapshot(player); });
       long now = player.level().getGameTime();
       CompoundTag data = player.getPersistentData();
-      data.putLong(CAST_END, now + NightingaleRules.NOBLE_PHANTASM_WINDUP);
+      long releaseAt = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.releaseAt(player);
+      data.putLong(CAST_END, releaseAt > 0L ? releaseAt : voiceEnd);
       data.putDouble(CAST_X, player.getX());
       data.putDouble(CAST_Y, player.getY());
       data.putDouble(CAST_Z, player.getZ());
@@ -107,14 +110,14 @@ public final class ServantCardNightingaleSkills {
          clear(player, false);
          return;
       }
-      player.setPos(data.getDouble(CAST_X), data.getDouble(CAST_Y), data.getDouble(CAST_Z));
-      player.setDeltaMovement(Vec3.ZERO);
+
       player.fallDistance = 0.0F;
       if (player.level() instanceof ServerLevel level && now % 2L == 0L) {
          level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.5, player.getZ(), 5, 0.3, 0.45, 0.3, 0.02);
       }
       if (now < data.getLong(CAST_END)) return;
 
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.awaitVoice(player);
       clearCastTags(player);
       clearRefundSnapshot(player);
       ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, NightingaleRules.NOBLE_PHANTASM_COOLDOWN);

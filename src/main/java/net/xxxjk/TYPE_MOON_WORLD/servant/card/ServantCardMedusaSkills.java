@@ -742,7 +742,7 @@ public final class ServantCardMedusaSkills {
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
       if (!state.isAir() && hardness >= 0.0F && hardness < (charging ? 75.0F : 30.0F) && !state.is(Blocks.BEDROCK)) {
-         level.removeBlock(pos, false);
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
          return true;
       }
       return false;
@@ -774,7 +774,7 @@ public final class ServantCardMedusaSkills {
    }
 
    private static void spawnMedusaPegasusArrivalFx(ServerLevel level, MedusaPegasusEntity pegasus) {
-      level.sendParticles(ParticleTypes.FLASH, pegasus.getX(), pegasus.getY() + 1.0, pegasus.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, pegasus.getX(), pegasus.getY() + 1.0, pegasus.getZ(), 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 10, 0.22, 0.35, 0.22, 0.015);
       level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, pegasus.getX(), pegasus.getY() + 0.9, pegasus.getZ(), 8, 0.25, 0.35, 0.25, 0.015);
       level.sendParticles(MEDUSA_SUMMON_LIGHT_PARTICLE, pegasus.getX(), pegasus.getY() + 0.8, pegasus.getZ(), 14, 0.28, 0.42, 0.28, 0.0);
@@ -897,7 +897,7 @@ public final class ServantCardMedusaSkills {
          spawnMedusaBloodfortLine(level, majorNodes[i], minorNodes[i], MEDUSA_BLOODFORT_NODE_PARTICLE, 0.34);
          spawnMedusaBloodfortLine(level, minorNodes[i], center.add(0.0, 0.06, 0.0), MEDUSA_BLOODFORT_SIGIL_PARTICLE, 0.3);
       }
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.1, center.z, 1, 0.05, 0.02, 0.05, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.1, center.z, 1, 0.05, 0.02, 0.05, 0.0);
    }
 
    private static void spawnMedusaBloodfortPeripheralSigils(ServerLevel level, Vec3 center, double radius, boolean noble) {

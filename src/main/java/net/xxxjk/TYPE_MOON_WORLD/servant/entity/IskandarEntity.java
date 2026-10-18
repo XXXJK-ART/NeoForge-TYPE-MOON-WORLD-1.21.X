@@ -487,7 +487,7 @@ public final class IskandarEntity extends ServantEntity {
       data.putInt(TAG_IONIOI_NEXT_INDEX, lifetimeDeaths);
       this.triggerNamedActionAnimation("ionioi_hetairoi");
       ServantVoiceHelper.tryPlayIskandarIonioi(this);
-      level.sendParticles(ParticleTypes.FLASH, this.getX(), this.getY() + 1.2, this.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY() + 1.2, this.getZ(), 4, 0.0, 0.0, 0.0, 0.0);
       level.playSound(null, this.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.4F, 0.75F);
       rememberIonioiMount(level);
       discardLocalMounts(level);
@@ -540,7 +540,7 @@ public final class IskandarEntity extends ServantEntity {
          iskandar.gordiusWheelUuid = null;
          iskandar.restoreIonioiMount(ionioiLevel);
          iskandar.spawnInitialFormation(ionioiLevel);
-         ionioiLevel.sendParticles(ParticleTypes.FLASH, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
+         ionioiLevel.sendParticles(ParticleTypes.END_ROD, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
          ionioiLevel.playSound(null, BlockPos.containing(armyEntry), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.85F);
          return iskandar;
       }
@@ -560,7 +560,7 @@ public final class IskandarEntity extends ServantEntity {
       int duration = 120 + this.getRandom().nextInt(81);
       Vec3 center = this.position().add(target.position()).scale(0.5);
       level.playSound(null, BlockPos.containing(center), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.7F);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y + 0.4, center.z, 4, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.4, center.z, 4, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.DUST_PLUME, center.x, center.y + 0.1, center.z, 64, 2.8, 0.2, 2.8, 0.08);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.25, center.z, 32, 1.6, 0.18, 1.6, 0.025);
 

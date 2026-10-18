@@ -128,7 +128,7 @@ public final class MagicAddonTemplateExample {
             return false;
          } else {
             CompoundTag payload = getSlotPayload(slot);
-            return caster.hasLineOfSight(target) && ("crest".equals(slot.sourceType) || vars.player_mana >= readManaCost(payload, false));
+            return caster.hasLineOfSight(target) && ("crest".equals(slot.sourceType) || vars.magicState().hasMana(readManaCost(payload, false)));
          }
       }
 
@@ -198,10 +198,10 @@ public final class MagicAddonTemplateExample {
    private static boolean consumeMana(TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (amount <= 0.0) {
          return true;
-      } else if (vars == null || vars.player_mana < amount) {
+      } else if (vars == null || !vars.magicState().hasMana(amount)) {
          return false;
       } else {
-         vars.player_mana = Math.max(0.0, vars.player_mana - amount);
+         vars.magicState().tryConsume(amount);
          return true;
       }
    }

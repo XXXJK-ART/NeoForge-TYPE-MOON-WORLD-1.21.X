@@ -1,0 +1,14 @@
+{
+  "name_key": "magic.fatesupport.message_magic.name",
+  "category": "typemoonworld:basic",
+  "school": "typemoonworld:none",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": false,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "knowledge_only": false,
+  "npc_global_cooldown": 0,
+  "npc_cooldown": 0
+}

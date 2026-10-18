@@ -85,7 +85,7 @@ public final class ManaBurstService {
       if (data.getInt(MODE_TAG) == mode) {
          clear(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.off"), true);
-         return MagicExecutionResult.SUCCESS;
+         return MagicExecutionResult.stopped();
       }
       clear(player);
       if (!ManaHelper.consumeManaStrict(player, WheelCastingModifierService.adjustManaCost(player, UPKEEP[level - 1]), false)) {
@@ -101,7 +101,7 @@ public final class ManaBurstService {
       MagicProficiencyService.add(vars, MAGIC_ID, 0.25);
       vars.syncPlayerVariables(player);
       player.displayClientMessage(Component.translatable("message.typemoonworld.magic.mana_burst.on", level), true);
-      return MagicExecutionResult.SUCCESS;
+      return MagicExecutionResult.STARTED;
    }
 
    private static MagicExecutionResult direct(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int level) {
@@ -328,7 +328,7 @@ public final class ManaBurstService {
    private static void spawnToggleFx(ServerPlayer player, int mode, int level) {
       if (player.level() instanceof ServerLevel serverLevel) {
          double y = player.getY() + player.getBbHeight() * 0.55;
-         serverLevel.sendParticles(ParticleTypes.FLASH, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          serverLevel.sendParticles(ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 34 + level * 8, 0.55, 0.65, 0.55, 0.12);
          serverLevel.sendParticles(mode == 1 ? ParticleTypes.CRIT : ParticleTypes.END_ROD, player.getX(), y, player.getZ(), 18 + level * 5, 0.45, 0.55, 0.45, 0.08);
       }
@@ -385,7 +385,7 @@ public final class ManaBurstService {
    }
 
    private static void spawnDirectBeamFx(ServerLevel level, Vec3 eye, Vec3 look, double range, int levelRank) {
-      level.sendParticles(ParticleTypes.FLASH, eye.x + look.x * 0.8, eye.y + look.y * 0.8, eye.z + look.z * 0.8, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, eye.x + look.x * 0.8, eye.y + look.y * 0.8, eye.z + look.z * 0.8, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, eye.x + look.x * 1.1, eye.y + look.y * 1.1, eye.z + look.z * 1.1, 2, 0.12, 0.12, 0.12, 0.0);
       for (double d = 0.8; d <= range; d += 0.75) {
          Vec3 p = eye.add(look.scale(d));
@@ -401,7 +401,7 @@ public final class ManaBurstService {
    }
 
    private static void spawnDirectImpactFx(ServerLevel level, Vec3 pos, int levelRank) {
-      level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 2 + levelRank / 2, 0.25, 0.25, 0.25, 0.0);
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.x, pos.y, pos.z, 14 + levelRank * 5, 0.45, 0.35, 0.45, 0.05);
       level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 18 + levelRank * 6, 0.32, 0.32, 0.32, 0.12);
@@ -440,7 +440,7 @@ public final class ManaBurstService {
          || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
          return false;
       }
-      boolean destroyed = level.destroyBlock(pos, false, player);
+      boolean destroyed = net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.destroyBlock(level, pos, false, player);
       if (destroyed) {
          level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.16, 0.16, 0.16, 0.03);
          level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3, 0.12, 0.12, 0.12, 0.035);

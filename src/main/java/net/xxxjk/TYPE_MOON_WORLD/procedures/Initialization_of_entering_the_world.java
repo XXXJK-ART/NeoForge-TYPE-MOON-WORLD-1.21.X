@@ -21,12 +21,12 @@ public class Initialization_of_entering_the_world {
 
    private static void execute(@Nullable Event event, Entity entity) {
       if (entity != null) {
-         if (((TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).player_max_mana == 0.0) {
+         if (((TypeMoonWorldModVariables.PlayerVariables)entity.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES)).magicState().maxMana() == 0.0) {
             TypeMoonWorldModVariables.PlayerVariables _vars = (TypeMoonWorldModVariables.PlayerVariables)entity.getData(
                TypeMoonWorldModVariables.PLAYER_VARIABLES
             );
-            _vars.player_max_mana = 0.0;
-            _vars.player_mana = 0.0;
+            _vars.magicState().setMaxMana(0.0);
+            _vars.magicState().setMana(0.0);
          }
       }
    }

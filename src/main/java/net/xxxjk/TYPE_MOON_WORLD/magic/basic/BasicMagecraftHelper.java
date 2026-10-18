@@ -28,12 +28,12 @@ public final class BasicMagecraftHelper {
    public static boolean isLowManaTarget(LivingEntity target) {
       if (target instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return vars.is_magus && vars.player_max_mana < LOW_MANA_MAX_THRESHOLD;
+         return vars.is_magus && vars.magicState().maxMana() < LOW_MANA_MAX_THRESHOLD;
       }
 
       if (target instanceof net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity) {
          TypeMoonWorldModVariables.PlayerVariables vars = target.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return vars.player_max_mana < LOW_MANA_MAX_THRESHOLD;
+         return vars.magicState().maxMana() < LOW_MANA_MAX_THRESHOLD;
       }
 
       return false;

@@ -64,12 +64,12 @@ public final class ImaginaryDiveMagic {
                     "message.typemoonworld.imaginary_dive.invalid_depth"), true);
             return;
         }
-        if (!Double.isFinite(vars.magic_cooldown) || vars.magic_cooldown > 0.0D) {
+        if (vars.magicState().cooldown() > 0.0D) {
             player.displayClientMessage(Component.translatable(
                     "message.typemoonworld.imaginary_dive.cooldown"), true);
             return;
         }
-        double mana = Double.isFinite(vars.player_mana) ? Math.max(0.0D, vars.player_mana) : 0.0D;
+        double mana = vars.magicState().mana();
         if (mana < MANA_COST) {
             player.displayClientMessage(Component.translatable(
                     "message.typemoonworld.imaginary_dive.insufficient_mana", format(MANA_COST)), true);
@@ -85,8 +85,8 @@ public final class ImaginaryDiveMagic {
             case UNCHANGED -> player.displayClientMessage(Component.translatable(
                     "message.typemoonworld.imaginary_dive.unchanged"), true);
             case CHANGED -> {
-                vars.player_mana = Math.max(0.0D, mana - MANA_COST);
-                vars.magic_cooldown = Math.max(vars.magic_cooldown, COOLDOWN_TICKS);
+                vars.magicState().setMana(mana - MANA_COST);
+                vars.magicState().setCooldownAtLeast(COOLDOWN_TICKS);
                 vars.syncMana(player);
                 player.displayClientMessage(Component.translatable(
                         "message.typemoonworld.imaginary_dive.changed", format(requestedDepth)), true);

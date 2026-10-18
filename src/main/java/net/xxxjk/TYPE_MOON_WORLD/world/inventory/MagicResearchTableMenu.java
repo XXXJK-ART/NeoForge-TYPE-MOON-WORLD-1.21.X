@@ -13,6 +13,8 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
@@ -22,7 +24,9 @@ import net.xxxjk.TYPE_MOON_WORLD.init.TypeMoonWorldModMenus;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicLearningStrategy;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.MagecraftRiskService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.world.leyline.LeylineService;
 
 public class MagicResearchTableMenu extends AbstractContainerMenu {
    private final MagicResearchTableBlockEntity blockEntity; private final ItemStackHandler items; private final ContainerLevelAccess access; private final ContainerData data;
@@ -72,6 +76,44 @@ public class MagicResearchTableMenu extends AbstractContainerMenu {
    public void tryResearch(ServerPlayer player,String id){
        var vars=player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES); if(id==null||id.isBlank()||!MagicLearningStrategy.canResearch(id)||!MagicLearningStrategy.isLearned(vars, id)){ player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_locked"),true); return; }
       ItemStack in=items.getStackInSlot(0); boolean analysis="magic_analysis".equals(id); if(analysis){ if(!in.is(ModItems.UNKNOWN_MAGIC_PAGE.get())){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_need_unknown"),true);return;} } else if(!net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(in.getItem()).getPath().equals(MagicLearningStrategy.pageItemPath(id))){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_need_page"),true);return;}
-      double proficiency=MagicProficiencyService.get(vars,id); double cost=MagicLearningStrategy.researchManaCost(id,proficiency); if(vars.player_mana<cost){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.insufficient_mana"),true);return;} int ticks=MagicLearningStrategy.researchTicks(id,proficiency);if(!blockEntity.start(id,player.getUUID(),ticks)){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_busy"),true);return;}vars.player_mana-=cost;in.shrink(1);vars.syncPlayerVariables(player);blockEntity.setChanged();broadcastChanges();
+      int fragmentSlot = findMagicFragment(player);
+      if (fragmentSlot < 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_need_fragment"), true);
+         return;
+      }
+      int paperSlot = findItem(player, Items.PAPER);
+      int inkSlot = findItem(player, Items.INK_SAC);
+      if (paperSlot < 0 || inkSlot < 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_need_recording_material"), true);
+         return;
+      }
+      double proficiency=MagicProficiencyService.get(vars,id);
+      double leyline = player.level() instanceof ServerLevel level ? LeylineService.getRegenMultiplier(level, player.blockPosition()) : 1.0D;
+      double cost=MagicLearningStrategy.researchManaCost(id,proficiency) / Math.sqrt(Math.max(0.5D, leyline));
+      if(!vars.magicState().hasMana(cost)){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.insufficient_mana"),true);return;}
+      int ticks=(int)Math.max(40L, Math.round(MagicLearningStrategy.researchTicks(id,proficiency) / Math.max(0.65D, leyline)));
+      if(!blockEntity.start(id,player.getUUID(),ticks)){player.displayClientMessage(Component.translatable("message.typemoonworld.magic.research_busy"),true);return;}
+      vars.magicState().tryConsume(cost); in.shrink(1); consumeMagicFragment(player, fragmentSlot); consumeMagicFragment(player, paperSlot); consumeMagicFragment(player, inkSlot); vars.syncMana(player); blockEntity.setChanged(); broadcastChanges();
+   }
+
+   private static int findMagicFragment(ServerPlayer player) {
+      for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+         if (player.getInventory().getItem(i).is(ModItems.MAGIC_FRAGMENTS.get())) return i;
+      }
+      return -1;
+   }
+
+   private static int findItem(ServerPlayer player, net.minecraft.world.item.Item item) {
+      for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+         if (player.getInventory().getItem(i).is(item)) return i;
+      }
+      return -1;
+   }
+
+   private static void consumeMagicFragment(ServerPlayer player, int slot) {
+      ItemStack stack = player.getInventory().getItem(slot);
+      if (stack.isEmpty()) return;
+      stack.shrink(1);
+      player.getInventory().setChanged();
    }
 }

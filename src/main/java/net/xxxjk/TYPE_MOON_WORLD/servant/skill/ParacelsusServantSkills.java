@@ -596,7 +596,7 @@ public final class ParacelsusServantSkills {
       if (state.isAir() || state.is(net.minecraft.world.level.block.Blocks.BEDROCK) || hardness < 0.0F || hardness >= maxHardness) {
          return false;
       }
-      if (level.removeBlock(pos, false)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
          level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, heavy ? 3 : 1, 0.12, 0.12, 0.12, 0.02);
          return true;
       }
@@ -644,7 +644,7 @@ public final class ParacelsusServantSkills {
    }
 
    private static void castFireFurnace(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
-      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, 120, 3.6, 0.35, 3.6, 0.08);
+      level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.35, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 3.6, 0.35, 3.6, 0.08);
       level.sendParticles(ParticleTypes.LAVA, center.x, center.y + 0.25, center.z, 34, 2.8, 0.18, 2.8, 0.02);
       level.sendParticles(FIRE, center.x, center.y + 0.5, center.z, 70, 2.6, 0.45, 2.6, 0.02);
       breakElementalTerrain(level, entity, center, 8.0, 4, 48, 0.72F, 0.52F);
@@ -665,8 +665,8 @@ public final class ParacelsusServantSkills {
    }
 
    private static void castDeepSeaPressure(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
-      level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.8, center.z, 160, 3.0, 2.1, 3.0, 0.10);
-      level.sendParticles(ParticleTypes.BUBBLE, center.x, center.y + 1.0, center.z, 120, 2.4, 1.7, 2.4, 0.08);
+      level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.8, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(160), 3.0, 2.1, 3.0, 0.10);
+      level.sendParticles(ParticleTypes.BUBBLE, center.x, center.y + 1.0, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 2.4, 1.7, 2.4, 0.08);
       level.sendParticles(WATER, center.x, center.y + 0.7, center.z, 76, 2.1, 1.1, 2.1, 0.02);
       breakElementalTerrain(level, entity, center, 7.5, 4, 38, 0.58F, 0.42F);
       AABB prison = new AABB(center, center).inflate(3.2, 3.2, 3.2);
@@ -915,7 +915,7 @@ public final class ParacelsusServantSkills {
          var state = level.getBlockState(pos);
          float hardness = state.getDestroySpeed(level, pos);
          float cap = hardness < 0.0F ? 0.0F : (hardness < 8.0F ? softMax : hardMax);
-         if (!state.isAir() && hardness >= 0.0F && hardness < cap && level.removeBlock(pos, false)) {
+         if (!state.isAir() && hardness >= 0.0F && hardness < cap && net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
             broken++;
             level.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.15, 0.15, 0.15, 0.02);
          }

@@ -25,7 +25,7 @@ public final class KimarisMagic {
         }
 
         TypeMoonWorldModVariables.PlayerVariables vars = context.vars();
-        double currentMana = finiteNonNegative(vars.player_mana);
+        double currentMana = vars.magicState().mana();
         if (currentMana < MANA_COST) {
             player.displayClientMessage(Component.translatable(
                     "message.typemoonworld.magic.kimaris.insufficient_mana"), true);

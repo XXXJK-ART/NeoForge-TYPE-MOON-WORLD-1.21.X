@@ -56,7 +56,8 @@ public record VFXVanillaParticleDefinition(ParticleOptions options, int count, V
          case "soul_fire_flame" -> ParticleTypes.SOUL_FIRE_FLAME;
          case "wax_on" -> ParticleTypes.WAX_ON;
          case "wax_off" -> ParticleTypes.WAX_OFF;
-         case "flash" -> ParticleTypes.FLASH;
+         // Legacy packs keep loading, but never spawn the expanding flash quad.
+         case "flash", "minecraft:flash" -> ParticleTypes.END_ROD;
          case "explosion" -> ParticleTypes.EXPLOSION;
          case "explosion_emitter" -> ParticleTypes.EXPLOSION_EMITTER;
          case "heart" -> ParticleTypes.HEART;

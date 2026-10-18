@@ -139,6 +139,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    private static final EntityDataAccessor<Integer> SPIRITUAL_MANIFEST_TICKS = SynchedEntityData.defineId(
       ServantEntity.class, EntityDataSerializers.INT
    );
+   private static final EntityDataAccessor<Integer> COMBAT_POSE = SynchedEntityData.defineId(
+      ServantEntity.class, EntityDataSerializers.INT
+   );
 
    private final ServantAiEngine aiEngine = new ServantAiEngine();
    @Nullable
@@ -180,6 +183,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
    public int getAttackSwingTicks() {
       return this.attackSwingTicks;
+   }
+
+   /** Bridges character-specific 1..3 phases to the shared encounter decision. */
+   protected int withSharedCombatPhase(int healthPhase) {
+      if (this.level().isClientSide() || this.getTarget() == null || !this.getTarget().isAlive()) return healthPhase;
+      return Math.max(healthPhase, ServantCombatSystem.getPhase(this).id() + 1);
    }
 
    protected ServantEntity(EntityType<? extends ServantEntity> entityType, Level level, String servantId) {
@@ -238,6 +247,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       builder.define(CURRENT_MP, 0.0F);
       builder.define(SPIRITUAL_DISSOLVING, false);
       builder.define(SPIRITUAL_MANIFEST_TICKS, 0);
+      builder.define(COMBAT_POSE, 0);
    }
 
    @Override
@@ -358,6 +368,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
       }
       super.tick();
+      if (!this.level().isClientSide) {
+         int pose = this.entityData.get(COMBAT_POSE);
+         if (pose % 1000 > 0) this.entityData.set(COMBAT_POSE, pose - 1);
+         else if (pose > 0) this.entityData.set(COMBAT_POSE, 0);
+      }
       if (!this.level().isClientSide && this.entityData.get(SPIRITUAL_MANIFEST_TICKS) > 0) {
          this.entityData.set(SPIRITUAL_MANIFEST_TICKS, this.entityData.get(SPIRITUAL_MANIFEST_TICKS) - 1);
       }
@@ -502,14 +517,19 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
-         boolean tacticalHandled = !combatHandled && ServantTacticalController.tick(this);
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
+         boolean pacingHandled = !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
+         boolean tacticalHandled = pacingHandled || !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
          if (!combatHandled && !tacticalHandled) {
             super.customServerAiStep();
             this.aiEngine.tick(this);
          }
+         if (!combatHandled && !tacticalHandled
+            && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiMigrationPolicy.isArbitrated(this)) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(this, this.getTarget(), this.level().getGameTime());
+         }
          ServantFlightCombatService.tickIndependentController(this);
-         ServantFlightCombatService.tick(this);
          this.tickManaHealthConversion();
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         
@@ -802,7 +822,9 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       ServantSkillRegistry.ensureInitialized();
       ServantExecutionContext ctx = new ServantExecutionContext(this, null, params.manaPool(), 0);
       for (String skillId : def.skillIds()) {
-         ServantSkillRegistry.execute(skillId, ctx);
+         var skill = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDataRegistry.get(skillId);
+         if (skill == null || skill.type() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.SkillType.PASSIVE)
+            ServantSkillRegistry.execute(skillId, ctx);
       }
 
       this.refreshDimensions();
@@ -1013,7 +1035,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    /**
     * 触发冲刺攻击动画    */
    public void triggerChargeAnimation() {
-      this.chargeAnimationTicks = 30; // 1.5s
+      this.triggerChargeAnimation(30);
+   }
+
+   public void triggerChargeAnimation(int durationTicks) {
+      this.chargeAnimationTicks = Math.max(this.chargeAnimationTicks, Math.max(1, durationTicks));
       playActionAnimation("charge");
       if (this.level() instanceof ServerLevel sl) {
          sl.sendParticles(ParticleTypes.CLOUD,
@@ -1210,6 +1236,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    public boolean isAttackSwinging() {
       return this.attackSwingTicks > 0;
    }
+
+   public void setCombatPose(int pose, int ticks) {
+      this.entityData.set(COMBAT_POSE, Math.max(0, Math.min(2, pose)) * 1000 + Math.max(0, Math.min(999, ticks)));
+      if (pose == 1) this.triggerNamedActionAnimation("dodge");
+      else if (pose == 2) this.triggerNamedActionAnimation("guard");
+   }
+
+   public int getCombatPose() { return this.entityData.get(COMBAT_POSE) / 1000; }
+   public int getCombatPoseTicks() { return this.entityData.get(COMBAT_POSE) % 1000; }
 
    public boolean isPerformingAction() {
       return this.jumpAttackAnimationTicks > 0 || this.chargeAnimationTicks > 0
@@ -1453,7 +1488,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             this.getX(), this.getY() + 1.5, this.getZ(),
             20, 0.3, 1.2, 0.3, 0.05);
          // 鐢卞唴鍚戝鎵╂暎鐨勭櫧鑹插厜鐜?
-         sl.sendParticles(ParticleTypes.FLASH,
+         sl.sendParticles(ParticleTypes.END_ROD,
             this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
             5, 0.0, 0.0, 0.0, 0.0);
          // 韬綋閫愭笎閫忔槑鐨勭伆鐑晥鏋?
@@ -1507,7 +1542,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          }
 
          if (this.spiritualDissolveTicks >= SPIRITUAL_DISSOLVE_DURATION) {
-            sl.sendParticles(ParticleTypes.FLASH,
+            sl.sendParticles(ParticleTypes.END_ROD,
                this.getX(), this.getY() + this.getBbHeight() * 0.6, this.getZ(),
                1, 0.0, 0.0, 0.0, 0.0);
             sl.sendParticles(ParticleTypes.END_ROD,
@@ -1739,7 +1774,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
       // 涓绘帶鍒跺櫒锛歩dle / walk
-      controllers.add(new AnimationController<>(this, "controller", 0, event -> {
+      controllers.add(new AnimationController<>(this, "controller", 2, event -> {
+         event.getController().setAnimationSpeed(this.isSprinting() ? 1.4 : 1.0);
          var animations = this.getAnimationSet();
          String animation = null;
          if (this.isSpiritualTransitionLocked()) {
@@ -1760,7 +1796,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return animation != null ? event.setAndContinue(RawAnimation.begin().thenLoop(animation)) : PlayState.STOP;
       }));
       // 鍔ㄤ綔鎺у埗鍣紙transition = 0锛屾壙杞芥妧鑳戒笌鏀诲嚮鍔ㄤ綔锛?
-      this.actionCtrl = new AnimationController<>(this, "action_controller", 0,
+      this.actionCtrl = new AnimationController<>(this, "action_controller", 2,
          event -> this.isSpiritualTransitionLocked() ? PlayState.STOP : PlayState.CONTINUE)
          .receiveTriggeredAnimations();
       controllers.add(this.actionCtrl);

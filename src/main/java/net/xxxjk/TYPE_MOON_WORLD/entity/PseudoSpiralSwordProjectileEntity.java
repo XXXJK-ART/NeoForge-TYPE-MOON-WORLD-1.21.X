@@ -117,7 +117,7 @@ public class PseudoSpiralSwordProjectileEntity extends ThrowableItemProjectile {
          target.hurtMarked = true;
       }
       if (this.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.FLASH, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 42, 0.45, 0.55, 0.45, 0.18);
          level.sendParticles(ParticleTypes.END_ROD, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 28, 0.35, 0.45, 0.35, 0.1);
       }

@@ -90,8 +90,7 @@ public final class ZaganService {
         if (!PlayerMagicSelectionService.isCurrentSelection(vars, ZaganMagic.MAGIC_ID)
                 || !vars.is_magus
                 || !vars.is_magic_circuit_open
-                || !Double.isFinite(vars.magic_cooldown)
-                || vars.magic_cooldown > 0.0D) {
+                || vars.magicState().cooldown() > 0.0D) {
             return false;
         }
 

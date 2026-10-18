@@ -14,7 +14,7 @@ import net.xxxjk.TYPE_MOON_WORLD.block.entity.ArtificialLeylineBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
-import com.example.typemoonaddon.magic.ManaFurnaceService;
+import net.xxxjk.typemoonworld.api.AddonManaSource;
 
 public final class ServantCardManaService {
    private static final double SERVANT_CARD_REGEN_MULTIPLIER = 1.0;
@@ -41,41 +41,42 @@ public final class ServantCardManaService {
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!vars.servant_card_transformed) {
+      var card = vars.servantCardState();
+      if (!card.transformed()) {
          return;
       }
-      if (vars.servant_card_max_mana <= 0.0) {
-         vars.servant_card_max_mana = maxManaFor(vars.servant_card_id);
+      if (card.maxMana() <= 0.0) {
+         card.setMaxMana(maxManaFor(card.id()));
       }
       double expectedRegen = 0.0;
       ServerPlayer master = getMaster(player, vars);
       boolean linked = MasterServantLinkService.canUseMasterMana(player, vars, master);
-      boolean medeaException = "medea".equals(vars.servant_card_id);
+      boolean medeaException = "medea".equals(card.id());
       double linkedRegen = 0.0;
       if (linked && master != null) {
          if (medeaException) {
-            linkedRegen = regenPerSecondFor(vars.servant_card_id)
+            linkedRegen = regenPerSecondFor(card.id())
                * Math.max(0.0, 1.0 - MasterServantLinkService.distanceDecay(player, vars, master));
          } else {
             TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            linkedRegen = masterVars.player_mana_egenerated_every_moment
+            linkedRegen = masterVars.magicState().manaRegen()
                * MasterServantLinkService.linkedRegenMultiplier(player, vars)
                * SERVANT_CARD_REGEN_MULTIPLIER;
          }
       }
       expectedRegen = passiveRegenForContractState(vars.servant_card_contract_state,
-         regenPerSecondFor(vars.servant_card_id), linkedRegen);
+         regenPerSecondFor(card.id()), linkedRegen);
       if (hasValidServantCardLeyline(player, vars)) {
-         expectedRegen = regenPerSecondFor(vars.servant_card_id);
+         expectedRegen = regenPerSecondFor(card.id());
       }
       if (player.hasEffect(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION)) {
          expectedRegen *= 0.5;
       }
-      if (Math.abs(vars.servant_card_mana_regen - expectedRegen) > 1.0E-6) {
-         vars.servant_card_mana_regen = expectedRegen;
+      if (Math.abs(card.manaRegen() - expectedRegen) > 1.0E-6) {
+         card.setManaRegen(expectedRegen);
       }
-      if (expectedRegen > 0.0 && vars.servant_card_mana < vars.servant_card_max_mana) {
-         vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + vars.servant_card_mana_regen / 20.0);
+      if (expectedRegen > 0.0 && card.mana() < card.maxMana()) {
+         card.setMana(Math.min(card.maxMana(), card.mana() + card.manaRegen() / 20.0));
       }
       if (player.tickCount % 20 == 0) {
          vars.syncMana(player);
@@ -88,6 +89,7 @@ public final class ServantCardManaService {
          case A -> 60.0;
          case B -> 120.0;
          case C -> 180.0;
+         case A_MINUS -> 180.0;
          case D -> 240.0;
          case E -> 300.0;
       };
@@ -123,7 +125,11 @@ public final class ServantCardManaService {
          clearNoblePhantasmPowerScale(player);
          return false;
       }
+      ManaSnapshot paymentBefore = snapshot(player, vars);
       consumeUpTo(player, vars, effectiveCost);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, true, paymentBefore.servantMana() - vars.servantCardState().mana());
+      if (paymentBefore.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, paymentBefore.master(), false,
+         paymentBefore.masterMana() - paymentBefore.master().getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana());
       player.getPersistentData().putDouble(NOBLE_PHANTASM_POWER_SCALE_TAG, 1.0);
       return true;
    }
@@ -144,17 +150,17 @@ public final class ServantCardManaService {
       if (player == null || vars == null) {
          return 0.0;
       }
-      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+      if (AddonManaSource.hasInfiniteSupply(player)) {
          return Double.MAX_VALUE;
       }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return Double.MAX_VALUE;
       }
-      double available = Math.max(0.0, vars.servant_card_mana);
+      double available = Math.max(0.0, vars.servantCardState().mana());
       ServerPlayer master = getMaster(player, vars);
       if (master != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
          TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         available += Math.max(0.0, masterVars.player_mana);
+         available += Math.max(0.0, masterVars.magicState().mana());
       }
       return available;
    }
@@ -163,13 +169,14 @@ public final class ServantCardManaService {
       if (player == null || vars == null || amount <= 0.0) {
          return 0.0;
       }
-      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+      if (AddonManaSource.hasInfiniteSupply(player)) {
          return amount;
       }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
          return amount;
       }
-      double own = Math.min(Math.max(0.0, vars.servant_card_mana), amount);
+      var card = vars.servantCardState();
+      double own = Math.min(Math.max(0.0, card.mana()), amount);
       double remaining = amount - own;
       ServerPlayer master = getMaster(player, vars);
       TypeMoonWorldModVariables.PlayerVariables masterVars = master == null
@@ -177,14 +184,14 @@ public final class ServantCardManaService {
          : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       double masterSpent = 0.0;
       if (remaining > 0.0 && masterVars != null && MasterStateManager.canDrawMasterMana(player, vars, master)) {
-         masterSpent = Math.min(Math.max(0.0, masterVars.player_mana), remaining);
+         masterSpent = Math.min(Math.max(0.0, masterVars.magicState().mana()), remaining);
       }
       if (own > 0.0) {
-         vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - own);
+         card.setMana(Math.max(0.0, card.mana() - own));
          vars.syncMana(player);
       }
       if (masterSpent > 0.0 && masterVars != null) {
-         masterVars.player_mana = Math.max(0.0, masterVars.player_mana - masterSpent);
+         masterVars.magicState().setMana(Math.max(0.0, masterVars.magicState().mana() - masterSpent));
          MasterServantLinkService.markDrawingMasterMana(master, player);
          masterVars.syncMana(master);
       }
@@ -193,18 +200,18 @@ public final class ServantCardManaService {
 
    public static ManaSnapshot snapshot(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       ServerPlayer master = getMaster(player, vars);
-      double masterMana = master == null ? 0.0 : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
-      return new ManaSnapshot(vars.servant_card_mana, master, masterMana);
+      double masterMana = master == null ? 0.0 : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana();
+      return new ManaSnapshot(vars.servantCardState().mana(), master, masterMana);
    }
 
    public static void restore(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ManaSnapshot snapshot) {
       clearNoblePhantasmPowerScale(player);
-      vars.servant_card_mana = snapshot.servantMana();
+      vars.servantCardState().setMana(snapshot.servantMana());
       vars.syncMana(player);
       ServerPlayer master = snapshot.master();
       if (master != null) {
          TypeMoonWorldModVariables.PlayerVariables masterVars = master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         masterVars.player_mana = snapshot.masterMana();
+         masterVars.magicState().setMana(snapshot.masterMana());
          masterVars.syncMana(master);
       }
    }
@@ -213,7 +220,7 @@ public final class ServantCardManaService {
       if (amount <= 0.0) {
          return true;
       }
-      if (ManaFurnaceService.hasInfiniteSupply(player)) {
+      if (AddonManaSource.hasInfiniteSupply(player)) {
          return true;
       }
       if (ServantCardUnlimitedMode.isEnabled(player)) {
@@ -226,18 +233,19 @@ public final class ServantCardManaService {
          }
          amount *= multiplier;
       }
-      double own = Math.min(vars.servant_card_mana, amount);
+      var card = vars.servantCardState();
+      double own = Math.min(card.mana(), amount);
       double remaining = amount - own;
       ServerPlayer master = getMaster(player, vars);
       TypeMoonWorldModVariables.PlayerVariables masterVars = master == null
          ? null
          : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (remaining > 0.0 && (masterVars == null || !MasterStateManager.canDrawMasterMana(player, vars, master) || masterVars.player_mana < remaining)) {
+      if (remaining > 0.0 && (masterVars == null || !MasterStateManager.canDrawMasterMana(player, vars, master) || masterVars.magicState().mana() < remaining)) {
          return false;
       }
-      vars.servant_card_mana -= own;
+      card.setMana(card.mana() - own);
       if (remaining > 0.0 && masterVars != null) {
-         masterVars.player_mana -= remaining;
+         masterVars.magicState().setMana(masterVars.magicState().mana() - remaining);
          MasterServantLinkService.markDrawingMasterMana(master, player);
          if (sync) {
             masterVars.syncMana(master);
@@ -251,20 +259,22 @@ public final class ServantCardManaService {
 
    public static boolean consumeOwnMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (amount <= 0.0) return true;
-      if (ManaFurnaceService.hasInfiniteSupply(player)) return true;
-      if (vars.servant_card_mana + 1.0E-6 < amount) return false;
-      vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
+      if (AddonManaSource.hasInfiniteSupply(player)) return true;
+      var card = vars.servantCardState();
+      if (card.mana() + 1.0E-6 < amount) return false;
+      card.setMana(Math.max(0.0, card.mana() - amount));
       vars.syncMana(player);
       return true;
    }
 
    /** Restores card MP from explicit mana media in the player's inventory. */
    public static boolean restoreFromInventory(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (player == null || vars == null || !vars.servant_card_transformed
-         || vars.servant_card_mana >= vars.servant_card_max_mana) {
+      if (player == null || vars == null || !vars.servantCardState().transformed()
+         || vars.servantCardState().mana() >= vars.servantCardState().maxMana()) {
          return false;
       }
-      double need = vars.servant_card_max_mana - vars.servant_card_mana;
+      var card = vars.servantCardState();
+      double need = card.maxMana() - card.mana();
       ManaSource source = null;
       for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
          ItemStack stack = player.getInventory().getItem(slot);
@@ -278,27 +288,28 @@ public final class ServantCardManaService {
       }
       if (source == null) return false;
       consumeInventorySource(player, source);
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + source.amount());
+      card.setMana(Math.min(card.maxMana(), card.mana() + source.amount()));
       vars.syncMana(player);
       return true;
    }
 
    public static boolean restoreFromActiveItem(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars,
                                                 InteractionHand hand) {
-      if (player == null || vars == null || hand == null || !vars.servant_card_transformed
-         || vars.servant_card_mana >= vars.servant_card_max_mana) return false;
+      if (player == null || vars == null || hand == null || !vars.servantCardState().transformed()
+         || vars.servantCardState().mana() >= vars.servantCardState().maxMana()) return false;
+      var card = vars.servantCardState();
       ItemStack stack = player.getItemInHand(hand);
       ManaSource source = manaSource(-1, stack);
       if (source == null) return false;
-      double amount = Math.min(source.amount(), vars.servant_card_max_mana - vars.servant_card_mana);
+      double amount = Math.min(source.amount(), card.maxMana() - card.mana());
       consumeHeldSource(player, hand, source.remainder());
-      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + amount);
+      card.setMana(Math.min(card.maxMana(), card.mana() + amount));
       vars.syncMana(player);
       return true;
    }
 
    public static boolean hasValidServantCardLeyline(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (player == null || vars == null || !vars.servant_card_transformed
+      if (player == null || vars == null || !vars.servantCardState().transformed()
          || !vars.servant_card_artificial_leyline_bonus_active
          || !player.level().dimension().location().toString().equals(vars.servant_card_artificial_leyline_dimension)) return false;
       BlockPos pos = new BlockPos(vars.servant_card_artificial_leyline_x,

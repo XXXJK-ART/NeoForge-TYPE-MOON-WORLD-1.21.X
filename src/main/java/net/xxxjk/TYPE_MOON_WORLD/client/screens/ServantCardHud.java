@@ -29,6 +29,8 @@ import net.xxxjk.TYPE_MOON_WORLD.client.HundredFacesClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.PaleRiderClientState;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardKeybindConfig;
 import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardSkillInputController;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardDefenseClientState;
+import net.xxxjk.TYPE_MOON_WORLD.client.CombatThreatClientState;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardCasterGilgameshSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -88,26 +90,27 @@ public class ServantCardHud {
       int manaY = guiHeight - 20;
       if (vars.master_active) {
          if (vars.master_servant_link_partner_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF00656D, 0xFF0099A6);
+            drawBar(gui, minecraft, manaX, manaY, 120, linkLabel("Servant", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF48EDF5, 0xFF439DFF);
          }
       } else {
          int barY = manaY;
-         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF00656D, 0xFF0099A6);
+         drawBar(gui, minecraft, manaX, barY, 120, "MP", vars.servant_card_mana, vars.servant_card_max_mana, 0xFF48EDF5, 0xFF439DFF);
          barY -= 11;
          if ("gilles_de_rais_caster".equals(vars.servant_card_id) && vars.servant_card_gilles_spellbook_max_mana > 0.0) {
             drawBar(gui, minecraft, manaX, barY, 120,
                Component.translatable("hud.typemoonworld.servant_card.gilles_spellbook_mana").getString(),
                vars.servant_card_gilles_spellbook_mana, vars.servant_card_gilles_spellbook_max_mana,
-               0xFF0A3478, 0xFF2E79B5);
+               0xFF559DFF, 0xFF54D0F5);
             barY -= 11;
          }
          if (vars.master_servant_link_partner_max_mana > 0.0) {
             drawBar(gui, minecraft, manaX, barY, 120, linkLabel("Master", vars), vars.master_servant_link_partner_mana, vars.master_servant_link_partner_max_mana, 0xFF501477, 0xFF996BA5);
             barY -= 11;
          }
-         if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
-            drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF004A4D, 0xFF0099A6);
-         }
+          if (vars.servant_card_medea_sub_servant_active && vars.servant_card_medea_sub_servant_max_mana > 0.0) {
+             drawBar(gui, minecraft, manaX, barY, 120, "Servant [M]", vars.servant_card_medea_sub_servant_mana, vars.servant_card_medea_sub_servant_max_mana, 0xFF48EDF5, 0xFF439DFF);
+          }
+          drawThreatStatus(gui, minecraft, manaX, barY - 22);
       }
 
       int x = 6;
@@ -140,9 +143,11 @@ public class ServantCardHud {
       drawPaleRiderStatus(gui, minecraft, vars, x, y + 58);
       drawHundredFacesStatus(gui, minecraft, vars, x, y + 58);
       drawHeraclesGodHandLives(gui, minecraft, vars, x, y + 58);
+      drawNumericDefenseStatus(gui, minecraft, x, y + 90);
+      drawGilgameshShield(gui, minecraft, vars, x + 125, y + 90);
       drawMasterPosition(gui, minecraft, vars, x, y + 68);
       drawMasterLossStatus(gui, minecraft, vars, x, y + 78);
-      drawCooldownGrid(gui, minecraft, vars, 5, 98);
+      drawCooldownGrid(gui, minecraft, vars, 5, 126);
       drawMedeaStocks(gui, minecraft, vars, guiWidth, 36);
       drawParacelsusStocks(gui, minecraft, vars, guiWidth, 36);
       drawArashArrows(gui, minecraft, vars, guiWidth, 36);
@@ -400,6 +405,50 @@ public class ServantCardHud {
       float scale = 0.62F;
       int textX = x + (int)((width - minecraft.font.width(text) * scale) / 2.0F);
       drawScaledString(gui, minecraft, Component.literal(text), textX, y + 1, 0xFFFFFFFF, scale);
+   }
+
+   private static void drawNumericDefenseStatus(GuiGraphics gui, Minecraft minecraft, int x, int y) {
+      double stamina = ServantCardDefenseClientState.stamina();
+      double staminaMax = ServantCardDefenseClientState.staminaMax();
+      double poise = ServantCardDefenseClientState.poise();
+      double poiseMax = ServantCardDefenseClientState.poiseMax();
+      if (staminaMax <= 0.0 && poiseMax <= 0.0) return;
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.guard_value",
+         Math.round(stamina), Math.round(staminaMax)), x, y, 0xFFE5B04A, 0.58F);
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.poise_value",
+         Math.round(poise), Math.round(poiseMax)), x, y + 9, 0xFFB36BE8, 0.58F);
+      long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
+      long dodge = Math.max(0L, ServantCardDefenseClientState.dodgeCooldownEnd() - now);
+      long broken = Math.max(0L, ServantCardDefenseClientState.guardBrokenEnd() - now);
+      String dodgeText = dodge <= 0L ? Component.translatable("hud.typemoonworld.servant_card.ready").getString()
+         : String.format(java.util.Locale.ROOT, "%.1fs", dodge / 20.0F);
+      if (ServantCardDefenseClientState.autoDodgeMax() > 0) {
+         long restore = Math.max(0, ServantCardDefenseClientState.autoRestore() - now);
+         dodgeText += " | " + ServantCardDefenseClientState.autoDodges() + "/" + ServantCardDefenseClientState.autoDodgeMax()
+            + (restore > 0 ? String.format(java.util.Locale.ROOT, " (%.1fs)", restore / 20.0) : "");
+      }
+      if (ServantCardDefenseClientState.guardBroken()) dodgeText += " | " + Component.translatable("hud.typemoonworld.servant_card.guard_broken").getString();
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.dodge_value", dodgeText),
+         x, y + 18, broken > 0L ? 0xFFFF5555 : 0xFFE0E0E0, 0.58F);
+   }
+
+   private static void drawGilgameshShield(GuiGraphics gui, Minecraft minecraft,
+                                           TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      if (!("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id))
+         || !ServantCardDefenseClientState.shieldActive()) return;
+      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.divine_shield",
+         Math.round(ServantCardDefenseClientState.shieldHp()), Math.round(ServantCardDefenseClientState.shieldMax())),
+         x, y, 0xFFFFD54F, 0.6F);
+   }
+
+   private static void drawThreatStatus(GuiGraphics gui, Minecraft minecraft, int x, int y) {
+      CombatThreatClientState.Entry strongest = CombatThreatClientState.threats().stream()
+         .min(java.util.Comparator.comparingInt(CombatThreatClientState.Entry::ticksToImpact))
+         .orElse(null);
+      if (strongest == null) return;
+      String marker = strongest.dodgeable() ? "危险" : strongest.blockable() ? "防御" : "必中";
+      String text = marker + " " + strongest.danger() + "  " + String.format(java.util.Locale.ROOT, "%.1fs", strongest.ticksToImpact() / 20.0F);
+      drawScaledString(gui, minecraft, Component.literal(text), x, y, strongest.danger() >= 4 ? 0xFFFF5555 : 0xFFFFD180, 0.58F);
    }
 
    private static String ticksToSeconds(int ticks) {

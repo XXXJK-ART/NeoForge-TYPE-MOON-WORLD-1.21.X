@@ -20,7 +20,7 @@
         { "t": 0.3, "size": 0.28 },
         { "t": 1.0, "size": 0.02 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GRAM_FLAME_UNSHEATH",
       "enable_trail": true,
       "vanilla_particles": [
@@ -58,7 +58,7 @@
         { "t": 0.72, "size": 0.34 },
         { "t": 1.0, "size": 0.03 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GRAM_DRAGON_SLAYER_ARC",
       "enable_trail": true,
       "vanilla_particles": [
@@ -95,7 +95,7 @@
         { "t": 0.4, "size": 0.34 },
         { "t": 1.0, "size": 0.025 }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GRAM_VOLCANIC_WAKE",
       "enable_trail": true,
       "vanilla_particles": [
@@ -125,7 +125,7 @@
         { "t": 0.5, "pos": [0.0, 0.1, 9.2], "scale": [3.4, 2.0, 3.4], "easing": "ease_out_back" },
         { "t": 1.0, "pos": [0.0, 0.1, 9.8], "scale": [4.8, 2.8, 4.8] }
       ],
-      "blend": "ADDITIVE",
+      "blend": "ADDITIVE", "material": {"shader":"gilgamesh_energy","bloom":1.35,"soft_particles":true,"distortion":true},
       "particle_role": "GRAM_DRAGON_IMPACT",
       "vanilla_particles": [
         { "type": "flash", "count": 1, "spread": [0.1, 0.1, 0.1], "offset": [0.0, 0.0, 9.0], "speed": 0.0, "chance": 0.72 }

@@ -87,7 +87,12 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
    }
 
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+      if (player instanceof ServerPlayer server && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(server)) return InteractionResultHolder.fail(player.getItemInHand(hand));
       if (player.isCrouching()) {
+         if (player instanceof ServerPlayer server) {
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(server, "muramasa_tsumukari", 1200,
+               ticks -> server.getCooldowns().addCooldown(this, ticks), () -> server.stopUsingItem());
+         }
          player.startUsingItem(hand);
          return InteractionResultHolder.consume(player.getItemInHand(hand));
       } else {
@@ -212,6 +217,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
    }
 
    public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeCharged) {
+      if (livingEntity instanceof ServerPlayer server && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(server, () -> releaseUsing(stack, level, livingEntity, timeCharged))) return;
       super.releaseUsing(stack, level, livingEntity, timeCharged);
       if (!level.isClientSide && livingEntity instanceof Player player) {
          int useDuration = this.getUseDuration(stack, livingEntity) - timeCharged;
@@ -250,7 +256,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
       if (shouldConsumeMuramasaCardMana(percent)) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          double costPerTick = CARD_MURAMASA_TOTAL_MANA_COST / CARD_MURAMASA_MAX_CHARGE_TICKS;
-         if (!ServantCardManaService.consumeSilently(player, vars, costPerTick)) {
+         if (!ServantCardManaService.consumeNoblePhantasm(player, vars, costPerTick)) {
             player.releaseUsingItem();
             player.displayClientMessage(Component.translatable("message.typemoonworld.not_enough_mana"), true);
             return;
@@ -299,8 +305,7 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
 
       if (level instanceof ServerLevel serverLevel) {
          int color = MagicCircuitColorHelper.ensureColor(player);
-         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-            ModSounds.SENKO_MURAMASA_VOICE_TSUMUKARI.get(), SoundSource.VOICE, 1.0F, 1.0F);
+
          spawnReleaseAirwaves(serverLevel, player, percent, color);
          MuramasaSlashHandler.initiateTsumukari(serverLevel, player, percent, 300, MuramasaSlashHandler.TSUMUKARI_DAMAGE_SLASH_WIDTH, 100);
          serverLevel.addFreshEntity(new TsumukariWaveProjectileEntity(serverLevel, player, percent, color));
@@ -333,8 +338,8 @@ public class TsumukariMuramasaItem extends SwordItem implements GeoItem, NoblePh
 
    private static boolean consumePlayerMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       if (amount <= 0.0) return true;
-      if (vars.player_mana + 1.0E-6 < amount) return false;
-      vars.player_mana -= amount;
+      if (!vars.magicState().tryConsume(amount)) return false;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, false, amount);
       vars.syncMana(player);
       return true;
    }

@@ -1,1 +1,8 @@
-{"id":"swallow_technique_b","display_name":"Swallow Technique B","display_name_zh":"\u71d5\u4e4b\u795e\u6280 B","type":"passive","effects":[]}
+{
+  "rank": "B",
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "ushiwakamaru_swallow_technique"
+    ]
+  },"id":"swallow_technique_b","display_name":"Swallow Technique B","display_name_zh":"\u71d5\u4e4b\u795e\u6280 B","type":"passive","effects":[]}

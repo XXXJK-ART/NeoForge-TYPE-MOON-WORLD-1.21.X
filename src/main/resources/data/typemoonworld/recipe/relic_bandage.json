@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["PWP", "PRP"],
+  "key": {
+    "P": {"item": "minecraft:paper"},
+    "W": {"item": "minecraft:white_dye"},
+    "R": {"item": "minecraft:red_dye"}
+  },
+  "result": {"id": "typemoonworld:relic_bandage", "count": 1}
+}

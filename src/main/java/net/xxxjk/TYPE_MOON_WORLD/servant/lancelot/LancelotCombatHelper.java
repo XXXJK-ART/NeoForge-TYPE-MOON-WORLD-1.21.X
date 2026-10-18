@@ -167,14 +167,18 @@ public final class LancelotCombatHelper {
          return false;
       }
       entity.setCurrentMp(entity.getCurrentMp() - AROUNDIGHT_DRAW_MP_COST);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, AROUNDIGHT_DRAW_MP_COST);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "lancelot_arondight", 1200, ticks -> data.putLong(AROUNDIGHT_COOLDOWN_UNTIL_TAG, level.getGameTime() + ticks), () -> { });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       data.putBoolean(AROUNDIGHT_MODE_TAG, true);
       data.putLong(AROUNDIGHT_DRAIN_TICK_TAG, now + AROUNDIGHT_DRAIN_INTERVAL);
       entity.setItemInHand(InteractionHand.MAIN_HAND, knightOfOwnerStack(new ItemStack(ModItems.AROUNDIGHT.get()), entity));
       entity.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
       applyAroundightModifiers(entity);
-      level.playSound(null, entity.blockPosition(), ModSounds.LANCELOT_BERSERKER_VOICE_NP.get(), SoundSource.HOSTILE, 1.35F, 0.95F);
-      level.sendParticles(ParticleTypes.FLASH, entity.getX(), entity.getY() + 1.0, entity.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
+
+      level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + 1.0, entity.getZ(), 1, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + 1.0, entity.getZ(), 40, 0.75, 0.8, 0.75, 0.2);
+      });
       return true;
    }
 

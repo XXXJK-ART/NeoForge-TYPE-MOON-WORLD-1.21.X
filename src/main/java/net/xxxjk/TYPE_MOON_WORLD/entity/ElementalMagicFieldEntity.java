@@ -365,10 +365,10 @@ public class ElementalMagicFieldEntity extends Entity {
          return true;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.player_mana + 1.0E-6 < this.manaPerTick) {
+      if (!vars.magicState().hasMana(this.manaPerTick)) {
          return false;
       }
-      vars.player_mana = Math.max(0.0, vars.player_mana - this.manaPerTick);
+      vars.magicState().tryConsume(this.manaPerTick);
       vars.syncMana(player);
       return true;
    }

@@ -1,4 +1,12 @@
 {
+  "rank": "B",
+  "defense": {
+    "evasion": true,
+    "activation_actions": [
+      "cu_protection_arrows",
+      "cu_protection_from_arrows"
+    ]
+  },
   "id": "protection_from_arrows_b",
   "display_name": "protection from arrows b",
   "display_name_zh": "protection from arrows b",
@@ -8,11 +16,22 @@
   "duration_ticks": 0,
   "effects": [],
   "ai": {
-    "facts": [{
-      "type": "projectile_negation",
-      "strength": 1.0,
-      "requires": ["mobile"],
-      "bypassed_by": ["immobilize", "stun", "freeze", "explosion", "piercing", "sure_hit"]
-    }]
+    "facts": [
+      {
+        "type": "projectile_negation",
+        "strength": 1.0,
+        "requires": [
+          "mobile"
+        ],
+        "bypassed_by": [
+          "immobilize",
+          "stun",
+          "freeze",
+          "explosion",
+          "piercing",
+          "sure_hit"
+        ]
+      }
+    ]
   }
 }

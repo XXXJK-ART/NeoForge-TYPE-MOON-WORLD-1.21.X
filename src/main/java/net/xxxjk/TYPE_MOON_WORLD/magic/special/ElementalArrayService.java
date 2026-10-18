@@ -299,10 +299,10 @@ public final class ElementalArrayService {
       if (perTick <= 1.0E-6) {
          return true;
       }
-      if (vars.player_mana + 1.0E-6 < perTick) {
+      if (vars.magicState().mana() + 1.0E-6 < perTick) {
          return false;
       }
-      vars.player_mana = Math.max(0.0, vars.player_mana - perTick);
+      vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - perTick));
       vars.syncMana(player);
       return true;
    }

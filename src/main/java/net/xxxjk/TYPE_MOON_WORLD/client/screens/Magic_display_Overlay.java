@@ -65,20 +65,21 @@ public class Magic_display_Overlay {
                 GuiUtils.renderHudPanel(event.getGuiGraphics(), barX - 3, barY - 3, barWidth + 6, barHeight + 6, GuiUtils.ARCANE_CYAN);
                 event.getGuiGraphics().fill(barX, barY, barX + barWidth, barY + barHeight, GuiUtils.ARCANE_BACKGROUND);
 
-                int startColor = 0xFF008F99;
-                int endColor = 0xFF205EAA;
+                int startColor = 0xFF48EDF5;
+                int endColor = 0xFF439DFF;
                 if (currentMana <= maxMana * 0.2) {
-                    startColor = 0xFFB33600;
-                    endColor = 0xFFB00000;
+                    startColor = 0xFFFF9448;
+                    endColor = 0xFFF34E52;
                 } else if (currentMana > maxMana) {
-                    startColor = 0xFFB000B0;
-                    endColor = 0xFF7200B8;
+                    startColor = 0xFFF277FF;
+                    endColor = 0xFFAE69FF;
                 }
 
                 if (maxMana > 0) {
                     double ratio = Math.min(1.0, Math.max(0.0, currentMana / maxMana));
                     int fillWidth = (int) (barWidth * ratio);
                     event.getGuiGraphics().fillGradient(barX, barY, barX + fillWidth, barY + barHeight, startColor, endColor);
+                    event.getGuiGraphics().fill(barX, barY, barX + fillWidth, barY + 1, 0x70FFFFFF);
                 }
 
                 event.getGuiGraphics().renderOutline(barX - 1, barY - 1, barWidth + 2, barHeight + 2, GuiUtils.ARCANE_BORDER);
@@ -300,15 +301,15 @@ public class Magic_display_Overlay {
         }
 
         String path = magicPath(magicId);
-        String selectedKey = "key.typemoonworld.magic." + path + ".selected";
+        String selectedKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.selectedName(magicId);
         MutableComponent selected = Component.translatable(selectedKey);
         if (!selected.getString().equals(selectedKey)) return selected;
 
-        String nameKey = "magic.typemoonworld." + path + ".name";
+        String nameKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.name(magicId);
         MutableComponent name = Component.translatable(nameKey);
         if (!name.getString().equals(nameKey)) return name;
 
-        String shortKey = "key.typemoonworld.magic." + path + ".short";
+        String shortKey = net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys.shortName(magicId);
         MutableComponent shortName = Component.translatable(shortKey);
         if (!shortName.getString().equals(shortKey)) return shortName;
         return Component.literal(path.replace('_', ' '));

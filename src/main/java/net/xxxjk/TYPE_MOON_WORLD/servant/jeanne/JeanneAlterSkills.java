@@ -15,6 +15,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.particles.ParticleTypes;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -59,6 +60,9 @@ public final class JeanneAlterSkills {
    private static final String INFERNO_BODY_COOLDOWN = "JeanneAlterInfernoBodyUntil";
    private static final String EPHEMERAL_DREAM_COOLDOWN = "JeanneAlterEphemeralDreamCooldownUntil";
    private static final String NOBLE_PHANTASM_COOLDOWN = "JeanneAlterNpUntil";
+   private static final String NP_CAST_START = "JeanneAlterNpCastStart";
+   private static final String NP_TARGET = "JeanneAlterNpTarget";
+   private static final String NP_PHASE = "JeanneAlterNpPhase";
    private static final float OBLIVION_CRIT_CHANCE = 0.16F;
    private static final float SELF_MOD_CRIT_CHANCE = 0.45F;
    private static final float SELF_MOD_CRIT_MULTIPLIER = 3.0F;
@@ -151,15 +155,11 @@ public final class JeanneAlterSkills {
       ServerPlayer p = c.player();
       if (!canAffordCardAction(p, 220.0D, true)) return ExecutionResult.FAILED;
       if (!(p.level() instanceof ServerLevel level)) return ExecutionResult.FAILED;
+      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, 64.0D, 2.0D);
+      if (target == null) return ExecutionResult.FAILED;
       JeanneAlterVoice.noblePhantasm(p);
+      beginNoblePhantasm(p, target, level);
       VFXServerEffects.spawnReplayable(level, "jeanne_alter_np_invocation", p, 2.3F);
-      for (LivingEntity target : p.level().getEntitiesOfClass(LivingEntity.class,
-            p.getBoundingBox().inflate(18.0D), e -> e != p && !e.isAlliedTo(p))) {
-         target.hurt(level.damageSources().source(NP_DAMAGE, p), 80.0F);
-         target.setRemainingFireTicks(160);
-         VFXServerEffects.spawn(level, "jeanne_alter_np_execution_flames", target, 128.0D);
-         applyNoblePhantasmDebuffs(target);
-      }
       return ExecutionResult.SUCCESS.withCost(220).withCooldown(2400);
    }
 
@@ -280,18 +280,13 @@ public final class JeanneAlterSkills {
       }
       servant.getPersistentData().putLong(NOBLE_PHANTASM_COOLDOWN, c.gameTick() + 2400L);
       servant.setCurrentMp(Math.max(0.0D, servant.getCurrentMp() - 220.0D));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(servant, 220);
       servant.getNavigation().stop();
       servant.faceToward(c.target().position());
       servant.triggerNamedActionAnimation("cast");
       JeanneAlterVoice.noblePhantasm(servant);
+      beginNoblePhantasm(servant, c.target(), level);
       VFXServerEffects.spawnReplayable(level, "jeanne_alter_np_invocation", servant, 2.3F);
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
-         servant.getBoundingBox().inflate(18.0D), e -> validTarget(servant, e))) {
-         target.hurt(level.damageSources().source(NP_DAMAGE, servant), 80.0F);
-         target.setRemainingFireTicks(160);
-         VFXServerEffects.spawn(level, "jeanne_alter_np_execution_flames", target, 128.0D);
-         applyNoblePhantasmDebuffs(target);
-      }
       return ExecutionResult.SUCCESS;
    }
 
@@ -425,6 +420,7 @@ public final class JeanneAlterSkills {
          data.putBoolean("CritDamageBoostActive", data.getBoolean(OBLIVION));
          data.putFloat("CritDamageMultiplier", data.getBoolean(OBLIVION) ? 2.0F : 1.0F);
       }
+      tickNoblePhantasm(entity, data, now);
    }
 
    private static void activateDeathLock(LivingEntity victim, long now, float lockedHealth) {
@@ -447,6 +443,83 @@ public final class JeanneAlterSkills {
       if (damage <= 0.0F) return;
       CompoundTag data = entity.getPersistentData();
       data.putInt(GRUDGE, Math.min(MAX_GRUDGE, data.getInt(GRUDGE) + 1));
+   }
+
+   private static void beginNoblePhantasm(LivingEntity caster, LivingEntity target, ServerLevel level) {
+      if (caster == null || target == null) return;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(caster, "jeanne_alter_np", 2400, ticks -> {
+         if (caster instanceof ServerPlayer player) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks);
+         else caster.getPersistentData().putLong(NOBLE_PHANTASM_COOLDOWN, caster.level().getGameTime() + ticks);
+      }, () -> clearNoblePhantasm(caster.getPersistentData()));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(caster, () -> {
+      CompoundTag data = caster.getPersistentData();
+      data.putLong(NP_CAST_START, level.getGameTime());
+      data.putUUID(NP_TARGET, target.getUUID());
+      data.putInt(NP_PHASE, -1);
+      if (caster instanceof net.minecraft.world.entity.Mob mob) mob.setTarget(target);
+      });
+   }
+
+   /** Three server-side phases keep the visual timeline and damage timeline together. */
+   private static void tickNoblePhantasm(LivingEntity caster, CompoundTag data, long now) {
+      if (!data.contains(NP_CAST_START) || !(caster.level() instanceof ServerLevel level)) return;
+      long age = now - data.getLong(NP_CAST_START);
+      if (age < 0L) { clearNoblePhantasm(data); return; }
+      LivingEntity target = resolveNobleTarget(caster, level, data);
+      if (age >= 20L && data.getInt(NP_PHASE) < 0) {
+         data.putInt(NP_PHASE, 0);
+         emitNoblePhase(level, caster, target, 0);
+         damageNoblePhase(caster, target, 34.0F, false);
+      }
+      if (age >= 48L && data.getInt(NP_PHASE) < 1) {
+         data.putInt(NP_PHASE, 1);
+         emitNoblePhase(level, caster, target, 1);
+         damageNoblePhase(caster, target, 58.0F, false);
+      }
+      if (age >= 78L && data.getInt(NP_PHASE) < 2) {
+         data.putInt(NP_PHASE, 2);
+         emitNoblePhase(level, caster, target, 2);
+         damageNoblePhase(caster, target, 110.0F, true);
+      }
+      if (age >= 106L) clearNoblePhantasm(data);
+   }
+
+   private static LivingEntity resolveNobleTarget(LivingEntity caster, ServerLevel level, CompoundTag data) {
+      LivingEntity target = data.hasUUID(NP_TARGET) && level.getEntity(data.getUUID(NP_TARGET)) instanceof LivingEntity living ? living : null;
+      if (validTarget(caster, target)) {
+         if (caster instanceof net.minecraft.world.entity.Mob mob) mob.setTarget(target);
+         return target;
+      }
+      target = level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(64.0D), e -> validTarget(caster, e))
+            .stream().min(java.util.Comparator.comparingDouble(caster::distanceToSqr)).orElse(null);
+      if (target != null) {
+         data.putUUID(NP_TARGET, target.getUUID());
+         if (caster instanceof net.minecraft.world.entity.Mob mob) mob.setTarget(target);
+      }
+      return target;
+   }
+
+   private static void emitNoblePhase(ServerLevel level, LivingEntity caster, LivingEntity target, int phase) {
+      Vec3 point = target == null ? caster.getEyePosition().add(caster.getLookAngle().scale(8.0D)) : target.getBoundingBox().getCenter();
+      int count = phase == 0 ? 18 : phase == 1 ? 34 : 60;
+      level.sendParticles(phase == 2 ? ParticleTypes.EXPLOSION_EMITTER : ParticleTypes.SOUL_FIRE_FLAME,
+            point.x, point.y, point.z, count, 0.9D + phase * 0.5D, 0.45D, 0.9D + phase * 0.5D, 0.04D);
+      VFXServerEffects.spawn(level, "jeanne_alter_np_execution_flames", point, 128.0D);
+   }
+
+   private static void damageNoblePhase(LivingEntity caster, LivingEntity target, float damage, boolean finalPhase) {
+      if (target == null || !validTarget(caster, target) || !(caster.level() instanceof ServerLevel level)) return;
+      for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(finalPhase ? 5.0D : 3.0D), e -> validTarget(caster, e))) {
+         victim.hurt(level.damageSources().source(NP_DAMAGE, caster), victim == target ? damage : damage * 0.35F);
+         victim.setRemainingFireTicks(160);
+         if (finalPhase) applyNoblePhantasmDebuffs(victim);
+      }
+   }
+
+   private static void clearNoblePhantasm(CompoundTag data) {
+      data.remove(NP_CAST_START);
+      data.remove(NP_TARGET);
+      data.remove(NP_PHASE);
    }
 
    @net.neoforged.bus.api.SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -507,7 +580,7 @@ public final class JeanneAlterSkills {
             DREAM_UNTIL, DREAM_READY, INFERNO_UNTIL, DEATH_LOCK_HEALTH, DEATH_LOCK_UNTIL,
             DEATH_LOCK_READY, INFERNO_PROC_READY, SELF_MOD_UNTIL, DRAGON_WITCH_UNTIL,
             DRAGON_WITCH_MULTIPLIER, "JeanneAlterInfernoProcAt", "CritDamageBoostActive",
-            "CritDamageMultiplier"}) data.remove(key);
+            "CritDamageMultiplier", NP_CAST_START, NP_TARGET, NP_PHASE}) data.remove(key);
    }
 
    public static boolean startFlagExplosion(ServerPlayer player) {

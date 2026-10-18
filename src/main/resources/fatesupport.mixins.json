@@ -1,0 +1,41 @@
+{
+  "required": true,
+  "package": "com.captain.servant.mixin",
+  "plugin": "com.captain.servant.compat.FateSupportMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "SpiritualizationMovementMixin",
+    "ServantCardActionMixin",
+    "ServantCardDefenseMixin",
+    "SpiritualizationCombatDefenseMixin",
+    "ArtificialLeylineMasterLossMixin",
+    "ArtificialLeylineManaMixin",
+    "LancelotKnightOfOwnerMixin",
+    "LancelotCombatHelperMixin",
+    "LancelotNpcAroundightMixin",
+    "LancelotNpcNoblePhantasmMixin",
+    "SuperbWarfareVehicleMixin",
+    "ServantCardSkillUtilsMixin",
+    "UBWBrokenPhantasmExplosionMixin",
+    "ArtoriaExcaliburBeamMixin",
+    "EmiyaServantCardSkillsMixin",
+    "EmiyaNamelessBowMixin",
+    "EmiyaArrowExplosionMixin",
+    "EmiyaBrokenPhantasmShieldMixin",
+    "accessor.UBWBrokenPhantasmExplosionAccessor"
+  ],
+  "client": [
+    "client.MagicalAttributesScreenMixin",
+    "client.ClientSpiritualizationMovementMixin",
+    "client.ServantCardHudMixin",
+    "client.SuperbWarfareGeoVehicleRendererMixin",
+    "client.SuperbWarfareVehicleRendererMixin",
+    "client.SuperbWarfareProjectileRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

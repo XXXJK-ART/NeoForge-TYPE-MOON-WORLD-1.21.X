@@ -247,7 +247,7 @@ public final class BeamClashManager {
       VFXServerEffects.spawn(level, "beam_clash_impact", center, 224.0);
       VFXServerEffects.screenFlash(level, center, 128.0, draw ? 10 : 7, draw ? 0.85F : 0.65F);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, draw ? 8 : 4, 1.2, 1.2, 1.2, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, draw ? 5 : 3, 0.4, 0.4, 0.4, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, draw ? 5 : 3, 0.4, 0.4, 0.4, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, draw ? 120 : 72, radius * 0.4, radius * 0.4, radius * 0.4, 0.2);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y, center.z, draw ? 90 : 54, radius * 0.35, radius * 0.35, radius * 0.35, 0.16);
       level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, draw ? 5.5F : 4.0F, draw ? 0.48F : 0.62F);
@@ -308,7 +308,7 @@ public final class BeamClashManager {
       if (owner instanceof ServantEntity servant) return servant.getCurrentMp();
       if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return vars.servant_card_transformed ? vars.servant_card_mana : vars.player_mana;
+         return vars.servantCardState().transformed() ? vars.servantCardState().mana() : vars.magicState().mana();
       }
       return 0.0;
    }
@@ -317,7 +317,7 @@ public final class BeamClashManager {
       if (owner instanceof ServantEntity servant) return servant.getMaxMp();
       if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return Math.max(1.0, vars.servant_card_transformed ? vars.servant_card_max_mana : vars.player_max_mana);
+         return Math.max(1.0, vars.servantCardState().transformed() ? vars.servantCardState().maxMana() : vars.magicState().maxMana());
       }
       return 1.0;
    }
@@ -327,11 +327,11 @@ public final class BeamClashManager {
          servant.setCurrentMp(Math.max(0.0, servant.getCurrentMp() - amount));
       } else if (owner instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         if (vars.servant_card_transformed) {
-            vars.servant_card_mana = Math.max(0.0, vars.servant_card_mana - amount);
+         if (vars.servantCardState().transformed()) {
+            vars.servantCardState().setMana(Math.max(0.0, vars.servantCardState().mana() - amount));
             vars.syncPlayerVariables(player);
          } else {
-            vars.player_mana = Math.max(0.0, vars.player_mana - amount);
+            vars.magicState().setMana(Math.max(0.0, vars.magicState().mana() - amount));
             vars.syncMana(player);
          }
       }
@@ -339,7 +339,7 @@ public final class BeamClashManager {
 
    private static void spawnSustainFx(ServerLevel level, Vec3 center, float balance) {
       double spread = 1.8 + Math.abs(balance) * 1.2;
-      if (level.getGameTime() % 6 == 0) level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 1, 0.1, 0.1, 0.1, 0.0);
+      if (level.getGameTime() % 6 == 0) level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 1, 0.1, 0.1, 0.1, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 22, spread, spread, spread, 0.18);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 16, spread * 0.75, spread * 0.75, spread * 0.75, 0.12);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, center.x, center.y, center.z, 14, spread * 0.7, spread * 0.7, spread * 0.7, 0.1);

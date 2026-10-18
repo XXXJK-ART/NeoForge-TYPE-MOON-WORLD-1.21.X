@@ -5,6 +5,7 @@ import javax.annotation.Nullable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import com.example.typemoonaddon.worm.WormType;
 
 public final class EngravedWormData {
     public static final String GU = "EngravedWormGu";
@@ -27,7 +28,7 @@ public final class EngravedWormData {
     }
 
     public static int gu(ItemStack stack) {
-        return Math.max(1, tag(stack).getInt(GU));
+        return WormType.clampGu(tag(stack).getInt(GU));
     }
 
     @Nullable
@@ -46,7 +47,7 @@ public final class EngravedWormData {
 
     public static void set(ItemStack stack, int guPower, @Nullable UUID owner, @Nullable String ownerName) {
         CompoundTag tag = tag(stack);
-        tag.putInt(GU, Math.max(1, guPower));
+        tag.putInt(GU, WormType.clampGu(guPower));
         if (owner == null) {
             tag.remove(OWNER);
         } else {

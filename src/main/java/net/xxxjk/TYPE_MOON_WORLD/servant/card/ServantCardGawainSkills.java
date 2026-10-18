@@ -297,7 +297,7 @@ public final class ServantCardGawainSkills {
       if (!canBreakSunBlock(level, pos, hardnessCap)) {
          return false;
       }
-      if (!level.removeBlock(pos, false)) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false)) {
          return false;
       }
       if (debris) {

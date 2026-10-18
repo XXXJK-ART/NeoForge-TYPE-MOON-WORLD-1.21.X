@@ -309,12 +309,18 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayOkitaSoujiSaberNp(ServantEntity servant) {
       if (isOkitaSoujiSaber(servant)) {
-         playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+         SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+         if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
+            playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
+         }
       }
    }
 
    public static void tryPlayOkitaSoujiSaberNp(OkitaSoujiSaberEntity servant) {
-      playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get());
+      SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
+         playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
+      }
    }
 
    public static void tryPlayIskandarIonioi(IskandarEntity servant) {
@@ -495,6 +501,12 @@ public final class ServantVoiceHelper {
       playVoiceForced(servant, "oda_np", 1.1F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_NP.get());
    }
 
+   public static void tryPlayOdaNobunagaSkill(ServantEntity servant) {
+      if (isOdaNobunaga(servant)) {
+         playVoiceForced(servant, "oda_skill", 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
+      }
+   }
+
    public static void tryPlayMuramasaNp(ServantEntity servant) {
       if (isMuramasa(servant)) {
          playVoiceForced(servant, "muramasa_np", 1.15F, 1.0F, ModSounds.SENKO_MURAMASA_VOICE_NP.get());
@@ -602,6 +614,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
@@ -627,6 +640,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG) && !"zhao_yun_np".equals(category)) {

@@ -1,6 +1,5 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic;
 
-import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.server.level.ServerPlayer;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -46,6 +45,7 @@ public final class MagicLearningProgressService {
       double next = Math.min(maxProgress(magicId), current + effectiveGain(current, amount));
       vars.magic_learning_progress.put(magicId, next);
       vars.magic_learning_progress_last_gain_tick.put(magicId, gameTick);
+      vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.MAGIC);
       return next;
    }
 
@@ -102,13 +102,21 @@ public final class MagicLearningProgressService {
       if (player == null) {
          return;
       }
+      // Progress decay is a slow process. Running it once per second keeps the
+      // same decay rate while avoiding a map copy for every player every tick.
+      if (player.tickCount % 20 != 0) {
+         return;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars == null || vars.magic_learning_progress.isEmpty()) {
          return;
       }
       long now = player.level().getGameTime();
       boolean changed = false;
-      for (Map.Entry<String, Double> entry : new HashMap<>(vars.magic_learning_progress).entrySet()) {
+      // The decay pass only changes values; iterating the live map avoids a
+      // full allocation/copy for every player. Keys are removed by migration,
+      // never by this pass, so the iterator remains structurally stable.
+      for (Map.Entry<String, Double> entry : vars.magic_learning_progress.entrySet()) {
          String magicId = entry.getKey();
          double current = Math.max(0.0D, entry.getValue());
          double max = maxProgress(magicId);
@@ -119,6 +127,7 @@ public final class MagicLearningProgressService {
             double next = Math.max(0.0D, current - decay);
             if (next != current) {
                vars.magic_learning_progress.put(magicId, next);
+               vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.MAGIC);
                changed = true;
             }
          }
@@ -134,6 +143,7 @@ public final class MagicLearningProgressService {
       }
       vars.magic_learning_progress.remove(magicId);
       vars.magic_learning_progress_last_gain_tick.remove(magicId);
+      vars.markDirty(TypeMoonWorldModVariables.PlayerVariables.StateDomain.MAGIC);
    }
 
    private static void checkThresholds(ServerPlayer player,

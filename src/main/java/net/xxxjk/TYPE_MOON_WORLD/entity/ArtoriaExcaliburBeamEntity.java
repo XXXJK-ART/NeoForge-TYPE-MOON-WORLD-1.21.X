@@ -224,6 +224,10 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       return base * (0.28 + this.powerScale() * 0.72);
    }
 
+   public boolean isGoldenVariant() {
+      return this.entityData.get(GOLDEN_VARIANT);
+   }
+
    @Override
    public float clashPower() { return this.powerScale(); }
 
@@ -334,7 +338,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.0F, 0.45F);
       level.playSound(null, BlockPos.containing(center), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.6F, 1.35F);
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 10, 1.0, 0.8, 1.0, 0.0);
-      level.sendParticles(ParticleTypes.FLASH, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
       VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192.0);
       float powerScale = this.powerScale() * this.clashDamageScale;
       int radius = Math.max(6, (int)Math.floor(28.0F * (0.25F + powerScale * 0.75F)));
@@ -376,7 +380,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, y, center.z, 95, radius * 0.55, 1.9, radius * 0.55, 0.055);
       level.sendParticles(ParticleTypes.CLOUD, center.x, y + 0.4, center.z, 80, radius * 0.48, 1.2, radius * 0.48, 0.11);
       level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.5, center.z, 70, radius * 0.38, 1.6, radius * 0.38, 0.08);
-      level.sendParticles(ParticleTypes.FLASH, center.x, y + 0.6, center.z, 2, radius * 0.08, 0.4, radius * 0.08, 0.0);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.6, center.z, 2, radius * 0.08, 0.4, radius * 0.08, 0.0);
       level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
       if (fromY % 9 == 0) {
          level.playSound(null, BlockPos.containing(center.x, y, center.z), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.8F, 0.72F + (fromY + 25) * 0.006F);

@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="typemoonworld_ui_vfx_smoke"
+version="1.0"
+displayName="Type Moon UI and VFX Regression Test"
+[[dependencies.typemoonworld_ui_vfx_smoke]]
+modId="typemoonworld"
+type="required"
+versionRange="[4.0,)"
+ordering="AFTER"
+side="CLIENT"

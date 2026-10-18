@@ -164,8 +164,8 @@ public final class NightingaleSupportService {
          }
       }
       SAFETY_CIRCLES.add(new SafetyCircle(level.dimension().location(), nightingale.getUUID(), center, now + NightingaleRules.SAFETY_CIRCLE_DURATION));
-      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.8, center.z, 160, 7.0, 1.2, 7.0, 0.08);
-      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y + 0.5, center.z, 100, 6.5, 0.8, 6.5, 0.05);
+      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.8, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(160), 7.0, 1.2, 7.0, 0.08);
+      level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y + 0.5, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(100), 6.5, 0.8, 6.5, 0.05);
       level.playSound(null, center.x, center.y, center.z, SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.5F, 1.15F);
    }
 
@@ -203,7 +203,7 @@ public final class NightingaleSupportService {
             vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + amount);
             vars.syncMana(player);
          } else {
-            vars.player_mana = Math.min(vars.player_max_mana, vars.player_mana + amount);
+            vars.magicState().addMana(amount);
             vars.syncPlayerVariables(player);
          }
       }

@@ -41,7 +41,9 @@ public class MagicUnlimitedBladeWorks {
 
    public static void checkUnlock(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = (TypeMoonWorldModVariables.PlayerVariables)player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.player_magic_attributes_sword && !vars.has_unlimited_blade_works) {
+      if (vars.player_magic_attributes_sword
+         && vars.learned_magics.contains("unlimited_blade_works")
+         && !vars.has_unlimited_blade_works) {
          vars.has_unlimited_blade_works = true;
          vars.syncPlayerVariables(player);
          player.displayClientMessage(Component.translatable("message.typemoonworld.unlimited_blade_works.unlocked"), false);

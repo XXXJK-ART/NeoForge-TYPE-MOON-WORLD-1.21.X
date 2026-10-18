@@ -442,7 +442,7 @@ public final class ServantCardIskandarSkills {
          clearIonioiData(data(player));
          return false;
       }
-      ionioiLevel.sendParticles(ParticleTypes.FLASH, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
+      ionioiLevel.sendParticles(ParticleTypes.END_ROD, armyEntry.x, armyEntry.y + 1.2, armyEntry.z, 6, 0.0, 0.0, 0.0, 0.0);
       ionioiLevel.playSound(null, BlockPos.containing(armyEntry), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.2F, 0.85F);
       return true;
    }
@@ -956,6 +956,7 @@ public final class ServantCardIskandarSkills {
          return;
       }
       lightning.moveTo(pos.x, pos.y, pos.z);
+      lightning.setNoGravity(true); // Synced marker: local bolt, no whole-sky flash.
       lightning.setVisualOnly(true);
       level.addFreshEntity(lightning);
    }
