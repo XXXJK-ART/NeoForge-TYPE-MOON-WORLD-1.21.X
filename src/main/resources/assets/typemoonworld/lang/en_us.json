@@ -2151,6 +2151,7 @@
   "message.typemoonworld.servant_card.ubw_chant_started": "Unlimited Blade Works chant started",
   "message.typemoonworld.servant_card.ubw_need_third_line": "Chant has not reached the third line",
   "message.typemoonworld.servant_card.ubw_released": "Unlimited Blade Works released",
+  "message.typemoonworld.servant_card.oda_hajun_released": "Returned from Hajun's domain",
   "message.typemoonworld.servant_card.unknown": "Unknown servant card: %s",
   "message.typemoonworld.servant_card.workshop_overworld_only": "Workshop skills can only be used in the Overworld",
   "message.typemoonworld.shadow.binding_locked": "Shadow Binding prevents Imaginary Absorption from locking onto that target.",

@@ -1978,6 +1978,7 @@
   "message.typemoonworld.servant_card.ubw_chant_started": "무한검제 창송 시작",
   "message.typemoonworld.servant_card.ubw_need_third_line": "창송이 아직 3구절에 도달하지 않았습니다.",
   "message.typemoonworld.servant_card.ubw_released": "무한검제가 해제되었습니다.",
+  "message.typemoonworld.servant_card.oda_hajun_released": "파순의 영역에서 돌아왔습니다.",
   "message.typemoonworld.servant_card.unknown": "알 수 없는 서번트 카드: %s",
   "message.typemoonworld.servant_card.workshop_overworld_only": "작업장 스킬은 오버월드에서만 사용할 수 있습니다.",
   "message.typemoonworld.shadow.binding_locked": "대상이 그림자 속박 상태여서 허수 흡수로 고정할 수 없습니다.",

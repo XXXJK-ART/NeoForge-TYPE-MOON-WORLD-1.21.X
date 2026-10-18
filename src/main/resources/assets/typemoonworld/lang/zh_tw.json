@@ -1971,6 +1971,7 @@
   "message.typemoonworld.servant_card.ubw_chant_started": "無限劍制吟唱開始",
   "message.typemoonworld.servant_card.ubw_need_third_line": "吟唱尚未到第三句",
   "message.typemoonworld.servant_card.ubw_released": "無限劍制已解除",
+  "message.typemoonworld.servant_card.oda_hajun_released": "已從波旬領域返回",
   "message.typemoonworld.servant_card.unknown": "未知從者卡：%s",
   "message.typemoonworld.servant_card.workshop_overworld_only": "工坊技能只能在主世界使用",
   "message.typemoonworld.shadow.binding_locked": "目標正受到影子束縛，無法被虛數吸收鎖定。",

@@ -127,6 +127,9 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
          applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
+         if (entity.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity gun && gun.isChantLift()) {
+            net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(this, gun.chantPoseProgress(ageInTicks - entity.tickCount));
+         }
          if (isJeanneAlter(entity.getServantId())) {
             this.leftArm.xRot = -(float)Math.PI / 2.0F;
             this.leftArm.yRot = 0.0F;

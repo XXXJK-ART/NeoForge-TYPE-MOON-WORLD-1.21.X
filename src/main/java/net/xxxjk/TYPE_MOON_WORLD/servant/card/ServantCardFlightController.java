@@ -51,7 +51,12 @@ public final class ServantCardFlightController {
       if (horizontal.lengthSqr() < 0.0001) {
          horizontal = buildHorizontalMotion(player, 1.0F, 0.0F);
       }
-      startDashMotion(player, horizontal.normalize(), scale);
+      Vec3 direction = horizontal.normalize();
+      if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
+         mount.queueRiderDash(direction, 1.08 * scale, FLIGHT_DASH_DURATION_TICKS);
+      } else {
+         startDashMotion(player, direction, scale);
+      }
       player.fallDistance = 0.0F;
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, player.getX(), player.getY() + 0.15, player.getZ(), 14, 0.25, 0.10, 0.25, 0.06);
@@ -189,6 +194,16 @@ public final class ServantCardFlightController {
       if (player.tickCount % 10 == 0) {
          vars.syncMana(player);
       }
+      if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
+         double verticalInput = card.flightVertical();
+         if (card.flightMode() == MODE_NORMAL && !hasGroundWithin(player, 5)) {
+            verticalInput = Math.min(verticalInput, -0.28);
+         }
+         mount.setMountInput(card.flightForward(), card.flightStrafe(), verticalInput);
+         player.setNoGravity(false);
+         player.fallDistance = 0.0F;
+         return;
+      }
       player.setNoGravity(true);
       player.fallDistance = 0.0F;
       double yaw = Math.toRadians(player.getYRot());
@@ -203,11 +218,13 @@ public final class ServantCardFlightController {
          case "oda_nobunaga" -> 0.54;
          default -> 0.48;
       };
+      boolean sprinting = player.getPersistentData().getBoolean("ServantCardFlightSprint");
+      if (sprinting) horizontalSpeed *= 1.5;
       double verticalInput = card.flightVertical();
       if (card.flightMode() == MODE_NORMAL && !hasGroundWithin(player, 5)) {
          verticalInput = Math.min(verticalInput, -0.28);
       }
-      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, verticalInput * 0.42, 0.0);
+      Vec3 velocity = movement.scale(horizontalSpeed).add(0.0, verticalInput * 0.42 * (sprinting ? 1.25 : 1.0), 0.0);
       velocity = velocity.add(consumeDashMotion(player));
       if (velocity.lengthSqr() < 0.0001) {
          velocity = new Vec3(0.0, -0.015, 0.0);
@@ -223,6 +240,11 @@ public final class ServantCardFlightController {
       var card = vars.servantCardState();
       player.getPersistentData().remove(FLIGHT_WAS_AIRBORNE_TAG);
       clearDashMotion(player);
+      player.getPersistentData().putBoolean("ServantCardFlightSprint", false);
+      player.getPersistentData().putBoolean("OdaFlightSprint", false);
+      if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
+         mount.setMountInput(0.0, 0.0, 0.0);
+      }
       if ("oda_nobunaga".equals(card.id())) {
          if (card.flightMode() == MODE_HIGH) {
             beginHighFlightRecharge(player, vars);

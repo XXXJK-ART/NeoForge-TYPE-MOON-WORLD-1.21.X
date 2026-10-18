@@ -182,7 +182,7 @@ public final class ServantCardTransformManager {
       if ("jeanne_alter".equals(servantId)) {
          net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterVoice.summon(player);
       }
-      player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.transformed", definition.displayName()), true);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.transformed", definition.displayName()), false);
       NeoForge.EVENT_BUS.post(new ServantTransformEvent.Post(player, publicId));
       return true;
    }
@@ -519,6 +519,10 @@ public final class ServantCardTransformManager {
       if (!vars.servantCardState().transformed() || slot < -1 || slot > 9) {
          return false;
       }
+      if ("oda_nobunaga".equals(vars.servantCardState().id()) && slot == 9
+         && ServantCardOdaNobunagaSkills.tryExitOdaHajunField(player)) {
+         return true;
+      }
       if (ServantCardActionTimeline.isActive(player)) {
          return false;
       }
@@ -788,7 +792,7 @@ public final class ServantCardTransformManager {
          return false;
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits.activated(player, action.effectId());
-      if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId()) && !"oda_charged_matchlock".equals(action.effectId())) {
+      if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId())) {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }
       int cooldownTicks = effectiveCooldownTicks(action, npSlot);

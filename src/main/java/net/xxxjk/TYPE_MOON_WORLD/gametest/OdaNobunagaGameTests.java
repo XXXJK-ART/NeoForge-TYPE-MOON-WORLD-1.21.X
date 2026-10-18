@@ -57,6 +57,14 @@ public final class OdaNobunagaGameTests {
    private static void close(GameTestHelper helper, double actual, double expected, String message) {
       helper.assertTrue(Math.abs(actual - expected) < .01, message + ": " + actual + " expected " + expected);
    }
+   private static void tickMockFlight(GameTestHelper helper, net.minecraft.server.level.ServerPlayer player, int ticks) {
+      // GameTest's mock does not run the real player's CommonEvents tick pipeline.
+      for (int tick = 1; tick <= ticks; tick++) helper.runAfterDelay(tick, () -> {
+         var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         ServantCardFlightController.tick(player, vars);
+         ServantCardOdaNobunagaSkills.tick(player, vars);
+      });
+   }
    @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_profileHasTenTraitsAndBothNoblePhantasms")
    public static void profileHasTenTraitsAndBothNoblePhantasms(GameTestHelper helper) {
       var definition = ServantDataRegistry.get("oda_nobunaga");
@@ -136,22 +144,275 @@ public final class OdaNobunagaGameTests {
          OdaAbilityService.clear(owner); helper.succeed();
       });
    }
-   @GameTest(template = "ancient_temple", timeoutTicks = 100, batch = "oda_ninetyNineGunsFireExactlyTwoHundredNinetySevenShots")
-   public static void ninetyNineGunsFireExactlyTwoHundredNinetySevenShots(GameTestHelper helper) {
+   @GameTest(template = "ancient_temple", timeoutTicks = 330, batch = "oda_threeWavesFireWhileGunsAppear")
+   public static void threeWavesFireWhileTheirGunsAreStillAppearing(GameTestHelper helper) {
+      verifyThreeThousandWaves(helper, true);
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 330, batch = "oda_fixedThreeWavesFireWhileGunsAppear")
+   public static void fixedThreeWavesKeepTheirTallSpiralAndShotCadence(GameTestHelper helper) {
+      verifyThreeThousandWaves(helper, false);
+   }
+   private static void verifyThreeThousandWaves(GameTestHelper helper, boolean follow) {
       var owner = owner(helper);
-      int[] count = {0};
+      int[] gunCount = {0};
+      int[] shotCount = {0};
+      double[] highestGun = {0};
+      var guns = new java.util.ArrayList<OdaMatchlockGunEntity>();
+      var formation = new OdaMatchlockGunEntity[297];
+      boolean[] relayBeforeWholeWaveFinished = {false};
+      var shotTimes = new java.util.HashMap<java.util.UUID, java.util.List<Long>>();
       java.util.function.Consumer<EntityJoinLevelEvent> listener = event -> {
-         if (event.getEntity() instanceof OdaMatchlockBulletEntity bullet && bullet.getOwner() == owner && bullet.ability() == THREE_THOUSAND) count[0]++;
+         if (event.getEntity() instanceof OdaMatchlockGunEntity gun && gun.isOwnedBy(owner.getUUID()) && gun.ability() == THREE_THOUSAND) {
+            int index = gun.getFormationIndex();
+            if (index >= 99) {
+               var previous = formation[index - 99];
+               helper.assertTrue(previous != null && previous.isRemoved() && previous.getShotsLeft() == 0,
+                  "A position was replaced before its preceding gun finished all three shots");
+               helper.assertTrue(previous.position().distanceTo(gun.position()) < (follow ? .25 : 1e-6),
+                  "The replacement did not appear at the corresponding gun position");
+               if (index < 198 && java.util.Arrays.stream(formation, 0, 99).anyMatch(g -> g != null && !g.isRemoved()))
+                  relayBeforeWholeWaveFinished[0] = true;
+            }
+            formation[index] = gun;
+            gunCount[0]++;
+            guns.add(gun);
+            highestGun[0] = Math.max(highestGun[0], gun.getY() - owner.getY());
+            gun.fixedDirection(new Vec3(0,1,0));
+         }
+         if (event.getEntity() instanceof OdaMatchlockBulletEntity bullet && bullet.getOwner() == owner && bullet.ability() == THREE_THOUSAND) {
+            shotCount[0]++;
+            var source = guns.stream().filter(gun -> !gun.isRemoved() && gun.position().distanceToSqr(bullet.position()) < 1e-8).findFirst().orElseThrow();
+            shotTimes.computeIfAbsent(source.getUUID(), id -> new java.util.ArrayList<>()).add(helper.getLevel().getGameTime());
+         }
+      };
+      NeoForge.EVENT_BUS.addListener(listener);
+      OdaAbilityService.threeThousand(owner, null, follow, owner.position());
+      helper.runAfterDelay(12, () -> {
+         helper.assertTrue(gunCount[0] > 0 && gunCount[0] < OdaRules.THREE_THOUSAND_GUNS_PER_WAVE,
+            "The first gun wave should still be appearing during the initial shots");
+         helper.assertTrue(shotCount[0] > 0, "Guns did not begin firing during their gradual appearance");
+         var firstGun = guns.getFirst();
+         Vec3 before = firstGun.position();
+         owner.setPos(owner.position().add(2, 1, 0));
+         helper.runAfterDelay(2, () -> {
+            close(helper, firstGun.getY() - before.y, follow ? 1 : 0, "Follow/fixed spiral movement");
+         });
+         helper.runAfterDelay(278, () -> {
+            NeoForge.EVENT_BUS.unregister(listener);
+            close(helper, gunCount[0], OdaRules.THREE_THOUSAND_TOTAL_GUNS, "NP spawned gun total");
+            close(helper, shotCount[0], OdaRules.THREE_THOUSAND_TOTAL_SHOTS, "NP shot total");
+            helper.assertTrue(relayBeforeWholeWaveFinished[0], "Gun positions still waited for the entire preceding wave");
+            helper.assertTrue(highestGun[0] > 1 && highestGun[0] < 10, "The compact spiral exceeded ten blocks");
+            close(helper, shotTimes.size(), 297, "Every gun must fire");
+            for (var times : shotTimes.values()) {
+               close(helper, times.size(), 3, "Each gun must fire exactly three times");
+               close(helper, times.get(1) - times.get(0), 30, "First shot interval");
+               close(helper, times.get(2) - times.get(1), 30, "Second shot interval");
+            }
+            helper.assertTrue(guns.stream().allMatch(OdaMatchlockGunEntity::isRemoved), "Finished guns did not disappear");
+            OdaAbilityService.clear(owner);
+            helper.succeed();
+         });
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 290, batch = "oda_eachPositionRelaysIndependently")
+   public static void eachGunPositionRelaysWhileOtherPositionsAreStillWaiting(GameTestHelper helper) {
+      var owner = owner(helper); owner.setPos(owner.position().add(0, 100, 0));
+      var guns = new java.util.ArrayList<OdaMatchlockGunEntity>();
+      java.util.function.Consumer<EntityJoinLevelEvent> listener = event -> {
+         if (event.getEntity() instanceof OdaMatchlockGunEntity gun && gun.isOwnedBy(owner.getUUID()) && gun.ability() == THREE_THOUSAND) guns.add(gun);
       };
       NeoForge.EVENT_BUS.addListener(listener);
       OdaAbilityService.threeThousand(owner, null, true, owner.position());
-      var guns = helper.getLevel().getEntitiesOfClass(OdaMatchlockGunEntity.class, owner.getBoundingBox().inflate(20), g -> g.isCombatFor(owner.getUUID()));
-      helper.assertTrue(guns.size() == 99 && guns.stream().allMatch(g -> g.getShotsLeft() == 3), "NP gun/shot count");
-      // Do not let this stress volley target entities belonging to neighboring concurrent tests.
-      guns.forEach(gun -> gun.fixedDirection(new Vec3(0,1,0)));
-      helper.runAfterDelay(80, () -> {
+      helper.runAfterDelay(100, () -> {
+         close(helper, guns.size(), 99, "Waiting first wave started another wave on a timer");
+         helper.assertTrue(guns.stream().allMatch(gun -> !gun.isRemoved() && gun.getShotsLeft() == 3), "Waiting guns wasted ammunition");
+         guns.getFirst().fixedDirection(new Vec3(0,1,0));
+      });
+      helper.runAfterDelay(175, () -> {
+         close(helper, guns.size(), 100, "One completed position must immediately receive its second gun");
+         helper.assertTrue(guns.getFirst().isRemoved() && guns.get(99).getFormationIndex() == 99,
+            "The completed position did not relay to its own second-wave gun");
+         helper.assertTrue(guns.subList(1, 99).stream().allMatch(g -> !g.isRemoved() && g.getShotsLeft() == 3),
+            "Waiting positions were advanced without finishing");
+         guns.get(99).fixedDirection(new Vec3(0,1,0));
+      });
+      helper.runAfterDelay(250, () -> {
+         close(helper, guns.size(), 101, "The completed position did not reach its third gun");
+         helper.assertTrue(guns.get(100).getFormationIndex() == 198, "The third gun did not reuse its position index");
+         OdaAbilityService.clear(owner);
+      });
+      helper.runAfterDelay(275, () -> {
          NeoForge.EVENT_BUS.unregister(listener);
-         close(helper, count[0], 297, "NP shot total");
+         close(helper, guns.size(), 101, "Clearing the owner did not cancel pending gun relays");
+         helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 95, batch = "oda_chantFlightAllowsMovementAndKeepsFlying")
+   public static void chantFlightAllowsMovementAndKeepsFlyingAfterInterruption(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      Vec3 origin = Vec3.atCenterOf(helper.absolutePos(new BlockPos(6, 12, 6)));
+      player.setPos(origin);
+      for (int x = 4; x <= 8; x++) for (int z = 4; z <= 8; z++) {
+         helper.setBlock(new BlockPos(x, 11, z), Blocks.STONE);
+         for (int y = 12; y <= 20; y++) helper.setBlock(new BlockPos(x,y,z), Blocks.AIR);
+      }
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_transformed = true; vars.servant_card_id = "oda_nobunaga";
+      vars.servantCardState().setMaxMana(1000); vars.servantCardState().setMana(1000);
+      double[] beforeDescent = {0}, afterDescent = {0};
+      ServantCardOdaNobunagaSkills.startOdaThreeThousand(player);
+      helper.assertTrue(player.getVehicle() instanceof OdaMatchlockGunEntity, "Chant did not seat the player on a matchlock");
+      var gun = (OdaMatchlockGunEntity)player.getVehicle();
+      tickMockFlight(helper, player, 74);
+      helper.runAfterDelay(15, () -> {
+         helper.assertTrue(gun.isChantLift() && player.getY() > origin.y && player.getY() < origin.y + 3,
+            "Chant lift teleported instead of rising smoothly");
+         helper.assertTrue(vars.servantCardState().flying(), "The chant did not enable normal player flight");
+         ServantCardFlightController.setInput(player, false, 1, .5, 0);
+      });
+      helper.runAfterDelay(30, () -> {
+         helper.assertTrue(player.position().subtract(origin).horizontalDistance() > 1, "Chant flight ignored horizontal input");
+         beforeDescent[0] = player.getY();
+         ServantCardFlightController.setInput(player, false, 1, 0, -1);
+      });
+      helper.runAfterDelay(34, () -> {
+         afterDescent[0] = player.getY();
+         helper.assertTrue(afterDescent[0] < beforeDescent[0], "Manual descent did not override the automatic lift");
+         ServantCardFlightController.setInput(player, false, 1, 0, 1);
+      });
+      helper.runAfterDelay(42, () -> {
+         helper.assertTrue(player.getY() > afterDescent[0], "Manual ascent did not work during chanting");
+         ServantCardFlightController.setInput(player, false, 0, 0, 0);
+         vars.servantCardState().setJumpCharges(4);
+         helper.assertTrue(ServantCardFlightController.tryDash(player, 1, 0), "The chant blocked the normal flight dash");
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancel(player, false);
+      });
+      helper.runAfterDelay(75, () -> {
+         helper.assertTrue(!gun.isRemoved() && player.getVehicle() == gun && !gun.isChantLift(), "Ending the chant removed the player's flight mount");
+         helper.assertTrue(vars.servantCardState().flying(), "Ending the chant forced the player out of flight");
+         helper.assertTrue(vars.servantCardState().mana() < 1000, "Normal flight did not pay its usual mana cost");
+         ServantCardFlightController.stop(player, vars, true);
+         ServantCardOdaNobunagaSkills.clear(player); helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 430, batch = "oda_npcChantRideReleasesAndLands")
+   public static void npcChantRideReleasesTheArrayAndReturnsWithoutAiMovement(GameTestHelper helper) {
+      var npc = owner(helper); npc.setPos(npc.position().add(0,100,0));
+      Vec3 origin = npc.position();
+      var target = target(helper, origin.add(0,0,12));
+      target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(100000); target.setHealth(100000);
+      target.setInvulnerable(true);
+      npc.setTarget(target);
+      long now = npc.level().getGameTime();
+      npc.getPersistentData().putLong("TypeMoonAiCombatStartedAt", now - 600);
+      npc.getPersistentData().putLong("TypeMoonAiLastCombatAt", now);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem.tickBeforeAi(npc);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      helper.assertTrue(npc.getVehicle() instanceof OdaMatchlockGunEntity, "NPC did not mount its chant gun");
+      var mount = (OdaMatchlockGunEntity)npc.getVehicle();
+      helper.runAfterDelay(45, () -> close(helper, npc.getY() - origin.y, 3, "NPC chant hover height"));
+      helper.runAfterDelay(175, () -> {
+         helper.assertTrue(!mount.isRemoved() && npc.getVehicle() == mount, "NPC did not remain in the center of its active array");
+         helper.assertTrue(!helper.getLevel().getEntitiesOfClass(OdaMatchlockGunEntity.class, npc.getBoundingBox().inflate(40),
+            gun -> gun.isOwnedBy(npc.getUUID()) && gun.ability() == THREE_THOUSAND).isEmpty(), "Mounted NPC never released its array");
+      });
+      helper.runAfterDelay(390, () -> {
+         helper.assertTrue(mount.isRemoved() && !npc.isPassenger(), "NPC did not return after its array finished");
+         OdaAbilityService.clear(npc); helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 85, batch = "oda_chantBorrowsExistingFlightMount")
+   public static void chantPreservesAnExistingFlightMountAndItsControls(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      player.setPos(Vec3.atCenterOf(helper.absolutePos(new BlockPos(6,100,6))));
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_transformed = true; vars.servant_card_id = "oda_nobunaga";
+      vars.servantCardState().setMaxMana(1000); vars.servantCardState().setMana(1000);
+      ServantCardFlightController.setInput(player, true, 0, 0, 0);
+      var mount = (OdaMatchlockGunEntity)player.getVehicle();
+      ServantCardOdaNobunagaSkills.startOdaThreeThousand(player);
+      helper.assertTrue(player.getVehicle() == mount && mount.isChantLift(), "Chant replaced the existing flight mount");
+      Vec3 origin = mount.position();
+      tickMockFlight(helper, player, 59);
+      ServantCardFlightController.setInput(player, false, 1, 1, 0);
+      helper.runAfterDelay(20, () -> helper.assertTrue(mount.position().subtract(origin).horizontalDistance() > 2,
+         "The chant locked an already flying player in place"));
+      helper.runAfterDelay(45, () -> net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancel(player, false));
+      helper.runAfterDelay(60, () -> {
+         helper.assertTrue(player.getVehicle() == mount && !mount.isRemoved() && !mount.isChantLift(), "Chant did not return control of the existing mount");
+         helper.assertTrue(vars.servantCardState().flying(), "Chant disabled pre-existing flight");
+         ServantCardFlightController.stop(player, vars, true);
+         ServantCardOdaNobunagaSkills.clear(player); helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 200, batch = "oda_threeThousandReleaseKeepsPlayerFlight")
+   public static void releasingThreeThousandDoesNotLandOrLockThePlayer(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      Vec3 origin = Vec3.atCenterOf(helper.absolutePos(new BlockPos(6, 12, 6)));
+      player.setPos(origin);
+      for (int x = 3; x <= 9; x++) for (int z = 3; z <= 9; z++) {
+         helper.setBlock(new BlockPos(x, 11, z), Blocks.STONE);
+         for (int y = 12; y <= 20; y++) helper.setBlock(new BlockPos(x,y,z), Blocks.AIR);
+      }
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_transformed = true; vars.servant_card_id = "oda_nobunaga";
+      vars.servantCardState().setMaxMana(1000); vars.servantCardState().setMana(1000);
+      ServantCardOdaNobunagaSkills.startOdaThreeThousand(player);
+      var mount = (OdaMatchlockGunEntity)player.getVehicle();
+      tickMockFlight(helper, player, 179);
+      helper.runAfterDelay(160, () -> {
+         helper.assertTrue(vars.servantCardState().flying() && player.getVehicle() == mount && !mount.isChantLift(),
+            "Noble Phantasm release did not leave the player in normal flight");
+         helper.assertTrue(OdaAbilityService.hasThreeThousandArray(player), "The gun array was not released");
+         ServantCardFlightController.setInput(player, false, 1, 0, 0);
+      });
+      helper.runAfterDelay(180, () -> {
+         helper.assertTrue(player.position().subtract(origin).horizontalDistance() > 2, "The active gun array locked player movement");
+         ServantCardFlightController.stop(player, vars, true);
+         ServantCardOdaNobunagaSkills.clear(player); helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 630, batch = "oda_unfinishedThreeThousandGunsExpireAfterThirtySeconds")
+   public static void unfinishedThreeThousandGunsWaitAndExpireAfterThirtySeconds(GameTestHelper helper) {
+      var owner = owner(helper);
+      owner.setPos(owner.position().add(0, 100, 0));
+      var fixed = OdaMatchlockGunEntity.threeThousandWorlds(owner.level(), owner, null,
+         owner.position().add(4, 0, 0), owner.getLookAngle(), 2);
+      var follow = OdaMatchlockGunEntity.threeThousandWorldsFollow(owner.level(), owner, null,
+         296, OdaRules.THREE_THOUSAND_TOTAL_GUNS, 2);
+      helper.getLevel().addFreshEntity(fixed);
+      helper.getLevel().addFreshEntity(follow);
+      helper.runAfterDelay(590, () -> {
+         helper.assertTrue(!fixed.isRemoved() && !follow.isRemoved(), "Unfinished guns expired before thirty seconds");
+         close(helper, fixed.getShotsLeft(), 3, "Fixed gun wasted ammunition without a target");
+         close(helper, follow.getShotsLeft(), 3, "Follow gun wasted ammunition without a target");
+      });
+      helper.runAfterDelay(602, () -> {
+         helper.assertTrue(fixed.isRemoved() && follow.isRemoved(), "Unfinished guns exceeded thirty seconds");
+         OdaAbilityService.clear(owner); helper.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 120, batch = "oda_threeThousandGunsResumeRemainingShots")
+   public static void threeThousandGunsResumeRemainingShotsWhenANewTargetAppears(GameTestHelper helper) {
+      var owner = owner(helper);
+      owner.setPos(owner.position().add(0, 100, 0));
+      var target = target(helper, owner.position().add(0, 0, 5));
+      var gun = OdaMatchlockGunEntity.threeThousandWorldsFollow(owner.level(), owner, target,
+         296, OdaRules.THREE_THOUSAND_TOTAL_GUNS, 2);
+      helper.getLevel().addFreshEntity(gun);
+      helper.runAfterDelay(10, () -> {
+         close(helper, gun.getShotsLeft(), 2, "High spiral gun did not fire its first shot");
+         target.discard();
+      });
+      helper.runAfterDelay(55, () -> {
+         helper.assertTrue(!gun.isRemoved(), "Gun disappeared when its target was lost");
+         close(helper, gun.getShotsLeft(), 2, "Gun wasted its remaining shots");
+         target(helper, owner.position().add(0, 0, 6));
+      });
+      helper.runAfterDelay(90, () -> {
+         close(helper, gun.getShotsLeft(), 0, "Gun failed to resume its remaining shots");
+         helper.assertTrue(gun.isRemoved(), "Gun did not disappear after completing its three shots");
          OdaAbilityService.clear(owner); helper.succeed();
       });
    }
@@ -299,6 +560,46 @@ public final class OdaNobunagaGameTests {
       }
       OdaAbilityService.clear(player); OdaAbilityService.clear(npc); helper.succeed();
    }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_refillPreemptsCloseRangeSkill")
+   public static void refillPreemptsCloseRangeSkillWhenFormationIsIncomplete(GameTestHelper helper) {
+      var npc = owner(helper);
+      var target = target(helper, npc.position().add(0, 0, 4));
+      npc.setTarget(target);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      close(helper, npc.getCurrentMp(), 980, "Refill did not get the first close-range skill decision");
+      close(helper, npc.getPersistentData().getLong("OdaResetCooldown0") - npc.level().getGameTime(), 200, "Refill cooldown");
+      helper.assertTrue(!npc.getPersistentData().contains("OdaResetCooldown-1"), "Close-range thrust ran before refill");
+      OdaAbilityService.clear(npc);
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "odaMatchlockFlightStartsAtPhaseTwo")
+   public static void matchlockFlightStartsAtSecondPhaseHealthThreshold(GameTestHelper helper) {
+      var npc = owner(helper);
+      var target = target(helper, npc.position().add(0, 0, 12));
+      npc.setTarget(target);
+      npc.setHealth(800);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      helper.assertTrue(npc.isNoGravity(), "Matchlock mount flight did not start at 80% health");
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.isCombatFlying(npc, npc.level().getGameTime()), "Phase-two flight was not reported to the flight controller");
+      helper.assertTrue(!helper.getLevel().getEntitiesOfClass(OdaMatchlockGunEntity.class, npc.getBoundingBox().inflate(4), gun -> gun.isFootSupportFor(npc.getUUID())).isEmpty(), "Flight mount was not spawned");
+      OdaAbilityService.clear(npc);
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "odaGenericThirdPhaseStartsNoblePhantasm")
+   public static void genericThirdPhaseStartsNoblePhantasmAfterThirtySeconds(GameTestHelper helper) {
+      var npc = owner(helper);
+      var target = target(helper, npc.position().add(0, 0, 12));
+      npc.setTarget(target);
+      long now = npc.level().getGameTime();
+      npc.getPersistentData().putLong("TypeMoonAiCombatStartedAt", now - 600L);
+      npc.getPersistentData().putLong("TypeMoonAiLastCombatAt", now);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem.tickBeforeAi(npc);
+      helper.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem.canUseNoblePhantasm(npc), "30-second generic phase did not unlock Nobunaga's NP");
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      helper.assertTrue(npc.getPersistentData().getLong(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.TAG_THREE_THOUSAND_CHANT_END) > now, "Nobunaga did not start her NP after generic decisive phase");
+      OdaAbilityService.clear(npc);
+      helper.succeed();
+   }
    @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_hajunPayment")
    public static void hajunStartupAndInterruptPaymentMatchForBothActors(GameTestHelper helper) {
       var npc = owner(helper);
@@ -321,6 +622,79 @@ public final class OdaNobunagaGameTests {
       close(helper,npc.getPersistentData().getLong("OdaSharedNpUntil") - npc.level().getGameTime(),1800,"NPC interruption cooldown");
       ServantCardOdaNobunagaSkills.clear(player); OdaAbilityService.clear(npc); helper.succeed();
    }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_hajunExitKey")
+   public static void hajunFieldExitUsesOnlyItsSkillSlot(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_transformed = true;
+      vars.servant_card_id = "oda_nobunaga";
+      String dimension = player.level().dimension().location().toString();
+      var data = player.getPersistentData();
+      data.putLong("ServantCardOdaHajunFieldActiveUntil", player.level().getGameTime() + 100L);
+      data.putString("ServantCardOdaHajunFieldReturnDim", dimension);
+      data.putDouble("ServantCardOdaHajunFieldReturnX", player.getX());
+      data.putDouble("ServantCardOdaHajunFieldReturnY", player.getY());
+      data.putDouble("ServantCardOdaHajunFieldReturnZ", player.getZ());
+      data.putString("OdaCardFieldDimension", dimension);
+      ServantCardTransformManager.setSkillCooldownUntil(player, vars, 0, player.level().getGameTime() + 40L);
+      ServantCardTransformManager.triggerAction(player, 0);
+      helper.assertTrue(data.getLong("ServantCardOdaHajunFieldActiveUntil") > 0L,
+         "A non-Hajun skill key exited the domain");
+      helper.assertTrue(ServantCardTransformManager.triggerAction(player, 9), "Hajun skill key did not return the player");
+      helper.assertTrue(data.getLong("ServantCardOdaHajunFieldActiveUntil") == 0L, "Hajun field state was not cleared on return");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_mountFlightDash")
+   public static void otherFlyingServantDashesTheMatchlockMount(GameTestHelper helper) {
+      var owner = helper.makeMockServerPlayerInLevel();
+      var ownerVars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      ownerVars.servant_card_transformed = true;
+      ownerVars.servant_card_id = "oda_nobunaga";
+      var rider = helper.makeMockServerPlayerInLevel();
+      var riderVars = rider.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      riderVars.servant_card_transformed = true;
+      riderVars.servant_card_id = "enkidu";
+      riderVars.servantCardState().setFlying(true);
+      riderVars.servantCardState().setJumpCharges(4);
+      var mount = OdaMatchlockGunEntity.flightMount(helper.getLevel(), owner);
+      helper.getLevel().addFreshEntity(mount);
+      helper.assertTrue(rider.startRiding(mount, true), "The other flying servant could not mount the matchlock");
+      Vec3 start = mount.position();
+      helper.assertTrue(ServantCardFlightController.tryDash(rider, 1.0F, 0.0F), "The mounted servant dash was rejected");
+      helper.runAfterDelay(6, () -> {
+         helper.assertTrue(mount.isAlive(), "The mount was discarded while another servant rode it");
+         helper.assertTrue(mount.position().distanceToSqr(start) > 1.0, "The rider dash impulse did not move the matchlock");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_mountFlightSprint")
+   public static void matchlockMountAccelerationUsesRiderSprintInput(GameTestHelper helper) {
+      var owner = helper.makeMockServerPlayerInLevel();
+      var ownerVars = owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      ownerVars.servant_card_transformed = true;
+      ownerVars.servant_card_id = "oda_nobunaga";
+      var rider = helper.makeMockServerPlayerInLevel();
+      var riderVars = rider.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      riderVars.servant_card_transformed = true;
+      riderVars.servant_card_id = "enkidu";
+      var mount = OdaMatchlockGunEntity.flightMount(helper.getLevel(), owner);
+      helper.getLevel().addFreshEntity(mount);
+      helper.assertTrue(rider.startRiding(mount, true), "The other flying servant could not mount the matchlock");
+      mount.setMountInput(1.0, 0.0, 0.0);
+      helper.runAfterDelay(2, () -> {
+         double baseSpeed = mount.getDeltaMovement().horizontalDistance();
+         rider.getPersistentData().putBoolean("ServantCardFlightSprint", true);
+         helper.runAfterDelay(3, () -> {
+            helper.assertTrue(mount.getDeltaMovement().horizontalDistance() > baseSpeed * 1.5,
+               "Rider sprint input did not increase the mount's acceleration");
+            helper.succeed();
+         });
+      });
+   }
+
    @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_ownedBurn")
    public static void hajunBurnRetainsCasterAndUsesTheSameSpecialZone(GameTestHelper helper) {
       var owner = owner(helper); var target = target(helper, owner.position().add(0,0,4));

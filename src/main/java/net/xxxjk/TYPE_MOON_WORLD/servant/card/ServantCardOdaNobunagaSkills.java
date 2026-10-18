@@ -118,6 +118,12 @@ public final class ServantCardOdaNobunagaSkills {
          return;
       }
       OdaAbilityService.prepare(player);
+      long chantAge = player.level().getGameTime() - player.getPersistentData().getLong(THREE_THOUSAND_START);
+      if (player.getPersistentData().getBoolean(THREE_THOUSAND_ACTIVE) && chantAge > 0 && chantAge % 40 == 0
+         && net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)
+         && player.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawn(level, "servant_oda_three_thousand_charge", player, 72.0);
+      }
       tickOdaHajunChant(player, vars);
       tickOdaHajunField(player);
    }
@@ -260,8 +266,9 @@ public final class ServantCardOdaNobunagaSkills {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(CHARGED_ACTIVE, true);
       data.putLong(CHARGED_START, level.getGameTime());
+      VFXServerEffects.spawn(level, "servant_oda_sniper_charge", player, 64.0);
       level.playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_LOADING_START.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
-      level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 1.2, player.getZ(), 16, 0.4, 0.28, 0.4, 0.04);
+      level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 1.2, player.getZ(), 5, 0.16, 0.12, 0.16, 0.01);
    }
 
    public static void releaseOdaChargedMatchlock(ServerPlayer player) {
@@ -312,11 +319,12 @@ public final class ServantCardOdaNobunagaSkills {
       data.putBoolean(THREE_THOUSAND_FOLLOW, true);
       data.putBoolean(THREE_THOUSAND_RELEASED, false);
       data.putLong(THREE_THOUSAND_START, level.getGameTime());
+      VFXServerEffects.spawn(level, "servant_oda_three_thousand_charge", player, 72.0);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "oda_three_thousand", 3600,
          ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks),
          () -> { data.remove(THREE_THOUSAND_ACTIVE); });
-      VFXServerEffects.spawn(level, "servant_oda_three_thousand", player, 160.0);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseOdaThreeThousand(player));
+      OdaMatchlockGunEntity.beginThreeThousandChant(player);
    }
 
    public static void markOdaThreeThousandRelease(ServerPlayer player) {
@@ -348,14 +356,18 @@ public final class ServantCardOdaNobunagaSkills {
       startOdaHajun(player);
    }
 
+   public static boolean tryExitOdaHajunField(ServerPlayer player) {
+      if (player.getPersistentData().getLong(HAJUN_FIELD_ACTIVE_UNTIL) <= 0L || !returnFromOdaHajunField(player)) {
+         return false;
+      }
+      player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.oda_hajun_released"), true);
+      return true;
+   }
+
    public static boolean performOdaHajunAction(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, ServantCardSkillAction action) {
       CompoundTag data = player.getPersistentData();
       if (data.getLong(HAJUN_FIELD_ACTIVE_UNTIL) > 0L) {
-         if (returnFromOdaHajunField(player)) {
-            player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.ubw_released"), true);
-            return true;
-         }
-         return false;
+         return tryExitOdaHajunField(player);
       }
       if (data.getBoolean(HAJUN_ACTIVE)) {
          int progress = data.getInt(HAJUN_PROGRESS);
@@ -415,9 +427,9 @@ public final class ServantCardOdaNobunagaSkills {
       data.putInt(HAJUN_PROGRESS, 1);
       data.putInt(HAJUN_TIMER, 0);
       PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "oda_nobunaga", ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get());
-      VFXServerEffects.spawn(level, "servant_oda_hajun", player, 192.0);
+      VFXServerEffects.spawn(level, "servant_oda_hajun_charge", player, 192.0);
       level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.9F, 0.72F);
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 48, 3.2, 0.18, 3.2, 0.025);
+      level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.2, player.getZ(), 24, 2.4, 0.12, 2.4, 0.006);
    }
 
    public static void releaseOdaHajun(ServerPlayer player) {
@@ -426,6 +438,18 @@ public final class ServantCardOdaNobunagaSkills {
       if (action != null) {
          performOdaHajunAction(player, vars, action);
       }
+   }
+
+   public static boolean startChantFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!startMountFlight(player, vars)) return false;
+      if (!vars.servantCardState().flying()) {
+         vars.servantCardState().setFlying(true);
+         vars.servantCardState().setFlightMode(1);
+         vars.servantCardState().setHighFlightUntil(0);
+         vars.servantCardState().setFlightInput(0, 0, 0);
+      }
+      vars.syncPlayerVariables(player);
+      return true;
    }
 
    public static boolean startMountFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -479,7 +503,8 @@ public final class ServantCardOdaNobunagaSkills {
          player.stopRiding();
          if (mount.level() instanceof ServerLevel level) {
             mount.discard();
-            level.sendParticles(ParticleTypes.ENCHANT, mount.getX(), mount.getY(), mount.getZ(), 12, 0.25, 0.18, 0.25, 0.06);
+            level.sendParticles(ParticleTypes.ASH, mount.getX(), mount.getY(), mount.getZ(), 8, 0.18, 0.12, 0.18, 0.008);
+            level.sendParticles(ParticleTypes.SMOKE, mount.getX(), mount.getY(), mount.getZ(), 2, 0.12, 0.08, 0.12, 0.006);
          }
       } else if (player.level() instanceof ServerLevel level) {
          OdaMatchlockGunEntity mount = findMount(level, player);
@@ -527,7 +552,8 @@ public final class ServantCardOdaNobunagaSkills {
       Vec3 entry = findHajunSafePosition(hajunLevel, randomEntry.x, randomEntry.z,
          player.getBbWidth(), player.getBbHeight());
       source.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.2F, 0.55F);
-      source.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 72, 4.0, 0.18, 4.0, 0.04);
+      source.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.2, player.getZ(), 32, 3.0, 0.12, 3.0, 0.008);
+      source.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.25, player.getZ(), 12, 1.6, 0.16, 1.6, 0.008);
       restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
       hajunLevel.getChunk(Mth.floor(entry.x) >> 4, Mth.floor(entry.z) >> 4);
       player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 4, false, false, false));
@@ -574,7 +600,8 @@ public final class ServantCardOdaNobunagaSkills {
       level.addFreshEntity(skeleton);
       VFXServerEffects.spawn(level, "servant_oda_hajun", player, 192.0);
       level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.2F, 0.55F);
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 90, 4.0, 0.18, 4.0, 0.04);
+      level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.2, player.getZ(), 48, 4.0, 0.12, 4.0, 0.01);
+      level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.3, player.getZ(), 16, 2.0, 0.16, 2.0, 0.01);
       spreadOdaHajunTerrain(player, level, 220);
       applyOdaHajunPulse(player, level, true);
    }
@@ -589,14 +616,14 @@ public final class ServantCardOdaNobunagaSkills {
       long now = level.getGameTime();
       if (now % 5L == 0L) {
          double radius = 2.5 + Math.min(8.0, timer * 0.07);
-         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX(), player.getY() + 0.2, player.getZ(), 20, radius, 0.16, radius, 0.025);
-         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, player.getX(), player.getY() + 0.4, player.getZ(), 8, radius * 0.8, 0.18, radius * 0.8, 0.01);
+         level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 0.2, player.getZ(), 8, radius * 0.75, 0.1, radius * 0.75, 0.004);
+         level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 0.25, player.getZ(), 3, radius * 0.45, 0.12, radius * 0.45, 0.004);
          stainOdaHajunChantSurfaceFromCaster(player, level, now, 16);
       }
       int progress = Math.min(HAJUN_CHANT_LINES, 1 + timer / HAJUN_CHANT_LINE_TICKS);
       if (progress > data.getInt(HAJUN_PROGRESS)) {
          data.putInt(HAJUN_PROGRESS, progress);
-         VFXServerEffects.spawn(level, "servant_oda_hajun", player, 160.0);
+         VFXServerEffects.spawn(level, "servant_oda_hajun_charge", player, 160.0);
          level.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.65F, 0.65F + progress * 0.06F);
       }
       if (progress >= HAJUN_CHANT_LINES && timer >= HAJUN_CHANT_LINE_TICKS * HAJUN_CHANT_LINES) {
@@ -916,12 +943,8 @@ public final class ServantCardOdaNobunagaSkills {
       double x = player.getX();
       double y = player.getY() + player.getBbHeight() * 0.45;
       double z = player.getZ();
-      level.sendParticles(ParticleTypes.SMOKE, x, y, z, 2, 2.5, 0.35, 2.5, 0.01);
-      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.2, z, 1, 2.0, 0.25, 2.0, 0.005);
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.1, z, 2, 2.2, 0.2, 2.2, 0.01);
-      if (level.random.nextInt(3) == 0) {
-         level.sendParticles(ParticleTypes.FLAME, x, y + 0.15, z, 2, 1.8, 0.18, 1.8, 0.01);
-      }
+      level.sendParticles(ParticleTypes.ASH, x, y, z, 2, 2.5, 0.25, 2.5, 0.004);
+      level.sendParticles(ParticleTypes.SMOKE, x, y + 0.12, z, 1, 2.0, 0.16, 2.0, 0.004);
    }
 
    private static void spreadOdaHajunTerrain(ServerPlayer player, ServerLevel level, int budget) {

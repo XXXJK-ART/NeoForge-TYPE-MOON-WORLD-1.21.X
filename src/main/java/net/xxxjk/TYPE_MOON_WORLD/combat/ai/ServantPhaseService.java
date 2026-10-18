@@ -5,8 +5,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 
 public final class ServantPhaseService {
    public static final long MAX_PROBING_TICKS = 30L * 20L;
-   /** A full-health stalemate must also reach the noble phantasm phase. */
-   public static final long PROLONGED_COMBAT_DECISIVE_TICKS = 60L * 20L;
+   /** A full-health stalemate reaches the noble phantasm phase after 30 seconds. */
+   public static final long PROLONGED_COMBAT_DECISIVE_TICKS = 30L * 20L;
    public static final float OVERWHELMING_STRENGTH_RATIO = 1.65F;
    private static final String TAG_PHASE = "TypeMoonAiCombatPhase";
    private static final String TAG_PHASE_CHANGED = "TypeMoonAiPhaseChangedAt";

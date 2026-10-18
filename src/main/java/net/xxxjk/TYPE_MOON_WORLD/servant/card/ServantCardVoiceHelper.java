@@ -78,9 +78,7 @@ public final class ServantCardVoiceHelper {
          case "zhao_yun_changbanpo" -> ModSounds.ZHAO_YUN_VOICE_NP.get();
          case "oda_hasebe_short_thrust", "oda_floating_refill", "oda_three_line",
             "oda_encircle_matchlocks", "oda_charged_matchlock", "oda_crossfire_net",
-            "oda_scorched_earth", "oda_hasebe_breakthrough", "strategy", "maou",
-            "matchlock", "volley", "fire_barrage", "atsumori", "anti_mystery",
-            "ash_field", "hasebe_repel" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
+            "oda_scorched_earth", "oda_hasebe_breakthrough", "maou" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
          case "okita_mumyoudan_zuki" -> ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
@@ -97,7 +95,6 @@ public final class ServantCardVoiceHelper {
          case "lancelot_maul_combo", "lancelot_feral_rush", "lancelot_ground_slam", "lancelot_hunt_step",
             "lancelot_mana_reversal", "lancelot_knight_of_owner" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
          case "baobhan_sith_fetch_failnaught" -> ModSounds.BAOBHAN_SITH_VOICE_NP.get();
-         case "hajun" -> ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get();
          case "baobhan_sith_blood_spike", "baobhan_sith_blood_thorns", "baobhan_sith_curse_volley",
             "baobhan_sith_fingertip_dance", "baobhan_sith_night_feast", "baobhan_sith_grimalkin",
             "baobhan_sith_blessed_successor", "baobhan_sith_fairy_vampirism" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
@@ -107,7 +104,12 @@ public final class ServantCardVoiceHelper {
             -> ModSounds.JEANNE_ALTER_VOICE_SKILL.get();
          default -> null;
       };
-      play(player, sound, 40);
+      if (sound == ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get()) {
+         if (player.getRandom().nextFloat() > 0.4F) return;
+         play(player, sound, 200);
+      } else {
+         play(player, sound, 40);
+      }
    }
 
    static boolean usesUshiwakamaruNoblePhantasmVoice(String effectId) {

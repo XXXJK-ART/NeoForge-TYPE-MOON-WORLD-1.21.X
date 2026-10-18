@@ -5,6 +5,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.*;
@@ -19,6 +21,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import static net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource.Ability.*;
 
 /** Server-authoritative effects. Resource payment is performed by each actor's input adapter. */
@@ -45,7 +48,23 @@ public final class OdaAbilityService {
       final List<Zone> zones = new ArrayList<>();
       final Map<UUID, Pursuit> pursuits = new HashMap<>();
       final Set<LivingEntity> burns = new HashSet<>();
+      final List<ThreeThousandRelay> gunRelays = new ArrayList<>();
+      int pendingGunTiers;
       State(LivingEntity owner) { this.owner = owner; this.level = (ServerLevel)owner.level(); }
+   }
+   private static final class ThreeThousandRelay {
+      final LivingEntity target;
+      final boolean follow;
+      final Vec3 position, direction, origin;
+      final int index;
+      final boolean[] waveEffects;
+      OdaMatchlockGunEntity gun;
+      int wave;
+      ThreeThousandRelay(LivingEntity target, boolean follow, Vec3 position, Vec3 direction, Vec3 origin, int index,
+                         OdaMatchlockGunEntity gun, boolean[] waveEffects) {
+         this.target = target; this.follow = follow; this.position = position; this.direction = direction;
+         this.origin = origin; this.index = index; this.gun = gun; this.waveEffects = waveEffects;
+      }
    }
    private static final class Pursuit {
       final LivingEntity target;
@@ -125,7 +144,10 @@ public final class OdaAbilityService {
                level.addFreshEntity(gun);
             }
          }
-         case 3 -> later(owner, 40, () -> sniper(owner, 40)); // NPC full charge, player uses press/release.
+         case 3 -> {
+            VFXServerEffects.spawn(level, "servant_oda_sniper_charge", owner, 64.0);
+            later(owner, 40, () -> sniper(owner, 40)); // NPC full charge, player uses press/release.
+         }
          case 4 -> {
             LivingEntity target = lookTarget(owner, 30);
             Vec3 center = target == null ? owner.position().add(owner.getLookAngle().scale(14)) : target.position();
@@ -147,6 +169,7 @@ public final class OdaAbilityService {
          case 7 -> {
             owner.getPersistentData().putLong(MANIFEST_UNTIL, level.getGameTime() + 300);
             modifier(owner, SPEED, .15, true);
+            VFXServerEffects.spawn(level, "servant_oda_maou_skill", owner, 72.0);
          }
          default -> { return false; }
       }
@@ -192,7 +215,12 @@ public final class OdaAbilityService {
       }
    }
    public static void sniper(LivingEntity owner, int held) {
-      shoot(owner, owner.getEyePosition().add(owner.getLookAngle().scale(.85)), owner.getLookAngle(), OdaRules.chargeDamage(held), OdaRules.chargeSpeed(held), SNIPER)
+      Vec3 look = owner.getLookAngle();
+      Vec3 start = owner.getEyePosition().add(look.scale(.85));
+      if (owner.level() instanceof ServerLevel level) {
+         VFXServerEffects.spawnOriented(level, "servant_oda_sniper_release", start, look, 64.0);
+      }
+      shoot(owner, start, look, OdaRules.chargeDamage(held), OdaRules.chargeSpeed(held), SNIPER)
          .knockback(held >= 40 ? 1 : 0);
    }
    public static OdaMatchlockBulletEntity shoot(LivingEntity owner, Vec3 pos, Vec3 direction, float damage, float speed, OdaDamageSource.Ability ability) {
@@ -201,15 +229,69 @@ public final class OdaAbilityService {
       owner.level().addFreshEntity(bullet);
       return bullet;
    }
+   public static boolean hasThreeThousandArray(LivingEntity owner) {
+      State current = STATES.get(owner.getUUID());
+      return current != null && (current.pendingGunTiers > 0 || !current.gunRelays.isEmpty());
+   }
    public static void threeThousand(LivingEntity owner, LivingEntity target, boolean follow, Vec3 origin) {
-      ServerLevel level = (ServerLevel)owner.level();
-      state(owner);
-      for (int i = 0; i < 99; i++) {
-         double angle = i * Math.PI * 2 / 99;
-         Vec3 pos = origin.add(Math.cos(angle) * (3 + i % 3), .2 + i % 4 * .35, Math.sin(angle) * (3 + i % 3));
-         var gun = follow ? OdaMatchlockGunEntity.threeThousandWorldsFollow(level, owner, target, i, 99, i % 6 * 4)
-            : OdaMatchlockGunEntity.threeThousandWorlds(level, owner, target, pos, owner.getLookAngle(), i % 6 * 4);
-         level.addFreshEntity(gun.configure(THREE_THOUSAND, 3, 20, 320));
+      State current = state(owner);
+      ServerLevel level = current.level;
+      Vec3 horizontal = owner.getLookAngle().multiply(1, 0, 1);
+      Vec3 forward = horizontal.lengthSqr() < 1e-6 ? new Vec3(0,0,1) : horizontal.normalize();
+      Vec3 side = new Vec3(-forward.z, 0, forward.x);
+      boolean[] waveEffects = new boolean[OdaRules.THREE_THOUSAND_WAVE_COUNT];
+      current.pendingGunTiers += OdaRules.THREE_THOUSAND_TIER_COUNT;
+      for (int tier = 0; tier < OdaRules.THREE_THOUSAND_TIER_COUNT; tier++) {
+         int currentTier = tier;
+         later(owner, OdaRules.threeThousandTierDelay(tier), () -> {
+            current.pendingGunTiers--;
+            if (!owner.isAlive() || owner.isRemoved() || owner.level() != level || !OdaCombatEvents.isOda(owner)) return;
+            Vec3 center = follow ? owner.position().add(0, owner.getBbHeight() * .55, 0) : origin;
+            if (currentTier == 0) startThreeThousandWaveEffect(level, owner, follow, origin, forward, 0, waveEffects);
+            for (int slot = 0; slot < OdaRules.THREE_THOUSAND_GUNS_PER_TIER; slot++) {
+               int index = currentTier * OdaRules.THREE_THOUSAND_GUNS_PER_TIER + slot;
+               double radius = OdaRules.threeThousandRadius(currentTier, slot, 0);
+               double angle = OdaRules.threeThousandAngle(currentTier, slot, 0);
+               Vec3 position = center.add(side.scale(Math.cos(angle) * radius)).add(forward.scale(Math.sin(angle) * radius))
+                  .add(0, OdaRules.threeThousandHeight(currentTier, slot, 0), 0);
+               var gun = spawnThreeThousandGun(level, owner, target, follow, position, forward, index, 0,
+                  OdaRules.threeThousandShotDelay(slot));
+               current.gunRelays.add(new ThreeThousandRelay(target, follow, position, forward, origin, index, gun, waveEffects));
+            }
+            level.playSound(null, center.x, center.y, center.z, SoundEvents.CROSSBOW_LOADING_END.value(), SoundSource.PLAYERS,
+               .24F, .9F + currentTier * .035F);
+         });
+      }
+   }
+   private static OdaMatchlockGunEntity spawnThreeThousandGun(ServerLevel level, LivingEntity owner, LivingEntity target,
+         boolean follow, Vec3 position, Vec3 direction, int index, int wave, int delay) {
+      int formationIndex = wave * OdaRules.THREE_THOUSAND_GUNS_PER_WAVE + index;
+      var gun = follow
+         ? OdaMatchlockGunEntity.threeThousandWorldsFollow(level, owner, target, formationIndex, OdaRules.THREE_THOUSAND_TOTAL_GUNS, delay)
+         : OdaMatchlockGunEntity.threeThousandWorlds(level, owner, target, position, direction, delay);
+      gun.formationIndex(formationIndex);
+      level.addFreshEntity(gun);
+      Vec3 appearance = gun.position();
+      level.sendParticles(ParticleTypes.ASH, appearance.x, appearance.y, appearance.z, 1, .05, .08, .05, .01);
+      return gun;
+   }
+   private static void startThreeThousandWaveEffect(ServerLevel level, LivingEntity owner, boolean follow,
+         Vec3 origin, Vec3 direction, int wave, boolean[] started) {
+      if (started[wave]) return;
+      started[wave] = true;
+      if (follow) VFXServerEffects.spawn(level, "servant_oda_three_thousand", owner, 160.0);
+      else VFXServerEffects.spawnOriented(level, "servant_oda_three_thousand", origin, direction, 160.0);
+   }
+   private static void tickThreeThousandRelays(State current) {
+      var iterator = current.gunRelays.iterator();
+      while (iterator.hasNext()) {
+         ThreeThousandRelay relay = iterator.next();
+         if (!relay.gun.isRemoved()) continue;
+         if (++relay.wave >= OdaRules.THREE_THOUSAND_WAVE_COUNT) { iterator.remove(); continue; }
+         startThreeThousandWaveEffect(current.level, current.owner, relay.follow,
+            relay.origin, relay.direction, relay.wave, relay.waveEffects);
+         relay.gun = spawnThreeThousandGun(current.level, current.owner, relay.target, relay.follow, relay.position,
+            relay.gun.getLookAngle(), relay.index, relay.wave, 0);
       }
    }
    public static boolean hurt(LivingEntity caster, LivingEntity target, float damage, OdaDamageSource.Ability ability, boolean fire) {
@@ -296,6 +378,7 @@ public final class OdaAbilityService {
          var due = state.tasks.stream().filter(task -> task.at <= now).toList();
          state.tasks.removeAll(due);
          for (Task task : due) task.run.run();
+         tickThreeThousandRelays(state);
          state.pursuits.values().removeIf(p -> now > p.expires || !p.target.isAlive() || p.target.level() != state.level);
          state.burns.removeIf(target -> {
             if (target.isAlive() && target.getRemainingFireTicks() > 0 && target.level() == state.level) return false;

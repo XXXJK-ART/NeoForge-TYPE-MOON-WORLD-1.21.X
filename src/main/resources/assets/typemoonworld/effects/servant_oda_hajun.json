@@ -1,0 +1,176 @@
+{
+  "duration": 5.2,
+  "notes": [
+    "Hajun field entry: a low crimson seal, elevated dark halo, upward ash vortex, and sparse pale anti-divine scars. The geometry is local to the field center."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.15,
+      "rate": 94,
+      "particle_lifetime": 0.82,
+      "size_variance": 0.13,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.018,
+      "velocity": [0.0, 0.015, 0.0],
+      "velocity_variance": 0.012,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.04, 0.0], "rotate_with_entity": true },
+      "component": { "type": "bicircle_star", "radius": 1.0, "inner_radius": 0.84, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.12, "color": "#FFE5A05A" },
+        { "t": 0.45, "color": "#DD841817" },
+        { "t": 0.8, "color": "#66340C13" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.07 },
+        { "t": 0.28, "size": 0.2 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 0.04, 0.2] },
+        { "t": 0.72, "scale": [10.0, 0.04, 10.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [11.0, 0.04, 11.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_ENTRY_GROUND_SEAL",
+      "material": { "shader": "vfx_sdf", "bloom": 0.45, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 0.2,
+      "end_time": 4.8,
+      "rate": 82,
+      "particle_lifetime": 1.15,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 4.8, 0.0], "rotate_with_entity": true },
+      "component": { "type": "elliptic_torus", "radius_x": 7.4, "radius_z": 7.4, "tube_radius": 0.16, "u_segments": 64, "v_segments": 8 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00300A0B" },
+        { "t": 0.15, "color": "#AA9B201A" },
+        { "t": 0.52, "color": "#88511720" },
+        { "t": 0.82, "color": "#55310C15" },
+        { "t": 1.0, "color": "#00100000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.3, "size": 0.13 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.75, 0.24, 0.75] },
+        { "t": 0.45, "scale": [1.1, 0.3, 1.1] },
+        { "t": 1.0, "scale": [1.18, 0.2, 1.18] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_ECLIPSE_RING",
+      "material": { "shader": "vfx_polar", "bloom": 0.22, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 0.1,
+      "end_time": 4.5,
+      "rate": 96,
+      "particle_lifetime": 1.25,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.1, 0.0], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 6.2, "turns": 1.15, "height": 7.5, "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00100000" },
+        { "t": 0.14, "color": "#997C1A19" },
+        { "t": 0.5, "color": "#66500C12" },
+        { "t": 0.84, "color": "#44220A10" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.38, "size": 0.2 },
+        { "t": 1.0, "size": 0.035 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_FIELD_ASH_VORTEX",
+      "material": { "shader": "vfx_smoke", "bloom": 0.12, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [0.48, 0.22, 0.48], "offset": [0.0, 0.2, 0.0], "speed": 0.01, "chance": 0.18 },
+        { "type": "smoke", "count": 1, "spread": [0.22, 0.14, 0.22], "offset": [0.0, 0.1, 0.0], "speed": 0.008, "chance": 0.08 }
+      ]
+    },
+    {
+      "start_time": 0.55,
+      "end_time": 3.8,
+      "rate": 18,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.08,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.008,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.1, 0.0], "rotate_with_entity": true },
+      "component": { "type": "line", "start": [-7.0, 2.4, -3.8], "end": [6.2, 0.45, 4.7], "segments": 64 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.1, "color": "#EEFFF0D1" },
+        { "t": 0.3, "color": "#BBE83C27" },
+        { "t": 0.72, "color": "#663B1013" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.2, "size": 0.085 },
+        { "t": 1.0, "size": 0.008 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_ANTI_DIVINE_SCAR",
+      "material": { "shader": "vfx_energy", "bloom": 0.8, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 4.15,
+      "end_time": 5.2,
+      "rate": 68,
+      "particle_lifetime": 0.48,
+      "size_variance": 0.13,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.18, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.6, 0.0], "rotate_with_entity": true },
+      "component": { "type": "sphere", "radius": 0.85, "sample_count": 48 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#DDF9E7D7" },
+        { "t": 0.34, "color": "#CCF43C21" },
+        { "t": 0.76, "color": "#66210B10" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.24, "size": 0.66 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.35, 0.25, 0.35] },
+        { "t": 0.62, "scale": [7.0, 2.8, 7.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [8.0, 3.0, 8.0] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_FIELD_CRUSH_PULSE",
+      "material": { "shader": "vfx_energy", "bloom": 0.55, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [0.3, 0.16, 0.3], "offset": [0.0, 0.2, 0.0], "speed": 0.01, "chance": 0.16 },
+        { "type": "flame", "count": 1, "spread": [0.12, 0.1, 0.12], "offset": [0.0, 0.1, 0.0], "speed": 0.01, "chance": 0.05 }
+      ]
+    }
+  ]
+}

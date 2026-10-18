@@ -1,0 +1,64 @@
+{
+  "duration": 0.42,
+  "notes": [
+    "Charged matchlock release: a short white-hot muzzle core and one straight amber pressure lane in the firing direction."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.16,
+      "rate": 120,
+      "particle_lifetime": 0.18,
+      "size_variance": 0.12,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 2,
+      "component": { "type": "sphere", "radius": 0.22, "sample_count": 48 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.28, "color": "#FFFFD58A" },
+        { "t": 1.0, "color": "#00F24A18" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.25, "size": 0.46 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_SNIPER_MUZZLE_CORE",
+      "material": { "shader": "vfx_energy", "bloom": 0.7, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "flame", "count": 1, "spread": [0.05, 0.05, 0.05], "offset": [0.0, 0.0, 0.0], "speed": 0.015, "chance": 0.3 },
+        { "type": "smoke", "count": 1, "spread": [0.08, 0.05, 0.08], "offset": [0.0, 0.0, 0.0], "speed": 0.018, "chance": 0.25 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.22,
+      "rate": 90,
+      "particle_lifetime": 0.24,
+      "size_variance": 0.1,
+      "lifetime_variance": 0.06,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.005,
+      "component": { "type": "line", "start": [0.0, 0.0, 0.05], "end": [0.0, 0.0, 2.4], "segments": 48 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.25, "color": "#FFFFD178" },
+        { "t": 1.0, "color": "#00D74612" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.3, "size": 0.14 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_SNIPER_FORWARD_LANCE",
+      "enable_trail": true,
+      "material": { "shader": "vfx_energy", "bloom": 0.45, "soft_particles": true, "distortion": false }
+    }
+  ]
+}

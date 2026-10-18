@@ -502,8 +502,9 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayOdaNobunagaSkill(ServantEntity servant) {
-      if (isOdaNobunaga(servant)) {
-         playVoiceForced(servant, "oda_skill", 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
+      if (isOdaNobunaga(servant) && servant.getRandom().nextFloat() <= 0.4F) {
+         playVoice(servant, "oda_skill", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F,
+            ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
       }
    }
 

@@ -72,8 +72,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       Map.entry("servant_medea_barrier", "servant_ushiwakamaru_benkei_shield"),
       Map.entry("servant_medea_bind", "servant_enkidu_chain_of_heaven"),
       Map.entry("servant_medea_workshop", "magic_circle"),
-      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort"),
-      Map.entry("servant_oda_hajun", "demon_god_gaze_final_explosion")
+      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort")
    );
 
    private EffectLibrary() {
@@ -133,7 +132,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       apply(loaded, resourceManager, null);
    }
 
-   private static VFXEffectDefinition parseEffect(ResourceLocation id, JsonObject json) {
+   static VFXEffectDefinition parseEffect(ResourceLocation id, JsonObject json) {
       requireOnly(json, "duration", "emitters", "environment", "screen_effects", "notes");
       float duration = requiredFloat(json, "duration");
       JsonArray emittersJson = requiredArray(json, "emitters");

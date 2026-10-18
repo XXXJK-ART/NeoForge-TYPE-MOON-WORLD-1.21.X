@@ -28,7 +28,7 @@ public final class ServantTacticsGameTests {
    private static final AtomicInteger ARENAS = new AtomicInteger();
 
    @GameTest(template = "ancient_temple", templateNamespace = "typemoonworld_tactics", timeoutTicks = 20)
-   public static void phasesAdvanceAtRangedDistanceAndNeverRegressAfterHealing(GameTestHelper h) {
+   public static void phasesUnlockNoblePhantasmsAfterThirtySecondsAndNeverRegressAfterHealing(GameTestHelper h) {
       BlockPos center = arena(h);
       var a = spawn(h, "artoria_pendragon", center.above(), true);
       var b = spawn(h, "artoria_pendragon", center.offset(40, 1, 0), true);
@@ -37,10 +37,8 @@ public final class ServantTacticsGameTests {
       a.getPersistentData().putLong("TypeMoonAiCombatStartedAt", now - 600L);
       a.getPersistentData().putLong("TypeMoonAiLastCombatAt", now);
       ServantCombatSystem.tickBeforeAi(a);
-      h.assertTrue(ServantCombatSystem.getPhase(a) == ServantCombatPhase.NORMAL, "30-second ranged probing did not end");
-      a.getPersistentData().putLong("TypeMoonAiCombatStartedAt", now - 1200L);
-      ServantCombatSystem.tickBeforeAi(a);
-      h.assertTrue(ServantCombatSystem.canUseNoblePhantasm(a), "full-health stalemate never unlocked NP");
+      h.assertTrue(ServantCombatSystem.getPhase(a) == ServantCombatPhase.DECISIVE, "30-second combat did not unlock decisive phase");
+      h.assertTrue(ServantCombatSystem.canUseNoblePhantasm(a), "30-second combat did not unlock NP");
       a.setHealth(a.getMaxHealth());
       h.assertTrue(ServantPhaseService.tick(a, b, null, now).phase().ordinal() >= 2, "healing downgraded combat phase");
       a.discard(); b.discard(); h.succeed();

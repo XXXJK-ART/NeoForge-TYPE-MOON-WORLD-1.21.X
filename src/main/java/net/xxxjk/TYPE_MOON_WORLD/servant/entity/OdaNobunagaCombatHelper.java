@@ -139,14 +139,15 @@ public final class OdaNobunagaCombatHelper {
       double distance = entity.distanceTo(target);
       float hp = entity.getHealth() / Math.max(1, entity.getMaxHealth());
       updateSeriousModeFlight(entity, target, now);
-      if (hp <= .6F) {
+      boolean decisive = ServantCombatSystem.getPhase(entity) == ServantCombatPhase.DECISIVE;
+      if (hp <= .6F || decisive) {
          if (hasTrait(target, ServantTraitTag.DIVINE) && tryBeginHajun(entity, level, target, now)) return;
          if (tryCastThreeThousandWorlds(entity, level, target, now, true)) return;
          if (tryBeginHajun(entity, level, target, now)) return;
       }
       // Distance and phase drive selection, while every effect/cost/cooldown uses the card's contract.
-      if (distance < 5 && castResetSkill(entity, -1, now)) return;
       if (OdaAbilityService.orbitCount(entity) < 5 && castResetSkill(entity, 0, now)) return;
+      if (distance < 5 && castResetSkill(entity, -1, now)) return;
       if (hp <= .8F && castResetSkill(entity, 7, now)) return;
       int[] candidates = distance < 6 ? new int[]{6, 4, 1, 5, 2} : distance > 22 ? new int[]{3, 2, 1, 4, 5} : new int[]{2, 4, 1, 5, 3};
       if (hp <= .8F || entity.getRandom().nextInt(4) == 0) {
@@ -206,7 +207,8 @@ public final class OdaNobunagaCombatHelper {
       }
       data.putLong(TAG_LAST_PERSISTENT_STATE_TICK, now);
       tickThreeThousandWorldsChant(entity, level, now);
-      boolean busy = tickHajunChant(entity, level, now) || tickHajunField(entity, level, now);
+      boolean busy = tickHajunChant(entity, level, now) || tickHajunField(entity, level, now)
+         || entity.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isChantLift();
       if (!busy) expireBuffs(entity, level, now);
       data.putBoolean(TAG_PERSISTENT_STATE_BUSY, busy);
       return busy || entity.getPersistentData().getLong("OdaResetRecovery") > now;
@@ -228,17 +230,16 @@ public final class OdaNobunagaCombatHelper {
          ticks -> { entity.getPersistentData().putLong(TAG_LAST_THREE_THOUSAND, entity.level().getGameTime() - THREE_THOUSAND_COOLDOWN + ticks); entity.getPersistentData().putLong("OdaSharedNpUntil", entity.level().getGameTime() + ticks); }, () -> { entity.getPersistentData().remove(TAG_THREE_THOUSAND_CHANT_END); entity.getPersistentData().remove(TAG_THREE_THOUSAND_TARGET); });
       entity.getPersistentData().putLong(TAG_LAST_THREE_THOUSAND, now);
       entity.getPersistentData().putLong("OdaSharedNpUntil", now + 3600);
-      entity.getPersistentData().putLong(TAG_THREE_THOUSAND_CHANT_END, net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.voiceEnd(entity));
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> { });
-      entity.getPersistentData().putLong(TAG_LAND_FOR_NP_UNTIL, now + THREE_THOUSAND_CHANT_TICKS + NP_LAND_TICKS);
+      entity.getPersistentData().putLong(TAG_THREE_THOUSAND_CHANT_END, net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.releaseAt(entity));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity,
+         () -> completeThreeThousandWorldsChant(entity, level));
       entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + THREE_THOUSAND_CHANT_TICKS + FLIGHT_HOLD_TICKS);
       entity.getPersistentData().putInt(TAG_THREE_THOUSAND_TARGET, target.getId());
-      landForNoblePhantasm(entity);
+      OdaMatchlockGunEntity.beginThreeThousandChant(entity);
       entity.triggerNamedActionAnimation("strategy");
       ServantVoiceHelper.tryPlayOdaNobunagaNp(entity);
-      VFXServerEffects.spawn(level, "servant_oda_three_thousand", entity, 160.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.95F, 0.85F);
-      level.sendParticles(ParticleTypes.ENCHANT, entity.getX(), entity.getY() + 1.15, entity.getZ(), 36, 1.2, 0.55, 1.2, 0.08);
+      VFXServerEffects.spawn(level, "servant_oda_three_thousand_charge", entity, 72.0);
       return true;
    }
 
@@ -254,13 +255,18 @@ public final class OdaNobunagaCombatHelper {
       if (now < chantEnd) {
          return;
       }
+      completeThreeThousandWorldsChant(entity, level);
+   }
+
+   private static void completeThreeThousandWorldsChant(OdaNobunagaEntity entity, ServerLevel level) {
+      if (!entity.getPersistentData().contains(TAG_THREE_THOUSAND_CHANT_END)) return;
       Entity resolved = level.getEntity(entity.getPersistentData().getInt(TAG_THREE_THOUSAND_TARGET));
       LivingEntity target = resolved instanceof LivingEntity living && living.isAlive() ? living : entity.getTarget();
       entity.getPersistentData().remove(TAG_THREE_THOUSAND_CHANT_END);
       entity.getPersistentData().remove(TAG_THREE_THOUSAND_TARGET);
       if (target != null && target.isAlive() && entity.isAlive()) {
          releaseThreeThousandWorlds(entity, level, target);
-         relightAfterNoblePhantasm(entity, now);
+         relightAfterNoblePhantasm(entity, level.getGameTime());
       }
    }
 
@@ -303,6 +309,7 @@ public final class OdaNobunagaCombatHelper {
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> { });
       landForNoblePhantasm(entity); entity.triggerChargeAnimation();
       ServantVoiceHelper.tryPlayOdaNobunagaHajun(entity);
+      VFXServerEffects.spawn(level, "servant_oda_hajun_charge", entity, 128.0);
       return true;
    }
 
@@ -324,8 +331,12 @@ public final class OdaNobunagaCombatHelper {
          return false;
       }
       entity.getNavigation().stop();
+      long elapsed = Math.max(0L, now - entity.getPersistentData().getLong(TAG_HAJUN_START_TICK));
+      if (elapsed > 0L && elapsed % 22L == 0L) {
+         VFXServerEffects.spawn(level, "servant_oda_hajun_charge", entity, 128.0);
+      }
       if (now % 5L == 0L) {
-         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + 0.15, entity.getZ(), 16, 1.5, 0.15, 1.5, 0.03);
+         level.sendParticles(ParticleTypes.ASH, entity.getX(), entity.getY() + 0.15, entity.getZ(), 7, 1.5, 0.1, 1.5, 0.004);
          stainHajunChantSurfaceFromCaster(entity, level, now, 16);
       }
       if (now < chantEnd) {
@@ -356,6 +367,7 @@ public final class OdaNobunagaCombatHelper {
       if (hajunLevel == null || ModDimensions.isHajunDimension(source.dimension().location())) {
          applyHajunState(entity, now, entity.blockPosition());
          entity.getPersistentData().putBoolean("OdaHajunLocal", true);
+         VFXServerEffects.spawn(source, "servant_oda_hajun", entity, 192.0);
          for (LivingEntity target : collectHajunTargets(entity, source, primary)) markHajunTarget(entity, target, source, target.getX(), target.getY(), target.getZ(), target == primary);
          applyHajunInstantDamage(entity, source);
          return;
@@ -382,8 +394,8 @@ public final class OdaNobunagaCombatHelper {
          double radius = 5.0 + i % 7;
          double px = entity.getX() + Math.cos(angle) * radius;
          double pz = entity.getZ() + Math.sin(angle) * radius;
-         source.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, px, entity.getY() + 0.1, pz, 3, 0.16, 0.04, 0.16, 0.015);
-         source.sendParticles(ParticleTypes.CAMPFIRE_SIGNAL_SMOKE, px, entity.getY() + 0.2, pz, 2, 0.08, 0.02, 0.08, 0.0);
+         source.sendParticles(ParticleTypes.ASH, px, entity.getY() + 0.1, pz, 1, 0.1, 0.03, 0.1, 0.004);
+         source.sendParticles(ParticleTypes.SMOKE, px, entity.getY() + 0.2, pz, 1, 0.08, 0.02, 0.08, 0.002);
       }
 
       Vec3 randomEntry = UBWInstanceManager.randomEntryPosition(entity.getRandom());
@@ -414,7 +426,9 @@ public final class OdaNobunagaCombatHelper {
          RedSkeletonHajunEntity skeleton = new RedSkeletonHajunEntity(hajunLevel, nobu, HAJUN_DURATION);
          hajunLevel.addFreshEntity(skeleton);
          hajunLevel.playSound(null, entryBlock, SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.2F, 0.55F);
-         hajunLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entry.x, entry.y + 0.2, entry.z, 72, 4.0, 0.18, 4.0, 0.04);
+         VFXServerEffects.spawn(hajunLevel, "servant_oda_hajun", nobu, 192.0);
+         hajunLevel.sendParticles(ParticleTypes.ASH, entry.x, entry.y + 0.2, entry.z, 48, 4.0, 0.12, 4.0, 0.01);
+         hajunLevel.sendParticles(ParticleTypes.SMOKE, entry.x, entry.y + 0.3, entry.z, 16, 2.0, 0.16, 2.0, 0.01);
          spreadHajunTerrain(nobu, hajunLevel, 220);
          applyHajunInstantDamage(nobu, hajunLevel);
       }
@@ -670,10 +684,11 @@ public final class OdaNobunagaCombatHelper {
 
    public static boolean isCombatFlying(OdaNobunagaEntity entity, long now) {
       if (entity == null || entity.isSpiritualDissolving()
+         || entity.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isChantLift()
          || entity.getPersistentData().getLong(TAG_LAND_FOR_NP_UNTIL) > now) {
          return false;
       }
-      return entity.getHealth() <= entity.getMaxHealth() * 0.6F
+      return entity.getHealth() <= entity.getMaxHealth() * 0.8F
          || entity.getPersistentData().getLong(TAG_MAOU_UNTIL) > now
          || entity.getPersistentData().getLong(TAG_THREE_THOUSAND_CHANT_END) > now
          || entity.getPersistentData().getLong(TAG_HAJUN_CHANT_END) > now
@@ -693,7 +708,7 @@ public final class OdaNobunagaCombatHelper {
          landForNoblePhantasm(entity);
          return;
       }
-      boolean serious = entity.getHealth() <= entity.getMaxHealth() * 0.6F
+      boolean serious = entity.getHealth() <= entity.getMaxHealth() * 0.8F
          || entity.getPersistentData().getLong(TAG_MAOU_UNTIL) > now
          || entity.getPersistentData().getLong(TAG_THREE_THOUSAND_CHANT_END) > now
          || entity.getPersistentData().getLong(TAG_HAJUN_CHANT_END) > now
@@ -978,12 +993,8 @@ public final class OdaNobunagaCombatHelper {
       double x = entity.getX();
       double y = entity.getY() + entity.getBbHeight() * 0.45;
       double z = entity.getZ();
-      level.sendParticles(ParticleTypes.SMOKE, x, y, z, 2, 2.5, 0.35, 2.5, 0.01);
-      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, x, y + 0.2, z, 1, 2.0, 0.25, 2.0, 0.005);
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.1, z, 2, 2.2, 0.2, 2.2, 0.01);
-      if (level.random.nextInt(3) == 0) {
-         level.sendParticles(ParticleTypes.FLAME, x, y + 0.15, z, 2, 1.8, 0.18, 1.8, 0.01);
-      }
+      level.sendParticles(ParticleTypes.ASH, x, y, z, 2, 2.5, 0.25, 2.5, 0.004);
+      level.sendParticles(ParticleTypes.SMOKE, x, y + 0.12, z, 1, 2.0, 0.16, 2.0, 0.004);
    }
 
    public static void restoreLegacyDuelState(LivingEntity living) {

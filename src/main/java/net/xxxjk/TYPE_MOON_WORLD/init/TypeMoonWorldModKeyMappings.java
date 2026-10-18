@@ -390,6 +390,10 @@ public class TypeMoonWorldModKeyMappings {
       @SubscribeEvent
       public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
          if (!(event.getEntity() instanceof Player player) || !player.isPassenger()) return;
+         if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
+            event.getInput().shiftKeyDown = false;
+            return;
+         }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)
             && (PaleRiderClientState.possessing

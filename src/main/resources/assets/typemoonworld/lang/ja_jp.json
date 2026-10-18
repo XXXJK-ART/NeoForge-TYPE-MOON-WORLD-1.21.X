@@ -1978,6 +1978,7 @@
   "message.typemoonworld.servant_card.ubw_chant_started": "無限の剣製詠唱開始",
   "message.typemoonworld.servant_card.ubw_need_third_line": "詠唱はまだ第三句に達していない",
   "message.typemoonworld.servant_card.ubw_released": "無限の剣製を解除した",
+  "message.typemoonworld.servant_card.oda_hajun_released": "波旬の領域から帰還した",
   "message.typemoonworld.servant_card.unknown": "未知のサーヴァントカード：%s",
   "message.typemoonworld.servant_card.workshop_overworld_only": "工房スキルはオーバーワールドでのみ使用可能",
   "message.typemoonworld.shadow.binding_locked": "目標は影縛されており、虚数吸収でロックできない。",

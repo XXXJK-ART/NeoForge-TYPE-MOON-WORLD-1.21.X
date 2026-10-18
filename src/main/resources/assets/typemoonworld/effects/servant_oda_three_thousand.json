@@ -1,14 +1,14 @@
 {
-    "duration":  7.2,
+    "duration":  7.0,
     "notes":  [
-                  "Three Thousand Worlds: three-stage battlefield VFX. 0.0-1.15s gun-array summon, 1.15-3.25s matchlock volley, 3.05-7.2s smoke/sparks/scorched residue.",
-                  "All firing geometry is authored as local +Z forward and remains bound to Nobunaga yaw without changing noble phantasm trigger logic."
+                  "99 corresponding gun positions, each relaying through three waves immediately after its preceding gun finishes. Each gun starts firing during its rising spiral tier; smoke remains after the third volley.",
+                  "Gold-orange fire lanes sit over layered grey black-powder smoke, authored in local +Z and bound to Nobunaga yaw."
               ],
     "emitters":  [
                      {
                          "start_time":  0.0,
-                         "end_time":  1.65,
-                         "rate":  3200,
+                         "end_time":  1.35,
+                         "rate":  110,
                          "particle_lifetime":  0.92,
                          "size_variance":  0.34,
                          "lifetime_variance":  0.22,
@@ -19,7 +19,7 @@
                                           0.0
                                       ],
                          "velocity_variance":  0.05,
-                         "max_vanilla_particles_per_tick":  4,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -138,9 +138,9 @@
                                                ]
                      },
                      {
-                         "start_time":  0.18,
-                         "end_time":  1.95,
-                         "rate":  3800,
+                         "start_time":  0.0,
+                         "end_time":  1.35,
+                         "rate":  80,
                          "particle_lifetime":  0.74,
                          "size_variance":  0.28,
                          "lifetime_variance":  0.18,
@@ -151,7 +151,7 @@
                                           0.0
                                       ],
                          "velocity_variance":  0.035,
-                         "max_vanilla_particles_per_tick":  2,
+                         "max_vanilla_particles_per_tick":  0,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -235,9 +235,9 @@
                          "particle_role":  "THREE_THOUSAND_MATCHLOCK_ARRAY"
                      },
                      {
-                         "start_time":  0.76,
-                         "end_time":  2.3,
-                         "rate":  2600,
+                         "start_time":  0.08,
+                         "end_time":  4.6,
+                         "rate":  65,
                          "particle_lifetime":  0.38,
                          "size_variance":  0.42,
                          "lifetime_variance":  0.18,
@@ -248,7 +248,7 @@
                                           0.06
                                       ],
                          "velocity_variance":  0.16,
-                         "max_vanilla_particles_per_tick":  6,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -368,7 +368,7 @@
                                                        "chance":  0.28
                                                    },
                                                    {
-                                                       "type":  "flash",
+                                                       "type":  "ash",
                                                        "count":  1,
                                                        "spread":  [
                                                                       0.0,
@@ -386,9 +386,9 @@
                                                ]
                      },
                      {
-                         "start_time":  1.12,
-                         "end_time":  2.75,
-                         "rate":  5400,
+                         "start_time":  0.12,
+                         "end_time":  4.6,
+                         "rate":  160,
                          "particle_lifetime":  0.5,
                          "size_variance":  0.3,
                          "lifetime_variance":  0.18,
@@ -399,7 +399,7 @@
                                           10.5
                                       ],
                          "velocity_variance":  0.55,
-                         "max_vanilla_particles_per_tick":  7,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -492,7 +492,7 @@
                          "enable_trail":  true,
                          "vanilla_particles":  [
                                                    {
-                                                       "type":  "crit",
+                                                       "type":  "flame",
                                                        "count":  1,
                                                        "spread":  [
                                                                       0.35,
@@ -508,7 +508,7 @@
                                                        "chance":  0.25
                                                    },
                                                    {
-                                                       "type":  "flash",
+                                                       "type":  "smoke",
                                                        "count":  1,
                                                        "spread":  [
                                                                       0.0,
@@ -526,9 +526,9 @@
                                                ]
                      },
                      {
-                         "start_time":  1.38,
-                         "end_time":  3.15,
-                         "rate":  3200,
+                         "start_time":  0.15,
+                         "end_time":  5.4,
+                         "rate":  145,
                          "particle_lifetime":  0.62,
                          "size_variance":  0.45,
                          "lifetime_variance":  0.2,
@@ -539,7 +539,7 @@
                                           7.2
                                       ],
                          "velocity_variance":  0.95,
-                         "max_vanilla_particles_per_tick":  5,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -662,7 +662,7 @@
                                                        "chance":  0.28
                                                    },
                                                    {
-                                                       "type":  "cloud",
+                                                       "type":  "ash",
                                                        "count":  1,
                                                        "spread":  [
                                                                       1.0,
@@ -680,9 +680,9 @@
                                                ]
                      },
                      {
-                         "start_time":  2.9,
-                         "end_time":  7.2,
-                         "rate":  900,
+                         "start_time":  2.5,
+                         "end_time":  7.0,
+                         "rate":  70,
                          "particle_lifetime":  1.65,
                          "size_variance":  0.48,
                          "lifetime_variance":  0.35,
@@ -693,7 +693,7 @@
                                           0.08
                                       ],
                          "velocity_variance":  0.2,
-                         "max_vanilla_particles_per_tick":  5,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -811,9 +811,9 @@
                                                ]
                      },
                      {
-                         "start_time":  2.2,
-                         "end_time":  6.8,
-                         "rate":  1250,
+                         "start_time":  0.25,
+                         "end_time":  6.6,
+                         "rate":  40,
                          "particle_lifetime":  1.15,
                          "size_variance":  0.4,
                          "lifetime_variance":  0.34,
@@ -824,7 +824,7 @@
                                           0.03
                                       ],
                          "velocity_variance":  0.18,
-                         "max_vanilla_particles_per_tick":  2,
+                         "max_vanilla_particles_per_tick":  1,
                          "binding":  {
                                          "mode":  "entity_yaw",
                                          "offset":  [
@@ -922,8 +922,8 @@
                      },
                      {
                          "start_time":  2.45,
-                         "end_time":  6.2,
-                         "rate":  560,
+                         "end_time":  6.6,
+                         "rate":  18,
                          "particle_lifetime":  1.35,
                          "size_variance":  0.35,
                          "lifetime_variance":  0.22,
@@ -1015,6 +1015,66 @@
                          "visibility_condition":  "random() \u003e 0.34",
                          "blend":  "TRANSLUCENT",
                          "particle_role":  "THREE_THOUSAND_SCORCHED_GROUND"
+                     },
+                     {
+                         "start_time":  0.2,
+                         "end_time":  6.8,
+                         "rate":  105,
+                         "particle_lifetime":  1.85,
+                         "size_variance":  0.18,
+                         "lifetime_variance":  0.14,
+                         "position_variance":  0.18,
+                         "velocity":  [
+                                          0.0,
+                                          0.09,
+                                          0.0
+                                      ],
+                         "velocity_variance":  0.035,
+                         "max_vanilla_particles_per_tick":  1,
+                         "binding":  {
+                                         "mode":  "entity_yaw",
+                                         "offset":  [
+                                                        0.0,
+                                                        0.75,
+                                                        1.0
+                                                    ],
+                                         "rotate_with_entity":  true
+                                     },
+                         "component":  {
+                                           "type":  "parametric",
+                                           "mode":  "EXPRESSION",
+                                           "expr_x":  "cos(t * 32.3 + time * 0.56) * (1.5 + t * 3.0)",
+                                           "expr_y":  "-3.675 + t * 7.35",
+                                           "expr_z":  "sin(t * 32.3 + time * 0.56) * (1.5 + t * 3.0)",
+                                           "t_start":  0.0,
+                                           "t_end":  1.0,
+                                           "segments":  198
+                                       },
+                         "color_over_life":  [
+                                                 { "t":  0.0, "color":  "#00797979" },
+                                                 { "t":  0.16, "color":  "#A5A5A5A5" },
+                                                 { "t":  0.58, "color":  "#88888888" },
+                                                 { "t":  1.0, "color":  "#00707070" }
+                                             ],
+                         "size_over_life":  [
+                                                { "t":  0.0, "size":  0.16 },
+                                                { "t":  0.32, "size":  0.62 },
+                                                { "t":  0.78, "size":  0.48 },
+                                                { "t":  1.0, "size":  0.06 }
+                                            ],
+                         "transform_over_life":  [
+                                                     { "t":  0.0, "scale":  [0.96, 0.98, 0.96] },
+                                                     { "t":  0.55, "scale":  [1.02, 1.0, 1.02], "easing":  "ease_out_cubic" },
+                                                     { "t":  1.0, "scale":  [1.06, 1.02, 1.06] }
+                                                 ],
+                         "visibility_condition":  "random() > 0.12",
+                         "blend":  "TRANSLUCENT",
+                         "particle_role":  "THREE_THOUSAND_GREY_GUNSMOKE",
+                         "material":  { "shader":  "vfx_smoke", "bloom":  0.08, "soft_particles":  true, "distortion":  false },
+                         "vanilla_particles":  [
+                                                   { "type":  "large_smoke", "count":  1, "spread":  [0.65, 0.42, 0.65], "offset":  [0.0, 0.18, 0.0], "speed":  0.014, "chance":  0.16 },
+                                                   { "type":  "smoke", "count":  1, "spread":  [0.42, 0.3, 0.42], "offset":  [0.0, 0.1, 0.0], "speed":  0.01, "chance":  0.14 }
+                                               ]
                      }
                  ]
 }

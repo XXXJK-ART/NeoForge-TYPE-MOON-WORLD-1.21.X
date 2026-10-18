@@ -1,0 +1,106 @@
+{
+  "duration": 2.0,
+  "notes": [
+    "Maou skill activation: an emphatic black-red crown spiral, expanding pressure ring, and bright iron halo, separate from the longer anti-divine field."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.82,
+      "rate": 158,
+      "particle_lifetime": 1.02,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.045,
+      "velocity": [0.0, 0.08, 0.0],
+      "velocity_variance": 0.045,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.08, 0.0], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 1.62, "turns": 1.8, "height": 4.6, "segments": 96 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00200608" },
+        { "t": 0.12, "color": "#CC6D1112" },
+        { "t": 0.38, "color": "#D9991C13" },
+        { "t": 0.75, "color": "#AA200608" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.38, "size": 0.32 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "ODA_MAOU_SKILL_CROWN_SPIRAL",
+      "material": { "shader": "vfx_smoke", "bloom": 0.0, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [0.35, 0.25, 0.35], "offset": [0.0, 0.2, 0.0], "speed": 0.006, "chance": 0.2 },
+        { "type": "flame", "count": 1, "spread": [0.12, 0.2, 0.12], "offset": [0.0, 0.2, 0.0], "speed": 0.008, "chance": 0.08 }
+      ]
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.88,
+      "rate": 124,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.08,
+      "lifetime_variance": 0.06,
+      "position_variance": 0.01,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.0,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.04, 0.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 64 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#CCFFB05A" },
+        { "t": 0.48, "color": "#AA7B1714" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.32, "size": 0.14 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.2, 0.04, 0.2] },
+        { "t": 0.72, "scale": [5.8, 0.04, 5.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [6.5, 0.04, 6.5] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_SKILL_PRESSURE_RING",
+      "material": { "shader": "vfx_polar", "bloom": 0.38, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 0.08,
+      "end_time": 1.7,
+      "rate": 92,
+      "particle_lifetime": 0.78,
+      "size_variance": 0.1,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.01,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 2.55, 0.0], "rotate_with_entity": true },
+      "component": { "type": "elliptic_torus", "radius_x": 1.75, "radius_z": 1.75, "tube_radius": 0.11, "u_segments": 64, "v_segments": 8 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#AADA783A" },
+        { "t": 0.34, "color": "#CCEA6A20" },
+        { "t": 0.7, "color": "#CCB22B1F" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.3, "size": 0.1 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.4, 0.25, 0.4] },
+        { "t": 0.55, "scale": [1.15, 0.45, 1.15], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.42, 0.35, 1.42] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_MAOU_SKILL_CROWN_HALO",
+      "material": { "shader": "vfx_energy", "bloom": 0.55, "soft_particles": true, "distortion": false }
+    }
+  ]
+}

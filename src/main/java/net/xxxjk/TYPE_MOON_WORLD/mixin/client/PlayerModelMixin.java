@@ -32,6 +32,10 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
       if (entity instanceof AbstractClientPlayer player) {
          if (player.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isMountMode()) {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
+            if (gun.isChantLift()) {
+               net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(model, gun.chantPoseProgress(ageInTicks - player.tickCount));
+               return;
+            }
             model.body.xRot = 0.0F;
             model.body.yRot = 0.0F;
             model.rightLeg.xRot = Mth.cos(limbSwing * 0.6662F) * 0.7F * limbSwingAmount;

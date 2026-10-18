@@ -1975,6 +1975,7 @@
   "message.typemoonworld.servant_card.ubw_chant_started": "Начато произнесение Бесконечного клинка",
   "message.typemoonworld.servant_card.ubw_need_third_line": "Произнесение ещё не достигло третьей строки",
   "message.typemoonworld.servant_card.ubw_released": "Бесконечный клинок рассеян",
+  "message.typemoonworld.servant_card.oda_hajun_released": "Вы вернулись из владений Хаджуна",
   "message.typemoonworld.servant_card.unknown": "Неизвестная карта слуги: %s",
   "message.typemoonworld.servant_card.workshop_overworld_only": "Навык мастерской доступен только в основном мире",
   "message.typemoonworld.shadow.binding_locked": "Цель связана привязкой тени, не может быть захвачена мнимым поглощением.",
