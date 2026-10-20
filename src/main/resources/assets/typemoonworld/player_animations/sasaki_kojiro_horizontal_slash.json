@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_horizontal_slash",
+  "version": 3,
+  "description": "Ichimonji horizontal slash adapted from the supplied third strike.",
+  "emote": {"beginTick":0,"endTick":14,"stopTick":14,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":3,"body":{"pitch":-4,"yaw":28},"rightArm":{"pitch":-74,"yaw":-16,"roll":-48},"leftArm":{"pitch":-44,"yaw":16}},
+    {"tick":7,"body":{"pitch":4,"yaw":-28},"rightArm":{"pitch":-42,"yaw":22,"roll":62},"leftArm":{"pitch":-18,"yaw":-14}},
+    {"tick":14,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

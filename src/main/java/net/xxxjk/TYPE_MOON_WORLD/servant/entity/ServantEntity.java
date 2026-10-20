@@ -516,10 +516,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         boolean heraclesHandled = this instanceof HeraclesEntity && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
+         boolean combatHandled = heraclesHandled || ServantCombatSystem.tickBeforeAi(this);
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
-         boolean pacingHandled = !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
-         boolean tacticalHandled = pacingHandled || !combatHandled && ServantTacticalController.tick(this);
+         boolean pacingHandled = !(this instanceof HeraclesEntity) && !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
+         boolean tacticalHandled = pacingHandled || !(this instanceof HeraclesEntity) && !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
          if (!combatHandled && !tacticalHandled) {
             super.customServerAiStep();
@@ -783,11 +784,6 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
       ServantParams params = def.parameters();
       this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(params.maxHealth());
-      if (initializeDefaults) {
-         this.setHealth((float) params.maxHealth());
-      } else if (this.getHealth() > this.getMaxHealth()) {
-         this.setHealth(this.getMaxHealth());
-      }
       this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(params.attackDamage());
       this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(params.movementSpeed());
       this.getAttribute(Attributes.ARMOR).setBaseValue(params.armor());
@@ -812,12 +808,6 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(96.0);
       }
 
-      // Berserker 职阶额外移速补正（狂化加护）
-      if (def.classType() == ServantClassType.BERSERKER) {
-         double currentSpeed = this.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue();
-         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(currentSpeed + 0.1);
-      }
-
       // 初始化被动技能
       ServantSkillRegistry.ensureInitialized();
       ServantExecutionContext ctx = new ServantExecutionContext(this, null, params.manaPool(), 0);
@@ -827,6 +817,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             ServantSkillRegistry.execute(skillId, ctx);
       }
 
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(this);
+      if (initializeDefaults) this.setHealth(this.getMaxHealth());
       this.refreshDimensions();
    }
 

@@ -1430,31 +1430,7 @@ public class RyougiShikiEntity extends PathfinderMob implements GeoEntity {
             }
          }
 
-         // 十二试炼（God Hand）：每次致死攻击只消耗1条命，而非绕过
-         CompoundTag targetData = target.getPersistentData();
-         boolean godHandActive = targetData.getBoolean("GodHandActive");
-         if (godHandActive) {
-            int livesLeft = targetData.getInt("GodHandLives");
-            if (livesLeft > 0) {
-               // 消耗1条命：满血复活，减少 lives 计数，触发粒子+音效
-               target.setHealth(target.getMaxHealth());
-               targetData.putInt("GodHandLives", livesLeft - 1);
-               if (this.level() instanceof ServerLevel sl) {
-                  sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-                     target.getX(), target.getY() + 1.0, target.getZ(),
-                     30, 0.6, 0.6, 0.6, 0.15);
-                  sl.sendParticles(ParticleTypes.POOF,
-                     target.getX(), target.getY() + 0.5, target.getZ(),
-                     20, 0.5, 0.5, 0.5, 0.1);
-                  sl.playSound(null, target.blockPosition(),
-                     SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
-               }
-               // 魔眼音效
-               this.playSound(SoundEvents.TRIDENT_THUNDER.value(), 1.0F, 2.0F);
-               return; // 不继续执行死亡逻辑
-            }
-            // 无剩余命数 → 正常击杀（走下方代码）
-         }
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,this.damageSources().genericKill(),0,"ryougi_shiki:death_perception",true)) return;
 
          target.setInvulnerable(false);
          target.hurt(this.damageSources().genericKill(), Float.MAX_VALUE);

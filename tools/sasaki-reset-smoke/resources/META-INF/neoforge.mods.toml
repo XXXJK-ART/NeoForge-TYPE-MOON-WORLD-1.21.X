@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="typemoonworld_sasaki_smoke"
+version="1.0"
+displayName="Sasaki Reset Verification"
+[[dependencies.typemoonworld_sasaki_smoke]]
+modId="typemoonworld"
+type="required"
+versionRange="[4.0,)"
+ordering="AFTER"
+side="BOTH"

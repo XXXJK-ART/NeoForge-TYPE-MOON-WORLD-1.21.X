@@ -1,4 +1,244 @@
-{"servant":"heracles","actions":[
-  {"id":"typemoonworld:heracles/ground_slam","tags":["melee","area","interrupt","launcher","finisher","terrain_break"],"minimum_range":0,"maximum_range":8,"mana_cost":0,"stamina_cost":18,"timing":{"windup":10,"active":5,"recovery":12},"threat":{"shape":"hemisphere","radius":6,"length":0,"danger":4,"blockable":true,"dodgeable":true,"interruptible":true,"friendly_fire_radius":6},"terrain_impact":"heavy","maneuver":{"movement":"gap_closer","control":"slam","pursuit_window":28,"combo_cost":3,"interrupt_level":4,"horizontal_force":1.85,"vertical_force":0.72,"approach_range":20,"damage_scale":1.1,"interrupt_resistance":5}},
-  {"id":"typemoonworld:heracles/nine_lives","tags":["noble_phantasm","melee"],"minimum_range":0,"maximum_range":10,"mana_cost":80,"stamina_cost":35,"timing":{"windup":24,"active":18,"recovery":28},"threat":{"shape":"cone","radius":5,"length":10,"danger":5,"blockable":false,"dodgeable":true,"interruptible":true,"friendly_fire_radius":7},"terrain_impact":"heavy"}
-]}
+{
+  "servant": "heracles",
+  "actions": [
+    {
+      "id": "typemoonworld:heracles/big_jump",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 16,
+      "mana_cost": 18,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 4,
+        "active": 1,
+        "recovery": 10
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 16,
+        "length": 16,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 16
+      },
+      "terrain_impact": "medium"
+    },
+    {
+      "id": "typemoonworld:heracles/ground_slam",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5.4,
+      "mana_cost": 32,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 14,
+        "active": 1,
+        "recovery": 14
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 5.4,
+        "length": 5.4,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 5.4
+      },
+      "terrain_impact": "heavy"
+    },
+    {
+      "id": "typemoonworld:heracles/shoulder",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 6,
+      "mana_cost": 22,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 4,
+        "active": 8,
+        "recovery": 10
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 1,
+        "length": 6,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 6
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/uppercut",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 3,
+      "mana_cost": 20,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 6,
+        "active": 1,
+        "recovery": 10
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 1,
+        "length": 3,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 3
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/sweep",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4.5,
+      "mana_cost": 26,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 8,
+        "active": 1,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 4.5,
+        "length": 4.5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 4.5
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/throw",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 12,
+      "mana_cost": 35,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 8,
+        "active": 10,
+        "recovery": 12
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 1,
+        "length": 12,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 12
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/stomp",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 3.5,
+      "mana_cost": 18,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 4,
+        "active": 1,
+        "recovery": 10
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 3.5,
+        "length": 3.5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 3.5
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/flurry",
+      "tags": [
+        "melee"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 3,
+      "mana_cost": 30,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 6,
+        "active": 8,
+        "recovery": 10
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 1,
+        "length": 3,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 3
+      },
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:heracles/pounce",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 16,
+      "mana_cost": 38,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 10,
+        "active": 24,
+        "recovery": 14
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 16,
+        "length": 16,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 16
+      },
+      "terrain_impact": "medium"
+    }
+  ]
+}

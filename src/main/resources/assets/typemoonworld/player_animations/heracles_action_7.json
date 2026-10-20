@@ -1,0 +1,84 @@
+{
+  "name": "heracles_action_7",
+  "version": 3,
+  "description": "Berserker Flurry",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 24,
+    "stopTick": 24,
+    "moves": [
+      {
+        "tick": 0,
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 6,
+        "rightArm": {
+          "pitch": -100
+        },
+        "leftArm": {
+          "pitch": -35
+        },
+        "body": {
+          "yaw": -18
+        }
+      },
+      {
+        "tick": 10,
+        "rightArm": {
+          "pitch": -30
+        },
+        "leftArm": {
+          "pitch": -100
+        },
+        "body": {
+          "yaw": 18
+        }
+      },
+      {
+        "tick": 14,
+        "rightArm": {
+          "pitch": -100
+        },
+        "leftArm": {
+          "pitch": -35
+        },
+        "body": {
+          "yaw": -18
+        }
+      },
+      {
+        "tick": 24,
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

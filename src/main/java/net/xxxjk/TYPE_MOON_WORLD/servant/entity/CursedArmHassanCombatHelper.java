@@ -572,14 +572,10 @@ public final class CursedArmHassanCombatHelper {
          return;
       }
       boolean validInstantDeath = isHumanoidInstantDeathTarget(target) && !(target instanceof EmiyaArcherEntity) && !(target instanceof EnkiduEntity);
-      if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
-         HeraclesGodHandHelper.applyAdaptedSlow(target, 120);
-         applyZabaniyaCurse(target);
-         spawnZabaniyaImpactFx(entity, target, false);
-         return;
-      }
+
       boolean killed = validInstantDeath && entity.getRandom().nextFloat() < 0.6F;
       DamageSource source = entity.damageSources().magic();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,50,"cursed_arm_hassan:zabaniya",killed)) { spawnZabaniyaImpactFx(entity,target,killed);return; }
       if (killed) {
          if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya")) {
             spawnZabaniyaImpactFx(entity, target, false);

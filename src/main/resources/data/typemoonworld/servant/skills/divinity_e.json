@@ -1,0 +1,20 @@
+{
+  "id": "divinity_e",
+  "rank": "E",
+  "display_name": "Divinity E",
+  "display_name_zh": "神性 E",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 20,
+        "attack": 2,
+        "speed_additive": 0.01
+      }
+    }
+  ]
+}

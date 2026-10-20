@@ -1,0 +1,20 @@
+{
+  "id": "mad_enhancement_e",
+  "rank": "E",
+  "display_name": "Mad Enhancement E",
+  "display_name_zh": "狂化 E",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 20,
+        "attack": 3,
+        "speed_additive": 0.02
+      }
+    }
+  ]
+}

@@ -174,7 +174,7 @@ public final class CasterGilgameshEntity extends ServantEntity {
          && this.getPersistentData().getBoolean("DivinityActive")) {
          living.invulnerableTime = 0;
          living.hurt(this.damageSources().magic(),
-            Math.max(0.0F, this.getPersistentData().getFloat("DivinityFlatDamage")));
+            Math.max(0.0F, net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.legacyDivinity(this)));
          living.invulnerableTime = 0;
       }
       return hit;

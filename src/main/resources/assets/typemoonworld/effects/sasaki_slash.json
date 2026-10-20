@@ -1,0 +1,40 @@
+{
+  "duration": 0.5,
+  "notes": "Short silver blade arc with a cool blue edge for Sasaki's sword techniques.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.34,
+      "rate": 115.0,
+      "particle_lifetime": 0.24,
+      "size_variance": 0.02,
+      "lifetime_variance": 0.04,
+      "position_variance": 0.0,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.0,
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(t - 0.5) * 3.4",
+        "expr_y": "sin(t * 3.14159) * 0.75",
+        "expr_z": "0.0",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 48
+      },
+      "color_over_life": [
+        {"t": 0.0, "color": "#FFFFFFFF"},
+        {"t": 0.45, "color": "#FFD8F2FF"},
+        {"t": 1.0, "color": "#00000000"}
+      ],
+      "size_over_life": [
+        {"t": 0.0, "size": 0.08},
+        {"t": 0.32, "size": 0.22},
+        {"t": 1.0, "size": 0.015}
+      ],
+      "blend": "ADDITIVE",
+      "material": {"shader": "vfx_energy", "texture": "typemoonworld:textures/particle/sasaki_blade_arc.png"},
+      "enable_trail": true
+    }
+  ]
+}

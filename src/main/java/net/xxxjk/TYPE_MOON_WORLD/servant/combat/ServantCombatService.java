@@ -34,9 +34,7 @@ public final class ServantCombatService {
       double zoneABuffMultiplier
    ) {
       ServantDefinition attackerDef = attacker.getDefinition();
-      double attackerAttack = attacker instanceof HundredFacesHassanEntity || attacker instanceof HundredFacesHassanPersonaEntity
-         ? attacker.getAttributeValue(Attributes.ATTACK_DAMAGE)
-         : attackerDef != null ? attackerDef.parameters().attackDamage() : 5.0;
+      double attackerAttack = attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
       ServantFaction attackerFaction = attackerDef != null ? attackerDef.faction() : null;
       java.util.List<ServantTraitTag> attackerTraits = attackerDef != null ? attackerDef.traits() : java.util.Collections.emptyList();
 
@@ -54,7 +52,7 @@ public final class ServantCombatService {
       double traitMultiplier = attackerDef != null && "oda_nobunaga".equals(attackerDef.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(specialConditions, defenderTraitList);
       double zoneC = factionMultiplier * traitMultiplier;
 
-      double defenderArmor = defender.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR);
+      double defenderArmor = net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(defender) ? 0 : defender.getAttributeValue(Attributes.ARMOR);
       return ServantDamageCalculator.computeFinalDamage(baseDamage, zoneABuffMultiplier, zoneB, zoneC, defenderArmor);
    }
 
@@ -81,7 +79,7 @@ public final class ServantCombatService {
       List<ServantTraitTag> traits = specialConditions != null ? specialConditions
          : definition == null ? java.util.Collections.emptyList() : definition.traits();
       double traitMultiplier = definition != null && "oda_nobunaga".equals(definition.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(traits, ServantIdentityHelper.traitsOf(defender));
-      double armor = defender.getAttributeValue(Attributes.ARMOR);
+      double armor = net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(defender) ? 0 : defender.getAttributeValue(Attributes.ARMOR);
       return ServantDamageCalculator.computeFinalDamage(base, zoneABuffMultiplier, critMultiplier,
          factionMultiplier * traitMultiplier, armor);
    }

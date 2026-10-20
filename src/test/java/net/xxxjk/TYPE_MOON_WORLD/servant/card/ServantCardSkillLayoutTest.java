@@ -17,7 +17,7 @@ class ServantCardSkillLayoutTest {
    }
 
    @Test
-   void liShuwenAndSasakiCardCostsUseRoundedQuarterCostRule() {
+   void liShuwenKeepsQuarterCostWhileSasakiUsesListedCosts() {
       ServantCardSkillAction liCharge = ServantCardSkillLayout.actionFor("li_shuwen", 1, false);
       assertNotNull(liCharge);
       assertEquals(7.0, ServantCardSkillCostRules.effectiveMpCost("li_shuwen", true, liCharge));
@@ -28,11 +28,27 @@ class ServantCardSkillLayoutTest {
 
       ServantCardSkillAction sasakiStep = ServantCardSkillLayout.actionFor("sasaki_kojiro", -1, false);
       assertNotNull(sasakiStep);
-      assertEquals(3.0, ServantCardSkillCostRules.effectiveMpCost("sasaki_kojiro", true, sasakiStep));
+      assertEquals(8.0, sasakiStep.mpCost());
+      assertEquals(8.0, ServantCardSkillCostRules.effectiveMpCost("sasaki_kojiro", true, sasakiStep));
 
       ServantCardSkillAction liFaJin = ServantCardSkillLayout.actionFor("li_shuwen", 8, false);
       assertNotNull(liFaJin);
       assertEquals(6.0, ServantCardSkillCostRules.effectiveMpCost("li_shuwen", true, liFaJin));
+   }
+
+   @Test
+   void sasakiUsesEveryStandardSlotWithoutNoblePhantasmCooldown() {
+      double[] costs = {18.0, 12.0, 8.0, 10.0, 12.0, 20.0, 14.0, 16.0, 18.0, 20.0};
+      int[] cooldowns = {0, 80, 60, 80, 80, 600, 100, 140, 180, 600};
+      for (int slot = 0; slot <= 9; slot++) {
+         ServantCardSkillAction action = ServantCardSkillLayout.actionFor("sasaki_kojiro", slot, false);
+         assertNotNull(action, "slot " + slot);
+         assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
+         assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
+      }
+      assertEquals("sasaki_tsubame_gaeshi", ServantCardSkillLayout.actionFor("sasaki_kojiro", 9, false).effectId());
+      assertEquals(false, ServantCardTransformManager.isNoblePhantasmAction("sasaki_kojiro", 9));
+      assertEquals(false, ServantCardTransformManager.usesSharedNoblePhantasmCooldown("sasaki_kojiro", 9));
    }
 
    @Test

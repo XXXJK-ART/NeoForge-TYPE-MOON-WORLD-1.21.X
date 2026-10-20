@@ -34,7 +34,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -52,7 +51,6 @@ public final class ServantCardDefenseHandler {
    private static final String TAG_GUARD_EXHAUST_UNTIL = TAG_PREFIX + "GuardExhaustUntil";
    private static final String TAG_GUARD_BROKEN_UNTIL = TAG_PREFIX + "GuardBrokenUntil";
    private static final String TAG_LI_PASSIVE_DODGE_COOLDOWN = "ServantCardLiPassiveDodgeCooldown";
-   private static final String GOD_HAND_REVIVE_LOCK_TAG = "GodHandReviveLockUntil";
    private static final String BATTLE_CONTINUATION_RECOVERY_ACTIVE_TAG = "BattleContinuationRecoveryActive";
    private static final double BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.18;
 
@@ -133,9 +131,7 @@ public final class ServantCardDefenseHandler {
          spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
          return true;
       }
-      if (handleHeraclesGodHand(player, vars, event, now, divineDefenseBroken, infectionDamage, defensePiercing)) {
-         return true;
-      }
+
       if (!defensePiercing && ("gilgamesh".equals(vars.servant_card_id) || "gilgamesh_caster".equals(vars.servant_card_id))) {
          GilgameshDivineShield.ShieldHit shieldHit = GilgameshDivineShield.tryAbsorb(
             player, event.getSource(), event.getAmount()
@@ -236,7 +232,7 @@ public final class ServantCardDefenseHandler {
       }
 
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
-         && ServantCombatDefenseService.trySkillAutoDodge(player)) {
+         && ServantCombatDefenseService.trySkillAutoDodge(player,event.getSource(),event.getAmount())) {
          event.setCanceled(true); event.setAmount(0); return true;
       }
       Float reduced = defensePiercing || divineDefenseBroken || specialNoblePhantasmDamage && !elementalSwordDamage
@@ -252,93 +248,15 @@ public final class ServantCardDefenseHandler {
          event.setAmount(reduced);
       }
 
-      if (!specialNoblePhantasmDamage && tryBattleContinuation(player, event, data)) {
+      if (data.getBoolean("EmiyaStyleBattleContinuationActive") && !specialNoblePhantasmDamage && tryBattleContinuation(player, event, data)) {
          return true;
       }
       return false;
    }
 
-   private static boolean handleHeraclesGodHand(
-      ServerPlayer player,
-      TypeMoonWorldModVariables.PlayerVariables vars,
-      LivingIncomingDamageEvent event,
-      long now,
-      boolean divineDefenseBroken,
-      boolean infectionDamage,
-      boolean defensePiercing
-   ) {
-      if (!"heracles".equals(vars.servant_card_id) || !HeraclesGodHandHelper.hasGodHand(player)) {
-         return false;
-      }
 
-      CompoundTag data = player.getPersistentData();
-      if (now < data.getLong(GOD_HAND_REVIVE_LOCK_TAG)) {
-         event.setCanceled(true);
-         event.setAmount(0.0F);
-         return true;
-      }
 
-      float damage = event.getAmount();
-      boolean majorBrokenPhantasmExplosion = isMajorBrokenPhantasmExplosion(event.getSource(), damage);
-      boolean artoriaExcalibur = isArtoriaExcaliburDamage(event.getSource());
-      boolean gaeBulgArmy = isGaeBulgArmyDamage(event.getSource());
-      boolean poisonOrWither = isPoisonOrWitherDamage(event.getSource());
-      boolean specialAttack = defensePiercing || divineDefenseBroken || majorBrokenPhantasmExplosion || artoriaExcalibur || gaeBulgArmy || poisonOrWither;
 
-      if (!infectionDamage && !specialAttack && damage < data.getFloat("GodHandThreshold")) {
-         event.setCanceled(true);
-         event.setAmount(0.0F);
-         spawnDefenseFx(player, ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, 1.4F);
-         return true;
-      }
-
-      if (!infectionDamage && !specialAttack) {
-         float reduction = data.getFloat("GodHandAdaptiveReduction");
-         float maxReduction = data.getFloat("GodHandAdaptiveMax");
-         float currentResistance = data.getFloat("GodHandCurrentResistance");
-         if (currentResistance < maxReduction) {
-            currentResistance = Math.min(currentResistance + reduction, maxReduction);
-            data.putFloat("GodHandCurrentResistance", currentResistance);
-         }
-         if (currentResistance > 0.0F) {
-            event.setAmount(damage * (1.0F - currentResistance));
-         }
-      } else if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
-         level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + player.getBbHeight() * 0.45, player.getZ(), 18, 0.52, 0.45, 0.52, 0.045);
-      }
-
-      if (!data.getBoolean("CausalSevered") && player.getHealth() - event.getAmount() <= 0.0F) {
-         int livesLeft = data.getInt("GodHandLives");
-         if (livesLeft > 0) {
-            event.setCanceled(true);
-            event.setAmount(0.0F);
-            reviveGodHandPlayer(player, data, livesLeft - 1, now);
-            return true;
-         }
-      }
-      return false;
-   }
-
-   private static void reviveGodHandPlayer(ServerPlayer player, CompoundTag data, int remainingLives, long now) {
-      data.putInt("GodHandLives", remainingLives);
-      data.remove("CausalSevered");
-      data.putLong(GOD_HAND_REVIVE_LOCK_TAG, now + 20L);
-      player.clearFire();
-      player.invulnerableTime = 0;
-      player.hurtTime = 0;
-      player.hurtDuration = 0;
-      player.setHealth(player.getMaxHealth());
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 4, false, false, true));
-      player.setDeltaMovement(player.getDeltaMovement().multiply(0.55, 1.0, 0.55));
-      player.hurtMarked = true;
-      if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, player.getX(), player.getY() + player.getBbHeight() * 0.72, player.getZ(), 32, 0.62, 0.7, 0.62, 0.12);
-         level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.6, player.getZ(), 20, 0.55, 0.55, 0.55, 0.025);
-         level.sendParticles(ParticleTypes.POOF, player.getX(), player.getY() + player.getBbHeight() * 0.45, player.getZ(), 16, 0.5, 0.45, 0.5, 0.06);
-         level.playSound(null, player.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.9F, 0.78F);
-      }
-   }
 
    private static boolean isMajorBrokenPhantasmExplosion(DamageSource source, float originalDamage) {
       if (source == null || !source.is(DamageTypeTags.IS_EXPLOSION) || originalDamage < 300.0F) {

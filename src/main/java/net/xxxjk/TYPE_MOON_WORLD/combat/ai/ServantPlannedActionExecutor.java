@@ -284,7 +284,7 @@ public final class ServantPlannedActionExecutor {
          boolean damaged;
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.beginSharedHit(entity);
          try {
-            damaged = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+            damaged = victim.hurt(new net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource(entity.damageSources().mobAttack(entity), net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin.skill(entity.getServantId(), action.id().toString())), damage);
          } finally {
             net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.endSharedHit(entity);
          }

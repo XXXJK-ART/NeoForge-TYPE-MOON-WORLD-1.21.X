@@ -29,8 +29,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -89,6 +89,7 @@ public final class ServantCombatSystem {
    }
 
    public static boolean tickBeforeAi(ServantEntity entity) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) { entity.getNavigation().stop();return true; }
       if (entity.level().isClientSide()) {
          return false;
       }
@@ -142,6 +143,7 @@ public final class ServantCombatSystem {
    }
 
    public static boolean tryRunComboAction(ServantEntity attacker, LivingEntity target) {
+      if (attacker instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity) return false;
       if (attacker.level().isClientSide()
          || target == null
          || !target.isAlive()
@@ -213,6 +215,8 @@ public final class ServantCombatSystem {
       if (source.getEntity() instanceof ServantEntity attacker
          && source.getDirectEntity() == attacker
          && !(source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTechniqueDamage(source)
+         && !(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity)
          && ServantCombatExchangeService.ordinary(attacker, servant)) {
          event.setAmount(event.getAmount() * 0.55F);
       }
@@ -225,12 +229,12 @@ public final class ServantCombatSystem {
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
          boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
          if (!unavoidable && !PaleRiderDamageTypes.isInfection(source)
-            && ServantCombatDefenseService.trySkillAutoDodge(servant)) {
+            && ServantCombatDefenseService.trySkillAutoDodge(servant,source,event.getAmount())) {
             event.setCanceled(true); event.setAmount(0); return;
          }
          // NPC servants keep their reaction-based defense.  Player cards use
          // the explicit guard/dodge inputs handled by ServantCombatDefenseService.
-         if (!ushiwakamaruMelee && !unavoidable
+         if (!(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity) && !ushiwakamaruMelee && !unavoidable
             && !PaleRiderDamageTypes.isInfection(source)
             && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
             && tryAutoDodge(servant, source, params, now)) {
@@ -484,7 +488,7 @@ public final class ServantCombatSystem {
       if (!ServantMasterProtection.isProtectedMaster(attacker, target)) {
          ServantCombatService.beginSharedHit(attacker);
          try {
-            launcherHit = target.hurt(attacker.damageSources().mobAttack(attacker), damage);
+            launcherHit = target.hurt(new CombatDamageSource(attacker.damageSources().mobAttack(attacker), AttackOrigin.skill(attacker.getServantId(), "launcher")), damage);
          } finally {
             ServantCombatService.endSharedHit(attacker);
          }

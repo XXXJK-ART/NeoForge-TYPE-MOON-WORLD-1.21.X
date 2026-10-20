@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_counter_stance",
+  "version": 3,
+  "description": "Ganryu ready stance, held briefly for the counter window.",
+  "emote": {"beginTick":0,"endTick":20,"stopTick":20,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0,"roll":0}},
+    {"tick":3,"body":{"pitch":5,"yaw":-10},"rightArm":{"pitch":-72,"yaw":-22,"roll":-26},"leftArm":{"pitch":-54,"yaw":24,"roll":18}},
+    {"tick":12,"body":{"pitch":5,"yaw":-10},"rightArm":{"pitch":-72,"yaw":-22,"roll":-26},"leftArm":{"pitch":-54,"yaw":24,"roll":18}},
+    {"tick":20,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0,"roll":0}}
+  ]}
+}

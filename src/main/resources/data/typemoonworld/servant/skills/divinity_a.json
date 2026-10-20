@@ -9,8 +9,12 @@
   "duration_ticks": 0,
   "effects": [
     {
-      "effect_type": "damage_add",
-      "params": { "flat_damage": 25.0, "damage_type": "magic" }
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 100,
+        "attack": 10,
+        "speed_additive": 0.05
+      }
     }
   ]
 }

@@ -38,6 +38,8 @@ public final class TerrainImpactService {
       if (level == null || center == null || profile == null || profile.tier() == TerrainImpactProfile.Tier.NONE
          || profile.radius() <= 0.0 || !allowed(level, permission)) return false;
 
+      if (isHeracles(source)) return impactGroundLayer(level, source, center.add(0,-.2,0), profile, permission);
+
       List<TerrainDebrisMessage.Sample> debris = new ArrayList<>(Math.min(48, profile.debrisCount()));
       int[] physicalDebris = {0};
       long debrisSeed = level.random.nextLong();
@@ -109,6 +111,7 @@ public final class TerrainImpactService {
       Vec3 horizontal = direction.multiply(1.0, 0.0, 1.0);
       if (horizontal.lengthSqr() < 1.0E-4) return false;
       horizontal = horizontal.normalize();
+      if (isHeracles(source)) return impactHeraclesWall(level, source, center, horizontal, profile, permission);
       double cutLength = Math.max(1.0, length);
       double cutWidth = Math.max(1.0, width);
       double cutHeight = Math.max(1.0, height);
@@ -118,6 +121,66 @@ public final class TerrainImpactService {
       DeferredTerrainDestruction.queueDirectionalCut(level, origin, horizontal,
          cutLength, cutWidth, cutHeight, false, profile.maximumHardness());
       return impact(level, source, center, profile, permission, Shape.AIR_SPHERE);
+   }
+
+   private static boolean isHeracles(@Nullable LivingEntity source) {
+      var definition = source == null ? null : net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper.definitionOf(source);
+      return definition != null && "heracles".equals(definition.id());
+   }
+
+   /** Snapshot exactly one contact layer; delayed jobs and visual debris cannot dig below it. */
+   public static boolean impactGroundLayer(ServerLevel level, LivingEntity source, Vec3 feet, TerrainImpactProfile profile, Permission permission) {
+      if (!allowed(level, permission)) return false;
+      int y = net.minecraft.util.Mth.floor(feet.y - .01);
+      java.util.Map<BlockPos, BlockState> snapshot = new java.util.HashMap<>();
+      int radius = (int)Math.ceil(profile.radius());
+      BlockPos origin = BlockPos.containing(feet);
+      for (int x=-radius;x<=radius;x++) for (int z=-radius;z<=radius;z++) {
+         BlockPos pos=new BlockPos(origin.getX()+x,y,origin.getZ()+z);
+         if (Vec3.atCenterOf(pos).subtract(feet).horizontalDistanceSqr() <= profile.radius()*profile.radius()) snapshot.put(pos,level.getBlockState(pos));
+      }
+      return queueSnapshot(level,source,new Vec3(feet.x,y+.5,feet.z),profile,snapshot,profile.radius()+1,true);
+   }
+
+   private static boolean impactHeraclesWall(ServerLevel level, LivingEntity source, Vec3 center, Vec3 forward,
+                                             TerrainImpactProfile profile, Permission permission) {
+      return impactHeraclesWallAt(level,source,source.position(),source.getBbHeight(),forward,profile,permission);
+   }
+
+   public static boolean impactHeraclesWallAt(ServerLevel level, LivingEntity source, Vec3 feet, double height, Vec3 direction,
+                                                TerrainImpactProfile profile, Permission permission) {
+      if (!allowed(level,permission)) return false;
+      Vec3 forward=direction.multiply(1,0,1);
+      if(forward.lengthSqr()<1e-6)return false;
+      forward=forward.normalize();
+      double footY=feet.y;
+      Vec3 origin=feet;
+      Vec3 side=new Vec3(-forward.z,0,forward.x);
+      java.util.Map<BlockPos,BlockState> snapshot=new java.util.HashMap<>();
+      // Bounds are captured now and enforced again by the queued snapshot predicate.
+      for(int x=-5;x<=5;x++) for(int z=-5;z<=5;z++) for(int y=0;y<=Math.ceil(height);y++) {
+         BlockPos pos=BlockPos.containing(origin).offset(x,y,z);
+         Vec3 rel=Vec3.atCenterOf(pos).subtract(origin);
+         double along=rel.dot(forward), across=rel.dot(side);
+         if(along<0 || along>3 || Math.abs(across)>1.5 || pos.getY()<footY-1.0E-5 || pos.getY()>=footY+height) continue;
+         snapshot.put(pos,level.getBlockState(pos));
+      }
+      return queueSnapshot(level,source,origin.add(forward.scale(1.5)).add(0,height*.5,0),profile,snapshot,6,false);
+   }
+
+   private static boolean queueSnapshot(ServerLevel level, LivingEntity source, Vec3 center, TerrainImpactProfile profile,
+                                         java.util.Map<BlockPos,BlockState> snapshot, double scanRadius, boolean originalGroundLimit) {
+      List<TerrainDebrisMessage.Sample> debris=new ArrayList<>();
+      // Horizontal snapshots already exclude all blocks below the captured feet. A wall's
+      // top must not be mistaken for original ground by the heightmap floor cache.
+      if(originalGroundLimit)DeferredTerrainDestruction.protectNextCombatJob();
+      DeferredTerrainDestruction.queueSphereDetailed(level,center,scanRadius,profile.maximumHardness(),3,
+         (world,pos,distance,radius,origin)->snapshot.containsKey(pos) && world.getBlockState(pos).equals(snapshot.get(pos))
+            && (!originalGroundLimit || CombatTerrainProtection.canRemove(world,pos))
+            && !NeoForge.EVENT_BUS.post(new TerrainImpactBlockEvent(world,source,pos,world.getBlockState(pos),profile,"HERACLES_SNAPSHOT")).isCanceled(),
+         (world,pos,state,removed)->addVisualSample(debris,profile,pos,state),
+         ()->finishVisuals(level,center,profile,debris));
+      return true;
    }
 
    @Nullable

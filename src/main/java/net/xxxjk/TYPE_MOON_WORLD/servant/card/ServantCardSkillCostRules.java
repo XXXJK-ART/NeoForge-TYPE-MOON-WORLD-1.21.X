@@ -24,6 +24,6 @@ public final class ServantCardSkillCostRules {
    }
 
    private static boolean isReducedQuarterCostServant(String servantId) {
-      return "li_shuwen".equals(servantId) || "sasaki_kojiro".equals(servantId);
+      return "li_shuwen".equals(servantId);
    }
 }

@@ -244,7 +244,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!hasOneShotTsubame(stack)) {
          return false;
       }
-      LivingEntity target = findLookTarget(player, 5.5, 1.25);
+      LivingEntity target = findLookTarget(player, 8.0, 2.0);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return true;
@@ -252,32 +252,18 @@ public final class PlayerNoblePhantasmHelper {
       clearOneShotTsubame(stack);
       performTsubame(player, target);
       if (!player.getAbilities().instabuild) stack.shrink(1);
-      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
-            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
-         );
-         vars.syncPlayerVariables(player);
-      }
+      player.getCooldowns().addCooldown(stack.getItem(), 600);
       return true;
    }
 
    public static boolean triggerTsubameOnHit(ServerPlayer player, ItemStack stack, LivingEntity target) {
-      if (!hasOneShotTsubame(stack) || target == null || !target.isAlive() || player.distanceToSqr(target) > 16.0) {
+      if (!hasOneShotTsubame(stack) || target == null || !target.isAlive() || player.distanceToSqr(target) > 64.0) {
          return false;
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
       if (!player.getAbilities().instabuild) stack.shrink(1);
-      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
-            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
-         );
-         vars.syncPlayerVariables(player);
-      }
+      player.getCooldowns().addCooldown(stack.getItem(), 600);
       return true;
    }
 
@@ -1109,6 +1095,7 @@ public final class PlayerNoblePhantasmHelper {
          && !(target instanceof EnkiduEntity)
          && player.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       DamageSource source = player.damageSources().mobAttack(player);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,250,"cu_chulainn:gae_bolg",deathThorn)) return;
       int livesBeforeInitialHit = target.getPersistentData().getInt("GodHandLives");
       target.invulnerableTime = 0;
       target.hurt(source, 250.0F);
@@ -1134,35 +1121,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      VFXServerEffects.spawn(level, "servant_sasaki_tsubame", player, 96.0);
-      target.invulnerableTime = 0;
-      target.hurt(player.damageSources().mobAttack(player), 300.0F);
-      target.invulnerableTime = 0;
-      Vec3 from = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
-      Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
-      Vec3 slashDir = to.subtract(from);
-      if (slashDir.lengthSqr() < 1.0E-4) {
-         slashDir = player.getLookAngle();
-      }
-      slashDir = slashDir.normalize();
-      Vec3 perp = new Vec3(-slashDir.z, 0.0, slashDir.x);
-      for (int arc = 0; arc < 3; arc++) {
-         double arcOffset = (arc - 1) * 0.4;
-         for (double t = 0.0; t <= 1.0; t += 0.1) {
-            Vec3 pos = from.lerp(to, t);
-            double wave = Math.sin(t * Math.PI) * 0.3 * (arc + 1);
-            pos = pos.add(perp.scale(wave + arcOffset));
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 2, 0.0, 0.0, 0.0, 0.0);
-         }
-      }
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(), 25, 0.5, 0.6, 0.5, 0.08);
-      level.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 15, 0.4, 0.5, 0.4, 0.05);
-      level.sendParticles(ParticleTypes.SOUL, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 12, 0.3, 0.4, 0.3, 0.04);
-      level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 8, 0.3, 0.3, 0.3, 0.15);
-      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.5, player.getZ(), 20, 0.3, 0.5, 0.3, 0.04);
-      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.8F, 0.5F);
-      level.playSound(null, player.blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.2F, 0.7F);
-      level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.5F, 0.6F);
+      net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.performTsubameGaeshi(player, target);
    }
 
    private static void performNineLives(ServerPlayer player, LivingEntity target) {

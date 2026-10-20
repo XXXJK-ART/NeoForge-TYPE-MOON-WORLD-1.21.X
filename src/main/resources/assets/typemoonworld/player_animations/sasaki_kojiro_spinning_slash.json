@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_spinning_slash",
+  "version": 3,
+  "description": "Turning formation-breaker sweep adapted to the standard player rig.",
+  "emote": {"beginTick":0,"endTick":16,"stopTick":16,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":4,"body":{"pitch":-4,"yaw":42},"rightArm":{"pitch":-86,"yaw":-18,"roll":-38},"leftArm":{"pitch":-44,"yaw":16}},
+    {"tick":8,"body":{"pitch":4,"yaw":-50},"rightArm":{"pitch":-44,"yaw":18,"roll":64},"leftArm":{"pitch":-18,"yaw":-14}},
+    {"tick":16,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

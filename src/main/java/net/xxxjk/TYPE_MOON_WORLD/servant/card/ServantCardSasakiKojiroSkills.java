@@ -1,42 +1,33 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.phys.Vec3;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroRules.Technique;
 
 public final class ServantCardSasakiKojiroSkills {
    private ServantCardSasakiKojiroSkills() {
    }
 
    public static void tick(ServerPlayer player) {
-      ServantCardConcealmentHelper.tick(player);
+      SasakiKojiroCombatService.tick(player);
    }
 
-   public static boolean performTsubameGaeshi(ServerPlayer player) {
-      return PlayerNoblePhantasmHelper.useTsubameGaeshi(player);
+   public static boolean canPerform(ServerPlayer player, Technique technique) {
+      return SasakiKojiroCombatService.canPerform(player, technique);
    }
 
-   public static void performAfterimage(ServerPlayer player) {
-      Vec3 side = new Vec3(-player.getLookAngle().z, 0.0, player.getLookAngle().x).normalize().scale(player.getRandom().nextBoolean() ? 4.0 : -4.0);
-      if (ServantCardSkillUtils.trySafeHorizontalTeleport(player, player.position().add(side).add(0.0, 0.1, 0.0))) {
-         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 50, 2, false, true, true));
-      }
+   public static boolean perform(ServerPlayer player, Technique technique) {
+      return SasakiKojiroCombatService.perform(player, technique);
    }
 
-   public static void performMindEye(ServerPlayer player) {
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 2, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 60, 1, false, true, true));
+   public static boolean enablePresenceConcealment(ServerPlayer player) {
+      if (!SasakiKojiroCombatService.setConcealed(player, true)) return false;
+      net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroActionAnimationService.play(player,
+         net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction.PRESENCE_CONCEALMENT);
+      return true;
    }
 
-   public static void performSweep(ServerPlayer player) {
-      ServantCardSkillUtils.hitForwardArc(player, PlayerNoblePhantasmHelper.horizontalLook(player), 6.5, 24.0F);
-   }
-
-   public static void performTransparency(ServerPlayer player) {
-      ServantCardSkillUtils.clearHarmfulEffects(player);
-      ServantCardConcealmentHelper.apply(player, 80);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 1, false, false, false));
+   public static boolean performTransparency(ServerPlayer player) {
+      return SasakiKojiroCombatService.performTransparency(player);
    }
 }

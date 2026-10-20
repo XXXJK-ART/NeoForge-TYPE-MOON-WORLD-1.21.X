@@ -6,13 +6,16 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.Np
 /** The numerical contract shared by the servant card, NPC, projectiles and tests. */
 public final class OdaRules {
    private OdaRules() {}
-   public static final int THREE_THOUSAND_TIER_COUNT = 9;
+   /** Three tiers of eleven guns make the requested thirty-three-gun wave. */
+   public static final int THREE_THOUSAND_TIER_COUNT = 3;
    public static final int THREE_THOUSAND_GUNS_PER_TIER = 11;
    public static final int THREE_THOUSAND_WAVE_COUNT = 3;
    public static final int THREE_THOUSAND_TIER_INTERVAL = 3;
    public static final int THREE_THOUSAND_GUNS_PER_WAVE = THREE_THOUSAND_TIER_COUNT * THREE_THOUSAND_GUNS_PER_TIER;
    public static final int THREE_THOUSAND_TOTAL_GUNS = THREE_THOUSAND_GUNS_PER_WAVE * THREE_THOUSAND_WAVE_COUNT;
    public static final int THREE_THOUSAND_SHOTS_PER_GUN = 3;
+   /** Dedicated NP shot damage; the damage reduction comes from the smaller array. */
+   public static final float THREE_THOUSAND_SHOT_DAMAGE = 10.0F;
    public static final int THREE_THOUSAND_SHOT_INTERVAL = 30;
    public static final int THREE_THOUSAND_MAX_LIFE = 20 * 30;
    public static final int THREE_THOUSAND_INITIAL_SHOT_DELAY = 2;
@@ -94,15 +97,16 @@ public final class OdaRules {
       return 1.5 + 3.0 * index / (THREE_THOUSAND_GUNS_PER_WAVE - 1);
    }
    public static double threeThousandHeight(int tier) {
-      return -3.675 + Math.clamp(tier, 0, THREE_THOUSAND_TIER_COUNT - 1) * .825;
+      int index = Math.clamp(tier, 0, THREE_THOUSAND_TIER_COUNT - 1) * THREE_THOUSAND_GUNS_PER_TIER;
+      return -3.675 + 7.35 * index / (THREE_THOUSAND_GUNS_PER_WAVE - 1);
    }
    public static double threeThousandHeight(int tier, int wave) {
       return threeThousandHeight(tier);
    }
    public static double threeThousandHeight(int tier, int slot, int wave) {
-      // Keep neighboring guns 0.8-1 block apart, including between adjacent spiral turns.
-      return threeThousandHeight(tier, wave) + Math.floorMod(slot, THREE_THOUSAND_GUNS_PER_TIER)
-         * .075;
+      int index = Math.clamp(tier, 0, THREE_THOUSAND_TIER_COUNT - 1) * THREE_THOUSAND_GUNS_PER_TIER
+         + Math.floorMod(slot, THREE_THOUSAND_GUNS_PER_TIER);
+      return -3.675 + 7.35 * index / (THREE_THOUSAND_GUNS_PER_WAVE - 1);
    }
    public static double threeThousandAngle(int tier, int slot) {
       int normalizedTier = Math.clamp(tier, 0, THREE_THOUSAND_TIER_COUNT - 1);

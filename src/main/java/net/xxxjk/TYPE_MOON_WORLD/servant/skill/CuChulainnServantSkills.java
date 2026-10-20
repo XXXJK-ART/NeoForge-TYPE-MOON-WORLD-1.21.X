@@ -34,10 +34,8 @@ public final class CuChulainnServantSkills {
    }
 
    private static ServantExecutionResult executeDivinity(ServantExecutionContext context) {
-      LivingEntity entity = context.caster();
-      if (entity == null) return ServantExecutionResult.FAILED;
-      entity.getPersistentData().putBoolean("DivinityActive", true);
-      entity.getPersistentData().putFloat("DivinityFlatDamage", 3.0F);
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(context.caster());
       return ServantExecutionResult.SUCCESS;
    }
 }

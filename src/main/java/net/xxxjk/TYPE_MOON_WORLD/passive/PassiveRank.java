@@ -3,11 +3,11 @@ package net.xxxjk.TYPE_MOON_WORLD.passive;
 import java.util.Locale;
 
 public enum PassiveRank {
-   E(20.0, 4.0, 10.0, 2.0, 0.10),
-   D(40.0, 6.0, 20.0, 4.0, 0.175),
-   C(60.0, 8.0, 30.0, 6.0, 0.25),
-   B(80.0, 10.0, 40.0, 8.0, 0.325),
-   A(100.0, 12.0, 50.0, 10.0, 0.40);
+   E(20.0, 4.0, 20.0, 2.0, 0.10),
+   D(40.0, 6.0, 40.0, 4.0, 0.175),
+   C(60.0, 8.0, 60.0, 6.0, 0.25),
+   B(80.0, 10.0, 80.0, 8.0, 0.325),
+   A(100.0, 12.0, 100.0, 10.0, 0.40);
 
    private final double clairvoyanceProficiency;
    private final double maxZoom;

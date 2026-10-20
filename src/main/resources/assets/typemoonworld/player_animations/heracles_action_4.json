@@ -1,0 +1,58 @@
+{
+  "name": "heracles_action_4",
+  "version": 3,
+  "description": "Turning Sweep",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 21,
+    "stopTick": 21,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 7,
+        "body": {
+          "yaw": -65
+        },
+        "rightArm": {
+          "pitch": -70,
+          "yaw": -70
+        }
+      },
+      {
+        "tick": 9,
+        "rightArm": {
+          "pitch": -70,
+          "yaw": 70
+        },
+        "body": {
+          "yaw": 65
+        }
+      },
+      {
+        "tick": 21,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

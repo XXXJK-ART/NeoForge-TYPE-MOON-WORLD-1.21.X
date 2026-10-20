@@ -1,0 +1,233 @@
+package net.xxxjk.TYPE_MOON_WORLD.gametest;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
+
+@GameTestHolder("typemoonworld_sasaki")
+@PrefixGameTestTemplate(false)
+public final class SasakiKojiroGameTests {
+   private SasakiKojiroGameTests() { }
+
+   private static ServerPlayer card(GameTestHelper helper) {
+      clearArena(helper);
+      ServerPlayer player = helper.makeMockServerPlayerInLevel();
+      Vec3 position = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(4, 2, 4)));
+      player.teleportTo(position.x, position.y, position.z);
+      player.setYRot(0.0F);
+      player.setXRot(0.0F);
+      helper.assertTrue(ServantCardTransformManager.transform(player, "sasaki_kojiro"), "Sasaki card transform failed");
+      player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().setMana(200.0);
+      return player;
+   }
+
+   private static void clearArena(GameTestHelper helper) {
+      for (int x = 2; x <= 8; x++) for (int z = 2; z <= 8; z++) for (int y = 2; y <= 5; y++) {
+         helper.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR);
+      }
+   }
+
+   private static SasakiKojiroEntity sasaki(GameTestHelper helper, BlockPos position) {
+      clearArena(helper);
+      SasakiKojiroEntity entity = ModEntities.SASAKI_KOJIRO.get().create(helper.getLevel());
+      entity.setPos(Vec3.atBottomCenterOf(helper.absolutePos(position)));
+      entity.setNoAi(true);
+      entity.setNoGravity(true);
+      entity.setCurrentMp(200.0);
+      helper.getLevel().addFreshEntity(entity);
+      return entity;
+   }
+
+   private static LivingEntity target(GameTestHelper helper, BlockPos position) {
+      var entity = EntityType.HUSK.create(helper.getLevel());
+      entity.setPos(Vec3.atBottomCenterOf(helper.absolutePos(position)));
+      entity.setNoAi(true);
+      entity.setNoGravity(true);
+      entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+      entity.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+      entity.setHealth(1000.0F);
+      helper.getLevel().addFreshEntity(entity);
+      return entity;
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void tsubameGaeshiAppliesOne450PointPhysicalHit(GameTestHelper helper) {
+      SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
+      LivingEntity defender = target(helper, new BlockPos(6, 2, 4));
+      helper.assertTrue(SasakiKojiroCombatService.applyTsubameDamage(attacker, defender), "Tsubame hit was rejected");
+      helper.assertTrue(Math.abs(defender.getHealth() - 550.0F) < 0.02F,
+         "Tsubame must apply one 450 physical damage event, remaining health=" + defender.getHealth());
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void tsubameGaeshiCannotBeGuarded(GameTestHelper helper) {
+      SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
+      SasakiKojiroEntity defender = sasaki(helper, new BlockPos(6, 2, 4));
+      defender.getPersistentData().putBoolean(ServantCombatDefenseService.TAG_GUARDING, true);
+      defender.getPersistentData().putLong(ServantCombatDefenseService.TAG_GUARD_START, helper.getLevel().getGameTime());
+      var source = new CombatDamageSource(attacker.damageSources().mobAttack(attacker),
+         AttackOrigin.skill("sasaki_kojiro", "tsubame_gaeshi"));
+      Float reduced = ServantCombatDefenseService.applyGuardHit(defender, source, 450.0F);
+      helper.assertTrue(reduced == null, "Tsubame was handled by block/parry stamina logic");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void tsubameKeepsSkillDamageThroughNpcDuelScaling(GameTestHelper helper) {
+      SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
+      SasakiKojiroEntity defender = sasaki(helper, new BlockPos(6, 2, 4));
+      defender.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES, 0);
+      defender.getPersistentData().putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN, Long.MAX_VALUE);
+      var source = new CombatDamageSource(attacker.damageSources().mobAttack(attacker),
+         AttackOrigin.skill("sasaki_kojiro", "tsubame_gaeshi"));
+      var incoming = new LivingIncomingDamageEvent(defender, new DamageContainer(source, 450.0F));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem.handleIncomingDamage(defender, incoming);
+      helper.assertTrue(Math.abs(incoming.getAmount() - 450.0F) < 0.02F,
+         "Tsubame was softened as an ordinary duel strike: " + incoming.getAmount());
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void presenceToggleChargesOnlyOnActivationAndNeedsNoManaToClose(GameTestHelper helper) {
+      ServerPlayer player = card(helper);
+      var state = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState();
+      helper.assertTrue(!SasakiKojiroCombatService.isConcealed(player), "Card initialized with free concealment");
+      helper.assertTrue(ServantCardTransformManager.triggerAction(player, 0), "Concealment activation failed");
+      helper.assertTrue(Math.abs(state.mana() - 182.0) < 0.001, "Concealment did not cost exactly 18 MP");
+      helper.assertTrue(player.getPersistentData().getLong(SasakiKojiroCombatService.CONCEALMENT_UNTIL) == 0L,
+         "Presence concealment has an expiry");
+      state.setMana(0.0);
+      helper.assertTrue(ServantCardTransformManager.triggerAction(player, 0), "Free closure failed at zero MP");
+      helper.assertTrue(!SasakiKojiroCombatService.isConcealed(player) && !player.hasEffect(MobEffects.INVISIBILITY),
+         "Closing concealment left invisibility behind");
+      helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 0), "Concealment activated without MP");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void cardTsubameUsesExactSkillResourcesAndRejectsCooldown(GameTestHelper helper) {
+      ServerPlayer player = card(helper);
+      LivingEntity defender = target(helper, new BlockPos(4, 2, 6));
+      var state = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState();
+      helper.assertTrue(ServantCardTransformManager.triggerAction(player, 9), "Card Tsubame failed");
+      helper.assertTrue(Math.abs(defender.getHealth() - 550.0F) < 0.02F, "Card Tsubame damage differs from NPC");
+      helper.assertTrue(Math.abs(state.mana() - 180.0) < 0.001, "Card Tsubame did not cost 20 MP");
+      helper.assertTrue(state.npCooldown() == 0, "Tsubame wrote noble phantasm cooldown");
+      helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 9), "Tsubame ignored skill cooldown");
+      helper.assertTrue(Math.abs(state.mana() - 180.0) < 0.001, "Cooldown rejection spent mana");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void concealmentSurvivesDodgedHitsAndBreaksOnActualDamage(GameTestHelper helper) {
+      SasakiKojiroEntity defender = sasaki(helper, new BlockPos(4, 2, 4));
+      LivingEntity attacker = target(helper, new BlockPos(6, 2, 4));
+      SasakiKojiroCombatService.setConcealed(defender, true);
+      defender.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES, 1);
+      float health = defender.getHealth();
+      defender.hurt(attacker.damageSources().mobAttack(attacker), 10.0F);
+      helper.assertTrue(defender.getHealth() == health && SasakiKojiroCombatService.isConcealed(defender),
+         "Dodged damage removed concealment");
+      defender.hurt(defender.damageSources().genericKill(), 1.0F);
+      helper.assertTrue(defender.getHealth() < health && !SasakiKojiroCombatService.isConcealed(defender),
+         "Actual damage failed to remove concealment");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void attackingBreaksConcealmentAndTsubameCanBeDodged(GameTestHelper helper) {
+      SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
+      SasakiKojiroEntity defender = sasaki(helper, new BlockPos(6, 2, 4));
+      SasakiKojiroCombatService.setConcealed(attacker, true);
+      attacker.getRandom().setSeed(123L);
+      defender.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES, 1);
+      float health = defender.getHealth();
+      SasakiKojiroCombatService.performTsubameGaeshi(attacker, defender);
+      helper.assertTrue(!SasakiKojiroCombatService.isConcealed(attacker), "Attack retained concealment");
+      helper.assertTrue(defender.getHealth() == health, "Tsubame bypassed automatic dodge");
+      helper.assertTrue(defender.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES) == 0,
+         "Tsubame did not use the shared dodge charge");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 100)
+   public static void transparencyCleansesAndExpiresAfter80Ticks(GameTestHelper helper) {
+      SasakiKojiroEntity entity = sasaki(helper, new BlockPos(4, 2, 4));
+      entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200));
+      helper.assertTrue(SasakiKojiroCombatService.performTransparency(entity), "Transparency failed");
+      helper.assertTrue(!entity.hasEffect(MobEffects.WEAKNESS) && entity.hasEffect(MobEffects.DAMAGE_RESISTANCE),
+         "Transparency did not cleanse and grant resistance");
+      helper.runAfterDelay(81, () -> {
+         helper.assertTrue(!SasakiKojiroCombatService.isConcealed(entity) && !entity.hasEffect(MobEffects.INVISIBILITY)
+            && !entity.hasEffect(MobEffects.DAMAGE_RESISTANCE), "Transparency exceeded 80 ticks");
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void souwaRankBBypassesDefenseOnExactlyTheSelectedRolls(GameTestHelper helper) {
+      SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
+      var source = new CombatDamageSource(attacker.damageSources().mobAttack(attacker),
+         AttackOrigin.skill("sasaki_kojiro", "sasaki_vertical_slash"));
+      int bypasses = 0;
+      for (int i = 0; i < 32; i++) {
+         long seed = 123L + i * 104729L;
+         attacker.getRandom().setSeed(seed);
+         boolean bypass = net.minecraft.util.RandomSource.create(seed).nextFloat() < 0.15F;
+         if (bypass) bypasses++;
+         SasakiKojiroEntity defender = sasaki(helper, new BlockPos(6, 2, 4));
+         defender.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES, 0);
+         defender.getPersistentData().putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN, Long.MAX_VALUE);
+         defender.getPersistentData().putBoolean(ServantCombatDefenseService.TAG_GUARDING, true);
+         defender.getPersistentData().putLong(ServantCombatDefenseService.TAG_GUARD_START, helper.getLevel().getGameTime() - 100L);
+         var incoming = new LivingIncomingDamageEvent(defender, new DamageContainer(source, 20.0F));
+         ServantCombatSystem.handleIncomingDamage(defender, incoming);
+         helper.assertTrue(Math.abs(incoming.getAmount() - (bypass ? 20.0F : 4.0F)) < 0.02F,
+            "Souwa rank B defense bypass disagreed with roll " + i + ": " + incoming.getAmount());
+         defender.discard();
+      }
+      helper.assertTrue(bypasses > 0 && bypasses < 32, "Test seeds must cover bypass and normal defense");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void souwaReadsTheSameRankForPlayerAndNpcAttackers(GameTestHelper helper) {
+      ServerPlayer player = card(helper);
+      SasakiKojiroEntity npc = sasaki(helper, new BlockPos(6, 2, 4));
+      helper.assertTrue(Math.abs(SasakiKojiroCombatService.souwaBonus(player) - 0.20) < 0.001
+         && Math.abs(SasakiKojiroCombatService.souwaBonus(npc) - 0.20) < 0.001,
+         "Player and NPC did not resolve Souwa rank B");
+      for (int i = 0; i < 32; i++) {
+         long seed = 123L + i * 104729L;
+         player.getRandom().setSeed(seed);
+         npc.getRandom().setSeed(seed);
+         boolean expected = net.minecraft.util.RandomSource.create(seed).nextFloat() < 0.15F;
+         helper.assertTrue(SasakiKojiroCombatService.rollDefenseBypass(player.damageSources().playerAttack(player)) == expected
+            && SasakiKojiroCombatService.rollDefenseBypass(npc.damageSources().mobAttack(npc)) == expected,
+            "Player/NPC rank B bypass probabilities differ");
+      }
+      helper.succeed();
+   }
+}

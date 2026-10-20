@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 import java.util.ArrayList;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaRules;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -188,7 +189,11 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    public static void fireHeshikiriPrimary(ServerPlayer player) {
-      // Ordinary left-click is vanilla melee. Kept as a compatibility no-op.
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (!vars.servant_card_transformed || !"oda_nobunaga".equals(vars.servant_card_id)) return;
+      OdaNobunagaActionAnimations.play(player, isHoldingHeshikiriClient(player)
+         ? OdaNobunagaActionAnimations.Action.ATTACK_SLASH
+         : OdaNobunagaActionAnimations.Action.ATTACK_SHOT);
    }
 
    public static boolean handleHeshikiriRightClick(ServerPlayer player) {
@@ -201,6 +206,7 @@ public final class ServantCardOdaNobunagaSkills {
          return false;
       }
       setCooldown(player, SECONDARY_ATTACK_COOLDOWN, 16);
+      OdaNobunagaActionAnimations.play(player, OdaNobunagaActionAnimations.Action.ATTACK_SHOT);
       Vec3 look = player.getLookAngle();
       shootMatchlockBullet(level, player, player.getEyePosition().add(look.scale(0.9)), look, 18.0F, 3.3F, 3);
       muzzleFx(level, player, look, 2);
@@ -266,6 +272,7 @@ public final class ServantCardOdaNobunagaSkills {
       CompoundTag data = player.getPersistentData();
       data.putBoolean(CHARGED_ACTIVE, true);
       data.putLong(CHARGED_START, level.getGameTime());
+      OdaNobunagaActionAnimations.play(player, OdaNobunagaActionAnimations.Action.CHARGED_SHOT);
       VFXServerEffects.spawn(level, "servant_oda_sniper_charge", player, 64.0);
       level.playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_LOADING_START.value(), SoundSource.PLAYERS, 0.9F, 0.7F);
       level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 1.2, player.getZ(), 5, 0.16, 0.12, 0.16, 0.01);
@@ -319,6 +326,7 @@ public final class ServantCardOdaNobunagaSkills {
       data.putBoolean(THREE_THOUSAND_FOLLOW, true);
       data.putBoolean(THREE_THOUSAND_RELEASED, false);
       data.putLong(THREE_THOUSAND_START, level.getGameTime());
+      OdaNobunagaActionAnimations.play(player, OdaNobunagaActionAnimations.Action.NP_THREE_THOUSAND_CHANT);
       VFXServerEffects.spawn(level, "servant_oda_three_thousand_charge", player, 72.0);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "oda_three_thousand", 3600,
          ticks -> ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks),
@@ -426,6 +434,7 @@ public final class ServantCardOdaNobunagaSkills {
       data.putLong(HAJUN_START, level.getGameTime());
       data.putInt(HAJUN_PROGRESS, 1);
       data.putInt(HAJUN_TIMER, 0);
+      OdaNobunagaActionAnimations.play(player, OdaNobunagaActionAnimations.Action.NP_HAJUN_CHANT);
       PlayerNoblePhantasmHelper.startServantCardVoiceSession(player, "oda_nobunaga", ModSounds.ODA_NOBUNAGA_VOICE_HAJUN.get());
       VFXServerEffects.spawn(level, "servant_oda_hajun_charge", player, 192.0);
       level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.9F, 0.72F);
@@ -436,6 +445,7 @@ public final class ServantCardOdaNobunagaSkills {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       ServantCardSkillAction action = ServantCardSkillLayout.actionFor("oda_nobunaga", 9, false);
       if (action != null) {
+         OdaNobunagaActionAnimations.play(player, OdaNobunagaActionAnimations.Action.NP_HAJUN_RELEASE);
          performOdaHajunAction(player, vars, action);
       }
    }

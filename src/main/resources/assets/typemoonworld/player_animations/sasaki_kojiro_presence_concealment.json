@@ -1,0 +1,10 @@
+{
+  "name": "sasaki_kojiro_presence_concealment",
+  "version": 3,
+  "description": "A compact draw-in pose for Presence Concealment.",
+  "emote": {"beginTick":0,"endTick":10,"stopTick":10,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":3,"body":{"pitch":-7,"yaw":-10},"rightArm":{"pitch":-60,"yaw":-20,"roll":-18},"leftArm":{"pitch":-36,"yaw":12}},
+    {"tick":10,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

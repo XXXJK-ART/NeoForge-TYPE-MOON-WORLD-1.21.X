@@ -461,13 +461,14 @@ public class ServantCardHud {
    private static void drawCooldownGrid(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
       int[] cooldowns = effectiveSkillCooldowns(minecraft, vars);
       int selectedSlot = ServantCardSkillInputController.selectedSlot(vars);
+      boolean heracles = "heracles".equals(vars.servant_card_id);
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
          int ticks = i == 9 && !"gilgamesh".equals(vars.servant_card_id)
             && !"gilgamesh_caster".equals(vars.servant_card_id)
             && !"ushiwakamaru_rider".equals(vars.servant_card_id)
-            && !"okita_souji_saber".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
+            && !"okita_souji_saber".equals(vars.servant_card_id) && !heracles ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty

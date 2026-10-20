@@ -1,0 +1,11 @@
+// Keep both build outputs and Gradle's project cache separate during parallel local work.
+// Usage: gradlew --project-cache-dir build/sasaki-gradle-cache -I tools/sasaki-validation.init.gradle test build runGameTestServer -PgameTestNamespaces=typemoonworld_sasaki
+allprojects {
+    layout.buildDirectory = file('build/sasaki-verification')
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/sasaki-gametest-run')
+        project.tasks.named('test').configure {
+            inputs.dir project.file('src/main/resources')
+        }
+    }
+}

@@ -40,6 +40,15 @@ repositories {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
     }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'KosmX'
+                url = 'https://maven.kosmx.dev/'
+            }
+        }
+        filter { includeGroup 'dev.kosmx.player-anim' }
+    }
     maven {
         name = "TerraBlender"
         url = "https://maven.neoforged.net/releases"
@@ -215,6 +224,7 @@ dependencies {
     // For all intends and purposes: You can treat this dependency as if it is a normal library you would use.
     implementation "net.neoforged:neoforge:${neo_version}"
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+    implementation "dev.kosmx.player-anim:player-animation-lib-forge:${playeranimator_version}"
     implementation "maven.modrinth:terrablender:${terrablender_modrinth_version}" // NeoForge ${minecraft_version}-${terrablender_version}
     // Compile the optional bridges without bundling or requiring either mod at runtime.
     compileOnly 'de.maxhenkel.voicechat:voicechat-api:2.6.20'
@@ -260,6 +270,7 @@ tasks.withType(ProcessResources).configureEach {
             neo_version            : neo_version,
             neo_version_range      : neo_version_range,
             loader_version_range   : loader_version_range,
+            playeranimator_version_range: playeranimator_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,

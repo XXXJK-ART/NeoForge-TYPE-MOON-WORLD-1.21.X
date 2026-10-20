@@ -166,7 +166,7 @@ public final class ServantCardHassanSkills {
          spawnHassanZabaniyaImpact(player, target, false);
          return;
       }
-      if (killed && HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,player.damageSources().playerAttack(player),55,"cursed_arm_hassan:zabaniya",killed)) {
          spawnHassanZabaniyaImpact(player, target, true);
          return;
       }

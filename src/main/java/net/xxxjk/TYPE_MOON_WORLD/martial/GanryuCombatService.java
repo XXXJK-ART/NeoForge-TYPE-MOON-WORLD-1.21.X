@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class GanryuCombatService {
@@ -316,15 +317,16 @@ public final class GanryuCombatService {
       long now = player.level().getGameTime();
       int recovery = recoveryTicks(GanryuMove.TSUBAME_GAESHI.recoveryTicks(), vars.body_technique);
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
-      boolean landed = tsubameLands(player.getRandom().nextFloat());
-      if (landed) {
-         target.stopUsingItem();
-         target.invulnerableTime = 0;
-         hit(player, target, Mth.lerp(Mth.clamp(power, 0.0F, 1.0F), 60.0F, 120.0F), GanryuMove.TSUBAME_GAESHI, true);
-      } else {
-         player.serverLevel().sendParticles(ParticleTypes.SMOKE, target.getX(), target.getY() + 1.0, target.getZ(), 20, 0.45, 0.6, 0.45, 0.06);
+      target.stopUsingItem();
+      SasakiKojiroCombatService.playTsubamePresentation(player);
+      player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
+      boolean landed;
+      try {
+         landed = SasakiKojiroCombatService.applyTsubameDamage(player, target);
+      } finally {
+         player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
       }
-      net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(player.serverLevel(), "servant_sasaki_tsubame", player, 96.0);
+      if (landed) addProficiency(player, isSparring(player) ? 0.25 : 0.05);
       damageBlade(player);
    }
 
@@ -380,9 +382,7 @@ public final class GanryuCombatService {
       player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
       boolean landed;
       try {
-         landed = target.hurt(move == GanryuMove.TSUBAME_GAESHI
-            ? player.damageSources().source(TSUBAME_DAMAGE, player)
-            : player.damageSources().playerAttack(player), finalDamage);
+         landed = target.hurt(player.damageSources().playerAttack(player), finalDamage);
       } finally {
          player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
       }
@@ -457,10 +457,6 @@ public final class GanryuCombatService {
 
    static float stanceDamage(float minimum, float maximum, float power) {
       return Mth.lerp(Mth.clamp(power, 0.0F, 1.0F), minimum, maximum);
-   }
-
-   static boolean tsubameLands(float roll) {
-      return roll >= 0.0F && roll < 0.8F;
    }
 
    static int recoveryTicks(int baseTicks, int bodyTechnique) {

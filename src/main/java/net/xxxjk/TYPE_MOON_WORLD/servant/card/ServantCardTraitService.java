@@ -12,7 +12,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDamageCalculator;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -51,6 +50,7 @@ public final class ServantCardTraitService {
       data.putBoolean("TypeMoonServantLike", true);
 
       applyPassiveSkillTags(player, definition);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(player);
    }
 
    public static void tick(ServerPlayer player) {
@@ -116,13 +116,13 @@ public final class ServantCardTraitService {
       );
 
       CompoundTag data = attacker.getPersistentData();
-      if (data.getBoolean("MadEnhancementActive")) {
+      if (data.getBoolean("MadEnhancementActive") && net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(attackerDefinition.skillIds(),"mad_enhancement_")==0) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("MadEnhancementDamageBonus"));
       }
       if (!"oda_nobunaga".equals(attackerDefinition.id()) && data.getBoolean("IndependentActionActive") && attacker.getRandom().nextFloat() < 0.18F) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("IndependentActionCritDamageBonus"));
       }
-      if (data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
+      if (!"heracles".equals(attackerDefinition.id()) && data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
          multiplier *= Math.max(1.0F, data.getFloat("CritDamageMultiplier"));
       }
       if (data.getBoolean("ClairvoyanceActive") && attacker.getRandom().nextFloat() < 0.12F) {
@@ -131,7 +131,7 @@ public final class ServantCardTraitService {
 
       float result = (float)Math.max(0.0, amount * multiplier);
       if (data.getBoolean("DivinityActive")) {
-         result += Math.max(0.0F, data.getFloat("DivinityFlatDamage"));
+         result += net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.legacyDivinity(attacker);
       }
       return result;
    }
@@ -148,13 +148,6 @@ public final class ServantCardTraitService {
          );
       }
 
-      if (hasSkill(definition, "battle_continuation_a")) {
-         data.putBoolean("BattleContinuationActive", true);
-         if (!data.contains("BattleContinuationCooldown")) {
-            data.putInt("BattleContinuationCooldown", 0);
-         }
-         data.putInt("BattleContinuationMaxCooldown", 6000);
-      }
       if (hasSkill(definition, "emiya_style_battle_continuation")) {
          data.putBoolean("EmiyaStyleBattleContinuationActive", true);
       }
@@ -172,19 +165,9 @@ public final class ServantCardTraitService {
          data.putBoolean("DivinityActive", true);
          data.putFloat("DivinityFlatDamage", divinityFlatDamage(definition));
       }
-      if (hasSkill(definition, "mad_enhancement_b")) {
-         data.putBoolean("MadEnhancementActive", true);
-         data.putFloat("MadEnhancementPenalty", 0.3F);
-         data.putFloat("MadEnhancementDamageBonus", 0.15F);
-      }
-      if (hasSkill(definition, "false_mind_eye_b")) {
+      if (hasSkill(definition, "false_mind_eye_b") && !"heracles".equals(definition.id())) {
          data.putBoolean("CritDamageBoostActive", true);
          data.putFloat("CritDamageMultiplier", 2.0F);
-      }
-      if (hasSkill(definition, "true_mind_eye_b")) {
-         data.putBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG, true);
-         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.55F);
-         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG, 0.35F);
       }
       if (hasSkill(definition, "projection_magic_c")) {
          data.putBoolean("ProjectionMagicActive", true);
@@ -226,7 +209,7 @@ public final class ServantCardTraitService {
       data.remove(MagicResistanceHelper.MAGIC_RESISTANCE_DAMAGE_REDUCTION_TAG);
       data.remove(MagicResistanceHelper.MAGIC_RESISTANCE_DEBUFF_RESIST_TAG);
       data.remove("BattleContinuationActive");
-      data.remove("BattleContinuationCooldown");
+
       data.remove("BattleContinuationMaxCooldown");
       data.remove("BattleContinuationRecoveryActive");
       data.remove("BattleContinuationLastHealTick");
@@ -243,9 +226,6 @@ public final class ServantCardTraitService {
       data.remove("CritDamageBoostActive");
       data.remove("CritDamageMultiplier");
       data.remove("CritDamageTicksRemaining");
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG);
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG);
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG);
       data.remove("ProjectionMagicActive");
       data.remove("ProjectionMagicSwordDiscount");
       data.remove("ProjectionMagicLifetimeTicks");

@@ -1,38 +1,13 @@
 {
   "rank": "A",
   "id": "mindseye_a",
-  "display_name": "Mind's Eye A",
-  "display_name_zh": "心眼 A",
-  "type": "active",
-  "mp_cost": 3,
-  "cooldown_ticks": 60,
-  "duration_ticks": 60,
-  "effects": [
-    {
-      "effect_type": "damage_resistance",
-      "params": {
-        "duration_ticks": 60,
-        "amplifier": 3.0
-      }
-    }
-  ],
-  "ai": {
-    "facts": [
-      {
-        "type": "prediction",
-        "strength": 0.8
-      },
-      {
-        "type": "shield",
-        "strength": 0.7
-      }
-    ]
-  },
-  "defense": {
-    "evasion": true,
-    "activation_actions": [
-      "mind_eye",
-      "sasaki_mind_eye"
-    ]
-  }
+  "display_name": "Mind's Eye (False) A",
+  "display_name_zh": "心眼（伪）A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [],
+  "ai": {"facts": [{"type": "prediction", "strength": 0.8}]},
+  "defense": {"evasion": true}
 }

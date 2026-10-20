@@ -187,7 +187,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       boolean luckPlus = getBooleanOrDefault(json, "luck_plus", false);
 
       return ServantParams.of(endurance, endurancePlus, strength, strengthPlus,
-         agility, agilityPlus, magic, magicPlus, luck, luckPlus);
+         agility, agilityPlus, magic, magicPlus, luck, luckPlus).withNoblePhantasmRank(getStringOrDefault(json,"noble_phantasm_rank",""));
    }
 
    private ServantAnimations parseAnimations(JsonObject modelJson, String legacyAnimationPath) {

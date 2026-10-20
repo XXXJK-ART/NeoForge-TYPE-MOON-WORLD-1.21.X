@@ -1,0 +1,72 @@
+{
+  "name": "heracles_action_8",
+  "version": 3,
+  "description": "Leaping Pounce",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 48,
+    "stopTick": 48,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 9,
+        "body": {
+          "pitch": 40
+        },
+        "rightArm": {
+          "pitch": -125
+        },
+        "leftArm": {
+          "pitch": -125
+        }
+      },
+      {
+        "tick": 11,
+        "body": {
+          "pitch": 40
+        },
+        "rightArm": {
+          "pitch": -125
+        },
+        "leftArm": {
+          "pitch": -125
+        }
+      },
+      {
+        "tick": 48,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

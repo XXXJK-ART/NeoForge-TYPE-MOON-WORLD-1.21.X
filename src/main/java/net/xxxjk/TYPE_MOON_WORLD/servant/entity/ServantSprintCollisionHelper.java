@@ -55,6 +55,7 @@ public final class ServantSprintCollisionHelper {
       float hardnessCap,
       Vec3 direction
    ) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.busy(player)) return false;
       long now = level.getGameTime();
       if (player.isSprinting()) {
          data.putLong(PLAYER_LAST_SPRINT_TAG, now);
@@ -99,6 +100,7 @@ public final class ServantSprintCollisionHelper {
       }
       boolean gawain = entity instanceof GawainEntity;
       boolean heracles = entity instanceof HeraclesEntity;
+      if (heracles && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.busy(entity)) return;
       boolean lancelot = entity instanceof LancelotBerserkerEntity;
       if (!gawain && !heracles && !lancelot) {
          return;
@@ -221,6 +223,8 @@ public final class ServantSprintCollisionHelper {
       if (dir.lengthSqr() < 1.0E-4) {
          return 0;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner))
+         return TerrainImpactService.impactWallTunnel(level,owner,owner.position(),dir,TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL),3,3,(int)Math.ceil(owner.getBbHeight()))?1:0;
       Vec3 center = owner.position().add(dir.normalize().scale(1.65)).add(0.0, 0.9, 0.0);
       TerrainImpactProfile profile = new TerrainImpactProfile(TerrainImpactProfile.Tier.SMALL, 2.0,
          Math.min(TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL).maximumHardness(), hardnessCap),

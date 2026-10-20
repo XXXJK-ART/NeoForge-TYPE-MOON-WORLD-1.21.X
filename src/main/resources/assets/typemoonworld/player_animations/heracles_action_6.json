@@ -1,0 +1,72 @@
+{
+  "name": "heracles_action_6",
+  "version": 3,
+  "description": "Disrupting Stomp",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 15,
+    "stopTick": 15,
+    "moves": [
+      {
+        "tick": 0,
+        "rightLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 3,
+        "rightLeg": {
+          "pitch": -65
+        },
+        "leftLeg": {
+          "pitch": 15
+        },
+        "body": {
+          "pitch": -15
+        }
+      },
+      {
+        "tick": 5,
+        "rightLeg": {
+          "pitch": -65
+        },
+        "leftLeg": {
+          "pitch": 15
+        },
+        "body": {
+          "pitch": -15
+        }
+      },
+      {
+        "tick": 15,
+        "rightLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

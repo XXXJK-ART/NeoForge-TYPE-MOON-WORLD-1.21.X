@@ -1,0 +1,72 @@
+{
+  "name": "heracles_action_1",
+  "version": 3,
+  "description": "Heavy Ground Slam",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 29,
+    "stopTick": 29,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 13,
+        "body": {
+          "pitch": -12
+        },
+        "rightArm": {
+          "pitch": -170
+        },
+        "leftArm": {
+          "pitch": -155
+        }
+      },
+      {
+        "tick": 15,
+        "body": {
+          "pitch": 55
+        },
+        "rightArm": {
+          "pitch": -50
+        },
+        "leftArm": {
+          "pitch": -50
+        }
+      },
+      {
+        "tick": 29,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

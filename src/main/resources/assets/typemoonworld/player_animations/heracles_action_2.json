@@ -1,0 +1,76 @@
+{
+  "name": "heracles_action_2",
+  "version": 3,
+  "description": "Shoulder Charge",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 22,
+    "stopTick": 22,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 3,
+        "body": {
+          "pitch": 35,
+          "yaw": -30
+        },
+        "rightArm": {
+          "pitch": -35,
+          "roll": -35
+        },
+        "leftArm": {
+          "pitch": -70
+        }
+      },
+      {
+        "tick": 5,
+        "body": {
+          "pitch": 35,
+          "yaw": -30
+        },
+        "rightArm": {
+          "pitch": -35,
+          "roll": -35
+        },
+        "leftArm": {
+          "pitch": -70
+        }
+      },
+      {
+        "tick": 22,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

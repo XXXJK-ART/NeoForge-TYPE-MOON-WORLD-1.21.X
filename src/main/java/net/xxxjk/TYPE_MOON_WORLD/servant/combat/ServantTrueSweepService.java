@@ -153,6 +153,7 @@ public final class ServantTrueSweepService {
    private static int sweep(ServerLevel level, LivingEntity attacker, Vec3 forward, double range, float damage, boolean playerSource) {
       AABB area = attacker.getBoundingBox().inflate(range, 1.6, range).move(forward.scale(Math.min(0.8, range * 0.16)));
       int hits = 0;
+      boolean terrainTriggered = false;
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> isSweepTarget(attacker, entity))) {
          Vec3 offset = target.position().subtract(attacker.position());
@@ -165,14 +166,20 @@ public final class ServantTrueSweepService {
          boolean hurt;
          try {
             hurt = target.hurt(playerSource && attacker instanceof ServerPlayer player
-               ? attacker.damageSources().playerAttack(player)
-               : attacker.damageSources().mobAttack(attacker), resolvedDamage);
+               ? new CombatDamageSource(attacker.damageSources().playerAttack(player), AttackOrigin.of(attacker.damageSources().playerAttack(player)))
+               : new CombatDamageSource(attacker.damageSources().mobAttack(attacker), AttackOrigin.of(attacker.damageSources().mobAttack(attacker))), resolvedDamage);
          } finally {
             ServantCombatService.endSharedHit(attacker);
          }
          target.invulnerableTime = 0;
          if (hurt) {
             hits++;
+            if (!terrainTriggered && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(attacker)) {
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.impactGroundLayer(level,attacker,target.position(),
+                  net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL),
+                  playerSource?net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Permission.PLAYER:net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Permission.NPC);
+               terrainTriggered = true;
+            }
          }
          Vec3 push = new Vec3(offset.x, 0.0, offset.z);
          if (push.lengthSqr() > 1.0E-4) {

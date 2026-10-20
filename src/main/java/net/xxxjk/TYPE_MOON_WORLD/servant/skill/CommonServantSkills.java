@@ -27,7 +27,6 @@ public final class CommonServantSkills {
       registry.register("divinity_e_minus", CommonServantSkills::executeDivinityEMinus, "typemoonworld_core");
       registry.register("battle_continuation_a", CommonServantSkills::executeBattleContinuationA, "typemoonworld_core");
       registry.register("emiya_style_battle_continuation", CommonServantSkills::executeEmiyaStyleBattleContinuation, "typemoonworld_core");
-      registry.register("true_mind_eye_b", CommonServantSkills::executeTrueMindEyeB, "typemoonworld_core");
       registry.register("projection_magic_c", CommonServantSkills::executeProjectionMagicC, "typemoonworld_core");
       registry.register("clairvoyance_c", CommonServantSkills::executeClairvoyanceC, "typemoonworld_core");
       registry.register("clairvoyance_ex", CommonServantSkills::executeClairvoyanceEx, "typemoonworld_core");
@@ -245,28 +244,14 @@ public final class CommonServantSkills {
    }
 
    private static ServantExecutionResult executeDivinityEMinus(ServantExecutionContext context) {
-      LivingEntity entity = context.caster();
-      if (entity == null) {
-         return ServantExecutionResult.FAILED;
-      }
-
-      entity.getPersistentData().putBoolean("DivinityActive", true);
-      entity.getPersistentData().putFloat("DivinityFlatDamage", 1.0F);
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(context.caster());
       return ServantExecutionResult.SUCCESS;
    }
 
    private static ServantExecutionResult executeBattleContinuationA(ServantExecutionContext context) {
-      LivingEntity entity = context.caster();
-      if (entity == null) {
-         return ServantExecutionResult.FAILED;
-      }
-
-      var data = entity.getPersistentData();
-      data.putBoolean("BattleContinuationActive", true);
-      if (!data.contains("BattleContinuationCooldown")) {
-         data.putInt("BattleContinuationCooldown", 0);
-      }
-      data.putInt("BattleContinuationMaxCooldown", 6000);
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(context.caster());
       return ServantExecutionResult.SUCCESS;
    }
 
@@ -280,18 +265,6 @@ public final class CommonServantSkills {
          net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity.EMIYA_CONTINUATION_ACTIVE,
          true
       );
-      return ServantExecutionResult.SUCCESS;
-   }
-
-   private static ServantExecutionResult executeTrueMindEyeB(ServantExecutionContext context) {
-      LivingEntity entity = context.caster();
-      if (entity == null) {
-         return ServantExecutionResult.FAILED;
-      }
-
-      entity.getPersistentData().putBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG, true);
-      entity.getPersistentData().putFloat(net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.55F);
-      entity.getPersistentData().putFloat(net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG, 0.35F);
       return ServantExecutionResult.SUCCESS;
    }
 

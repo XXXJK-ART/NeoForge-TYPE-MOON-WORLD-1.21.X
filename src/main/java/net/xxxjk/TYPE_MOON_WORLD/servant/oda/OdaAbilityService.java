@@ -173,6 +173,7 @@ public final class OdaAbilityService {
          }
          default -> { return false; }
       }
+      OdaNobunagaActionAnimations.playSkill(owner, slot);
       return true;
    }
    private static void fan(LivingEntity owner, int count, int shots, int interval, OdaDamageSource.Ability source) {
@@ -215,6 +216,7 @@ public final class OdaAbilityService {
       }
    }
    public static void sniper(LivingEntity owner, int held) {
+      OdaNobunagaActionAnimations.play(owner, OdaNobunagaActionAnimations.Action.ATTACK_SHOT);
       Vec3 look = owner.getLookAngle();
       Vec3 start = owner.getEyePosition().add(look.scale(.85));
       if (owner.level() instanceof ServerLevel level) {
@@ -234,6 +236,7 @@ public final class OdaAbilityService {
       return current != null && (current.pendingGunTiers > 0 || !current.gunRelays.isEmpty());
    }
    public static void threeThousand(LivingEntity owner, LivingEntity target, boolean follow, Vec3 origin) {
+      OdaNobunagaActionAnimations.play(owner, OdaNobunagaActionAnimations.Action.NP_THREE_THOUSAND_RELEASE);
       State current = state(owner);
       ServerLevel level = current.level;
       Vec3 horizontal = owner.getLookAngle().multiply(1, 0, 1);

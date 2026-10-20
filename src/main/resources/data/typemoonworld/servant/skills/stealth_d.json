@@ -1,17 +1,12 @@
 {
   "rank": "D",
   "id": "stealth_d",
-  "display_name": "Stealth D",
+  "display_name": "Presence Concealment D",
   "display_name_zh": "气息遮断 D",
-  "type": "passive",
-  "mp_cost": 0,
+  "type": "active",
+  "mp_cost": 18,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": [
-    {
-      "effect_type": "stealth_passive",
-      "params": {}
-    }
-  ],
+  "effects": [],
   "ai": {"facts": [{"type": "concealment", "strength": 0.55}]}
 }

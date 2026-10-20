@@ -12,6 +12,9 @@ public enum ServantTraitTag {
    MOUNTED("mounted"),
    CHALDEAN("chaldean"),
    EARTH("earth"),
+   HEAVEN_OR_EARTH_SERVANT("heaven_or_earth_servant"),
+   GREEK_MYTHOLOGY_MALE("greek_mythology_male"),
+   ARGONAUT("argonaut"),
    RIDING("riding"),
    SUN_KNIGHT("sun_knight"),
 

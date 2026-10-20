@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_vertical_slash",
+  "version": 3,
+  "description": "Overhead Ichimonji slash adapted from the supplied downslash keys.",
+  "emote": {"beginTick":0,"endTick":14,"stopTick":14,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":3,"body":{"pitch":-7,"yaw":12},"rightArm":{"pitch":-126,"yaw":14,"roll":-24},"leftArm":{"pitch":-48,"yaw":-16}},
+    {"tick":6,"body":{"pitch":12,"yaw":-8},"rightArm":{"pitch":-20,"yaw":-8,"roll":-52},"leftArm":{"pitch":-24}},
+    {"tick":14,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

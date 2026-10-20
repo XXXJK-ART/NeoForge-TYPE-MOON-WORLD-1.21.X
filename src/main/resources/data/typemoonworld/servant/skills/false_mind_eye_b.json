@@ -3,23 +3,16 @@
   "id": "false_mind_eye_b",
   "display_name": "False Eyes of the Mind B",
   "display_name_zh": "伪·心眼 B",
-  "type": "active",
-  "mp_cost": 60,
-  "cooldown_ticks": 800,
-  "duration_ticks": 200,
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
   "effects": [
     {
-      "effect_type": "evasion",
+      "effect_type": "evasion_charges",
       "params": {
-        "chance": 0.4,
-        "duration_ticks": 200
-      }
-    },
-    {
-      "effect_type": "crit_damage_boost",
-      "params": {
-        "multiplier": 2.0,
-        "duration_ticks": 200
+        "charges": 2,
+        "restore_ticks": 400
       }
     }
   ],
@@ -32,9 +25,6 @@
     ]
   },
   "defense": {
-    "evasion": true,
-    "activation_actions": [
-      "heracles_mind_eye"
-    ]
+    "evasion": true
   }
 }

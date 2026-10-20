@@ -123,7 +123,6 @@ public final class CombatModule implements ServantAiModule {
    private static final int SPEAR_VAULT_COOLDOWN = 75;
    private static final int AFTERIMAGE_SLASH_COOLDOWN = 65;
    private static final int IAIJUTSU_STEP_COOLDOWN = 80;
-   private static final double SASAKI_TSURIGAMESHI_MP_COST = 8.0;
    private static final int BLOCK_BREAK_COOLDOWN = 15;
    private static final int UNDERGROUND_TARGET_TIMEOUT = 80;
    private static final int COMBAT_PATH_RECALC_INTERVAL = 8;
@@ -615,7 +614,6 @@ public final class CombatModule implements ServantAiModule {
       boolean canHorizontalSwing = specialization.hasCombatAction("horizontal_swing");
       boolean canGroundSlam = specialization.hasCombatAction("slam");
       boolean canAssassinCombo = specialization.hasCombatAction("combo");
-      boolean canTsurigameshi = specialization.hasCombatAction("tsurigameshi");
       boolean canRuneCast = specialization.hasCombatAction("rune_cast");
       boolean canGaeBolg = specialization.hasCombatAction("gae_bolg");
       boolean canGaeBolgArmy = specialization.hasCombatAction("gae_bolg_army");
@@ -695,6 +693,8 @@ public final class CombatModule implements ServantAiModule {
       }
 
       double distance = entity.distanceTo(target);
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity sasaki
+         && net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.tickNpc(sasaki, target)) return;
       if (ServantCombatDisposition.isRelentlessAdvance(entity) && canBreakForwardBlocks) {
          tryBreakCollisionWall(entity, target, data, tick, entity instanceof HeraclesEntity, hasLineOfSight);
       }
@@ -890,18 +890,6 @@ public final class CombatModule implements ServantAiModule {
             data.putInt("LastShoulderCheckTick", tick);
             entity.triggerChargeAnimation();
             performShoulderCheck(entity, target);
-            return;
-         }
-      }
-
-      // ——— 燕返（Assassin专属）：目标HP<40%，100固定真伤 + 概率斩杀 ———
-      if (canTsurigameshi && distance < 4.0 && !SasakiKojiroCombatHelper.isBladeBroken(entity)) {
-         int lastTsurigameshi = data.getInt("LastTsurigameshiTick");
-         if (tick - lastTsurigameshi >= 600 && entity.getCurrentMp() >= SASAKI_TSURIGAMESHI_MP_COST) {
-            data.putInt("LastTsurigameshiTick", tick);
-            entity.setCurrentMp(entity.getCurrentMp() - SASAKI_TSURIGAMESHI_MP_COST);
-            entity.triggerTsurigameshiAnimation();
-            performTsurigameshi(entity, target);
             return;
          }
       }
@@ -1119,7 +1107,7 @@ public final class CombatModule implements ServantAiModule {
       }
 
       // ——— 8. 狂暴：低血量永久 ATK+5 + 移速+0.05 ———
-      if (healthRatio < 0.3 && combatStyle == CombatDisposition.FRENZIED) {
+      if (!(entity instanceof HeraclesEntity) && healthRatio < 0.3 && combatStyle == CombatDisposition.FRENZIED) {
          AttributeInstance atk = entity.getAttribute(Attributes.ATTACK_DAMAGE);
          if (atk != null && atk.getModifier(VALOR_RES) == null) {
             atk.addPermanentModifier(new AttributeModifier(
@@ -1385,6 +1373,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void applyDivinityDamage(ServantEntity entity, LivingEntity target, CompoundTag data) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(entity.getDefinition().skillIds(), "divinity_") > 0) return;
       if (data.getBoolean("DivinityActive")) {
          float divDmg = data.getFloat("DivinityFlatDamage");
          if (divDmg > 0) {
@@ -1397,6 +1386,7 @@ public final class CombatModule implements ServantAiModule {
     * 狂化 B：额外造成基础攻击力 15% 的伤害
     */
    private void applyMadEnhancementDamage(ServantEntity entity, LivingEntity target, CompoundTag data) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(entity.getDefinition().skillIds(), "mad_enhancement_") > 0) return;
       if (data.getBoolean("MadEnhancementActive")) {
          float bonusRatio = data.getFloat("MadEnhancementDamageBonus");
          if (bonusRatio > 0) {
@@ -1761,145 +1751,6 @@ public final class CombatModule implements ServantAiModule {
       sl.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, heavy ? 14 : 8, 0.25, 0.2, 0.25, 0.055);
       sl.playSound(null, entity.blockPosition(), heavy ? SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR : SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, heavy ? 0.9F : 0.75F, heavy ? 0.65F : 0.85F);
       return true;
-   }
-
-   /**
-    * 燕返（Tsurigameshi）：必杀一击特效增强版
-    */
-   private void performTsurigameshi(ServantEntity entity, LivingEntity target) {
-      if (!(entity.level() instanceof ServerLevel sl) || EntityUtils.isImmunePlayerTarget(target)) return;
-      if (SasakiKojiroCombatHelper.isSasakiKojiro(entity)) {
-         float hitChance = SasakiKojiroCombatHelper.getTsurigameshiHitChance(entity);
-         if (hitChance <= 0.0F) {
-            return;
-         }
-
-         if (entity.getRandom().nextFloat() > hitChance) {
-            // 未命中：少量挥空粒子 + 弱攻击音效
-            sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-               target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-               4, 0.25, 0.25, 0.25, 0.02);
-            sl.sendParticles(ParticleTypes.CLOUD,
-               target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-               8, 0.2, 0.2, 0.2, 0.04);
-            sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-               SoundEvents.PLAYER_ATTACK_WEAK, SoundSource.HOSTILE, 1.0F, 1.15F);
-            return;
-         }
-
-         target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().mobAttack(entity), 300.0F);
-         target.invulnerableTime = 0;
-
-         // === 燕返命中：多重斩击轨迹 + 灵子散逸 ===
-         Vec3 entityPos = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-         Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
-         Vec3 slashDir = targetPos.subtract(entityPos).normalize();
-
-         // 1. 弧形斩击轨迹粒子（从下往上三道弧线）
-         for (int arc = 0; arc < 3; arc++) {
-            double arcOffset = (arc - 1) * 0.4;
-            for (double t = 0.0; t <= 1.0; t += 0.1) {
-               Vec3 pos = entityPos.lerp(targetPos, t);
-               double wave = Math.sin(t * Math.PI) * 0.3 * (arc + 1);
-               Vec3 perp = new Vec3(-slashDir.z, 0, slashDir.x);
-               pos = pos.add(perp.scale(wave + arcOffset));
-               sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                  pos.x, pos.y, pos.z,
-                  2, 0.0, 0.0, 0.0, 0.0);
-            }
-         }
-
-         // 2. 目标处爆发：灵魂火焰 + 末影碎裂
-         sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-            target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(),
-            25, 0.5, 0.6, 0.5, 0.08);
-         sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
-            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-            15, 0.4, 0.5, 0.4, 0.05);
-         sl.sendParticles(ParticleTypes.SOUL,
-            target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
-            12, 0.3, 0.4, 0.3, 0.04);
-
-         // 3. 斩击闪光（中心扩散）
-         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-            target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-            8, 0.3, 0.3, 0.3, 0.15);
-
-         // 4. 实体侧烟雾残留（瞬移残影感）
-         sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-            entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
-            20, 0.3, 0.5, 0.3, 0.04);
-
-         // 5. 击飞效果
-         double dx = target.getX() - entity.getX();
-         double dz = target.getZ() - entity.getZ();
-         double dist = Math.sqrt(dx * dx + dz * dz);
-         if (dist > 0) {
-            target.push(dx / dist * 0.8, 0.4, dz / dist * 0.8);
-            target.hurtMarked = true;
-         }
-
-         // 6. 音效叠加
-         sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-            SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.8F, 0.5F);
-         sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-            SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.2F, 0.7F);
-         sl.playSound(null, target.getX(), target.getY(), target.getZ(),
-            SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.5F, 0.6F);
-         return;
-      }
-
-      // 100点固定真伤
-      target.hurt(entity.damageSources().generic(), 100.0F);
-
-      double hpRatio = target.getHealth() / target.getMaxHealth();
-      net.minecraft.util.RandomSource random = entity.getRandom();
-
-      // 即死判定（HP<10%，30%概率）
-      if (hpRatio < 0.10 && random.nextInt(100) < 30) {
-         if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) {
-            return;
-         }
-         target.setHealth(0);
-         target.die(entity.damageSources().mobAttack(entity));
-      }
-      // 半血斩杀判定（HP<30%，50%概率，额外造成剩余HP一半的伤害）
-      else if (hpRatio < 0.30 && random.nextInt(100) < 50) {
-         float bonusDmg = target.getHealth() / 2.0F;
-         target.hurt(entity.damageSources().generic(), bonusDmg);
-      }
-
-      // 通用燕返特效
-      Vec3 entityPos = entity.position().add(0, entity.getBbHeight() * 0.5, 0);
-      Vec3 targetPos = target.position().add(0, target.getBbHeight() * 0.5, 0);
-      Vec3 slashDir = targetPos.subtract(entityPos).normalize();
-
-      // 弧形斩击轨迹
-      for (double t = 0.0; t <= 1.0; t += 0.15) {
-         Vec3 pos = entityPos.lerp(targetPos, t);
-         double wave = Math.sin(t * Math.PI) * 0.2;
-         Vec3 perp = new Vec3(-slashDir.z, 0, slashDir.x);
-         pos = pos.add(perp.scale(wave));
-         sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-            pos.x, pos.y, pos.z,
-            1, 0.0, 0.0, 0.0, 0.0);
-      }
-
-      sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-         target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(),
-         15, 0.4, 0.5, 0.4, 0.06);
-      sl.sendParticles(ParticleTypes.CRIT,
-         target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
-         20, 0.4, 0.4, 0.4, 0.2);
-      sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-         entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(),
-         15, 0.3, 0.3, 0.3, 0.08);
-
-      sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-         SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.5F, 0.6F);
-      sl.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-         SoundEvents.ENDER_EYE_DEATH, SoundSource.HOSTILE, 1.0F, 0.8F);
    }
 
    /**
@@ -2387,7 +2238,7 @@ public final class CombatModule implements ServantAiModule {
          if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(resolvedTarget)) {
             return;
          }
-         if (!tryConsumeGodHandLife(entity, resolvedTarget, 250.0F, deathThorn)) {
+         if (!net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(resolvedTarget,entity.damageSources().mobAttack(entity),250,"cu_chulainn:gae_bolg",deathThorn)) {
             applyFixedNoArmorDamage(entity, resolvedTarget, 250.0F);
             if (resolvedTarget.isAlive() && deathThorn) {
                applyDeathThorn(entity, resolvedTarget);
@@ -2531,6 +2382,7 @@ public final class CombatModule implements ServantAiModule {
 
    private void applyFixedNoArmorDamage(ServantEntity attacker, LivingEntity target, float damage) {
       if (EntityUtils.isImmunePlayerTarget(target)) return;
+      if (HeraclesGodHandHelper.hasGodHand(target)) { target.hurt(attacker.damageSources().mobAttack(attacker), damage); return; }
       float before = target.getHealth();
       target.invulnerableTime = 0;
       target.hurt(attacker.damageSources().mobAttack(attacker), damage);
@@ -2542,38 +2394,11 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private boolean tryConsumeGodHandLife(ServantEntity attacker, LivingEntity target, float incomingDamage, boolean deathThorn) {
-      if (EntityUtils.isImmunePlayerTarget(target)) return false;
-      CompoundTag targetData = target.getPersistentData();
-      if (targetData.getBoolean("CausalSevered") || !targetData.getBoolean("GodHandActive")) {
-         return false;
-      }
-
-      int livesLeft = targetData.getInt("GodHandLives");
-      if (livesLeft <= 0) {
-         return false;
-      }
-
-      boolean lethalByDamage = target.getHealth() <= incomingDamage;
-      if (!lethalByDamage && !deathThorn) {
-         return false;
-      }
-
-      target.setHealth(target.getMaxHealth());
-      targetData.putInt("GodHandLives", livesLeft - 1);
-      if (attacker.level() instanceof ServerLevel sl) {
-         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-            target.getX(), target.getY() + 1.0, target.getZ(),
-            30, 0.6, 0.6, 0.6, 0.15);
-         sl.sendParticles(ParticleTypes.POOF,
-            target.getX(), target.getY() + 0.5, target.getZ(),
-            20, 0.5, 0.5, 0.5, 0.1);
-         sl.playSound(null, target.blockPosition(),
-            SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
-      }
-      return true;
+      return deathThorn && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg");
    }
 
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg")) return;
       if (EntityUtils.isImmunePlayerTarget(target)) return;
       if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) return;
       int livesBeforeHit = target.getPersistentData().getInt("GodHandLives");

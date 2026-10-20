@@ -352,8 +352,7 @@ public final class MedusaCombatHelper {
          HeraclesGodHandHelper.applyAdaptedSlow(target, 100);
          return;
       }
-      if (HeraclesGodHandHelper.hasGodHand(target)) {
-         HeraclesGodHandHelper.consumeLifeForCybele(target);
+      if (HeraclesGodHandHelper.consumeLifeForCybele(target)) {
          return;
       }
 
@@ -1130,7 +1129,7 @@ public final class MedusaCombatHelper {
 
    private static void applyDivinityDamage(MedusaEntity entity, LivingEntity target) {
       if (entity.getPersistentData().getBoolean("DivinityActive")) {
-         float extra = entity.getPersistentData().getFloat("DivinityFlatDamage");
+         float extra = net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.legacyDivinity(entity);
          if (extra > 0.0F) {
             target.hurt(entity.damageSources().magic(), extra);
          }

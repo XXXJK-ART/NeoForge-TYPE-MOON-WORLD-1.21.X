@@ -14,7 +14,6 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.client.gui.OdaProfileScreen;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.*;
 import net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
@@ -25,6 +24,7 @@ public final class OdaClientSmoke {
    private int ticks;
    private volatile String failure;
    private volatile boolean verified;
+   private boolean animationReceived;
    public OdaClientSmoke() { NeoForge.EVENT_BUS.register(this); }
    @SubscribeEvent public void tick(ClientTickEvent.Post event) {
       var mc = Minecraft.getInstance();
@@ -46,16 +46,18 @@ public final class OdaClientSmoke {
          if (ticks == 10) mc.getSingleplayerServer().execute(() -> {
             try { verify(mc); verified = true; } catch (Throwable error) { failure = error.toString(); }
          });
-         if (ticks == 60) { require(verified, "Server checks incomplete"); mc.setScreen(new OdaProfileScreen(null)); }
-         if (ticks == 70) capture(mc, "oda-profile-parameters");
-         if (ticks == 75) mc.screen.mouseScrolled(300, 300, 0, -12);
-         if (ticks == 80) capture(mc, "oda-profile-skills");
-         if (ticks == 85) mc.screen.mouseScrolled(300, 300, 0, -30);
-         if (ticks == 90) capture(mc, "oda-profile-noble-phantasms");
-         if (ticks == 100) mc.setScreen(null);
+         if (verified && !animationReceived) {
+            Object layer = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(mc.player)
+               .get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("typemoonworld", "oda_nobunaga_action"));
+            animationReceived = layer instanceof dev.kosmx.playerAnim.api.layered.ModifierLayer<?> animation && animation.isActive();
+         }
+         if (ticks == 60) {
+            require(verified, "Server checks incomplete");
+            require(animationReceived, "Negotiated client did not receive its Oda action animation");
+         }
          if (ticks == 110) capture(mc, "oda-hud");
          if (ticks >= 120) {
-            done = true; TYPE_MOON_WORLD.LOGGER.info("ODA_CLIENT_SMOKE_PASS old_save=loaded flight=start,hover,stop,diagonal,vertical,sprint,collision profile=rendered"); mc.stop();
+            done = true; TYPE_MOON_WORLD.LOGGER.info("ODA_CLIENT_SMOKE_PASS old_save=loaded flight=start,hover,stop,diagonal,vertical,sprint,collision animations=received"); mc.stop();
          }
       } catch (Throwable error) {
          done = true; TYPE_MOON_WORLD.LOGGER.error("ODA_CLIENT_SMOKE_FAIL ticks=" + ticks, error); mc.stop();
@@ -103,6 +105,10 @@ public final class OdaClientSmoke {
       require(player.getVehicle() == null && !vars.servantCardState().flying(), "Flight did not stop");
       player.teleportTo(.5,101,.5); player.setYRot(0); player.setXRot(0);
       vars.syncPlayerVariables(player);
+      require(net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork.supports(player,
+         net.xxxjk.TYPE_MOON_WORLD.network.OdaNobunagaActionAnimationMessage.TYPE), "Oda animation channel was not negotiated");
+      net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(player,
+         net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.SKILL_COMMAND);
    }
    private static void capture(Minecraft mc, String name) {
       File directory = new File(mc.gameDirectory,"qa"); directory.mkdirs();

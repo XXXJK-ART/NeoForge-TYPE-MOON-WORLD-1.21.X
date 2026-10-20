@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_crouch_cutback",
+  "version": 3,
+  "description": "Crouching cutback adapted from the supplied crouch strike.",
+  "emote": {"beginTick":0,"endTick":12,"stopTick":12,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0},"rightLeg":{"pitch":0},"leftLeg":{"pitch":0}},
+    {"tick":3,"body":{"pitch":8,"yaw":-16},"rightArm":{"pitch":-90,"yaw":-18,"roll":-30},"leftArm":{"pitch":-48},"rightLeg":{"pitch":34},"leftLeg":{"pitch":-20}},
+    {"tick":6,"body":{"pitch":-8,"yaw":24},"rightArm":{"pitch":-12,"yaw":28,"roll":62},"leftArm":{"pitch":-28},"rightLeg":{"pitch":12},"leftLeg":{"pitch":-4}},
+    {"tick":12,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0},"rightLeg":{"pitch":0},"leftLeg":{"pitch":0}}
+  ]}
+}

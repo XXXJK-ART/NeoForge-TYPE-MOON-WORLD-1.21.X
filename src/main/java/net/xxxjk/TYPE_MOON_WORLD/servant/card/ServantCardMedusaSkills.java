@@ -185,11 +185,9 @@ public final class ServantCardMedusaSkills {
 
    private static void applyMedusaCardCybele(ServerPlayer player, LivingEntity target) {
       if (HeraclesGodHandHelper.isAdaptedToCybele(target)) {
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2, false, true, true));
          return;
       }
-      if (HeraclesGodHandHelper.hasGodHand(target)) {
-         HeraclesGodHandHelper.consumeLifeForCybele(target);
+      if (HeraclesGodHandHelper.consumeLifeForCybele(target)) {
          return;
       }
 

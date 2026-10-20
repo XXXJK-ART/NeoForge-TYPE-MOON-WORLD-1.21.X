@@ -51,6 +51,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    private float knockback;
    public OdaMatchlockBulletEntity source(Ability value) { ability = value; return this; }
    public Ability ability() { return ability; }
+   public float getDirectDamage() { return this.entityData.get(DIRECT_DAMAGE); }
    public OdaMatchlockBulletEntity tracking(LivingEntity target) { trackingTarget = target; return this; }
    public OdaMatchlockBulletEntity pursuit(UUID id, int index) { pursuitId = id; pursuitIndex = index; return this; }
    public OdaMatchlockBulletEntity knockback(float value) { knockback = value; return this; }

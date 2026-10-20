@@ -9,9 +9,11 @@
   "duration_ticks": 0,
   "effects": [
     {
-      "effect_type": "divinity",
+      "effect_type": "attribute_bonus",
       "params": {
-        "flat_damage": 1.0
+        "health": 20,
+        "attack": 2,
+        "speed_additive": 0.01
       }
     }
   ]

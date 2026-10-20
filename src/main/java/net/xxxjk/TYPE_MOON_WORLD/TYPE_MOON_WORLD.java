@@ -100,6 +100,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterCommandSpellMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MasterVisualStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenServantCommandScreenMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.OdaNobunagaActionAnimationMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCommandMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MedeaCraftSelectionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.MuramasaForgeSelectionMessage;
@@ -378,6 +379,9 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(MasterVisualStateMessage.TYPE, MasterVisualStateMessage.STREAM_CODEC, MasterVisualStateMessage::handleData);
       registrar.playToClient(ConcealmentStateMessage.TYPE, ConcealmentStateMessage.STREAM_CODEC, ConcealmentStateMessage::handleData);
       registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
+      registrar.playToClient(OdaNobunagaActionAnimationMessage.TYPE, OdaNobunagaActionAnimationMessage.STREAM_CODEC, OdaNobunagaActionAnimationMessage::handleData);
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage::handleData);
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage::handleData);
       registrar.playToClient(BajiquanPoseMessage.TYPE, BajiquanPoseMessage.STREAM_CODEC, BajiquanPoseMessage::handleData);
       registrar.playToClient(GanryuPoseMessage.TYPE, GanryuPoseMessage.STREAM_CODEC, GanryuPoseMessage::handleData);
       registrar.playToClient(CircleRealmStateMessage.TYPE, CircleRealmStateMessage.STREAM_CODEC, CircleRealmStateMessage::handleData);

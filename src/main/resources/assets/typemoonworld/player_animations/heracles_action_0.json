@@ -1,0 +1,72 @@
+{
+  "name": "heracles_action_0",
+  "version": 3,
+  "description": "Great Leap: Crash",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 15,
+    "stopTick": 15,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 3,
+        "body": {
+          "pitch": -20
+        },
+        "rightArm": {
+          "pitch": -130
+        },
+        "leftArm": {
+          "pitch": -130
+        }
+      },
+      {
+        "tick": 5,
+        "body": {
+          "pitch": -20
+        },
+        "rightArm": {
+          "pitch": -130
+        },
+        "leftArm": {
+          "pitch": -130
+        }
+      },
+      {
+        "tick": 15,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

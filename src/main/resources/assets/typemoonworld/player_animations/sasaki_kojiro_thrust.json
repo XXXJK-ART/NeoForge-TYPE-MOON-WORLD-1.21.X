@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_thrust",
+  "version": 3,
+  "description": "Swallow-piercing step thrust adapted to the standard player rig.",
+  "emote": {"beginTick":0,"endTick":16,"stopTick":16,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0},"leftArm":{"pitch":0},"rightLeg":{"pitch":0},"leftLeg":{"pitch":0}},
+    {"tick":3,"body":{"pitch":-18,"yaw":-6},"rightArm":{"pitch":-76,"yaw":-10,"roll":-12},"leftArm":{"pitch":-34},"rightLeg":{"pitch":28},"leftLeg":{"pitch":-20}},
+    {"tick":6,"body":{"pitch":-10,"yaw":8},"rightArm":{"pitch":-96,"yaw":8,"roll":8},"leftArm":{"pitch":-48},"rightLeg":{"pitch":-18},"leftLeg":{"pitch":32}},
+    {"tick":16,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0},"rightLeg":{"pitch":0},"leftLeg":{"pitch":0}}
+  ]}
+}

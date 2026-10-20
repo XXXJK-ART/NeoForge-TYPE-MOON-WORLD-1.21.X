@@ -9,8 +9,12 @@
   "duration_ticks": 0,
   "effects": [
     {
-      "effect_type": "mad_enhancement",
-      "params": { "madness_rank": 2.0, "obedience_penalty": 0.3, "damage_bonus": 0.15 }
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 80,
+        "attack": 12,
+        "speed_additive": 0.08
+      }
     }
   ]
 }

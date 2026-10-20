@@ -1,0 +1,17 @@
+{
+  "name": "oda_np_three_thousand_chant",
+  "version": 3,
+  "description": "Oda Nobunaga presents the gathering matchlocks before Three Thousand Worlds.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 56,
+    "stopTick": 56,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -8, "roll": -8}, "leftArm": {"pitch": -8, "roll": 8}, "head": {"pitch": -5}},
+      {"tick": 16, "rightArm": {"pitch": -42, "roll": -26}, "leftArm": {"pitch": -42, "roll": 26}, "body": {"pitch": 4}, "head": {"pitch": -12}},
+      {"tick": 38, "rightArm": {"pitch": -83, "roll": -44}, "leftArm": {"pitch": -83, "roll": 44}, "body": {"pitch": -4}, "head": {"pitch": -16}},
+      {"tick": 50, "rightArm": {"pitch": -83, "roll": -44}, "leftArm": {"pitch": -83, "roll": 44}, "body": {"pitch": -4}, "head": {"pitch": -16}},
+      {"tick": 56, "rightArm": {"pitch": 0, "roll": 0}, "leftArm": {"pitch": 0, "roll": 0}, "body": {"pitch": 0}, "head": {"pitch": 0}}
+    ]
+  }
+}

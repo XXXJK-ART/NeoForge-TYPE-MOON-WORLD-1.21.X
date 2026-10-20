@@ -382,16 +382,13 @@ public final class LiShuwenCombatHelper {
       boolean instantDeathTarget = isInstantDeathTarget(target);
       float chance = instantDeathChance(target);
       boolean killed = instantDeathTarget && roll < chance;
-      if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
-         HeraclesGodHandHelper.applyAdaptedSlow(target, 80);
-         killed = false;
-      }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,wuErDaDamage(attacker),200,"li_shuwen:wu_er_da",killed)) { spawnWuErDaImpact(level,target,killed);return; }
       if (killed) {
          if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "wu_er_da")) {
             spawnWuErDaImpact(level, target, false);
             return;
          }
-         if (HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"li_shuwen:wu_er_da")) {
             spawnWuErDaImpact(level, target, true);
             return;
          }

@@ -64,16 +64,10 @@ public final class ServantCardSkillLayout {
             case 6 -> new ServantCardSkillAction("Rune Barrier", "cu_rune_barrier", 80.0, 600);
             default -> null;
          };
-         case "heracles" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Great Leap", "heracles_big_jump", 18.0, 120);
-            case 1 -> new ServantCardSkillAction("Ground Slam", "heracles_ground_slam", 32.0, 180);
-            case 2 -> new ServantCardSkillAction("Roar", "heracles_roar", 18.0, 180);
-            case 3 -> new ServantCardSkillAction("Valor A+", "heracles_valor", 20.0, 300);
-            case 4 -> new ServantCardSkillAction("Mind's Eye (False) B", "heracles_mind_eye", 18.0, 240);
-            case 5 -> new ServantCardSkillAction("Battle Continuation A", "heracles_battle_continuation", 35.0, 600);
-            case 9 -> new ServantCardSkillAction("Twelve Labors", "god_hand_status", 0.0, 20);
-            default -> null;
-         };
+         case "heracles" -> {
+            var spec = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.spec(slot);
+            yield spec == null ? null : new ServantCardSkillAction(spec.name(), spec.id(), spec.mana(), spec.cooldown());
+         }
          case "medea" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Workshop", "workshop", 0.0, 80);
             case 1 -> new ServantCardSkillAction("Auto Minor Magic", "medea_minor_magic", 0.0, 20);
@@ -146,13 +140,17 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "sasaki_kojiro" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Iaijutsu Step", "sasaki_crouch_combo", 10.0, 20);
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 220);
-            case 1 -> new ServantCardSkillAction("Tsubame Gaeshi", "tsubame_gaeshi", 0.0, 300);
-            case 2 -> new ServantCardSkillAction("Afterimage", "sasaki_afterimage", 15.0, 160);
-            case 3 -> new ServantCardSkillAction("Mind's Eye (False)", "sasaki_mind_eye", 18.0, 240);
-            case 4 -> new ServantCardSkillAction("Sweep", "sasaki_sweep", 12.0, 80);
-            case 5 -> new ServantCardSkillAction("Transparency", "sasaki_transparency", 20.0, 600);
+            case -1 -> new ServantCardSkillAction("Crouching Cutback", "sasaki_crouch_cutback", 8.0, 20);
+            case 0 -> new ServantCardSkillAction("Presence Concealment D", "sasaki_presence_concealment", 18.0, 0);
+            case 1 -> new ServantCardSkillAction("Ichimonji: Vertical Slash", "sasaki_vertical_slash", 12.0, 80);
+            case 2 -> new ServantCardSkillAction("Falling Swallow", "sasaki_downward_slash", 8.0, 60);
+            case 3 -> new ServantCardSkillAction("Returning Swallow", "sasaki_upward_slash", 10.0, 80);
+            case 4 -> new ServantCardSkillAction("Ichimonji: Horizontal Slash", "sasaki_horizontal_slash", 12.0, 80);
+            case 5 -> new ServantCardSkillAction("Transparency B+", "sasaki_transparency", 20.0, 600);
+            case 6 -> new ServantCardSkillAction("Swallow-Piercing Thrust", "sasaki_thrust", 14.0, 100);
+            case 7 -> new ServantCardSkillAction("Turning Formation Breaker", "sasaki_spinning_slash", 16.0, 140);
+            case 8 -> new ServantCardSkillAction("Ganryu Stance Counter", "sasaki_counter_stance", 18.0, 180);
+            case 9 -> new ServantCardSkillAction("Tsubame Gaeshi", "sasaki_tsubame_gaeshi", 20.0, 600);
             default -> null;
          };
          case "oda_nobunaga" -> {

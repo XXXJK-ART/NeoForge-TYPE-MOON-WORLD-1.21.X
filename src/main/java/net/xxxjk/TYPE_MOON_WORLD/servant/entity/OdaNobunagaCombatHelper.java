@@ -164,7 +164,6 @@ public final class OdaNobunagaCombatHelper {
       entity.setCurrentMp(entity.getCurrentMp() - skill.mp());
       ServantVoiceHelper.tryPlayOdaNobunagaSkill(entity);
       entity.getPersistentData().putLong(key, now + skill.cooldown());
-      entity.triggerNamedActionAnimation(slot == -1 || slot == 6 ? "hasebe_thrust" : slot == 7 ? "maou" : "summon_guns");
       entity.getPersistentData().putLong("OdaResetRecovery", now + (slot == 3 ? 40 : 12));
       return true;
    }
@@ -236,7 +235,8 @@ public final class OdaNobunagaCombatHelper {
       entity.getPersistentData().putLong(TAG_FLIGHT_UNTIL, now + THREE_THOUSAND_CHANT_TICKS + FLIGHT_HOLD_TICKS);
       entity.getPersistentData().putInt(TAG_THREE_THOUSAND_TARGET, target.getId());
       OdaMatchlockGunEntity.beginThreeThousandChant(entity);
-      entity.triggerNamedActionAnimation("strategy");
+      net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(
+         entity, net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.NP_THREE_THOUSAND_CHANT);
       ServantVoiceHelper.tryPlayOdaNobunagaNp(entity);
       level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 0.95F, 0.85F);
       VFXServerEffects.spawn(level, "servant_oda_three_thousand_charge", entity, 72.0);
@@ -298,6 +298,8 @@ public final class OdaNobunagaCombatHelper {
       entity.setCurrentMp(entity.getCurrentMp() - 35);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, 35);
       entity.getPersistentData().putLong(TAG_HAJUN_CHANT_END, now + HAJUN_CHANT_TICKS);
+      net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(
+         entity, net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.NP_HAJUN_CHANT);
       entity.getPersistentData().putLong(TAG_HAJUN_START_TICK, now);
       entity.getPersistentData().putInt(TAG_HAJUN_CHANT_TARGET, target.getId());
       entity.getPersistentData().putDouble(TAG_HAJUN_POWER_SCALE, 1);
@@ -363,6 +365,8 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static void activateHajun(OdaNobunagaEntity entity, ServerLevel source, LivingEntity primary, long now) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(
+         entity, net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.NP_HAJUN_RELEASE);
       ServerLevel hajunLevel = source.getServer().getLevel(ModDimensions.HAJUN_KEY);
       if (hajunLevel == null || ModDimensions.isHajunDimension(source.dimension().location())) {
          applyHajunState(entity, now, entity.blockPosition());
@@ -651,7 +655,8 @@ public final class OdaNobunagaCombatHelper {
       if (entity.getCurrentMp() < 3) return;
       entity.setCurrentMp(entity.getCurrentMp() - 3);
       entity.getPersistentData().putLong(TAG_LAST_RIFLE_SHOT, now);
-      entity.triggerNamedActionAnimation("bow_shot");
+      net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(
+         entity, net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.ATTACK_SHOT);
       Vec3 start = entity.getEyePosition();
       OdaAbilityService.shoot(entity, start, target.getBoundingBox().getCenter().subtract(start), 18, 3.3F, OdaDamageSource.Ability.WEAPON);
    }

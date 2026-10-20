@@ -85,6 +85,18 @@ public final class ServantCombatDefenseService {
 
    public static boolean broken(LivingEntity entity) { return entity.getPersistentData().getLong(TAG_GUARD_BROKEN) > 0; }
 
+   /** Shared undodgeable conditions for counted servant skill evasion. */
+   public static boolean trySkillAutoDodge(LivingEntity entity, DamageSource source, float amount) {
+      if(source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || source.is(FanaticDamageTypes.GUARANTEED_HITS)
+         || source.is(FanaticDamageTypes.BYPASSES_DEFENSES)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.poison(source)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(source)
+         || net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper.isOriginBulletDamage(source)
+         || NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source,amount)
+         || entity.getPersistentData().getLong(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.TAG_DIVINE_BREAK_UNTIL)>entity.level().getGameTime()) return false;
+      return trySkillAutoDodge(entity);
+   }
+
    public static boolean trySkillAutoDodge(LivingEntity entity) {
       initialize(entity);
       CompoundTag d = entity.getPersistentData();
@@ -235,6 +247,7 @@ public final class ServantCombatDefenseService {
    }
 
    public static boolean requestDodge(LivingEntity entity, float forward, float strafe) {
+      if (entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) return false;
       if (entity == null || entity.level().isClientSide() || !entity.isAlive() || !canAct(entity)) return false;
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
@@ -281,6 +294,7 @@ public final class ServantCombatDefenseService {
    }
 
    public static boolean setGuarding(LivingEntity entity, boolean active) {
+      if (active && entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) return false;
       if (entity == null || entity.level().isClientSide()) return false;
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
@@ -316,6 +330,7 @@ public final class ServantCombatDefenseService {
          || source.getEntity() == null && source.getDirectEntity() == null
          || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || source.is(DamageTypeTags.BYPASSES_ARMOR)
          || source.is(FanaticDamageTypes.GUARANTEED_HITS) || source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) return null;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTsubameGaeshi(source)) return null;
       initialize(defender);
       CompoundTag data = defender.getPersistentData();
       long now = defender.level().getGameTime();
@@ -327,7 +342,8 @@ public final class ServantCombatDefenseService {
       int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) + PLAYER_PARRY_GRACE_TICKS : 10;
       boolean perfect = active && now - data.getLong(TAG_GUARD_START) <= window
          && (!(defender instanceof ServantEntity) || !data.getBoolean(NPC_PARRY_USED));
-      double cost = DefenseRules.guardCost(ServantCombatFormulas.blockStaminaCost(p), ServantDefenseTraits.resolve(defender).guardBonus(), active, perfect);
+      double cost = DefenseRules.guardCost(ServantCombatFormulas.blockStaminaCost(p), ServantDefenseTraits.resolve(defender).guardBonus(),
+         active, perfect, net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.souwaBonus(source.getEntity() instanceof LivingEntity attacker ? attacker : null));
       setStamina(defender, Math.max(0, stamina(defender) - cost));
       data.putInt("TypeMoonDefenseGuardCount", data.getInt("TypeMoonDefenseGuardCount") + 1);
       if (perfect) {
@@ -336,6 +352,7 @@ public final class ServantCombatDefenseService {
          data.putBoolean(NPC_PARRY_USED, true);
          setResult(defender, RESULT_PARRY, now + 16);
       } else setResult(defender, RESULT_GUARD, now + 12);
+      net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.onSuccessfulGuard(defender, source.getEntity());
       if (source.getEntity() instanceof ServantEntity attacker) {
          ServantCombatExchangeService.recordContact(attacker, defender, now);
          ServantCombatSpectacleService.exchangeFx(attacker, defender, false, true);

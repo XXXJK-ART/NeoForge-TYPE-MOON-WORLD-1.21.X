@@ -1,0 +1,15 @@
+// Opt-in real client and dedicated-server checks; never included in release artifacts.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('heraclesResetSmoke') {
+            java.srcDir 'tools/heracles-reset-smoke/java'
+            resources.srcDir 'tools/heracles-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_heracles_smoke', smoke)
+        project.runs.server.modSources.add('typemoonworld_heracles_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/heracles-client-run')
+        project.runs.server.workingDirectory project.file('build/heracles-server-run')
+    }
+}

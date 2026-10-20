@@ -92,6 +92,7 @@ public final class PaleRiderEvents {
 
    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
    public static void onInfectionDamageEnd(LivingIncomingDamageEvent event) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(event.getEntity())) return;
       if (!net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) return;
       if (PaleRiderInfectionService.isPaleRiderCardPlayer(event.getEntity())
          || net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils.isImmunePlayerTarget(event.getEntity())) {
@@ -104,9 +105,10 @@ public final class PaleRiderEvents {
       event.setInvulnerabilityTicks(0);
    }
 
-   @SubscribeEvent(priority = EventPriority.LOWEST)
+   @SubscribeEvent(priority = EventPriority.LOW)
    public static void onInfectionFinalDamage(LivingDamageEvent.Pre event) {
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(event.getSource())
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(event.getEntity())) {
          event.setNewDamage(event.getOriginalDamage());
       }
       if (PaleRiderDamageTypes.isPaleRiderDamage(event.getSource())) {

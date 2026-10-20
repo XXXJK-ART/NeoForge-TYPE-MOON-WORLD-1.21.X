@@ -73,7 +73,7 @@ public final class ChurchDeadApostleEvents {
       }
    }
 
-   @SubscribeEvent(priority = EventPriority.LOWEST)
+   @SubscribeEvent(priority = EventPriority.LOW)
    public static void onFinalDamage(LivingDamageEvent.Pre event) {
       LivingEntity target = event.getEntity();
       float damage = event.getNewDamage();

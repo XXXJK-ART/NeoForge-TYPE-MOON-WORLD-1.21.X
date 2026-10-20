@@ -520,7 +520,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          && !(target instanceof EmiyaArcherEntity)
          && !(target instanceof EnkiduEntity)
          && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
-      if (this.tryConsumeGodHandLife(target, 250.0F, deathThorn)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,250,"cu_chulainn:gae_bolg",deathThorn)) {
          this.spawnSingleTargetImpact(target);
          this.discard();
          return;
@@ -718,37 +718,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {
-      CompoundTag targetData = target.getPersistentData();
-      if (targetData.getBoolean("CausalSevered") || !targetData.getBoolean("GodHandActive")) {
-         return false;
-      }
-
-      int livesLeft = targetData.getInt("GodHandLives");
-      if (livesLeft <= 0) {
-         return false;
-      }
-
-      boolean lethalByDamage = target.getHealth() <= incomingDamage;
-      if (!lethalByDamage && !deathThorn) {
-         return false;
-      }
-
-      target.setHealth(target.getMaxHealth());
-      targetData.putInt("GodHandLives", livesLeft - 1);
-      if (this.level() instanceof ServerLevel sl) {
-         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-            target.getX(), target.getY() + 1.0, target.getZ(),
-            30, 0.6, 0.6, 0.6, 0.15);
-         sl.sendParticles(ParticleTypes.POOF,
-            target.getX(), target.getY() + 0.5, target.getZ(),
-            20, 0.5, 0.5, 0.5, 0.1);
-         sl.playSound(null, target.blockPosition(),
-            SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
-      }
-      return true;
+      return deathThorn && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg");
    }
 
    private void applyDeathThorn(LivingEntity target, DamageSource source) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg")) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

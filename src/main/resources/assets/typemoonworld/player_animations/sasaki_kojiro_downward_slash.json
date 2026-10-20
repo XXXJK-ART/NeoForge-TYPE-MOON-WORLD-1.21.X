@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_downward_slash",
+  "version": 3,
+  "description": "Falling Swallow downward cut adapted from the supplied first strike.",
+  "emote": {"beginTick":0,"endTick":12,"stopTick":12,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":2,"body":{"pitch":-8,"yaw":18},"rightArm":{"pitch":-112,"yaw":10,"roll":-30},"leftArm":{"pitch":-42,"yaw":-18}},
+    {"tick":5,"body":{"pitch":15,"yaw":-18},"rightArm":{"pitch":36,"yaw":-16,"roll":-72},"leftArm":{"pitch":12,"yaw":10}},
+    {"tick":12,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

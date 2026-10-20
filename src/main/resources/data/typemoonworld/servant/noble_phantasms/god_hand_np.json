@@ -1,37 +1,40 @@
 {
   "id": "god_hand_np",
   "display_name": "God Hand",
-  "display_name_zh": "射杀百头",
+  "display_name_zh": "十二试炼",
   "type": "anti_unit",
-  "rank": "A",
-  "mp_cost": 150,
-  "over_charge_supported": true,
-  "over_charge_levels": 2,
-  "base_damage_multiplier": 15.0,
-  "range": 8.0,
+  "rank": "B",
+  "mp_cost": 0,
+  "over_charge_supported": false,
+  "over_charge_levels": 1,
+  "base_damage_multiplier": 0,
+  "range": 0,
   "effects": [
-    {
-      "effect_type": "revive",
-      "params": {
-        "count_min": 3,
-        "count_max": 11,
-        "heal_ratio": 1.0
-      }
-    },
     {
       "effect_type": "damage_immunity_threshold",
       "params": {
-        "threshold": 15.0
+        "threshold": 15
+      }
+    },
+    {
+      "effect_type": "revive",
+      "params": {
+        "count_min": 11,
+        "count_max": 11,
+        "heal_ratio": 1
       }
     },
     {
       "effect_type": "adaptive_defense",
       "params": {
-        "reduction_per_trigger": 0.1,
-        "max_reduction": 0.9
+        "normal_multiplier": 0.8,
+        "adapted_multiplier": 0.2,
+        "adaptation_ticks": 100
       }
     }
   ],
   "special_attack_conditions": [],
-  "class_restrictions": ["berserker"]
+  "class_restrictions": [
+    "berserker"
+  ]
 }

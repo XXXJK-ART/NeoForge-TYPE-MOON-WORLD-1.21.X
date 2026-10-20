@@ -63,7 +63,13 @@ public final class OdaCombatEvents {
          if (divinity(event.getEntity()) > 0) OdaNobunagaCombatHelper.applyDivineDefenseBreak(caster, event.getEntity());
          if (caster.getPersistentData().getLong(OdaAbilityService.MANIFEST_UNTIL) > caster.level().getGameTime()) multiplier *= 1.3;
          if (OdaRules.armyOrCastle(NoblePhantasmDamageClassifier.typeOf(event.getSource()))) multiplier *= 1 + OdaRules.strategy("B");
-         event.setAmount((float)(event.getAmount() * multiplier));
+         float base = event.getAmount();
+         float total = (float)(base * multiplier);
+         double special = OdaRules.special(divinity(event.getEntity()), era(event.getEntity()), np && riding(event.getEntity()));
+         float divine = (float)(base * divinity(event.getEntity()) * multiplier / special);
+         event.setAmount(total);
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.DamageContexts.put(event,
+            new net.xxxjk.TYPE_MOON_WORLD.servant.combat.DamageParts(total - divine, divine));
       }
       if (isOda(event.getEntity()) && OdaRules.armyOrCastle(NoblePhantasmDamageClassifier.typeOf(event.getSource()))) {
          event.setAmount((float)(event.getAmount() * (1 - OdaRules.strategy("B"))));
@@ -78,7 +84,7 @@ public final class OdaCombatEvents {
          if (remaining <= 0) event.setCanceled(true);
       }
    }
-   @SubscribeEvent(priority = EventPriority.LOWEST)
+   @SubscribeEvent(priority = EventPriority.LOW)
    public static void finalEra(LivingDamageEvent.Pre event) {
       if (event.getSource().getEntity() instanceof LivingEntity caster && isOda(caster)) {
          event.setNewDamage((float)(event.getNewDamage() * OdaRules.eraFinal(era(event.getEntity()))));

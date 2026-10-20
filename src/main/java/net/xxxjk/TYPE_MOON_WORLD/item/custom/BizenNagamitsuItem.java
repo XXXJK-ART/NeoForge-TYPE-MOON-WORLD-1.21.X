@@ -29,7 +29,7 @@ import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class BizenNagamitsuItem extends SwordItem implements GeoItem, NoblePhantasmItem {
-   private static final int TSUBAME_COOLDOWN = 700;
+   private static final int TSUBAME_COOLDOWN = 600;
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
    public BizenNagamitsuItem(Properties properties) {

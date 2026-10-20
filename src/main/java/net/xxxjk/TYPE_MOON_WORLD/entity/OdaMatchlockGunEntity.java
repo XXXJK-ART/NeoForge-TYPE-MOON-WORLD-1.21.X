@@ -646,7 +646,8 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       Vec3 start = this.position();
       Vec3 shotDirection = fixedDirection != null ? fixedDirection : target == null ? owner.getLookAngle() : target.position().add(0.0, target.getBbHeight() * .55, 0).subtract(start);
       setFacing(shotDirection);
-      OdaMatchlockBulletEntity bullet = new OdaMatchlockBulletEntity(level, owner, this, 10.0F)
+      float damage = ability() == Ability.THREE_THOUSAND ? OdaRules.THREE_THOUSAND_SHOT_DAMAGE : 10.0F;
+      OdaMatchlockBulletEntity bullet = new OdaMatchlockBulletEntity(level, owner, this, damage)
          .source(ability()).tracking(ability() == Ability.PURSUIT ? target : null).pursuit(pursuitId, pursuitIndex);
       shotReported = true;
       bullet.setPos(start.x, start.y, start.z);

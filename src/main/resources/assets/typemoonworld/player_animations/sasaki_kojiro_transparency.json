@@ -1,0 +1,10 @@
+{
+  "name": "sasaki_kojiro_transparency",
+  "version": 3,
+  "description": "Short turned shoulder pose for Transparency.",
+  "emote": {"beginTick":0,"endTick":18,"stopTick":18,"moves":[
+    {"tick":0,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"roll":0},"leftArm":{"pitch":0}},
+    {"tick":5,"body":{"pitch":-12,"yaw":-24},"rightArm":{"pitch":-46,"yaw":-18,"roll":-28},"leftArm":{"pitch":-28,"yaw":16}},
+    {"tick":18,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

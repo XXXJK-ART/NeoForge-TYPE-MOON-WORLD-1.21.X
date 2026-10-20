@@ -1,0 +1,11 @@
+{
+  "name": "sasaki_kojiro_upward_slash",
+  "version": 3,
+  "description": "Returning Swallow rising cut adapted from the supplied uppercut keys.",
+  "emote": {"beginTick":0,"endTick":12,"stopTick":12,"moves":[
+    {"tick":0,"body":{"pitch":8,"yaw":-8},"rightArm":{"pitch":28,"roll":18},"leftArm":{"pitch":-12}},
+    {"tick":3,"body":{"pitch":-4,"yaw":-14},"rightArm":{"pitch":-86,"yaw":-18,"roll":-44},"leftArm":{"pitch":-44}},
+    {"tick":6,"body":{"pitch":-14,"yaw":16},"rightArm":{"pitch":-142,"yaw":18,"roll":52},"leftArm":{"pitch":-24,"yaw":10}},
+    {"tick":12,"body":{"pitch":0,"yaw":0},"rightArm":{"pitch":0,"yaw":0,"roll":0},"leftArm":{"pitch":0,"yaw":0}}
+  ]}
+}

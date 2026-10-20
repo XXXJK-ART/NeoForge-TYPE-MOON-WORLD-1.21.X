@@ -50,17 +50,18 @@ class OdaRulesTest {
       assertTrue(OdaRules.followMode(11));
       assertFalse(OdaRules.followMode(12));
    }
-   @Test void threeThousandUsesThreeNinetyNineGunWavesAndACompactSpiral() {
-      assertEquals(99, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE);
-      assertEquals(297, OdaRules.THREE_THOUSAND_TOTAL_GUNS);
+   @Test void threeThousandUsesThirtyThreeGunWavesAndACompactSpiral() {
+      assertEquals(33, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE);
+      assertEquals(99, OdaRules.THREE_THOUSAND_TOTAL_GUNS);
       assertEquals(3, OdaRules.THREE_THOUSAND_SHOTS_PER_GUN);
+      assertEquals(10.0F, OdaRules.THREE_THOUSAND_SHOT_DAMAGE);
       assertEquals(30, OdaRules.THREE_THOUSAND_SHOT_INTERVAL);
       assertEquals(600, OdaRules.THREE_THOUSAND_MAX_LIFE);
-      assertEquals(891, OdaRules.THREE_THOUSAND_TOTAL_SHOTS);
-      assertEquals(0, OdaRules.threeThousandWave(98));
-      assertEquals(1, OdaRules.threeThousandWave(99));
-      assertEquals(2, OdaRules.threeThousandWave(296));
-      assertEquals(98, OdaRules.threeThousandGunIndexInWave(296));
+      assertEquals(297, OdaRules.THREE_THOUSAND_TOTAL_SHOTS);
+      assertEquals(0, OdaRules.threeThousandWave(32));
+      assertEquals(1, OdaRules.threeThousandWave(33));
+      assertEquals(2, OdaRules.threeThousandWave(98));
+      assertEquals(32, OdaRules.threeThousandGunIndexInWave(98));
       for (int wave = 0; wave < OdaRules.THREE_THOUSAND_WAVE_COUNT; wave++) {
          for (int tier = 0; tier < OdaRules.THREE_THOUSAND_TIER_COUNT; tier++) {
             int firstGunIndex = wave * OdaRules.THREE_THOUSAND_GUNS_PER_WAVE
@@ -81,22 +82,25 @@ class OdaRulesTest {
          }
       }
       assertEquals(1.5, OdaRules.threeThousandRadius(0, 0), 1e-8);
-      assertEquals(4.5, OdaRules.threeThousandRadius(8, 10, 2), 1e-8);
+      assertEquals(4.5, OdaRules.threeThousandRadius(2, 10, 2), 1e-8);
       assertEquals(-3.675, OdaRules.threeThousandHeight(0, 0, 0), 1e-8);
-      assertEquals(3.675, OdaRules.threeThousandHeight(8, 10, 2), 1e-8);
+      assertEquals(3.675, OdaRules.threeThousandHeight(2, 10, 2), 1e-8);
       assertEquals(OdaRules.threeThousandAngle(1, 0, 0), OdaRules.threeThousandAngle(1, 0, 1));
    }
    @Test void everyGunHasANeighborBetweenPointEightAndOneBlockAway() {
-      for (int wave = 0; wave < 3; wave++) {
-         double[][] positions = new double[99][3];
-         for (int index = 0; index < 99; index++) {
-            int tier = index / 11, slot = index % 11;
+      for (int wave = 0; wave < OdaRules.THREE_THOUSAND_WAVE_COUNT; wave++) {
+         double[][] positions = new double[OdaRules.THREE_THOUSAND_GUNS_PER_WAVE][3];
+         for (int index = 0; index < positions.length; index++) {
+            int tier = index / OdaRules.THREE_THOUSAND_GUNS_PER_TIER;
+            int slot = index % OdaRules.THREE_THOUSAND_GUNS_PER_TIER;
             double angle = OdaRules.threeThousandAngle(tier, slot, wave);
             double radius = OdaRules.threeThousandRadius(tier, slot, wave);
             double x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
             double y = OdaRules.threeThousandHeight(tier, slot, wave);
             assertTrue(Math.abs(y) < 5, "The cone must surround its center within ten blocks of height");
-            if (index > 0) assertTrue(radius > OdaRules.threeThousandRadius((index - 1) / 11, (index - 1) % 11, wave),
+            if (index > 0) assertTrue(radius > OdaRules.threeThousandRadius(
+               (index - 1) / OdaRules.THREE_THOUSAND_GUNS_PER_TIER,
+               (index - 1) % OdaRules.THREE_THOUSAND_GUNS_PER_TIER, wave),
                "The tornado must widen continuously from bottom to top");
             assertEquals(radius, OdaRules.threeThousandRadius(tier, slot, 0), 1e-8, "Replacement waves must reuse the same positions");
             positions[index] = new double[]{x, y, z};

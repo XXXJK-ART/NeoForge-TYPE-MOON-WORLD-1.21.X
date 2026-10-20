@@ -1,12 +1,12 @@
 {
   "rank": "B+",
   "id": "spiritualization_b_plus",
-  "display_name": "Spiritualization B+",
-  "display_name_zh": "灵体化 B+",
+  "display_name": "Transparency B+",
+  "display_name_zh": "透化 B+",
   "type": "active",
-  "mp_cost": 5,
-  "cooldown_ticks": 0,
-  "duration_ticks": 60,
+  "mp_cost": 20,
+  "cooldown_ticks": 600,
+  "duration_ticks": 80,
   "effects": [
     {
       "effect_type": "cleanse",
@@ -14,7 +14,7 @@
     },
     {
       "effect_type": "damage_resistance",
-      "params": { "duration_ticks": 60, "amplifier": 3.0 }
+      "params": { "duration_ticks": 80, "amplifier": 1.0 }
     }
   ]
 }

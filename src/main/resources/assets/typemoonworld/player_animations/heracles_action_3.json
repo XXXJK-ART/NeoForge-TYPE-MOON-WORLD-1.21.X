@@ -1,0 +1,56 @@
+{
+  "name": "heracles_action_3",
+  "version": 3,
+  "description": "Rising Uppercut",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 17,
+    "stopTick": 17,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 5,
+        "body": {
+          "yaw": -30
+        },
+        "rightArm": {
+          "pitch": 45
+        }
+      },
+      {
+        "tick": 7,
+        "rightArm": {
+          "pitch": -155
+        },
+        "body": {
+          "yaw": 30
+        }
+      },
+      {
+        "tick": 17,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}
