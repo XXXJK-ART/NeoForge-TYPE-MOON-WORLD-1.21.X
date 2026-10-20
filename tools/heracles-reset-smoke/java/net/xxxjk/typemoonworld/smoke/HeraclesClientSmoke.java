@@ -61,7 +61,26 @@ public final class HeraclesClientSmoke {
             require(player.isAlive()&&GodHandService.read(player).lives()==10,"real player revival failed");verified=true;
          });
          if(ticks==90)capture(mc,"heracles-hud-revival");
-         if(ticks>=110) {require(verified,"server checks incomplete");done=true;TYPE_MOON_WORLD.LOGGER.info("HERACLES_CLIENT_SMOKE_PASS animations=9 flurry=66 revival=in_place hud=rendered");mc.stop();}
+         if(ticks==100) {
+            var effect=net.xxxjk.TYPE_MOON_WORLD.vfx.data.EffectLibrary.INSTANCE.get("servant_heracles_slam");
+            require(effect!=null,"slam VFX did not load");
+            require(effect.emitters().stream().allMatch(e->e.blendMode()==net.xxxjk.TYPE_MOON_WORLD.vfx.VFXBlendMode.TRANSLUCENT&&e.material().bloom()==0),"slam still has luminous material");
+            mc.player.setXRot(22);
+            server(mc,()->{
+               var player=mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+               player.teleportTo(.5,101,.5);player.setYRot(0);player.setXRot(22);
+               require(HeraclesAbilityService.start(player,1),"real player slam did not start");
+            });
+         }
+         if(ticks==108)capture(mc,"heracles-slam-impact");
+         if(ticks==115)capture(mc,"heracles-slam-dust");
+         if(ticks==130)server(mc,()->{
+            var level=mc.getSingleplayerServer().overworld();
+            require(level.getBlockState(new BlockPos(0,100,0)).isAir(),"slam did not break surface");
+            require(level.getBlockState(new BlockPos(0,99,0)).isAir(),"slam did not break second central layer");
+            require(level.getBlockState(new BlockPos(0,98,0)).is(Blocks.STONE),"slam dug beyond two layers");
+         });
+         if(ticks>=150) {require(verified,"server checks incomplete");done=true;TYPE_MOON_WORLD.LOGGER.info("HERACLES_CLIENT_SMOKE_PASS animations=9 flurry=66 revival=in_place slam=smoke_only crater=two_layers hud=rendered");mc.stop();}
       } catch(Throwable error) {done=true;TYPE_MOON_WORLD.LOGGER.error("HERACLES_CLIENT_SMOKE_FAIL ticks="+ticks,error);mc.stop();}
    }
    private void setup(Minecraft mc) {
@@ -73,7 +92,7 @@ public final class HeraclesClientSmoke {
       var previous=new java.util.ArrayList<net.minecraft.world.entity.Entity>();
       for(var entity:level.getAllEntities())if(entity instanceof net.minecraft.world.entity.Mob)previous.add(entity);
       previous.forEach(net.minecraft.world.entity.Entity::discard);
-      for(int x=-10;x<=10;x++)for(int z=-10;z<=10;z++) {level.setBlock(new BlockPos(x,100,z),Blocks.STONE.defaultBlockState(),2);for(int y=101;y<110;y++)level.setBlock(new BlockPos(x,y,z),Blocks.AIR.defaultBlockState(),2);}
+      for(int x=-10;x<=10;x++)for(int z=-10;z<=10;z++) {for(int y=97;y<=100;y++)level.setBlock(new BlockPos(x,y,z),Blocks.STONE.defaultBlockState(),2);for(int y=101;y<110;y++)level.setBlock(new BlockPos(x,y,z),Blocks.AIR.defaultBlockState(),2);}
       player.teleportTo(.5,101,.5);player.setYRot(0);player.setXRot(0);require(ServantCardTransformManager.transform(player,"heracles"),"transform failed");
       player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.setItemSlot(EquipmentSlot.OFFHAND,ItemStack.EMPTY);
       require(player.getMaxHealth()==680&&player.getAttributeValue(Attributes.ATTACK_DAMAGE)==72,"real player common attributes");

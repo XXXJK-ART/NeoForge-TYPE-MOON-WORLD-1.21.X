@@ -6,15 +6,17 @@
   "type": "active",
   "mp_cost": 20,
   "cooldown_ticks": 600,
-  "duration_ticks": 80,
+  "duration_ticks": 0,
+  "description": "Cleanses harmful effects and teleports behind a nearby enemy within 8 blocks. Grants no invisibility or resistance.",
+  "description_zh": "清除负面效果，并瞬移到8格内附近敌人身后；不附加隐身或抗性。",
   "effects": [
     {
       "effect_type": "cleanse",
       "params": {}
     },
     {
-      "effect_type": "damage_resistance",
-      "params": { "duration_ticks": 80, "amplifier": 1.0 }
+      "effect_type": "teleport_behind",
+      "params": { "range": 8.0 }
     }
   ]
 }

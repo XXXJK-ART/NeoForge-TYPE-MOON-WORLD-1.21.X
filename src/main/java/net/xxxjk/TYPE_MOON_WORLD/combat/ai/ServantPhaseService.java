@@ -17,6 +17,16 @@ public final class ServantPhaseService {
 
    public static Update tick(ServantEntity entity, LivingEntity target, ServantActionProfile profile, long now) {
       var data = entity.getPersistentData();
+      // Berserkers have one continuous combat disposition. DECISIVE is only
+      // the compatibility value for consumers that require a phase enum.
+      if (entity.getDefinition() != null
+         && entity.getDefinition().classType() == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantClassType.BERSERKER) {
+         data.putString(TAG_PHASE, ServantCombatPhase.DECISIVE.name());
+         data.remove(TAG_PHASE_CHANGED);
+         data.remove(TAG_COMBAT_STARTED);
+         data.remove(TAG_LAST_COMBAT);
+         return new Update(ServantCombatPhase.DECISIVE, false);
+      }
       ServantCombatPhase current = ServantCombatPhase.byName(data.getString(TAG_PHASE));
       ServantCombatPhase desired = ServantCombatPhase.PROBING;
       boolean inCombat = target != null && target.isAlive() && target.level() == entity.level();

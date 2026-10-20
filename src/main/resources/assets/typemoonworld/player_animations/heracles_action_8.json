@@ -4,8 +4,8 @@
   "description": "Leaping Pounce",
   "emote": {
     "beginTick": 0,
-    "endTick": 48,
-    "stopTick": 48,
+    "endTick": 25,
+    "stopTick": 25,
     "moves": [
       {
         "tick": 0,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "tick": 9,
+        "tick": 3,
         "body": {
           "pitch": 40
         },
@@ -38,7 +38,7 @@
         }
       },
       {
-        "tick": 11,
+        "tick": 4,
         "body": {
           "pitch": 40
         },
@@ -50,7 +50,7 @@
         }
       },
       {
-        "tick": 48,
+        "tick": 25,
         "body": {
           "pitch": 0,
           "yaw": 0,

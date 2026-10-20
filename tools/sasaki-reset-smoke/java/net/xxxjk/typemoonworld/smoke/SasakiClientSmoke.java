@@ -83,6 +83,13 @@ public final class SasakiClientSmoke {
             server(mc, () -> setup(mc));
          }
          if (ticks == 18) {
+            var vars = mc.player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            require(ServantCardTransformManager.getSkillCooldown(vars, 9) > 500,
+               "Tsubame skill cooldown did not reach the client");
+            var hudCooldown = net.xxxjk.TYPE_MOON_WORLD.client.screens.ServantCardHud.class.getDeclaredMethod(
+               "effectiveNpCooldown", Minecraft.class, TypeMoonWorldModVariables.PlayerVariables.class);
+            hudCooldown.setAccessible(true);
+            require((int)hudCooldown.invoke(null, mc, vars) > 500, "HUD failed to read Tsubame's slot cooldown");
             require(net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.afterimageCount(mc.player.getUUID()) == 2,
                "Player Tsubame did not render two afterimages");
             require(net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.afterimageCount(npcId) == 2,
@@ -93,6 +100,7 @@ public final class SasakiClientSmoke {
             require(net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.afterimageCount(mc.player.getUUID()) == 0
                && net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.afterimageCount(npcId) == 0,
                "Tsubame afterimages did not expire");
+            server(mc, () -> verifyTransparency(mc));
          }
          if (ticks >= 40 && (ticks - 40) % 25 == 0) {
             int index = (ticks - 40) / 25;
@@ -135,7 +143,7 @@ public final class SasakiClientSmoke {
          if (ticks >= 375) {
             require(verified, "Server checks incomplete");
             done = true;
-            TYPE_MOON_WORLD.LOGGER.info("SASAKI_CLIENT_SMOKE_PASS animations=11 tsubame=450 mana=20 npc=humanoid afterimages=2_per_caster expires=true vfx=rendered");
+            TYPE_MOON_WORLD.LOGGER.info("SASAKI_CLIENT_SMOKE_PASS animations=11 tsubame=450 mana=20 npc=humanoid afterimages=2_per_caster expires=true vfx=rendered cooldown_hud=true transparency=cleanse_teleport");
             mc.stop();
          }
       } catch (Throwable error) {
@@ -193,6 +201,16 @@ public final class SasakiClientSmoke {
       mc.getSingleplayerServer().execute(() -> {
          try { work.run(); } catch (Throwable error) { failure = error.toString(); }
       });
+   }
+
+   private void verifyTransparency(Minecraft mc) {
+      var player = mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+      player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 200));
+      require(ServantCardTransformManager.triggerAction(player, 5), "Real player transparency failed");
+      require(!player.hasEffect(net.minecraft.world.effect.MobEffects.WEAKNESS)
+         && !player.hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)
+         && !player.hasEffect(net.minecraft.world.effect.MobEffects.DAMAGE_RESISTANCE), "Transparency added buffs or failed to cleanse");
+      require(player.getZ() < 2.5 && player.getZ() > 0.5, "Transparency did not teleport behind the enemy");
    }
 
    private static void require(boolean value, String message) { if (!value) throw new AssertionError(message); }

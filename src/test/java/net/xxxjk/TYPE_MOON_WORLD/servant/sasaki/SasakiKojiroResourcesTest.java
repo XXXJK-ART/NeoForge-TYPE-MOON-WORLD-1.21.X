@@ -51,7 +51,10 @@ class SasakiKojiroResourcesTest {
       assertEquals("passive", json("data/typemoonworld/servant/skills/souwa_expertise_b.json").get("type").getAsString());
       assertEquals("active", json("data/typemoonworld/servant/skills/stealth_d.json").get("type").getAsString());
       assertEquals(18, json("data/typemoonworld/servant/skills/stealth_d.json").get("mp_cost").getAsInt());
-      assertEquals(80, json("data/typemoonworld/servant/skills/spiritualization_b_plus.json").get("duration_ticks").getAsInt());
+      JsonObject transparency = json("data/typemoonworld/servant/skills/spiritualization_b_plus.json");
+      assertEquals(0, transparency.get("duration_ticks").getAsInt());
+      assertEquals("teleport_behind", transparency.getAsJsonArray("effects").get(1).getAsJsonObject().get("effect_type").getAsString());
+      assertEquals(8.0, transparency.getAsJsonArray("effects").get(1).getAsJsonObject().getAsJsonObject("params").get("range").getAsDouble());
 
       for (SasakiKojiroAction action : SasakiKojiroAction.values()) {
          JsonObject animation = json("assets/typemoonworld/player_animations/" + action.playerAnimationPath() + ".json");

@@ -60,7 +60,7 @@ public final class ServantSprintCollisionHelper {
       if (player.isSprinting()) {
          data.putLong(PLAYER_LAST_SPRINT_TAG, now);
       }
-      boolean recentlySprinting = now - data.getLong(PLAYER_LAST_SPRINT_TAG) <= 20L;
+      boolean recentlySprinting = data.contains(PLAYER_LAST_SPRINT_TAG) && now - data.getLong(PLAYER_LAST_SPRINT_TAG) <= 20L;
       if ((!player.isSprinting() && !recentlySprinting) || !canUsePlayerSprintCollision(player, recentlySprinting)) {
          return false;
       }
@@ -223,8 +223,11 @@ public final class ServantSprintCollisionHelper {
       if (dir.lengthSqr() < 1.0E-4) {
          return 0;
       }
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner))
-         return TerrainImpactService.impactWallTunnel(level,owner,owner.position(),dir,TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL),3,3,(int)Math.ceil(owner.getBbHeight()))?1:0;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner)) {
+         if(!hasHeraclesForwardObstacle(level,owner,dir))return 0;
+         var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.MEDIUM,2.4,Math.min(6,hardnessCap),48,80);
+         return TerrainImpactService.impactWallTunnel(level,owner,owner.position(),dir,profile,3,3,(int)Math.ceil(owner.getBbHeight()))?1:0;
+      }
       Vec3 center = owner.position().add(dir.normalize().scale(1.65)).add(0.0, 0.9, 0.0);
       TerrainImpactProfile profile = new TerrainImpactProfile(TerrainImpactProfile.Tier.SMALL, 2.0,
          Math.min(TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL).maximumHardness(), hardnessCap),
@@ -233,10 +236,23 @@ public final class ServantSprintCollisionHelper {
    }
 
    private static void spawnCollisionFx(ServerLevel level, LivingEntity owner, Vec3 dir, boolean fiery, boolean blockHit, SoundSource source) {
+      if(net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner)&&blockHit)return;
       Vec3 fx = owner.position().add(dir.scale(1.15)).add(0.0, owner.getBbHeight() * 0.42, 0.0);
       level.sendParticles(ParticleTypes.CLOUD, fx.x, fx.y, fx.z, blockHit ? 12 : 6, 0.42, 0.25, 0.42, 0.06);
       level.sendParticles(fiery ? ParticleTypes.FLAME : ParticleTypes.CRIT, fx.x, fx.y + 0.1, fx.z, fiery ? 8 : 6, 0.28, 0.18, 0.28, 0.07);
       level.playSound(null, owner.blockPosition(), blockHit ? SoundEvents.ZOMBIE_ATTACK_IRON_DOOR : SoundEvents.PLAYER_ATTACK_KNOCKBACK, source, blockHit ? 0.68F : 0.55F, fiery ? 0.85F : 0.7F);
+   }
+
+   /** Scan the body's front above step height, excluding ground, slabs and stair treads. */
+   public static boolean hasHeraclesForwardObstacle(ServerLevel level,LivingEntity owner,Vec3 direction) {
+      Vec3 forward=direction.multiply(1,0,1);
+      if(forward.lengthSqr()<1.0E-4)return false;
+      var body=owner.getBoundingBox();
+      double bottom=owner.getY()+.65;
+      if(bottom>=body.maxY-.05)return false;
+      AABB probe=new AABB(body.minX+.05,bottom,body.minZ+.05,body.maxX-.05,body.maxY-.05,body.maxZ-.05)
+         .expandTowards(forward.normalize().scale(.7));
+      return level.getBlockCollisions(owner,probe).iterator().hasNext();
    }
 
    private static boolean isUnderSun(ServerLevel level, BlockPos pos) {

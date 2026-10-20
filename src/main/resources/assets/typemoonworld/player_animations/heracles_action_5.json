@@ -4,8 +4,8 @@
   "description": "Pursuit Back Throw",
   "emote": {
     "beginTick": 0,
-    "endTick": 30,
-    "stopTick": 30,
+    "endTick": 14,
+    "stopTick": 14,
     "moves": [
       {
         "tick": 0,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "tick": 7,
+        "tick": 3,
         "body": {
           "pitch": 10
         },
@@ -38,7 +38,7 @@
         }
       },
       {
-        "tick": 9,
+        "tick": 4,
         "body": {
           "pitch": 10
         },
@@ -50,7 +50,7 @@
         }
       },
       {
-        "tick": 30,
+        "tick": 14,
         "body": {
           "pitch": 0,
           "yaw": 0,

@@ -19,11 +19,15 @@ public final class CombatTerrainProtection {
    private static final Map<Level, Map<Long, Integer>> FLOORS = new WeakHashMap<>();
    private CombatTerrainProtection() { }
    public static boolean canRemove(Level level, BlockPos pos) {
+      return canRemoveWithinSurfaceDepth(level,pos,0);
+   }
+   /** Explicit shallow-impact exception; the cached original surface prevents repeated digging. */
+   public static boolean canRemoveWithinSurfaceDepth(Level level, BlockPos pos, int depth) {
       if (level == null || !level.hasChunkAt(pos)) return false;
       Map<Long, Integer> floors = FLOORS.computeIfAbsent(level, unused -> new HashMap<>());
       long column = BlockPos.asLong(pos.getX(), 0, pos.getZ());
       int floor = floors.computeIfAbsent(column, unused -> findFloor(level, pos));
-      return pos.getY() > floor;
+      return pos.getY() > floor - Math.max(0,Math.min(2,depth));
    }
    private static int findFloor(Level level, BlockPos pos) {
       int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;

@@ -516,8 +516,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         boolean heraclesHandled = this instanceof HeraclesEntity && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
-         boolean combatHandled = heraclesHandled || ServantCombatSystem.tickBeforeAi(this);
+         boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         if (!combatHandled && this instanceof HeraclesEntity) {
+            combatHandled = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
+         }
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
          boolean pacingHandled = !(this instanceof HeraclesEntity) && !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
          boolean tacticalHandled = pacingHandled || !(this instanceof HeraclesEntity) && !combatHandled && ServantTacticalController.tick(this);

@@ -6,7 +6,7 @@
     "likes_high_places": false
   },
   "combat": {
-    "preferred_attack_distance": 5,
+    "preferred_attack_distance": 2.4,
     "retreat_health_ratio": 0,
     "melee_preference": 1,
     "berserk_health_ratio": 1,
@@ -15,13 +15,13 @@
   "tactical": {
     "style": "berserker",
     "minimum_range": 0,
-    "preferred_range": 2.5,
+    "preferred_range": 2,
     "maximum_range": 16,
     "reposition_distance": 18,
     "pursuit_aggression": 1,
     "intercept_bias": 0.8,
     "vertical_mobility": 0.25,
-    "recovery_tendency": 0.15,
+    "recovery_tendency": 0,
     "collateral_caution": 0.25,
     "maximum_terrain_impact": "heavy"
   },

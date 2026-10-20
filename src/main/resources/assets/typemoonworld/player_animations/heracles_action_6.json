@@ -4,8 +4,8 @@
   "description": "Disrupting Stomp",
   "emote": {
     "beginTick": 0,
-    "endTick": 15,
-    "stopTick": 15,
+    "endTick": 6,
+    "stopTick": 6,
     "moves": [
       {
         "tick": 0,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "tick": 3,
+        "tick": 1,
         "rightLeg": {
           "pitch": -65
         },
@@ -38,7 +38,7 @@
         }
       },
       {
-        "tick": 5,
+        "tick": 2,
         "rightLeg": {
           "pitch": -65
         },
@@ -50,7 +50,7 @@
         }
       },
       {
-        "tick": 15,
+        "tick": 6,
         "rightLeg": {
           "pitch": 0,
           "yaw": 0,

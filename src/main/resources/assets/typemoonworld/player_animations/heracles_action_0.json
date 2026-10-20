@@ -4,8 +4,8 @@
   "description": "Great Leap: Crash",
   "emote": {
     "beginTick": 0,
-    "endTick": 15,
-    "stopTick": 15,
+    "endTick": 6,
+    "stopTick": 6,
     "moves": [
       {
         "tick": 0,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "tick": 3,
+        "tick": 1,
         "body": {
           "pitch": -20
         },
@@ -38,19 +38,7 @@
         }
       },
       {
-        "tick": 5,
-        "body": {
-          "pitch": -20
-        },
-        "rightArm": {
-          "pitch": -130
-        },
-        "leftArm": {
-          "pitch": -130
-        }
-      },
-      {
-        "tick": 15,
+        "tick": 6,
         "body": {
           "pitch": 0,
           "yaw": 0,

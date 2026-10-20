@@ -4,8 +4,8 @@
   "description": "Shoulder Charge",
   "emote": {
     "beginTick": 0,
-    "endTick": 22,
-    "stopTick": 22,
+    "endTick": 13,
+    "stopTick": 13,
     "moves": [
       {
         "tick": 0,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "tick": 3,
+        "tick": 1,
         "body": {
           "pitch": 35,
           "yaw": -30
@@ -40,7 +40,7 @@
         }
       },
       {
-        "tick": 5,
+        "tick": 2,
         "body": {
           "pitch": 35,
           "yaw": -30
@@ -54,7 +54,7 @@
         }
       },
       {
-        "tick": 22,
+        "tick": 13,
         "body": {
           "pitch": 0,
           "yaw": 0,

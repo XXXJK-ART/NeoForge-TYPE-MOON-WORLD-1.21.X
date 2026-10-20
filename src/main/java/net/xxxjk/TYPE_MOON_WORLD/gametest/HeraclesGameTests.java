@@ -254,4 +254,71 @@ public final class HeraclesGameTests {
       h.assertTrue(HeraclesAbilityService.start(player,7),"player flurry failed");ticks(player,14);close(h,1000-t.getHealth(),66,"player and NPC fixed damage diverged");
       HeraclesAbilityService.cancel(player);h.succeed();
    }
+
+   @GameTest(template="ancient_temple",timeoutTicks=45,batch="heracles_shallow_crater")
+   public static void heavyImpactsBreakTwoCentralLayersWithoutDiggingFurtherOnRepeat(GameTestHelper h) {
+      var e=owner(h);var origin=e.blockPosition();
+      for(int x=-4;x<=4;x++)for(int z=-4;z<=4;z++)for(int y=-4;y<=-1;y++)
+         h.getLevel().setBlock(origin.offset(x,y,z),Blocks.STONE.defaultBlockState(),2);
+      var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY,3.2,6,48,64);
+      TerrainImpactService.impactHeraclesGround(h.getLevel(),e,e.position(),profile,TerrainImpactService.Permission.PLAYER,2);
+      h.runAfterDelay(12,()->{
+         h.assertTrue(h.getLevel().getBlockState(origin.below()).isAir(),"surface did not break");
+         h.assertTrue(h.getLevel().getBlockState(origin.below(2)).isAir(),"central second layer did not break");
+         h.assertTrue(h.getLevel().getBlockState(origin.below(3)).is(Blocks.STONE),"impact exceeded two layers");
+         TerrainImpactService.impactHeraclesGround(h.getLevel(),e,e.position().add(0,-2,0),profile,TerrainImpactService.Permission.PLAYER,2);
+         h.runAfterDelay(12,()->{
+            h.assertTrue(h.getLevel().getBlockState(origin.below(3)).is(Blocks.STONE),"repeat impact dug below original surface limit");
+            h.succeed();
+         });
+      });
+   }
+
+   @GameTest(template="ancient_temple",timeoutTicks=25,batch="heracles_sprint_geometry")
+   public static void sprintIgnoresFootingAndEmptySpaceButDetectsARealFrontWall(GameTestHelper h) {
+      var e=owner(h);var origin=e.blockPosition();
+      for(int x=-3;x<=3;x++)for(int z=-3;z<=4;z++)h.getLevel().setBlock(origin.offset(x,-1,z),Blocks.STONE.defaultBlockState(),2);
+      var forward=new Vec3(0,0,1);
+      h.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper.hasHeraclesForwardObstacle(h.getLevel(),e,forward),"flat floor counted as a front collision");
+      h.assertTrue(!TerrainImpactService.impactWallTunnel(h.getLevel(),e,e.position(),forward,TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM),3,3,3),"empty wall job reported an impact");
+      h.getLevel().setBlock(origin.offset(0,0,1),Blocks.STONE_SLAB.defaultBlockState(),2);
+      h.assertTrue(!net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper.hasHeraclesForwardObstacle(h.getLevel(),e,forward),"step-height slab counted as a wall");
+      h.getLevel().setBlock(origin.offset(0,1,1),Blocks.STONE.defaultBlockState(),2);
+      h.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper.hasHeraclesForwardObstacle(h.getLevel(),e,forward),"real front wall was ignored");
+      h.assertTrue(TerrainImpactService.impactWallTunnel(h.getLevel(),e,e.position(),forward,TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM),3,3,3),"real wall was not queued");
+      h.runAfterDelay(10,()->{
+         h.assertTrue(h.getLevel().getBlockState(origin.offset(0,1,1)).isAir(),"front wall was not broken");
+         h.assertTrue(h.getLevel().getBlockState(origin.below()).is(Blocks.STONE),"sprint removed footing");h.succeed();
+      });
+   }
+
+   @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_phase_free")
+   public static void berserkerHasNoPhaseTransitionsAndAttacksWithoutMana(GameTestHelper h) {
+      var e=owner(h);var t=target(h,e.position().add(0,0,2));e.setTarget(t);e.setCurrentMp(0);
+      for(float health:new float[]{680,300,50,680}) {
+         e.setHealth(health);
+         var update=net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPhaseService.tick(e,t,null,h.getLevel().getGameTime());
+         h.assertTrue(!update.changed()&&update.phase()==net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantCombatPhase.DECISIVE,"Berserker entered a health/time phase");
+      }
+      h.assertTrue(HeraclesAbilityService.npcCombat(e),"low mana fell back to generic duel AI");
+      h.assertTrue(t.getHealth()<1000,"low mana prevented basic melee");
+      t.setPos(t.position().add(0,0,8));
+      h.assertTrue(HeraclesAbilityService.npcCombat(e)&&e.isSprinting(),"cooldown/mana gap did not pursue");h.succeed();
+   }
+
+   @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_input_buffer")
+   public static void recoveryBuffersOnePlayerInputAndRevalidatesItBeforeStarting(GameTestHelper h) {
+      var e=owner(h);var player=h.makeMockServerPlayerInLevel();player.teleportTo(e.getX()+4,e.getY(),e.getZ());player.setYRot(0);player.setXRot(0);
+      h.assertTrue(ServantCardTransformManager.transform(player,"heracles"),"player transform failed");
+      var t=target(h,player.position().add(0,0,2));
+      h.assertTrue(HeraclesAbilityService.start(player,6),"stomp start failed");
+      h.assertTrue(!ServantCardTransformManager.triggerAction(player,3),"windup unexpectedly allowed a second action");
+      ticks(player,1);
+      h.assertTrue(ServantCardTransformManager.triggerAction(player,3),"recovery input was discarded");
+      h.assertTrue(!player.getPersistentData().contains("HeraclesCooldown:3"),"queued input paid before execution");
+      ticks(player,4);
+      h.assertTrue(player.getPersistentData().contains("HeraclesCooldown:3"),"buffered action did not start at recovery end");
+      ticks(player,2);h.assertTrue(t.getHealth()<976,"buffered uppercut did not hit on its second tick");
+      HeraclesAbilityService.cancel(player);h.succeed();
+   }
 }

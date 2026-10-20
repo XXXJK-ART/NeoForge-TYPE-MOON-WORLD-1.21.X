@@ -135,6 +135,8 @@ public final class SasakiKojiroGameTests {
       helper.assertTrue(Math.abs(defender.getHealth() - 550.0F) < 0.02F, "Card Tsubame damage differs from NPC");
       helper.assertTrue(Math.abs(state.mana() - 180.0) < 0.001, "Card Tsubame did not cost 20 MP");
       helper.assertTrue(state.npCooldown() == 0, "Tsubame wrote noble phantasm cooldown");
+      helper.assertTrue(ServantCardTransformManager.getSkillCooldown(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), 9) == 600,
+         "Tsubame did not populate the cooldown slot used by its HUD");
       helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 9), "Tsubame ignored skill cooldown");
       helper.assertTrue(Math.abs(state.mana() - 180.0) < 0.001, "Cooldown rejection spent mana");
       helper.succeed();
@@ -172,18 +174,75 @@ public final class SasakiKojiroGameTests {
       helper.succeed();
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 100)
-   public static void transparencyCleansesAndExpiresAfter80Ticks(GameTestHelper helper) {
+   private static void transparencyFloor(GameTestHelper helper) {
+      for (int x = 2; x <= 8; x++) for (int z = 2; z <= 8; z++) {
+         helper.setBlock(new BlockPos(x, 1, z), net.minecraft.world.level.block.Blocks.STONE);
+      }
+   }
+
+   private static void assertTransparencyResult(GameTestHelper helper, LivingEntity entity, LivingEntity enemy) {
+      Vec3 offset = entity.position().subtract(enemy.position());
+      helper.assertTrue(offset.dot(enemy.getLookAngle()) < -0.5 && entity.distanceTo(enemy) < 2.5,
+         "Transparency did not teleport behind the enemy");
+      helper.assertTrue(entity.getLookAngle().dot(enemy.position().subtract(entity.position()).normalize()) > 0.95,
+         "Transparency did not face the enemy");
+      helper.assertTrue(!entity.hasEffect(MobEffects.WEAKNESS) && entity.hasEffect(MobEffects.MOVEMENT_SPEED),
+         "Transparency failed to remove only harmful effects");
+      helper.assertTrue(!SasakiKojiroCombatService.isConcealed(entity) && !entity.hasEffect(MobEffects.INVISIBILITY)
+         && !entity.hasEffect(MobEffects.DAMAGE_RESISTANCE), "Transparency granted concealment or resistance");
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void transparencyCleansesAndTeleportsNpcBehindEnemy(GameTestHelper helper) {
       SasakiKojiroEntity entity = sasaki(helper, new BlockPos(4, 2, 4));
+      LivingEntity enemy = target(helper, new BlockPos(6, 2, 4));
+      enemy.setYRot(180.0F);
+      entity.setTarget(enemy);
+      transparencyFloor(helper);
       entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200));
-      helper.assertTrue(SasakiKojiroCombatService.performTransparency(entity), "Transparency failed");
-      helper.assertTrue(!entity.hasEffect(MobEffects.WEAKNESS) && entity.hasEffect(MobEffects.DAMAGE_RESISTANCE),
-         "Transparency did not cleanse and grant resistance");
-      helper.runAfterDelay(81, () -> {
-         helper.assertTrue(!SasakiKojiroCombatService.isConcealed(entity) && !entity.hasEffect(MobEffects.INVISIBILITY)
-            && !entity.hasEffect(MobEffects.DAMAGE_RESISTANCE), "Transparency exceeded 80 ticks");
-         helper.succeed();
-      });
+      entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200));
+      helper.assertTrue(SasakiKojiroCombatService.tickNpc(entity, enemy), "NPC did not use transparency");
+      assertTransparencyResult(helper, entity, enemy);
+      helper.assertTrue(Math.abs(entity.getCurrentMp() - 180.0) < 0.001, "NPC transparency did not cost 20 MP");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void cardTransparencyTeleportsWithoutNeedingALookTarget(GameTestHelper helper) {
+      ServerPlayer player = card(helper);
+      LivingEntity enemy = target(helper, new BlockPos(6, 2, 4));
+      enemy.setYRot(180.0F);
+      transparencyFloor(helper);
+      player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200));
+      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200));
+      helper.assertTrue(ServantCardTransformManager.triggerAction(player, 5), "Card transparency failed");
+      assertTransparencyResult(helper, player, enemy);
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      helper.assertTrue(Math.abs(vars.servantCardState().mana() - 180.0) < 0.001
+         && ServantCardTransformManager.getSkillCooldown(vars, 5) == 600, "Transparency resources differ from NPC");
+      helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 5), "Transparency ignored cooldown");
+      helper.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void cardTransparencyRequiresEnemyAndSafeLanding(GameTestHelper helper) {
+      ServerPlayer player = card(helper);
+      transparencyFloor(helper);
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 200));
+      Vec3 start = player.position();
+      helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 5), "Transparency succeeded without an enemy");
+      LivingEntity enemy = target(helper, new BlockPos(4, 2, 6));
+      enemy.setYRot(180.0F);
+      for (int x = 2; x <= 8; x++) for (int z = 7; z <= 9; z++) for (int y = 2; y <= 4; y++) {
+         helper.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.STONE);
+      }
+      helper.assertTrue(!ServantCardTransformManager.triggerAction(player, 5), "Transparency accepted a blocked landing");
+      helper.assertTrue(player.position().distanceToSqr(start) < 0.001 && player.hasEffect(MobEffects.WEAKNESS),
+         "Failed transparency changed position or effects");
+      helper.assertTrue(Math.abs(vars.servantCardState().mana() - 200.0) < 0.001
+         && ServantCardTransformManager.getSkillCooldown(vars, 5) == 0, "Failed transparency consumed resources");
+      helper.succeed();
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 20)

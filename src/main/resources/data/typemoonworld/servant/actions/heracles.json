@@ -12,9 +12,9 @@
       "mana_cost": 18,
       "stamina_cost": 0,
       "timing": {
-        "windup": 4,
+        "windup": 1,
         "active": 1,
-        "recovery": 10
+        "recovery": 4
       },
       "threat": {
         "shape": "sphere",
@@ -39,9 +39,9 @@
       "mana_cost": 32,
       "stamina_cost": 0,
       "timing": {
-        "windup": 14,
+        "windup": 6,
         "active": 1,
-        "recovery": 14
+        "recovery": 6
       },
       "threat": {
         "shape": "sphere",
@@ -65,9 +65,9 @@
       "mana_cost": 22,
       "stamina_cost": 0,
       "timing": {
-        "windup": 4,
+        "windup": 1,
         "active": 8,
-        "recovery": 10
+        "recovery": 4
       },
       "threat": {
         "shape": "cone",
@@ -91,9 +91,9 @@
       "mana_cost": 20,
       "stamina_cost": 0,
       "timing": {
-        "windup": 6,
+        "windup": 2,
         "active": 1,
-        "recovery": 10
+        "recovery": 4
       },
       "threat": {
         "shape": "cone",
@@ -118,9 +118,9 @@
       "mana_cost": 26,
       "stamina_cost": 0,
       "timing": {
-        "windup": 8,
+        "windup": 3,
         "active": 1,
-        "recovery": 12
+        "recovery": 5
       },
       "threat": {
         "shape": "cone",
@@ -144,9 +144,9 @@
       "mana_cost": 35,
       "stamina_cost": 0,
       "timing": {
-        "windup": 8,
-        "active": 10,
-        "recovery": 12
+        "windup": 3,
+        "active": 6,
+        "recovery": 5
       },
       "threat": {
         "shape": "cone",
@@ -171,9 +171,9 @@
       "mana_cost": 18,
       "stamina_cost": 0,
       "timing": {
-        "windup": 4,
+        "windup": 1,
         "active": 1,
-        "recovery": 10
+        "recovery": 4
       },
       "threat": {
         "shape": "sphere",
@@ -197,9 +197,9 @@
       "mana_cost": 30,
       "stamina_cost": 0,
       "timing": {
-        "windup": 6,
-        "active": 8,
-        "recovery": 10
+        "windup": 2,
+        "active": 6,
+        "recovery": 4
       },
       "threat": {
         "shape": "cone",
@@ -224,9 +224,9 @@
       "mana_cost": 38,
       "stamina_cost": 0,
       "timing": {
-        "windup": 10,
-        "active": 24,
-        "recovery": 14
+        "windup": 3,
+        "active": 16,
+        "recovery": 6
       },
       "threat": {
         "shape": "sphere",

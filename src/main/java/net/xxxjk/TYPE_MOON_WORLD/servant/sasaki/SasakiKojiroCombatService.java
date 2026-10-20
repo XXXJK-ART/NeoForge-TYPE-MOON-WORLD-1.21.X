@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.sasaki;
 
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -41,7 +43,7 @@ public final class SasakiKojiroCombatService {
    private static final String NPC_COOLDOWN = "SasakiKojiroCooldown:";
    private static final String NPC_STEALTH_READY = "SasakiKojiroNpcStealthReady";
    private static final int PRESENCE_CONCEALMENT_COST = 18;
-   private static final int TRANSPARENCY_DURATION = 80;
+   private static final double TRANSPARENCY_RANGE = 8.0;
    private static final int TRANSPARENCY_COOLDOWN = 600;
 
    private SasakiKojiroCombatService() { }
@@ -137,14 +139,63 @@ public final class SasakiKojiroCombatService {
    }
 
    public static boolean performTransparency(LivingEntity entity) {
-      if (entity == null || entity.level().isClientSide() || !isSasakiOwner(entity)) return false;
+      if (entity == null || !(entity.level() instanceof ServerLevel level) || !isSasakiOwner(entity)) return false;
+      LivingEntity preferred = entity instanceof ServerPlayer player ? findLookTarget(player, TRANSPARENCY_RANGE)
+         : entity instanceof Mob mob ? mob.getTarget() : null;
+      var targets = new java.util.ArrayList<>(level.getEntitiesOfClass(LivingEntity.class,
+         entity.getBoundingBox().inflate(TRANSPARENCY_RANGE), target -> canDamageTarget(entity, target, TRANSPARENCY_RANGE)
+            && entity.hasLineOfSight(target)));
+      targets.sort(Comparator.comparingDouble(entity::distanceToSqr));
+      if (targets.remove(preferred)) targets.addFirst(preferred);
+      for (LivingEntity target : targets) {
+         Vec3 destination = transparencyDestination(entity, target);
+         if (destination == null) continue;
+         float yaw = (float)Math.toDegrees(Math.atan2(target.getZ() - destination.z, target.getX() - destination.x)) - 90.0F;
+         entity.stopRiding();
+         if (entity instanceof ServerPlayer player) {
+            player.connection.teleport(destination.x, destination.y, destination.z, yaw, 0.0F);
+         } else {
+            entity.teleportTo(destination.x, destination.y, destination.z);
+            entity.setYRot(yaw);
+            entity.setXRot(0.0F);
+         }
+         entity.setYHeadRot(yaw);
+         entity.yBodyRot = yaw;
+         entity.setDeltaMovement(Vec3.ZERO);
+         entity.fallDistance = 0.0F;
+         entity.hurtMarked = true;
+         if (entity instanceof Mob mob) mob.getNavigation().stop();
+         cleanseHarmfulEffects(entity);
+         SasakiKojiroActionAnimationService.play(entity, SasakiKojiroAction.TRANSPARENCY);
+         return true;
+      }
+      return false;
+   }
+
+   private static Vec3 transparencyDestination(LivingEntity caster, LivingEntity target) {
+      ServerLevel level = (ServerLevel)caster.level();
+      Vec3 behind = horizontalLook(target).scale(-1.0);
+      double separation = Math.max(1.35, (caster.getBbWidth() + target.getBbWidth()) * 0.5 + 0.6);
+      for (double distance : new double[]{separation, separation + 0.6}) {
+         for (int angle : new int[]{0, 30, -30, 60, -60}) {
+            Vec3 candidate = target.position().add(behind.yRot((float)Math.toRadians(angle)).scale(distance));
+            for (int dy : new int[]{0, 1, -1}) {
+               BlockPos feet = BlockPos.containing(candidate).offset(0, dy, 0);
+               if (!level.hasChunkAt(feet) || !level.getBlockState(feet.below()).isFaceSturdy(level, feet.below(), Direction.UP)) continue;
+               Vec3 destination = new Vec3(candidate.x, feet.getY(), candidate.z);
+               AABB bounds = caster.getBoundingBox().move(destination.subtract(caster.position()));
+               if (level.getWorldBorder().isWithinBounds(bounds) && level.noCollision(caster, bounds)
+                  && !level.containsAnyLiquid(bounds)) return destination;
+            }
+         }
+      }
+      return null;
+   }
+
+   private static void cleanseHarmfulEffects(LivingEntity entity) {
       for (MobEffectInstance effect : List.copyOf(entity.getActiveEffects())) {
          if (effect.getEffect().value().getCategory() == MobEffectCategory.HARMFUL) entity.removeEffect(effect.getEffect());
       }
-      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, TRANSPARENCY_DURATION, 1, false, false, false));
-      setConcealedFor(entity, TRANSPARENCY_DURATION);
-      SasakiKojiroActionAnimationService.play(entity, SasakiKojiroAction.TRANSPARENCY);
-      return true;
    }
 
    public static boolean canPerform(ServerPlayer player, Technique technique) {
@@ -442,13 +493,6 @@ public final class SasakiKojiroCombatService {
    private static void beforeAttack(LivingEntity attacker) {
       breakConcealment(attacker);
       if (attacker != null) attacker.getPersistentData().remove(COUNTER_UNTIL);
-   }
-
-   private static void setConcealedFor(LivingEntity entity, int duration) {
-      entity.getPersistentData().putBoolean(CONCEALED, true);
-      entity.getPersistentData().putLong(CONCEALMENT_UNTIL, entity.level().getGameTime() + duration);
-      maintainInvisibility(entity, duration);
-      clearHostileAggro(entity);
    }
 
    private static void maintainInvisibility(LivingEntity entity, int duration) {

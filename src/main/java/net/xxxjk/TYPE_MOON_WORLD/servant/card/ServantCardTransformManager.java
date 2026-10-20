@@ -527,7 +527,7 @@ public final class ServantCardTransformManager {
          && ServantCardOdaNobunagaSkills.tryExitOdaHajunField(player)) {
          return true;
       }
-      if (ServantCardActionTimeline.isActive(player)) {
+      if (ServantCardActionTimeline.isActive(player) && !"heracles".equals(vars.servantCardState().id())) {
          return false;
       }
       if (ServantCardArashSkills.isPlayerChanting(player)) {

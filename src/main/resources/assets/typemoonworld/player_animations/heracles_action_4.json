@@ -4,8 +4,8 @@
   "description": "Turning Sweep",
   "emote": {
     "beginTick": 0,
-    "endTick": 21,
-    "stopTick": 21,
+    "endTick": 9,
+    "stopTick": 9,
     "moves": [
       {
         "tick": 0,
@@ -21,7 +21,7 @@
         }
       },
       {
-        "tick": 7,
+        "tick": 3,
         "body": {
           "yaw": -65
         },
@@ -31,7 +31,7 @@
         }
       },
       {
-        "tick": 9,
+        "tick": 4,
         "rightArm": {
           "pitch": -70,
           "yaw": 70
@@ -41,7 +41,7 @@
         }
       },
       {
-        "tick": 21,
+        "tick": 9,
         "body": {
           "pitch": 0,
           "yaw": 0,

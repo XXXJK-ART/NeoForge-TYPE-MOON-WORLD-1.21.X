@@ -4,8 +4,8 @@
   "description": "Rising Uppercut",
   "emote": {
     "beginTick": 0,
-    "endTick": 17,
-    "stopTick": 17,
+    "endTick": 7,
+    "stopTick": 7,
     "moves": [
       {
         "tick": 0,
@@ -21,7 +21,7 @@
         }
       },
       {
-        "tick": 5,
+        "tick": 2,
         "body": {
           "yaw": -30
         },
@@ -30,7 +30,7 @@
         }
       },
       {
-        "tick": 7,
+        "tick": 3,
         "rightArm": {
           "pitch": -155
         },
@@ -39,7 +39,7 @@
         }
       },
       {
-        "tick": 17,
+        "tick": 7,
         "body": {
           "pitch": 0,
           "yaw": 0,
