@@ -263,7 +263,8 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "diarmuid_ua_duibhne" -> {
-            var action = net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot);
+            var action = slot == 7 && crouching ? net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.CROSS_GUARD
+               : net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot);
             yield action == null || action.basic() ? null : new ServantCardSkillAction(action.path(), action.skillId(), action.mana(), action.cooldown());
          }
          case "lancelot_berserker" -> switch (slot) {

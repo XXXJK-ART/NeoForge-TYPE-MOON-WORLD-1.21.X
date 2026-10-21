@@ -560,7 +560,8 @@ public final class ServantCardTransformManager {
       if ("heracles".equals(vars.servantCardState().id())) return net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.start(player, slot);
       if ("diarmuid_ua_duibhne".equals(vars.servantCardState().id())) {
          return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.start(player,
-            net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot));
+            slot == 7 && player.isCrouching() ? net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.CROSS_GUARD
+               : net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot));
       }
       String externalActionId = net.xxxjk.TYPE_MOON_WORLD.api.CardActionRegistry.actionIdForSlot(vars.servantCardState().id(), slot);
       ResourceLocation parsedActionId = ResourceLocation.tryParse(externalActionId);
@@ -909,7 +910,10 @@ public final class ServantCardTransformManager {
       if (!vars.servantCardState().transformed() || ServantMasterCarryService.isCarryingMaster(player)) {
          return;
       }
-      if ("emiya_archer".equals(vars.servantCardState().id()) && slot == 1) {
+      if ("diarmuid_ua_duibhne".equals(vars.servantCardState().id()) && slot == 8) {
+         if (pressed) triggerAction(player, slot);
+         else net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.releaseDance(player);
+      } else if ("emiya_archer".equals(vars.servantCardState().id()) && slot == 1) {
          if (pressed) {
             triggerAction(player, slot);
          } else {

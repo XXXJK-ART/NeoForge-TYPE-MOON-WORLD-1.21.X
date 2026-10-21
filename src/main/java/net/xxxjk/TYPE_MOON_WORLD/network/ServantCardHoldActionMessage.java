@@ -32,7 +32,7 @@ public record ServantCardHoldActionMessage(int slot, boolean pressed) implements
       if (context.flow() != PacketFlow.SERVERBOUND || message.slot < 0 || message.slot > 9) return;
       context.enqueueWork(() -> {
          if (context.player() instanceof ServerPlayer player
-            && ServerPacketRateLimiter.allow(player, "servant_card_hold_" + message.slot, 1)) {
+            && ServerPacketRateLimiter.allow(player, "servant_card_hold_" + message.slot + "_" + message.pressed, 1)) {
             ServantCardTransformManager.handleHoldAction(player, message.slot, message.pressed);
          }
       });

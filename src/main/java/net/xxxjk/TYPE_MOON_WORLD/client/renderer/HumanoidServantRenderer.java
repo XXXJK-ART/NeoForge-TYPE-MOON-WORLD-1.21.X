@@ -142,6 +142,12 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             float age = diarmuid.getDiarmuidActionAge(ageInTicks - diarmuid.tickCount);
             if (action != null && age >= 0 && age < action.duration())
                net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyImportedPose(this, action, age);
+            else net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(diarmuid,this);
+         }
+         if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid
+            && diarmuid.getDiarmuidAction() == net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.DOUBLE_SPEAR_STANCE
+            && (diarmuid.tickCount < 8 || diarmuid.getDiarmuidActionAge(ageInTicks - diarmuid.tickCount) >= 8)) {
+            net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(diarmuid,this);
          }
          if (entity.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity gun && gun.isChantLift()) {
             net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(this, gun.chantPoseProgress(ageInTicks - entity.tickCount));

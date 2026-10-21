@@ -22,15 +22,17 @@ public final class ServantCardDiarmuidSkills {
    public static void initialize(ServerPlayer player) {
       DiarmuidCombatHelper.ensureDurability(player);
       var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      vars.servant_card_action_mode = 1;
+      DiarmuidAbilityService.cancel(player);
+      vars.servant_card_action_mode = 0;
       removeOldStrategy(player);
       vars.syncPlayerVariables(player);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!isActiveCard(player)) { DiarmuidAbilityService.cancel(player); return; }
-      if (vars.servant_card_action_mode != 1) {
-         vars.servant_card_action_mode = 1;
+      int mode = DiarmuidAbilityService.isDoubleSpearStance(player) ? 1 : 0;
+      if (vars.servant_card_action_mode != mode) {
+         vars.servant_card_action_mode = mode;
          vars.syncPlayerVariables(player);
       }
       removeOldStrategy(player);
@@ -54,7 +56,7 @@ public final class ServantCardDiarmuidSkills {
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "servant_card_diarmuid_strategy_move_speed"));
    }
 
-   public static boolean isDualWieldActive(ServerPlayer player) { return isActiveCard(player); }
+   public static boolean isDualWieldActive(ServerPlayer player) { return isActiveCard(player) && DiarmuidAbilityService.isDoubleSpearStance(player); }
    public static void performOffhandSpearThrust(ServerPlayer player) { DiarmuidAbilityService.basic(player, InteractionHand.OFF_HAND); }
    public static void performMainhandSpearThrust(ServerPlayer player) { DiarmuidAbilityService.basic(player, InteractionHand.MAIN_HAND); }
 }

@@ -41,10 +41,12 @@ public final class DiarmuidEvents {
    public static void onAttackEntity(AttackEntityEvent event) {
       Player player = event.getEntity();
       if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && ServantCardDiarmuidSkills.isActiveCard(serverPlayer)) {
-         event.setCanceled(true);
-         if (player.isShiftKeyDown()) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.triggerAction(serverPlayer, -1);
-         else ServantCardDiarmuidSkills.performOffhandSpearThrust(serverPlayer);
-         return;
+         if (ServantCardDiarmuidSkills.isDualWieldActive(serverPlayer) || player.isShiftKeyDown() || DiarmuidAbilityService.active(player)) {
+            event.setCanceled(true);
+            if (player.isShiftKeyDown()) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.triggerAction(serverPlayer, -1);
+            else ServantCardDiarmuidSkills.performOffhandSpearThrust(serverPlayer);
+            return;
+         }
       }
       if (player.getMainHandItem().getItem() instanceof DiarmuidSpearItem spear && event.getTarget() instanceof LivingEntity target
          && !DiarmuidAbilityService.canHit(player, target, spear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG ? 5 : 3)) {
@@ -100,7 +102,14 @@ public final class DiarmuidEvents {
       if (source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource) return;
       if (source.getEntity() instanceof LivingEntity attacker && source.getDirectEntity() == attacker
          && attacker.getMainHandItem().getItem() instanceof DiarmuidSpearItem spear
-         && (DiarmuidAbilityService.isOwner(attacker) || !DiarmuidAbilityService.canHit(attacker, event.getEntity(),
+         && (DiarmuidAbilityService.active(attacker) || DiarmuidAbilityService.isDoubleSpearStance(attacker) || !DiarmuidAbilityService.canHit(attacker, event.getEntity(),
             spear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG ? 5 : 3))) event.setCanceled(true);
+   }
+
+   @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+   public static void onProjectileImpact(net.neoforged.neoforge.event.entity.ProjectileImpactEvent event) {
+      if (event.getRayTraceResult() instanceof net.minecraft.world.phys.EntityHitResult hit
+         && hit.getEntity() instanceof LivingEntity defender
+         && DiarmuidAbilityService.deflectLowDamageProjectile(defender, event.getProjectile())) event.setCanceled(true);
    }
 }

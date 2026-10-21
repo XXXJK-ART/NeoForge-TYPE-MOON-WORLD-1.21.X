@@ -26,7 +26,7 @@ def pulse(tick, center, before=3, after=3):
     return max(0, 1 - abs(tick - center) / (before if tick < center else after))
 
 
-def pose(path, tick, duration, hits):
+def original_pose(path, tick, duration, hits):
     # Independent thrust, sweep and recovery curves; the long and short weapons never share a track.
     fade = min(1, tick / 2) * min(1, (duration - tick) / 3)
     red = max((pulse(tick, t, 4, 3) for t, r, _, _ in hits if r), default=0)
@@ -96,24 +96,126 @@ def pose(path, tick, duration, hits):
     return result
 
 
+def smooth(value):
+    value = max(0, min(1, value))
+    return value * value * (3 - 2 * value)
+
+
+def pose(path, tick, duration, hits):
+    # No root/pelvis translation: displacement belongs to the authoritative entity timeline.
+    # Item rotations compensate the raised forearm so thrusts remain level with the target.
+    fade = smooth(tick / 2) * smooth((duration - tick) / 3)
+    red = max((pulse(tick, t, 3, 3) for t, r, _, _ in hits if r), default=0)
+    yellow = max((pulse(tick, t, 2, 2) for t, r, _, _ in hits if not r), default=0)
+    low = path in ('cross_thrust', 'low_spin')
+    result = {
+        'body': part(), 'head': part(pitch=-3 * fade),
+        'torso': part(pitch=(10 if low else 4) * fade, yaw=(10 * red - 9 * yellow) * fade),
+        'rightArm': part(-5, 2, pitch=(-58 - 28 * red) * fade, yaw=(-10 + 10 * red) * fade, roll=8 * fade),
+        'leftArm': part(5, 2, pitch=(-53 - 32 * yellow) * fade, yaw=(12 - 12 * yellow) * fade, roll=-8 * fade),
+        'rightLeg': part(-1.9, 12, pitch=(10 + 10 * red) * fade, yaw=-5 * fade),
+        'leftLeg': part(1.9, 12, pitch=(-10 - 9 * yellow) * fade, yaw=5 * fade),
+        'rightItem': part(pitch=(-58 - 28 * red) * fade),
+        'leftItem': part(pitch=(-53 - 32 * yellow) * fade),
+    }
+    if path == 'rising_thrust':
+        lift = smooth((tick - 2) / 5) * smooth((duration - tick) / 4)
+        result['rightArm']['pitch'] = (-55 - 65 * lift) * fade
+        result['rightItem']['pitch'] = (-55 - 20 * lift) * fade
+        result['torso']['pitch'] = (8 - 14 * lift) * fade
+    if path in ('red_sweep', 'low_spin', 'landing_sweep'):
+        # Wind up at the waist, drive the sweep with the shoulders, then recover.
+        # The grip stays fixed in the palm; neither wrist spins through a full turn.
+        double = path != 'red_sweep'
+        first = smooth((tick - 2) / 6)
+        second = smooth((tick - 6) / 6) if double else 0
+        turn = (-38 + 76 * first - 48 * second) * fade
+        result['body'] = part(pitch=(5 if double else 2) * fade, roll=-3 * math.sin(tick * math.pi / duration) * fade)
+        result['torso'] = part(pitch=(13 if double else 7) * fade, yaw=turn)
+        result['head']['yaw'] = -turn * 0.6
+        result['rightArm'] = part(-5, 2, pitch=(-70 - 12 * math.sin(first * math.pi)) * fade,
+                                  yaw=(-32 + 72 * first) * fade, roll=12 * fade)
+        result['rightItem'] = part(pitch=-76 * fade, yaw=(-16 + 32 * first) * fade)
+        if double:
+            result['leftArm'] = part(5, 2, pitch=(-66 - 16 * math.sin(second * math.pi)) * fade,
+                                     yaw=(32 - 70 * second) * fade, roll=-12 * fade)
+            result['leftItem'] = part(pitch=-72 * fade, yaw=(16 - 32 * second) * fade)
+    if path == 'figure_eight':
+        # Preserve the accepted eight-shaped gunflower, extending its cyclic middle section.
+        result = original_pose(path, 2 + ((tick - 2) % 8), 36, [])
+        for track in result.values():
+            for channel in ('pitch', 'yaw', 'roll'):
+                track[channel] *= fade
+        result['body'] = part(pitch=3 * math.sin(tick * math.pi / 4) * fade, roll=4 * math.sin(tick * math.pi / 4) * fade)
+        for name in ('rightArm', 'leftArm'):
+            result[name]['z'] = 0
+        for name in ('rightItem', 'leftItem'):
+            result[name]['x'] = result[name]['y'] = result[name]['z'] = 0
+    if path in ('red_dance', 'yellow_dance'):
+        left = path == 'yellow_dance'
+        # The actual skill-8 shoulder loop, sampled over two complete revolutions.
+        dance = original_pose('figure_eight', 2 + tick * 1.4, 24, [])
+        arm, item = ('leftArm', 'leftItem') if left else ('rightArm', 'rightItem')
+        result[arm] = dance[arm]
+        result[arm]['z'] = 0
+        result[item] = part(pitch=dance[item]['pitch'] * fade, yaw=dance[item]['yaw'] * fade)
+        result[arm]['pitch'] *= fade
+        result[arm]['yaw'] *= fade
+        result[arm]['roll'] *= fade
+        result['torso']['yaw'] = 12 * math.sin(tick * math.pi / 4) * fade
+    if path == 'rose_dance' and tick <= 7:
+        twirl = original_pose('figure_eight', tick, 26, [])
+        for name in ('rightArm', 'leftArm', 'rightItem', 'leftItem'):
+            result[name] = twirl[name]
+            result[name]['z'] = 0
+    if path == 'cross_guard':
+        result['rightArm'] = part(-5, 2, pitch=-78 * fade, yaw=-18 * fade, roll=12 * fade)
+        result['leftArm'] = part(5, 2, pitch=-78 * fade, yaw=18 * fade, roll=-12 * fade)
+        result['rightItem'] = part(pitch=-78 * fade, yaw=42 * fade)
+        result['leftItem'] = part(pitch=-78 * fade, yaw=-42 * fade)
+    if path == 'mana_leap':
+        flight = smooth((tick - 3) / 5)
+        result['body'] = part(pitch=8 * flight)
+        result['torso']['pitch'] = 10 * flight
+        result['rightArm']['pitch'] = -28 * fade
+        result['leftArm']['pitch'] = -32 * fade
+        result['rightItem'] = part(pitch=-25 * fade, yaw=-20 * flight)
+        result['leftItem'] = part(pitch=-28 * fade, yaw=20 * flight)
+        result['rightLeg']['pitch'] = -48 * flight
+        result['leftLeg']['pitch'] = 40 * flight
+    if path == 'double_spear_stance':
+        for name in ('rightArm', 'leftArm'):
+            result[name]['pitch'] = -42 * fade
+        result['rightItem'] = part(pitch=-36 * fade, yaw=-15 * fade)
+        result['leftItem'] = part(pitch=-36 * fade, yaw=15 * fade)
+    # Hands keep their shoulder pivots and weapons keep their palms as rotation centers.
+    result['body']['x'] = result['body']['y'] = result['body']['z'] = 0
+    for name in ('rightItem', 'leftItem'):
+        result[name]['x'] = result[name]['y'] = result[name]['z'] = 0
+    return result
+
+
 actions = []
 names_zh = ["伏身·交叉刺", "红蔷薇·踏进突刺", "黄蔷薇·连环点刺", "回身·长枪横扫", "挑枪·上扬刺",
             "伏身·双枪回旋", "退步·回马枪", "魔力放出·跃身", "骑士武略·交叉架枪", "枪舞·八字回环", "双蔷薇·贯击连舞",
-            "红蔷薇·探刺", "黄蔷薇·点刺", "骑士武略·反刺"]
+            "红蔷薇·探刺", "黄蔷薇·点刺", "骑士武略·反刺", "双枪架势（开关）", "红蔷薇·单手八字枪舞", "黄蔷薇·单手八字枪舞", "落地·双枪横扫"]
 matches = list(PATTERN.finditer(TEXT))
-assert len(matches) == 14, len(matches)
+assert len(matches) == 18, len(matches)
 for index, match in enumerate(matches):
     constant, slot, path, mana, cooldown, duration, angle, count, tail = match.groups()
     slot, mana, cooldown, duration, angle, count = map(int, (slot, mana, cooldown, duration, angle, count))
     hits = [(int(t), r == "true", int(d), int(l)) for t, r, d, l in HIT.findall(tail)]
+    if path == 'figure_eight':
+        hits = [(t, ((t - 6) // 4) % 2 == 0, 10, 4 if ((t - 6) // 4) % 2 == 0 else 3)
+                for t in range(6, duration, 4)]
     moves = [{"tick": t, **pose(path, t, duration, hits)} for t in range(duration + 1)]
     dump(RES / f"assets/typemoonworld/player_animations/diarmuid_{path}.json", {
         "name": f"diarmuid_{path}", "version": 3,
         "description": "Authored full-body dual-spear technique; shared by PlayerAnimator and NPC sampling.",
         "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration, "degrees": True, "moves": moves}})
-    reach = max((h[3] for h in hits), default=6 if slot == 6 else 5)
+    reach = max((h[3] for h in hits), default=6 if slot == 6 else 5 if path == 'cross_guard' else 0)
     windup = hits[0][0] if hits else (4 if slot == 6 else 2)
-    last = hits[-1][0] if hits else (20 if slot == 6 else 12)
+    last = hits[-1][0] if hits else (20 if slot == 6 else min(12, duration - 1))
     actions.append({
         "id": f"typemoonworld:diarmuid/{path}", "tags": ["melee", "area" if count > 1 else "pursuit"] if hits else ["guard" if slot == 7 else "gap_closer"],
         "minimum_range": 0, "maximum_range": reach, "mana_cost": mana, "stamina_cost": 0,

@@ -28,6 +28,8 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       DiarmuidUaDuibhneEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
    private static final net.minecraft.network.syncher.EntityDataAccessor<Long> ACTION_START = net.minecraft.network.syncher.SynchedEntityData.defineId(
       DiarmuidUaDuibhneEntity.class, net.minecraft.network.syncher.EntityDataSerializers.LONG);
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> DOUBLE_SPEAR_STANCE = net.minecraft.network.syncher.SynchedEntityData.defineId(
+      DiarmuidUaDuibhneEntity.class, net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
 
    public DiarmuidUaDuibhneEntity(EntityType<? extends DiarmuidUaDuibhneEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
@@ -38,7 +40,11 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       super.defineSynchedData(builder);
       builder.define(ACTION, -1);
       builder.define(ACTION_START, 0L);
+      builder.define(DOUBLE_SPEAR_STANCE, false);
    }
+
+   public void setDoubleSpearStance(boolean active) { entityData.set(DOUBLE_SPEAR_STANCE, active); }
+   public boolean isDoubleSpearStance() { return entityData.get(DOUBLE_SPEAR_STANCE); }
 
    public void triggerDiarmuidAction(net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction action) {
       entityData.set(ACTION, action == null ? -1 : action.networkId());

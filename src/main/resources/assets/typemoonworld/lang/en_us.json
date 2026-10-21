@@ -3516,5 +3516,9 @@
   "trait.typemoonworld.beloved": "Beloved",
   "trait.typemoonworld.fianna_knights": "Fianna Knights",
   "trait.typemoonworld.knight": "Knight",
-  "skill.typemoonworld.servant_card.diarmuid_guard_counter": "Guard Counter"
+  "skill.typemoonworld.servant_card.diarmuid_guard_counter": "Guard Counter",
+  "skill.typemoonworld.servant_card.diarmuid_double_spear_stance": "Double Spear Stance",
+  "skill.typemoonworld.servant_card.diarmuid_red_dance": "Red Dance",
+  "skill.typemoonworld.servant_card.diarmuid_yellow_dance": "Yellow Dance",
+  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "Landing Sweep"
 }

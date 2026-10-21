@@ -72,6 +72,7 @@ public final class DiarmuidActionAnimationClient {
       if (action == null) return null;
       var animation = PlayerAnimationRegistry.getAnimation(ResourceLocation.fromNamespaceAndPath("typemoonworld", action.animationPath()));
       if (!(animation instanceof KeyframeAnimation data)) return null;
+      if (action == DiarmuidAction.FIGURE_EIGHT) age = age % action.duration();
       int tick = Math.max(0, (int)age);
       var sample = SAMPLES.get(action);
       if (sample == null || sample.getData() != data || sample.getTick() != tick) {
@@ -111,6 +112,27 @@ public final class DiarmuidActionAnimationClient {
       part.setRotation(rotation.getX(), rotation.getY(), rotation.getZ());
    }
 
+   private static boolean stanceIdle(LivingEntity owner) {
+      if (DiarmuidVisualsClient.isAnimating(owner.getUUID())) return false;
+      if (owner instanceof DiarmuidUaDuibhneEntity npc) return npc.isDoubleSpearStance();
+      if (owner instanceof AbstractClientPlayer player) {
+         var vars=player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         return vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id) && vars.servant_card_action_mode==1;
+      }
+      return false;
+   }
+
+   public static void applyIdlePose(LivingEntity owner, HumanoidModel<?> model) {
+      if (!stanceIdle(owner)) return;
+      var ready=sample(DiarmuidAction.DOUBLE_SPEAR_STANCE,6);
+      if (ready==null) return;
+      apply(ready,"rightArm",model.rightArm);
+      apply(ready,"leftArm",model.leftArm);
+      if (model instanceof PlayerModel<?> player) {
+         player.rightSleeve.copyFrom(player.rightArm); player.leftSleeve.copyFrom(player.leftArm);
+      }
+   }
+
    private static void grip(HumanoidModel<?> model, HumanoidArm arm, KeyframeAnimationPlayer sample, PoseStack poses) {
       model.translateToHand(arm, poses);
       poses.mulPose(Axis.XP.rotationDegrees(-90));
@@ -127,7 +149,9 @@ public final class DiarmuidActionAnimationClient {
 
    public static boolean renderImportedHeldItem(LivingEntity owner, HumanoidModel<?> model, HumanoidArm arm,
       ItemStack stack, ItemDisplayContext display, PoseStack poses, MultiBufferSource buffers, int light) {
-      if (!(owner instanceof DiarmuidUaDuibhneEntity npc) || stack.isEmpty()) return false;
+      if (stack.isEmpty()) return false;
+      if (stanceIdle(owner)) return renderHeldItem(owner,model,DiarmuidAction.DOUBLE_SPEAR_STANCE,6,arm,stack,display,poses,buffers,light);
+      if (!(owner instanceof DiarmuidUaDuibhneEntity npc)) return false;
       DiarmuidAction action = npc.getDiarmuidAction();
       float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
       float age = npc.getDiarmuidActionAge(partial);

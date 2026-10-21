@@ -15,9 +15,9 @@ class DiarmuidResourcesTest {
    }
 
    @Test void completeSharedSkillBarAndFinisher() {
-      int[] mana = {6,12,10,14,14,16,12,18,16,24,36};
-      int[] cooldowns = {20,80,70,100,100,120,100,260,180,180,400};
-      int[] ends = {14,14,13,17,16,17,17,28,20,26,40};
+      int[] mana = {6,12,10,14,14,16,12,18,0,24,36};
+      int[] cooldowns = {20,80,70,100,100,120,100,260,20,180,400};
+      int[] ends = {14,14,13,17,16,17,17,120,12,300,40};
       for (int slot = -1; slot <= 9; slot++) {
          DiarmuidAction action = DiarmuidAction.bySlot(slot);
          assertNotNull(action);
@@ -34,6 +34,36 @@ class DiarmuidResourcesTest {
       assertEquals(3, finisher.stream().filter(hit -> !hit.red()).count());
       assertNull(DiarmuidAction.byNetworkId(-1));
       assertNull(DiarmuidAction.byNetworkId(100));
+   }
+
+   @Test void animationPositionsStayOnEntityAndSweepUsesShouldersInsteadOfSpinningWrists() throws Exception {
+      for (var action : DiarmuidAction.values()) {
+         var moves=json("assets/typemoonworld/player_animations/"+action.animationPath()+".json").getAsJsonObject("emote").getAsJsonArray("moves");
+         for (var frame : moves) for (String bone : List.of("body","rightItem","leftItem"))
+            for (String axis : List.of("x","y","z")) assertEquals(0,frame.getAsJsonObject().getAsJsonObject(bone).get(axis).getAsDouble(),action+":"+bone);
+      }
+      var sweep=json("assets/typemoonworld/player_animations/diarmuid_red_sweep.json").getAsJsonObject("emote").getAsJsonArray("moves");
+      double wristTurn=0, shoulderTurn=0;
+      for(var frame:sweep){
+         var pose=frame.getAsJsonObject();
+         wristTurn=Math.max(wristTurn,Math.abs(pose.getAsJsonObject("rightItem").get("yaw").getAsDouble()));
+         shoulderTurn=Math.max(shoulderTurn,Math.abs(pose.getAsJsonObject("rightArm").get("yaw").getAsDouble()));
+      }
+      assertTrue(wristTurn<40,"sweep spun the wrist");
+      assertTrue(shoulderTurn>20,"sweep did not drive the shoulder");
+      var paired=json("assets/typemoonworld/player_animations/diarmuid_landing_sweep.json").getAsJsonObject("emote").getAsJsonArray("moves");
+      assertTrue(paired.get(10).getAsJsonObject().getAsJsonObject("leftArm").get("yaw").getAsDouble()<0,"landing sweep did not pair both arms");
+      assertTrue(paired.get(5).getAsJsonObject().getAsJsonObject("body").get("pitch").getAsDouble()!=0,"sweep body could not lean");
+      var continuous=DiarmuidAction.FIGURE_EIGHT.hits();
+      assertEquals(74,continuous.size());
+      assertEquals(37,continuous.stream().filter(DiarmuidAction.Hit::red).count());
+      assertEquals(298,continuous.getLast().tick());
+      assertEquals(120,DiarmuidAction.MANA_LEAP.duration());
+      assertEquals(17,DiarmuidAction.LANDING_SWEEP.duration());
+      for (var dance : List.of(DiarmuidAction.RED_DANCE,DiarmuidAction.YELLOW_DANCE)) {
+         assertEquals(List.of(2,5,8),dance.hits().stream().map(DiarmuidAction.Hit::tick).toList());
+         assertEquals(dance==DiarmuidAction.RED_DANCE?18:17,dance.hits().stream().mapToDouble(DiarmuidAction.Hit::damage).sum());
+      }
    }
 
    @Test void everyHitRespectsSpearRangeAndRecovery() {

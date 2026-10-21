@@ -13,7 +13,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,14 +24,13 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity;
-import net.xxxjk.TYPE_MOON_WORLD.vfx.client.VFXMaterialRenderTypes;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.DiarmuidTrailRenderType;
 import org.joml.Vector3f;
 
 /** Client-only ribbons and sparks follow the rendered spear tips and each held weapon's color. */
 @EventBusSubscriber(modid = "typemoonworld", value = Dist.CLIENT)
 public final class DiarmuidVisualsClient {
    private static final Map<UUID, Swing> SWINGS = new HashMap<>();
-   private static final ResourceLocation TRAIL = ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/particle/sasaki_tsubame_blade_stretched.png");
    private static final DustParticleOptions RED_SPARK = new DustParticleOptions(new Vector3f(1,0.035F,0.045F),0.65F);
    private static final DustParticleOptions YELLOW_SPARK = new DustParticleOptions(new Vector3f(1,0.86F,0.035F),0.6F);
    private static net.minecraft.client.multiplayer.ClientLevel activeLevel;
@@ -55,6 +53,11 @@ public final class DiarmuidVisualsClient {
       ensureLevel(); SWINGS.put(owner.getUUID(),new Swing(owner,action,start));
    }
    public static void stop(UUID id) { SWINGS.remove(id); }
+   public static boolean isAnimating(UUID id) {
+      ensureLevel();
+      Swing swing=SWINGS.get(id);
+      return swing!=null && activeLevel!=null && activeLevel.getGameTime()-swing.start<swing.action.duration();
+   }
    public static int activeTrailCount(UUID id) {
       ensureLevel(); Swing swing=SWINGS.get(id);
       return swing == null ? 0 : (int)swing.paths.values().stream().filter(path -> path.size()>1).count();
@@ -69,38 +72,42 @@ public final class DiarmuidVisualsClient {
          if (entity instanceof DiarmuidUaDuibhneEntity npc) {
             var action=npc.getDiarmuidAction();
             float age=npc.getDiarmuidActionAge(0);
-            if (action==null || age<0 || age>=action.duration()) continue;
-            long start=activeLevel.getGameTime()-(long)age;
+            if (action==null || age<0 || action!=DiarmuidAction.FIGURE_EIGHT && age>=action.duration()) continue;
             Swing previous=SWINGS.get(npc.getUUID());
-            if (previous==null || previous.start!=start) begin(npc,action,start);
+            if (previous==null || previous.action!=action) begin(npc,action,activeLevel.getGameTime()-(long)age);
          }
       }
       SWINGS.values().removeIf(s -> !s.owner.isAlive() || s.owner.isRemoved() || s.owner.level()!=activeLevel
-         || activeLevel.getGameTime()-s.start>=s.action.duration());
+         || s.action!=DiarmuidAction.FIGURE_EIGHT && activeLevel.getGameTime()-s.start>=s.action.duration());
       var buffers=Minecraft.getInstance().renderBuffers().bufferSource();
       Vec3 camera=event.getCamera().getPosition();
       float partial=event.getPartialTick().getGameTimeDeltaPartialTick(false);
       for (Swing swing : SWINGS.values()) {
          float age=activeLevel.getGameTime()-swing.start+partial;
+         if (swing.action==DiarmuidAction.FIGURE_EIGHT) age%=swing.action.duration();
          float yaw=Mth.rotLerp(partial,swing.owner.yBodyRotO,swing.owner.yBodyRot);
          for (var hand : InteractionHand.values()) {
             var stack=swing.owner.getItemInHand(hand);
             if (!(stack.getItem() instanceof DiarmuidSpearItem spear)) { swing.paths.remove(hand); continue; }
             // Hand swaps change the light immediately; animation labels never determine its color.
             boolean red=spear.spearType()==DiarmuidSpearItem.SpearType.GAE_DEARG;
-            boolean drawing=swing.action==DiarmuidAction.FIGURE_EIGHT && age>=2 && age<=22
-               || swing.action==DiarmuidAction.ROSE_DANCE && age>=2 && age<=7
-               || swing.action.hits().stream().anyMatch(hit -> hit.red()==red && age>=hit.tick()-2.5F && age<=hit.tick()+2.0F);
+            // A technique glows throughout windup, active motion and recovery. Single-hand basics
+            // illuminate only the attacking hand; swapping weapons still swaps the actual hue.
+            boolean single=swing.action==DiarmuidAction.RED_BASIC || swing.action==DiarmuidAction.YELLOW_BASIC || swing.action.dance();
+            boolean left=hand==InteractionHand.MAIN_HAND ? swing.owner.getMainArm()==net.minecraft.world.entity.HumanoidArm.LEFT
+               : swing.owner.getMainArm()!=net.minecraft.world.entity.HumanoidArm.LEFT;
+            boolean leftAction=swing.action==DiarmuidAction.YELLOW_BASIC || swing.action==DiarmuidAction.YELLOW_DANCE;
+            boolean drawing=age>=0 && age<swing.action.duration() && (!single || left==leftAction);
             var path=swing.paths.computeIfAbsent(hand,ignored -> new ArrayDeque<>());
-            float tailLife=red?3.6F:2.6F;
+            float tailLife=swing.action==DiarmuidAction.FIGURE_EIGHT || swing.action.dance()?6.5F:5.0F;
             while (!path.isEmpty() && age-path.getFirst().age()>tailLife) path.removeFirst();
             if (drawing) {
                float last=swing.sampledAge.getOrDefault(hand,age-0.25F);
                // Dense sub-frame sampling keeps the shoulder loops and fast thrusts continuous.
-               for (float frame=Math.max(last+0.08F,age-0.5F);frame<age;frame+=0.16F) samplePoint(swing,hand,frame,partial,yaw,path);
+               for (float frame=Math.max(last+0.04F,age-1.0F);frame<age;frame+=0.10F) samplePoint(swing,hand,frame,partial,yaw,path);
                samplePoint(swing,hand,age,partial,yaw,path);
                swing.sampledAge.put(hand,age);
-               while (path.size()>(red?48:36)) path.removeFirst();
+               while (path.size()>160) path.removeFirst();
                if (!path.isEmpty()) {
                   int beat=(int)age;
                   if (swing.lastSpark.getOrDefault(hand,-1)!=beat) {
@@ -130,10 +137,11 @@ public final class DiarmuidVisualsClient {
 
    private static void ribbon(PoseStack poses,MultiBufferSource.BufferSource buffers,List<Point> path,Vec3 camera,
                               boolean red,float age,float tailLife) {
-      RenderType type=VFXMaterialRenderTypes.get("vanilla",TRAIL,false);
+      RenderType type=DiarmuidTrailRenderType.trail();
       VertexConsumer vertices=buffers.getBuffer(type);
-      // Colored bloom, saturated edge and narrow hot core all retain the spear's own hue.
-      for (int layer=0;layer<3;layer++) {
+      // Eight transverse gradient strips: transparent colored edge -> saturated band -> hot core.
+      // Both cross-section and tail age interpolate per vertex, without a reused blade texture.
+      for (int layer=0;layer<8;layer++) {
          Vec3 previousSide=Vec3.ZERO;
          for (int i=1;i<path.size();i++) {
             Vec3 a=path.get(i-1).position().subtract(camera),b=path.get(i).position().subtract(camera);
@@ -143,23 +151,27 @@ public final class DiarmuidVisualsClient {
             if (side.lengthSqr()<1.0E-8) side=tangent.cross(new Vec3(0,1,0)).normalize();
             if (side.dot(previousSide)<0) side=side.scale(-1);
             Vec3 before=previousSide.lengthSqr()<1.0E-8?side:previousSide;
-            float taper=(float)Math.sqrt(i/(double)path.size());
-            double width=(layer==0?(red?0.16:0.12):layer==1?(red?0.065:0.05):0.017)*taper;
-            float alpha=(layer==0?0.22F:layer==1?0.65F:0.95F)*taper
-               *(1-Mth.clamp((age-path.get(i).age())/tailLife,0,1));
-            float green=red?(layer==2?0.28F:0.035F):(layer==2?0.98F:0.82F);
-            float blue=red?(layer==2?0.22F:0.065F):(layer==2?0.26F:0.025F);
-            vertex(poses,vertices,a.subtract(before.scale(width)),0,0,green,blue,alpha);
-            vertex(poses,vertices,b.subtract(side.scale(width)),1,0,green,blue,alpha);
-            vertex(poses,vertices,b.add(side.scale(width)),1,1,green,blue,alpha);
-            vertex(poses,vertices,a.add(before.scale(width)),0,1,green,blue,alpha);
+            float lifeA=1-Mth.clamp((age-path.get(i-1).age())/tailLife,0,1);
+            float lifeB=1-Mth.clamp((age-path.get(i).age())/tailLife,0,1);
+            double widthA=(red?0.40:0.34)*Math.sqrt(lifeA);
+            double widthB=(red?0.40:0.34)*Math.sqrt(lifeB);
+            float edgeA=-1+layer*0.25F,edgeB=edgeA+0.25F;
+            gradientVertex(poses,vertices,a.add(before.scale(widthA*edgeA)),edgeA,lifeA,red);
+            gradientVertex(poses,vertices,b.add(side.scale(widthB*edgeA)),edgeA,lifeB,red);
+            gradientVertex(poses,vertices,b.add(side.scale(widthB*edgeB)),edgeB,lifeB,red);
+            gradientVertex(poses,vertices,a.add(before.scale(widthA*edgeB)),edgeB,lifeA,red);
             previousSide=side;
          }
       }
       buffers.endBatch(type);
    }
 
-   private static void vertex(PoseStack poses,VertexConsumer vertices,Vec3 point,float u,float v,float g,float b,float alpha) {
-      vertices.addVertex(poses.last(),(float)point.x,(float)point.y,(float)point.z).setUv(u,v).setColor(1,g,b,alpha);
+   private static void gradientVertex(PoseStack poses,VertexConsumer vertices,Vec3 point,float edge,float life,boolean red) {
+      float center=1-Math.abs(edge);
+      float hot=(float)Math.pow(center,5)*life;
+      float green=red?Mth.lerp(hot,0.008F,0.16F):Mth.lerp(hot,0.72F,1.0F);
+      float blue=red?Mth.lerp(hot,0.018F,0.07F):Mth.lerp(hot,0.002F,0.06F);
+      float alpha=(float)Math.pow(center,1.4)*life*0.80F;
+      vertices.addVertex(poses.last(),(float)point.x,(float)point.y,(float)point.z).setColor(1,green,blue,alpha);
    }
 }

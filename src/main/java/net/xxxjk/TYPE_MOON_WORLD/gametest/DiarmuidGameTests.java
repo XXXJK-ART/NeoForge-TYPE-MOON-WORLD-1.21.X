@@ -65,6 +65,65 @@ public final class DiarmuidGameTests {
 
    private static void check(GameTestHelper h, boolean condition, String message) { h.assertTrue(condition, message); }
 
+   @GameTest(template = ARENA, timeoutTicks = 55)
+   public static void stanceStartsDisabledAndTogglesWithoutManaOrWeaponRepair(GameTestHelper h) {
+      var owner=card(h);
+      check(h,!DiarmuidAbilityService.isDoubleSpearStance(owner),"transformation enabled stance automatically");
+      check(h,ServantCardTransformManager.triggerAction(owner,7),"stance activation rejected");
+      check(h,DiarmuidAbilityService.isDoubleSpearStance(owner),"stance did not activate");
+      check(h,owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().mana()==200,"stance charged mana");
+      h.runAfterDelay(22,()->{
+         owner.setItemInHand(InteractionHand.OFF_HAND,ItemStack.EMPTY);
+         check(h,ServantCardTransformManager.triggerAction(owner,7),"exit required missing weapon");
+         check(h,!DiarmuidAbilityService.isDoubleSpearStance(owner) && owner.getOffhandItem().isEmpty(),"exit restored spear or kept stance");
+         ServantCardTransformManager.release(owner,false); h.succeed();
+      });
+   }
+
+   @GameTest(template = ARENA, timeoutTicks = 60)
+   public static void singleHandDanceHasThreeHitsAndOnlyDeflectsWeakProjectilesInWindow(GameTestHelper h) {
+      var owner=npc(h); var target=target(h,owner,2.4);
+      check(h,DiarmuidAbilityService.start(owner,DiarmuidAction.DOUBLE_SPEAR_STANCE),"stance rejected");
+      h.runAfterDelay(14,()->{
+         check(h,DiarmuidAbilityService.start(owner,DiarmuidAction.RED_DANCE),"single-hand dance rejected");
+         var weak=EntityType.ARROW.create(h.getLevel()); weak.setBaseDamage(2); weak.setDeltaMovement(0,0,-1);
+         check(h,DiarmuidAbilityService.deflectLowDamageProjectile(owner,weak),"weak arrow not deflected");
+         check(h,weak.getDeltaMovement().z>0 && weak.getOwner()==owner,"deflection did not reverse flight or attribution");
+         var strong=EntityType.ARROW.create(h.getLevel()); strong.setBaseDamage(20); strong.setDeltaMovement(0,0,-1);
+         check(h,!DiarmuidAbilityService.deflectLowDamageProjectile(owner,strong),"strong arrow deflected");
+         var snowball=EntityType.SNOWBALL.create(h.getLevel()); snowball.setDeltaMovement(0,0,-1);
+         check(h,DiarmuidAbilityService.deflectLowDamageProjectile(owner,snowball),"snowball not deflected");
+      });
+      h.runAfterDelay(27,()->{
+         check(h,Math.abs(target.getHealth()-182)<0.01,"dance damage not three six-point hits: "+target.getHealth());
+         check(h,DiarmuidCombatHelper.redDurability(owner)==197 && DiarmuidCombatHelper.yellowDurability(owner)==200,"dance used wrong spear or duplicated effects");
+         var snowball=EntityType.SNOWBALL.create(h.getLevel()); snowball.setDeltaMovement(0,0,-1);
+         check(h,!DiarmuidAbilityService.deflectLowDamageProjectile(owner,snowball),"deflection outlasted dance");
+         owner.discard(); target.discard(); h.succeed();
+      });
+   }
+
+   @GameTest(template = ARENA, timeoutTicks = 55)
+   public static void heldSkillEightStopsOnRelease(GameTestHelper h) {
+      var owner=card(h); var target=target(h,owner,2.4);
+      check(h,ServantCardTransformManager.triggerAction(owner,7),"stance rejected");
+      h.runAfterDelay(14,()->{
+         ServantCardTransformManager.handleHoldAction(owner,8,true);
+         check(h,DiarmuidAbilityService.active(owner),"held skill eight did not start");
+         check(h,owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().mana()==176,"held skill charged the wrong MP");
+         h.runAfterDelay(14,()->{
+            double health=target.getHealth();
+            check(h,health<200,"held skill did not strike continuously");
+            ServantCardTransformManager.handleHoldAction(owner,8,false);
+            check(h,!DiarmuidAbilityService.active(owner),"release did not stop the dance");
+            h.runAfterDelay(10,()->{
+               check(h,Math.abs(target.getHealth()-health)<0.01,"dance kept hitting after release");
+               ServantCardTransformManager.release(owner,false); target.discard(); h.succeed();
+            });
+         });
+      });
+   }
+
    @GameTest(template = ARENA, timeoutTicks = 30)
    public static void distanceUsesEyeToNearestBoxAndWalls(GameTestHelper h) {
       var owner = npc(h); var target = target(h, owner, 3.30);
@@ -293,18 +352,31 @@ public final class DiarmuidGameTests {
       });
    }
 
-   @GameTest(template = ARENA, timeoutTicks = 45)
-   public static void leapFollowsSixBlockTwoHighArcAndEndsProtectionOnLanding(GameTestHelper h) {
-      var owner=npc(h); Vec3 start=owner.position();
-      for (int x=3;x<=8;x++) for (int z=3;z<=12;z++) h.setBlock(new BlockPos(x,1,z),Blocks.SMOOTH_STONE);
+   @GameTest(template = ARENA, timeoutTicks = 90)
+   public static void servantScaleLeapLandsIntoADualSpearSweep(GameTestHelper h) {
+      var owner=card(h); Vec3 start=owner.position();
+      for (int x=2;x<=11;x++) for (int z=2;z<=17;z++) h.setBlock(new BlockPos(x,1,z),Blocks.SMOOTH_STONE);
       owner.setOnGround(true);
-      check(h,DiarmuidAbilityService.start(owner,DiarmuidAction.MANA_LEAP),"legal leap rejected");
-      h.runAfterDelay(12, () -> check(h,owner.getY()-start.y>1.9 && owner.getY()-start.y<=2.01,"leap apex drifted"));
-      h.runAfterDelay(25, () -> {
-         check(h,Math.abs(owner.getZ()-start.z-6)<0.02 && Math.abs(owner.getY()-start.y)<0.02,"leap landing drifted");
-         check(h,!DiarmuidAbilityService.protectFall(owner),"landing left fall protection active");
-         owner.discard(); h.succeed();
-      });
+      Vec3 velocity=DiarmuidAbilityService.leapVelocity(owner);
+      check(h,velocity.y>=1.05 && velocity.horizontalDistance()>0.5,"servant big-jump impulse is missing");
+      check(h,ServantCardTransformManager.triggerAction(owner,6),"legal leap rejected");
+      h.runAfterDelay(12, () -> check(h,owner.getY()-start.y>3.0,"servant-scale leap height="+(owner.getY()-start.y)+", velocity="+owner.getDeltaMovement()+", onGround="+owner.onGround()+", action="+DiarmuidAbilityService.currentAction(owner)));
+      awaitLandingSweep(h,owner,0);
+   }
+
+   private static void awaitLandingSweep(GameTestHelper h, LivingEntity owner, int elapsed) {
+      if (DiarmuidAbilityService.currentAction(owner)==DiarmuidAction.LANDING_SWEEP) {
+         var target=target(h,owner,2.0);
+         h.runAfterDelay(20,()->{
+            check(h,Math.abs(target.getHealth()-178)<0.01,"landing sweep did not hit with both spears: "+target.getHealth());
+            check(h,!DiarmuidAbilityService.protectFall(owner),"landing left fall protection active");
+            check(h,DiarmuidAbilityService.currentAction(owner)==null,"landing sweep did not recover");
+            ServantCardTransformManager.release((ServerPlayer)owner,false); target.discard(); h.succeed();
+         });
+         return;
+      }
+      check(h,elapsed<65,"big jump never transitioned into its landing sweep");
+      if(elapsed<65) h.runAfterDelay(1,()->awaitLandingSweep(h,owner,elapsed+1));
    }
 
    @GameTest(template = ARENA, timeoutTicks = 30)

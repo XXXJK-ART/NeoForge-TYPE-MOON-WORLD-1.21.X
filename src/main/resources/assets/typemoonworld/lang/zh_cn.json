@@ -3518,5 +3518,9 @@
   "trait.typemoonworld.beloved": "所爱之人",
   "trait.typemoonworld.fianna_knights": "费奥纳骑士",
   "trait.typemoonworld.knight": "骑士",
-  "skill.typemoonworld.servant_card.diarmuid_guard_counter": "骑士武略·反刺"
+  "skill.typemoonworld.servant_card.diarmuid_guard_counter": "骑士武略·反刺",
+  "skill.typemoonworld.servant_card.diarmuid_double_spear_stance": "双枪架势（开关）",
+  "skill.typemoonworld.servant_card.diarmuid_red_dance": "红蔷薇·单手八字枪舞",
+  "skill.typemoonworld.servant_card.diarmuid_yellow_dance": "黄蔷薇·单手八字枪舞",
+  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "落地·双枪横扫"
 }

@@ -91,10 +91,41 @@ public final class DiarmuidClientSmoke {
          }
          if (ticks == 635) {
             mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
-            server(mc, () -> cast(mc,DiarmuidAction.FIGURE_EIGHT));
          }
          if (ticks == 645) capture(mc,"diarmuid-first-person");
-         if (ticks == 680) {
+         if (ticks == 545) server(mc,()->{
+            var player=mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+            var npc=(DiarmuidUaDuibhneEntity)mc.getSingleplayerServer().overworld().getEntity(npcId);
+            ServantCardTransformManager.handleHoldAction(player,8,false);
+            DiarmuidAbilityService.cancel(npc);
+            require(!DiarmuidAbilityService.active(player),"skill eight continued after release");
+         });
+         if (ticks == 675) {
+            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+            server(mc,()->cast(mc,DiarmuidAction.RED_DANCE));
+         }
+         if (ticks == 681) capture(mc,"diarmuid-red-single-hand-dance");
+         if (ticks == 710) server(mc,()->cast(mc,DiarmuidAction.YELLOW_DANCE));
+         if (ticks == 716) capture(mc,"diarmuid-yellow-single-hand-dance");
+         if (ticks == 730) {
+            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+            server(mc,()->{
+               var player=mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+               ServantCardTransformManager.handleHoldAction(player,8,true);
+               require(DiarmuidAbilityService.active(player),"held skill eight did not start on press");
+            });
+         }
+         if (ticks == 738) capture(mc,"diarmuid-held-skill-eight-third-person");
+         if (ticks == 740) mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
+         if (ticks == 741) capture(mc,"diarmuid-held-skill-eight-first-person");
+         if (ticks == 744) server(mc,()->{
+            var player=mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+            ServantCardTransformManager.handleHoldAction(player,8,false);
+            require(!DiarmuidAbilityService.active(player),"skill eight did not stop on release");
+         });
+         if (ticks == 745) server(mc,()->cast(mc,DiarmuidAction.RED_SWEEP));
+         if (ticks >= 747 && ticks <= 760 && ticks%2==0) capture(mc,"diarmuid-sweep-frame-"+(ticks-745));
+         if (ticks == 785) {
             TYPE_MOON_WORLD.LOGGER.info("DIARMUID_CLIENT_SMOKE_OK: all actions decoded, player/NPC animations, HUD, dual grips and colored spear trails; no afterimages");
             done=true; mc.stop();
          }
@@ -140,7 +171,7 @@ public final class DiarmuidClientSmoke {
             target.getAttribute(Attributes.KNOCKBACK_RESISTANCE).setBaseValue(1); server.overworld().addFreshEntity(target);
          }
       }
-      require(ServantCardTransformManager.triggerAction(player,action.slot()),"card cast failed: "+action);
+      require(action.basic()?DiarmuidAbilityService.start(player,action):ServantCardTransformManager.triggerAction(player,action.slot()),"card cast failed: "+action);
       require(DiarmuidAbilityService.start(npc,action),"NPC cast failed: "+action);
    }
 

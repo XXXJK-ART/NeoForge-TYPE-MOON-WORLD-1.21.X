@@ -13,6 +13,8 @@ public final class DiarmuidCombatAi {
       if (!DiarmuidAbilityService.validTarget(entity, target)) return false;
       if (DiarmuidAbilityService.active(entity)) { entity.getNavigation().stop(); return true; }
       if (!DiarmuidAbilityService.canAct(entity)) return true;
+      if (!DiarmuidAbilityService.isDoubleSpearStance(entity) && DiarmuidAbilityService.hasSpear(entity, true)
+         && DiarmuidAbilityService.hasSpear(entity, false) && tryAction(entity, DiarmuidAction.DOUBLE_SPEAR_STANCE)) return true;
       entity.faceToward(target.position());
       entity.getLookControl().setLookAt(target, 50, 50);
       double distance = DiarmuidAbilityService.distance(entity, target);
