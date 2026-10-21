@@ -33,6 +33,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_FAIL = register("sasaki_kojiro_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_VICTORY = register("sasaki_kojiro_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_TSURIGAMESHI = register("sasaki_kojiro_voice_tsurigameshi");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_DRAW = register("sasaki_blade_draw");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_SWING = register("sasaki_blade_swing");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_IMPACT = register("sasaki_blade_impact");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_TSUBAME_RELEASE = register("sasaki_tsubame_release");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_TSUBAME_SLASH = register("sasaki_tsubame_slash");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_ROAR = register("heracles_voice_roar");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_FAIL = register("heracles_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_VICTORY = register("heracles_voice_victory");

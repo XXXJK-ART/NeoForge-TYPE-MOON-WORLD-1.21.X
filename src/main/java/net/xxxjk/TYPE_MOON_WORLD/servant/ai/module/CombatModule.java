@@ -351,6 +351,11 @@ public final class CombatModule implements ServantAiModule {
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
       LivingEntity sharedTarget = context.target();
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid
+         && entity.level() instanceof net.minecraft.server.level.ServerLevel level) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidCombatAi.tick(diarmuid, level);
+         return;
+      }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.ordinary(entity, sharedTarget)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.skillDecisionAllowed(entity)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.nativeNpActive(entity)) {

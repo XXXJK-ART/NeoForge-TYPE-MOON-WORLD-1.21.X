@@ -1100,11 +1100,6 @@ public class ModItems {
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_speed"),
                                             1.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
-                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
-                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_range"),
-                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
-                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> RULE_BREAKER = ITEMS.register("rule_breaker",
             () -> new RuleBreakerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()

@@ -150,6 +150,7 @@ public final class GanryuCombatService {
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (player.hasEffect(ModMobEffects.STAGGER) || player.hasEffect(ModMobEffects.OFF_BALANCE)) return;
+      if (SasakiKojiroCombatService.isPreparingTsubame(player)) return;
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
       if (input == INPUT_DOWN) {
@@ -319,14 +320,18 @@ public final class GanryuCombatService {
       player.getPersistentData().putLong(TAG_RECOVERY, now + recovery);
       target.stopUsingItem();
       SasakiKojiroCombatService.playTsubamePresentation(player);
-      player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
-      boolean landed;
-      try {
-         landed = SasakiKojiroCombatService.applyTsubameDamage(player, target);
-      } finally {
-         player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
-      }
-      if (landed) addProficiency(player, isSparring(player) ? 0.25 : 0.05);
+      var castLevel = player.level();
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(SasakiKojiroCombatService.TSUBAME_WINDUP_TICKS, () -> {
+         if (!player.isAlive() || player.isRemoved() || player.hasDisconnected() || player.level() != castLevel) return;
+         player.getPersistentData().putBoolean(TAG_MARTIAL_DAMAGE, true);
+         boolean landed;
+         try {
+            landed = SasakiKojiroCombatService.applyTsubameDamage(player, target);
+         } finally {
+            player.getPersistentData().remove(TAG_MARTIAL_DAMAGE);
+         }
+         if (landed) addProficiency(player, isSparring(player) ? 0.25 : 0.05);
+      });
       damageBlade(player);
    }
 

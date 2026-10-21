@@ -52,12 +52,14 @@ class OdaRulesTest {
    }
    @Test void threeThousandUsesThirtyThreeGunWavesAndACompactSpiral() {
       assertEquals(33, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE);
+      assertEquals(3, OdaRules.THREE_THOUSAND_WAVE_COUNT);
+      assertEquals(20, OdaRules.THREE_THOUSAND_WAVE_INTERVAL);
       assertEquals(99, OdaRules.THREE_THOUSAND_TOTAL_GUNS);
-      assertEquals(3, OdaRules.THREE_THOUSAND_SHOTS_PER_GUN);
+      assertEquals(1, OdaRules.THREE_THOUSAND_SHOTS_PER_GUN);
       assertEquals(10.0F, OdaRules.THREE_THOUSAND_SHOT_DAMAGE);
       assertEquals(30, OdaRules.THREE_THOUSAND_SHOT_INTERVAL);
       assertEquals(600, OdaRules.THREE_THOUSAND_MAX_LIFE);
-      assertEquals(297, OdaRules.THREE_THOUSAND_TOTAL_SHOTS);
+      assertEquals(99, OdaRules.THREE_THOUSAND_TOTAL_SHOTS);
       assertEquals(0, OdaRules.threeThousandWave(32));
       assertEquals(1, OdaRules.threeThousandWave(33));
       assertEquals(2, OdaRules.threeThousandWave(98));

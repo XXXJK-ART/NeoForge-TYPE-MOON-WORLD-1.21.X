@@ -23,7 +23,8 @@ public final class ShadowHassanEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void onTargetChange(LivingChangeTargetEvent event) {
-      if (event.getNewAboutToBeSetTarget() instanceof LivingEntity target && ServantConcealment.isFullyConcealed(target)) {
+      if (event.getNewAboutToBeSetTarget() instanceof LivingEntity target
+         && ServantConcealment.suppressesAggroFrom(target, event.getEntity())) {
          event.setNewAboutToBeSetTarget(null);
       }
    }

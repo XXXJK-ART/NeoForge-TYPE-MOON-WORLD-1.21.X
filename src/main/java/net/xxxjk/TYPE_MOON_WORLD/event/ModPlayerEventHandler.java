@@ -121,9 +121,10 @@ public class ModPlayerEventHandler {
          }
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.servant_card_transformed && "heracles".equals(vars.servant_card_id)) {
-               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesBlockAttack(player, event.getPos());
+            if (vars.servant_card_transformed && "heracles".equals(vars.servant_card_id)
+               && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHeraclesSkills.triggerHeraclesBlockAttack(player, event.getPos())) {
                event.setCanceled(true);
+               event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
                return;
             }
          }

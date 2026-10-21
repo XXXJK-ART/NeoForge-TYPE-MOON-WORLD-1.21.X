@@ -1,60 +1,37 @@
 {
   "duration": 0.7,
-  "notes": "Three flowing, forward-carrying Tsubame Gaeshi blade trails. Visual only; damage is resolved separately.",
+  "notes": "Brief release motes only. The three long blade trails follow their respective animated sword tips on the client.",
   "emitters": [
     {
       "start_time": 0.0,
-      "end_time": 0.39,
-      "rate": 300.0,
-      "particle_lifetime": 0.38,
-      "size_variance": 0.07,
+      "end_time": 0.1,
+      "rate": 60.0,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.04,
       "lifetime_variance": 0.08,
-      "position_variance": 0.0,
-      "velocity": [0.0, 0.05, 2.8],
-      "velocity_variance": 0.08,
-      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(t - 0.5) * 4.6","expr_y":"0.35 + sin(t * 3.14159) * 1.05","expr_z":"0.0","t_start":0.0,"t_end":1.0,"segments":72},
-      "color_over_life": [{"t":0.0,"color":"#DFFFFFFF"},{"t":0.24,"color":"#FFFFFFFF"},{"t":0.62,"color":"#BDEBFFFF"},{"t":1.0,"color":"#00000000"}],
-      "size_over_life": [{"t":0.0,"size":0.08},{"t":0.28,"size":0.28},{"t":1.0,"size":0.015}],
-      "blend":"ADDITIVE",
-      "renderer":"BILLBOARD",
-      "material":{"shader":"vfx_energy","texture":"typemoonworld:textures/particle/sasaki_tsubame_slash.png"},
-      "enable_trail":true
-    },
-    {
-      "start_time": 0.025,
-      "end_time": 0.43,
-      "rate": 260.0,
-      "particle_lifetime": 0.35,
-      "size_variance": 0.08,
-      "lifetime_variance": 0.08,
-      "position_variance": 0.0,
-      "velocity": [0.0, 0.12, 2.5],
-      "velocity_variance": 0.1,
-      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(t - 0.5) * 4.8","expr_y":"-0.1 - sin(t * 3.14159) * 0.8","expr_z":"0.0","t_start":0.0,"t_end":1.0,"segments":72},
-      "color_over_life": [{"t":0.0,"color":"#CCFFFFFF"},{"t":0.25,"color":"#FFEFFFFF"},{"t":0.68,"color":"#A5B8FFFF"},{"t":1.0,"color":"#00000000"}],
-      "size_over_life": [{"t":0.0,"size":0.07},{"t":0.32,"size":0.24},{"t":1.0,"size":0.012}],
-      "blend":"ADDITIVE",
-      "renderer":"BILLBOARD",
-      "material":{"shader":"vfx_energy","texture":"typemoonworld:textures/particle/sasaki_tsubame_slash.png"},
-      "enable_trail":true
-    },
-    {
-      "start_time": 0.055,
-      "end_time": 0.47,
-      "rate": 225.0,
-      "particle_lifetime": 0.32,
-      "size_variance": 0.09,
-      "lifetime_variance": 0.1,
-      "position_variance": 0.0,
-      "velocity": [0.0, -0.08, 2.2],
-      "velocity_variance": 0.12,
-      "component": {"type":"parametric","mode":"EXPRESSION","expr_x":"(t - 0.5) * 4.3","expr_y":"0.12 + cos(t * 3.14159) * 0.45","expr_z":"0.08","t_start":0.0,"t_end":1.0,"segments":72},
-      "color_over_life": [{"t":0.0,"color":"#BFFFFFFF"},{"t":0.3,"color":"#FFE9FFFF"},{"t":0.72,"color":"#9AA6FFFF"},{"t":1.0,"color":"#00000000"}],
-      "size_over_life": [{"t":0.0,"size":0.055},{"t":0.34,"size":0.21},{"t":1.0,"size":0.01}],
-      "blend":"ADDITIVE",
-      "renderer":"BILLBOARD",
-      "material":{"shader":"vfx_energy","texture":"typemoonworld:textures/particle/sasaki_tsubame_slash.png"},
-      "enable_trail":true
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 1.8],
+      "velocity_variance": 0.06,
+      "component": {
+        "type": "sphere",
+        "radius": 0.04,
+        "segments": 8
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DFFFFFFF" },
+        { "t": 0.24, "color": "#FFFFFFFF" },
+        { "t": 0.62, "color": "#BDEBFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.28, "size": 0.06 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "blend": "ADDITIVE",
+      "renderer": "BILLBOARD",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/sasaki_tsubame_slash.png" },
+      "enable_trail": true
     }
   ]
 }

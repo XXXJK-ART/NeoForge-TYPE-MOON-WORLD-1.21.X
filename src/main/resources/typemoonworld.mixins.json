@@ -25,6 +25,8 @@
     "client.MixinMinecraft",
     "client.LocalPlayerHakuryuDismountMixin",
     "client.PlayerModelMixin",
+    "client.SasakiTsubameFacingMixin",
+    "client.SasakiTsubameHeldItemMixin",
     "client.PlayerRendererMixin"
   ],
   "injectors": {

@@ -131,13 +131,28 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
          if (entity instanceof OdaNobunagaEntity oda) {
+            applyOdaIdlePose(oda, ageInTicks, limbSwingAmount);
             applyOdaActionPose(oda, ageInTicks - entity.tickCount);
          }
          if (entity instanceof SasakiKojiroEntity sasaki) {
             applySasakiActionPose(sasaki, ageInTicks - sasaki.tickCount);
          }
+         if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid) {
+            var action = diarmuid.getDiarmuidAction();
+            float age = diarmuid.getDiarmuidActionAge(ageInTicks - diarmuid.tickCount);
+            if (action != null && age >= 0 && age < action.duration())
+               net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyImportedPose(this, action, age);
+         }
          if (entity.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity gun && gun.isChantLift()) {
             net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(this, gun.chantPoseProgress(ageInTicks - entity.tickCount));
+         }
+         if (entity instanceof OdaNobunagaEntity) {
+            this.hat.copyFrom(this.head);
+            this.jacket.copyFrom(this.body);
+            this.rightSleeve.copyFrom(this.rightArm);
+            this.leftSleeve.copyFrom(this.leftArm);
+            this.rightPants.copyFrom(this.rightLeg);
+            this.leftPants.copyFrom(this.leftLeg);
          }
          if (isJeanneAlter(entity.getServantId())) {
             this.leftArm.xRot = -(float)Math.PI / 2.0F;
@@ -171,79 +186,11 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          if (action == null) return;
          float age = sasaki.getSasakiActionAge(partialTick);
          if (age < 0.0F || age >= action.durationTicks()) return;
-         float progress = Mth.clamp(age / action.durationTicks(), 0.0F, 1.0F);
-         float sweep = Mth.sin(progress * (float)Math.PI);
-         float recovery = 1.0F - Mth.clamp((progress - 0.55F) / 0.45F, 0.0F, 1.0F);
-         switch (action) {
-            case CROUCH_CUTBACK -> {
-               float draw = 1.0F - Mth.clamp(progress * 2.2F, 0.0F, 1.0F);
-               this.body.xRot -= sweep * 0.18F;
-               this.body.yRot -= sweep * 0.32F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -0.75F - draw * 0.85F);
-               this.rightArm.zRot -= sweep * 0.55F;
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.42F);
-               this.rightLeg.xRot += sweep * 0.6F;
-               this.leftLeg.xRot -= sweep * 0.32F;
-            }
-            case VERTICAL_SLASH, DOWNWARD_SLASH -> {
-               float windup = 1.0F - Mth.clamp(progress * 2.0F, 0.0F, 1.0F);
-               this.body.yRot -= sweep * 0.16F;
-               this.body.xRot += sweep * 0.12F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -0.22F - windup * 1.25F + sweep * 1.18F);
-               this.rightArm.zRot = Mth.lerp(sweep, this.rightArm.zRot, -0.12F - sweep * 0.5F);
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.72F);
-               this.leftLeg.xRot -= sweep * 0.16F;
-            }
-            case UPWARD_SLASH -> {
-               this.body.xRot -= sweep * 0.12F;
-               this.body.yRot += sweep * 0.18F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -2.1F + progress * 0.75F);
-               this.rightArm.zRot = Mth.lerp(sweep, this.rightArm.zRot, 0.32F + sweep * 0.22F);
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.38F);
-               this.rightLeg.xRot += sweep * 0.2F;
-            }
-            case HORIZONTAL_SLASH -> {
-               float draw = 1.0F - Mth.clamp(progress * 2.0F, 0.0F, 1.0F);
-               this.body.yRot -= sweep * 0.56F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -0.68F - draw * 0.64F);
-               this.rightArm.zRot = Mth.lerp(sweep, this.rightArm.zRot, -0.25F - sweep * 0.95F);
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.55F);
-               this.rightLeg.xRot -= sweep * 0.18F;
-            }
-            case TRANSPARENCY, PRESENCE_CONCEALMENT -> {
-               this.body.xRot -= recovery * 0.1F;
-               this.rightArm.xRot = Mth.lerp(recovery, this.rightArm.xRot, -0.82F);
-               this.leftArm.xRot = Mth.lerp(recovery, this.leftArm.xRot, -0.5F);
-               this.rightArm.zRot = Mth.lerp(recovery, this.rightArm.zRot, -0.18F);
-            }
-            case THRUST -> {
-               this.body.xRot -= sweep * 0.32F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -1.42F + progress * 0.45F);
-               this.rightArm.zRot = Mth.lerp(sweep, this.rightArm.zRot, -0.08F);
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.66F);
-               this.rightLeg.xRot = Mth.lerp(sweep, this.rightLeg.xRot, -0.55F);
-               this.leftLeg.xRot = Mth.lerp(sweep, this.leftLeg.xRot, 0.38F);
-            }
-            case SPINNING_SLASH -> {
-               float turn = Mth.sin(progress * (float)Math.PI * 2.0F);
-               this.body.yRot += turn * 0.58F;
-               this.rightArm.xRot = Mth.lerp(sweep, this.rightArm.xRot, -0.9F - sweep * 0.5F);
-               this.leftArm.xRot = Mth.lerp(sweep, this.leftArm.xRot, -0.7F);
-               this.rightArm.zRot -= sweep * 0.62F;
-               this.leftLeg.xRot -= sweep * 0.2F;
-            }
-            case COUNTER_STANCE -> {
-               this.body.xRot += recovery * 0.08F;
-               this.rightArm.xRot = Mth.lerp(recovery, this.rightArm.xRot, -1.12F);
-               this.leftArm.xRot = Mth.lerp(recovery, this.leftArm.xRot, -0.92F);
-               this.rightArm.yRot = Mth.lerp(recovery, this.rightArm.yRot, -0.32F);
-               this.leftArm.yRot = Mth.lerp(recovery, this.leftArm.yRot, 0.38F);
-               this.rightLeg.xRot += recovery * 0.12F;
-            }
-            case TSUBAME_GAESHI -> {
-               net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.applyMainPose(
-                  this, net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.animationTime(age));
-            }
+         if (action == SasakiKojiroAction.TSUBAME_GAESHI) {
+            net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.applyMainPose(
+               this, net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.animationTime(age));
+         } else {
+            net.xxxjk.TYPE_MOON_WORLD.client.SasakiKojiroActionAnimationClient.applyImportedPose(this, action, age);
          }
       }
 
@@ -262,7 +209,24 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          this.body.yRot = recoil * 0.14F;
       }
 
+      private void applyOdaIdlePose(OdaNobunagaEntity oda, float ageInTicks, float limbSwingAmount) {
+         if (!oda.isAlive() || oda.isSpiritualTransitionLocked()) return;
+         float breathe = Mth.sin((ageInTicks + oda.getId() * 3.0F) * 0.12F);
+         float still = 1.0F - Mth.clamp(limbSwingAmount * 3.0F, 0.0F, 1.0F);
+         this.body.zRot += breathe * 0.012F * still;
+         this.leftArm.zRot += breathe * 0.025F;
+         if (!oda.isCombatReady()) return;
+         this.rightArm.xRot = Mth.lerp(0.65F, this.rightArm.xRot, -0.55F + breathe * 0.035F);
+         this.leftArm.xRot = Mth.lerp(0.65F, this.leftArm.xRot, -0.38F - breathe * 0.035F);
+         this.rightArm.yRot -= 0.12F;
+         this.leftArm.yRot += 0.12F;
+         this.body.yRot -= 0.1F * still;
+         this.rightLeg.xRot += 0.1F * still;
+         this.leftLeg.xRot -= 0.1F * still;
+      }
+
       private void applyOdaActionPose(OdaNobunagaEntity oda, float partialTick) {
+         if (!oda.isAlive() || oda.isSpiritualTransitionLocked()) return;
          String action = oda.getActionAnimation();
          float age = oda.getActionAnimationAge(partialTick);
          switch (action) {
@@ -274,6 +238,9 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
                this.rightArm.yRot = Mth.lerp(pose, this.rightArm.yRot, -0.12F);
                this.leftArm.yRot = Mth.lerp(pose, this.leftArm.yRot, 0.12F);
                this.body.xRot -= recoil * 0.08F;
+               this.body.yRot -= pose * 0.12F;
+               this.rightLeg.xRot += recoil * 0.12F;
+               this.leftLeg.xRot -= recoil * 0.08F;
             }
             case "attack_slash" -> {
                float pose = actionEnvelope(age, 16.0F, 2.0F, 3.0F);
@@ -285,6 +252,8 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
                this.leftArm.xRot = Mth.lerp(pose, this.leftArm.xRot, -0.65F + cut * 0.3F);
                this.body.yRot -= cut * 0.42F;
                this.body.xRot += cut * 0.1F;
+               this.rightLeg.xRot -= cut * 0.24F;
+               this.leftLeg.xRot += cut * 0.16F;
             }
             case "attack_volley" -> {
                float pose = actionEnvelope(age, 24.0F, 2.0F, 3.0F);
@@ -311,6 +280,8 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
                this.leftArm.xRot = Mth.lerp(pose, this.leftArm.xRot, -0.72F);
                this.leftArm.zRot = Mth.lerp(pose, this.leftArm.zRot, 0.4F);
                this.body.yRot -= pose * 0.14F;
+               this.head.yRot += pose * 0.1F;
+               this.rightLeg.xRot -= pose * 0.1F;
             }
             case "skill_maou" -> {
                float pose = actionEnvelope(age, 34.0F, 6.0F, 6.0F);

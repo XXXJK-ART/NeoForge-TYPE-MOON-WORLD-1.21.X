@@ -57,7 +57,13 @@
       "martial_6": "animation.heracles.martial_6",
       "martial_7": "animation.heracles.martial_7",
       "martial_8": "animation.heracles.martial_8",
-      "martial_end": "animation.heracles.martial_end"
+      "martial_end": "animation.heracles.martial_end",
+      "frenzy": "animation.heracles.frenzy",
+      "frenzy_walk": "animation.heracles.frenzy_walk",
+      "frenzy_slash_0": "animation.heracles.frenzy_slash_0",
+      "frenzy_slash_1": "animation.heracles.frenzy_slash_1",
+      "frenzy_slash_2": "animation.heracles.frenzy_slash_2",
+      "frenzy_impact": "animation.heracles.frenzy_impact"
     }
   },
   "specialization": {

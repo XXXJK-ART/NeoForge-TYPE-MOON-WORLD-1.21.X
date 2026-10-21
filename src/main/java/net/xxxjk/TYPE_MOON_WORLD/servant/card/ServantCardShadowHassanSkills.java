@@ -47,7 +47,7 @@ public final class ServantCardShadowHassanSkills {
    public static void initialize(ServerPlayer player) {
       clear(player);
       player.getPersistentData().putBoolean(TAG_BODY_INVISIBILITY_MANAGED, true);
-      // Presence concealment is the card's default state; attacks briefly reveal it.
+      // Presence concealment is the card's default state until combat breaks it.
       setConcealed(player, true);
       setNoblePhantasmConsumed(player, false);
    }
@@ -95,9 +95,7 @@ public final class ServantCardShadowHassanSkills {
 
    public static void revealForAttack(ServerPlayer player) {
       if (!isShadowHassan(player) || !wantsConcealment(player)) return;
-      player.getPersistentData().putLong(TAG_EXPOSED_UNTIL,
-         player.level().getGameTime() + ShadowHassanRules.CONCEALMENT_EXPOSURE_TICKS);
-      maintainBodyInvisibility(player, false);
+      setConcealed(player, false);
    }
 
    public static boolean canAttack(ServerPlayer player) {

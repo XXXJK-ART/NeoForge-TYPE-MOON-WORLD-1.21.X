@@ -1,0 +1,11 @@
+{
+  "id": "gae_buidhe",
+  "display_name": "Gae Buidhe",
+  "display_name_zh": "必灭的黄蔷薇",
+  "rank": "B",
+  "type": "anti_unit",
+  "mp_cost": 0,
+  "range": 3,
+  "effects": [],
+  "description": "Permanent weapon Noble Phantasm: existing five-stack wound curse and limb disable rules are resolved once by each effective yellow-spear hit. No separate release; the hit may play its limited voice callout."
+}

@@ -25,7 +25,10 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (isCasterGilgamesh(servant)) {
+      if (isHeracles(servant)) {
+         if (servant.getRandom().nextFloat() > 0.42F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
+      } else if (isCasterGilgamesh(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          SoundEvent sound = servant.getRandom().nextBoolean()
             ? ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_1.get()
@@ -426,7 +429,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
-      playVoiceForced(servant, "diarmuid_np", 1.15F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_NP.get());
+      net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.yellowHit(servant);
    }
 
    public static void tryPlayProjection(ServantEntity servant) {
@@ -616,6 +619,7 @@ public final class ServantVoiceHelper {
       }
 
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
+      if (isDiarmuid(servant) && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(servant)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
@@ -632,6 +636,8 @@ public final class ServantVoiceHelper {
 
       data.putLong(GLOBAL_VOICE_TICK_TAG, now);
       data.putLong(categoryTag, now);
+      if (isDiarmuid(servant)) net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.lock(servant,
+         "attack".equals(category) ? 22 : 80);
       float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;
       serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
    }

@@ -176,9 +176,13 @@ public final class TerrainImpactService {
          BlockPos pos=BlockPos.containing(origin).offset(x,y,z);
          Vec3 rel=Vec3.atCenterOf(pos).subtract(origin);
          double along=rel.dot(forward), across=rel.dot(side);
-         if(along<0 || along>3 || Math.abs(across)>1.5 || pos.getY()<footY-1.0E-5 || pos.getY()>=footY+height) continue;
+         if(along<0 || along>3 || Math.abs(across)>1.5 || pos.getY()>=footY+height) continue;
          BlockState state=level.getBlockState(pos);
-         if(state.isAir()||state.getCollisionShape(level,pos).isEmpty()||level.getBlockEntity(pos)!=null)continue;
+         var collision=state.getCollisionShape(level,pos);
+         if(state.isAir()||collision.isEmpty()||level.getBlockEntity(pos)!=null)continue;
+         // Fractional foot heights still overlap the bottom wall row. Preserve
+         // only shapes entirely below the feet (including a supporting slab).
+         if(pos.getY()+collision.max(Direction.Axis.Y)<=footY+1.0E-5)continue;
          float hardness=state.getDestroySpeed(level,pos);
          if(hardness<0||hardness>profile.maximumHardness())continue;
          snapshot.put(pos,state);

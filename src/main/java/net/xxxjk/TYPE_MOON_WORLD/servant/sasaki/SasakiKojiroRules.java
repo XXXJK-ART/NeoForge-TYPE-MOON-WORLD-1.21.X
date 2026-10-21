@@ -35,6 +35,7 @@ public final class SasakiKojiroRules {
       public double mpCost() { return mpCost; }
       public int cooldownTicks() { return cooldownTicks; }
       public double range() { return range; }
+      public double cardRange() { return this == TSUBAME_GAESHI ? range : 4.0; }
       public float damage() { return damage; }
 
       public static Technique forSlot(int slot) {

@@ -29,7 +29,7 @@ public final class OdaNobunagaActionAnimationClient {
    @SubscribeEvent
    public static void registerPlayerAnimationLayer(FMLClientSetupEvent event) {
       event.enqueueWork(() -> PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
-         PLAYER_ANIMATION_LAYER, 1000, player -> new ModifierLayer<>()
+         PLAYER_ANIMATION_LAYER, 1000, player -> ServantActionAnimationLayer.create()
       ));
    }
 

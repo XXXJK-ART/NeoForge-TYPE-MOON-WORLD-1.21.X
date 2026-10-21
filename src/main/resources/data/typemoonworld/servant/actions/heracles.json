@@ -8,7 +8,7 @@
         "area"
       ],
       "minimum_range": 0,
-      "maximum_range": 16,
+      "maximum_range": 20,
       "mana_cost": 18,
       "stamina_cost": 0,
       "timing": {
@@ -18,13 +18,13 @@
       },
       "threat": {
         "shape": "sphere",
-        "radius": 16,
-        "length": 16,
+        "radius": 20,
+        "length": 20,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 16
+        "friendly_fire_radius": 20
       },
       "terrain_impact": "medium"
     },
@@ -35,7 +35,7 @@
         "area"
       ],
       "minimum_range": 0,
-      "maximum_range": 5.4,
+      "maximum_range": 6.75,
       "mana_cost": 32,
       "stamina_cost": 0,
       "timing": {
@@ -45,13 +45,13 @@
       },
       "threat": {
         "shape": "sphere",
-        "radius": 5.4,
-        "length": 5.4,
+        "radius": 6.75,
+        "length": 6.75,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 5.4
+        "friendly_fire_radius": 6.75
       },
       "terrain_impact": "heavy"
     },
@@ -61,7 +61,7 @@
         "melee"
       ],
       "minimum_range": 0,
-      "maximum_range": 6,
+      "maximum_range": 7.5,
       "mana_cost": 22,
       "stamina_cost": 0,
       "timing": {
@@ -72,12 +72,12 @@
       "threat": {
         "shape": "cone",
         "radius": 1,
-        "length": 6,
+        "length": 7.5,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 6
+        "friendly_fire_radius": 7.5
       },
       "terrain_impact": "small"
     },
@@ -87,7 +87,7 @@
         "melee"
       ],
       "minimum_range": 0,
-      "maximum_range": 3,
+      "maximum_range": 3.75,
       "mana_cost": 20,
       "stamina_cost": 0,
       "timing": {
@@ -98,12 +98,12 @@
       "threat": {
         "shape": "cone",
         "radius": 1,
-        "length": 3,
+        "length": 3.75,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 3
+        "friendly_fire_radius": 3.75
       },
       "terrain_impact": "small"
     },
@@ -114,7 +114,7 @@
         "area"
       ],
       "minimum_range": 0,
-      "maximum_range": 4.5,
+      "maximum_range": 5.625,
       "mana_cost": 26,
       "stamina_cost": 0,
       "timing": {
@@ -124,13 +124,13 @@
       },
       "threat": {
         "shape": "cone",
-        "radius": 4.5,
-        "length": 4.5,
+        "radius": 5.625,
+        "length": 5.625,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 4.5
+        "friendly_fire_radius": 5.625
       },
       "terrain_impact": "small"
     },
@@ -140,7 +140,7 @@
         "melee"
       ],
       "minimum_range": 0,
-      "maximum_range": 12,
+      "maximum_range": 15,
       "mana_cost": 35,
       "stamina_cost": 0,
       "timing": {
@@ -151,12 +151,12 @@
       "threat": {
         "shape": "cone",
         "radius": 1,
-        "length": 12,
+        "length": 15,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 12
+        "friendly_fire_radius": 15
       },
       "terrain_impact": "small"
     },
@@ -167,7 +167,7 @@
         "area"
       ],
       "minimum_range": 0,
-      "maximum_range": 3.5,
+      "maximum_range": 4.375,
       "mana_cost": 18,
       "stamina_cost": 0,
       "timing": {
@@ -177,13 +177,13 @@
       },
       "threat": {
         "shape": "sphere",
-        "radius": 3.5,
-        "length": 3.5,
+        "radius": 4.375,
+        "length": 4.375,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 3.5
+        "friendly_fire_radius": 4.375
       },
       "terrain_impact": "small"
     },
@@ -193,7 +193,7 @@
         "melee"
       ],
       "minimum_range": 0,
-      "maximum_range": 3,
+      "maximum_range": 3.75,
       "mana_cost": 30,
       "stamina_cost": 0,
       "timing": {
@@ -204,12 +204,12 @@
       "threat": {
         "shape": "cone",
         "radius": 1,
-        "length": 3,
+        "length": 3.75,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 3
+        "friendly_fire_radius": 3.75
       },
       "terrain_impact": "small"
     },
@@ -220,7 +220,7 @@
         "area"
       ],
       "minimum_range": 0,
-      "maximum_range": 16,
+      "maximum_range": 20,
       "mana_cost": 38,
       "stamina_cost": 0,
       "timing": {
@@ -230,13 +230,13 @@
       },
       "threat": {
         "shape": "sphere",
-        "radius": 16,
-        "length": 16,
+        "radius": 20,
+        "length": 20,
         "danger": 3,
         "blockable": true,
         "dodgeable": true,
         "interruptible": true,
-        "friendly_fire_radius": 16
+        "friendly_fire_radius": 20
       },
       "terrain_impact": "medium"
     }

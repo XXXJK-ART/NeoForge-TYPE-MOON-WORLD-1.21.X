@@ -19,6 +19,7 @@ public final class ServantCardVoiceHelper {
          return;
       }
       play(player, switch (vars.servant_card_id) {
+         case "heracles" -> ModSounds.HERACLES_VOICE_ROAR.get();
          case "sasaki_kojiro" -> ModSounds.SASAKI_KOJIRO_VOICE_ATTACK.get();
          case "cu_chulainn" -> ModSounds.CU_CHULAINN_VOICE_ATTACK.get();
          case "medea" -> ModSounds.MEDEA_VOICE_ATTACK.get();
@@ -54,6 +55,12 @@ public final class ServantCardVoiceHelper {
       SoundEvent sound = usesUshiwakamaruNoblePhantasmVoice(effectId)
          ? ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get()
          : switch (effectId) {
+         case "god_hand_status", "heracles_big_jump", "heracles_ground_slam", "heracles_shoulder",
+            "heracles_uppercut", "heracles_sweep", "heracles_throw", "heracles_stomp", "heracles_flurry", "heracles_pounce"
+            -> ModSounds.HERACLES_VOICE_ROAR.get();
+         case "sasaki_crouch_cutback", "sasaki_vertical_slash", "sasaki_downward_slash", "sasaki_upward_slash",
+            "sasaki_horizontal_slash", "sasaki_thrust", "sasaki_spinning_slash", "sasaki_counter_stance"
+            -> ModSounds.SASAKI_KOJIRO_VOICE_ATTACK.get();
          case "zabaniya" -> ModSounds.CURSED_ARM_HASSAN_VOICE_ZABANIYA_SHORT.get();
          case "shadow_hassan_meditative_sensitivity" -> ModSounds.SHADOW_HASSAN_VOICE_MEDITATIVE_SENSITIVITY.get();
          case "fanatic_heartbeat" -> ModSounds.FANATIC_ASSASSIN_VOICE_HEARTBEAT.get();
@@ -121,12 +128,15 @@ public final class ServantCardVoiceHelper {
          return;
       }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return;
+      boolean diarmuid = ServantCardDiarmuidSkills.isActiveCard(player);
+      if (diarmuid && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(player)) return;
       long now = level.getGameTime();
       long last = player.getPersistentData().getLong(LAST_VOICE_TICK);
-      if (now - last < cooldownTicks) {
+      if (player.getPersistentData().contains(LAST_VOICE_TICK) && now - last < cooldownTicks) {
          return;
       }
       player.getPersistentData().putLong(LAST_VOICE_TICK, now);
+      if (diarmuid) net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.lock(player, 22);
       level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.VOICE, 1.0F, 1.0F);
    }
 }

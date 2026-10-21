@@ -28,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
@@ -36,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 /** Server executor shared by player input and NPC selection. No weapon requirement or free NPC skills. */
 @EventBusSubscriber(modid="typemoonworld")
 public final class HeraclesAbilityService {
+   private static final double RANGE_SCALE = 1.25;
    public record Spec(String id, String name, int mana, int cooldown, int windup, int recovery) {}
    private static final Spec[] SPECS={
       new Spec("heracles_big_jump","大跳·坠击",18,120,1,4),
@@ -51,6 +53,7 @@ public final class HeraclesAbilityService {
    private static final Map<LivingEntity,Action> RUNNING=new WeakHashMap<>();
    private static final Map<LivingEntity,Thrown> THROWN=new WeakHashMap<>();
    private static final String GRAB="HeraclesGrabbedBy";
+   private static double expandedRange(double range) { return range * RANGE_SCALE; }
    private static final class Action {
       final int slot; final LivingEntity target; final Vec3 direction, destination; final net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension;
       final Set<UUID> hit=new HashSet<>();
@@ -88,12 +91,12 @@ public final class HeraclesAbilityService {
          && (delta.horizontalDistanceSqr()<1e-6 || facing.dot(delta.multiply(1,0,1).normalize())>=Math.cos(Math.toRadians(degrees/2))) && visible(owner,target);
    }
    private static LivingEntity select(LivingEntity caster,int slot) {
-      double range=slot==5?12:slot==8?16:slot==2?6:3;
+      double range=expandedRange(slot==5?12:slot==8?16:slot==2?6:3);
       Vec3 facing=forward(caster);
       if(caster instanceof ServantEntity npc) {
          var target=npc.getTarget();
          return enemy(caster,target)&&caster.distanceTo(target)<=range&&visible(caster,target)
-            && (slot!=3 || inArc(caster,target,facing,3,90))?target:null;
+            && (slot!=3 || inArc(caster,target,facing,expandedRange(3),90))?target:null;
       }
       return caster.level().getEntitiesOfClass(LivingEntity.class,caster.getBoundingBox().inflate(range),t->enemy(caster,t)
          &&caster.distanceTo(t)<=range&&visible(caster,t)&&inArc(caster,t,facing,range,slot==3?90:45))
@@ -149,6 +152,7 @@ public final class HeraclesAbilityService {
       }
       caster.getPersistentData().putLong("HeraclesCooldown:"+slot,now+spec.cooldown());
       if(slot==9) { status(caster);return true; }
+      actionSmoke(caster);
       Vec3 direction=target==null?forward(caster):target.position().subtract(caster.position()).multiply(1,0,1).normalize();
       RUNNING.put(caster,new Action(slot,target,direction,destination,caster));
       if (caster instanceof ServerPlayer p) {
@@ -158,12 +162,17 @@ public final class HeraclesAbilityService {
       if(caster instanceof ServerPlayer p)ServantCardActionTimeline.begin(p,spec.id(),spec.windup(),130,spec.recovery());
       if(caster instanceof ServantEntity npc) {
          npc.getNavigation().stop();
+         ServantVoiceHelper.tryPlayAttack(npc);
          npc.triggerNamedActionAnimation("martial_"+slot);
       }
       return true;
    }
    public static void status(LivingEntity caster) {
-      if(caster instanceof ServerPlayer player)player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.god_hand_lives",Math.max(1,GodHandService.read(caster).lives()+1)),true);
+      actionSmoke(caster);
+      if(caster instanceof ServerPlayer player) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.god_hand_lives",Math.max(1,GodHandService.read(caster).lives()+1)),true);
+         ServantCardVoiceHelper.tryPlaySkill(player,"god_hand_status");
+      }
       if(caster.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,caster.getX(),caster.getY()+1,caster.getZ(),18,.5,.55,.5,.035);
          level.playSound(null,caster.blockPosition(),SoundEvents.BEACON_AMBIENT,SoundSource.PLAYERS,.55F,.72F);
@@ -186,9 +195,9 @@ public final class HeraclesAbilityService {
       boolean sight=visible(npc,target);
       // Select attacks for the current geometry; never jump or slam in place
       // just because every useful gap closer is cooling down.
-      if(npc.tickCount%4==0&&sight&&distance<=16) {
+      if(npc.tickCount%4==0&&sight&&distance<=20) {
          int[] choices=Math.abs(target.getY()-npc.getY())>2?new int[]{8,0}
-            :distance<=3?new int[]{7,3,4,6,1}:distance<=5.4?new int[]{2,1,4,5,8}:new int[]{2,5,8};
+            :distance<=3.75?new int[]{7,3,4,6,1}:distance<=6.75?new int[]{2,1,4,5,8}:new int[]{2,5,8};
          int offset=npc.getRandom().nextInt(choices.length);
          for(int i=0;i<choices.length;i++)if(start(npc,choices[(i+offset)%choices.length]))return true;
       }
@@ -244,6 +253,7 @@ public final class HeraclesAbilityService {
          Vec3 away=target.position().subtract(caster.position()).multiply(1,0,1);if(away.lengthSqr()<1e-6)away=forward(caster);else away=away.normalize();
          target.setDeltaMovement(away.scale(horizontal).add(0,vertical,0));target.hurtMarked=true;
       }
+      if(result && caster.level() instanceof ServerLevel level)smokeFx(level,target.position(),.6F);
       return result;
    }
    private static void area(LivingEntity caster,int slot,double radius,double arc,float damage,double horizontal,double vertical) {
@@ -258,11 +268,11 @@ public final class HeraclesAbilityService {
       }
    }
    private static void ground(LivingEntity caster,int slot,double radius,float damage,double horizontal,double vertical) {
+      if ((slot == 0 || slot == 8) && caster instanceof HeraclesEntity npc) npc.triggerNamedActionAnimation("frenzy_impact");
       area(caster,slot,radius,360,damage,horizontal,vertical);
       if(caster.level() instanceof ServerLevel level) {
          var tier=slot==1?TerrainImpactProfile.Tier.HEAVY:TerrainImpactProfile.Tier.MEDIUM;
-         var base=TerrainImpactProfile.of(tier);
-         var profile=new TerrainImpactProfile(tier,Math.min(radius,slot==1?3.4:2.4),base.maximumHardness(),64,96);
+         var profile=new TerrainImpactProfile(tier,radius,slot==1?35.0F:8.0F,64,96);
          TerrainImpactService.impactHeraclesGround(level,caster,caster.position(),profile,caster instanceof ServerPlayer?TerrainImpactService.Permission.PLAYER:TerrainImpactService.Permission.NPC,slot==1||slot==8?2:1);
          impactFx(level,caster.position(),slot==1?1F:slot==6?.55F:.75F);
       }
@@ -288,30 +298,30 @@ public final class HeraclesAbilityService {
             if(a.age==windup) { e.setDeltaMovement(a.direction.scale(1.05).add(0,1.52,0));e.hurtMarked=true;e.fallDistance=0; }
             if(!e.onGround())a.airborne=true;
             if(a.age>240) {cancel(e);break;}
-            if(a.airborne&&e.onGround()) { ground(e,0,3.2,26,1.15,.42);recover(e,a);resetAir(e); }
+            if(a.airborne&&e.onGround()) { ground(e,0,expandedRange(3.2),29,1.15,.42);recover(e,a);resetAir(e); }
          }
-         case 1 -> { ground(e,1,5.4,58,1.85,.72);recover(e,a); }
+         case 1 -> { ground(e,1,expandedRange(5.4),64,1.85,.72);recover(e,a); }
          case 2 -> {
             if(a.age>=windup+8) { recover(e,a);break; }
-            Vec3 before=e.position();e.setDeltaMovement(Vec3.ZERO);e.move(MoverType.SELF,a.direction.scale(.75));e.hurtMarked=true;
+            Vec3 before=e.position();e.setDeltaMovement(Vec3.ZERO);e.move(MoverType.SELF,a.direction.scale(.95));e.hurtMarked=true;
             if(a.age%2==0&&e.level() instanceof ServerLevel level) {
                BlockPos feet=BlockPos.containing(before.add(0,-.1,0));
                var state=level.getBlockState(feet);
                if(!state.isAir())level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,state),before.x,before.y+.1,before.z,10,.45,.12,.45,.16);
                level.sendParticles(ParticleTypes.SMOKE,before.x,before.y+.15,before.z,3,.3,.08,.3,.035);
             }
-            AABB path=e.getBoundingBox().minmax(e.getBoundingBox().move(before.subtract(e.position()))).inflate(.5,0,.5);
-            for(var t:e.level().getEntitiesOfClass(LivingEntity.class,path,t->enemy(e,t)))if(a.hit.add(t.getUUID()))hit(e,t,2,32,1.25,.26,false);
+            AABB path=e.getBoundingBox().minmax(e.getBoundingBox().move(before.subtract(e.position()))).inflate(.75,0,.75);
+            for(var t:e.level().getEntitiesOfClass(LivingEntity.class,path,t->enemy(e,t)))if(a.hit.add(t.getUUID()))hit(e,t,2,35,1.25,.26,false);
             if(e.horizontalCollision||e.position().distanceToSqr(before)<.01) { wall(e,a.direction);recover(e,a); }
          }
-         case 3 -> { if(enemy(e,a.target)&&inArc(e,a.target,a.direction,3,90))hit(e,a.target,3,36,.55,1.05,false);recover(e,a); }
-         case 4 -> { area(e,4,4.5,240,40,1.1,.2);recover(e,a); }
+         case 3 -> { if(enemy(e,a.target)&&inArc(e,a.target,a.direction,expandedRange(3),90))hit(e,a.target,3,40,.55,1.05,false);recover(e,a); }
+         case 4 -> { area(e,4,expandedRange(4.5),240,44,1.1,.2);recover(e,a); }
          case 5 -> {
             if(a.age==windup) {
-               if(!enemy(e,a.target)||!grabbable(a.target)||!visible(e,a.target)||e.distanceTo(a.target)>12) { recover(e,a);break; }
+               if(!enemy(e,a.target)||!grabbable(a.target)||!visible(e,a.target)||e.distanceTo(a.target)>expandedRange(12)) { recover(e,a);break; }
                Vec3 pos=behind(e,a.target);if(pos==null) {recover(e,a);break;}
                teleport(e,pos);
-               if(!hit(e,a.target,5,8,0,0,true)) {recover(e,a);break;}
+               if(!hit(e,a.target,5,9,0,0,true)) {recover(e,a);break;}
                a.grabbed=true;a.anchor=e.position();a.held=a.target.position();
                a.target.getPersistentData().putUUID(GRAB,e.getUUID());
             }
@@ -320,16 +330,16 @@ public final class HeraclesAbilityService {
                if(a.age<windup+6) { teleport(e,a.anchor);teleport(a.target,a.held); }
                else {
                   release(a.target);a.grabbed=false;
-                  if(hit(e,a.target,5,20,1.6,.65,true)&&a.target.isAlive())THROWN.put(a.target,new Thrown(e,a.target));
+                  if(hit(e,a.target,5,22,1.6,.65,true)&&a.target.isAlive())THROWN.put(a.target,new Thrown(e,a.target));
                   recover(e,a);
                }
             }
          }
-         case 6 -> { area(e,6,3.5,360,24,.25,.12);recover(e,a); }
+         case 6 -> { area(e,6,expandedRange(3.5),360,27,.25,.12);recover(e,a); }
          case 7 -> {
-            if(!enemy(e,a.target)||e.distanceTo(a.target)>3||!visible(e,a.target)) {recover(e,a);break;}
+            if(!enemy(e,a.target)||e.distanceTo(a.target)>expandedRange(3)||!visible(e,a.target)) {recover(e,a);break;}
             int finalHit=windup+6;
-            if(a.age==windup||a.age==windup+3||a.age==finalHit)hit(e,a.target,7,a.age==finalHit?30:18,a.age==finalHit?1.2:0,a.age==finalHit?.35:0,true);
+            if(a.age==windup||a.age==windup+3||a.age==finalHit)hit(e,a.target,7,a.age==finalHit?33:20,a.age==finalHit?1.2:0,a.age==finalHit?.35:0,true);
             if(a.age>=finalHit)recover(e,a);
          }
          case 8 -> {
@@ -339,14 +349,23 @@ public final class HeraclesAbilityService {
             Vec3 point=a.anchor.lerp(a.destination,ratio).add(0,Math.sin(Math.PI*ratio)*3,0);
             Vec3 before=e.position(),step=point.subtract(before);
             e.setDeltaMovement(Vec3.ZERO);e.move(MoverType.SELF,step);e.hurtMarked=true;e.fallDistance=0;
-            if(t>=16||e.position().distanceToSqr(point)>.02||t>3&&e.onGround()) { ground(e,8,4,46,1.2,.35);recover(e,a);resetAir(e); }
+            if(t>=16||e.position().distanceToSqr(point)>.02||t>3&&e.onGround()) { ground(e,8,expandedRange(4),51,1.2,.35);recover(e,a);resetAir(e); }
          }
       }
    }
    private static void wall(LivingEntity caster,Vec3 direction) {
       if(caster.level() instanceof ServerLevel level) {
-         TerrainImpactService.impactWallTunnel(level,caster,caster.position(),direction,new TerrainImpactProfile(TerrainImpactProfile.Tier.MEDIUM,2.4,6,48,80),3,3,(int)Math.ceil(caster.getBbHeight()));
+         TerrainImpactService.impactWallTunnel(level,caster,caster.position(),direction,new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY,3.0,35,48,80),3,3,(int)Math.ceil(caster.getBbHeight()));
       }
+   }
+   private static void actionSmoke(LivingEntity caster) {
+      if(caster.level() instanceof ServerLevel level)smokeFx(level,caster.position().add(forward(caster).scale(1.1)).add(0,.25,0),.8F);
+   }
+   private static void smokeFx(ServerLevel level,Vec3 position,float scale) {
+      double spread=.34*scale;
+      level.sendParticles(ParticleTypes.SMOKE,position.x,position.y,position.z,Math.max(4,Math.round(9*scale)),spread,.2*scale,spread,.025);
+      level.sendParticles(ParticleTypes.CLOUD,position.x,position.y,position.z,Math.max(2,Math.round(4*scale)),spread,.12*scale,spread,.045);
+      level.sendParticles(ParticleTypes.LARGE_SMOKE,position.x,position.y,position.z,1,.12*scale,.08*scale,.12*scale,.005);
    }
    private static void impactFx(ServerLevel level,Vec3 position,float scale) {
       VFXServerEffects.spawnScaled(level,"servant_heracles_slam",position,96,scale);
@@ -370,7 +389,7 @@ public final class HeraclesAbilityService {
          d.putInt("HeraclesAirTicks",d.getInt("HeraclesAirTicks")+1);
          d.putDouble("HeraclesAirTop",d.contains("HeraclesAirTop")?Math.max(d.getDouble("HeraclesAirTop"),e.getY()):e.getY());
       } else {
-         if(!d.getBoolean("HeraclesLandingConsumed")&&!busy(e)&&d.getInt("HeraclesAirTicks")>=8&&d.getDouble("HeraclesAirTop")-e.getY()>=5)ground(e,-1,3.2,26,1.15,.42);
+         if(!d.getBoolean("HeraclesLandingConsumed")&&!busy(e)&&d.getInt("HeraclesAirTicks")>=8&&d.getDouble("HeraclesAirTop")-e.getY()>=5)ground(e,-1,expandedRange(3.2),29,1.15,.42);
          d.remove("HeraclesAirTicks");d.remove("HeraclesAirTop");d.remove("HeraclesLandingConsumed");
       }
    }
@@ -394,7 +413,7 @@ public final class HeraclesAbilityService {
          if(e.horizontalCollision||entityCollision||thrown.airborne&&e.onGround()) {
             THROWN.remove(e);hit(thrown.owner,e,5,22,0,0,true);
             if(e.level() instanceof ServerLevel level) {
-               var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.MEDIUM,2.2,6,48,80);
+               var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY,2.75,35,48,80);
                var permission=thrown.owner instanceof ServerPlayer?TerrainImpactService.Permission.PLAYER:TerrainImpactService.Permission.NPC;
                if(e.horizontalCollision)TerrainImpactService.impactHeraclesWallAt(level,thrown.owner,e.position(),e.getBbHeight(),thrown.lastMotion,profile,permission);
                else if(e.onGround())TerrainImpactService.impactHeraclesGround(level,thrown.owner,e.position(),profile,permission,2);

@@ -262,17 +262,10 @@ public final class ServantCardSkillLayout {
             case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
             default -> null;
          };
-         case "diarmuid_ua_duibhne" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Twin Spear Combo", "diarmuid_twin_spear_combo", 0.0, 18);
-            case 0 -> new ServantCardSkillAction("Gae Dearg Focus", "diarmuid_red_rose_focus", 12.0, 120);
-            case 1 -> new ServantCardSkillAction("Gae Buidhe Focus", "diarmuid_yellow_rose_focus", 12.0, 120);
-            case 2 -> new ServantCardSkillAction("Knight Strategy", "diarmuid_knight_strategy", 18.0, 300);
-            case 3 -> new ServantCardSkillAction("Mana Burst Jump", "diarmuid_mana_burst_jump", 18.0, 260);
-            case 4 -> new ServantCardSkillAction("Flower Step", "diarmuid_flower_step", 10.0, 100);
-            case 5 -> new ServantCardSkillAction("Disengage", "diarmuid_disengage", 14.0, 280);
-            case 6 -> new ServantCardSkillAction("Dual Spear Stance", "diarmuid_dual_wield", 0.0, 20);
-            default -> null;
-         };
+         case "diarmuid_ua_duibhne" -> {
+            var action = net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot);
+            yield action == null || action.basic() ? null : new ServantCardSkillAction(action.path(), action.skillId(), action.mana(), action.cooldown());
+         }
          case "lancelot_berserker" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Mad Enhancement Combo", "lancelot_maul_combo", 8.0, 80);
             case 1 -> new ServantCardSkillAction("Feral Rush", "lancelot_feral_rush", 12.0, 140);

@@ -25,6 +25,7 @@ public final class OdaClientSmoke {
    private volatile String failure;
    private volatile boolean verified;
    private boolean animationReceived;
+   private boolean firstPersonAnimationVerified;
    public OdaClientSmoke() { NeoForge.EVENT_BUS.register(this); }
    @SubscribeEvent public void tick(ClientTickEvent.Post event) {
       var mc = Minecraft.getInstance();
@@ -43,17 +44,32 @@ public final class OdaClientSmoke {
          }
          if (mc.player == null || mc.getSingleplayerServer() == null) return;
          ticks++;
-         if (ticks == 10) mc.getSingleplayerServer().execute(() -> {
-            try { verify(mc); verified = true; } catch (Throwable error) { failure = error.toString(); }
-         });
-         if (verified && !animationReceived) {
+         if (ticks == 10) {
+            mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
+            mc.getSingleplayerServer().execute(() -> {
+               try { verify(mc); verified = true; } catch (Throwable error) { failure = error.toString(); }
+            });
+         }
+         if (verified) {
             Object layer = dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(mc.player)
                .get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("typemoonworld", "oda_nobunaga_action"));
-            animationReceived = layer instanceof dev.kosmx.playerAnim.api.layered.ModifierLayer<?> animation && animation.isActive();
+            if (layer instanceof dev.kosmx.playerAnim.api.layered.ModifierLayer<?> animation && animation.isActive()) {
+               animationReceived = true;
+               if (!firstPersonAnimationVerified && animation.getFirstPersonMode(0.0F)
+                  == dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL) {
+                  var effective = ((dev.kosmx.playerAnim.impl.IAnimatedPlayer)mc.player).playerAnimator_getAnimation();
+                  require(effective.getFirstPersonMode()
+                     == dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL,
+                     "Oda animation layer was not active in the first-person player stack");
+                  firstPersonAnimationVerified = true;
+                  capture(mc, "oda-first-person-action");
+               }
+            }
          }
          if (ticks == 60) {
             require(verified, "Server checks incomplete");
             require(animationReceived, "Negotiated client did not receive its Oda action animation");
+            require(firstPersonAnimationVerified, "Oda action did not enable its first-person animation");
          }
          if (ticks == 110) capture(mc, "oda-hud");
          if (ticks >= 120) {

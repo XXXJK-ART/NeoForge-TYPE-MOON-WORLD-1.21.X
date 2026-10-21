@@ -50,6 +50,7 @@ public final class ServantTrueSweepService {
    }
 
    public static boolean triggerPlayerAttack(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (vars != null && "diarmuid_ua_duibhne".equals(vars.servant_card_id)) return false;
       if (player == null || vars == null || !vars.servant_card_transformed || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
@@ -86,6 +87,7 @@ public final class ServantTrueSweepService {
    }
 
    public static boolean triggerNpcAttack(ServantEntity servant, @Nullable LivingEntity primaryTarget, long now) {
+      if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity) return false;
       if (servant == null || !(servant.level() instanceof ServerLevel level)
          || primaryTarget != null && (!primaryTarget.isAlive() || primaryTarget.level() != servant.level())) {
          return false;

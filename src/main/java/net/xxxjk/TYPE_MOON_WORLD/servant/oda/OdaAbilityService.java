@@ -60,6 +60,7 @@ public final class OdaAbilityService {
       final boolean[] waveEffects;
       OdaMatchlockGunEntity gun;
       int wave;
+      long nextWaveAt = -1;
       ThreeThousandRelay(LivingEntity target, boolean follow, Vec3 position, Vec3 direction, Vec3 origin, int index,
                          OdaMatchlockGunEntity gun, boolean[] waveEffects) {
          this.target = target; this.follow = follow; this.position = position; this.direction = direction;
@@ -286,11 +287,16 @@ public final class OdaAbilityService {
       else VFXServerEffects.spawnOriented(level, "servant_oda_three_thousand", origin, direction, 160.0);
    }
    private static void tickThreeThousandRelays(State current) {
+      long now = current.level.getGameTime();
       var iterator = current.gunRelays.iterator();
       while (iterator.hasNext()) {
          ThreeThousandRelay relay = iterator.next();
          if (!relay.gun.isRemoved()) continue;
-         if (++relay.wave >= OdaRules.THREE_THOUSAND_WAVE_COUNT) { iterator.remove(); continue; }
+         if (relay.wave + 1 >= OdaRules.THREE_THOUSAND_WAVE_COUNT) { iterator.remove(); continue; }
+         if (relay.nextWaveAt < 0) relay.nextWaveAt = now + OdaRules.THREE_THOUSAND_WAVE_INTERVAL;
+         if (now < relay.nextWaveAt) continue;
+         relay.wave++;
+         relay.nextWaveAt = -1;
          startThreeThousandWaveEffect(current.level, current.owner, relay.follow,
             relay.origin, relay.direction, relay.wave, relay.waveEffects);
          relay.gun = spawnThreeThousandGun(current.level, current.owner, relay.target, relay.follow, relay.position,

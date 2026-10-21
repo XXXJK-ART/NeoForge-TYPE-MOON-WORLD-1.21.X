@@ -10,6 +10,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.EffectParticleModificationEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment;
 
 @EventBusSubscriber(modid = "typemoonworld")
 final class ServantCardConcealmentHelper {
@@ -56,7 +57,7 @@ final class ServantCardConcealmentHelper {
    private static void clearEnemyAggro(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
       for (Mob mob : level.getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(AGGRO_CLEAR_RADIUS),
-         mob -> mob.isAlive() && mob.getTarget() == player)) {
+         mob -> mob.isAlive() && mob.getTarget() == player && ServantConcealment.suppressesAggroFrom(player, mob))) {
          mob.setTarget(null);
          mob.getNavigation().stop();
       }

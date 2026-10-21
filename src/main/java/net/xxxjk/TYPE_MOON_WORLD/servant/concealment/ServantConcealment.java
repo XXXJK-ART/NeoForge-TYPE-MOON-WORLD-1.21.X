@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.concealment;
 import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,10 +12,16 @@ import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardFanaticAssassinSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanRules;
 import org.joml.Vector3f;
 
@@ -48,6 +55,33 @@ public final class ServantConcealment {
          || player.isInvisible() && !player.getPersistentData().getBoolean(TAG_MANAGED_INVISIBLE);
    }
 
+   public static boolean suppressesAggroFrom(LivingEntity entity, LivingEntity observer) {
+      return isFullyConcealed(entity) && (!(observer instanceof ServantEntity) || rankOf(entity).isPerfect());
+   }
+
+   public static void breakConcealment(LivingEntity entity) {
+      if (entity == null || entity.level().isClientSide() || !isFullyConcealed(entity)) return;
+      if (!(entity instanceof ServantEntity) && ServantIdentityHelper.definitionOf(entity) == null
+         && !(entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player))) return;
+
+      SasakiKojiroCombatService.setConcealed(entity, false);
+      if (entity instanceof ShadowHassanEntity hassan) hassan.revealForAttack();
+      if (entity instanceof FanaticAssassinEntity fanatic) fanatic.revealForCombat();
+      if (entity instanceof HundredFacesHassanPersonaEntity persona) persona.revealForCombat();
+      if (entity instanceof ServerPlayer player) {
+         ServantCardFanaticAssassinSkills.revealForAttack(player);
+         ServantCardShadowHassanSkills.revealForAttack(player);
+         ServantCardLiShuwenSkills.revealCircleRealm(player);
+         BajiquanCombatService.breakCircleRealm(player);
+      }
+      entity.removeEffect(MobEffects.INVISIBILITY);
+      entity.setInvisible(false);
+      entity.getPersistentData().remove(TAG_MANAGED_INVISIBLE);
+      entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
+      manageSilence(entity, false);
+      ConcealmentStateSync.update(entity, false);
+   }
+
    public static void tick(LivingEntity entity) {
       if (entity.isSpectator()) {
          // Spectator invisibility belongs to vanilla, not presence concealment.
@@ -70,7 +104,7 @@ public final class ServantConcealment {
 
       if (entity.tickCount % 5 == 0 && entity.level() instanceof ServerLevel level) {
          for (Mob mob : level.getEntitiesOfClass(Mob.class, entity.getBoundingBox().inflate(48.0),
-            mob -> mob != entity && mob.getTarget() == entity)) {
+            mob -> mob != entity && mob.getTarget() == entity && suppressesAggroFrom(entity, mob))) {
             mob.setTarget(null);
             mob.getNavigation().stop();
          }
@@ -87,7 +121,6 @@ public final class ServantConcealment {
    }
 
    public static ConcealmentRank rankOf(LivingEntity entity) {
-      if (isParticleExempt(entity)) return ConcealmentRank.EX;
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
       ConcealmentRank best = ConcealmentRank.NONE;
       if (definition != null) {
@@ -101,7 +134,7 @@ public final class ServantConcealment {
    private static void tickLeakParticles(LivingEntity entity) {
       if (!(entity.level() instanceof ServerLevel level)) return;
       ConcealmentRank rank = rankOf(entity);
-      if (rank.isPerfect() || rank.maxParticles() <= 0) {
+      if (isParticleExempt(entity) || rank.isPerfect() || rank.maxParticles() <= 0) {
          entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
          return;
       }

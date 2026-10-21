@@ -353,6 +353,7 @@ public final class ServantCombatDefenseService {
          setResult(defender, RESULT_PARRY, now + 16);
       } else setResult(defender, RESULT_GUARD, now + 12);
       net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.onSuccessfulGuard(defender, source.getEntity());
+      net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.onSuccessfulGuard(defender, source.getEntity());
       if (source.getEntity() instanceof ServantEntity attacker) {
          ServantCombatExchangeService.recordContact(attacker, defender, now);
          ServantCombatSpectacleService.exchangeFx(attacker, defender, false, true);

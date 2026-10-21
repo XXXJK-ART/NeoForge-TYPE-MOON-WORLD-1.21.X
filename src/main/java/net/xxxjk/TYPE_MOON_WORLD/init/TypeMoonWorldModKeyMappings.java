@@ -1193,9 +1193,7 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isClientDiarmuidDualWieldActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
          return vars.servant_card_transformed
             && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
-            && vars.servant_card_action_mode == 1
-            && player.getMainHandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem
-            && player.getOffhandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
+            && vars.servant_card_action_mode == 1;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

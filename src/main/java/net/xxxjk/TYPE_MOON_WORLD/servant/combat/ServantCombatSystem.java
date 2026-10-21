@@ -216,6 +216,7 @@ public final class ServantCombatSystem {
          && source.getDirectEntity() == attacker
          && !(source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTechniqueDamage(source)
+         && !(source instanceof CombatDamageSource named && "diarmuid_ua_duibhne".equals(named.origin().servant()))
          && !(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity)
          && ServantCombatExchangeService.ordinary(attacker, servant)) {
          event.setAmount(event.getAmount() * 0.55F);

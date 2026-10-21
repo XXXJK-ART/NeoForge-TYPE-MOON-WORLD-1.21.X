@@ -118,6 +118,8 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             carryModel.rightPants.copyFrom(carryModel.rightLeg);
             carryModel.leftPants.copyFrom(carryModel.leftLeg);
          }
+         net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.applyOwnerPose(
+            player, (PlayerModel<?>)(Object)this, ageInTicks - player.tickCount);
       }
    }
 

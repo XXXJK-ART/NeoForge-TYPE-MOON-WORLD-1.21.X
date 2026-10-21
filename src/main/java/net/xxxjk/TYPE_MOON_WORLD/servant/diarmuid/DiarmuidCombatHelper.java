@@ -109,11 +109,12 @@ public final class DiarmuidCombatHelper {
 
    public static void applyYellowRoseHit(LivingEntity owner, LivingEntity target) {
       if (owner == null || target == null || target == owner || !isYellowActive(owner)) return;
-      consumeDurability(owner, YELLOW_SPEAR_DURABILITY_TAG, 1);
       int stacks = applyYellowRoseCurse(owner, target);
+      DiarmuidVoiceService.yellowHit(owner);
       if (target.level().random.nextDouble() < limbDisableChance(stacks)) {
          applyRandomLimbDisable(target);
       }
+      consumeDurability(owner, YELLOW_SPEAR_DURABILITY_TAG, 1);
    }
 
    public static void tickCurse(ServerLevel level, LivingEntity target) {
@@ -392,7 +393,8 @@ public final class DiarmuidCombatHelper {
          return owner.isAlive() && isYellowActive(owner);
       }
       if (entity instanceof net.minecraft.server.level.ServerPlayer player) {
-         return player.isAlive() && ServantCardDiarmuidSkills.isActiveCard(player) && isYellowActive(player);
+         return player.isAlive() && isYellowActive(player)
+            && (ServantCardDiarmuidSkills.isActiveCard(player) || !findSpear(player, DiarmuidSpearItem.SpearType.GAE_BUIDHE).isEmpty());
       }
       return false;
    }

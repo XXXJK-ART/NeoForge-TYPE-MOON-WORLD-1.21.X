@@ -24,10 +24,32 @@ import org.jetbrains.annotations.Nullable;
 public class DiarmuidUaDuibhneEntity extends ServantEntity {
    public static final String SERVANT_KEY = "diarmuid_ua_duibhne";
    public static final String TAG_RETREAT_UNTIL = "DiarmuidRetreatUntil";
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> ACTION = net.minecraft.network.syncher.SynchedEntityData.defineId(
+      DiarmuidUaDuibhneEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
+   private static final net.minecraft.network.syncher.EntityDataAccessor<Long> ACTION_START = net.minecraft.network.syncher.SynchedEntityData.defineId(
+      DiarmuidUaDuibhneEntity.class, net.minecraft.network.syncher.EntityDataSerializers.LONG);
 
    public DiarmuidUaDuibhneEntity(EntityType<? extends DiarmuidUaDuibhneEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
    }
+
+   @Override
+   protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(ACTION, -1);
+      builder.define(ACTION_START, 0L);
+   }
+
+   public void triggerDiarmuidAction(net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction action) {
+      entityData.set(ACTION, action == null ? -1 : action.networkId());
+      entityData.set(ACTION_START, level().getGameTime());
+   }
+
+   public net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction getDiarmuidAction() {
+      return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.byNetworkId(entityData.get(ACTION));
+   }
+
+   public float getDiarmuidActionAge(float partialTick) { return level().getGameTime() - entityData.get(ACTION_START) + partialTick; }
 
    @Override
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType,
@@ -43,7 +65,6 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       super.tick();
       if (!this.level().isClientSide) {
          DiarmuidCombatHelper.ensureDurability(this);
-         if (this.tickCount % 40 == 0) this.ensureDiarmuidLoadout();
       }
    }
 
@@ -54,7 +75,6 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
          return;
       }
       super.customServerAiStep();
-      DiarmuidCombatAi.tick(this, level);
    }
 
    @Override
@@ -62,35 +82,10 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       if (!(target instanceof LivingEntity living) || living == this || !living.isAlive() || this.isAlliedTo(living) || living.isAlliedTo(this)) {
          return false;
       }
-      boolean useRed = DiarmuidCombatAi.consumePreferredRedRose(this, living);
-      ItemStack originalMain = this.getMainHandItem();
-      ItemStack originalOff = this.getOffhandItem();
-      boolean mainAlreadyPreferred = isSpear(originalMain, useRed ? DiarmuidSpearItem.SpearType.GAE_DEARG : DiarmuidSpearItem.SpearType.GAE_BUIDHE);
-      if (!mainAlreadyPreferred) {
-         this.setItemInHand(InteractionHand.MAIN_HAND, originalOff);
-         this.setItemInHand(InteractionHand.OFF_HAND, originalMain);
-      }
-      boolean hit = super.doHurtTarget(target);
-      DiarmuidCombatHelper.syncSpearItemToOwner(this, useRed ? DiarmuidSpearItem.SpearType.GAE_DEARG : DiarmuidSpearItem.SpearType.GAE_BUIDHE);
-      if (!mainAlreadyPreferred) {
-         ItemStack currentMain = this.getMainHandItem();
-         ItemStack currentOff = this.getOffhandItem();
-         this.setItemInHand(InteractionHand.MAIN_HAND, currentOff);
-         this.setItemInHand(InteractionHand.OFF_HAND, currentMain);
-      }
-      if (hit) {
-         ServantVoiceHelper.tryPlayAttack(this);
-      }
-      return hit;
-   }
-
-   @Override
-   public boolean hurt(DamageSource source, float amount) {
-      if (amount > 0.0F && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-         amount = MagicResistanceHelper.applyMagicDamageReduction(this, source, amount);
-         if (amount <= 0.0F) return false;
-      }
-      return super.hurt(source, amount);
+      this.faceToward(living.position());
+      boolean red = net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.distance(this, living) > 3
+         || !net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.hasSpear(this, false);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.basicSpear(this, red);
    }
 
    @Override
@@ -115,16 +110,29 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
          tag.contains(DiarmuidCombatHelper.RED_SPEAR_DURABILITY_TAG) ? tag.getInt(DiarmuidCombatHelper.RED_SPEAR_DURABILITY_TAG) : DiarmuidCombatHelper.SPEAR_MAX_DURABILITY);
       this.getPersistentData().putInt(DiarmuidCombatHelper.YELLOW_SPEAR_DURABILITY_TAG,
          tag.contains(DiarmuidCombatHelper.YELLOW_SPEAR_DURABILITY_TAG) ? tag.getInt(DiarmuidCombatHelper.YELLOW_SPEAR_DURABILITY_TAG) : DiarmuidCombatHelper.SPEAR_MAX_DURABILITY);
-      this.ensureDiarmuidLoadout();
+      // Equipment is restored by vanilla; do not regenerate broken or unequipped spears on reload.
+      if (tag.contains("HandItems", net.minecraft.nbt.Tag.TAG_LIST)) {
+         var hands = tag.getList("HandItems", net.minecraft.nbt.Tag.TAG_COMPOUND);
+         if (!hands.isEmpty() && hands.getCompound(0).isEmpty()) this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+      }
+      for (var hand : InteractionHand.values()) {
+         if (isSpear(getItemInHand(hand), DiarmuidSpearItem.SpearType.GAE_DEARG) && !DiarmuidCombatHelper.isRedActive(this)
+            || isSpear(getItemInHand(hand), DiarmuidSpearItem.SpearType.GAE_BUIDHE) && !DiarmuidCombatHelper.isYellowActive(this)) setItemInHand(hand, ItemStack.EMPTY);
+      }
+   }
+
+   @Override
+   public void ensureDefaultNpcLoadout(boolean forceClientSync) {
+      // The spawn path equips both spears once; refreshes must preserve absent and broken weapons.
    }
 
    private void ensureDiarmuidLoadout() {
-      if (!isSpear(this.getMainHandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
+      if (DiarmuidCombatHelper.isRedActive(this) && !isSpear(this.getMainHandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
          && !isSpear(this.getMainHandItem(), DiarmuidSpearItem.SpearType.GAE_BUIDHE)) {
          this.setItemInHand(InteractionHand.MAIN_HAND, DiarmuidCombatHelper.createSpearStack(
             DiarmuidSpearItem.SpearType.GAE_DEARG, DiarmuidCombatHelper.redDurability(this)));
       }
-      if (!isSpear(this.getOffhandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
+      if (DiarmuidCombatHelper.isYellowActive(this) && !isSpear(this.getOffhandItem(), DiarmuidSpearItem.SpearType.GAE_DEARG)
          && !isSpear(this.getOffhandItem(), DiarmuidSpearItem.SpearType.GAE_BUIDHE)) {
          this.setItemInHand(InteractionHand.OFF_HAND, DiarmuidCombatHelper.createSpearStack(
             DiarmuidSpearItem.SpearType.GAE_BUIDHE, DiarmuidCombatHelper.yellowDurability(this)));

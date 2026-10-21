@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.heracles.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.*;
@@ -142,7 +144,7 @@ public final class HeraclesGameTests {
    public static void flurryUsesThreeFixedHitsAndPaysOnlyOnce(GameTestHelper h) {
       var e=owner(h);var t=target(h,e.position().add(0,0,2));e.setTarget(t);double mp=e.getCurrentMp();
       h.assertTrue(HeraclesAbilityService.start(e,7),"flurry start: target="+e.getTarget()+" distance="+e.distanceTo(t)+" visible="+e.hasLineOfSight(t)+" enemy="+HeraclesAbilityService.enemy(e,t)+" control="+HeraclesAbilityService.controlled(e)+" suppressed="+ServantCombatSystem.skillsSuppressed(e));h.assertTrue(!HeraclesAbilityService.start(e,3),"overlapping action started");
-      ticks(e,14);close(h,1000-t.getHealth(),66,"flurry fixed damage");close(h,mp-e.getCurrentMp(),30,"flurry resource payment");
+      ticks(e,14);close(h,1000-t.getHealth(),73,"flurry fixed damage");close(h,mp-e.getCurrentMp(),30,"flurry resource payment");
       HeraclesAbilityService.cancel(e);h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_validation")
@@ -172,7 +174,7 @@ public final class HeraclesGameTests {
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_three_strikes")
    public static void uppercutSweepAndStompUseFixedDamage(GameTestHelper h) {
       var e=owner(h);var t=target(h,e.position().add(0,0,2));e.setTarget(t);
-      int[] slots={3,4,6};float[] damage={36,40,24};
+      int[] slots={3,4,6};float[] damage={40,44,27};
       for(int i=0;i<slots.length;i++) {
          t.setHealth(1000);t.invulnerableTime=0;e.setTarget(t);
          h.assertTrue(HeraclesAbilityService.start(e,slots[i]),"action did not start "+slots[i]);
@@ -180,11 +182,20 @@ public final class HeraclesGameTests {
       }
       h.succeed();
    }
+   @GameTest(template="ancient_temple",timeoutTicks=25,batch="heracles_expanded_ranges")
+   public static void directMeleeAndSweepReachPastTheirPreviousBoundary(GameTestHelper h) {
+      var uppercutOwner=owner(h);var uppercutTarget=target(h,uppercutOwner.position().add(0,0,3.5));uppercutOwner.setTarget(uppercutTarget);
+      h.assertTrue(HeraclesAbilityService.start(uppercutOwner,3),"uppercut rejected target beyond previous three-block limit");ticks(uppercutOwner,8);
+      close(h,1000-uppercutTarget.getHealth(),40,"expanded uppercut range");HeraclesAbilityService.cancel(uppercutOwner);
+      var sweepOwner=owner(h);var sweepTarget=target(h,sweepOwner.position().add(0,0,5.2));
+      h.assertTrue(HeraclesAbilityService.start(sweepOwner,4),"sweep did not start");ticks(sweepOwner,9);
+      close(h,1000-sweepTarget.getHealth(),44,"expanded sweep radius");HeraclesAbilityService.cancel(sweepOwner);h.succeed();
+   }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_shoulder")
    public static void shoulderMovesAtMostSixBlocksAndHitsEachEnemyOnce(GameTestHelper h) {
       var e=owner(h);var start=e.position();var t=target(h,start.add(0,0,2.5));e.setTarget(t);
       h.assertTrue(HeraclesAbilityService.start(e,2),"shoulder start failed");ticks(e,14);
-      close(h,1000-t.getHealth(),32,"shoulder repeated contact");h.assertTrue(e.position().distanceTo(start)<=6.01,"shoulder exceeded six blocks");
+      close(h,1000-t.getHealth(),35,"shoulder repeated contact");h.assertTrue(e.position().distanceTo(start)<=7.61,"shoulder exceeded scaled travel distance");
       HeraclesAbilityService.cancel(e);h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_big_jump")
@@ -193,13 +204,13 @@ public final class HeraclesGameTests {
       h.assertTrue(HeraclesAbilityService.start(e,0),"jump start failed");ticks(e,4);
       close(h,e.getDeltaMovement().horizontalDistance(),1.05,"jump horizontal speed");close(h,e.getDeltaMovement().y,1.52,"jump vertical speed");
       e.setOnGround(false);e.setPos(start.add(0,6,0));ticks(e,8);e.setPos(start);e.setOnGround(true);ticks(e,1);
-      close(h,1000-t.getHealth(),26,"jump landing damage");ticks(e,15);close(h,1000-t.getHealth(),26,"duplicate passive landing");h.succeed();
+      close(h,1000-t.getHealth(),29,"jump landing damage");ticks(e,15);close(h,1000-t.getHealth(),29,"duplicate passive landing");h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_pounce")
    public static void pounceLocksItsDestinationAndResolvesOnlyOnce(GameTestHelper h) {
       var e=owner(h);var t=target(h,e.position().add(0,0,8));e.setTarget(t);Vec3 destination=t.position();
       h.assertTrue(HeraclesAbilityService.start(e,8),"pounce start failed");ticks(e,40);
-      close(h,1000-t.getHealth(),46,"pounce repeated impact");h.assertTrue(e.position().distanceTo(destination)<.1,"pounce destination drifted");h.succeed();
+      close(h,1000-t.getHealth(),51,"pounce repeated impact");h.assertTrue(e.position().distanceTo(destination)<.1,"pounce destination drifted");h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_throw")
    public static void throwConstrainsBothActorsAndCollidesOnlyOnce(GameTestHelper h) {
@@ -207,15 +218,15 @@ public final class HeraclesGameTests {
       for(int x=-4;x<=4;x++)for(int z=-4;z<=8;z++)h.getLevel().setBlock(floor.offset(x,0,z),Blocks.STONE.defaultBlockState(),2);
       h.assertTrue(HeraclesAbilityService.start(e,5),"throw start failed");ticks(e,8);
       h.assertTrue(HeraclesAbilityService.held(t)&&HeraclesAbilityService.motionLocked(e),"grip did not constrain both actors");
-      ticks(e,10);h.assertTrue(!HeraclesAbilityService.held(t),"throw left grab control");close(h,1000-t.getHealth(),28,"grab and release damage");
+      ticks(e,10);h.assertTrue(!HeraclesAbilityService.held(t),"throw left grab control");close(h,1000-t.getHealth(),31,"grab and release damage");
       t.horizontalCollision=true;HeraclesAbilityService.tick(new EntityTickEvent.Post(t));HeraclesAbilityService.tick(new EntityTickEvent.Post(t));
-      close(h,1000-t.getHealth(),50,"throw collision did not settle exactly once");HeraclesAbilityService.cancel(e);h.succeed();
+      close(h,1000-t.getHealth(),53,"throw collision did not settle exactly once");HeraclesAbilityService.cancel(e);h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_slam")
    public static void slamUsesHorizontalRadiusAndVerticalInterval(GameTestHelper h) {
-      var e=owner(h);var near=target(h,e.position().add(5.3,0,0));var far=target(h,e.position().add(5.5,0,0));var high=target(h,e.position().add(0,3,1));
+      var e=owner(h);var near=target(h,e.position().add(6.5,0,0));var far=target(h,e.position().add(6.9,0,0));var high=target(h,e.position().add(0,3,1));
       h.assertTrue(HeraclesAbilityService.start(e,1),"slam failed");ticks(e,15);
-      close(h,1000-near.getHealth(),58,"slam distance falloff");close(h,far.getHealth(),1000,"slam exceeded radius");close(h,high.getHealth(),1000,"slam exceeded vertical interval");
+      close(h,1000-near.getHealth(),64,"expanded slam radius");close(h,far.getHealth(),1000,"slam exceeded radius");close(h,high.getHealth(),1000,"slam exceeded vertical interval");
       HeraclesAbilityService.cancel(e);h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_concept_dedup")
@@ -251,7 +262,7 @@ public final class HeraclesGameTests {
       h.assertTrue(ServantCardTransformManager.transform(player,"heracles"),"player transform failed");
       player.setItemSlot(EquipmentSlot.MAINHAND,ItemStack.EMPTY);player.setItemSlot(EquipmentSlot.OFFHAND,ItemStack.EMPTY);
       var t=target(h,player.position().add(0,0,2));
-      h.assertTrue(HeraclesAbilityService.start(player,7),"player flurry failed");ticks(player,14);close(h,1000-t.getHealth(),66,"player and NPC fixed damage diverged");
+      h.assertTrue(HeraclesAbilityService.start(player,7),"player flurry failed");ticks(player,14);close(h,1000-t.getHealth(),73,"player and NPC fixed damage diverged");
       HeraclesAbilityService.cancel(player);h.succeed();
    }
 
@@ -289,6 +300,88 @@ public final class HeraclesGameTests {
       h.runAfterDelay(10,()->{
          h.assertTrue(h.getLevel().getBlockState(origin.offset(0,1,1)).isAir(),"front wall was not broken");
          h.assertTrue(h.getLevel().getBlockState(origin.below()).is(Blocks.STONE),"sprint removed footing");h.succeed();
+      });
+   }
+
+   @GameTest(template="ancient_temple",timeoutTicks=50,batch="heracles_player_destruction")
+   public static void playerRightClickBreaksARealWallAndSprintDoesNotWaitForMaximumSpeed(GameTestHelper h) {
+      var player=h.makeMockServerPlayerInLevel();
+      var origin=h.absolutePos(new BlockPos(6,6,6));
+      for(int x=-3;x<=3;x++)for(int z=-3;z<=5;z++) {
+         h.getLevel().setBlock(origin.offset(x,-1,z),Blocks.STONE.defaultBlockState(),2);
+         for(int y=0;y<4;y++)h.getLevel().setBlock(origin.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+      }
+      var start=Vec3.atBottomCenterOf(origin);player.teleportTo(start.x,start.y,start.z);player.setYRot(0);player.setXRot(0);player.setOnGround(true);
+      h.assertTrue(ServantCardTransformManager.transform(player,"heracles"),"player transformation failed");
+      h.assertTrue(!ServantCardHeraclesSkills.triggerHeraclesBlockAttack(player,origin.offset(0,1,1)),"right click consumed with no wall");
+      var wall=origin.offset(0,1,1);
+      h.getLevel().setBlock(wall,Blocks.STONE.defaultBlockState(),2);
+      h.assertTrue(ServantCardHeraclesSkills.triggerHeraclesBlockAttack(player,wall),"right click did not break the front wall");
+      h.runAfterDelay(12,()->{
+         h.assertTrue(h.getLevel().getBlockState(wall).isAir(),"right-click wall remained intact");
+         h.assertTrue(h.getLevel().getBlockState(origin.below()).is(Blocks.STONE),"right-click break removed footing");
+         h.getLevel().setBlock(wall,Blocks.STONE.defaultBlockState(),2);player.setSprinting(true);
+         h.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantSprintCollisionHelper.tryPlayerSprintCollision(
+            player,h.getLevel(),player.getPersistentData(),"HeraclesSprintTestCooldown",false,10,1.25,.26,32,45,true),
+            "sprinting at the initial speed stage did not break the wall");
+         h.runAfterDelay(12,()->{
+            h.assertTrue(h.getLevel().getBlockState(wall).isAir(),"sprint wall remained intact before maximum speed");
+            h.assertTrue(h.getLevel().getBlockState(origin.below()).is(Blocks.STONE),"sprint break removed footing");h.succeed();
+         });
+      });
+   }
+
+   private static ServerPlayer sprintPlayer(GameTestHelper h,double footOffset) {
+      var origin=h.absolutePos(new BlockPos(6,6,6));
+      for(int x=-4;x<=4;x++)for(int z=-2;z<=12;z++) {
+         h.getLevel().setBlock(origin.offset(x,-1,z),Blocks.STONE.defaultBlockState(),2);
+         for(int y=0;y<7;y++)h.getLevel().setBlock(origin.offset(x,y,z),Blocks.AIR.defaultBlockState(),2);
+      }
+      if(footOffset==.5)for(int x=-1;x<=1;x++)h.getLevel().setBlock(origin.offset(x,0,0),Blocks.STONE_SLAB.defaultBlockState(),2);
+      var player=h.makeMockServerPlayerInLevel();
+      var start=Vec3.atBottomCenterOf(origin).add(0,footOffset,0);
+      player.teleportTo(start.x,start.y,start.z);player.setYRot(0);player.setXRot(0);player.setOnGround(true);player.setNoGravity(true);
+      h.assertTrue(ServantCardTransformManager.transform(player,"heracles"),"sprint player transformation failed");
+      player.getPersistentData().remove("ServantCardSprintRampTicks");
+      player.setSprinting(true);player.setDeltaMovement(Vec3.ZERO);
+      return player;
+   }
+   private static void assertSprintTunnel(GameTestHelper h,BlockPos origin,int firstZ,int lastZ,int height) {
+      for(int x=-1;x<=1;x++)for(int z=firstZ;z<=lastZ;z++) {
+         for(int y=0;y<height;y++)h.assertTrue(h.getLevel().getBlockState(origin.offset(x,y,z)).isAir(),"sprint tunnel blocked at "+x+","+y+","+z);
+         h.assertTrue(h.getLevel().getBlockState(origin.offset(x,-1,z)).is(Blocks.STONE),"sprint removed tunnel footing");
+         h.assertTrue(h.getLevel().getBlockState(origin.offset(x,height,z)).is(Blocks.STONE),"sprint cut above body height");
+      }
+   }
+   @GameTest(template="ancient_temple",timeoutTicks=50,batch="heracles_continuous_sprint")
+   public static void lowSpeedSprintClearsThickWallsAfterCollisionCancelsSprinting(GameTestHelper h) {
+      var player=sprintPlayer(h,0);var origin=player.blockPosition();int height=(int)Math.ceil(player.getBbHeight());
+      for(int x=-1;x<=1;x++)for(int z=1;z<=9;z++)for(int y=0;y<=height;y++)h.getLevel().setBlock(origin.offset(x,y,z),Blocks.STONE.defaultBlockState(),2);
+      h.assertTrue(ServantSprintCollisionHelper.tryPlayerSprintCollision(player,h.getLevel(),player.getPersistentData(),"HeraclesContinuousSprintTest",false,10,1.25,.26,32,45,true),"first slow sprint collision failed");
+      player.setSprinting(false);
+      h.runAfterDelay(8,()->{
+         assertSprintTunnel(h,origin,1,3,height);
+         player.teleportTo(origin.getX()+.5,origin.getY(),origin.getZ()+3.5);player.setOnGround(true);player.horizontalCollision=true;player.setDeltaMovement(Vec3.ZERO);
+         h.assertTrue(!player.isSprinting(),"fixture did not simulate collision cancelling sprint");
+         h.assertTrue(ServantSprintCollisionHelper.tryPlayerSprintCollision(player,h.getLevel(),player.getPersistentData(),"HeraclesContinuousSprintTest",false,10,1.25,.26,32,45,true),"collision cancelled the next low-speed wall cut");
+         h.runAfterDelay(8,()->{
+            assertSprintTunnel(h,origin,4,6,height);
+            player.teleportTo(origin.getX()+.5,origin.getY(),origin.getZ()+6.5);player.setOnGround(true);player.horizontalCollision=true;
+            player.getPersistentData().putLong("ServantCardLastSprintCollisionRun",h.getLevel().getGameTime()-21);
+            h.assertTrue(!ServantSprintCollisionHelper.tryPlayerSprintCollision(player,h.getLevel(),player.getPersistentData(),"HeraclesContinuousSprintTest",false,10,1.25,.26,32,45,true),"walking after sprint expired still broke a wall");
+            h.runAfterDelay(6,()->{h.assertTrue(h.getLevel().getBlockState(origin.offset(0,1,7)).is(Blocks.STONE),"expired sprint removed the next wall");h.succeed();});
+         });
+      });
+   }
+   @GameTest(template="ancient_temple",timeoutTicks=25,batch="heracles_fractional_sprint")
+   public static void lowSpeedSprintClearsTheWholeBodyWhenFeetAreOnAHalfSlab(GameTestHelper h) {
+      var player=sprintPlayer(h,.5);var origin=player.blockPosition();int height=(int)Math.ceil(.5+player.getBbHeight());
+      for(int x=-1;x<=1;x++)for(int z=1;z<=3;z++)for(int y=0;y<=height;y++)h.getLevel().setBlock(origin.offset(x,y,z),Blocks.STONE.defaultBlockState(),2);
+      h.assertTrue(ServantSprintCollisionHelper.tryPlayerSprintCollision(player,h.getLevel(),player.getPersistentData(),"HeraclesSlabSprintTest",false,10,1.25,.26,32,45,true),"slow sprint from a slab failed");
+      player.setSprinting(false);
+      h.runAfterDelay(10,()->{
+         assertSprintTunnel(h,origin,1,3,height);
+         h.assertTrue(h.getLevel().getBlockState(origin).is(Blocks.STONE_SLAB),"sprint removed the slab supporting the player");h.succeed();
       });
    }
 

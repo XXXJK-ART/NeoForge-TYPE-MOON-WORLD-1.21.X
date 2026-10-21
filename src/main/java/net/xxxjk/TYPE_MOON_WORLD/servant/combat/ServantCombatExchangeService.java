@@ -140,7 +140,8 @@ public final class ServantCombatExchangeService {
    }
 
    public static boolean protectedAction(ServantEntity actor) {
-      return actor.isPerformingAction() || actor.isAttackSwinging() || actor.isRoaring() || actor.isSlamming()
+      return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.active(actor)
+         || actor.isPerformingAction() || actor.isAttackSwinging() || actor.isRoaring() || actor.isSlamming()
          || NoblePhantasmCastService.chanting(actor) || ServantDuelPacing.nativeNpActive(actor)
          || hasWindup(actor) || ServantPlannedActionExecutor.isActive(actor)
             && ServantPlannedActionExecutor.stage(actor) != ServantPlannedActionExecutor.Stage.APPROACH;

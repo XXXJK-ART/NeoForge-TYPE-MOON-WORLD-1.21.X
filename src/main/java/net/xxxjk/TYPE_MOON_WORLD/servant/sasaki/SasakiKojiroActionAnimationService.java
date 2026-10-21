@@ -18,7 +18,7 @@ public final class SasakiKojiroActionAnimationService {
          var message = new SasakiKojiroActionAnimationMessage(player.getUUID(), action.networkId());
          PacketDistributor.sendToPlayersTrackingEntity(player, message);
          net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork.sendToPlayer(player, message);
-      } else if (action == SasakiKojiroAction.TSUBAME_GAESHI) {
+      } else {
          PacketDistributor.sendToPlayersTrackingEntity(owner,
             new SasakiKojiroActionAnimationMessage(owner.getUUID(), action.networkId()));
       }

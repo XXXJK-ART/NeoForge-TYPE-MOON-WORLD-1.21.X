@@ -2,25 +2,10 @@
   "rank": "B",
   "id": "knight_strategy_b",
   "display_name": "Knight Strategy B",
-  "display_name_zh": "Knight Strategy B",
-  "type": "active",
-  "mp_cost": 10,
-  "cooldown_ticks": 360,
-  "duration_ticks": 300,
-  "effects": [
-    {
-      "effect_type": "self_attribute_bonus",
-      "params": {
-        "attack_speed_bonus": 0.25,
-        "accuracy_bonus": 0.2,
-        "guarded_target_damage_bonus": 0.3
-      }
-    }
-  ],
-  "defense": {
-    "guard": true,
-    "activation_actions": [
-      "diarmuid_knight_strategy"
-    ]
-  }
+  "display_name_zh": "骑士的武略 B",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
 }

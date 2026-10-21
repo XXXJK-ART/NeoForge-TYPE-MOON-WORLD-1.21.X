@@ -8,6 +8,9 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -16,6 +19,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -23,6 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource;
@@ -30,10 +37,12 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroRules.Technique;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 
 @EventBusSubscriber(modid = "typemoonworld")
 public final class SasakiKojiroCombatService {
@@ -45,6 +54,8 @@ public final class SasakiKojiroCombatService {
    private static final int PRESENCE_CONCEALMENT_COST = 18;
    private static final double TRANSPARENCY_RANGE = 8.0;
    private static final int TRANSPARENCY_COOLDOWN = 600;
+   public static final int TSUBAME_WINDUP_TICKS = 10;
+   private static final String TSUBAME_READY = "SasakiKojiroTsubameReady";
 
    private SasakiKojiroCombatService() { }
 
@@ -55,6 +66,12 @@ public final class SasakiKojiroCombatService {
    public static boolean isSasakiOwner(LivingEntity entity) {
       if (entity instanceof SasakiKojiroEntity) return true;
       return entity instanceof ServerPlayer player && isSasakiCard(player);
+   }
+
+   public static boolean hasSwordInMainHand(LivingEntity entity) {
+      if (entity == null) return false;
+      ItemStack stack = entity.getMainHandItem();
+      return !stack.isEmpty() && (stack.getItem() instanceof SwordItem || stack.is(ItemTags.SWORDS));
    }
 
    public static double souwaBonus(LivingEntity attacker) {
@@ -98,6 +115,7 @@ public final class SasakiKojiroCombatService {
 
    public static boolean setConcealed(LivingEntity entity, boolean active) {
       if (entity == null || entity.level().isClientSide() || !isSasakiOwner(entity)) return false;
+      if (active && !hasSwordInMainHand(entity)) return false;
       CompoundTag data = entity.getPersistentData();
       if (!active) {
          data.remove(CONCEALED);
@@ -110,6 +128,7 @@ public final class SasakiKojiroCombatService {
       data.putLong(CONCEALMENT_UNTIL, 0L);
       maintainInvisibility(entity, Integer.MAX_VALUE);
       clearHostileAggro(entity);
+      bladeSound(entity, ModSounds.SASAKI_BLADE_DRAW.get(), 0.55F, 0.9F);
       return true;
    }
 
@@ -139,7 +158,9 @@ public final class SasakiKojiroCombatService {
    }
 
    public static boolean performTransparency(LivingEntity entity) {
-      if (entity == null || !(entity.level() instanceof ServerLevel level) || !isSasakiOwner(entity)) return false;
+      if (entity == null || !(entity.level() instanceof ServerLevel level) || !isSasakiOwner(entity)
+         || !hasSwordInMainHand(entity)) return false;
+      if (isPreparingTsubame(entity)) return false;
       LivingEntity preferred = entity instanceof ServerPlayer player ? findLookTarget(player, TRANSPARENCY_RANGE)
          : entity instanceof Mob mob ? mob.getTarget() : null;
       var targets = new java.util.ArrayList<>(level.getEntitiesOfClass(LivingEntity.class,
@@ -167,6 +188,7 @@ public final class SasakiKojiroCombatService {
          if (entity instanceof Mob mob) mob.getNavigation().stop();
          cleanseHarmfulEffects(entity);
          SasakiKojiroActionAnimationService.play(entity, SasakiKojiroAction.TRANSPARENCY);
+         bladeSound(entity, ModSounds.SASAKI_BLADE_DRAW.get(), 0.8F, 1.15F);
          return true;
       }
       return false;
@@ -199,44 +221,89 @@ public final class SasakiKojiroCombatService {
    }
 
    public static boolean canPerform(ServerPlayer player, Technique technique) {
-      return player != null && technique != null && canPerform((LivingEntity)player, technique, findLookTarget(player, technique.range()));
+      if (player == null || technique == null || player.level().isClientSide() || !player.isAlive()
+         || !hasSwordInMainHand(player)) return false;
+      if (isPreparingTsubame(player)) return false;
+      if (technique != Technique.TSUBAME_GAESHI) return true;
+      return canPerform(player, technique, findLookTarget(player, technique.cardRange()));
    }
 
    public static boolean perform(ServerPlayer player, Technique technique) {
-      if (player == null || technique == null || !(player.level() instanceof ServerLevel)) return false;
-      LivingEntity target = technique == Technique.COUNTER_STANCE ? null : findLookTarget(player, technique.range());
-      if (!canPerform(player, technique, target)) return false;
+      if (!canPerform(player, technique)) return false;
+      LivingEntity target = switch (technique) {
+         case COUNTER_STANCE, SPINNING_SLASH -> null;
+         case TSUBAME_GAESHI -> findLookTarget(player, technique.cardRange());
+         default -> nearbyTargets(player, technique.cardRange()).stream().findFirst().orElse(null);
+      };
       return execute(player, target, technique);
    }
 
    public static boolean performTsubameGaeshi(LivingEntity attacker, LivingEntity target) {
-      if (!canDamageTarget(attacker, target, 8.0) || !attacker.hasLineOfSight(target)) return false;
+      if (attacker == null || !(attacker.level() instanceof ServerLevel castLevel)) return false;
+      if (isSasakiOwner(attacker) && !hasSwordInMainHand(attacker)) return false;
+      if (!canDamageTarget(attacker, target, 8.0) || !attacker.hasLineOfSight(target) || isPreparingTsubame(attacker)) return false;
+      boolean sasakiOwner = isSasakiOwner(attacker);
       playTsubamePresentation(attacker);
-      applyTsubameDamage(attacker, target);
+      TYPE_MOON_WORLD.queueServerWork(TSUBAME_WINDUP_TICKS, () -> {
+         if (canFinishTsubame(attacker, castLevel, sasakiOwner)) applyTsubameDamage(attacker, target);
+      });
       return true;
    }
 
+   public static boolean isPreparingTsubame(LivingEntity attacker) {
+      return attacker != null && attacker.getPersistentData().getLong(TSUBAME_READY) > attacker.level().getGameTime();
+   }
+
+   private static boolean canFinishTsubame(LivingEntity attacker, ServerLevel castLevel, boolean sasakiOwner) {
+      return attacker.isAlive() && !attacker.isRemoved() && attacker.level() == castLevel
+         && (!sasakiOwner || isSasakiOwner(attacker))
+         && (!(attacker instanceof ServerPlayer player) || !player.hasDisconnected());
+   }
+
    public static void playTsubamePresentation(LivingEntity attacker) {
-      if (attacker == null || attacker.level().isClientSide()) return;
+      if (attacker == null || !(attacker.level() instanceof ServerLevel level) || isPreparingTsubame(attacker)) return;
+      if (isSasakiOwner(attacker) && !hasSwordInMainHand(attacker)) return;
       breakConcealment(attacker);
-      SasakiKojiroActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_GAESHI);
-      if (attacker.level() instanceof ServerLevel level) {
+      attacker.getPersistentData().putLong(TSUBAME_READY, level.getGameTime() + TSUBAME_WINDUP_TICKS);
+      boolean sasakiOwner = isSasakiOwner(attacker);
+      SasakiKojiroActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_WINDUP);
+      level.playSound(null, attacker.getX(), attacker.getY(), attacker.getZ(),
+         ModSounds.SASAKI_KOJIRO_VOICE_TSURIGAMESHI.get(), SoundSource.VOICE, 1.0F, 1.0F);
+      bladeSound(attacker, ModSounds.SASAKI_BLADE_DRAW.get(), 0.95F, 0.8F);
+      TYPE_MOON_WORLD.queueServerWork(TSUBAME_WINDUP_TICKS, () -> {
+         attacker.getPersistentData().remove(TSUBAME_READY);
+         if (!canFinishTsubame(attacker, level, sasakiOwner)) return;
+         SasakiKojiroActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_GAESHI);
+         bladeSound(attacker, ModSounds.SASAKI_TSUBAME_SLASH.get(), 1.0F, 1.0F);
+         bladeSound(attacker, ModSounds.SASAKI_TSUBAME_RELEASE.get(), 1.5F, 0.85F);
+         bladeSound(attacker, ModSounds.SASAKI_BLADE_SWING.get(), 1.35F, 0.7F);
+         bladeSound(attacker, SoundEvents.TRIDENT_THROW.value(), 0.65F, 0.65F);
+         Vec3 direction = horizontalLook(attacker);
+         Vec3 swordSide = new Vec3(direction.z, 0.0, -direction.x);
          Vec3 origin = attacker.position().add(0.0, attacker.getBbHeight() * 0.54, 0.0)
-            .add(horizontalLook(attacker).scale(0.9));
-         VFXServerEffects.spawnOriented(level, "sasaki_tsubame", origin, horizontalLook(attacker), 96.0);
-      }
+            .add(direction.scale(0.25)).add(swordSide.scale(0.28));
+         VFXServerEffects.spawnOrientedScaled(level, "sasaki_tsubame", origin, direction, 96.0, 1.45F);
+         for (int delay : new int[]{2, 4}) TYPE_MOON_WORLD.queueServerWork(delay, () -> {
+            if (canFinishTsubame(attacker, level, sasakiOwner))
+               bladeSound(attacker, ModSounds.SASAKI_BLADE_SWING.get(), 1.0F, delay == 2 ? 1.15F : 0.85F);
+         });
+      });
    }
 
    public static boolean applyTsubameDamage(LivingEntity attacker, LivingEntity target) {
+      if (isSasakiOwner(attacker) && !hasSwordInMainHand(attacker)) return false;
       if (!canDamageTarget(attacker, target, 8.0) || !attacker.hasLineOfSight(target)) return false;
       breakConcealment(attacker);
       DamageSource base = physicalAttackSource(attacker);
       DamageSource source = new CombatDamageSource(base, AttackOrigin.skill("sasaki_kojiro", "tsubame_gaeshi"));
-      return target.hurt(source, 450.0F);
+      boolean landed = target.hurt(source, 450.0F);
+      if (landed) bladeSound(target, ModSounds.SASAKI_BLADE_IMPACT.get(), 1.25F, 0.75F);
+      return landed;
    }
 
    public static boolean tickNpc(SasakiKojiroEntity entity, LivingEntity target) {
-      if (entity == null || target == null || !canDamageTarget(entity, target, 16.0)) return false;
+      if (entity == null || target == null || !hasSwordInMainHand(entity)
+         || !canDamageTarget(entity, target, 16.0)) return false;
       long now = entity.level().getGameTime();
       if (entity.isSasakiActionActive()) return true;
       double distance = entity.distanceTo(target);
@@ -289,8 +356,10 @@ public final class SasakiKojiroCombatService {
 
    public static void startCounter(LivingEntity defender) {
       if (defender == null || defender.level().isClientSide()) return;
+      if (isSasakiOwner(defender) && !hasSwordInMainHand(defender)) return;
       defender.getPersistentData().putLong(COUNTER_UNTIL, defender.level().getGameTime() + 10L);
       SasakiKojiroActionAnimationService.play(defender, SasakiKojiroAction.COUNTER_STANCE);
+      bladeSound(defender, ModSounds.SASAKI_BLADE_DRAW.get(), 0.85F, 1.0F);
       if (defender.level() instanceof ServerLevel level) {
          Vec3 origin = defender.position().add(0.0, defender.getBbHeight() * 0.58, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, origin.x, origin.y, origin.z, 8, 0.24, 0.32, 0.24, 0.015);
@@ -299,9 +368,13 @@ public final class SasakiKojiroCombatService {
 
    public static void onSuccessfulGuard(LivingEntity defender, Entity attacker) {
       if (attacker instanceof LivingEntity target && defender != null
+         && hasSwordInMainHand(defender)
          && defender.getPersistentData().getLong(COUNTER_UNTIL) > defender.level().getGameTime()
-         && canDamageTarget(defender, target, Technique.COUNTER_STANCE.range())) {
+         && canDamageTarget(defender, target, attackRange(defender, Technique.COUNTER_STANCE))) {
          defender.getPersistentData().remove(COUNTER_UNTIL);
+         SasakiKojiroActionAnimationService.play(defender, SasakiKojiroAction.HORIZONTAL_SLASH);
+         bladeSound(defender, SoundEvents.SHIELD_BLOCK, 0.85F, 1.3F);
+         slashVfx(defender, 1.25);
          hit(defender, target, Technique.COUNTER_STANCE.damage(), Technique.COUNTER_STANCE.effectId());
       }
    }
@@ -332,7 +405,9 @@ public final class SasakiKojiroCombatService {
    }
 
    private static boolean canPerform(LivingEntity caster, Technique technique, LivingEntity target) {
-      if (caster == null || technique == null || caster.level().isClientSide() || !caster.isAlive()) return false;
+      if (caster == null || technique == null || caster.level().isClientSide() || !caster.isAlive()
+         || !hasSwordInMainHand(caster)) return false;
+      if (isPreparingTsubame(caster)) return false;
       if (technique == Technique.COUNTER_STANCE) return true;
       if (technique == Technique.SPINNING_SLASH) return !nearbyTargets(caster, technique.range()).isEmpty();
       if (!validTarget(caster, target)) return false;
@@ -346,10 +421,14 @@ public final class SasakiKojiroCombatService {
          return true;
       }
       breakConcealment(caster);
+      if (technique != Technique.TSUBAME_GAESHI && caster instanceof ServantEntity servant) {
+         ServantVoiceHelper.tryPlayAttack(servant);
+      }
       switch (technique) {
          case CROUCH_CUTBACK -> {
             SasakiKojiroActionAnimationService.play(caster, SasakiKojiroAction.CROUCH_CUTBACK);
             slashVfx(caster, 1.05);
+            secondBladeSwing(caster);
             hitTwice(caster, target, technique.damage(), technique.effectId());
          }
          case VERTICAL_SLASH -> singleSlash(caster, target, technique, SasakiKojiroAction.VERTICAL_SLASH, 1.0);
@@ -365,22 +444,24 @@ public final class SasakiKojiroCombatService {
             SasakiKojiroActionAnimationService.play(caster, SasakiKojiroAction.THRUST);
             slashVfx(caster, 1.15);
             Vec3 forward = horizontalLook(caster);
-            double travel = Math.min(technique.range(), clearThrustDistance(caster, technique.range()));
-            double distance = caster.distanceTo(target);
-            if (distance <= travel + 0.35) hit(caster, target, technique.damage(), technique.effectId());
+            double range = attackRange(caster, technique);
+            double travel = Math.min(range, clearThrustDistance(caster, range));
+            if (target != null && caster.distanceTo(target) <= travel + 0.35) {
+               hit(caster, target, technique.damage(), technique.effectId());
+            }
             caster.setDeltaMovement(forward.scale(Math.min(1.35, travel * 0.3)).add(0.0, caster.getDeltaMovement().y, 0.0));
             caster.hurtMarked = true;
          }
          case SPINNING_SLASH -> {
             SasakiKojiroActionAnimationService.play(caster, SasakiKojiroAction.SPINNING_SLASH);
             slashVfx(caster, 1.3);
-            for (LivingEntity victim : nearbyTargets(caster, technique.range()).stream().limit(3).toList()) {
+            secondBladeSwing(caster);
+            for (LivingEntity victim : nearbyTargets(caster, attackRange(caster, technique)).stream().limit(3).toList()) {
                hit(caster, victim, technique.damage(), technique.effectId());
             }
          }
          case TSUBAME_GAESHI -> {
-            playTsubamePresentation(caster);
-            applyTsubameDamage(caster, target);
+            return performTsubameGaeshi(caster, target);
          }
          case COUNTER_STANCE -> startCounter(caster);
       }
@@ -394,19 +475,26 @@ public final class SasakiKojiroCombatService {
       return hit(caster, target, technique.damage(), technique.effectId());
    }
 
+   private static double attackRange(LivingEntity caster, Technique technique) {
+      return caster instanceof ServerPlayer ? technique.cardRange() : technique.range();
+   }
+
    private static void hitTwice(LivingEntity caster, LivingEntity target, float damage, String skill) {
       if (!validTarget(caster, target)) return;
       beforeAttack(caster);
       target.invulnerableTime = 0;
-      target.hurt(damageSource(caster, skill), damage);
+      boolean first = target.hurt(damageSource(caster, skill), damage);
       target.invulnerableTime = 0;
-      target.hurt(damageSource(caster, skill), damage);
+      boolean second = target.hurt(damageSource(caster, skill), damage);
+      if (first || second) bladeSound(target, ModSounds.SASAKI_BLADE_IMPACT.get(), 0.85F, 1.1F);
    }
 
    private static boolean hit(LivingEntity caster, LivingEntity target, float damage, String skill) {
       if (!validTarget(caster, target)) return false;
       beforeAttack(caster);
-      return target.hurt(damageSource(caster, skill), damage);
+      boolean landed = target.hurt(damageSource(caster, skill), damage);
+      if (landed) bladeSound(target, ModSounds.SASAKI_BLADE_IMPACT.get(), 0.85F, 1.0F);
+      return landed;
    }
 
    private static DamageSource damageSource(LivingEntity caster, String skill) {
@@ -476,7 +564,22 @@ public final class SasakiKojiroCombatService {
       if (!(caster.level() instanceof ServerLevel level)) return;
       Vec3 direction = horizontalLook(caster);
       Vec3 origin = caster.position().add(0.0, caster.getBbHeight() * 0.56, 0.0).add(direction.scale(0.65));
-      VFXServerEffects.spawnOrientedScaled(level, "sasaki_slash", origin, direction, 64.0, (float)scale);
+      VFXServerEffects.spawnOrientedScaled(level, "sasaki_slash", origin, direction, 64.0, (float)scale * 1.25F);
+      bladeSound(caster, ModSounds.SASAKI_BLADE_SWING.get(), 0.95F, 0.85F + caster.getRandom().nextFloat() * 0.18F);
+   }
+
+   private static void secondBladeSwing(LivingEntity caster) {
+      var level = caster.level();
+      TYPE_MOON_WORLD.queueServerWork(11, () -> {
+         if (caster.isAlive() && !caster.isRemoved() && caster.level() == level)
+            bladeSound(caster, ModSounds.SASAKI_BLADE_SWING.get(), 0.9F, 1.1F);
+      });
+   }
+
+   private static void bladeSound(LivingEntity owner, SoundEvent sound, float volume, float pitch) {
+      if (owner.level() instanceof ServerLevel level)
+         level.playSound(null, owner.getX(), owner.getY() + owner.getBbHeight() * 0.5, owner.getZ(),
+            sound, SoundSource.PLAYERS, volume, pitch);
    }
 
    private static boolean needsTransparency(LivingEntity entity) {
@@ -506,7 +609,8 @@ public final class SasakiKojiroCombatService {
    private static void clearHostileAggro(LivingEntity entity) {
       if (!(entity.level() instanceof ServerLevel level)) return;
       for (Mob mob : level.getEntitiesOfClass(Mob.class, entity.getBoundingBox().inflate(48.0),
-         mob -> mob.isAlive() && mob.getTarget() == entity)) {
+         mob -> mob.isAlive() && mob.getTarget() == entity
+            && net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.suppressesAggroFrom(entity, mob))) {
          mob.setTarget(null);
          mob.getNavigation().stop();
       }

@@ -33,6 +33,7 @@ import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationRegistry;
 public final class HeraclesClientSmoke {
    private static final String WORLD="Heracles-QA";
    private boolean opened,done;private int ticks;private volatile String failure;private volatile boolean verified;
+   private boolean firstPersonActionVerified;
    private UUID target;
    public HeraclesClientSmoke() { NeoForge.EVENT_BUS.register(this); }
    @SubscribeEvent public void tick(ClientTickEvent.Post event) {
@@ -49,10 +50,26 @@ public final class HeraclesClientSmoke {
          ticks++;
          if(ticks==10) {
             for(int i=0;i<9;i++)require(PlayerAnimationRegistry.getAnimation(ResourceLocation.fromNamespaceAndPath("typemoonworld","heracles_action_"+i))!=null,"missing player animation "+i);
-            mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+            mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON);
             server(mc,()->setup(mc));
          }
-         if(ticks==22)capture(mc,"heracles-flurry");
+         if(ticks==22) {
+            require(firstPersonActionVerified,"Heracles action did not enable its first-person animation");
+            capture(mc,"heracles-flurry");
+         }
+         if(!firstPersonActionVerified) {
+            Object layer=dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess.getPlayerAssociatedData(mc.player)
+               .get(ResourceLocation.fromNamespaceAndPath("typemoonworld","heracles_action"));
+            if(layer instanceof dev.kosmx.playerAnim.api.layered.ModifierLayer<?> animation
+               && animation.isActive()
+               && animation.getFirstPersonMode(0.0F)==dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL) {
+               var effective=((dev.kosmx.playerAnim.impl.IAnimatedPlayer)mc.player).playerAnimator_getAnimation();
+               require(effective.getFirstPersonMode()==dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL,
+                  "Heracles animation layer was not active in the first-person player stack");
+               firstPersonActionVerified=true;
+               capture(mc,"heracles-first-person-action");
+            }
+         }
          if(ticks==70)server(mc,()->{
             var level=mc.getSingleplayerServer().overworld();var player=mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
             var victim=(net.minecraft.world.entity.LivingEntity)level.getEntity(target);

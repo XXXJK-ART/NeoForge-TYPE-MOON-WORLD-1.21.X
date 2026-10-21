@@ -1,0 +1,11 @@
+{
+  "id": "gae_dearg",
+  "display_name": "Gae Dearg",
+  "display_name_zh": "破魔的红蔷薇",
+  "rank": "B",
+  "type": "anti_unit",
+  "mp_cost": 0,
+  "range": 5,
+  "effects": [],
+  "description": "Permanent weapon Noble Phantasm: magic-defense removal, shield handling and defense-break marks are resolved once by each effective red-spear hit. No separate release; slot 9 is an ordinary technique."
+}

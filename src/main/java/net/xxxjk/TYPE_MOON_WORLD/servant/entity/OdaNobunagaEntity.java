@@ -11,9 +11,13 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.level.Level;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 
 public class OdaNobunagaEntity extends ServantEntity {
    public static final String SERVANT_KEY = "oda_nobunaga";
+   private static final EntityDataAccessor<Boolean> COMBAT_READY = SynchedEntityData.defineId(
+      OdaNobunagaEntity.class, EntityDataSerializers.BOOLEAN
+   );
    private static final EntityDataAccessor<String> ACTION_ANIMATION = SynchedEntityData.defineId(
       OdaNobunagaEntity.class, EntityDataSerializers.STRING
    );
@@ -28,8 +32,32 @@ public class OdaNobunagaEntity extends ServantEntity {
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
+      builder.define(COMBAT_READY, false);
       builder.define(ACTION_ANIMATION, "");
       builder.define(ACTION_ANIMATION_START, -1000);
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      if (!this.level().isClientSide()) {
+         var target = this.getTarget();
+         this.entityData.set(COMBAT_READY, this.isAlive() && !this.isSpiritualTransitionLocked()
+            && !ServantCombatSystem.cannotAct(this) && target != null && target.isAlive()
+            && this.distanceToSqr(target) <= 1024.0 && this.hasLineOfSight(target));
+      }
+   }
+
+   public boolean isCombatReady() {
+      return this.entityData.get(COMBAT_READY);
+   }
+
+   @Override
+   public void triggerBasicAttackAnimation() {
+      if (this.isAlive() && !this.isSpiritualTransitionLocked() && !this.isPerformingAction()
+         && !ServantCombatSystem.cannotAct(this)) {
+         this.triggerNamedActionAnimation(Action.ATTACK_SLASH.animationId());
+      }
    }
 
    @Override

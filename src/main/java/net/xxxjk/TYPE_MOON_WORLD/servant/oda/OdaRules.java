@@ -10,10 +10,11 @@ public final class OdaRules {
    public static final int THREE_THOUSAND_TIER_COUNT = 3;
    public static final int THREE_THOUSAND_GUNS_PER_TIER = 11;
    public static final int THREE_THOUSAND_WAVE_COUNT = 3;
+   public static final int THREE_THOUSAND_WAVE_INTERVAL = 20;
    public static final int THREE_THOUSAND_TIER_INTERVAL = 3;
    public static final int THREE_THOUSAND_GUNS_PER_WAVE = THREE_THOUSAND_TIER_COUNT * THREE_THOUSAND_GUNS_PER_TIER;
    public static final int THREE_THOUSAND_TOTAL_GUNS = THREE_THOUSAND_GUNS_PER_WAVE * THREE_THOUSAND_WAVE_COUNT;
-   public static final int THREE_THOUSAND_SHOTS_PER_GUN = 3;
+   public static final int THREE_THOUSAND_SHOTS_PER_GUN = 1;
    /** Dedicated NP shot damage; the damage reduction comes from the smaller array. */
    public static final float THREE_THOUSAND_SHOT_DAMAGE = 10.0F;
    public static final int THREE_THOUSAND_SHOT_INTERVAL = 30;

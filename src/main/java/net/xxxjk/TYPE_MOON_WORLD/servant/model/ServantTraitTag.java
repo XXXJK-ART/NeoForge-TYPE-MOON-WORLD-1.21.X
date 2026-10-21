@@ -49,6 +49,9 @@ public enum ServantTraitTag {
 
    SERVANT("servant"),
    SEVEN_KNIGHTS("seven_knights"),
+   BELOVED("beloved"),
+   FIANNA_KNIGHTS("fianna_knights"),
+   KNIGHT("knight"),
    SHADOW_SERVANT("shadow_servant"),
 
    CHAOTIC("chaotic"),

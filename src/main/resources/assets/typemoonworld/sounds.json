@@ -1,4 +1,19 @@
 {
+  "sasaki_blade_draw": {
+    "sounds": [{"name":"minecraft:item.armor.equip_iron","type":"event","volume":0.8,"pitch":1.25}]
+  },
+  "sasaki_blade_swing": {
+    "sounds": [{"name":"minecraft:entity.player.attack.sweep","type":"event","volume":1.0,"pitch":0.85}]
+  },
+  "sasaki_blade_impact": {
+    "sounds": [{"name":"minecraft:entity.player.attack.strong","type":"event","volume":1.0,"pitch":0.75}]
+  },
+  "sasaki_tsubame_release": {
+    "sounds": [{"name":"minecraft:entity.player.attack.knockback","type":"event","volume":1.0,"pitch":0.65}]
+  },
+  "sasaki_tsubame_slash": {
+    "sounds": [{"name":"typemoonworld:sfx/sasaki_kojiro/tsubame_slash"}]
+  },
   "arash_voice_attack": {
     "sounds": [
       {

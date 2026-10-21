@@ -1,0 +1,8 @@
+// Isolated validation output; never modifies another local verification run.
+allprojects {
+    layout.buildDirectory = file('build/diarmuid-verification')
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/diarmuid-gametest-run')
+        project.tasks.named('test').configure { inputs.dir project.file('src/main/resources') }
+    }
+}

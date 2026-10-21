@@ -159,7 +159,6 @@ public final class OdaNobunagaGameTests {
       double[] highestGun = {0};
       var guns = new java.util.ArrayList<OdaMatchlockGunEntity>();
       var formation = new OdaMatchlockGunEntity[OdaRules.THREE_THOUSAND_TOTAL_GUNS];
-      boolean[] relayBeforeWholeWaveFinished = {false};
       var shotTimes = new java.util.HashMap<java.util.UUID, java.util.List<Long>>();
       java.util.function.Consumer<EntityJoinLevelEvent> listener = event -> {
          if (event.getEntity() instanceof OdaMatchlockGunEntity gun && gun.isOwnedBy(owner.getUUID()) && gun.ability() == THREE_THOUSAND) {
@@ -167,13 +166,19 @@ public final class OdaNobunagaGameTests {
             if (index >= OdaRules.THREE_THOUSAND_GUNS_PER_WAVE) {
                var previous = formation[index - OdaRules.THREE_THOUSAND_GUNS_PER_WAVE];
                helper.assertTrue(previous != null && previous.isRemoved() && previous.getShotsLeft() == 0,
-                  "A position was replaced before its preceding gun finished all three shots");
-               helper.assertTrue(previous.position().distanceTo(gun.position()) < (follow ? .25 : 1e-6),
+                  "A position was replaced before its preceding gun finished its shot");
+               close(helper, helper.getLevel().getGameTime() - shotTimes.get(previous.getUUID()).getFirst(),
+                  OdaRules.THREE_THOUSAND_WAVE_INTERVAL, "Each position must wait one second before its next wave");
+               if (follow) {
+                  int gunIndex = OdaRules.threeThousandGunIndexInWave(index);
+                  int tier = OdaRules.threeThousandTier(gunIndex);
+                  int slot = gunIndex % OdaRules.THREE_THOUSAND_GUNS_PER_TIER;
+                  close(helper, gun.position().subtract(owner.position()).horizontalDistance(),
+                     OdaRules.threeThousandRadius(tier, slot, OdaRules.threeThousandWave(index)), "Follow relay radius");
+                  close(helper, gun.getY() - owner.getY() - owner.getBbHeight() * .55,
+                     OdaRules.threeThousandHeight(tier, slot, OdaRules.threeThousandWave(index)), "Follow relay height");
+               } else helper.assertTrue(previous.position().distanceTo(gun.position()) < 1e-6,
                   "The replacement did not appear at the corresponding gun position");
-               if (index < 2 * OdaRules.THREE_THOUSAND_GUNS_PER_WAVE
-                  && java.util.Arrays.stream(formation, 0, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE)
-                     .anyMatch(g -> g != null && !g.isRemoved()))
-                  relayBeforeWholeWaveFinished[0] = true;
             }
             formation[index] = gun;
             gunCount[0]++;
@@ -191,10 +196,12 @@ public final class OdaNobunagaGameTests {
       NeoForge.EVENT_BUS.addListener(listener);
       OdaAbilityService.threeThousand(owner, null, follow, owner.position());
       helper.runAfterDelay(4, () -> {
-         helper.assertTrue(gunCount[0] > 0 && gunCount[0] < OdaRules.THREE_THOUSAND_GUNS_PER_WAVE,
+         long firstWaveGuns = java.util.Arrays.stream(formation, 0, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE)
+            .filter(java.util.Objects::nonNull).count();
+         helper.assertTrue(firstWaveGuns > 0 && firstWaveGuns < OdaRules.THREE_THOUSAND_GUNS_PER_WAVE,
             "The first gun wave should still be appearing during the initial shots");
          helper.assertTrue(shotCount[0] > 0, "Guns did not begin firing during their gradual appearance");
-         var firstGun = guns.getFirst();
+         var firstGun = guns.stream().filter(gun -> !gun.isRemoved()).findFirst().orElseThrow();
          Vec3 before = firstGun.position();
          owner.setPos(owner.position().add(2, 1, 0));
          helper.runAfterDelay(2, () -> {
@@ -204,13 +211,10 @@ public final class OdaNobunagaGameTests {
             NeoForge.EVENT_BUS.unregister(listener);
             close(helper, gunCount[0], OdaRules.THREE_THOUSAND_TOTAL_GUNS, "NP spawned gun total");
             close(helper, shotCount[0], OdaRules.THREE_THOUSAND_TOTAL_SHOTS, "NP shot total");
-            helper.assertTrue(relayBeforeWholeWaveFinished[0], "Gun positions still waited for the entire preceding wave");
             helper.assertTrue(highestGun[0] > 1 && highestGun[0] < 10, "The compact spiral exceeded ten blocks");
             close(helper, shotTimes.size(), OdaRules.THREE_THOUSAND_TOTAL_GUNS, "Every gun must fire");
             for (var times : shotTimes.values()) {
-               close(helper, times.size(), 3, "Each gun must fire exactly three times");
-               close(helper, times.get(1) - times.get(0), 30, "First shot interval");
-               close(helper, times.get(2) - times.get(1), 30, "Second shot interval");
+               close(helper, times.size(), 1, "Each gun must fire exactly once");
             }
             helper.assertTrue(guns.stream().allMatch(OdaMatchlockGunEntity::isRemoved), "Finished guns did not disappear");
             OdaAbilityService.clear(owner);
@@ -229,19 +233,28 @@ public final class OdaNobunagaGameTests {
       OdaAbilityService.threeThousand(owner, null, true, owner.position());
       helper.runAfterDelay(100, () -> {
          close(helper, guns.size(), OdaRules.THREE_THOUSAND_GUNS_PER_WAVE, "Waiting first wave started another wave on a timer");
-         helper.assertTrue(guns.stream().allMatch(gun -> !gun.isRemoved() && gun.getShotsLeft() == 3), "Waiting guns wasted ammunition");
+         helper.assertTrue(guns.stream().allMatch(gun -> !gun.isRemoved() && gun.getShotsLeft() == 1), "Waiting guns wasted ammunition");
          guns.getFirst().fixedDirection(new Vec3(0,1,0));
+      });
+      helper.runAfterDelay(110, () -> {
+         helper.assertTrue(guns.getFirst().isRemoved(), "The first gun did not finish its shot");
+         close(helper, guns.size(), OdaRules.THREE_THOUSAND_GUNS_PER_WAVE, "The next wave skipped its one-second wait");
+         helper.assertTrue(OdaAbilityService.hasThreeThousandArray(owner), "The array ended during its wave interval");
       });
       helper.runAfterDelay(175, () -> {
          close(helper, guns.size(), OdaRules.THREE_THOUSAND_GUNS_PER_WAVE + 1,
-            "One completed position must immediately receive its second gun");
+            "One completed position must receive its second gun after one second");
          helper.assertTrue(guns.getFirst().isRemoved()
             && guns.get(OdaRules.THREE_THOUSAND_GUNS_PER_WAVE).getFormationIndex() == OdaRules.THREE_THOUSAND_GUNS_PER_WAVE,
             "The completed position did not relay to its own second-wave gun");
          helper.assertTrue(guns.subList(1, OdaRules.THREE_THOUSAND_GUNS_PER_WAVE)
-            .stream().allMatch(g -> !g.isRemoved() && g.getShotsLeft() == 3),
+            .stream().allMatch(g -> !g.isRemoved() && g.getShotsLeft() == 1),
             "Waiting positions were advanced without finishing");
          guns.get(OdaRules.THREE_THOUSAND_GUNS_PER_WAVE).fixedDirection(new Vec3(0,1,0));
+      });
+      helper.runAfterDelay(185, () -> {
+         helper.assertTrue(guns.get(OdaRules.THREE_THOUSAND_GUNS_PER_WAVE).isRemoved(), "The second gun did not finish its shot");
+         close(helper, guns.size(), OdaRules.THREE_THOUSAND_GUNS_PER_WAVE + 1, "The third wave skipped its one-second wait");
       });
       helper.runAfterDelay(250, () -> {
          close(helper, guns.size(), OdaRules.THREE_THOUSAND_GUNS_PER_WAVE + 2,
@@ -321,7 +334,7 @@ public final class OdaNobunagaGameTests {
       helper.assertTrue(npc.getVehicle() instanceof OdaMatchlockGunEntity, "NPC did not mount its chant gun");
       var mount = (OdaMatchlockGunEntity)npc.getVehicle();
       helper.runAfterDelay(45, () -> close(helper, npc.getY() - origin.y, 3, "NPC chant hover height"));
-      helper.runAfterDelay(175, () -> {
+      helper.runAfterDelay(net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.releaseAt(npc) - now + 2, () -> {
          helper.assertTrue(!mount.isRemoved() && npc.getVehicle() == mount, "NPC did not remain in the center of its active array");
          helper.assertTrue(!helper.getLevel().getEntitiesOfClass(OdaMatchlockGunEntity.class, npc.getBoundingBox().inflate(40),
             gun -> gun.isOwnedBy(npc.getUUID()) && gun.ability() == THREE_THOUSAND).isEmpty(), "Mounted NPC never released its array");
@@ -394,8 +407,8 @@ public final class OdaNobunagaGameTests {
       helper.getLevel().addFreshEntity(follow);
       helper.runAfterDelay(590, () -> {
          helper.assertTrue(!fixed.isRemoved() && !follow.isRemoved(), "Unfinished guns expired before thirty seconds");
-         close(helper, fixed.getShotsLeft(), 3, "Fixed gun wasted ammunition without a target");
-         close(helper, follow.getShotsLeft(), 3, "Follow gun wasted ammunition without a target");
+         close(helper, fixed.getShotsLeft(), 1, "Fixed gun wasted ammunition without a target");
+         close(helper, follow.getShotsLeft(), 1, "Follow gun wasted ammunition without a target");
       });
       helper.runAfterDelay(602, () -> {
          helper.assertTrue(fixed.isRemoved() && follow.isRemoved(), "Unfinished guns exceeded thirty seconds");
@@ -410,18 +423,18 @@ public final class OdaNobunagaGameTests {
       var gun = OdaMatchlockGunEntity.threeThousandWorldsFollow(owner.level(), owner, target,
          OdaRules.THREE_THOUSAND_TOTAL_GUNS - 1, OdaRules.THREE_THOUSAND_TOTAL_GUNS, 2);
       helper.getLevel().addFreshEntity(gun);
+      target.discard();
       helper.runAfterDelay(10, () -> {
-         close(helper, gun.getShotsLeft(), 2, "High spiral gun did not fire its first shot");
-         target.discard();
+         close(helper, gun.getShotsLeft(), 1, "High spiral gun wasted its shot after losing its target");
       });
       helper.runAfterDelay(55, () -> {
          helper.assertTrue(!gun.isRemoved(), "Gun disappeared when its target was lost");
-         close(helper, gun.getShotsLeft(), 2, "Gun wasted its remaining shots");
+         close(helper, gun.getShotsLeft(), 1, "Gun wasted its remaining shot");
          target(helper, owner.position().add(0, 0, 6));
       });
       helper.runAfterDelay(90, () -> {
          close(helper, gun.getShotsLeft(), 0, "Gun failed to resume its remaining shots");
-         helper.assertTrue(gun.isRemoved(), "Gun did not disappear after completing its three shots");
+         helper.assertTrue(gun.isRemoved(), "Gun did not disappear after completing its shot");
          OdaAbilityService.clear(owner); helper.succeed();
       });
    }

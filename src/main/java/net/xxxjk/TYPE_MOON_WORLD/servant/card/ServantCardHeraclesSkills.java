@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
@@ -24,7 +25,7 @@ public final class ServantCardHeraclesSkills {
       initializeHeraclesGodHand(player);
       if (syncGodHandLives(player,vars)) vars.syncServantCardRuntime(player);
       if (!HeraclesAbilityService.busy(player) && player.level() instanceof ServerLevel level)
-         ServantSprintCollisionHelper.tryPlayerSprintCollision(player,level,player.getPersistentData(),"ServantCardHeraclesLastSprintCollisionBreak",false,10,1.25,.26,32,45);
+         ServantSprintCollisionHelper.tryPlayerSprintCollision(player,level,player.getPersistentData(),"ServantCardHeraclesLastSprintCollisionBreak",false,10,1.25,.26,32,45,true);
    }
    public static void clear(ServerPlayer player) {
       HeraclesAbilityService.cancel(player);GodHandService.clear(player);
@@ -49,7 +50,22 @@ public final class ServantCardHeraclesSkills {
       TerrainImpactService.impactGroundLayer(level,player,target.position(),TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL),TerrainImpactService.Permission.PLAYER);
       level.sendParticles(ParticleTypes.CRIT,target.getX(),target.getY()+.5,target.getZ(),10,.45,.35,.45,.12);
    }
-   public static void triggerHeraclesBlockAttack(ServerPlayer player,BlockPos pos) {
-      if(player.level() instanceof ServerLevel level)TerrainImpactService.impactWallTunnel(level,player,player.position(),player.getLookAngle(),TerrainImpactProfile.of(TerrainImpactProfile.Tier.SMALL),3,3,(int)Math.ceil(player.getBbHeight()));
+   public static boolean triggerHeraclesBlockAttack(ServerPlayer player,BlockPos pos) {
+      if(HeraclesAbilityService.busy(player)||!(player.level() instanceof ServerLevel level))return false;
+      BlockState clicked=level.getBlockState(pos);
+      if(clicked.isAir()||clicked.getCollisionShape(level,pos).isEmpty()||level.getBlockEntity(pos)!=null
+         ||clicked.getDestroySpeed(level,pos)<0||clicked.getDestroySpeed(level,pos)>35
+         ||!isInForwardBreakLane(player,pos))return false;
+      var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY,3.0,35,48,80);
+      return TerrainImpactService.impactWallTunnel(level,player,player.position(),player.getLookAngle(),profile,3,3,(int)Math.ceil(player.getBbHeight()));
+   }
+   private static boolean isInForwardBreakLane(ServerPlayer player,BlockPos pos) {
+      Vec3 forward=player.getLookAngle().multiply(1,0,1);
+      if(forward.lengthSqr()<1.0E-4)return false;
+      forward=forward.normalize();
+      Vec3 offset=Vec3.atCenterOf(pos).subtract(player.position());
+      double along=offset.dot(forward);
+      double across=offset.subtract(forward.scale(along)).horizontalDistance();
+      return along>=0&&along<=3&&across<=1.5&&offset.y>=-.1&&offset.y<player.getBbHeight();
    }
 }

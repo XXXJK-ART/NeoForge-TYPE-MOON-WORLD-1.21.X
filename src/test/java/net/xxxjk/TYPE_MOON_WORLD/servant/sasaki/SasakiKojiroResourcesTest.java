@@ -69,12 +69,15 @@ class SasakiKojiroResourcesTest {
          assertTrue(sourceBones.has(bone), bone);
       }
       JsonObject tsubameEffect = json("assets/typemoonworld/effects/sasaki_tsubame.json");
-      assertEquals(3, tsubameEffect.getAsJsonArray("emitters").size());
       for (var emitter : tsubameEffect.getAsJsonArray("emitters")) {
          JsonObject effect = emitter.getAsJsonObject();
          assertEquals("BILLBOARD", effect.get("renderer").getAsString());
          assertTrue(effect.get("enable_trail").getAsBoolean());
          assertTrue(effect.getAsJsonArray("velocity").get(2).getAsDouble() > 0.0);
+         assertTrue(effect.get("rate").getAsDouble() * effect.get("end_time").getAsDouble() <= 8,
+            "Release sparks must not form an independent slash or spiral");
+         assertTrue(effect.getAsJsonObject("component").get("radius").getAsDouble() <= 0.1,
+            "Release sparks must stay at the grip; the client supplies the tip trails");
          assertEquals("typemoonworld:textures/particle/sasaki_tsubame_slash.png",
             effect.getAsJsonObject("material").get("texture").getAsString());
       }
@@ -86,6 +89,69 @@ class SasakiKojiroResourcesTest {
       assertFalse(actions.toString().contains("tsubame_gaeshi"));
       assertFalse(Files.readString(RESOURCES.resolve("data/minecraft/tags/damage_type/bypasses_invulnerability.json"))
          .contains("typemoonworld:ganryu_tsubame"));
+   }
+
+   @Test
+   void restoredSasakiVoiceResourcesArePresent() throws Exception {
+      for (String file : List.of("attack1.ogg", "attack2.ogg", "attack3.ogg", "fail1.ogg", "fail2.ogg",
+         "victory1.ogg", "victory2.ogg", "tsurigameshi.ogg")) {
+         Path voice = RESOURCES.resolve("assets/typemoonworld/sounds/voice/sasaki_kojiro").resolve(file);
+         assertTrue(Files.isRegularFile(voice) && Files.size(voice) > 0, file);
+      }
+      String sounds = Files.readString(RESOURCES.resolve("assets/typemoonworld/sounds.json"));
+      for (String event : List.of("sasaki_kojiro_voice_attack", "sasaki_kojiro_voice_fail",
+         "sasaki_kojiro_voice_victory", "sasaki_kojiro_voice_tsurigameshi")) {
+         assertTrue(sounds.contains("\"" + event + "\""), event);
+      }
+   }
+
+   @Test
+   void reimportedActionsContainFullBodyTracksAndTheTenTickSourceStance() throws Exception {
+      JsonObject source = json("assets/typemoonworld/animations/sasaki_kojiro_source.animation.json")
+         .getAsJsonObject("animations");
+      for (SasakiKojiroAction action : SasakiKojiroAction.values()) {
+         if (action == SasakiKojiroAction.TSUBAME_GAESHI) continue;
+         JsonObject animation = json("assets/typemoonworld/player_animations/" + action.playerAnimationPath() + ".json");
+         assertTrue(animation.has("source_file") && animation.has("source_animation"), action.name());
+         assertTrue(source.has(action.animationName()), action.name());
+         JsonObject emote = animation.getAsJsonObject("emote");
+         assertEquals(action.durationTicks(), emote.get("stopTick").getAsInt());
+         assertEquals(action.durationTicks() + 1, emote.getAsJsonArray("moves").size());
+         for (var move : emote.getAsJsonArray("moves")) {
+            for (String part : List.of("head", "torso", "rightArm", "leftArm", "rightLeg", "leftLeg", "rightItem", "leftItem")) {
+               JsonObject pose = move.getAsJsonObject().getAsJsonObject(part);
+               for (String axis : List.of("x", "y", "z", "pitch", "yaw", "roll"))
+                  assertTrue(pose.has(axis) && Double.isFinite(pose.get(axis).getAsDouble()), action + ":" + part + ":" + axis);
+            }
+         }
+      }
+      JsonObject windup = json("assets/typemoonworld/player_animations/sasaki_kojiro_tsubame_windup.json");
+      assertTrue(windup.get("source_file").getAsString().contains("xiaocilangyanliujiashi.animation.json"));
+      assertEquals(10, windup.getAsJsonObject("emote").get("endTick").getAsInt());
+      assertEquals(0.3333, windup.get("source_length").getAsDouble(), 0.0001);
+   }
+
+   @Test
+   void mainBladeUsesTheStretchedDedicatedAtlasRegionAndSwordSoundsResolve() throws Exception {
+      BufferedImage source = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/particle/sasaki_tsubame_slash.png").toFile());
+      BufferedImage stretched = ImageIO.read(RESOURCES.resolve("assets/typemoonworld/textures/particle/sasaki_tsubame_blade_stretched.png").toFile());
+      assertEquals(512, stretched.getWidth());
+      assertEquals(96, stretched.getHeight());
+      // The stretched image must keep the original purple crescent and its alpha, not the blank atlas margins.
+      int opaque = 0, purple = 0;
+      for (int y = 0; y < stretched.getHeight(); y++) for (int x = 0; x < stretched.getWidth(); x++) {
+         int color = stretched.getRGB(x, y);
+         if ((color >>> 24) > 100) {
+            opaque++;
+            if ((color & 255) > ((color >> 8) & 255) + 20) purple++;
+         }
+      }
+      assertTrue(opaque > 4000 && purple > 1000);
+      assertNotNull(source);
+      JsonObject sounds = json("assets/typemoonworld/sounds.json");
+      for (String event : List.of("sasaki_blade_draw", "sasaki_blade_swing", "sasaki_blade_impact", "sasaki_tsubame_release")) {
+         assertTrue(sounds.getAsJsonObject(event).getAsJsonArray("sounds").size() > 0, event);
+      }
    }
 
    private static JsonObject json(String path) throws Exception {

@@ -128,7 +128,9 @@ public class ServantCardHud {
          gui,
          minecraft,
          Component.translatable(
-            vars.servant_card_flying
+            "diarmuid_ua_duibhne".equals(vars.servant_card_id)
+               ? "hud.typemoonworld.servant_card.diarmuid_jump"
+               : vars.servant_card_flying
                ? "hud.typemoonworld.servant_card.dash_np"
                : "hud.typemoonworld.servant_card.jump_np",
             effectiveJumpCharges(minecraft, vars),
@@ -414,10 +416,12 @@ public class ServantCardHud {
       double poise = ServantCardDefenseClientState.poise();
       double poiseMax = ServantCardDefenseClientState.poiseMax();
       if (staminaMax <= 0.0 && poiseMax <= 0.0) return;
-      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.guard_value",
-         Math.round(stamina), Math.round(staminaMax)), x, y, 0xFFE5B04A, 0.58F);
-      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.poise_value",
-         Math.round(poise), Math.round(poiseMax)), x, y + 9, 0xFFB36BE8, 0.58F);
+      int barWidth = 80;
+      drawDefenseBar(gui, minecraft, x, y, barWidth,
+         "hud.typemoonworld.servant_card.guard_value", stamina, staminaMax, 0xCCE5B04A);
+      drawDefenseBar(gui, minecraft, x, y + 9, barWidth,
+         "hud.typemoonworld.servant_card.poise_value", poise, poiseMax, 0xCCB36BE8);
+
       long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
       long dodge = Math.max(0L, ServantCardDefenseClientState.dodgeCooldownEnd() - now);
       long broken = Math.max(0L, ServantCardDefenseClientState.guardBrokenEnd() - now);
@@ -431,6 +435,22 @@ public class ServantCardHud {
       if (ServantCardDefenseClientState.guardBroken()) dodgeText += " | " + Component.translatable("hud.typemoonworld.servant_card.guard_broken").getString();
       drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.dodge_value", dodgeText),
          x, y + 18, broken > 0L ? 0xFFFF5555 : 0xFFE0E0E0, 0.58F);
+   }
+
+   private static void drawDefenseBar(GuiGraphics gui, Minecraft minecraft, int x, int y, int width,
+                                      String labelKey, double value, double max,
+                                      int fillColor) {
+      int height = 7;
+      gui.fill(x, y, x + width, y + height, 0x80000000);
+      if (max > 0.0) {
+         int fill = (int)((width - 2) * Mth.clamp(value / max, 0.0, 1.0));
+         if (fill > 0) gui.fill(x + 1, y + 1, x + 1 + fill, y + height - 1, fillColor);
+      }
+      gui.renderOutline(x, y, width, height, 0x665A626E);
+      String text = Component.translatable(labelKey, Math.round(value), Math.round(Math.max(0.0, max))).getString();
+      float scale = 0.58F;
+      int textX = x + (int)((width - minecraft.font.width(text) * scale) / 2.0F);
+      drawScaledString(gui, minecraft, Component.literal(text), textX, y + 1, 0xFFFFFFFF, scale);
    }
 
    private static void drawGilgameshShield(GuiGraphics gui, Minecraft minecraft,
@@ -470,7 +490,7 @@ public class ServantCardHud {
             && !"gilgamesh_caster".equals(vars.servant_card_id)
             && !"ushiwakamaru_rider".equals(vars.servant_card_id)
             && !"sasaki_kojiro".equals(vars.servant_card_id)
-            && !"okita_souji_saber".equals(vars.servant_card_id) && !heracles ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
+            && !"okita_souji_saber".equals(vars.servant_card_id) && !"diarmuid_ua_duibhne".equals(vars.servant_card_id) && !heracles ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty

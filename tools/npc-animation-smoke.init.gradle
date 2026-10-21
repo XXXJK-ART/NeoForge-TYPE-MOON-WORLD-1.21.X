@@ -1,0 +1,15 @@
+// Opt-in verification; the smoke mod is excluded from release artifacts.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('npcAnimationSmoke') {
+            java.srcDir 'tools/npc-animation-smoke/java'
+            resources.srcDir 'tools/npc-animation-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_npc_animation_smoke', smoke)
+        project.runs.server.modSources.add('typemoonworld_npc_animation_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/npc-animation-client-run')
+        project.runs.server.workingDirectory project.file('build/npc-animation-server-run')
+    }
+}
