@@ -31,6 +31,9 @@ import org.joml.Vector3f;
 @EventBusSubscriber(modid = "typemoonworld", value = Dist.CLIENT)
 public final class DiarmuidVisualsClient {
    private static final Map<UUID, Swing> SWINGS = new HashMap<>();
+   private static final Map<UUID, java.util.EnumMap<InteractionHand, Swing>> HAND_SWINGS = new HashMap<>();
+   private static final Map<UUID, EnumMap<InteractionHand, Integer>> BASIC_SEQUENCE = new HashMap<>();
+   public record PreviousPose(DiarmuidAction action, String path, float age) { }
    private static final DustParticleOptions RED_SPARK = new DustParticleOptions(new Vector3f(1,0.035F,0.045F),0.65F);
    private static final DustParticleOptions YELLOW_SPARK = new DustParticleOptions(new Vector3f(1,0.86F,0.035F),0.6F);
    private static net.minecraft.client.multiplayer.ClientLevel activeLevel;
@@ -39,28 +42,108 @@ public final class DiarmuidVisualsClient {
       final LivingEntity owner;
       final DiarmuidAction action;
       final long start;
+      final String animationPath;
+      final EnumMap<InteractionHand, PreviousPose> previous = new EnumMap<>(InteractionHand.class);
       final EnumMap<InteractionHand, ArrayDeque<Point>> paths = new EnumMap<>(InteractionHand.class);
       final EnumMap<InteractionHand, Integer> lastSpark = new EnumMap<>(InteractionHand.class);
       final EnumMap<InteractionHand, Float> sampledAge = new EnumMap<>(InteractionHand.class);
-      Swing(LivingEntity owner, DiarmuidAction action, long start) { this.owner=owner; this.action=action; this.start=start; }
+      Swing(LivingEntity owner, DiarmuidAction action, long start, InteractionHand selected) {
+         this.owner=owner; this.action=action; this.start=start;
+         for (InteractionHand hand : InteractionHand.values()) {
+            var hands = HAND_SWINGS.get(owner.getUUID());
+            Swing old = hands == null ? null : hands.get(hand);
+            if (old == null) old = SWINGS.get(owner.getUUID());
+            if (old != null && start - old.start < old.action.visualDuration())
+               previous.put(hand, new PreviousPose(old.action, old.animationPath, start - old.start));
+         }
+         String path = action.animationPath();
+         if (action == DiarmuidAction.RED_BASIC || action == DiarmuidAction.YELLOW_BASIC) {
+            InteractionHand hand = selected;
+            if (hand == null) for (InteractionHand candidate : InteractionHand.values())
+               if (owner.getItemInHand(candidate).getItem() instanceof DiarmuidSpearItem spear
+                  && (spear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG) == (action == DiarmuidAction.RED_BASIC)) hand = candidate;
+            if (hand == null) hand = InteractionHand.MAIN_HAND;
+            var counts = BASIC_SEQUENCE.computeIfAbsent(owner.getUUID(), ignored -> new EnumMap<>(InteractionHand.class));
+            int variant = counts.getOrDefault(hand, 0);
+            counts.put(hand, (variant + 1) % 4);
+            path += new String[]{"", "_slash_left", "_slash_right", "_rising_cut"}[variant];
+         }
+         animationPath = path;
+      }
    }
    private DiarmuidVisualsClient() { }
 
    private static void ensureLevel() {
-      if (activeLevel != Minecraft.getInstance().level) { activeLevel=Minecraft.getInstance().level; SWINGS.clear(); }
+      if (activeLevel != Minecraft.getInstance().level) { activeLevel=Minecraft.getInstance().level; SWINGS.clear(); HAND_SWINGS.clear(); BASIC_SEQUENCE.clear(); }
    }
    public static void begin(LivingEntity owner, DiarmuidAction action, long start) {
-      ensureLevel(); SWINGS.put(owner.getUUID(),new Swing(owner,action,start));
+      if (action == DiarmuidAction.DOUBLE_SPEAR_STANCE) return;
+      ensureLevel();
+      Swing next = new Swing(owner, action, start, null);
+      HAND_SWINGS.remove(owner.getUUID());
+      SWINGS.put(owner.getUUID(), next);
    }
-   public static void stop(UUID id) { SWINGS.remove(id); }
+   public static void stop(UUID id) { SWINGS.remove(id); HAND_SWINGS.remove(id); }
+   public static void beginHand(LivingEntity owner, DiarmuidAction action, InteractionHand hand, long start) {
+      ensureLevel();
+      HAND_SWINGS.computeIfAbsent(owner.getUUID(), ignored -> new java.util.EnumMap<>(InteractionHand.class))
+         .put(hand, new Swing(owner, action, start, hand));
+   }
+   public static void stopHand(UUID id, InteractionHand hand) {
+      var hands = HAND_SWINGS.get(id);
+      if (hands == null) return;
+      hands.remove(hand);
+      if (hands.isEmpty()) HAND_SWINGS.remove(id);
+   }
+   public static DiarmuidAction handAction(UUID id, InteractionHand hand) {
+      ensureLevel();
+      Swing swing = HAND_SWINGS.getOrDefault(id, new java.util.EnumMap<>(InteractionHand.class)).get(hand);
+      return swing == null || activeLevel == null || activeLevel.getGameTime() - swing.start >= swing.action.visualDuration() ? null : swing.action;
+   }
+   private static Swing swingFor(UUID id, DiarmuidAction action, InteractionHand hand) {
+      ensureLevel();
+      var hands = HAND_SWINGS.get(id);
+      Swing swing = hands == null ? null : hands.get(hand);
+      if (swing == null || swing.action != action) swing = SWINGS.get(id);
+      return swing != null && swing.action == action && activeLevel != null
+         && activeLevel.getGameTime() - swing.start < action.visualDuration() ? swing : null;
+   }
+   public static String animationPath(UUID id, DiarmuidAction action, InteractionHand hand) {
+      Swing swing = swingFor(id, action, hand);
+      return swing == null ? action.animationPath() : swing.animationPath;
+   }
+   public static PreviousPose previousPose(UUID id, DiarmuidAction action, InteractionHand hand) {
+      Swing swing = swingFor(id, action, hand);
+      return swing == null ? null : swing.previous.get(hand);
+   }
+   public static DiarmuidAction wholeBodyAction(UUID id) {
+      return isWholeBodyAnimating(id) ? SWINGS.get(id).action : null;
+   }
+   public static float wholeBodyActionAge(UUID id, float partial) {
+      return isWholeBodyAnimating(id) ? activeLevel.getGameTime() - SWINGS.get(id).start + partial : -1;
+   }
+   public static float handActionAge(UUID id, InteractionHand hand, float partial) {
+      ensureLevel();
+      Swing swing = HAND_SWINGS.getOrDefault(id, new java.util.EnumMap<>(InteractionHand.class)).get(hand);
+      return swing == null || activeLevel == null ? -1 : activeLevel.getGameTime() - swing.start + partial;
+   }
    public static boolean isAnimating(UUID id) {
       ensureLevel();
       Swing swing=SWINGS.get(id);
-      return swing!=null && activeLevel!=null && activeLevel.getGameTime()-swing.start<swing.action.duration();
+      if (swing != null && activeLevel!=null && activeLevel.getGameTime()-swing.start<swing.action.visualDuration()) return true;
+      var hands = HAND_SWINGS.get(id);
+      return hands != null && activeLevel != null && hands.values().stream().anyMatch(hand -> activeLevel.getGameTime()-hand.start<hand.action.visualDuration());
+   }
+   public static boolean isWholeBodyAnimating(UUID id) {
+      ensureLevel();
+      Swing swing = SWINGS.get(id);
+      return swing != null && swing.action != DiarmuidAction.DOUBLE_SPEAR_STANCE && activeLevel != null && activeLevel.getGameTime()-swing.start<swing.action.visualDuration();
    }
    public static int activeTrailCount(UUID id) {
       ensureLevel(); Swing swing=SWINGS.get(id);
-      return swing == null ? 0 : (int)swing.paths.values().stream().filter(path -> path.size()>1).count();
+      int whole = swing == null ? 0 : (int)swing.paths.values().stream().filter(path -> path.size()>1).count();
+      var hands = HAND_SWINGS.get(id);
+      return whole + (hands == null ? 0 : hands.values().stream().mapToInt(s -> (int)s.paths.values().stream().filter(path -> path.size()>1).count()).sum());
    }
 
    @SubscribeEvent
@@ -72,21 +155,44 @@ public final class DiarmuidVisualsClient {
          if (entity instanceof DiarmuidUaDuibhneEntity npc) {
             var action=npc.getDiarmuidAction();
             float age=npc.getDiarmuidActionAge(0);
-            if (action==null || age<0 || action!=DiarmuidAction.FIGURE_EIGHT && age>=action.duration()) continue;
+            if (action==null || action==DiarmuidAction.DOUBLE_SPEAR_STANCE || age<0 || action!=DiarmuidAction.FIGURE_EIGHT && age>=action.duration()) continue;
             Swing previous=SWINGS.get(npc.getUUID());
-            if (previous==null || previous.action!=action) begin(npc,action,activeLevel.getGameTime()-(long)age);
+            if (previous==null || previous.action!=action || Math.abs(previous.start - activeLevel.getGameTime()+(long)age) > 1) begin(npc,action,activeLevel.getGameTime()-(long)age);
          }
       }
       SWINGS.values().removeIf(s -> !s.owner.isAlive() || s.owner.isRemoved() || s.owner.level()!=activeLevel
-         || s.action!=DiarmuidAction.FIGURE_EIGHT && activeLevel.getGameTime()-s.start>=s.action.duration());
+         || s.action!=DiarmuidAction.FIGURE_EIGHT && activeLevel.getGameTime()-s.start>=s.action.visualDuration());
+      for (var entity : activeLevel.entitiesForRendering()) {
+         if (!(entity instanceof DiarmuidUaDuibhneEntity npc)) continue;
+         for (InteractionHand hand : InteractionHand.values()) {
+            DiarmuidAction action = npc.getDiarmuidAction(hand);
+            float age = npc.getDiarmuidActionAge(hand, 0);
+            if (action != null && age >= 0 && age < action.duration()) {
+               var hands = HAND_SWINGS.get(npc.getUUID());
+               Swing previous = hands == null ? null : hands.get(hand);
+               if (previous == null || previous.action != action || Math.abs(previous.start - activeLevel.getGameTime()+(long)age) > 1) beginHand(npc, action, hand, activeLevel.getGameTime()-(long)age);
+            }
+         }
+      }
+      HAND_SWINGS.values().forEach(hands -> hands.values().removeIf(s -> !s.owner.isAlive() || s.owner.isRemoved() || s.owner.level()!=activeLevel
+         || activeLevel.getGameTime()-s.start>=s.action.visualDuration()));
+      HAND_SWINGS.values().removeIf(java.util.Map::isEmpty);
       var buffers=Minecraft.getInstance().renderBuffers().bufferSource();
       Vec3 camera=event.getCamera().getPosition();
       float partial=event.getPartialTick().getGameTimeDeltaPartialTick(false);
       for (Swing swing : SWINGS.values()) {
+         renderSwing(swing, null, event, buffers, camera, partial);
+      }
+      for (var hands : HAND_SWINGS.values()) for (var entry : hands.entrySet())
+         renderSwing(entry.getValue(),entry.getKey(),event,buffers,camera,partial);
+   }
+
+   private static void renderSwing(Swing swing, InteractionHand activeHand, RenderLevelStageEvent event, MultiBufferSource.BufferSource buffers, Vec3 camera, float partial) {
          float age=activeLevel.getGameTime()-swing.start+partial;
-         if (swing.action==DiarmuidAction.FIGURE_EIGHT) age%=swing.action.duration();
+         if (swing.action==DiarmuidAction.FIGURE_EIGHT) age%=swing.action.visualDuration();
          float yaw=Mth.rotLerp(partial,swing.owner.yBodyRotO,swing.owner.yBodyRot);
          for (var hand : InteractionHand.values()) {
+            if (activeHand != null && hand != activeHand) continue;
             var stack=swing.owner.getItemInHand(hand);
             if (!(stack.getItem() instanceof DiarmuidSpearItem spear)) { swing.paths.remove(hand); continue; }
             // Hand swaps change the light immediately; animation labels never determine its color.
@@ -94,10 +200,8 @@ public final class DiarmuidVisualsClient {
             // A technique glows throughout windup, active motion and recovery. Single-hand basics
             // illuminate only the attacking hand; swapping weapons still swaps the actual hue.
             boolean single=swing.action==DiarmuidAction.RED_BASIC || swing.action==DiarmuidAction.YELLOW_BASIC || swing.action.dance();
-            boolean left=hand==InteractionHand.MAIN_HAND ? swing.owner.getMainArm()==net.minecraft.world.entity.HumanoidArm.LEFT
-               : swing.owner.getMainArm()!=net.minecraft.world.entity.HumanoidArm.LEFT;
-            boolean leftAction=swing.action==DiarmuidAction.YELLOW_BASIC || swing.action==DiarmuidAction.YELLOW_DANCE;
-            boolean drawing=age>=0 && age<swing.action.duration() && (!single || left==leftAction);
+            boolean redAction=swing.action==DiarmuidAction.RED_BASIC || swing.action==DiarmuidAction.RED_DANCE;
+            boolean drawing=age>=0 && age<swing.action.visualDuration() && (!single || activeHand != null || red==redAction);
             var path=swing.paths.computeIfAbsent(hand,ignored -> new ArrayDeque<>());
             float tailLife=swing.action==DiarmuidAction.FIGURE_EIGHT || swing.action.dance()?6.5F:5.0F;
             while (!path.isEmpty() && age-path.getFirst().age()>tailLife) path.removeFirst();
@@ -125,7 +229,6 @@ public final class DiarmuidVisualsClient {
             } else swing.sampledAge.remove(hand);
             if (path.size()>=2) ribbon(event.getPoseStack(),buffers,new ArrayList<>(path),camera,red,age,tailLife);
          }
-      }
    }
 
    private static void samplePoint(Swing swing,InteractionHand hand,float frame,float partial,float yaw,ArrayDeque<Point> path) {

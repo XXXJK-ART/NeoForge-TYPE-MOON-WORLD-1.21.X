@@ -309,8 +309,9 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
          }
-         if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+          if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
+             if (isClientDiarmuidHandReady(player, InteractionHand.MAIN_HAND))
+                PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             player.swing(InteractionHand.MAIN_HAND);
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -347,16 +348,20 @@ public class TypeMoonWorldModKeyMappings {
          }
          if (vars.servant_card_transformed && !blockTarget) {
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            if (isClientDiarmuidDualWieldActive(player, vars)) {
+             if (isClientDiarmuidDualWieldActive(player, vars)) {
                player.swing(InteractionHand.OFF_HAND);
+               if (isClientDiarmuidHandReady(player, InteractionHand.OFF_HAND))
+                  PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
                event.setSwingHand(false);
                event.setCanceled(true);
             }
             return;
          }
-         if (isClientDiarmuidDualWieldActive(player, vars)
+          if (isClientDiarmuidDualWieldActive(player, vars)
             && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
             player.swing(InteractionHand.OFF_HAND);
+            if (isClientDiarmuidHandReady(player, InteractionHand.OFF_HAND))
+               PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
             event.setCanceled(true);
             event.setSwingHand(false);
             return;
@@ -1194,6 +1199,15 @@ public class TypeMoonWorldModKeyMappings {
          return vars.servant_card_transformed
             && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
             && vars.servant_card_action_mode == 1;
+      }
+
+      private static boolean isClientDiarmuidHandReady(Player player, InteractionHand hand) {
+         if (!isClientDiarmuidDualWieldActive(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES))) return false;
+         ItemStack stack = player.getItemInHand(hand);
+         if (!(stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem spear)
+            || stack.getDamageValue() >= stack.getMaxDamage()) return false;
+         long until = player.getPersistentData().getLong("DiarmuidAction:hand_" + hand.name());
+         return player.level().getGameTime() >= until;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

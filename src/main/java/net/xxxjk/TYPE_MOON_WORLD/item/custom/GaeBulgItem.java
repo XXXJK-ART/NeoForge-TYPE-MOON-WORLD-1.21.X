@@ -81,10 +81,9 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
       if (!(player instanceof ServerPlayer serverPlayer)) {
          return InteractionResultHolder.pass(stack);
       }
-      if (player.getCooldowns().isOnCooldown(this)) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.begin(serverPlayer)) {
          return InteractionResultHolder.fail(stack);
       }
-      PlayerNoblePhantasmHelper.startGaeBulgDeathFlight(serverPlayer);
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
    }
@@ -103,13 +102,13 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
       if (net.xxxjk.TYPE_MOON_WORLD.servant.summon.SummoningRitualService.isRitualUsing(living, stack)) return;
       int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
-      PlayerNoblePhantasmHelper.tickGaeBulgUse(level, living, useTicks);
+      if(living instanceof ServerPlayer player) net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.charge(player,useTicks);
    }
 
    @Override
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
       if (!level.isClientSide() && living instanceof ServerPlayer player) {
-         PlayerNoblePhantasmHelper.releaseGaeBulg(player);
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.release(player,getUseDuration(stack,living)-timeLeft);
       }
    }
 

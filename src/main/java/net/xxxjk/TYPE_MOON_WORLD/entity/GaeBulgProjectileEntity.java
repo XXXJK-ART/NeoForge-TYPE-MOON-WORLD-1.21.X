@@ -288,10 +288,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          spear.setArmyDamage(splitDamage);
          spear.setDeathFlightCastId(deathFlightCastId);
          spear.setTrackedTarget(target);
+         spear.getPersistentData().putBoolean("CuResetAttack",this.getPersistentData().getBoolean("CuResetAttack"));
+         spear.getPersistentData().putString("NoblePhantasmId","cu_gae_bolg_flight");
          spear.setPos(origin.x, origin.y, origin.z);
          spear.noPhysics = true;
          spear.setNoGravity(true);
-         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+         Vec3 aim = target==null ? origin.add(this.getDeltaMovement().normalize().scale(24)) : target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          Vec3 dir = aim.subtract(spear.position());
          if (dir.lengthSqr() < 1.0E-4) {
             dir = this.getDeltaMovement().lengthSqr() > 1.0E-4 ? this.getDeltaMovement() : this.getLookAngle();
@@ -305,6 +307,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       level.playSound(null, BlockPos.containing(origin), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 1.8F, 0.52F);
    }
 
+   public void releasePhysicalCarrierSplits(ServerLevel level,LivingEntity target) {
+      getPersistentData().putBoolean("CuResetAttack",true);
+      spawnSplitSpears(level,target);
+   }
+
    private void resolveSplitBurst(ServerLevel level) {
       Vec3 burstCenter = this.position();
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
@@ -315,7 +322,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
-         e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
+         e -> isUsableTarget(e,owner)
       )) {
          if (living.distanceToSqr(burstCenter) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
             continue;
@@ -712,9 +719,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
-      target.invulnerableTime = 0;
-      target.hurt(source, damage);
-      target.invulnerableTime = 0;
+      int previous=target.invulnerableTime;target.invulnerableTime=0;
+      try {target.hurt(source, damage);}finally{target.invulnerableTime=previous;}
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {

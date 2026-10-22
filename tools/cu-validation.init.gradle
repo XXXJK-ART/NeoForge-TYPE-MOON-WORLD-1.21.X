@@ -1,0 +1,7 @@
+allprojects {
+    layout.buildDirectory = file('build/cu-verification')
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/cu-gametest-run')
+        project.tasks.named('test').configure { inputs.dir project.file('src/main/resources') }
+    }
+}

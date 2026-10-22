@@ -383,6 +383,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage::handleData);
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage::handleData);
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage::handleData);
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage.TYPE,net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage.STREAM_CODEC,net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage::handle);
       registrar.playToClient(BajiquanPoseMessage.TYPE, BajiquanPoseMessage.STREAM_CODEC, BajiquanPoseMessage::handleData);
       registrar.playToClient(GanryuPoseMessage.TYPE, GanryuPoseMessage.STREAM_CODEC, GanryuPoseMessage::handleData);
       registrar.playToClient(CircleRealmStateMessage.TYPE, CircleRealmStateMessage.STREAM_CODEC, CircleRealmStateMessage::handleData);

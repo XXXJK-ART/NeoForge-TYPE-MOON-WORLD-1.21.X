@@ -177,34 +177,8 @@ public final class ServantCardDefenseHandler {
          return true;
       }
       if (!defensePiercing && "cu_chulainn".equals(vars.servant_card_id)) {
-         float barrier = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG);
-         if (barrier > 0.0F && data.getLong(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_UNTIL_TAG) > now) {
-            float absorbed = Math.min(barrier, event.getAmount());
-            data.putFloat(ServantCardCuChulainnSkills.CU_RUNE_BARRIER_HP_TAG, barrier - absorbed);
-            event.setAmount(Math.max(0.0F, event.getAmount() - absorbed));
-            spawnDefenseFx(player, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.35F);
-            if (event.getAmount() <= 0.0F) {
-               event.setCanceled(true);
-               if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
-               return true;
-            }
-            if (barrier <= absorbed) ServantCardCuChulainnSkills.clearRuneBarrier(player);
-         }
-         float shield = data.getFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
-         if (shield > 0.0F) {
-            float absorbed = Math.min(shield, event.getAmount());
-            event.setAmount(Math.max(0.0F, event.getAmount() - absorbed));
-            if (shield > absorbed) {
-               data.putFloat(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG, shield - absorbed);
-            } else {
-               data.remove(ServantCardCuChulainnSkills.CU_RUNE_ALGIZ_SHIELD_TAG);
-            }
-            spawnDefenseFx(player, ParticleTypes.WAX_OFF, SoundEvents.SHIELD_BLOCK, 1.25F);
-            if (event.getAmount() <= 0.0F) {
-               event.setCanceled(true);
-               return true;
-            }
-         }
+         event.setAmount(net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.absorb(player,event.getAmount()));
+         if(event.getAmount()<=0){event.setCanceled(true);return true;}
       }
       if (!defensePiercing && "ushiwakamaru_rider".equals(vars.servant_card_id)) {
          if (ServantCardUshiwakamaruSkills.tryAbsorbShieldDamage(player, event.getSource(), event.getAmount())) {

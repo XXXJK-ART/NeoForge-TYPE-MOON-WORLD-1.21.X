@@ -350,6 +350,10 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity cu) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnCombatAi.tick(cu,context.target());
+         return;
+      }
       LivingEntity sharedTarget = context.target();
       if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid
          && entity.level() instanceof net.minecraft.server.level.ServerLevel level) {

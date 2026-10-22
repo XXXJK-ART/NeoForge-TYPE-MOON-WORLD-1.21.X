@@ -55,6 +55,14 @@ public class DiarmuidUaDuibhneEntity extends ServantEntity {
       return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.byNetworkId(entityData.get(ACTION));
    }
 
+   public net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction getDiarmuidAction(net.minecraft.world.InteractionHand hand) {
+      return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.handAction(this, hand);
+   }
+
+   public float getDiarmuidActionAge(net.minecraft.world.InteractionHand hand, float partialTick) {
+      return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.handActionAge(this, hand, partialTick);
+   }
+
    public float getDiarmuidActionAge(float partialTick) { return level().getGameTime() - entityData.get(ACTION_START) + partialTick; }
 
    @Override

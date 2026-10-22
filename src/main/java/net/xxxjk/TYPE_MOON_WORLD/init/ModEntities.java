@@ -141,6 +141,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterCursedLanceEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
+   public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.CuSpearEntity>> CU_PERSISTENT_SPEAR = ENTITY_TYPES.register("cu_persistent_spear",
+      () -> Builder.of(net.xxxjk.TYPE_MOON_WORLD.entity.CuSpearEntity::new,MobCategory.MISC).sized(.5F,.5F).clientTrackingRange(16).updateInterval(1).build("cu_persistent_spear"));
+   public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity>> CU_RUNE_FIREBALL = ENTITY_TYPES.register("cu_rune_fireball",
+      () -> Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity::new,MobCategory.MISC).sized(.35F,.35F).clientTrackingRange(16).updateInterval(1).build("cu_rune_fireball"));
    public static final DeferredHolder<EntityType<?>, EntityType<VFXTriggerEntity>> VFX_TRIGGER = ENTITY_TYPES.register(
       "vfx_trigger",
       () -> Builder.<VFXTriggerEntity>of(VFXTriggerEntity::new, MobCategory.MISC)

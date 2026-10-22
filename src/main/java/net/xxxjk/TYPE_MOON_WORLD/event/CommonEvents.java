@@ -536,12 +536,6 @@ public class CommonEvents {
              event.setAmount(0.0F);
              return;
           }
-          if (event.getEntity() instanceof ServerPlayer damagedCu) {
-             ServantCardCuChulainnSkills.markCombat(damagedCu);
-          }
-          if (event.getSource().getEntity() instanceof ServerPlayer attackingCu) {
-             ServantCardCuChulainnSkills.markCombat(attackingCu);
-          }
           if (ServantMasterProtection.isProtectedMasterDamage(event.getSource(), event.getEntity())) {
              event.setCanceled(true);
             event.setAmount(0.0F);
@@ -1209,7 +1203,6 @@ public class CommonEvents {
          return;
       }
       if (CuChulainnCombatHelper.isCuChulainn(servant)) {
-         CuChulainnCombatHelper.markCombat(servant);
          if (!fanaticDefensePiercing && CombatMatchupEvaluator.negatesProjectileDamage(servant, event.getSource())) {
             if (servant.level() instanceof ServerLevel sl) {
                sl.sendParticles(ParticleTypes.END_ROD,
@@ -1224,67 +1217,10 @@ public class CommonEvents {
             return;
          }
 
-         float shield = data.getFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-         float barrier = data.getFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG);
-         if (!fanaticDefensePiercing && !originBullet && barrier > 0.0F
-            && data.getLong(CuChulainnCombatHelper.RUNE_BARRIER_UNTIL_TAG) > currentTick) {
-            float absorbed = Math.min(barrier, damage);
-            data.putFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG, barrier - absorbed);
-            event.setAmount(Math.max(0.0F, damage - absorbed));
-            damage = event.getAmount();
-            if (barrier <= absorbed) CuChulainnCombatHelper.clearRuneBarrier(servant);
-            if (damage <= 0.0F) {
-               event.setCanceled(true);
-               return;
-            }
-         }
-         if (!fanaticDefensePiercing && !originBullet && shield > 0.0F) {
-            if (majorBrokenPhantasmExplosion) {
-               float minimumDamage = originalDamage * 0.5F;
-               float absorbable = Math.max(0.0F, damage - minimumDamage);
-               float absorbed = Math.min(shield, absorbable);
-               if (absorbed > 0.0F) {
-                  event.setAmount(damage - absorbed);
-                  damage = event.getAmount();
-                  if (shield > absorbed) {
-                     data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - absorbed);
-                  } else {
-                     data.remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-                  }
-                  if (servant.level() instanceof ServerLevel sl) {
-                     sl.sendParticles(ParticleTypes.WAX_OFF,
-                        servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
-                        16, 0.45, 0.45, 0.45, 0.05);
-                     sl.sendParticles(ParticleTypes.FLAME,
-                        servant.getX(), servant.getY() + servant.getBbHeight() * 0.5, servant.getZ(),
-                        12, 0.35, 0.3, 0.35, 0.04);
-                  }
-               }
-               if (damage <= 0.0F) {
-                  event.setAmount(minimumDamage);
-                  damage = event.getAmount();
-               }
-            } else {
-            if (shield >= damage) {
-               data.putFloat(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG, shield - damage);
-               if (servant.level() instanceof ServerLevel sl) {
-                  sl.sendParticles(ParticleTypes.WAX_ON,
-                     servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
-                     10, 0.3, 0.4, 0.3, 0.02);
-               }
-               event.setCanceled(true);
-               return;
-            }
-
-            event.setAmount(damage - shield);
-            damage = event.getAmount();
-            data.remove(CuChulainnCombatHelper.ALGIZ_SHIELD_TAG);
-            if (servant.level() instanceof ServerLevel sl) {
-               sl.sendParticles(ParticleTypes.WAX_OFF,
-                  servant.getX(), servant.getY() + servant.getBbHeight() * 0.55, servant.getZ(),
-                  12, 0.35, 0.4, 0.35, 0.03);
-            }
-            }
+         if(!fanaticDefensePiercing) {
+            event.setAmount(net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.absorb(servant,event.getAmount()));
+            damage=event.getAmount();
+            if(damage<=0){event.setCanceled(true);return;}
          }
       }
       if (SasakiKojiroCombatHelper.isSasakiKojiro(servant)

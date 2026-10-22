@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="typemoonworld_cu_smoke"
+version="1.0"
+displayName="Cu Chulainn Verification"
+[[dependencies.typemoonworld_cu_smoke]]
+modId="typemoonworld"
+type="required"
+versionRange="[4.0,)"
+ordering="AFTER"
+side="BOTH"

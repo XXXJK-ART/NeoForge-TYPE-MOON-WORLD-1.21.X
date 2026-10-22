@@ -11,7 +11,16 @@ public final class CuChulainnServantSkills {
 
    public static void registerBuiltin(ServantSkillRegistry registry) {
       registry.register("protection_from_arrows_b", CuChulainnServantSkills::executeProtectionFromArrows, "typemoonworld_core");
-      registry.register("recast_stance_c", CuChulainnServantSkills::executeRecastStance, "typemoonworld_core");
+      for(String rank:java.util.List.of("E","D","C","B","A")) {
+         registry.register("recast_stance_"+rank.toLowerCase(java.util.Locale.ROOT),context->{
+            if(context.caster()==null)return ServantExecutionResult.FAILED;
+            if(net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.isOwner(context.caster()) && rank.equals("C"))
+               return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.start(context.caster(),5)?ServantExecutionResult.SUCCESS:ServantExecutionResult.FAILED;
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.DisengageService.apply(context.caster(),rank);
+            return ServantExecutionResult.SUCCESS;
+         },"typemoonworld_core");
+      }
+      registry.register("four_branches_a",context->context.caster()==null?ServantExecutionResult.FAILED:ServantExecutionResult.SUCCESS,"typemoonworld_core");
       registry.register("divinity_b", CuChulainnServantSkills::executeDivinity, "typemoonworld_core");
    }
 

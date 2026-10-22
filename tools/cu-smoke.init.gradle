@@ -1,0 +1,15 @@
+allprojects {
+    layout.buildDirectory = file('build/cu-verification')
+    afterEvaluate { project ->
+        def smoke=project.sourceSets.create('cuSmoke') {
+            java.srcDir 'tools/cu-smoke/java'
+            resources.srcDir 'tools/cu-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_cu_smoke',smoke)
+        project.runs.server.modSources.add('typemoonworld_cu_smoke',smoke)
+        project.runs.client.workingDirectory project.file('build/cu-client-run')
+        project.runs.server.workingDirectory project.file('build/cu-server-run')
+    }
+}

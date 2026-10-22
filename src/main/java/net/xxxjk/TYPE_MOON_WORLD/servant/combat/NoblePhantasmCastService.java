@@ -233,6 +233,14 @@ public final class NoblePhantasmCastService {
       }
    }
 
+   /** An effect may fail its final preconditions before creating any attack. */
+   public static void failBeforeEffect(LivingEntity caster) {
+      Cast cast = EFFECT_CONTEXT.get();
+      if (cast == null || cast.caster != caster || CASTS.get(caster.getUUID()) != cast) return;
+      cast.released = false;
+      cancel(caster, true);
+   }
+
    @SubscribeEvent public static void logout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
       cancel(event.getEntity(), false); CASTS.remove(event.getEntity().getUUID()); PAYMENTS.remove(event.getEntity().getUUID());
    }

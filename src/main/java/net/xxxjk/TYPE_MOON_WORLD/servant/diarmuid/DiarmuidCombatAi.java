@@ -11,7 +11,7 @@ public final class DiarmuidCombatAi {
    public static boolean tick(DiarmuidUaDuibhneEntity entity, ServerLevel level) {
       LivingEntity target = entity.getTarget();
       if (!DiarmuidAbilityService.validTarget(entity, target)) return false;
-      if (DiarmuidAbilityService.active(entity)) { entity.getNavigation().stop(); return true; }
+      if (DiarmuidAbilityService.anyActive(entity)) { entity.getNavigation().stop(); return true; }
       if (!DiarmuidAbilityService.canAct(entity)) return true;
       if (!DiarmuidAbilityService.isDoubleSpearStance(entity) && DiarmuidAbilityService.hasSpear(entity, true)
          && DiarmuidAbilityService.hasSpear(entity, false) && tryAction(entity, DiarmuidAction.DOUBLE_SPEAR_STANCE)) return true;

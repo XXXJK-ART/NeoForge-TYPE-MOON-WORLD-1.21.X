@@ -70,6 +70,11 @@ public enum DiarmuidAction {
    public double mana() { return mana; }
    public int cooldown() { return cooldown; }
    public int duration() { return duration; }
+   /** Presentation only: recovery flourishes never extend a combat timeline or cooldown. */
+   public int visualDuration() {
+      return hits.isEmpty() || this == FIGURE_EIGHT || dance() ? duration
+         : Math.max(duration, hits.getLast().tick() + 10);
+   }
    public int angle() { return angle; }
    public int targets() { return targets; }
    public List<Hit> hits() {

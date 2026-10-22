@@ -1,6 +1,7 @@
 {
     "replace":  false,
     "values":  [
+                   "typemoonworld:cu_rune_fire",
                    "typemoonworld:time_alter_backlash",
                    "typemoonworld:baptism_rite",
                    "typemoonworld:pale_rider_infection",

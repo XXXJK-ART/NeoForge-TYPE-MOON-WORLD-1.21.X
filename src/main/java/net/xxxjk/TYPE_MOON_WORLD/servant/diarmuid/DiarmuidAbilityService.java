@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid;
 
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +18,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -53,6 +53,10 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 /** One cancellable server timeline; no delayed lambdas survive an entity's lifecycle. */
 public final class DiarmuidAbilityService {
    private static final Map<LivingEntity, Cast> CASTS = new WeakHashMap<>();
+   /** Basic attacks in double-spear stance are independent timelines, one per physical hand. */
+   private static final Map<LivingEntity, EnumMap<InteractionHand, Cast>> HAND_CASTS = new WeakHashMap<>();
+   private static final Map<LivingEntity, DiarmuidAction> NPC_HAND_ANIMATIONS = new WeakHashMap<>();
+   private static final Map<LivingEntity, Long> VISUAL_UNTIL = new WeakHashMap<>();
    private static final String PREFIX = "DiarmuidAction:";
    private static final String LAST_INPUT = PREFIX + "lastInput";
    private static final String FALL_PROTECTION = PREFIX + "fallProtection";
@@ -64,7 +68,6 @@ public final class DiarmuidAbilityService {
       final DiarmuidAction action;
       final long start;
       final net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension;
-      final Vec3 forward;
       final Set<String> hits = new HashSet<>();
       final InteractionHand basicHand;
       final boolean animationPlayed;
@@ -75,16 +78,13 @@ public final class DiarmuidAbilityService {
       long ends;
       boolean launched;
       boolean airborne;
-      final boolean previousNoGravity;
 
       Cast(LivingEntity owner, DiarmuidAction action, InteractionHand basicHand,
            boolean animationPlayed) {
          this.action = action;
-         previousNoGravity = owner.isNoGravity();
          start = owner.level().getGameTime();
          ends = start + action.duration();
          dimension = owner.level().dimension();
-         forward = horizontalLook(owner);
          this.basicHand = basicHand;
          this.animationPlayed = animationPlayed;
       }
@@ -97,16 +97,59 @@ public final class DiarmuidAbilityService {
          || owner instanceof ServerPlayer player && ServantCardDiarmuidSkills.isActiveCard(player);
    }
 
-   public static boolean active(LivingEntity owner) { return CASTS.containsKey(owner); }
+   /** True when a shared action is active; independent stance-hand attacks do not block skills. */
+   public static boolean active(LivingEntity owner) {
+      return CASTS.containsKey(owner);
+   }
+
+   /** Includes the two independent hand timelines for lifecycle and combat arbitration. */
+   public static boolean anyActive(LivingEntity owner) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      return CASTS.containsKey(owner) || hands != null && !hands.isEmpty();
+   }
 
    public static DiarmuidAction currentAction(LivingEntity owner) {
       Cast cast = CASTS.get(owner);
+      if (cast != null) return cast.action;
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      if (hands != null) {
+         for (Cast handCast : hands.values()) if (handCast != null) return handCast.action;
+      }
+      if (owner instanceof DiarmuidUaDuibhneEntity) return NPC_HAND_ANIMATIONS.get(owner);
+      return null;
+   }
+
+   public static boolean handActionActive(LivingEntity owner, InteractionHand hand) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      return hands != null && hands.containsKey(hand);
+   }
+
+   public static long handCooldown(LivingEntity owner, InteractionHand hand) {
+      return owner.getPersistentData().getLong(cooldownKey(DiarmuidAction.RED_BASIC, hand));
+   }
+
+   public static DiarmuidAction handAction(LivingEntity owner, InteractionHand hand) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      Cast cast = hands == null ? null : hands.get(hand);
       return cast == null ? null : cast.action;
+   }
+
+   public static float handActionAge(LivingEntity owner, InteractionHand hand, float partialTick) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      Cast cast = hands == null ? null : hands.get(hand);
+      return cast == null ? -1 : owner.level().getGameTime() - cast.start + partialTick;
    }
 
    public static void releaseDance(LivingEntity owner) {
       Cast cast = CASTS.get(owner);
       if (cast != null && cast.action == DiarmuidAction.FIGURE_EIGHT) finish(owner);
+      if (owner instanceof ServerPlayer) {
+         EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+         if (hands != null) for (InteractionHand hand : InteractionHand.values()) {
+            Cast handCast = hands.get(hand);
+            if (handCast != null && handCast.action.dance()) finishHand(owner, hand);
+         }
+      }
    }
 
    public static boolean isDoubleSpearStance(LivingEntity owner) {
@@ -115,7 +158,7 @@ public final class DiarmuidAbilityService {
 
    public static boolean deflectLowDamageProjectile(LivingEntity defender, Projectile projectile) {
       if (defender == null || projectile == null || !isOwner(defender) || !isDoubleSpearStance(defender)
-         || defender.level().isClientSide() || defender.level().getGameTime() >= defender.getPersistentData().getLong(DANCE_UNTIL_TAG)
+         || defender.level().isClientSide() || !hasActiveDance(defender)
          || projectile.getOwner() == defender) return false;
       boolean deflectable = projectile instanceof Arrow arrow && arrow.getBaseDamage() * projectile.getDeltaMovement().length() <= 6.0 && !arrow.isOnFire()
          || projectile instanceof Snowball || projectile instanceof ThrownEgg;
@@ -130,6 +173,13 @@ public final class DiarmuidAbilityService {
          level.playSound(null, defender.blockPosition(), SoundEvents.TRIDENT_HIT, SoundSource.PLAYERS, 0.35F, 1.65F);
       }
       return true;
+   }
+
+   private static boolean hasActiveDance(LivingEntity owner) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      if (hands == null) return false;
+      long now = owner.level().getGameTime();
+      return hands.values().stream().anyMatch(cast -> cast.action.dance() && now < cast.ends);
    }
 
    public static boolean canAct(LivingEntity owner) {
@@ -171,11 +221,21 @@ public final class DiarmuidAbilityService {
    }
 
    private static boolean start(LivingEntity owner, DiarmuidAction action, InteractionHand hand, boolean randomBasicAnimation) {
+      boolean stanceHandAction = hand != null && randomBasicAnimation && isDoubleSpearStance(owner);
       if (action == null || action == DiarmuidAction.GUARD_COUNTER || action == DiarmuidAction.LANDING_SWEEP || !(owner.level() instanceof ServerLevel) || !isOwner(owner)
-         || !canAct(owner) || active(owner) || owner instanceof ServerPlayer player && ServantCardActionTimeline.isActive(player)) return false;
+          || !canAct(owner) || (!stanceHandAction && anyActive(owner))
+          || (stanceHandAction && active(owner))
+         || owner instanceof ServerPlayer player && ServantCardActionTimeline.isActive(player)) return false;
+      EnumMap<InteractionHand, Cast> activeHands = HAND_CASTS.get(owner);
       var data = owner.getPersistentData();
       long now = owner.level().getGameTime();
-      if (data.contains(LAST_INPUT) && data.getLong(LAST_INPUT) == now || cooldown(owner, action, hand) > now) return false;
+      if (stanceHandAction && activeHands != null) {
+         Cast sameHand = activeHands.get(hand);
+         if (sameHand != null && now >= sameHand.ends) finishHand(owner, hand);
+         activeHands = HAND_CASTS.get(owner);
+      }
+      if (stanceHandAction && activeHands != null && activeHands.containsKey(hand)) return false;
+      if (!stanceHandAction && data.contains(LAST_INPUT) && data.getLong(LAST_INPUT) == now || cooldown(owner, action, hand) > now) return false;
       boolean stanceToggle = action == DiarmuidAction.DOUBLE_SPEAR_STANCE;
       boolean enteringStance = stanceToggle && !isDoubleSpearStance(owner);
       if (enteringStance && (!hasSpear(owner, true) || !hasSpear(owner, false))) return false;
@@ -200,7 +260,7 @@ public final class DiarmuidAbilityService {
          data.remove(DANCE_UNTIL_TAG);
          animationPlayed = true;
          animationId = action.networkId();
-      } else if (randomBasicAnimation && stance) {
+       } else if (randomBasicAnimation && stance) {
          boolean leftArm = (hand == InteractionHand.MAIN_HAND ? owner.getMainArm() : owner.getMainArm().getOpposite())
             == net.minecraft.world.entity.HumanoidArm.LEFT;
          if (action.dance()) {
@@ -216,14 +276,18 @@ public final class DiarmuidAbilityService {
          data.remove(DANCE_UNTIL_TAG);
          animationId = action.networkId();
       }
-      if (action.dance() && stance) data.putLong(DANCE_UNTIL_TAG, now + action.duration());
-      data.putLong(LAST_INPUT, now);
+      if (action.dance() && stance) data.putLong(DANCE_UNTIL_TAG + hand.name(), now + action.duration());
+      if (!stanceHandAction) data.putLong(LAST_INPUT, now);
       int cooldown = randomBasicAnimation && stance && !action.dance() ? DiarmuidAction.STANCE_HAND_COOLDOWN : action.cooldown();
       data.putLong(cooldownKey(action, hand), now + cooldown);
-      CASTS.put(owner, new Cast(owner, action, hand, animationPlayed));
+      Cast cast = new Cast(owner, action, hand, animationPlayed);
+      if (stanceHandAction) HAND_CASTS.computeIfAbsent(owner, ignored -> new EnumMap<>(InteractionHand.class)).put(hand, cast);
+      else CASTS.put(owner, cast);
       publishThreats(owner, action, now);
-      ServantCombatDefenseService.initialize(owner);
-      ServantCombatDefenseService.setGuarding(owner, false);
+      if (!stanceHandAction) {
+         ServantCombatDefenseService.initialize(owner);
+         ServantCombatDefenseService.setGuarding(owner, false);
+      }
       if (owner instanceof ServerPlayer player) {
          var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          vars.servant_card_action_mode = stance ? 1 : 0;
@@ -234,7 +298,7 @@ public final class DiarmuidAbilityService {
          if (!action.requiresYellow() || !DiarmuidVoiceService.yellowReady(owner)) ServantCardVoiceHelper.tryPlayAttack(player);
       } else if (owner instanceof DiarmuidUaDuibhneEntity npc
          && (!action.requiresYellow() || !DiarmuidVoiceService.yellowReady(owner))) ServantVoiceHelper.tryPlayAttack(npc);
-      if (animationPlayed) play(owner, animationId);
+       if (animationPlayed) play(owner, animationId, stanceHandAction ? hand : null);
       return true;
    }
 
@@ -296,11 +360,26 @@ public final class DiarmuidAbilityService {
             if (owner.onGround()) clearFallProtection(owner);
          }
       }
-      Cast cast = CASTS.get(owner);
-      if (cast == null) return;
       long now = level.getGameTime();
-      if (!isOwner(owner) || cast.dimension != level.dimension()) { cancel(owner); return; }
-      if (!canAct(owner)) { finish(owner); return; }
+      Long visualEnd = VISUAL_UNTIL.get(owner);
+      if (visualEnd != null && now >= visualEnd) VISUAL_UNTIL.remove(owner);
+      if (!isOwner(owner)) { cancel(owner); return; }
+      if (visualEnd != null && !canAct(owner)) {
+         VISUAL_UNTIL.remove(owner);
+         stopAnimation(owner);
+      }
+       EnumMap<InteractionHand, Cast> handCasts = HAND_CASTS.get(owner);
+      if (handCasts != null && !handCasts.isEmpty()) {
+         if (handCasts.values().stream().anyMatch(handCast -> handCast.dimension != level.dimension()) || !canAct(owner)) finishHands(owner);
+         else for (InteractionHand hand : InteractionHand.values()) {
+            Cast handCast = handCasts.get(hand);
+            if (handCast != null) tickHand(owner, level, handCast, now);
+         }
+      }
+       Cast cast = CASTS.get(owner);
+      if (cast == null) return;
+      if (cast.dimension != level.dimension()) { cancel(owner); return; }
+      if (!canAct(owner)) { finish(owner); finishHands(owner); return; }
       if ((cast.action == DiarmuidAction.FIGURE_EIGHT || cast.action == DiarmuidAction.MANA_LEAP
          || cast.action == DiarmuidAction.LANDING_SWEEP) && (!hasSpear(owner, true) || !hasSpear(owner, false))) { finish(owner); return; }
       if (cast.action == DiarmuidAction.FIGURE_EIGHT && owner instanceof DiarmuidUaDuibhneEntity npc
@@ -336,10 +415,61 @@ public final class DiarmuidAbilityService {
             }
             if (cast.target != null && level.getEntity(cast.target) instanceof LivingEntity target) hit(owner, cast, i, strike, target);
          }
-         InteractionHand hand = spearHand(owner, strike.red());
+          InteractionHand hand = cast.basicHand != null ? cast.basicHand : spearHand(owner, strike.red());
          if (hand != null) owner.swing(hand, true);
          level.playSound(null, owner.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.45F, strike.red() ? 1.0F : 1.5F);
       }
+   }
+
+   private static void tickHand(LivingEntity owner, ServerLevel level, Cast cast, long now) {
+      if (!isDoubleSpearStance(owner) || now >= cast.ends || !hasActiveHandSpear(owner, cast.basicHand)) {
+         finishHand(owner, cast.basicHand);
+         return;
+      }
+      int age = (int)(now - cast.start);
+      if (age < 0 || age > cast.action.duration() + 20 || cast.processed == age) return;
+      cast.processed = age;
+      var strikes = cast.action.hits();
+      for (int i = 0; i < strikes.size(); i++) {
+         DiarmuidAction.Hit strike = strikes.get(i);
+         if (age != strike.tick()) continue;
+         if (cast.action.targets() > 1) {
+            for (LivingEntity target : targets(owner, strike.range(), cast.action.angle(), cast.action.targets())) hit(owner, cast, i, strike, target);
+         } else {
+            if (!cast.selected) {
+               cast.selected = true;
+               var selected = targets(owner, strike.range(), cast.action.angle(), 1);
+               cast.target = selected.isEmpty() ? null : selected.getFirst().getUUID();
+            }
+            if (cast.target != null && level.getEntity(cast.target) instanceof LivingEntity target) hit(owner, cast, i, strike, target);
+         }
+         owner.swing(cast.basicHand, true);
+         level.playSound(null, owner.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS,
+            0.45F, strike.red() ? 1.0F : 1.5F);
+      }
+   }
+
+   private static boolean hasActiveHandSpear(LivingEntity owner, InteractionHand hand) {
+      if (hand == null || handDisabled(owner, hand)) return false;
+      ItemStack stack = owner.getItemInHand(hand);
+      return stack.getItem() instanceof DiarmuidSpearItem spear
+         && (spear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG
+            ? DiarmuidCombatHelper.redDurability(owner) > 0 : DiarmuidCombatHelper.yellowDurability(owner) > 0)
+         && stack.getDamageValue() < stack.getMaxDamage();
+   }
+
+   private static void finishHand(LivingEntity owner, InteractionHand hand) {
+      EnumMap<InteractionHand, Cast> hands = HAND_CASTS.get(owner);
+      Cast cast = hands == null ? null : hands.remove(hand);
+      if (cast == null) return;
+      if (hands.isEmpty()) HAND_CASTS.remove(owner);
+      owner.getPersistentData().remove(DANCE_UNTIL_TAG + hand.name());
+      if (cast.animationPlayed) stopAnimation(owner, hand, owner.level().getGameTime() >= cast.ends);
+   }
+
+   private static void finishHands(LivingEntity owner) {
+      for (InteractionHand hand : InteractionHand.values()) finishHand(owner, hand);
+      HAND_CASTS.remove(owner);
    }
 
    /** Called only from the shared guard transaction, after evasion checks. */
@@ -362,7 +492,10 @@ public final class DiarmuidAbilityService {
    private static void hit(LivingEntity owner, Cast cast, int index, DiarmuidAction.Hit strike, LivingEntity target) {
       if (!canHit(owner, target, strike.range()) || !cast.hits.add(index + ":" + target.getUUID())) return;
       InteractionHand hand = spearHand(owner, strike.red());
-      if (hand == null || cast.basicHand != null && hand != cast.basicHand) return;
+      if (cast.basicHand != null) hand = cast.basicHand;
+      if (hand == null || !hasActiveHandSpear(owner, hand)
+         || !(owner.getItemInHand(hand).getItem() instanceof DiarmuidSpearItem heldSpear)
+         || (heldSpear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG) != strike.red()) return;
       ItemStack stack = owner.getItemInHand(hand);
       var source = new CombatDamageSource(owner instanceof ServerPlayer player ? owner.damageSources().playerAttack(player)
          : owner.damageSources().mobAttack(owner), AttackOrigin.skill("diarmuid_ua_duibhne", cast.action.skillId()));
@@ -440,8 +573,6 @@ public final class DiarmuidAbilityService {
    }
 
    private static void beginLandingSweep(LivingEntity owner) {
-      Cast leap = CASTS.get(owner);
-      if (leap != null && leap.action == DiarmuidAction.MANA_LEAP) owner.setNoGravity(leap.previousNoGravity);
       clearFallProtection(owner);
       CASTS.put(owner, new Cast(owner, DiarmuidAction.LANDING_SWEEP, null, true));
       play(owner, DiarmuidAction.LANDING_SWEEP);
@@ -453,17 +584,13 @@ public final class DiarmuidAbilityService {
    }
 
    private static boolean move(LivingEntity owner, Cast cast, int age) {
-      double step = cast.action == DiarmuidAction.ADVANCING_THRUST && age >= 1 && age <= 5 ? 1.2 / 5
-         : cast.action == DiarmuidAction.RETREATING_THRUST && age >= 1 && age <= 6 ? -2.0 / 6
-         : cast.action == DiarmuidAction.ROSE_DANCE && age >= 22 && age <= 26 ? 1.2 / 5 : 0;
-      if (step != 0) {
-         Vec3 desired = cast.forward.scale(step);
-         Vec3 before = owner.position();
-         owner.move(MoverType.SELF, desired);
-         syncMovement(owner);
-         owner.setDeltaMovement(0, owner.getDeltaMovement().y, 0);
+      double impulse = cast.action == DiarmuidAction.ADVANCING_THRUST && age == 1 ? 0.55
+         : cast.action == DiarmuidAction.RETREATING_THRUST && age == 1 ? -0.85
+         : cast.action == DiarmuidAction.ROSE_DANCE && age == 22 ? 0.55 : 0;
+      if (impulse != 0) {
+         owner.addDeltaMovement(horizontalLook(owner).scale(impulse));
          owner.hurtMarked = true;
-         if (owner.position().distanceToSqr(before) > 0.001 && owner.level() instanceof ServerLevel level)
+         if (owner.level() instanceof ServerLevel level)
             level.sendParticles(ParticleTypes.CLOUD, owner.getX(), owner.getY() + 0.04, owner.getZ(), 2, 0.12, 0.01, 0.12, 0.01);
       }
       if (cast.action != DiarmuidAction.MANA_LEAP || age < 4) return true;
@@ -472,8 +599,9 @@ public final class DiarmuidAbilityService {
          cast.launched = true;
          owner.getPersistentData().putBoolean(FALL_PROTECTION, true);
          owner.getPersistentData().putString(FALL_DIMENSION, owner.level().dimension().location().toString());
-         owner.setNoGravity(true);
-         owner.setDeltaMovement(leapVelocity(owner));
+         Vec3 leap = leapVelocity(owner);
+         Vec3 velocity = owner.getDeltaMovement();
+         owner.setDeltaMovement(velocity.x + leap.x, Math.max(velocity.y, leap.y), velocity.z + leap.z);
          owner.setOnGround(false);
          owner.fallDistance = 0;
          owner.hurtMarked = true;
@@ -483,27 +611,14 @@ public final class DiarmuidAbilityService {
          }
          return true;
       }
-      Vec3 velocity = owner.getDeltaMovement();
-      Vec3 before = owner.position();
-      owner.move(MoverType.SELF, velocity);
-      Vec3 moved = owner.position().subtract(before);
-      syncMovement(owner);
+      // Vanilla travel and client input own the flight; the skill only observes its landing.
       owner.fallDistance = 0;
-      boolean blockedX = Math.abs(moved.x - velocity.x) > 1.0E-5;
-      boolean blockedY = Math.abs(moved.y - velocity.y) > 1.0E-5;
-      boolean blockedZ = Math.abs(moved.z - velocity.z) > 1.0E-5;
-      if (moved.y > 1.0E-5) cast.airborne = true;
-      if (cast.airborne && owner.onGround() && velocity.y < 0) { beginLandingSweep(owner); return false; }
-      owner.setDeltaMovement(blockedX ? 0 : velocity.x * 0.91,
-         blockedY ? 0 : (velocity.y - 0.08) * 0.98, blockedZ ? 0 : velocity.z * 0.91);
-      owner.hurtMarked = true;
+      if (!owner.onGround()) cast.airborne = true;
       if (cast.airborne && owner.onGround()) { beginLandingSweep(owner); return false; }
+      if (owner.isInWaterOrBubble() || owner.isInLava() || owner.onClimbable() || owner.isFallFlying()
+         || owner instanceof ServerPlayer player && player.getAbilities().flying) { finish(owner); return false; }
+      if (age == 14) stopAnimation(owner);
       return true;
-   }
-
-   private static void syncMovement(LivingEntity owner) {
-      if (owner instanceof ServerPlayer player && player.connection != null)
-         player.connection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
    }
 
    public static boolean protectFall(LivingEntity owner) {
@@ -524,36 +639,61 @@ public final class DiarmuidAbilityService {
          net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService.clearForSource(level, owner.getUUID());
       if (cast.action == DiarmuidAction.CROSS_GUARD) ServantCombatDefenseService.setGuarding(owner, false);
       if (cast.action == DiarmuidAction.MANA_LEAP) {
-         owner.setNoGravity(cast.previousNoGravity);
          clearFallProtection(owner);
       }
       owner.getPersistentData().remove(DANCE_UNTIL_TAG);
-      if (cast.animationPlayed) stopAnimation(owner);
+      if (cast.animationPlayed) stopAnimation(owner, null, owner.level().getGameTime() >= cast.ends);
    }
 
    public static void cancel(LivingEntity owner) {
+      boolean hadVisual = VISUAL_UNTIL.remove(owner) != null;
       finish(owner);
+      finishHands(owner);
+      NPC_HAND_ANIMATIONS.remove(owner);
       clearFallProtection(owner);
       owner.getPersistentData().remove(DOUBLE_SPEAR_STANCE);
       owner.getPersistentData().remove(DANCE_UNTIL_TAG);
       if (owner instanceof DiarmuidUaDuibhneEntity npc) npc.setDoubleSpearStance(false);
+      // An explicit cancellation also stops a presentation-only recovery after its cast ended.
+      if (hadVisual) stopAnimation(owner);
    }
 
    private static void play(LivingEntity owner, DiarmuidAction action) {
-      play(owner, action.networkId());
+      play(owner, action.networkId(), null);
    }
 
    private static void play(LivingEntity owner, int animationId) {
-      if (owner instanceof DiarmuidUaDuibhneEntity npc) npc.triggerDiarmuidAction(DiarmuidAction.byNetworkId(animationId));
-      var message = new DiarmuidActionAnimationMessage(owner.getUUID(), animationId);
+      play(owner, animationId, null);
+   }
+
+   private static void play(LivingEntity owner, int animationId, InteractionHand hand) {
+      DiarmuidAction visual = DiarmuidAction.byNetworkId(animationId);
+      if (visual != null) VISUAL_UNTIL.merge(owner, owner.level().getGameTime() + visual.visualDuration(), Math::max);
+      if (owner instanceof DiarmuidUaDuibhneEntity npc) {
+         if (hand == null) npc.triggerDiarmuidAction(DiarmuidAction.byNetworkId(animationId));
+         else NPC_HAND_ANIMATIONS.put(owner, DiarmuidAction.byNetworkId(animationId));
+      }
+      var message = new DiarmuidActionAnimationMessage(owner.getUUID(), animationId, hand == null ? -1 : hand.ordinal());
       PacketDistributor.sendToPlayersTrackingEntity(owner, message);
       if (owner instanceof ServerPlayer player && player.connection != null) ModNetwork.sendToPlayer(player, message);
    }
 
    private static void stopAnimation(LivingEntity owner) {
+      stopAnimation(owner, null);
+   }
+
+   private static void stopAnimation(LivingEntity owner, InteractionHand hand) {
+      stopAnimation(owner, hand, false);
+   }
+
+   private static void stopAnimation(LivingEntity owner, InteractionHand hand, boolean completed) {
       if (owner.level().isClientSide()) return;
-      if (owner instanceof DiarmuidUaDuibhneEntity npc) npc.triggerDiarmuidAction(null);
-      var message = new DiarmuidActionAnimationMessage(owner.getUUID(), -1);
+      if (owner instanceof DiarmuidUaDuibhneEntity npc) {
+         if (hand == null) { npc.triggerDiarmuidAction(null); NPC_HAND_ANIMATIONS.remove(owner); }
+         else if (currentAction(owner) == null) NPC_HAND_ANIMATIONS.remove(owner);
+      }
+      var message = new DiarmuidActionAnimationMessage(owner.getUUID(),
+         completed ? DiarmuidActionAnimationMessage.FINISH : -1, hand == null ? -1 : hand.ordinal());
       PacketDistributor.sendToPlayersTrackingEntity(owner, message);
       if (owner instanceof ServerPlayer player && player.connection != null) ModNetwork.sendToPlayer(player, message);
    }

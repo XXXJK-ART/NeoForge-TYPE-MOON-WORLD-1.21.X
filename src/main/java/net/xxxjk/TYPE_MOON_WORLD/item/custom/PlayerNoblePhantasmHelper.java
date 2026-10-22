@@ -317,156 +317,19 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useGaeBulgMelee(ServerPlayer player) {
-      LivingEntity target = findRandomGaeBulgMeleeTarget(player, 4.0);
-      if (target == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
-      ServantCardCuChulainnSkills.markCombat(player);
-      resolveGaeBulgHit(player, target);
-      addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
-      return true;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.noble(player,false,20);
    }
 
    public static void startGaeBulgDeathFlight(ServerPlayer player) {
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "cu_gae_bolg", GAE_BULG_ARMY_PLAYER_COOLDOWN, ticks -> net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks), () -> { clearGaeBulgUseState(player); });
-      CompoundTag data = player.getPersistentData();
-      boolean hadLock = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
-      LivingEntity target = resolveGaeBulgLockedTarget(player);
-      if (target == null) {
-         clearGaeBulgMeleeState(player);
-         target = findGaeBulgMeleeLockTarget(player);
-         hadLock = false;
-      }
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      data.remove(GAE_LOCK_CREATED_THIS_USE_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG);
-      data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
-      if (target != null) {
-         data.putBoolean(GAE_LOCKED_MELEE_CHARGE_TAG, true);
-         data.putInt(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks", 0);
-         if (!hadLock) {
-            data.putUUID(GAE_LOCKED_MELEE_TARGET_TAG, target.getUUID());
-            data.putLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_LOCK_TICKS);
-            data.putBoolean(GAE_LOCK_CREATED_THIS_USE_TAG, true);
-            player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.locked", target.getDisplayName()), true);
-            spawnGaeBulgLockFx(player, target);
-         }
-      } else {
-         data.putBoolean(GAE_DEATH_FLIGHT_TAG, true);
-         data.putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", 0);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_flight_charge"), true);
-      }
-      startServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
+      net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.begin(player);
    }
 
    public static void tickGaeBulgUse(Level level, LivingEntity living, int useTicks) {
-      if (!(living instanceof ServerPlayer player)) {
-         return;
-      }
-      CompoundTag data = player.getPersistentData();
-      boolean lockedMelee = data.getBoolean(GAE_LOCKED_MELEE_CHARGE_TAG);
-      boolean deathFlight = data.getBoolean(GAE_DEATH_FLIGHT_TAG);
-      long lockUntil = data.getLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG);
-      if (!lockedMelee && !deathFlight) {
-         return;
-      }
-      if (lockedMelee && lockUntil > 0L && player.level().getGameTime() > lockUntil) {
-         clearGaeBulgMeleeState(player);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.lock_expired"), true);
-         return;
-      }
-      String tickTag = lockedMelee ? GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks" : GAE_DEATH_FLIGHT_TAG + "Ticks";
-      data.putInt(tickTag, Math.max(0, useTicks));
-      tickServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-      if (useTicks >= GAE_BULG_MELEE_MIN_CHARGE_TICKS && level instanceof ServerLevel serverLevel) {
-         serverLevel.sendParticles(GAE_BULG_CHARGE_PARTICLE, player.getX(), player.getY() + 1.0, player.getZ(), 8, 0.42, 0.58, 0.42, 0.02);
-         serverLevel.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 3, 0.38, 0.48, 0.38, 0.035);
-         if (lockedMelee && useTicks % 5 == 0) {
-            LivingEntity target = resolveGaeBulgLockedTarget(player);
-            if (target != null) {
-               Vec3 from = player.position().add(0.0, player.getBbHeight() * 0.65, 0.0);
-               Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
-               ServantCardSkillUtils.spawnLineParticles(serverLevel, from, to, ParticleTypes.CRIT);
-            }
-         }
-      }
+      if(living instanceof ServerPlayer player) net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.charge(player,useTicks);
    }
 
    public static boolean releaseGaeBulg(ServerPlayer player) {
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseGaeBulg(player))) return true;
-      CompoundTag data = player.getPersistentData();
-      boolean lockedMelee = data.getBoolean(GAE_LOCKED_MELEE_CHARGE_TAG);
-      boolean deathFlight = data.getBoolean(GAE_DEATH_FLIGHT_TAG);
-      boolean lockCreatedThisUse = data.getBoolean(GAE_LOCK_CREATED_THIS_USE_TAG);
-      int meleeCharged = data.getInt(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      int charged = data.getInt(GAE_DEATH_FLIGHT_TAG + "Ticks");
-      boolean hadLockedTarget = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
-      LivingEntity lockedTarget = resolveGaeBulgLockedTarget(player);
-      stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      data.remove(GAE_LOCK_CREATED_THIS_USE_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG);
-      data.remove(GAE_DEATH_FLIGHT_TAG);
-      data.remove(GAE_DEATH_FLIGHT_TAG + "Ticks");
-      data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
-      if (!lockedMelee && !deathFlight) {
-         return false;
-      }
-
-      int useTicks = lockedMelee ? meleeCharged : charged;
-      // A previously acquired melee lock must not turn a tap into an instant
-      // Death Thorn release. Every melee release observes the full charge.
-      if (lockedTarget != null && useTicks < GAE_BULG_MELEE_MIN_CHARGE_TICKS) {
-         return true;
-      }
-
-      if (useTicks >= GAE_DEATH_FLIGHT_CHARGE_TICKS) {
-         LivingEntity target = lockedTarget != null ? lockedTarget : findGaeBulgDeathFlightTarget(player);
-         Float armyDamage = consumeGaeBulgArmyManaAndDamage(player, useTicks);
-         if (armyDamage == null) {
-            return false;
-         }
-         ServantCardCuChulainnSkills.markCombat(player);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_flight_release"), true);
-         throwGaeBulgArmy(player, target, armyDamage);
-         addGaeBulgCooldown(player, GAE_BULG_ARMY_PLAYER_COOLDOWN);
-         return true;
-      }
-
-      if (lockedMelee && hadLockedTarget && lockedTarget == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      LivingEntity target = lockedTarget != null ? lockedTarget : findRandomGaeBulgMeleeTarget(player, GAE_BULG_MELEE_LOCK_RANGE);
-      if (target == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!CuChulainnCombatRules.canReleaseMeleeGaeBolg(player.distanceTo(target))) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
-      ServantCardCuChulainnSkills.markCombat(player);
-      data.putUUID(GAE_LOCKED_MELEE_TARGET_TAG, target.getUUID());
-      data.putLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_MELEE_PURSUIT_TICKS);
-      data.putBoolean(GAE_LOCKED_MELEE_PURSUIT_TAG, true);
-      data.putLong(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_MELEE_PURSUIT_TICKS);
-      addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_thorn_release"), true);
-      startGaeBulgMeleePursuit(player, target);
-      scheduleGaeBulgMeleePursuit(player);
-      return true;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.release(player);
    }
 
    public static void tickGaeBulgMeleePursuit(ServerPlayer player) {

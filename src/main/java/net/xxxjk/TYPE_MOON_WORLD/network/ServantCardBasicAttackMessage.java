@@ -45,7 +45,7 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
             String rateLimitKey = diarmuidDualWield
                ? (message.secondary ? "servant_card_diarmuid_mainhand_attack" : "servant_card_diarmuid_offhand_attack")
                : "servant_card_basic_attack";
-            if (!ServerPacketRateLimiter.allow(player, rateLimitKey, 1)) {
+            if (!ServerPacketRateLimiter.allow(player, rateLimitKey, diarmuidDualWield ? 0 : 1)) {
                return;
             }
             if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {

@@ -53,17 +53,10 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Prelati's Spellbook: Huge Sea Monster", "gilles_uncontrolled_huge_sea_monster", 0.0, 1200);
             default -> null;
          };
-         case "cu_chulainn" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Spear Thrust", "cu_crouch_thrust", 0.0, 18);
-            case 0 -> new ServantCardSkillAction("Ansuz Rune", "cu_ansuz", 22.0, 120);
-            case 1 -> new ServantCardSkillAction("Laguz Rune", "cu_laguz", 20.0, 160);
-            case 2 -> new ServantCardSkillAction("Tiwaz Rune", "cu_tiwaz", 24.0, 260);
-            case 3 -> new ServantCardSkillAction("Algiz Rune", "cu_algiz", 30.0, 300);
-            case 4 -> new ServantCardSkillAction("Berkana Rune", "cu_berkana", 34.0, 400);
-            case 5 -> new ServantCardSkillAction("Disengage", "cu_disengage", 18.0, 400);
-            case 6 -> new ServantCardSkillAction("Rune Barrier", "cu_rune_barrier", 80.0, 600);
-            default -> null;
-         };
+         case "cu_chulainn" -> {
+            var spec=net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnRules.skill(slot);
+            yield spec==null?null:new ServantCardSkillAction(spec.id(),spec.id(),spec.mana(),spec.cooldown());
+         }
          case "heracles" -> {
             var spec = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.spec(slot);
             yield spec == null ? null : new ServantCardSkillAction(spec.name(), spec.id(), spec.mana(), spec.cooldown());

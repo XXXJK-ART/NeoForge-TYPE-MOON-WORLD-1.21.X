@@ -25,7 +25,7 @@ public final class DiarmuidEvents {
    public static void onEntityTick(EntityTickEvent.Post event) {
       if (event.getEntity() instanceof LivingEntity living && living.level() instanceof ServerLevel level) {
          DiarmuidCombatHelper.tickCurse(level, living);
-         if (DiarmuidAbilityService.isOwner(living) || DiarmuidAbilityService.active(living)) DiarmuidAbilityService.tick(living);
+         if (DiarmuidAbilityService.isOwner(living) || DiarmuidAbilityService.anyActive(living)) DiarmuidAbilityService.tick(living);
       }
    }
 
@@ -41,7 +41,7 @@ public final class DiarmuidEvents {
    public static void onAttackEntity(AttackEntityEvent event) {
       Player player = event.getEntity();
       if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && ServantCardDiarmuidSkills.isActiveCard(serverPlayer)) {
-         if (ServantCardDiarmuidSkills.isDualWieldActive(serverPlayer) || player.isShiftKeyDown() || DiarmuidAbilityService.active(player)) {
+         if (ServantCardDiarmuidSkills.isDualWieldActive(serverPlayer) || player.isShiftKeyDown() || DiarmuidAbilityService.anyActive(player)) {
             event.setCanceled(true);
             if (player.isShiftKeyDown()) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.triggerAction(serverPlayer, -1);
             else ServantCardDiarmuidSkills.performOffhandSpearThrust(serverPlayer);
@@ -52,7 +52,7 @@ public final class DiarmuidEvents {
          && !DiarmuidAbilityService.canHit(player, target, spear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG ? 5 : 3)) {
          event.setCanceled(true);
       }
-      if (DiarmuidCombatHelper.hasDisabledRightHand(player)) {
+      if (!DiarmuidAbilityService.isDoubleSpearStance(player) && DiarmuidCombatHelper.hasDisabledRightHand(player)) {
          event.setCanceled(true);
       }
    }

@@ -57,6 +57,16 @@ public final class ServantCardDiarmuidSkills {
    }
 
    public static boolean isDualWieldActive(ServerPlayer player) { return isActiveCard(player) && DiarmuidAbilityService.isDoubleSpearStance(player); }
+   public static boolean handReady(ServerPlayer player, InteractionHand hand) {
+      if (!isDualWieldActive(player) || DiarmuidAbilityService.handActionActive(player, hand)
+         || DiarmuidAbilityService.handCooldown(player, hand) > player.level().getGameTime()) return false;
+      var stack = player.getItemInHand(hand);
+      if (!(stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem spear)
+         || stack.getDamageValue() >= stack.getMaxDamage()) return false;
+      if (spear.spearType() == net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem.SpearType.GAE_DEARG)
+         return !DiarmuidCombatHelper.hasDisabledRightHand(player) && DiarmuidCombatHelper.redDurability(player) > 0;
+      return !DiarmuidCombatHelper.hasDisabledLeftHand(player) && DiarmuidCombatHelper.yellowDurability(player) > 0;
+   }
    public static void performOffhandSpearThrust(ServerPlayer player) { DiarmuidAbilityService.basic(player, InteractionHand.OFF_HAND); }
    public static void performMainhandSpearThrust(ServerPlayer player) { DiarmuidAbilityService.basic(player, InteractionHand.MAIN_HAND); }
 }

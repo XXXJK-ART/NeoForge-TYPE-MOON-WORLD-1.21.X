@@ -364,6 +364,7 @@ public final class MagicResistanceHelper {
       if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC)) {
          return true;
       }
+      if(source.typeHolder().unwrapKey().map(k->k.location().toString().equals("typemoonworld:cu_rune_fire")).orElse(false))return true;
       if (source.is(FanaticDamageTypes.MARROW)) {
          return true;
       }

@@ -196,6 +196,7 @@ public final class ServantCardTransformManager {
       removeAttributes(player);
       ServantCardFlightController.stop(player, vars, false);
       ServantCardDefenseHandler.clear(player);
+      if ("cu_chulainn".equals(vars.servantCardState().id())) ServantCardCuChulainnSkills.clear(player);
       stopActiveNoblePhantasmVoices(player);
       if ("ushiwakamaru_rider".equals(vars.servantCardState().id())) ServantCardUshiwakamaruSkills.clear(player, vars);
       restoreArmor(player, vars);
@@ -558,6 +559,7 @@ public final class ServantCardTransformManager {
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)
          && !("oda_nobunaga".equals(vars.servantCardState().id()) && slot == 9 && player.getPersistentData().getBoolean("ServantCardOdaHajunCardActive"))) return false;
       if ("heracles".equals(vars.servantCardState().id())) return net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.start(player, slot);
+      if ("cu_chulainn".equals(vars.servantCardState().id())) return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.start(player,slot);
       if ("diarmuid_ua_duibhne".equals(vars.servantCardState().id())) {
          return net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.start(player,
             slot == 7 && player.isCrouching() ? net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.CROSS_GUARD

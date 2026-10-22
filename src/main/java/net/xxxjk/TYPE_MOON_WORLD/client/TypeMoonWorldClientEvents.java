@@ -371,6 +371,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.CU_PERSISTENT_SPEAR.get(),net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuSpearRenderer::new);
+      event.registerEntityRenderer(ModEntities.CU_RUNE_FIREBALL.get(),net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
       event.registerEntityRenderer(ModEntities.GAE_BULG_ARMY_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.DIRK_PROJECTILE.get(), DirkProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_THROWN_WEAPON.get(), ProjectedItemProjectileRenderer::new);

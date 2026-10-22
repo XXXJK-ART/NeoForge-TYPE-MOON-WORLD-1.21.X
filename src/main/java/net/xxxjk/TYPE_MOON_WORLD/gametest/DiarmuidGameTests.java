@@ -201,17 +201,26 @@ public final class DiarmuidGameTests {
    }
 
    @GameTest(template = ARENA, timeoutTicks = 35)
-   public static void independentHandCooldownAndSameTickGate(GameTestHelper h) {
+   public static void independentHandCooldownsAllowSimultaneousAndOverlappingAttacks(GameTestHelper h) {
       var owner = npc(h);
-      check(h, DiarmuidAbilityService.basic(owner,InteractionHand.MAIN_HAND), "red basic rejected");
-      check(h, !DiarmuidAbilityService.basic(owner,InteractionHand.OFF_HAND), "same tick accepted both hands");
-      h.runAfterDelay(5, () -> {
-         check(h, !DiarmuidAbilityService.basic(owner,InteractionHand.MAIN_HAND), "red cooldown ended early");
-         check(h, DiarmuidAbilityService.basic(owner,InteractionHand.OFF_HAND), "other hand did not have independent cooldown");
-      });
-      h.runAfterDelay(10, () -> {
-         check(h, DiarmuidAbilityService.basic(owner,InteractionHand.MAIN_HAND), "red did not recover after 8 ticks");
-         owner.discard(); h.succeed();
+      var target = target(h, owner, 2.4);
+      check(h, DiarmuidAbilityService.start(owner,DiarmuidAction.DOUBLE_SPEAR_STANCE),"stance rejected");
+      owner.getRandom().setSeed(42L);
+      h.runAfterDelay(14,()->{
+         owner.getRandom().setSeed(7L);
+         check(h, DiarmuidAbilityService.basic(owner,InteractionHand.MAIN_HAND), "red basic rejected");
+         check(h, DiarmuidAbilityService.basic(owner,InteractionHand.OFF_HAND), "same-tick yellow basic rejected");
+         check(h, DiarmuidAbilityService.handActionActive(owner,InteractionHand.MAIN_HAND)
+            && DiarmuidAbilityService.handActionActive(owner,InteractionHand.OFF_HAND),"two hands did not retain independent timelines");
+         h.runAfterDelay(5, () -> {
+            check(h, !DiarmuidAbilityService.basic(owner,InteractionHand.MAIN_HAND), "red cooldown ended early");
+            check(h, !DiarmuidAbilityService.basic(owner,InteractionHand.OFF_HAND), "yellow cooldown ended early");
+         });
+         h.runAfterDelay(10, () -> {
+            check(h, Math.abs(target.getHealth()-165)<0.01, "both same-tick spear hits did not land once each: "+target.getHealth());
+            check(h, DiarmuidCombatHelper.redDurability(owner)==199 && DiarmuidCombatHelper.yellowDurability(owner)==199,"overlapping attacks damaged the wrong weapons");
+            owner.discard(); target.discard(); h.succeed();
+         });
       });
    }
 
@@ -354,12 +363,14 @@ public final class DiarmuidGameTests {
 
    @GameTest(template = ARENA, timeoutTicks = 90)
    public static void servantScaleLeapLandsIntoADualSpearSweep(GameTestHelper h) {
-      var owner=card(h); Vec3 start=owner.position();
+      var owner=npc(h); Vec3 start=owner.position();
+      owner.setNoAi(false);
+      owner.setNoGravity(false);
       for (int x=2;x<=11;x++) for (int z=2;z<=17;z++) h.setBlock(new BlockPos(x,1,z),Blocks.SMOOTH_STONE);
       owner.setOnGround(true);
       Vec3 velocity=DiarmuidAbilityService.leapVelocity(owner);
       check(h,velocity.y>=1.05 && velocity.horizontalDistance()>0.5,"servant big-jump impulse is missing");
-      check(h,ServantCardTransformManager.triggerAction(owner,6),"legal leap rejected");
+      check(h,DiarmuidAbilityService.start(owner,DiarmuidAction.MANA_LEAP),"legal leap rejected");
       h.runAfterDelay(12, () -> check(h,owner.getY()-start.y>3.0,"servant-scale leap height="+(owner.getY()-start.y)+", velocity="+owner.getDeltaMovement()+", onGround="+owner.onGround()+", action="+DiarmuidAbilityService.currentAction(owner)));
       awaitLandingSweep(h,owner,0);
    }
@@ -371,12 +382,58 @@ public final class DiarmuidGameTests {
             check(h,Math.abs(target.getHealth()-178)<0.01,"landing sweep did not hit with both spears: "+target.getHealth());
             check(h,!DiarmuidAbilityService.protectFall(owner),"landing left fall protection active");
             check(h,DiarmuidAbilityService.currentAction(owner)==null,"landing sweep did not recover");
-            ServantCardTransformManager.release((ServerPlayer)owner,false); target.discard(); h.succeed();
+            if (owner instanceof ServerPlayer player) ServantCardTransformManager.release(player,false);
+            else owner.discard();
+            target.discard(); h.succeed();
          });
          return;
       }
       check(h,elapsed<65,"big jump never transitioned into its landing sweep");
       if(elapsed<65) h.runAfterDelay(1,()->awaitLandingSweep(h,owner,elapsed+1));
+   }
+
+   @GameTest(template = ARENA, timeoutTicks = 40)
+   public static void cardLeapPreservesMomentumAndLeavesFlightToPlayerMovement(GameTestHelper h) {
+      var owner=card(h);
+      owner.setOnGround(true);
+      owner.setDeltaMovement(0.3,0,0.1);
+      Vec3 launch=DiarmuidAbilityService.leapVelocity(owner);
+      check(h,ServantCardTransformManager.triggerAction(owner,6),"card leap rejected");
+      h.runAfterDelay(5,()->{
+         check(h,!owner.isNoGravity(),"leap disabled vanilla gravity");
+         check(h,owner.getDeltaMovement().x>0.15,"leap erased lateral momentum");
+         check(h,owner.getDeltaMovement().z>launch.z*0.5,"leap erased forward momentum");
+         check(h,owner.getDeltaMovement().y>0.7,"takeoff impulse missing");
+         Vec3 steered=new Vec3(-0.4,-0.2,0.12);
+         owner.setDeltaMovement(steered);
+         owner.setYRot(90);
+         h.runAfterDelay(5,()->{
+            check(h,owner.getDeltaMovement().distanceToSqr(steered)<0.0001,"skill overwrote player steering");
+            check(h,DiarmuidAbilityService.currentAction(owner)==DiarmuidAction.MANA_LEAP,"sweep started before landing");
+            owner.setOnGround(true);
+            h.runAfterDelay(2,()->{
+               check(h,DiarmuidAbilityService.currentAction(owner)==DiarmuidAction.LANDING_SWEEP,"actual landing did not start sweep");
+               ServantCardTransformManager.release(owner,false); h.succeed();
+            });
+         });
+      });
+   }
+
+   @GameTest(template = ARENA, timeoutTicks = 25)
+   public static void thrustImpulseNeverDragsPlayerOrErasesTheirSteering(GameTestHelper h) {
+      var owner=card(h);
+      owner.setDeltaMovement(0.25,0,0);
+      check(h,ServantCardTransformManager.triggerAction(owner,0),"advancing thrust rejected");
+      h.runAfterDelay(2,()->{
+         check(h,owner.getDeltaMovement().x>0.15,"thrust erased sideways momentum");
+         check(h,owner.getDeltaMovement().z>0.3,"thrust did not apply its impulse");
+         owner.setDeltaMovement(-0.3,0,-0.2);
+         owner.setYRot(90);
+         h.runAfterDelay(4,()->{
+            check(h,owner.getDeltaMovement().distanceToSqr(new Vec3(-0.3,0,-0.2))<0.0001,"thrust reapplied movement after steering");
+            ServantCardTransformManager.release(owner,false); h.succeed();
+         });
+      });
    }
 
    @GameTest(template = ARENA, timeoutTicks = 30)

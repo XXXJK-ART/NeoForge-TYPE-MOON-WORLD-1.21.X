@@ -63,6 +63,19 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
    }
 
    @Override
+   protected void setupRotations(T entity, PoseStack poses, float ageInTicks, float bodyYaw, float partialTick, float scale) {
+      super.setupRotations(entity, poses, ageInTicks, bodyYaw, partialTick, scale);
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid) {
+         var action = diarmuid.getDiarmuidAction();
+         float age = diarmuid.getDiarmuidActionAge(partialTick);
+         var visual = net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidVisualsClient.wholeBodyAction(diarmuid.getUUID());
+         if (visual != null) { action = visual; age = net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidVisualsClient.wholeBodyActionAge(diarmuid.getUUID(), partialTick); }
+         if (action != null && age >= 0 && age < action.visualDuration())
+            net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyBodyTransform(poses, action, age);
+      }
+   }
+
+   @Override
    public ResourceLocation getTextureLocation(T entity) {
       return this.textureResolver.apply(entity);
    }
@@ -130,6 +143,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
          applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
+         if(entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity)net.xxxjk.TYPE_MOON_WORLD.client.CuChulainnVisualClient.pose(entity,this,ageInTicks-entity.tickCount);
          if (entity instanceof OdaNobunagaEntity oda) {
             applyOdaIdlePose(oda, ageInTicks, limbSwingAmount);
             applyOdaActionPose(oda, ageInTicks - entity.tickCount);
@@ -140,9 +154,14 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid) {
             var action = diarmuid.getDiarmuidAction();
             float age = diarmuid.getDiarmuidActionAge(ageInTicks - diarmuid.tickCount);
-            if (action != null && age >= 0 && age < action.duration())
-               net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyImportedPose(this, action, age);
-            else net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(diarmuid,this);
+            var visual = net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidVisualsClient.wholeBodyAction(diarmuid.getUUID());
+            if (visual != null) { action = visual; age = net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidVisualsClient.wholeBodyActionAge(diarmuid.getUUID(), ageInTicks - diarmuid.tickCount); }
+            if (action != null && age >= 0 && age < action.visualDuration())
+               net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyImportedPose(diarmuid, this, action, age);
+            else {
+               net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(diarmuid,this);
+               net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyHandPose(diarmuid,this,ageInTicks-diarmuid.tickCount);
+            }
          }
          if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid
             && diarmuid.getDiarmuidAction() == net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.DOUBLE_SPEAR_STANCE

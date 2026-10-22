@@ -121,6 +121,8 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
          net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.applyOwnerPose(
             player, (PlayerModel<?>)(Object)this, ageInTicks - player.tickCount);
          net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(player,(PlayerModel<?>)(Object)this);
+         if (vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id))
+            net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyHandPose(player,(PlayerModel<?>)(Object)this,ageInTicks-player.tickCount);
       }
    }
 

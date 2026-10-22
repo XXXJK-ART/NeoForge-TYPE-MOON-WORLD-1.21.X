@@ -827,6 +827,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    /**
     * 生成时自动装备默认武器到主手    */
    private void equipDefaultWeapon() {
+      if (this instanceof CuChulainnEntity && net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuSpearLedger.outstanding(this)) return;
       if (!this.getMainHandItem().isEmpty()) {
          return;
       }
