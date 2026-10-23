@@ -55,7 +55,6 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    private static final EntityDataAccessor<Float> MOVE_STRAFE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Float> MOVE_VERTICAL = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> STATIC_VOLLEY_MODE = SynchedEntityData.defineId(OdaMatchlockGunEntity.class, EntityDataSerializers.BOOLEAN);
-   private static final float MOUNT_MAX_HEALTH = 120.0F;
    private static final float MOUNT_INPUT_SYNC_EPSILON = 0.001F;
    private static final float AIM_SYNC_EPSILON_DEGREES = 0.5F;
    private static final double MOUNT_TRAIL_MIN_SPEED_SQR = 0.0025;
@@ -111,7 +110,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    public float absorb(float damage) {
       float used = Math.min(Math.max(0, damage), getGunHealth());
       this.entityData.set(HEALTH, getGunHealth() - used);
-      if (getGunHealth() <= 0 && level() instanceof ServerLevel level) dissolveAndDiscard(level);
+      if (getGunHealth() <= 0 && !isRemoved() && level() instanceof ServerLevel level) dissolveAndDiscard(level);
       return damage - used;
    }
 
@@ -174,6 +173,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
    public static OdaMatchlockGunEntity footSupport(Level level, LivingEntity owner) {
       OdaMatchlockGunEntity gun = new OdaMatchlockGunEntity(level, owner, owner.position(), owner.getLookAngle(), 0);
       gun.entityData.set(FOOT_SUPPORT_MODE, true);
+      gun.entityData.set(HEALTH, OdaRules.FLIGHT_GUN_HEALTH);
       gun.entityData.set(SHOTS_LEFT, 9999);
       gun.entityData.set(LIFE_TICKS, 20 * 4);
       return gun;
@@ -184,7 +184,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       gun.entityData.set(MOUNT_MODE, true);
       gun.entityData.set(SHOTS_LEFT, 0);
       gun.entityData.set(LIFE_TICKS, 20 * 60);
-      gun.entityData.set(HEALTH, MOUNT_MAX_HEALTH);
+      gun.entityData.set(HEALTH, OdaRules.FLIGHT_GUN_HEALTH);
       gun.setBoundingBox(new AABB(gun.getX() - 0.9, gun.getY() - 0.25, gun.getZ() - 0.9, gun.getX() + 0.9, gun.getY() + 0.55, gun.getZ() + 0.9));
       return gun;
    }
@@ -212,6 +212,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    public static void beginThreeThousandChant(LivingEntity owner) {
       if (!(owner.level() instanceof ServerLevel level)) return;
+      if (OdaAbilityService.flightCooldownRemaining(owner) > 0) return;
       if (!"oda_three_thousand".equals(owner.getPersistentData().getString("TypeMoonNpCastAction"))) return;
       boolean playerWasFlying = false;
       if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
@@ -281,7 +282,7 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       builder.define(MOUNT_MODE, false);
       builder.define(CHANT_LIFT, false);
       builder.define(CHANT_START, 0L);
-      builder.define(HEALTH, 30.0F);
+      builder.define(HEALTH, OdaRules.COMBAT_GUN_HEALTH);
       builder.define(ABILITY, Ability.ORBIT.name());
       builder.define(MOVE_FORWARD, 0.0F);
       builder.define(MOVE_STRAFE, 0.0F);
@@ -522,27 +523,26 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
 
    @Override
    public boolean isPickable() {
-      return !this.entityData.get(FOOT_SUPPORT_MODE) && !this.isRemoved();
+      return !this.isRemoved();
    }
 
    @Override
    public boolean hurt(DamageSource source, float amount) {
-      if (this.level().isClientSide || this.entityData.get(FOOT_SUPPORT_MODE) || amount <= 0.0F) {
+      if (this.level().isClientSide || this.isRemoved() || amount <= 0.0F) {
          return false;
       }
       Entity attacker = source.getEntity();
       if (attacker != null && this.ownerUuid != null && attacker.getUUID().equals(this.ownerUuid)) {
          return false;
       }
-      float health = this.entityData.get(HEALTH) - amount;
+      float health = Math.max(0.0F, this.entityData.get(HEALTH) - amount);
       this.entityData.set(HEALTH, health);
       if (this.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 0.25, this.getZ(), 6, 0.3, 0.16, 0.3, 0.008);
          level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.25, this.getZ(), 3, 0.18, 0.1, 0.18, 0.01);
          level.playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 0.35F, 1.6F);
          if (health <= 0.0F) {
-            this.ejectPassengers();
-            dissolveAndDiscard(level);
+            destroyGun(level);
          }
       }
       return true;
@@ -663,6 +663,14 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       level.sendParticles(ParticleTypes.FLAME, start.x, start.y, start.z, 1, 0.03, 0.02, 0.03, 0.008);
    }
 
+   private void destroyGun(ServerLevel level) {
+      LivingEntity owner = getOwnerLiving(level);
+      boolean flightGun = isMountMode() || this.entityData.get(FOOT_SUPPORT_MODE);
+      this.ejectPassengers();
+      dissolveAndDiscard(level);
+      if (flightGun) OdaAbilityService.flightGunDestroyed(owner);
+   }
+
    private void dissolveAndDiscard(ServerLevel level) {
       if (!this.dissolving) {
          this.dissolving = true;
@@ -743,7 +751,8 @@ public class OdaMatchlockGunEntity extends Entity implements GeoEntity {
       this.entityData.set(VOLLEY_TARGET_ID, tag.contains("VolleyTargetId") ? tag.getInt("VolleyTargetId") : -1);
       this.entityData.set(FOOT_SUPPORT_MODE, tag.getBoolean("FootSupportMode"));
       this.entityData.set(MOUNT_MODE, tag.getBoolean("MountMode"));
-      this.entityData.set(HEALTH, tag.contains("Health") ? tag.getFloat("Health") : (isMountMode() ? MOUNT_MAX_HEALTH : 30.0F));
+      float maxHealth = isMountMode() || this.entityData.get(FOOT_SUPPORT_MODE) ? OdaRules.FLIGHT_GUN_HEALTH : OdaRules.COMBAT_GUN_HEALTH;
+      this.entityData.set(HEALTH, tag.contains("Health") ? Mth.clamp(tag.getFloat("Health"), 0.0F, maxHealth) : maxHealth);
       legacy = !tag.contains("Ability") || !isMountMode() || tag.getBoolean("ChantLift");
       this.entityData.set(ABILITY, tag.getString("Ability"));
       shotInterval = tag.contains("ShotInterval") ? tag.getInt("ShotInterval") : 30;

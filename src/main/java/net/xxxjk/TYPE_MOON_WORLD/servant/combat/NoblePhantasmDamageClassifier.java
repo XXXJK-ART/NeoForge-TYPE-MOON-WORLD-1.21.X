@@ -68,9 +68,12 @@ public final class NoblePhantasmDamageClassifier {
 
    public static boolean isNoblePhantasmDamage(DamageSource source, float originalDamage) {
       if (source == null) return false;
+      if (source instanceof TypedSource) return true;
       if (source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource oda) return oda.npType() != null;
       if (source.is(NOBLE_PHANTASM_DAMAGE) || source.is(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY)) return true;
       Entity direct = source.getDirectEntity();
+      if (direct instanceof net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity spear
+         && spear.getMode() != net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity.Mode.SINGLE) return true;
       if (direct instanceof ArtoriaExcaliburBeamEntity
          || direct instanceof GaeBulgArmyProjectileEntity
          || direct instanceof PseudoSpiralSwordProjectileEntity) return true;

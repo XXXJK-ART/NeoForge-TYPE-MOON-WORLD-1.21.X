@@ -124,7 +124,9 @@ public final class HeraclesAbilityService {
       if(spec==null||!(caster.level() instanceof ServerLevel)||!isHeracles(caster)||!caster.isAlive()||held(caster)||controlled(caster)
          ||ServantCombatSystem.skillsSuppressed(caster)) return false;
       long now=caster.level().getGameTime();
-      if(caster.getPersistentData().getLong("HeraclesCooldown:"+slot)>now) return false;
+      boolean cooldownDisabled=ServantCardUnlimitedMode.isCooldownDisabled(caster);
+      String cooldownKey="HeraclesCooldown:"+slot;
+      if(!cooldownDisabled && caster.getPersistentData().getLong(cooldownKey)>now) return false;
       Action running=RUNNING.get(caster);
       if(running!=null) {
          // One input may be buffered in the final 0.2 seconds of recovery.
@@ -145,12 +147,13 @@ public final class HeraclesAbilityService {
       if(caster instanceof ServerPlayer player) {
          var vars=player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if(!ServantCardManaService.consume(player,vars,spec.mana()))return false;
-         ServantCardTransformManager.setSkillCooldownUntil(player,vars,slot,now+spec.cooldown());
+         if(!cooldownDisabled) ServantCardTransformManager.setSkillCooldownUntil(player,vars,slot,now+spec.cooldown());
       } else if(caster instanceof ServantEntity npc) {
          if(npc.getCurrentMp()<spec.mana())return false;
          npc.setCurrentMp(npc.getCurrentMp()-spec.mana());
       }
-      caster.getPersistentData().putLong("HeraclesCooldown:"+slot,now+spec.cooldown());
+      if(cooldownDisabled) caster.getPersistentData().remove(cooldownKey);
+      else caster.getPersistentData().putLong(cooldownKey,now+spec.cooldown());
       if(slot==9) { status(caster);return true; }
       actionSmoke(caster);
       Vec3 direction=target==null?forward(caster):target.position().subtract(caster.position()).multiply(1,0,1).normalize();
@@ -166,6 +169,10 @@ public final class HeraclesAbilityService {
          npc.triggerNamedActionAnimation("martial_"+slot);
       }
       return true;
+   }
+   public static void clearCooldowns(ServerPlayer player) {
+      var data=player.getPersistentData();
+      for(int slot=0;slot<10;slot++) data.remove("HeraclesCooldown:"+slot);
    }
    public static void status(LivingEntity caster) {
       actionSmoke(caster);

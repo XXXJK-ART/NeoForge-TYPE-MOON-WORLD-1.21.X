@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaAbilityService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaHajunDuelService;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +55,8 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class OdaNobunagaCombatHelper {
+   private static final net.minecraft.server.level.TicketType<UUID> HAJUN_TICKET =
+      net.minecraft.server.level.TicketType.create("typemoonworld_hajun", java.util.Comparator.<UUID>naturalOrder(), 320);
    public static final String TAG_LAST_STRATEGY = "OdaLastStrategyTick";
    public static final String TAG_STRATEGY_UNTIL = "OdaStrategyUntil";
    public static final String TAG_LAST_MAOU = "OdaLastMaouTick";
@@ -119,7 +122,7 @@ public final class OdaNobunagaCombatHelper {
    private static final int HAJUN_CHANT_TICKS = 5 * 20;
    private static final int HAJUN_DURATION = 15 * 20;
    private static final double HAJUN_RADIUS = 25.0;
-   private static final double HAJUN_PULL_RADIUS = 32.0;
+   private static final double HAJUN_PULL_RADIUS = OdaRules.HAJUN_PULL_RADIUS;
    private static final int HAJUN_TERRAIN_RADIUS = 25;
    private static final int HAJUN_CHANT_SURFACE_SPREAD_DELAY = 10;
    private static final int HAJUN_CHANT_SURFACE_RADIUS = 16;
@@ -185,6 +188,7 @@ public final class OdaNobunagaCombatHelper {
    }
 
    public static void cleanupHajun(OdaNobunagaEntity entity) {
+      OdaHajunDuelService.cancel(entity);
       OdaAbilityService.clear(entity);
       if (entity.level() instanceof ServerLevel level) {
          if (entity.getPersistentData().getLong(TAG_HAJUN_ACTIVE_UNTIL) > 0 && (ModDimensions.isHajunDimension(level.dimension().location()) || entity.getPersistentData().getBoolean("OdaHajunLocal"))) {
@@ -198,6 +202,7 @@ public final class OdaNobunagaCombatHelper {
 
    public static boolean tickPersistentState(OdaNobunagaEntity entity) {
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive()) return false;
+      if (OdaHajunDuelService.active(entity)) return true;
       long now = level.getGameTime();
       OdaAbilityService.prepare(entity);
       CompoundTag data = entity.getPersistentData();
@@ -353,36 +358,47 @@ public final class OdaNobunagaCombatHelper {
       }
       entity.getPersistentData().remove(TAG_HAJUN_CHANT_END);
       entity.getPersistentData().remove(TAG_HAJUN_CHANT_TARGET);
-      if (target != null && entity.isAlive() && entity.getCurrentMp() >= 95) {
+      if (entity.isAlive() && entity.getCurrentMp() >= 95) {
          entity.setCurrentMp(entity.getCurrentMp() - 95);
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteHajunEntryPayment(entity, null, false, 95);
          entity.getPersistentData().putLong("OdaSharedNpUntil", now + 3600);
-         activateHajun(entity, level, target, now);
-         relightAfterNoblePhantasm(entity, now);
+         if (activateHajun(entity, level, target, now)) {
+            if (!entity.isRemoved() && !OdaHajunDuelService.active(entity)) relightAfterNoblePhantasm(entity, now);
+         } else {
+            failHajunEntry(entity, level);
+         }
       } else {
-         restoreHajunChantTerrain(entity, level, Integer.MAX_VALUE);
+         failHajunEntry(entity, level);
       }
       return true;
    }
 
-   private static void activateHajun(OdaNobunagaEntity entity, ServerLevel source, LivingEntity primary, long now) {
+   private static void failHajunEntry(OdaNobunagaEntity entity, ServerLevel source) {
+      restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
+      clearHajunState(entity);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.failHajunEntry(entity);
+   }
+
+   private static boolean activateHajun(OdaNobunagaEntity entity, ServerLevel source, LivingEntity primary, long now) {
+      List<LivingEntity> pulled = collectHajunTargets(entity, source, primary);
+      if (pulled.isEmpty()) return false;
       net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.play(
          entity, net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action.NP_HAJUN_RELEASE);
+      if (pulled.stream().noneMatch(net.minecraft.world.entity.player.Player.class::isInstance)) {
+         restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
+         clearHajunState(entity);
+         return OdaHajunDuelService.start(entity, pulled);
+      }
       ServerLevel hajunLevel = source.getServer().getLevel(ModDimensions.HAJUN_KEY);
       if (hajunLevel == null || ModDimensions.isHajunDimension(source.dimension().location())) {
          applyHajunState(entity, now, entity.blockPosition());
          entity.getPersistentData().putBoolean("OdaHajunLocal", true);
          VFXServerEffects.spawn(source, "servant_oda_hajun", entity, 192.0);
-         for (LivingEntity target : collectHajunTargets(entity, source, primary)) markHajunTarget(entity, target, source, target.getX(), target.getY(), target.getZ(), target == primary);
+         for (LivingEntity target : pulled) markHajunTarget(entity, target, source, target.getX(), target.getY(), target.getZ(), target == primary);
          applyHajunInstantDamage(entity, source);
-         return;
+         return true;
       }
       recordHajunLockedTarget(entity, primary);
-      List<LivingEntity> pulled = collectHajunTargets(entity, source, primary);
-      if (pulled.isEmpty()) {
-         restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
-         clearHajunState(entity);
-         return;
-      }
 
 
       CompoundTag data = entity.getPersistentData();
@@ -406,11 +422,15 @@ public final class OdaNobunagaCombatHelper {
       Vec3 entry = new Vec3(randomEntry.x, 72.0, randomEntry.z);
       entry = new Vec3(entry.x, findSafeSpawnY(hajunLevel, Mth.floor(entry.x), Mth.floor(entry.z)), entry.z);
       BlockPos entryBlock = BlockPos.containing(entry);
+      hajunLevel.getChunkSource().addRegionTicket(HAJUN_TICKET, new net.minecraft.world.level.ChunkPos(entryBlock), 5, entity.getUUID(), true);
+      // Entity tracking requires the surrounding full chunks as well as the
+      // landing chunk. An NPC field has no player to load that neighborhood.
+      for (int dx = -2; dx <= 2; dx++) for (int dz = -2; dz <= 2; dz++)
+         hajunLevel.getChunk((entryBlock.getX() >> 4) + dx, (entryBlock.getZ() >> 4) + dz);
       LivingEntity movedPrimary = moveHajunTargets(entity, source, hajunLevel, pulled, primary, entry);
       if (movedPrimary == null) {
-         restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
-         clearHajunState(entity);
-         return;
+         hajunLevel.getChunkSource().removeRegionTicket(HAJUN_TICKET, new net.minecraft.world.level.ChunkPos(entryBlock), 5, entity.getUUID(), true);
+         return false;
       }
       Entity moved = entity.changeDimension(new DimensionTransition(hajunLevel, entry, Vec3.ZERO, entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING));
       if (moved instanceof OdaNobunagaEntity nobu) {
@@ -435,8 +455,15 @@ public final class OdaNobunagaCombatHelper {
          hajunLevel.sendParticles(ParticleTypes.SMOKE, entry.x, entry.y + 0.3, entry.z, 16, 2.0, 0.16, 2.0, 0.01);
          spreadHajunTerrain(nobu, hajunLevel, 220);
          applyHajunInstantDamage(nobu, hajunLevel);
+      } else {
+         TYPE_MOON_WORLD.queueServerWork(1, () -> {
+            returnPulledHajunTargets(entity.getUUID(), hajunLevel, source);
+            hajunLevel.getChunkSource().removeRegionTicket(HAJUN_TICKET, new net.minecraft.world.level.ChunkPos(entryBlock), 5, entity.getUUID(), true);
+         });
+         return false;
       }
       restoreHajunChantTerrain(entity, source, Integer.MAX_VALUE);
+      return true;
    }
 
    private static boolean tickHajunField(OdaNobunagaEntity entity, ServerLevel level, long now) {
@@ -492,11 +519,12 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static boolean isHajunPullTarget(OdaNobunagaEntity owner, LivingEntity living, ServerLevel source) {
-      if (living == null || !living.isAlive() || living == owner || living.level() != source) {
+      if (living == null || living.level() != source || OdaHajunDuelService.active(living)
+         || !OdaAbilityService.enemy(owner, living) || owner.isAlliedTo(living)) {
          return false;
       }
       Vec3 rel = living.position().subtract(owner.position());
-      return rel.y >= -2.0 && rel.lengthSqr() <= HAJUN_PULL_RADIUS * HAJUN_PULL_RADIUS;
+      return rel.lengthSqr() <= HAJUN_PULL_RADIUS * HAJUN_PULL_RADIUS;
    }
 
    private static LivingEntity moveHajunTargets(OdaNobunagaEntity owner, ServerLevel source, ServerLevel hajunLevel, List<LivingEntity> targets, LivingEntity primary, Vec3 entry) {
@@ -518,6 +546,7 @@ public final class OdaNobunagaCombatHelper {
       double relZ = Mth.clamp(living.getZ() - owner.getZ(), -16.0, 16.0);
       double targetX = entry.x + relX;
       double targetZ = entry.z + relZ;
+      hajunLevel.getChunk(Mth.floor(targetX) >> 4, Mth.floor(targetZ) >> 4);
       double targetY = findSafeSpawnY(hajunLevel, Mth.floor(targetX), Mth.floor(targetZ));
       double returnX = living.getX();
       double returnY = living.getY();
@@ -713,6 +742,11 @@ public final class OdaNobunagaCombatHelper {
          landForNoblePhantasm(entity);
          return;
       }
+      if (OdaAbilityService.flightCooldownRemaining(entity) > 0) {
+         entity.setNoGravity(false);
+         clearFootSupportGun(entity, (ServerLevel)entity.level());
+         return;
+      }
       boolean serious = entity.getHealth() <= entity.getMaxHealth() * 0.8F
          || entity.getPersistentData().getLong(TAG_MAOU_UNTIL) > now
          || entity.getPersistentData().getLong(TAG_THREE_THOUSAND_CHANT_END) > now
@@ -842,6 +876,12 @@ public final class OdaNobunagaCombatHelper {
 
    private static void clearHajunState(OdaNobunagaEntity entity) {
       CompoundTag data = entity.getPersistentData();
+      if (data.getLong(TAG_HAJUN_ACTIVE_UNTIL) > 0 && !data.getBoolean("OdaHajunLocal")
+         && entity.level() instanceof ServerLevel current) {
+         ServerLevel field = current.getServer().getLevel(ModDimensions.HAJUN_KEY);
+         if (field != null) field.getChunkSource().removeRegionTicket(HAJUN_TICKET,
+            new net.minecraft.world.level.ChunkPos(new BlockPos(data.getInt(TAG_HAJUN_CENTER_X), data.getInt(TAG_HAJUN_CENTER_Y), data.getInt(TAG_HAJUN_CENTER_Z))), 5, entity.getUUID(), true);
+      }
       data.remove(TAG_HAJUN_ACTIVE_UNTIL);
       data.remove(TAG_HAJUN_MIN_UNTIL);
       data.remove(TAG_HAJUN_START_TICK);
@@ -1009,6 +1049,8 @@ public final class OdaNobunagaCombatHelper {
       }
       living.setInvisible(data.getBoolean(TAG_HAJUN_OFFSCREEN_PREVIOUS_INVISIBLE));
       living.setInvulnerable(data.getBoolean(TAG_HAJUN_OFFSCREEN_PREVIOUS_INVULNERABLE));
+      if (data.contains(OdaHajunDuelService.PREVIOUS_NO_GRAVITY))
+         living.setNoGravity(data.getBoolean(OdaHajunDuelService.PREVIOUS_NO_GRAVITY));
       if (living instanceof Mob mob) {
          mob.setNoAi(data.getBoolean(TAG_HAJUN_OFFSCREEN_PREVIOUS_NO_AI));
       }
@@ -1021,6 +1063,7 @@ public final class OdaNobunagaCombatHelper {
       data.remove(TAG_HAJUN_OFFSCREEN_PREVIOUS_INVISIBLE);
       data.remove(TAG_HAJUN_OFFSCREEN_PREVIOUS_INVULNERABLE);
       data.remove(TAG_HAJUN_OFFSCREEN_PREVIOUS_NO_AI);
+      data.remove(OdaHajunDuelService.PREVIOUS_NO_GRAVITY);
    }
 
    private static CompoundTag saveBlockEntity(ServerLevel level, BlockPos pos) {

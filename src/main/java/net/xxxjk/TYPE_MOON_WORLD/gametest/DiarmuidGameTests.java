@@ -53,6 +53,18 @@ public final class DiarmuidGameTests {
       return owner;
    }
 
+   @GameTest(template = ARENA, timeoutTicks = 40)
+   public static void globalNoCooldownBypassesSkillTimerAndKeepsManaCost(GameTestHelper h) {
+      var owner=card(h);var data=owner.getPersistentData();var vars=owner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      data.putLong("DiarmuidAction:advancing_thrust",owner.level().getGameTime()+1000);
+      data.putBoolean("TypeMoonNoCooldown",true);
+      double mana=vars.servantCardState().mana();
+      check(h,DiarmuidAbilityService.start(owner,DiarmuidAction.ADVANCING_THRUST),"global no-cooldown did not bypass skill timer");
+      check(h,Math.abs(vars.servantCardState().mana()-(mana-DiarmuidAction.ADVANCING_THRUST.mana()))<.02,"no-cooldown removed mana cost");
+      check(h,!data.contains("DiarmuidAction:advancing_thrust"),"custom Diarmuid timer remained");
+      check(h,ServantCardTransformManager.getSkillCooldown(vars,0)==0,"card HUD retained skill timer");h.succeed();
+   }
+
    private static LivingEntity target(GameTestHelper h, LivingEntity owner, double distance) {
       var target = EntityType.HUSK.create(h.getLevel());
       target.setPos(owner.position().add(0,0,distance)); target.setNoAi(true); target.setNoGravity(true);

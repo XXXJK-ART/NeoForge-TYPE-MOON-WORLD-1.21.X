@@ -41,7 +41,10 @@ public final class CuChulainnEvents {
    }
    @SubscribeEvent public static void death(LivingDeathEvent event) {
       if(event.getEntity().level().isClientSide())return;
-      if(CuChulainnAbilityService.isOwner(event.getEntity()))CuChulainnAbilityService.clear(event.getEntity());
+      if(CuChulainnAbilityService.isOwner(event.getEntity())){
+         CuChulainnVoiceService.death(event.getEntity());CuChulainnAbilityService.clear(event.getEntity());
+      } else if(event.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer owner && CuChulainnAbilityService.isOwner(owner))
+         CuChulainnVoiceService.victory(owner);
    }
    @SubscribeEvent public static void attack(net.neoforged.neoforge.event.entity.player.AttackEntityEvent event){
       if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer owner && CuChulainnAbilityService.isOwner(owner)

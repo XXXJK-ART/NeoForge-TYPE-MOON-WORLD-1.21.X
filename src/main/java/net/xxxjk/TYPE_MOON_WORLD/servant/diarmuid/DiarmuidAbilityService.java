@@ -37,6 +37,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardActionTimeline;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDiarmuidSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardUnlimitedMode;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
@@ -229,13 +230,15 @@ public final class DiarmuidAbilityService {
       EnumMap<InteractionHand, Cast> activeHands = HAND_CASTS.get(owner);
       var data = owner.getPersistentData();
       long now = owner.level().getGameTime();
+      boolean cooldownDisabled = !action.basic() && ServantCardUnlimitedMode.isCooldownDisabled(owner);
       if (stanceHandAction && activeHands != null) {
          Cast sameHand = activeHands.get(hand);
          if (sameHand != null && now >= sameHand.ends) finishHand(owner, hand);
          activeHands = HAND_CASTS.get(owner);
       }
       if (stanceHandAction && activeHands != null && activeHands.containsKey(hand)) return false;
-      if (!stanceHandAction && data.contains(LAST_INPUT) && data.getLong(LAST_INPUT) == now || cooldown(owner, action, hand) > now) return false;
+      if (!stanceHandAction && data.contains(LAST_INPUT) && data.getLong(LAST_INPUT) == now
+         || !cooldownDisabled && cooldown(owner, action, hand) > now) return false;
       boolean stanceToggle = action == DiarmuidAction.DOUBLE_SPEAR_STANCE;
       boolean enteringStance = stanceToggle && !isDoubleSpearStance(owner);
       if (enteringStance && (!hasSpear(owner, true) || !hasSpear(owner, false))) return false;
@@ -279,7 +282,8 @@ public final class DiarmuidAbilityService {
       if (action.dance() && stance) data.putLong(DANCE_UNTIL_TAG + hand.name(), now + action.duration());
       if (!stanceHandAction) data.putLong(LAST_INPUT, now);
       int cooldown = randomBasicAnimation && stance && !action.dance() ? DiarmuidAction.STANCE_HAND_COOLDOWN : action.cooldown();
-      data.putLong(cooldownKey(action, hand), now + cooldown);
+      if (cooldownDisabled) data.remove(cooldownKey(action, hand));
+      else data.putLong(cooldownKey(action, hand), now + cooldown);
       Cast cast = new Cast(owner, action, hand, animationPlayed);
       if (stanceHandAction) HAND_CASTS.computeIfAbsent(owner, ignored -> new EnumMap<>(InteractionHand.class)).put(hand, cast);
       else CASTS.put(owner, cast);
@@ -329,6 +333,13 @@ public final class DiarmuidAbilityService {
    public static long cooldown(LivingEntity owner, DiarmuidAction action) { return cooldown(owner, action, null); }
    private static long cooldown(LivingEntity owner, DiarmuidAction action, InteractionHand hand) {
       return owner.getPersistentData().getLong(cooldownKey(action, hand));
+   }
+
+   public static void clearCooldowns(ServerPlayer player) {
+      var data=player.getPersistentData();
+      for(DiarmuidAction action:DiarmuidAction.values()) {
+         if(!action.basic()) data.remove(cooldownKey(action,null));
+      }
    }
 
    public static boolean hasSpear(LivingEntity owner, boolean red) { return spearHand(owner, red) != null; }

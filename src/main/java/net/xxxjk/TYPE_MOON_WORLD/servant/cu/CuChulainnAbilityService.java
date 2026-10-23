@@ -15,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
@@ -81,28 +82,58 @@ public final class CuChulainnAbilityService {
       }
       return false;
    }
-   public static long cooldown(LivingEntity owner,int slot) { return owner.getPersistentData().getLong(PREFIX+"cd:"+slot); }
+   public static long cooldown(LivingEntity owner,int slot) {
+      return ServantCardUnlimitedMode.isCooldownDisabled(owner) ? 0L : owner.getPersistentData().getLong(PREFIX+"cd:"+slot);
+   }
    public static void cooldown(LivingEntity owner,int slot,int ticks) {
-      owner.getPersistentData().putLong(PREFIX+"cd:"+slot,owner.level().getGameTime()+ticks);
+      String key=PREFIX+"cd:"+slot;
+      if(ServantCardUnlimitedMode.isCooldownDisabled(owner)) {
+         owner.getPersistentData().remove(key);
+         if(owner instanceof ServerPlayer p && slot>=0 && slot<=9)
+            ServantCardTransformManager.setSkillCooldownUntil(p,p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES),slot,owner.level().getGameTime());
+         return;
+      }
+      owner.getPersistentData().putLong(key,owner.level().getGameTime()+ticks);
       if(owner instanceof ServerPlayer p && slot>=0 && slot<=9)
          ServantCardTransformManager.setSkillCooldownUntil(p,p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES),slot,owner.level().getGameTime()+ticks);
    }
    public static void npCooldown(LivingEntity owner,int ticks) {
+      if(ServantCardUnlimitedMode.isCooldownDisabled(owner)) {
+         owner.getPersistentData().remove(NP_END);
+         if(owner instanceof ServerPlayer p) ServantCardTransformManager.setNoblePhantasmCooldown(p,p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES),0);
+         return;
+      }
       owner.getPersistentData().putLong(NP_END,owner.level().getGameTime()+ticks);
       if(owner instanceof ServerPlayer p) ServantCardTransformManager.setNoblePhantasmCooldown(p,p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES),ticks);
    }
+   public static void clearCooldowns(ServerPlayer player) {
+      var data=player.getPersistentData();
+      data.remove(NP_END);
+      for(int slot=-1;slot<=12;slot++) data.remove(PREFIX+"cd:"+slot);
+   }
    public static boolean start(LivingEntity owner,int slot) {
       var spec=CuChulainnRules.skill(slot);
+      if(slot==6 && owner.level() instanceof ServerLevel && isOwner(owner) && owner.isAlive()
+         && owner.getPersistentData().getFloat(CuChulainnCombatHelper.RUNE_BARRIER_HP_TAG)>0) {
+         clearBarrier(owner);
+         Cast cast=CASTS.get(owner);if(cast!=null && cast.slot==6)CASTS.remove(owner);
+         CuChulainnVisualService.action(owner,-100,0);
+         return true;
+      }
       if(spec==null || !(owner.level() instanceof ServerLevel) || !isOwner(owner) || !canAct(owner)
          || active(owner) || CuChulainnWeaponService.busy(owner) || cooldown(owner,slot)>owner.level().getGameTime()
          || spec.spear() && spearHand(owner)==null || slot==7 && !CuSpearLedger.recallable(owner)) return false;
       if(!pay(owner,spec.mana(),false)) return false;
       cooldown(owner,slot,spec.cooldown());
       Cast cast=new Cast(owner,slot); CASTS.put(owner,cast);
-      CuChulainnVisualService.action(owner,slot,spec.duration());
+      int visual=owner instanceof CuChulainnEntity && owner.getRandom().nextBoolean()
+         ? slot==8?CuChulainnRules.NPC_SWEEP:slot==9?CuChulainnRules.NPC_FLURRY:slot:slot;
+      CuChulainnVisualService.action(owner,visual,spec.duration());
+      if(slot>=0 && slot<=4 || slot==6)CuChulainnVisualService.runeCast(owner,slot);
+      else if(slot==-1 || slot==8 || slot==9)CuChulainnVoiceService.attack(owner);
       var data=owner.getPersistentData(); long now=owner.level().getGameTime();
       switch(slot) {
-         case -1 -> { owner.setDeltaMovement(owner.getDeltaMovement().add(cast.forward.scale(1.18)).add(0,.12,0)); owner.hurtMarked=true; hitArc(owner,cast.forward,4.2,24,3,false); }
+         case -1 -> { owner.setDeltaMovement(owner.getDeltaMovement().add(cast.forward.scale(1.18)).add(0,.12,0)); owner.hurtMarked=true; }
          case 1 -> {
             owner.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED,220,2));
             owner.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE,220,0));
@@ -142,6 +173,7 @@ public final class CuChulainnAbilityService {
       DisengageService.tick(owner);
       CuSpearLedger.deliverPending(owner);
       CuChulainnWeaponService.tick(owner);
+      CuChulainnCombatAi.tickMelee(owner);
       if(!isOwner(owner)) { if(active(owner)) clear(owner); return; }
       var data=owner.getPersistentData(); long now=owner.level().getGameTime();
       data.putBoolean(CuChulainnCombatHelper.PROTECTION_FROM_ARROWS_TAG,true);
@@ -176,13 +208,17 @@ public final class CuChulainnAbilityService {
       if(!owner.isAlive() || !cast.dimension.equals(owner.level().dimension()) || ServantCombatSystem.cannotAct(owner)
          || ServantCombatSystem.skillsSuppressed(owner)) { CASTS.remove(owner); return; }
       int age=(int)(now-cast.start);
+      if(cast.slot>=0 && cast.slot<=4 || cast.slot==6)CuChulainnVisualService.runePulse(owner,cast.slot,age);
       for(int frame=cast.processed+1;frame<=Math.min(age,CuChulainnRules.skill(cast.slot).duration());frame++) {
          if(cast.slot==0) {
             for(int i=0;i<5;i++) {
                Vec3 rune=runePosition(cast,i);
-               if(frame>=i*2 && frame<12+i*2 && frame%2==0) ((ServerLevel)owner.level()).sendParticles(ModParticles.ANSUZ_RUNE.get(),rune.x,rune.y,rune.z,1,0,0,0,0);
+               if(frame==i*2) ((ServerLevel)owner.level()).sendParticles(ModParticles.ANSUZ_RUNE.get(),rune.x,rune.y,rune.z,1,0,0,0,0);
+               if(frame>=i*2 && frame<12+i*2 && frame%2==0) ((ServerLevel)owner.level()).sendParticles(ParticleTypes.FLAME,rune.x,rune.y,rune.z,8,.16,.16,.16,.015);
                if(frame==12+i*2) fire(owner,rune);
             }
+         } else if(cast.slot==-1 && frame==3) {
+            if(spearHand(owner)!=null)hitArc(owner,cast.forward,4.2,24,3,false);
          } else if(cast.slot==8 && (frame==6 || frame==12)) {
             if(spearHand(owner)!=null) hitArc(owner,cast.forward,4,12,3,true);
          } else if(cast.slot==9 && (frame==4 || frame==8 || frame==12)) {
@@ -215,6 +251,14 @@ public final class CuChulainnAbilityService {
       return owner.level().getEntitiesOfClass(LivingEntity.class,owner.getBoundingBox().inflate(range),e -> enemy(owner,e)
          && owner.distanceToSqr(e)<=range*range && owner.hasLineOfSight(e)
          && (!cone || e.position().subtract(owner.position()).normalize().dot(forward)>.65))
+         .stream().sorted(Comparator.comparingDouble(owner::distanceToSqr)).toList();
+   }
+   public static List<LivingEntity> aimedTargets(LivingEntity owner,double range,double tolerance) {
+      Vec3 start=owner.getEyePosition(), end=start.add(owner.getLookAngle().scale(range));
+      AABB search=owner.getBoundingBox().expandTowards(end.subtract(start)).inflate(tolerance);
+      return owner.level().getEntitiesOfClass(LivingEntity.class,search,e -> enemy(owner,e)
+         && owner.distanceToSqr(e)<=range*range && owner.hasLineOfSight(e)
+         && e.getBoundingBox().inflate(tolerance).clip(start,end).isPresent())
          .stream().sorted(Comparator.comparingDouble(owner::distanceToSqr)).toList();
    }
    private static void hitArc(LivingEntity owner,Vec3 direction,double range,float damage,int maximum,boolean sweep) {
@@ -259,6 +303,7 @@ public final class CuChulainnAbilityService {
       owner.getPersistentData().remove(PREFIX+"tiwaz");
    }
    public static void clear(LivingEntity owner) {
+      CuChulainnVisualService.voice(owner,CuChulainnRules.STOP_CHANT_VOICE,0);
       CuChulainnVisualService.action(owner,-100,0);
       CASTS.remove(owner); clearTiwaz(owner); clearBarrier(owner); DisengageService.clear(owner);
       var data=owner.getPersistentData(); data.remove(PREFIX+"heals"); data.remove(LAST_DAMAGE);

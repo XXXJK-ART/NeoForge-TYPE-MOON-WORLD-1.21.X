@@ -37,10 +37,12 @@ public final class CuChulainnVisualClient {
          });layer.addModifierLast(new CuChulainnActionAnimationClient.WeaponArmModifier(p));return layer;
       }));}
    }
-   public static String animation(int slot) {return slot==8?"cu_sweep":slot==9?"cu_flurry":slot==11?"cu_throw":slot==10?"cu_raise":slot==-1?"cu_thrust":"cu_rune";}
+   public static String animation(int slot) {return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnRules.animation(slot);}
    public static void receive(CuChulainnVisualMessage message) {
       Minecraft mc=Minecraft.getInstance();if(mc.level==null)return;long now=mc.level.getGameTime();
       ensureLevel();
+      if(message.action()==net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnRules.CHANT_VOICE){CuChulainnVoiceClient.begin(message);return;}
+      if(message.action()==net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnRules.STOP_CHANT_VOICE){CuChulainnVoiceClient.stop(message.owner());return;}
       if(message.action()==-100){stop(message.owner());return;}
       if(message.action()==100) {
          if(message.ticks()<=0)BARRIERS.remove(message.owner());else BARRIERS.put(message.owner(),new Barrier(message.center(),now+message.ticks(),message.flash()?now+5:0));return;
@@ -64,7 +66,7 @@ public final class CuChulainnVisualClient {
       Action action=action(owner);if(action!=null)CuChulainnActionAnimationClient.pose(owner,model,action,age(owner,action,partial));
    }
    private static void ensureLevel() {
-      if(activeLevel!=Minecraft.getInstance().level){activeLevel=Minecraft.getInstance().level;ACTIONS.clear();BARRIERS.clear();CuChulainnSpearLightClient.clear();}
+      if(activeLevel!=Minecraft.getInstance().level){activeLevel=Minecraft.getInstance().level;ACTIONS.clear();BARRIERS.clear();CuChulainnSpearLightClient.clear();CuChulainnVoiceClient.clear();}
    }
    public static Action action(LivingEntity owner) {
       ensureLevel();Action a=ACTIONS.get(owner.getUUID());
@@ -73,7 +75,7 @@ public final class CuChulainnVisualClient {
    }
    public static float age(LivingEntity owner,Action action,float partial){return owner.level().getGameTime()-action.start+partial;}
    public static void stop(UUID owner) {
-      ACTIONS.remove(owner);BARRIERS.remove(owner);
+      ACTIONS.remove(owner);
       var mc=Minecraft.getInstance();if(mc.level!=null)for(var p:mc.level.players())if(p.getUUID().equals(owner)){
          var layer=PlayerAnimationAccess.getPlayerAssociatedData(p).get(LAYER);if(layer instanceof ModifierLayer<?> animation)animation.setAnimation(null);
       }
@@ -96,5 +98,6 @@ public final class CuChulainnVisualClient {
       buffers.endBatch(RenderType.debugQuads());
    }
    private static void vertex(VertexConsumer v,PoseStack poses,float[] p,float alpha){v.addVertex(poses.last(),p[0],p[1],p[2]).setColor(.45F,.95F,.92F,alpha);}
-   @SubscribeEvent public static void logout(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event){ACTIONS.clear();BARRIERS.clear();CuChulainnSpearLightClient.clear();}
+   @SubscribeEvent public static void tick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event){CuChulainnVoiceClient.tick();}
+   @SubscribeEvent public static void logout(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event){ACTIONS.clear();BARRIERS.clear();CuChulainnSpearLightClient.clear();CuChulainnVoiceClient.clear();}
 }

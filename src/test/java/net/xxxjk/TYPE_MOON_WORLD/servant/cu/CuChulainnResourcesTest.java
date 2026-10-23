@@ -35,4 +35,11 @@ class CuChulainnResourcesTest {
          for(int slot=-1;slot<=9;slot++)assertTrue(translations.has("skill.typemoonworld.servant_card."+CuChulainnRules.skill(slot).id()),locale+" slot "+slot);
       }
    }
+   @Test void throwAndRaiseOnlyAnimateTheWeaponArm()throws Exception {
+      for(String name:new String[]{"cu_raise","cu_throw"})for(var move:json("assets/typemoonworld/player_animations/"+name+".json").getAsJsonObject("emote").getAsJsonArray("moves")) {
+         var frame=move.getAsJsonObject();
+         assertTrue(frame.has("rightArm"));assertTrue(frame.has("rightItem"));
+         for(String part:new String[]{"body","torso","leftArm","rightLeg","leftLeg"})assertFalse(frame.has(part),name+" moves "+part);
+      }
+   }
 }

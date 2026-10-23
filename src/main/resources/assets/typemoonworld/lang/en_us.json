@@ -1,4 +1,5 @@
 {
+  "message.typemoonworld.servant_card.oda_hajun_entry_failed": "Hajun failed: no target entered. Mana refunded and field cancelled.",
   "item.typemoonworld.arash_bow": "Arash's Bow",
   "item.typemoonworld.arash_spawn_egg": "Arash (Archer) Spawn Egg",
   "item.typemoonworld.aroundight": "Aroundight",
@@ -3523,5 +3524,17 @@
   "skill.typemoonworld.servant_card.diarmuid_double_spear_stance": "Double Spear Stance",
   "skill.typemoonworld.servant_card.diarmuid_red_dance": "Red Dance",
   "skill.typemoonworld.servant_card.diarmuid_yellow_dance": "Yellow Dance",
-  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "Landing Sweep"
+  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "Landing Sweep",
+  "message.typemoonworld.cu.locked": "Target locked: %s",
+  "message.typemoonworld.cu.lock_status": "Target locked: %s",
+  "message.typemoonworld.cu.lock_failed": "Lock failed",
+  "message.typemoonworld.cu.lock_lost": "Target lock lost",
+  "message.typemoonworld.cu.no_target": "Cast failed",
+  "message.typemoonworld.cu.leap_blocked": "Gae Bolg Flight failed",
+  "message.typemoonworld.cu.np_cooldown": "Noble Phantasm on cooldown",
+  "message.typemoonworld.cu.no_mana": "Cast failed",
+  "message.typemoonworld.cu.thorn_success": "Gae Bolg Thorn succeeded",
+  "message.typemoonworld.cu.thorn_failed": "Gae Bolg Thorn failed",
+  "message.typemoonworld.cu.flight_success": "Gae Bolg Flight succeeded",
+  "message.typemoonworld.cu.flight_failed": "Gae Bolg Flight failed"
 }

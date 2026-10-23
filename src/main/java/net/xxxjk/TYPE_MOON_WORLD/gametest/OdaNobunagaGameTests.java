@@ -84,17 +84,61 @@ public final class OdaNobunagaGameTests {
       var middle = OdaMatchlockGunEntity.threeThousandWorlds(owner.level(), owner, null, owner.position().add(2,0,0), owner.getLookAngle(), 50);
       var mount = OdaMatchlockGunEntity.flightMount(owner.level(), owner);
       for (var gun : java.util.List.of(far, near, middle, mount)) helper.getLevel().addFreshEntity(gun);
-      close(helper, OdaAbilityService.absorb(owner, 35), 0, "35 damage should fit into two guns");
+      close(helper, OdaAbilityService.absorb(owner, 25), 0, "25 damage should fit into the two nearest guns");
       helper.assertTrue(near.isRemoved(), "Nearest gun did not die first");
-      close(helper, middle.getGunHealth(), 25, "Second gun health");
-      close(helper, far.getGunHealth(), 30, "Far gun health");
-      close(helper, OdaAbilityService.absorb(owner, 65), 10, "Three guns must leave ten from total 100");
-      close(helper, mount.getGunHealth(), 120, "Mount was included in substitution");
+      helper.assertTrue(middle.isRemoved(), "Second-nearest gun did not die second");
+      close(helper, far.getGunHealth(), 5, "Far gun health");
+      close(helper, OdaAbilityService.absorb(owner, 10), 5, "Damage beyond all combat guns must overflow");
+      helper.assertTrue(far.isRemoved(), "Far gun did not absorb the remaining damage");
+      close(helper, mount.getGunHealth(), OdaRules.FLIGHT_GUN_HEALTH, "Mount was included in substitution or has the wrong health");
       owner.getAttribute(Attributes.ARMOR).setBaseValue(0);
       owner.getPersistentData().putLong("TypeMoonCombatSuppressedUntil", owner.level().getGameTime() + 100);
       for (int i = 0; i < 3; i++) helper.getLevel().addFreshEntity(new OdaMatchlockGunEntity(owner.level(), owner, owner.position().add(i + 1,0,0), owner.getLookAngle(), 100));
       float before = owner.getHealth(); owner.hurt(owner.damageSources().generic(), 100);
-      close(helper, before - owner.getHealth(), 10, "Remaining damage did not reach the body exactly once");
+      close(helper, before - owner.getHealth(), 70, "Overflow from three 10-health guns did not reach the body exactly once");
+      helper.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "odaPlayerAndNpcFlightGunDeathCooldown")
+   public static void playerAndNpcFlightGunsShareHealthAndDeathCooldown(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servant_card_transformed = true;
+      vars.servant_card_id = "oda_nobunaga";
+      var card = vars.servantCardState();
+      card.setFlying(true);
+      card.setFlightMode(1);
+      var playerMount = OdaMatchlockGunEntity.flightMount(helper.getLevel(), player);
+      helper.getLevel().addFreshEntity(playerMount);
+      helper.assertTrue(player.startRiding(playerMount, true), "Player could not mount the flight gun");
+      close(helper, playerMount.getGunHealth(), OdaRules.FLIGHT_GUN_HEALTH, "Player mount health");
+      var attacker = target(helper, player.position().add(0, 0, 3));
+      helper.assertTrue(playerMount.hurt(attacker.damageSources().mobAttack(attacker), OdaRules.FLIGHT_GUN_HEALTH), "Lethal attack did not hit player mount");
+      helper.assertTrue(playerMount.isRemoved() && player.getVehicle() == null, "Destroyed player mount remained active");
+      helper.assertTrue(!card.flying(), "Player kept flying after losing the mount");
+      close(helper, OdaAbilityService.flightCooldownRemaining(player), OdaRules.FLIGHT_DESTROYED_COOLDOWN, "Player flight cooldown duration");
+      helper.assertTrue(!ServantCardOdaNobunagaSkills.startMountFlight(player, vars), "Player restarted flight during mount cooldown");
+      player.getPersistentData().putLong(OdaAbilityService.TAG_FLIGHT_DESTROYED_UNTIL, player.level().getGameTime());
+      helper.assertTrue(ServantCardOdaNobunagaSkills.startMountFlight(player, vars), "Player could not fly after the cooldown expired");
+      ServantCardOdaNobunagaSkills.stopMountFlight(player, vars, false);
+
+      var npc = owner(helper);
+      var npcAttacker = target(helper, npc.position().add(0, 0, 3));
+      npc.setNoGravity(true);
+      var support = OdaMatchlockGunEntity.footSupport(helper.getLevel(), npc);
+      helper.getLevel().addFreshEntity(support);
+      npc.getPersistentData().putUUID(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.TAG_FOOT_SUPPORT_GUN, support.getUUID());
+      close(helper, support.getGunHealth(), OdaRules.FLIGHT_GUN_HEALTH, "NPC flight support health");
+      helper.assertTrue(support.hurt(npcAttacker.damageSources().mobAttack(npcAttacker), OdaRules.FLIGHT_GUN_HEALTH), "Lethal attack did not hit NPC flight support");
+      helper.assertTrue(!npc.isNoGravity(), "NPC kept flying after losing flight support");
+      close(helper, OdaAbilityService.flightCooldownRemaining(npc), OdaRules.FLIGHT_DESTROYED_COOLDOWN, "NPC flight cooldown duration");
+      npc.setHealth(800);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      helper.assertTrue(!npc.isNoGravity(), "NPC resumed flight during cooldown");
+      npc.getPersistentData().putLong(OdaAbilityService.TAG_FLIGHT_DESTROYED_UNTIL, npc.level().getGameTime());
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.tick(npc);
+      helper.assertTrue(npc.isNoGravity(), "NPC did not resume flight after the cooldown expired");
+      helper.assertTrue(!helper.getLevel().getEntitiesOfClass(OdaMatchlockGunEntity.class, npc.getBoundingBox().inflate(4), gun -> gun.isFootSupportFor(npc.getUUID())).isEmpty(), "NPC flight support did not respawn after cooldown");
+      OdaAbilityService.clear(npc);
       helper.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_immunityAndDodgeDoNotSpendGunHealth")
@@ -103,10 +147,10 @@ public final class OdaNobunagaGameTests {
       var gun = OdaMatchlockGunEntity.floating(owner.level(), owner, 0, 1, 600, 100);
       helper.getLevel().addFreshEntity(gun);
       helper.assertTrue(!owner.hurt(owner.damageSources().lava(), 100), "Fire immunity failed");
-      close(helper, gun.getGunHealth(), 30, "Immune fire consumed gun health");
+      close(helper, gun.getGunHealth(), OdaRules.COMBAT_GUN_HEALTH, "Immune fire consumed gun health");
       owner.getPersistentData().putLong("TypeMoonCombatInvulnUntil", owner.level().getGameTime() + 40);
       owner.hurt(owner.damageSources().generic(), 10);
-      close(helper, gun.getGunHealth(), 30, "Dodge invulnerability consumed gun health");
+      close(helper, gun.getGunHealth(), OdaRules.COMBAT_GUN_HEALTH, "Dodge invulnerability consumed gun health");
       helper.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 20, batch = "oda_ordinaryGunDoesNotGainRidingBonusAndHajunHasOneBase")
@@ -755,10 +799,10 @@ public final class OdaNobunagaGameTests {
          new net.neoforged.neoforge.common.damagesource.DamageContainer(gallatin,100));
       OdaCombatEvents.outgoing(incoming);
       close(helper,incoming.getAmount(),84,"Existing anti-army NP ignored Strategy B");
-      for (int i=0;i<3;i++) helper.getLevel().addFreshEntity(new OdaMatchlockGunEntity(owner.level(),owner,owner.position().add(i + 1,0,0),owner.getLookAngle(),100));
+      for (int i=0;i<10;i++) helper.getLevel().addFreshEntity(new OdaMatchlockGunEntity(owner.level(),owner,owner.position().add(1 + i % 5 * .2, 0, i / 5 * .2),owner.getLookAngle(),100));
       incoming = new net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent(owner,
          new net.neoforged.neoforge.common.damagesource.DamageContainer(gallatin,100));
-      close(helper,OdaAbilityService.absorb(owner,100),10,"Remaining NP damage should reach the body after three guns");
+      close(helper,OdaAbilityService.absorb(owner,100),0,"Ten combat guns should absorb the first 100 damage");
       OdaAbilityService.clear(owner); helper.succeed();
    }
 }

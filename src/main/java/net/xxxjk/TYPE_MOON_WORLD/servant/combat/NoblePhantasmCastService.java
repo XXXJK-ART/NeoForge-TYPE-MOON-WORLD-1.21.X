@@ -45,7 +45,7 @@ public final class NoblePhantasmCastService {
       final Runnable cleanup;
       final List<Credit> credits = new ArrayList<>();
       double npcPaid;
-      boolean cancelled, released, queued;
+      boolean cancelled, damageInterrupted, released, queued;
       Cast(LivingEntity caster, String action, int cooldown, IntConsumer setCooldown, Runnable cleanup) {
          this.caster = caster; this.action = action; this.cooldown = cooldown;
          this.setCooldown = setCooldown; this.cleanup = cleanup;
@@ -88,6 +88,9 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       return cast != null && cast.cancelled;
    }
+   public static boolean interruptedByDamage(LivingEntity caster) {
+      Cast cast=CASTS.get(caster.getUUID());return cast!=null && cast.damageInterrupted;
+   }
    public static boolean awaitVoice(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
       if (cast == null) return false;
@@ -129,7 +132,9 @@ public final class NoblePhantasmCastService {
       caster.getPersistentData().putInt("TypeMoonNpCastCount", caster.getPersistentData().getInt("TypeMoonNpCastCount") + 1);
       caster.getPersistentData().putString("TypeMoonNpCastAction", action);
       caster.getPersistentData().putLong("TypeMoonNpVoiceEnd", cast.voiceEnd);
-      if (!NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
+      if ("cu_gae_bolg".equals(action)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.chant(caster);
+      } else if (!NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
          SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + action));
          level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
       }
@@ -145,6 +150,18 @@ public final class NoblePhantasmCastService {
       if (cast != null && !cast.cancelled && !cast.released) {
          if (credit.player() == null) cast.npcPaid += credit.amount(); else cast.credits.add(credit);
       } else PAYMENTS.computeIfAbsent(caster.getUUID(), unused -> new ArrayList<>()).add(credit);
+   }
+
+   /** Returns true when this service has taken ownership of the effect. */
+   public static void noteHajunEntryPayment(LivingEntity caster, ServerPlayer payer, boolean card, double amount) {
+      if (amount <= 0) return;
+      Credit credit = new Credit(payer == null ? null : payer.getUUID(), card, amount);
+      Cast cast = CASTS.get(caster.getUUID());
+      // The second installment can follow the voice release; it still belongs
+      // to this Hajun token, never to the next noble phantasm.
+      if (cast != null && !cast.cancelled && "oda_hajun".equals(cast.action)) {
+         if (payer == null) cast.npcPaid += amount; else cast.credits.add(credit);
+      } else notePayment(caster, credit);
    }
 
    /** Returns true when this service has taken ownership of the effect. */
@@ -196,7 +213,10 @@ public final class NoblePhantasmCastService {
    }
 
    @SubscribeEvent public static void afterDamage(LivingDamageEvent.Post event) {
-      if (event.getNewDamage() > 0 && inWindow(event.getEntity())) cancel(event.getEntity(), true);
+      if (event.getNewDamage() > 0 && inWindow(event.getEntity())) {
+         CASTS.get(event.getEntity().getUUID()).damageInterrupted=true;
+         cancel(event.getEntity(), true);
+      }
    }
    @SubscribeEvent public static void tick(EntityTickEvent.Post event) {
       if (!(event.getEntity() instanceof LivingEntity entity) || entity.level().isClientSide()) return;
@@ -213,23 +233,45 @@ public final class NoblePhantasmCastService {
       cast.cancelled = true;
       cast.cleanup.run();
       if (interrupted) {
-         if (caster instanceof ServantEntity servant) servant.setCurrentMp(Math.min(servant.getMaxMp(), servant.getCurrentMp() + cast.npcPaid * 0.5));
-         for (Credit credit : cast.credits) {
-            ServerPlayer payer = caster.getServer() == null ? null : caster.getServer().getPlayerList().getPlayer(credit.player());
-            if (payer == null) continue;
-            var vars = payer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (credit.card()) vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), vars.servantCardState().mana() + credit.amount() * 0.5));
-            else vars.magicState().setMana(vars.magicState().mana() + credit.amount() * 0.5);
-            vars.syncMana(payer);
-         }
+         refund(cast, 0.5);
          cast.setCooldown.accept(NoblePhantasmCastRules.interruptedCooldown(cast.cooldown));
       }
       caster.getPersistentData().remove("TypeMoonNpCastAction");
       caster.getPersistentData().remove("TypeMoonNpVoiceEnd");
+      if("cu_gae_bolg".equals(cast.action)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.cancelChant(caster);return;
+      }
       if (caster.level() instanceof ServerLevel level) {
          var stop = new net.minecraft.network.protocol.game.ClientboundStopSoundPacket(
             ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + cast.action), SoundSource.VOICE);
          for (ServerPlayer player : level.players()) player.connection.send(stop);
+      }
+   }
+
+   /** An effect may fail its final preconditions before creating any attack. */
+   public static void failHajunEntry(LivingEntity caster) {
+      Cast cast = CASTS.get(caster.getUUID());
+      if (cast == null || cast.cancelled || !"oda_hajun".equals(cast.action)) return;
+      cast.cancelled = true;
+      cast.cleanup.run();
+      refund(cast, 1.0);
+      cast.setCooldown.accept(0);
+      caster.getPersistentData().remove("TypeMoonNpCastAction");
+      caster.getPersistentData().remove("TypeMoonNpVoiceEnd");
+   }
+
+   private static void refund(Cast cast, double fraction) {
+      LivingEntity caster = cast.caster;
+      if (caster instanceof ServantEntity servant)
+         servant.setCurrentMp(Math.min(servant.getMaxMp(), servant.getCurrentMp() + cast.npcPaid * fraction));
+      for (Credit credit : cast.credits) {
+         ServerPlayer payer = caster instanceof ServerPlayer player && player.getUUID().equals(credit.player())
+            ? player : caster.getServer() == null ? null : caster.getServer().getPlayerList().getPlayer(credit.player());
+         if (payer == null) continue;
+         var vars = payer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (credit.card()) vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), vars.servantCardState().mana() + credit.amount() * fraction));
+         else vars.magicState().setMana(vars.magicState().mana() + credit.amount() * fraction);
+         vars.syncMana(payer);
       }
    }
 

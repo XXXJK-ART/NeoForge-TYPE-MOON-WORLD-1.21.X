@@ -58,8 +58,8 @@ def pose(name, t, end):
         right.update(pitch=-82*fade, yaw=yaw, roll=-9*fade)
         elevation = 6*math.sin(t*math.pi/6)*fade
         spin = 360*smooth((t-14)/4)
-    elif name in ('flurry', 'thrust'):
-        hits = [4, 8, 12] if name == 'flurry' else [3]
+    elif name in ('flurry', 'thrust', 'thorn'):
+        hits = [4, 8, 12] if name == 'flurry' else [6] if name == 'thorn' else [3]
         drive = max(max(0, 1-abs(t-hit)/2) for hit in hits)
         drive = smooth(drive)
         right.update(pitch=(-62-36*drive)*fade, yaw=-55*(1-drive)*fade, roll=-8*(1-drive)*fade)
@@ -67,21 +67,26 @@ def pose(name, t, end):
         yaw = 8*(1-drive)*fade
         if name == 'flurry':
             spin = 360*smooth((t-13)/5)
-        else:
+        elif name == 'thrust':
             torso['pitch'] += 16*fade
+        else:
+            # Clearly chamber the point, drive it once at server frame 6,
+            # then hold the extension before drawing the spear back.
+            drive = curve(t, [(0, 0), (3, 0), (6, 1), (9, .85), (14, 0), (end, 0)])
+            right.update(z=-3*drive, pitch=(-52-50*drive)*fade, yaw=-62*(1-drive)*fade, roll=-12*(1-drive)*fade)
+            left.update(pitch=(-32-22*drive)*fade, yaw=28*fade, roll=18*fade)
+            torso.update(pitch=(3+20*drive)*fade, yaw=(-28+42*drive)*fade)
+            yaw = 4*(1-drive)*fade
     elif name == 'raise':
-        right.update(pitch=-155*fade, yaw=-25*fade, roll=25*fade)
-        torso.update(pitch=-8*fade, yaw=-32*fade)
-        left.update(pitch=-62*fade, yaw=30*fade, roll=-15*fade)
-        yaw, elevation = 145*fade, 18*fade
+        right.update(pitch=-155*fade, yaw=-8*fade, roll=10*fade)
+        torso = part()
+        yaw, elevation = 150*fade, 15*fade
     elif name == 'throw':
         throw = smooth((t-3)/2)
         right.update(pitch=curve(t, [(0, -155), (3, -155), (5, -85), (8, -35), (end, 0)]),
-                     yaw=curve(t, [(0, -25), (3, -25), (5, 5), (8, 30), (end, 0)]), roll=20*(1-throw))
-        torso.update(pitch=curve(t, [(0, -8), (3, -8), (6, 22), (10, 12), (end, 0)]),
-                     yaw=curve(t, [(0, -32), (3, -32), (6, 36), (10, 18), (end, 0)]))
-        yaw, elevation = 145*(1-throw), 18*(1-throw)
-        left.update(pitch=-60*(1-throw)*fade, yaw=25*fade, roll=-12*fade)
+                     yaw=-8*(1-throw), roll=10*(1-throw))
+        torso = part()
+        yaw, elevation = 150*(1-throw), 15*(1-throw)
     else:
         left.update(pitch=-98*fade, yaw=20*fade, roll=-22*fade)
         right.update(pitch=-38*fade, yaw=-18*fade, roll=8*fade)
@@ -90,6 +95,8 @@ def pose(name, t, end):
     item = aim(right, yaw, elevation)
     item['pitch'] += spin
     tracks = dict(body=part(), torso=torso, rightArm=right, leftArm=left, rightItem=item, leftItem=part())
+    if name in ('raise', 'throw'):
+        tracks = dict(rightArm=right, rightItem=item)
     # Shoulder positions follow the torso while view direction and walking remain under vanilla control.
     rotation = matrix(**{k: torso[k] for k in ('pitch', 'yaw', 'roll')})
     for arm in (right, left):
@@ -102,10 +109,10 @@ def pose(name, t, end):
     return tracks
 
 
-for name, end in [('sweep', 20), ('flurry', 20), ('thrust', 12), ('raise', 20), ('throw', 16), ('rune', 22)]:
+for name, end in [('sweep', 20), ('flurry', 20), ('thrust', 12), ('raise', 20), ('throw', 16), ('rune', 22), ('thorn', 18)]:
     clip = {'name': 'cu_'+name, 'version': 3,
             'description': 'PlayerAnimator single-spear action; shared player/NPC tracks with palm-correct item aim.',
             'emote': {'beginTick': 0, 'endTick': end, 'stopTick': end, 'degrees': True,
                       'moves': [{'tick': tick, **pose(name, tick, end)} for tick in range(end+1)]}}
     (DEST / ('cu_'+name+'.json')).write_text(json.dumps(clip, indent=2)+'\n', encoding='utf-8')
-print('Generated six Cu Chulainn PlayerAnimator clips.')
+print('Generated seven Cu Chulainn PlayerAnimator clips.')

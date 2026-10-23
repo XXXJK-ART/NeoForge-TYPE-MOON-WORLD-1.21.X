@@ -1,0 +1,9 @@
+// Include Hajun in GameTest's flat preset without changing release resources.
+allprojects {
+    layout.buildDirectory = file('build/np-fixes-verification')
+    afterEvaluate { project ->
+        project.sourceSets.main.resources.srcDir 'tools/np-fixes-fixtures/resources'
+        project.runs.gameTestServer.workingDirectory project.file('build/np-fixes-gametest-run')
+        project.tasks.named('test').configure { inputs.dir project.file('src/main/resources') }
+    }
+}

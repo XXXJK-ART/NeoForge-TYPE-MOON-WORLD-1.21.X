@@ -23,6 +23,7 @@ public final class CuSpearLedger extends SavedData {
       public final InteractionHand hand;
       public State state;
       public String dimension;
+      private boolean returnFlourish;
       Entry(UUID owner,UUID ticket,UUID entity,ItemStack item,InteractionHand hand,State state,String dimension) {
          this.owner=owner; this.ticket=ticket; this.entity=entity; this.item=item; this.hand=hand; this.state=state; this.dimension=dimension;
       }
@@ -61,12 +62,15 @@ public final class CuSpearLedger extends SavedData {
    public static boolean outstanding(LivingEntity owner) { Entry e=entry(owner); return e!=null && e.state!=State.IN_HAND; }
    public static boolean recallable(LivingEntity owner) { Entry e=entry(owner); return e!=null && e.entity!=null && e.state!=State.RETURNING && e.state!=State.PENDING; }
    public static boolean launch(LivingEntity owner,boolean army,float damage,LivingEntity target) {
+      return launch(owner,army,damage,target,null);
+   }
+   public static boolean launch(LivingEntity owner,boolean army,float damage,LivingEntity target,net.minecraft.world.phys.Vec3 aim) {
       if(!(owner.level() instanceof ServerLevel level) || outstanding(owner)) return false;
       InteractionHand hand=CuChulainnAbilityService.spearHand(owner); if(hand==null) return false;
       var spear=ModEntities.CU_PERSISTENT_SPEAR.get().create(level); if(spear==null) return false;
       ItemStack item=owner.getItemInHand(hand).copyWithCount(1);
       Entry entry=new Entry(owner.getUUID(),UUID.randomUUID(),spear.getUUID(),item,hand,State.FLYING,level.dimension().location().toString());
-      spear.configure(owner,entry.ticket,item,army,damage,target);
+      spear.configure(owner,entry.ticket,item,army,damage,target,aim);
       var ledger=get(level); ledger.entries.put(owner.getUUID(),entry); ledger.setDirty();
       owner.getItemInHand(hand).shrink(1);
       if(!level.addFreshEntity(spear)) {
@@ -96,6 +100,7 @@ public final class CuSpearLedger extends SavedData {
       else {e.state=State.PENDING;e.entity=null;get((ServerLevel)owner.level()).setDirty();}
    }
    public static void deliver(CuSpearEntity spear,LivingEntity owner) {
+      Entry e=entry(owner);if(e!=null)e.returnFlourish=true;
       pending(spear); spear.discard(); deliverPending(owner);
    }
    public static void deliverPending(LivingEntity owner) {
@@ -113,7 +118,10 @@ public final class CuSpearLedger extends SavedData {
          int slot=p.getInventory().getFreeSlot();
          if(slot>=0) {p.getInventory().setItem(slot,copy);copy=ItemStack.EMPTY;}
       }
-      if(copy.isEmpty()) { get(level).entries.remove(e.owner); get(level).setDirty(); }
+      if(copy.isEmpty()) {
+         get(level).entries.remove(e.owner); get(level).setDirty();
+         if(e.returnFlourish)CuChulainnWeaponService.caught(owner);
+      }
    }
    public static void ownerLeft(LivingEntity owner) {
       Entry e=entry(owner); if(e!=null) {e.state=State.PENDING;e.entity=null;get((ServerLevel)owner.level()).setDirty();}

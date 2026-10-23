@@ -2169,6 +2169,9 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void performGaeBolg(ServantEntity entity, LivingEntity target, boolean meleeMode) {
+      if(entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity cu) {
+         cu.faceToward(target.position());net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.noble(cu,false,20);return;
+      }
       if (!(entity.level() instanceof ServerLevel sl)) return;
       ServantNoblePhantasmResourceService.CastDecision resource =
          ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 10.0);
@@ -2190,6 +2193,9 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void performGaeBolgArmy(ServantEntity entity, LivingEntity target) {
+      if(entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity cu) {
+         cu.faceToward(target.position());net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.noble(cu,true,40);return;
+      }
       if (!(entity.level() instanceof ServerLevel sl)) return;
       double maxMp = Math.max(1.0, entity.getMaxMp());
       ServantNoblePhantasmResourceService.CastDecision resource =

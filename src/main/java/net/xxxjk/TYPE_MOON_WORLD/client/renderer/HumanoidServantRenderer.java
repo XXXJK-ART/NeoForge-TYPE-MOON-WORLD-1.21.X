@@ -141,7 +141,7 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.riding = false;
          }
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-         applyCombatPose(entity);
+         if (entity.getCombatPose() != 2) applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
          if(entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity)net.xxxjk.TYPE_MOON_WORLD.client.CuChulainnVisualClient.pose(entity,this,ageInTicks-entity.tickCount);
          if (entity instanceof OdaNobunagaEntity oda) {
@@ -171,6 +171,8 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          if (entity.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity gun && gun.isChantLift()) {
             net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(this, gun.chantPoseProgress(ageInTicks - entity.tickCount));
          }
+         // Native spear/gun poses must not erase the synchronized guard feedback.
+         if (entity.getCombatPose() == 2) applyCombatPose(entity);
          if (entity instanceof OdaNobunagaEntity) {
             this.hat.copyFrom(this.head);
             this.jacket.copyFrom(this.body);

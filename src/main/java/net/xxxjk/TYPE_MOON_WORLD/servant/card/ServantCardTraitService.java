@@ -328,12 +328,17 @@ public final class ServantCardTraitService {
    }
 
    private static float debuffResistanceForRank(MagicResistanceRank rank) {
-      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
-         case A -> 0.25F;
-         case B -> 0.175F;
-         case C -> 0.10F;
-         default -> 0.0F;
-      };
+      // Keep card transformation independent of a compiler-generated enum switch class.
+      if (rank == MagicResistanceRank.A) {
+         return 0.25F;
+      }
+      if (rank == MagicResistanceRank.B) {
+         return 0.175F;
+      }
+      if (rank == MagicResistanceRank.C) {
+         return 0.10F;
+      }
+      return 0.0F;
    }
 
    private static float divinityFlatDamage(ServantDefinition definition) {

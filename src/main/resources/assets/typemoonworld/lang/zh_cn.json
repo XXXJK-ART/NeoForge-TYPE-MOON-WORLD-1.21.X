@@ -1,4 +1,5 @@
 {
+  "message.typemoonworld.servant_card.oda_hajun_entry_failed": "波旬展开失败：未能拉入目标，已退还魔力并取消结界。",
   "item.typemoonworld.arash_bow": "阿拉什之弓",
   "item.typemoonworld.arash_spawn_egg": "阿拉什（Archer）刷怪蛋",
   "item.typemoonworld.aroundight": "无毁的湖光",
@@ -3525,5 +3526,17 @@
   "skill.typemoonworld.servant_card.diarmuid_double_spear_stance": "双枪架势（开关）",
   "skill.typemoonworld.servant_card.diarmuid_red_dance": "红蔷薇·单手八字枪舞",
   "skill.typemoonworld.servant_card.diarmuid_yellow_dance": "黄蔷薇·单手八字枪舞",
-  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "落地·双枪横扫"
+  "skill.typemoonworld.servant_card.diarmuid_landing_sweep": "落地·双枪横扫",
+  "message.typemoonworld.cu.locked": "已锁定目标：%s",
+  "message.typemoonworld.cu.lock_status": "锁定目标：%s",
+  "message.typemoonworld.cu.lock_failed": "锁定失败",
+  "message.typemoonworld.cu.lock_lost": "锁定失效",
+  "message.typemoonworld.cu.no_target": "释放失败",
+  "message.typemoonworld.cu.leap_blocked": "死翔释放失败",
+  "message.typemoonworld.cu.np_cooldown": "宝具冷却中",
+  "message.typemoonworld.cu.no_mana": "宝具释放失败",
+  "message.typemoonworld.cu.thorn_success": "死棘释放成功",
+  "message.typemoonworld.cu.thorn_failed": "死棘释放失败",
+  "message.typemoonworld.cu.flight_success": "死翔释放成功",
+  "message.typemoonworld.cu.flight_failed": "死翔释放失败"
 }

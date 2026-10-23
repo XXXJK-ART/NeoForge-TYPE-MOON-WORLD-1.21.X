@@ -572,7 +572,7 @@ public final class ServantCardTransformManager {
          && (PlayerNoblePhantasmHelper.hasOneShotTsubame(player.getMainHandItem())
             || PlayerNoblePhantasmHelper.hasOneShotTsubame(player.getOffhandItem()));
       boolean noblePhantasmAction = isNoblePhantasmAction(vars.servantCardState().id(), slot) && !emiyaOneShotTsubame;
-      boolean externalUnlimited = ServantCardUnlimitedMode.isEnabled(player);
+      boolean externalUnlimited = ServantCardUnlimitedMode.isCooldownDisabled(player);
       int externalCooldownSlot = slot < 0 ? 6 : slot;
       int externalCooldown = externalUnlimited ? 0 : noblePhantasmAction
          ? vars.servantCardState().npCooldown() : getSkillCooldown(vars, externalCooldownSlot);
@@ -630,7 +630,7 @@ public final class ServantCardTransformManager {
       }
       boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servantCardState().id(), slot) && !emiyaOneShotTsubame;
       boolean np = noblePhantasmAction;
-      boolean unlimited = ServantCardUnlimitedMode.isEnabled(player);
+      boolean unlimited = ServantCardUnlimitedMode.isCooldownDisabled(player);
       if ((np || emiyaOneShotTsubame) && "emiya_archer".equals(vars.servantCardState().id())
          && PlayerNoblePhantasmHelper.hasOneShotProjectionNoblePhantasm(player)) {
          int oneShotCooldown = emiyaOneShotTsubame
@@ -1345,7 +1345,7 @@ public final class ServantCardTransformManager {
    }
 
    private static void setSkillCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int slot, int ticks) {
-      if (ServantCardUnlimitedMode.isEnabled(player)) {
+      if (ServantCardUnlimitedMode.isCooldownDisabled(player)) {
          return;
       }
       int[] cooldowns = parseSkillCooldowns(vars);
@@ -1379,7 +1379,7 @@ public final class ServantCardTransformManager {
    }
 
    public static void setNoblePhantasmCooldown(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int ticks) {
-      if (ServantCardUnlimitedMode.isEnabled(player)) {
+      if (ServantCardUnlimitedMode.isCooldownDisabled(player)) {
          vars.servantCardState().setNpCooldown(0);
          vars.servantCardState().setNpCooldownEnd(0L);
          return;

@@ -63,6 +63,20 @@ public final class HeraclesGameTests {
       close(h,p.getAttributeValue(Attributes.ATTACK_DAMAGE),72,"player basic attack");
       p.setHealth(222);CommonSkillService.reconcile(p);close(h,p.getHealth(),222,"player refresh healed");h.succeed();
    }
+   @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_unlimited_cooldown")
+   public static void globalNoCooldownBypassesHeraclesCustomTimerAndKeepsManaCost(GameTestHelper h) {
+      var player=h.makeMockServerPlayerInLevel();
+      h.assertTrue(ServantCardTransformManager.transform(player,"heracles"),"transform failed");
+      var vars=player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      vars.servantCardState().setMana(1000);
+      player.getPersistentData().putLong("HeraclesCooldown:1",player.level().getGameTime()+1000);
+      player.getPersistentData().putBoolean("TypeMoonNoCooldown",true);
+      double mana=vars.servantCardState().mana();
+      h.assertTrue(HeraclesAbilityService.start(player,1),"global no-cooldown did not bypass custom timer");
+      close(h,vars.servantCardState().mana(),mana-HeraclesAbilityService.spec(1).mana(),"no-cooldown removed mana cost");
+      h.assertTrue(!player.getPersistentData().contains("HeraclesCooldown:1"),"custom Heracles timer remained");
+      h.assertTrue(ServantCardTransformManager.getSkillCooldown(vars,1)==0,"card HUD retained Heracles timer");h.succeed();
+   }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_threshold")
    public static void thresholdIsBeforeArmorAndBeforeDodge(GameTestHelper h) {
       var e=owner(h);e.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES,2);
@@ -70,6 +84,8 @@ public final class HeraclesGameTests {
       close(h,e.getHealth(),health,"below-threshold damage");h.assertTrue(e.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES)==2,"immune hit consumed dodge");
       e.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES,0);e.hurt(e.damageSources().generic(),15);
       close(h,health-e.getHealth(),12,"15-point threshold");
+      // Isolate threshold/armor ordering from the shared random perfect-guard reaction.
+      e.getPersistentData().putDouble(ServantCombatDefenseService.TAG_STAMINA,0);
       e.invulnerableTime=0;e.getAttribute(Attributes.ARMOR).setBaseValue(30);e.getAttribute(Attributes.ARMOR_TOUGHNESS).setBaseValue(20);e.setHealth(40);var attacker=target(h,e.position().add(0,0,2));e.hurt(e.damageSources().mobAttack(attacker),100);
       h.assertTrue(e.getHealth()<40&&e.getPersistentData().getInt("GodHandLives")==11,"armor was applied before threshold or revival");h.succeed();
    }
@@ -242,6 +258,9 @@ public final class HeraclesGameTests {
       var e=owner(h);e.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES,2);var attacker=target(h,e.position().add(0,0,2));
       var source=e.damageSources().mobAttack(attacker);e.hurt(source,20);e.hurt(source,20);
       h.assertTrue(e.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES)==0,"did not use exactly two charges");
+      // Isolate the counted skill from ordinary paid NPC dodge/guard decisions.
+      e.getPersistentData().putDouble(ServantCombatDefenseService.TAG_STAMINA,0);
+      e.getPersistentData().putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN,Long.MAX_VALUE);
       float before=e.getHealth();e.hurt(source,20);h.assertTrue(e.getHealth()<before,"extra random dodge remained");
       long restore=e.getPersistentData().getLong(ServantCombatDefenseService.AUTO_RESTORE);
       close(h,restore-e.level().getGameTime(),400,"dodge group duration");

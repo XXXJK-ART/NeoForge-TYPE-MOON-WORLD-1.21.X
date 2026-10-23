@@ -7,6 +7,60 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.ManaRegenRules;
 import org.junit.jupiter.api.Test;
 
 class DefenseRulesTest {
+   @Test void npcGuardsCoverMartialSkillsAndLightRangedHits() {
+      assertTrue(DefenseRules.npcGuardCandidate(150, true, false, false, false));
+      assertTrue(DefenseRules.npcGuardCandidate(40, false, false, false, false));
+      assertFalse(DefenseRules.npcGuardCandidate(40.01F, false, false, false, false));
+      assertFalse(DefenseRules.npcGuardCandidate(20, true, true, false, false));
+      assertFalse(DefenseRules.npcGuardCandidate(20, true, false, true, false));
+      assertFalse(DefenseRules.npcGuardCandidate(20, false, false, false, true));
+      assertFalse(DefenseRules.npcGuardCandidate(0, true, false, false, false));
+      assertFalse(DefenseRules.npcGuardCandidate(Float.NaN, true, false, false, false));
+      assertFalse(DefenseRules.npcGuardCandidate(Float.POSITIVE_INFINITY, true, false, false, false));
+   }
+   @Test void ordinaryAttacksLeaveRoomToGuardDodgeOrKeepAttacking() {
+      var chances = DefenseRules.npcReactionChances(4, 4, 30, 500, 1, true, true);
+      assertEquals(0.14, chances.guard(), 1e-9);
+      assertEquals(0.26, chances.dodge(), 1e-9);
+      assertEquals(DefenseRules.NpcReaction.DODGE, chances.choose(0.10, 0.10));
+      assertEquals(DefenseRules.NpcReaction.GUARD, chances.choose(0.90, 0.10));
+      assertEquals(DefenseRules.NpcReaction.NONE, chances.choose(0.90, 0.90));
+   }
+   @Test void damageAndDangerShiftPreferenceTowardDodging() {
+      var light = DefenseRules.npcReactionChances(4, 4, 30, 500, 1, true, true);
+      for (var strong : new DefenseRules.NpcReactionChances[]{
+         DefenseRules.npcReactionChances(4, 4, 160, 500, 1, true, true),
+         DefenseRules.npcReactionChances(4, 4, 30, 100, 1, true, true),
+         DefenseRules.npcReactionChances(4, 4, 0, 500, 5, true, true)
+      }) {
+         assertTrue(strong.dodge() > strong.guard());
+         assertTrue(strong.dodge() > light.dodge());
+         assertTrue(strong.guard() < light.guard());
+         assertTrue(strong.guard() + strong.dodge() < 1.0);
+      }
+   }
+   @Test void unavailableDefensesDoNotForceTheOtherChoice() {
+      var both = DefenseRules.npcReactionChances(4, 4, 30, 500, 1, true, true);
+      var noDodge = DefenseRules.npcReactionChances(4, 4, 30, 500, 1, true, false);
+      var noGuard = DefenseRules.npcReactionChances(4, 4, 30, 500, 1, false, true);
+      assertEquals(both.guard(), noDodge.guard());
+      assertEquals(both.dodge(), noGuard.dodge());
+      assertEquals(0, noDodge.dodge());
+      assertEquals(0, noGuard.guard());
+      assertEquals(DefenseRules.NpcReaction.NONE,
+         DefenseRules.npcReactionChances(4, 4, 30, 500, 1, false, false).choose(0, 0));
+      assertEquals(DefenseRules.NpcReaction.GUARD, noDodge.choose(0, 0));
+      assertEquals(DefenseRules.NpcReaction.NONE, noDodge.choose(0, 0.90));
+   }
+   @Test void everyRankAndThreatKeepsAnOffensiveOpening() {
+      for (int defense = 0; defense <= 6; defense++)
+         for (int agility = 0; agility <= 6; agility++)
+            for (int danger = 0; danger <= 5; danger++) {
+               var chances = DefenseRules.npcReactionChances(defense, agility, 1000, 50, danger, true, true);
+               assertTrue(chances.guard() > 0 && chances.dodge() > 0);
+               assertTrue(chances.guard() + chances.dodge() <= 0.85);
+            }
+   }
    @Test void guardsUseFixedReductionAndOneResourceCost() {
       assertEquals(50, DefenseRules.guardedDamage(100, false, false));
       assertEquals(20, DefenseRules.guardedDamage(100, true, false));

@@ -28,6 +28,7 @@ import static net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource.Ability.*;
 @EventBusSubscriber(modid = "typemoonworld")
 public final class OdaAbilityService {
    public static final String MANIFEST_UNTIL = "OdaManifestUntil";
+   public static final String TAG_FLIGHT_DESTROYED_UNTIL = "OdaFlightDestroyedUntil";
    private static final ResourceLocation SPEED = ResourceLocation.fromNamespaceAndPath("typemoonworld", "oda_manifest");
    private static final ResourceLocation SLOW = ResourceLocation.fromNamespaceAndPath("typemoonworld", "oda_crossfire");
    private static final Map<UUID, State> STATES = new HashMap<>();
@@ -350,6 +351,23 @@ public final class OdaAbilityService {
       guns.sort(Comparator.comparingDouble((OdaMatchlockGunEntity gun) -> gun.distanceToSqr(owner)).thenComparingInt(Entity::getId));
       for (var gun : guns) { damage = gun.absorb(damage); if (damage <= 0) break; }
       return damage;
+   }
+   public static long flightCooldownRemaining(LivingEntity owner) {
+      if (owner instanceof ServerPlayer player
+         && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardUnlimitedMode.isCooldownDisabled(player)) return 0;
+      return Math.max(0, owner.getPersistentData().getLong(TAG_FLIGHT_DESTROYED_UNTIL) - owner.level().getGameTime());
+   }
+   public static void flightGunDestroyed(LivingEntity owner) {
+      if (owner == null || owner.level().isClientSide()) return;
+      owner.getPersistentData().putLong(TAG_FLIGHT_DESTROYED_UNTIL, owner.level().getGameTime() + OdaRules.FLIGHT_DESTROYED_COOLDOWN);
+      owner.setNoGravity(false);
+      if (owner instanceof ServerPlayer player) {
+         var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardFlightController.stop(player, vars, true);
+      } else {
+         owner.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.TAG_FLIGHT_UNTIL);
+         owner.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.servant.entity.OdaNobunagaCombatHelper.TAG_FOOT_SUPPORT_GUN);
+      }
    }
    private static void modifier(LivingEntity owner, ResourceLocation id, double value, boolean enable) {
       var attribute = owner.getAttribute(Attributes.MOVEMENT_SPEED);

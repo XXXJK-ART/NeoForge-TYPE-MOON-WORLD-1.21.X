@@ -104,7 +104,7 @@ public final class ServantCardOdaNobunagaSkills {
    private static final int HAJUN_CHANT_LINE_TICKS = 22;
    private static final int HAJUN_CHANT_LINES = 5;
    private static final int HAJUN_CARD_DURATION = 15 * 20;
-   private static final double HAJUN_CARD_RADIUS = 25.0;
+   private static final double HAJUN_CARD_RADIUS = OdaRules.HAJUN_PULL_RADIUS;
    private static final int HAJUN_TERRAIN_RADIUS = 52;
    private static final int HAJUN_CHANT_SURFACE_SPREAD_DELAY = 18;
    private static final int HAJUN_CHANT_SURFACE_RADIUS = 18;
@@ -133,6 +133,7 @@ public final class ServantCardOdaNobunagaSkills {
       OdaAbilityService.clear(player);
       CompoundTag data = player.getPersistentData();
       data.putLong("OdaRuntimeGeneration", data.getLong("OdaRuntimeGeneration") + 1);
+      data.remove("OdaHajunEntryPending");
       data.remove(PRIMARY_ATTACK_COOLDOWN);
       data.remove(SECONDARY_ATTACK_COOLDOWN);
       data.remove(CHARGED_ACTIVE);
@@ -377,6 +378,7 @@ public final class ServantCardOdaNobunagaSkills {
       if (data.getLong(HAJUN_FIELD_ACTIVE_UNTIL) > 0L) {
          return tryExitOdaHajunField(player);
       }
+      if (data.getBoolean("OdaHajunEntryPending")) return false;
       if (data.getBoolean(HAJUN_ACTIVE)) {
          int progress = data.getInt(HAJUN_PROGRESS);
          if (progress < 3) {
@@ -392,11 +394,12 @@ public final class ServantCardOdaNobunagaSkills {
          }
          finishOdaHajunChant(player, true);
          activateOdaHajunField(player, level);
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancelled(player)) return false;
          ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, action.cooldownTicks());
          vars.syncPlayerVariables(player);
          return true;
       }
-      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servantCardState().npCooldown() > 0) {
+      if (!ServantCardUnlimitedMode.isCooldownDisabled(player) && vars.servantCardState().npCooldown() > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servantCardState().npCooldown() / 20.0F)), true);
          return false;
       }
@@ -412,9 +415,15 @@ public final class ServantCardOdaNobunagaSkills {
    private static boolean payHajunMana(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, double amount) {
       var before = ServantCardManaService.snapshot(player, vars);
       if (!ServantCardManaService.consume(player, vars, amount)) return false;
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, true, before.servantMana() - vars.servantCardState().mana());
-      if (before.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, before.master(), false,
-         before.masterMana() - before.master().getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana());
+      double ownPaid = before.servantMana() - vars.servantCardState().mana();
+      double masterPaid = before.master() == null ? 0 : before.masterMana() - before.master().getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).magicState().mana();
+      if (amount == 95.0) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteHajunEntryPayment(player, player, true, ownPaid);
+         if (before.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteHajunEntryPayment(player, before.master(), false, masterPaid);
+      } else {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, player, true, ownPaid);
+         if (before.master() != null) net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.notePlayerPayment(player, before.master(), false, masterPaid);
+      }
       return true;
    }
 
@@ -423,7 +432,7 @@ public final class ServantCardOdaNobunagaSkills {
          return;
       }
       CompoundTag data = player.getPersistentData();
-      if (data.getBoolean(HAJUN_ACTIVE)) {
+      if (data.getBoolean(HAJUN_ACTIVE) || data.getBoolean("OdaHajunEntryPending")) {
          return;
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "oda_hajun", 3600,
@@ -464,6 +473,11 @@ public final class ServantCardOdaNobunagaSkills {
 
    public static boolean startMountFlight(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!vars.servant_card_transformed || !"oda_nobunaga".equals(vars.servant_card_id) || !(player.level() instanceof ServerLevel level)) {
+         return false;
+      }
+      long cooldown = OdaAbilityService.flightCooldownRemaining(player);
+      if (cooldown > 0) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.oda_flight_cooldown", (cooldown + 19) / 20), true);
          return false;
       }
       OdaMatchlockGunEntity mount = findMount(level, player);
@@ -533,6 +547,10 @@ public final class ServantCardOdaNobunagaSkills {
    private static void activateOdaHajunField(ServerPlayer player, ServerLevel source) {
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> activateOdaHajunField(player, source))) return;
       CompoundTag data = player.getPersistentData();
+      if (collectOdaHajunTargets(player, source).isEmpty()) {
+         failOdaHajunEntry(player, source);
+         return;
+      }
       if (ModDimensions.isHajunDimension(source.dimension().location())) {
          data.putString(HAJUN_FIELD_RETURN_DIM, source.dimension().location().toString());
          data.putDouble(HAJUN_FIELD_RETURN_X, player.getX());
@@ -557,7 +575,7 @@ public final class ServantCardOdaNobunagaSkills {
       data.putDouble(HAJUN_FIELD_RETURN_Y, player.getY());
       data.putDouble(HAJUN_FIELD_RETURN_Z, player.getZ());
       ServantCardFlightController.stop(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), true);
-      List<LivingEntity> targets = collectOdaHajunTargets(player, source);
+      data.putBoolean("OdaHajunEntryPending", true);
       Vec3 randomEntry = UBWInstanceManager.randomEntryPosition(player.getRandom());
       Vec3 entry = findHajunSafePosition(hajunLevel, randomEntry.x, randomEntry.z,
          player.getBbWidth(), player.getBbHeight());
@@ -573,7 +591,13 @@ public final class ServantCardOdaNobunagaSkills {
          if (!player.isAlive() || player.hasDisconnected() || player.level() != source
             || generation != data.getLong("OdaRuntimeGeneration")
             || !net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaCombatEvents.isOda(player)) return;
-         moveOdaHajunTargets(player, source, hajunLevel, targets, entry);
+         data.remove("OdaHajunEntryPending");
+         // Movement during the transition must not strand the caster alone.
+         List<LivingEntity> targets = collectOdaHajunTargets(player, source);
+         if (moveOdaHajunTargets(player, source, hajunLevel, targets, entry) == 0) {
+            failOdaHajunEntry(player, source);
+            return;
+         }
          Entity moved = player.changeDimension(new DimensionTransition(hajunLevel, entry, Vec3.ZERO, player.getYRot(), player.getXRot(), DimensionTransition.DO_NOTHING));
          if (moved instanceof ServerPlayer movedPlayer) {
             CompoundTag movedData = movedPlayer.getPersistentData();
@@ -589,15 +613,27 @@ public final class ServantCardOdaNobunagaSkills {
             movedPlayer.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, false));
          } else {
             // A failed server-side transition must not leave the caster's field state armed.
-            returnOdaHajunTargets(player.getUUID(), hajunLevel, source);
-            data.remove(HAJUN_FIELD_ACTIVE_UNTIL);
-            data.remove(HAJUN_FIELD_RETURN_DIM);
-            data.remove(HAJUN_FIELD_RETURN_X);
-            data.remove(HAJUN_FIELD_RETURN_Y);
-            data.remove(HAJUN_FIELD_RETURN_Z);
-            data.remove("OdaCardFieldDimension");
+            // Let the source world's entity tick finish removing the originals
+            // before their UUIDs are registered there again.
+            TYPE_MOON_WORLD.queueServerWork(1, () -> returnOdaHajunTargets(player.getUUID(), hajunLevel, source));
+            failOdaHajunEntry(player, source);
          }
       });
+   }
+
+   private static void failOdaHajunEntry(ServerPlayer player, ServerLevel source) {
+      finishOdaHajunChant(player, false);
+      restoreOdaHajunChantTerrain(player, source, Integer.MAX_VALUE);
+      CompoundTag data = player.getPersistentData();
+      data.remove("OdaHajunEntryPending");
+      data.remove(HAJUN_FIELD_ACTIVE_UNTIL);
+      data.remove(HAJUN_FIELD_RETURN_DIM);
+      data.remove(HAJUN_FIELD_RETURN_X);
+      data.remove(HAJUN_FIELD_RETURN_Y);
+      data.remove(HAJUN_FIELD_RETURN_Z);
+      data.remove("OdaCardFieldDimension");
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.failHajunEntry(player);
+      player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.oda_hajun_entry_failed"), true);
    }
 
    private static void startOdaHajunLocalField(ServerPlayer player, ServerLevel level) {
@@ -644,6 +680,7 @@ public final class ServantCardOdaNobunagaSkills {
          }
          finishOdaHajunChant(player, false);
          activateOdaHajunField(player, level);
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancelled(player)) return;
          ServantCardTransformManager.setNoblePhantasmCooldown(player, vars, 3600);
          vars.syncPlayerVariables(player);
       }
@@ -716,7 +753,8 @@ public final class ServantCardOdaNobunagaSkills {
          && living.distanceToSqr(player) <= HAJUN_CARD_RADIUS * HAJUN_CARD_RADIUS;
    }
 
-   private static void moveOdaHajunTargets(ServerPlayer player, ServerLevel source, ServerLevel hajunLevel, List<LivingEntity> targets, Vec3 entry) {
+   private static int moveOdaHajunTargets(ServerPlayer player, ServerLevel source, ServerLevel hajunLevel, List<LivingEntity> targets, Vec3 entry) {
+      int movedCount = 0;
       for (LivingEntity living : targets) {
          if (!isOdaHajunTarget(player, source, living)) {
             continue;
@@ -734,6 +772,7 @@ public final class ServantCardOdaNobunagaSkills {
          Vec3 targetPosition = findHajunSafePosition(hajunLevel, targetX, targetZ, living.getBbWidth(), living.getBbHeight());
          Entity moved = living.changeDimension(new DimensionTransition(hajunLevel, targetPosition, Vec3.ZERO, living.getYRot(), living.getXRot(), DimensionTransition.DO_NOTHING));
          if (moved instanceof LivingEntity movedLiving) {
+            movedCount++;
             CompoundTag movedData = movedLiving.getPersistentData();
             movedData.putUUID(HAJUN_FIELD_OWNER, player.getUUID());
             movedData.putString(HAJUN_FIELD_TARGET_RETURN_DIM, source.dimension().location().toString());
@@ -742,8 +781,11 @@ public final class ServantCardOdaNobunagaSkills {
             movedData.putDouble(HAJUN_FIELD_TARGET_RETURN_Z, data.getDouble(HAJUN_FIELD_TARGET_RETURN_Z));
             movedLiving.fallDistance = 0.0F;
             movedLiving.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 4, false, false, false));
+         } else {
+            clearOdaHajunTarget(living);
          }
       }
+      return movedCount;
    }
 
    private static void applyOdaHajunPulse(ServerPlayer player, ServerLevel level, boolean initial) {
@@ -1046,11 +1088,11 @@ public final class ServantCardOdaNobunagaSkills {
    }
 
    private static boolean isOnCooldown(ServerPlayer player, String tag) {
-      return !ServantCardUnlimitedMode.isEnabled(player) && player.getPersistentData().getLong(tag) > player.level().getGameTime();
+      return !ServantCardUnlimitedMode.isCooldownDisabled(player) && player.getPersistentData().getLong(tag) > player.level().getGameTime();
    }
 
    private static void setCooldown(ServerPlayer player, String tag, int ticks) {
-      if (ServantCardUnlimitedMode.isEnabled(player)) return;
+      if (ServantCardUnlimitedMode.isCooldownDisabled(player)) return;
       player.getPersistentData().putLong(tag, player.level().getGameTime() + Math.max(1, ticks));
    }
 

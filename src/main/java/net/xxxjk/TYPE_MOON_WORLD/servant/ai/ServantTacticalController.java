@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
 public final class ServantTacticalController {
    private static final ResourceLocation EVADE_PROJECTILE = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/evade_projectile");
    private static final ResourceLocation EVADE_ACTION = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/evade_action");
+   private static final ResourceLocation GUARD_INCOMING = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/guard_incoming");
    private static final ResourceLocation MASTER_FOLLOW = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/master_follow");
    private static final ResourceLocation MASTER_GUARD = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/master_guard");
    private static final ResourceLocation MASTER_STAY = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "ai/master_stay");
@@ -120,7 +121,16 @@ public final class ServantTacticalController {
          ServantCombatTempoService.submitFallback(entity, entity.getTarget(), brain, now, tempo);
       }
 
-      if (entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
+      if (ServantCombatDefenseService.isGuarding(entity)) {
+         brain.submit(AiIntent.of(GUARD_INCOMING, AiIntent.PRIORITY_LETHAL_DEFENSE, 100.0, 0, true,
+            () -> {
+               entity.getNavigation().stop();
+               entity.setCombatPose(2, 6);
+            }, AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
+      }
+
+      if (!ServantCombatDefenseService.isGuarding(entity)
+         && entity.tickCount % 3 == Math.floorMod(entity.getId(), 3)) {
          ProjectileThreatSensor.IncomingProjectile projectile = ProjectileThreatSensor.nearest(entity, 12.0, 8.0);
          ProjectileThreatSensor.IncomingProjectileLike gateProjectile =
             ProjectileThreatSensor.nearestGateWeapon(entity, 12.0, 8.0);
@@ -130,17 +140,11 @@ public final class ServantTacticalController {
             if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
                brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
             }
-            if (!ServantCombatDisposition.isRelentlessAdvance(entity)
-               && (!(entity instanceof HeraclesEntity) && !(entity instanceof GawainEntity)
-                  || entity.getRandom().nextFloat() < 0.04F)
-               && !CombatMatchupEvaluator.canIgnoreProjectile(entity, gateProjectile)) {
+            if (!CombatMatchupEvaluator.canIgnoreProjectile(entity, gateProjectile)) {
                double utility = 100.0 - gateProjectile.impactTicks() * 8.0;
-               brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> {
-                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
-                     EvasionMovementService.tryAdvanceEvade(entity, gateProjectile.projectile().position(),
-                        owner instanceof LivingEntity shooter ? shooter : null);
-                  },
+               brain.submit(AiIntent.attempt(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 0, true,
+                  () -> ServantCombatDefenseService.reactToProjectile(entity, gateProjectile.projectile(),
+                     ServantCombatDefenseService.estimatedProjectileDamage(gateProjectile.projectile()), gateProjectile.bypasses()),
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          } else if (projectile != null) {
@@ -148,17 +152,11 @@ public final class ServantTacticalController {
             if (owner instanceof LivingEntity shooter && !entity.isAlliedTo(shooter)) {
                brain.blackboard().revealFact(shooter.getUUID(), FactType.PROJECTILE_PRESSURE, 0.8, now);
             }
-            if (!ServantCombatDisposition.isRelentlessAdvance(entity)
-               && (!(entity instanceof HeraclesEntity) && !(entity instanceof GawainEntity)
-                  || entity.getRandom().nextFloat() < 0.04F)
-               && !CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
+            if (!CombatMatchupEvaluator.canIgnoreProjectile(entity, projectile)) {
                double utility = 100.0 - projectile.impactTicks() * 8.0;
-               brain.submit(AiIntent.of(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 4, false,
-                  () -> {
-                     ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
-                     EvasionMovementService.tryAdvanceEvade(entity, projectile.projectile().position(),
-                        owner instanceof LivingEntity shooter ? shooter : null);
-                  },
+               brain.submit(AiIntent.attempt(EVADE_PROJECTILE, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 0, true,
+                  () -> ServantCombatDefenseService.reactToProjectile(entity, projectile.projectile(),
+                     ServantCombatDefenseService.estimatedProjectileDamage(projectile.projectile()), projectile.bypasses()),
                   AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
             }
          }
@@ -166,32 +164,16 @@ public final class ServantTacticalController {
 
       CombatThreatService.forEachNearby(level, entity.position(), 64.0, now, threat -> {
          if (!hostile(entity, level, threat.sourceUuid())) return;
+         if (ServantCombatDefenseService.isGuarding(entity)) return;
          boolean explicitlyTargeted = entity.getUUID().equals(threat.targetUuid());
          if (!explicitlyTargeted && !threat.threatens(entity.getEyePosition(), entity.getBbWidth() * 0.65)) return;
-         if (threat.ticksToImpact(now) > 20L || !threat.dodgeable()) return;
-         if (ServantCombatDisposition.isRelentlessAdvance(entity)) return;
+         if (!threat.activeAt(now) || threat.ticksToImpact(now) > 10L) return;
          brain.blackboard().observe(threat.sourceUuid(), threat.actionId(),
             entity.position().distanceTo(threat.origin()), 0.0, true, now);
          double utility = threat.danger() * 20.0 + Math.max(0.0, 20.0 - threat.ticksToImpact(now));
-         Entity source = level.getEntity(threat.sourceUuid());
-         boolean rangedPressure = threat.shape() == CombatThreat.Shape.LINE && threat.length() > 6.0
-            || threat.shape() == CombatThreat.Shape.CONE && threat.length() > 6.0;
-         brain.submit(AiIntent.of(EVADE_ACTION, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 5, false,
-            () -> {
-               int agility = ServantCombatFormulas.agilityStep(entity.getDefinition() == null ? null : entity.getDefinition().parameters());
-               boolean dodge = rangedPressure || agility >= 3 || threat.ticksToImpact(now) <= 6L;
-               if (dodge) {
-                  ServantCombatDefenseService.requestDodge(entity, 0.0F, 1.0F);
-                  if (rangedPressure) {
-                     EvasionMovementService.tryAdvanceEvade(entity, threat.origin(),
-                        source instanceof LivingEntity shooter ? shooter : null);
-                  } else {
-                     EvasionMovementService.tryEvade(entity, threat.origin());
-                  }
-               } else {
-                  ServantCombatDefenseService.setGuarding(entity, true);
-               }
-            },
+         brain.submit(AiIntent.attempt(EVADE_ACTION, AiIntent.PRIORITY_LETHAL_DEFENSE, utility, 0, true,
+            () -> ServantCombatDefenseService.reactToThreat(entity, threat)
+               != net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.NpcReaction.NONE,
             AiControl.DEFEND, AiControl.MOVE, AiControl.LOOK));
       });
 

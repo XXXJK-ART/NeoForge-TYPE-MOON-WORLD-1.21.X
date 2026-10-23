@@ -76,6 +76,7 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       if (level.isClientSide()) {
+         player.startUsingItem(hand);
          return InteractionResultHolder.consume(stack);
       }
       if (!(player instanceof ServerPlayer serverPlayer)) {
@@ -95,7 +96,7 @@ public class GaeBulgItem extends SwordItem implements GeoItem, NoblePhantasmItem
 
    @Override
    public UseAnim getUseAnimation(ItemStack stack) {
-      return UseAnim.SPEAR;
+      return UseAnim.NONE;
    }
 
    @Override

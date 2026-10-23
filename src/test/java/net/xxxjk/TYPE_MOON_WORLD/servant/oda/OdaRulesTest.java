@@ -6,6 +6,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.*;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType;
 
 class OdaRulesTest {
+   @Test void matchlockHealthAndFlightCooldownAreExact() {
+      assertEquals(10.0F, OdaRules.COMBAT_GUN_HEALTH);
+      assertEquals(50.0F, OdaRules.FLIGHT_GUN_HEALTH);
+      assertEquals(60 * 20, OdaRules.FLIGHT_DESTROYED_COOLDOWN);
+   }
    @Test void minusRankParsesCalculatesAndDisplays() {
       assertEquals(StatRank.A_MINUS, StatRank.fromKey("A-"));
       assertEquals(25, StatRank.fromKey("A-").coefficient());

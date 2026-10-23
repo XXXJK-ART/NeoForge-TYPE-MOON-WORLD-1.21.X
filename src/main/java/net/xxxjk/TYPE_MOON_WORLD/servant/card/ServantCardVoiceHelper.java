@@ -14,6 +14,9 @@ public final class ServantCardVoiceHelper {
    }
 
    public static void tryPlayAttack(ServerPlayer player) {
+      if(net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.isOwner(player)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.attack(player);return;
+      }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servant_card_transformed || player.getRandom().nextFloat() > 0.42F) {
          return;

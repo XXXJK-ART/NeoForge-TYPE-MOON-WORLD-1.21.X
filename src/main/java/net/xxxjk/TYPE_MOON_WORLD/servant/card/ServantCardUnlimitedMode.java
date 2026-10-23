@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
@@ -11,7 +12,8 @@ public final class ServantCardUnlimitedMode {
       "ServantCardGilgameshSingleVaultCooldown",
       "ServantCardGilgameshMeleeCooldown",
       "ServantCardOdaPrimaryAttackCooldown",
-      "ServantCardOdaSecondaryAttackCooldown"
+      "ServantCardOdaSecondaryAttackCooldown",
+      "OdaThrustCooldown"
    };
 
    private ServantCardUnlimitedMode() {
@@ -25,6 +27,17 @@ public final class ServantCardUnlimitedMode {
       return vars.servant_card_transformed && player.getPersistentData().getBoolean(TAG_ENABLED);
    }
 
+   public static boolean isCooldownDisabled(ServerPlayer player) {
+      if (player == null) return false;
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed
+         && (player.getPersistentData().getBoolean("TypeMoonNoCooldown") || player.getPersistentData().getBoolean(TAG_ENABLED));
+   }
+
+   public static boolean isCooldownDisabled(LivingEntity entity) {
+      return entity instanceof ServerPlayer player && isCooldownDisabled(player);
+   }
+
    public static void setEnabled(ServerPlayer player, boolean enabled) {
       player.getPersistentData().putBoolean(TAG_ENABLED, enabled);
       if (enabled) {
@@ -33,6 +46,11 @@ public final class ServantCardUnlimitedMode {
    }
 
    public static void clearCooldowns(ServerPlayer player) {
+      clearServantCardCooldowns(player);
+      clearItemCooldowns(player);
+   }
+
+   public static void clearServantCardCooldowns(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       var card = vars.servantCardState();
       card.setSkillCooldowns("");
@@ -48,7 +66,9 @@ public final class ServantCardUnlimitedMode {
          player.getPersistentData().remove(tag);
       }
       GilgameshDivineShield.clearCooldown(player);
-      clearItemCooldowns(player);
+      net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.clearCooldowns(player);
+      net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.clearCooldowns(player);
+      net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.clearCooldowns(player);
    }
 
    /** Clears cooldowns attached to held or inventory items, including projected Noble Phantasms. */

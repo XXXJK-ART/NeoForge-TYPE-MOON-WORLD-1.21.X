@@ -234,6 +234,7 @@ public final class ServantExchangeGameTests {
          ServantCombatDefenseService.tick(defender);
          h.assertTrue(!ServantCombatDefenseService.isGuarding(defender), "unrelated threat activated guard");
          net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService.publishWindup(source, defender, action, 4, false, 1);
+         defender.getRandom().setSeed(4096L);
          ServantCombatDefenseService.tick(defender);
          h.assertTrue(ServantCombatDefenseService.isGuarding(defender), "targeted threat did not activate guard");
          h.runAfterDelay(14, () -> {

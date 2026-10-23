@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -56,6 +57,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> SPLIT_INDEX = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
+   // Small fading motes replace the vanilla explosion sprite's expanding animation.
+   private static final DustColorTransitionOptions DEATH_FLIGHT_BURST = new DustColorTransitionOptions(
+      new Vector3f(1.0F, 0.12F, 0.2F), new Vector3f(0.35F, 0.0F, 0.035F), 1.4F);
    private static final int SINGLE_HOMING_TICKS = 60;
    private static final int DEATH_FLIGHT_MAX_LIFETIME_TICKS = 100;
    private static final double ARMY_EXPLOSION_DISTANCE_SQR = 4.0D;
@@ -315,7 +319,8 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private void resolveSplitBurst(ServerLevel level) {
       Vec3 burstCenter = this.position();
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
-      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource source = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(
+         this.damageSources().explosion(this, owner), "cu_gae_bolg_flight");
       float damage = this.getArmyDamage();
       Set<Integer> damaged = new HashSet<>();
       AABB damageBox = new AABB(burstCenter, burstCenter).inflate(SPLIT_BURST_RADIUS);
@@ -346,12 +351,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
       this.spawnArmyExplosionShellEffects(level, burstCenter, SPLIT_BURST_RADIUS);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(DEATH_FLIGHT_BURST, burstCenter.x, burstCenter.y, burstCenter.z, 12, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
       level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 96, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, 0.16);
       level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 72, SPLIT_BURST_RADIUS * 0.42, SPLIT_BURST_RADIUS * 0.24, SPLIT_BURST_RADIUS * 0.42, 0.05);
       level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
-      this.breakLowHardnessTerrain(level, burstCenter, SPLIT_BURST_RADIUS, 0.0);
       this.breakSphereTerrain(level, burstCenter, SPLIT_BURST_RADIUS);
       this.discard();
    }
@@ -559,7 +563,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (this.level() instanceof ServerLevel sl) {
          VFXServerEffects.spawn(sl, "gae_bolg_army_impact", center, 128.0);
          this.spawnArmyExplosionShellEffects(sl, center, radius);
-         sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 0.3, 0.3, 0.3, 0.0);
+         sl.sendParticles(DEATH_FLIGHT_BURST, center.x, center.y, center.z, 20, 0.3, 0.3, 0.3, 0.0);
          sl.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
          sl.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z, 40, 1.2, 0.4, 1.2, 0.04);
          sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.4, center.z, 24, 0.9, 0.6, 0.9, 0.03);
@@ -612,7 +616,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          double x = currentRadius * Math.sin(phi) * Math.cos(theta);
          double y = currentRadius * Math.cos(phi);
          double z = currentRadius * Math.sin(phi) * Math.sin(theta);
-         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(DEATH_FLIGHT_BURST, center.x + x, center.y + y, center.z + z, 3, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.CRIT, center.x + x, center.y + y, center.z + z, 3, 0.2, 0.2, 0.2, 0.03);
          if (i % 2 == 0) {
@@ -631,7 +635,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          double angle = (Math.PI * 2.0) * i / ringCount;
          double px = center.x + Math.cos(angle) * currentRadius;
          double pz = center.z + Math.sin(angle) * currentRadius;
-         level.sendParticles(ParticleTypes.EXPLOSION, px, center.y + 0.35, pz, 1, 0.15, 0.15, 0.15, 0.0);
+         level.sendParticles(DEATH_FLIGHT_BURST, px, center.y + 0.35, pz, 2, 0.15, 0.15, 0.15, 0.0);
          level.sendParticles(ParticleTypes.CLOUD, px, center.y + 0.15, pz, 2, 0.1, 0.1, 0.1, 0.01);
       }
 
@@ -704,15 +708,18 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
       }, (serverLevel, pos, removed) -> {
          if ((removed & 127) == 0) {
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
+            serverLevel.sendParticles(DEATH_FLIGHT_BURST, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
          }
       });
    }
 
    private void breakSphereTerrain(ServerLevel level, Vec3 center, double radius) {
-      DeferredTerrainDestruction.ExpandingSphere terrain = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.ceil(radius), null);
-      terrain.advanceTo(radius);
-      terrain.seal();
+      // One radial job: a parallel low-hardness sweep would clear the rim ahead of the blast.
+      DeferredTerrainDestruction.queueRadialSphere(level, center, (int)Math.ceil(radius), (serverLevel, pos, removed) -> {
+         if ((removed & 127) == 0) {
+            serverLevel.sendParticles(DEATH_FLIGHT_BURST, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
+         }
+      });
    }
 
    private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {

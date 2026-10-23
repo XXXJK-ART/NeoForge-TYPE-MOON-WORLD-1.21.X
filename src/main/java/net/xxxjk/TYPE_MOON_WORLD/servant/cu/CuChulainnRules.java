@@ -6,9 +6,25 @@ public final class CuChulainnRules {
    public static final int LOCK_TICKS = 600;
    public static final double LOCK_RANGE = 4, THORN_RANGE = 5, THROW_RANGE = 48;
    public static final float BARRIER_SIZE = 2.2F, BARRIER_HALF_WIDTH = BARRIER_SIZE/2, BARRIER_HEIGHT = BARRIER_SIZE;
+   // NPC presentation IDs; these do not add skills, damage packets or resource discounts.
+   public static final int NPC_SWEEP=20, NPC_FLURRY=21, NPC_DANCE=22, NPC_THRUST=23, NPC_SLASH=24;
+   public static final int THORN_STRIKE=13, RECALL_CATCH=15, THORN_HIT_TICK=6, THORN_DURATION=18;
+   public static final int CHANT_VOICE=101, STOP_CHANT_VOICE=102;
    public record Skill(int slot, String id, double mana, int cooldown, int duration, boolean spear) { }
    public enum Input { LOCK, THORN, THROW, FLIGHT }
    private CuChulainnRules() { }
+   public static String animation(int action) {
+      return switch(action) {
+         case -1 -> "cu_thrust";case 8 -> "cu_sweep";case 9 -> "cu_flurry";case 10 -> "cu_raise";case 11 -> "cu_throw";
+         case THORN_STRIKE -> "cu_thorn";case RECALL_CATCH -> "cu_npc_dance";
+         case NPC_SWEEP -> "cu_npc_sweep";case NPC_FLURRY -> "cu_npc_flurry";case NPC_DANCE -> "cu_npc_dance";
+         case NPC_THRUST -> "cu_npc_thrust";case NPC_SLASH -> "cu_npc_slash";default -> "cu_rune";
+      };
+   }
+   public static boolean spearTrail(int action) {
+      return action==-1 || action==8 || action==9 || action==10 || action==11 || action==THORN_STRIKE || action==RECALL_CATCH
+         || action==NPC_SWEEP || action==NPC_FLURRY || action==NPC_DANCE || action==NPC_THRUST || action==NPC_SLASH;
+   }
    public static Skill skill(int slot) {
       return switch (slot) {
          case -1 -> new Skill(slot,"cu_crouch_thrust",0,18,12,true);

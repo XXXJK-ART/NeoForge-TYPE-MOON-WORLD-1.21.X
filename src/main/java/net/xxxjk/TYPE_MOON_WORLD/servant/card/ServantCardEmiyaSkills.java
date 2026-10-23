@@ -204,7 +204,7 @@ public final class ServantCardEmiyaSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.ubw_need_third_line"), true);
          return false;
       }
-      if (!ServantCardUnlimitedMode.isEnabled(player) && vars.servantCardState().npCooldown() > 0) {
+      if (!ServantCardUnlimitedMode.isCooldownDisabled(player) && vars.servantCardState().npCooldown() > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", vars.servantCardState().npCooldown() / 20.0F)), true);
          return false;
       }

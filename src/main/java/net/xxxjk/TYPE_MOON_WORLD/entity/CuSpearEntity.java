@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.*;
 import net.minecraft.world.phys.*;
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.NeoForge;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
@@ -29,8 +30,10 @@ public final class CuSpearEntity extends Entity {
    private UUID owner,ticket,target;
    private boolean army,attacked,falling;
    private float damage;
-   private double travelled,returnTravel;
+   private double travelled,maxFlightDistance=CuChulainnRules.THROW_RANGE;
    private Vec3 waypoint;
+   private Vec3 returnOrigin,returnAxis,returnSide;
+   private int returnLeg;
    private final Set<UUID> hit=new HashSet<>();
    public final List<Vec3> trail=new ArrayList<>();
    public CuSpearEntity(EntityType<? extends CuSpearEntity> type,Level level) {super(type,level);}
@@ -38,19 +41,44 @@ public final class CuSpearEntity extends Entity {
    public UUID ownerId(){return owner;}
    public UUID ticket(){return ticket;}
    public int state(){return entityData.get(STATE);}
+   /** Let the outbound attack reach its target before the NPC requests the paid recall skill. */
+   public boolean readyForNpcRecall(){return state()==1 || state()==0 && (attacked || tickCount>=30);}
    public ItemStack appearance(){return entityData.get(APPEARANCE);}
    public void configure(LivingEntity owner,UUID ticket,ItemStack item,boolean army,float damage,LivingEntity target) {
+      configure(owner,ticket,item,army,damage,target,null);
+   }
+   public void configure(LivingEntity owner,UUID ticket,ItemStack item,boolean army,float damage,LivingEntity target,Vec3 fallbackAim) {
       this.owner=owner.getUUID();this.ticket=ticket;this.army=army;this.damage=damage;this.target=target==null?null:target.getUUID();
+      if(!army && owner.level() instanceof ServerLevel level)maxFlightDistance=maxFlightDistance(level,owner);
       entityData.set(APPEARANCE,item.copy());
-      setPos(owner.getEyePosition()); Vec3 aim=target==null?owner.getEyePosition().add(owner.getLookAngle().scale(48)):target.getBoundingBox().getCenter();
+      setPos(owner.getEyePosition()); Vec3 aim=target!=null?target.getBoundingBox().getCenter():fallbackAim!=null?fallbackAim:owner.getEyePosition().add(owner.getLookAngle().scale(48));
       setDeltaMovement(aim.subtract(position()).normalize().scale(army?2.65:2.4));
+   }
+   private static double maxFlightDistance(ServerLevel level,LivingEntity owner) {
+      int viewChunks=level.getServer().getPlayerList().getViewDistance();
+      if(owner instanceof ServerPlayer player && player.clientInformation().viewDistance()>0)
+         viewChunks=Math.min(viewChunks,player.clientInformation().viewDistance());
+      return Math.max(1,viewChunks)*16.0;
    }
    public void beginReturn() {
       if(state()==2 || !CuSpearLedger.valid(this)) return;
-      entityData.set(STATE,2); waypoint=null;hit.clear();returnTravel=0; CuSpearLedger.state(this,CuSpearLedger.State.RETURNING);
+      entityData.set(STATE,2); waypoint=null;hit.clear();returnLeg=0;returnOrigin=position();
+      returnAxis=null;CuSpearLedger.state(this,CuSpearLedger.State.RETURNING);
    }
-   private void embed(){entityData.set(STATE,1);setDeltaMovement(Vec3.ZERO);setXRot(-75);CuSpearLedger.state(this,CuSpearLedger.State.EMBEDDED);}
+   private void embed(Vec3 direction) {
+      setYRot((float)Math.toDegrees(Math.atan2(direction.x,direction.z)));
+      setXRot((float)Math.toDegrees(Math.atan2(direction.y,direction.horizontalDistance())));
+      entityData.set(STATE,1);setDeltaMovement(Vec3.ZERO);refreshDimensions();updateEmbeddedBounds();
+      CuSpearLedger.state(this,CuSpearLedger.State.EMBEDDED);
+   }
+   private void updateEmbeddedBounds() {
+      Vec3 direction=Vec3.directionFromRotation(-getXRot(),-getYRot());
+      setBoundingBox(new AABB(position(),position().subtract(direction.scale(2.2))).inflate(.4));
+   }
    @Override public boolean isPickable(){return true;}
+   @Override public EntityDimensions getDimensions(Pose pose){return state()==1?EntityDimensions.fixed(.8F,2.2F):super.getDimensions(pose);}
+   @Override public void onSyncedDataUpdated(EntityDataAccessor<?> data){super.onSyncedDataUpdated(data);if(STATE.equals(data))refreshDimensions();}
+   @Override public InteractionResult interactAt(Player player,Vec3 at,InteractionHand hand){return interact(player,hand);}
    @Override public InteractionResult interact(Player player,InteractionHand hand) {
       if(level().isClientSide()) return InteractionResult.SUCCESS;
       if(!CuSpearLedger.valid(this)) {discard();return InteractionResult.CONSUME;}
@@ -60,6 +88,7 @@ public final class CuSpearEntity extends Entity {
    }
    @Override public void tick() {
       super.tick();
+      if(state()==1)updateEmbeddedBounds();
       if(level().isClientSide()) {
          trail.add(position());while(trail.size()>28) trail.removeFirst();return;
       }
@@ -74,10 +103,16 @@ public final class CuSpearEntity extends Entity {
          if(remaining<1.2){CuSpearLedger.deliver(this,wielder);return;}
          if(remaining<=3) waypoint=goal;
          else if(waypoint==null || from.distanceTo(waypoint)<.3) {
-            Vec3 axis=goal.subtract(from).normalize(),side=new Vec3(-axis.z,0,axis.x).normalize();
-            waypoint=from.add(axis.scale(Math.min(6,remaining-2))).add(side.scale(((int)(returnTravel/6)%2==0?1:-1)*1.5));
+            // Anchor the zigzag to one axis so each leg crosses the full width.
+            if(returnAxis==null){returnOrigin=from;returnAxis=goal.subtract(from).normalize();returnSide=new Vec3(-returnAxis.z,0,returnAxis.x).normalize();}
+            double length=returnOrigin.distanceTo(goal),advance=Math.min((returnLeg+1)*8,length-3);
+            if(returnLeg*8>=length-3)waypoint=goal;
+            else {
+               double width=Math.min(6,length*.3);
+               waypoint=returnOrigin.add(returnAxis.scale(advance)).add(returnSide.scale((returnLeg++%2==0?1:-1)*width));
+            }
          }
-         Vec3 move=waypoint.subtract(from);next=from.add(move.normalize().scale(Math.min(2.4,move.length())));returnTravel+=from.distanceTo(next);
+         Vec3 move=waypoint.subtract(from);next=from.add(move.normalize().scale(Math.min(2.4,move.length())));
          scan(wielder,from,next,true);breakPath(level,wielder,from,next);redTrail(level,from,next);
       } else {
          if(army && !attacked && target!=null && level.getEntity(target) instanceof LivingEntity living && CuChulainnAbilityService.enemy(wielder,living)) {
@@ -85,18 +120,32 @@ public final class CuSpearEntity extends Entity {
             setDeltaMovement(getDeltaMovement().scale(.28).add(direction.normalize().scale(2.65*.72)));
             if(direction.length()<=5){split(level,wielder,living);attacked=true;falling=true;setDeltaMovement(0,-.2,0);}
          }
-         if(falling) setDeltaMovement(getDeltaMovement().add(0,-.06,0));
+         if(army && falling) setDeltaMovement(getDeltaMovement().add(0,-.06,0));
+         else if(!army) setDeltaMovement(getDeltaMovement().add(0,-.005,0));
          Vec3 motion=getDeltaMovement();
-         if(!falling && travelled+motion.length()>CuChulainnRules.THROW_RANGE)motion=motion.normalize().scale(Math.max(0,CuChulainnRules.THROW_RANGE-travelled));
+         double rangeLimit=army?CuChulainnRules.THROW_RANGE:maxFlightDistance;
+         if(!falling && travelled+motion.length()>rangeLimit)motion=motion.normalize().scale(Math.max(0,rangeLimit-travelled));
          next=from.add(motion);travelled+=from.distanceTo(next);
          var block=level.clip(new ClipContext(from,next,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,this));
          Vec3 collisionEnd=block.getType()==HitResult.Type.BLOCK?block.getLocation():next;
-         if(!army&&!attacked && scan(wielder,from,collisionEnd,false)) {attacked=true;falling=true;setDeltaMovement(0,-.2,0);next=from.add(0,-.2,0);}
-         else if(block.getType()==HitResult.Type.BLOCK) {
-            setPos(block.getLocation()); if(army&&!attacked){split(level,wielder,null);attacked=true;} embed();return;
+         if(!army&&!attacked && scan(wielder,from,collisionEnd,false)) attacked=true;
+         if(block.getType()==HitResult.Type.BLOCK) {
+            setPos(block.getLocation()); if(army&&!attacked){split(level,wielder,null);attacked=true;}
+            Vec3 direction=next.subtract(from);
+            if(direction.lengthSqr()<1.0E-8)direction=Vec3.atLowerCornerOf(block.getDirection().getOpposite().getNormal());
+            embed(direction);return;
          }
-         if(travelled>=48 || tickCount>=100) {if(army&&!attacked){split(level,wielder,null);attacked=true;}falling=true;setDeltaMovement(0,-.4,0);}
-         if(getY()<level.getMinBuildHeight()){CuSpearLedger.pending(this);discard();return;}
+         if(army && (travelled>=CuChulainnRules.THROW_RANGE || tickCount>=100)) {
+            if(!attacked){split(level,wielder,null);attacked=true;}
+            falling=true;setDeltaMovement(0,-.4,0);
+         } else if(!army && travelled>=maxFlightDistance) {
+            setPos(next);beginReturn();return;
+         }
+         if(next.y<level.getMinBuildHeight()) {
+            if(army){CuSpearLedger.pending(this);discard();}
+            else {setPos(next);beginReturn();}
+            return;
+         }
       }
       if(state()==2)setDeltaMovement(next.subtract(from));
       setPos(next);
@@ -139,10 +188,12 @@ public final class CuSpearEntity extends Entity {
       target=tag.hasUUID("Target")?tag.getUUID("Target"):null;entityData.set(STATE,tag.getInt("State"));
       entityData.set(APPEARANCE,ItemStack.parseOptional(registryAccess(),tag.getCompound("Appearance")));
       army=tag.getBoolean("Army");attacked=tag.getBoolean("Attacked");falling=tag.getBoolean("Falling");damage=tag.getFloat("Damage");travelled=tag.getDouble("Travelled");
+      maxFlightDistance=tag.contains("MaxFlightDistance")?Math.max(1,tag.getDouble("MaxFlightDistance")):CuChulainnRules.THROW_RANGE;
    }
    @Override protected void addAdditionalSaveData(CompoundTag tag) {
       if(owner!=null)tag.putUUID("Owner",owner);if(ticket!=null)tag.putUUID("Ticket",ticket);if(target!=null)tag.putUUID("Target",target);
       tag.putInt("State",state());tag.put("Appearance",appearance().saveOptional(registryAccess()));
       tag.putBoolean("Army",army);tag.putBoolean("Attacked",attacked);tag.putBoolean("Falling",falling);tag.putFloat("Damage",damage);tag.putDouble("Travelled",travelled);
+      tag.putDouble("MaxFlightDistance",maxFlightDistance);
    }
 }

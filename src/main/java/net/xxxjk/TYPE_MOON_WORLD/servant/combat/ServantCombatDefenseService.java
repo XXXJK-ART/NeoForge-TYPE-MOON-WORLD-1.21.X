@@ -8,7 +8,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
@@ -22,6 +25,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreat;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService;
+import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ProjectileThreatClassifier;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.NpcReaction;
 
 /** Server-authoritative active dodge and guard state shared by cards and NPCs. */
 @net.neoforged.fml.common.EventBusSubscriber(modid = "typemoonworld")
@@ -32,6 +39,26 @@ public final class ServantCombatDefenseService {
    public static final String AUTO_RESTORE = "TypeMoonDefenseAutoRestore";
    private static final String NPC_PARRY_READY = "TypeMoonDefenseNpcParryReady";
    private static final String NPC_PARRY_USED = "TypeMoonDefenseNpcParryUsed";
+   private static final String NPC_GUARD_UNTIL = "TypeMoonDefenseNpcGuardUntil";
+   private static final int NPC_PARRY_WINDOW_TICKS = 10;
+   private static final int NPC_PARRY_COOLDOWN_TICKS = 40;
+   private static final int NPC_REACTION_INTERVAL_TICKS = 16;
+   private static final java.util.Map<ServantEntity, NpcDefenseMemory> NPC_REACTIONS = new java.util.WeakHashMap<>();
+   private static final class NpcDefenseMemory {
+      long nextDecision;
+      final java.util.Map<Object, NpcDecision> decisions = new java.util.LinkedHashMap<>();
+   }
+   private static final class NpcDecision {
+      final NpcReaction reaction;
+      final boolean fallbackGuard;
+      final long expires;
+      boolean attempted;
+      NpcDecision(NpcReaction reaction, boolean fallbackGuard, long expires) {
+         this.reaction = reaction; this.fallbackGuard = fallbackGuard; this.expires = expires;
+      }
+   }
+   private record ThreatKey(java.util.UUID source, net.minecraft.resources.ResourceLocation action, long start, long impact) { }
+   private record HitKey(java.util.UUID source, java.util.UUID direct, long tick) { }
    private static final java.util.Map<net.neoforged.neoforge.common.damagesource.DamageContainer, Boolean> GUARDED = new java.util.WeakHashMap<>();
    private record PendingDamage(boolean exhausted, boolean guarded) { }
    private static final java.util.Map<LivingEntity, java.util.Deque<PendingDamage>> PENDING = new java.util.WeakHashMap<>();
@@ -225,13 +252,12 @@ public final class ServantCombatDefenseService {
          }
       }
       if (entity instanceof ServantEntity servant && entity.level() instanceof ServerLevel level) {
-         boolean imminent = net.xxxjk.TYPE_MOON_WORLD.combat.ai.CombatThreatService.nearby(level, servant.position(), 24, now).stream()
-            .anyMatch(threat -> threat.ticksToImpact(now) <= 10 && threat.activeAt(now)
-               && !threat.sourceUuid().equals(servant.getUUID()) && threat.blockable()
-               && level.getEntity(threat.sourceUuid()) instanceof LivingEntity source && !servant.isAlliedTo(source)
-               && (servant.getUUID().equals(threat.targetUuid()) || threat.threatens(servant.getEyePosition(), servant.getBbWidth() * 0.65)));
-         if (imminent && !isGuarding(servant)) setGuarding(servant, true);
-         else if (!imminent) setGuarding(servant, false);
+         // A telegraph cannot keep renewing a guard and suppress attacks forever.
+         if (isGuarding(servant) && (now >= data.getLong(NPC_GUARD_UNTIL) || !canAct(servant))) setGuarding(servant, false);
+         CombatThreat threat = CombatThreatService.incoming(level, servant, now, 10,
+            incoming -> incoming.activeAt(now) && level.getEntity(incoming.sourceUuid()) instanceof LivingEntity source
+               && !servant.isAlliedTo(source));
+         if (threat != null && !isGuarding(servant)) reactToThreat(servant, threat);
       }
       if (!entity.isAlive() || entity instanceof ServerPlayer player && !isCardActive(player)) {
          data.remove(TAG_GUARDING);
@@ -300,7 +326,8 @@ public final class ServantCombatDefenseService {
       long now = entity.level().getGameTime();
       if (!active) {
          data.remove(TAG_GUARDING);
-         if (entity instanceof ServantEntity servant) servant.setCombatPose(0, 0);
+         data.remove(NPC_GUARD_UNTIL);
+         if (entity instanceof ServantEntity servant && servant.getCombatPose() == 2) servant.setCombatPose(0, 0);
          if (entity instanceof ServerPlayer player) sync(player, true);
          return true;
       }
@@ -313,24 +340,164 @@ public final class ServantCombatDefenseService {
          if (entity instanceof ServantEntity) {
             boolean ready = now >= data.getLong(NPC_PARRY_READY);
             data.putBoolean(NPC_PARRY_USED, !ready);
-            if (ready) data.putLong(NPC_PARRY_READY, now + 40);
          }
       }
       data.putBoolean(TAG_GUARDING, true);
-      if (entity instanceof ServantEntity servant) servant.setCombatPose(2, 3);
+      if (entity instanceof ServantEntity) data.putLong(NPC_GUARD_UNTIL, now + NPC_PARRY_WINDOW_TICKS);
+      if (entity instanceof ServantEntity servant) servant.setCombatPose(2, 6);
       ServantCombatExchangeService.activity(entity, now);
       data.putLong(TAG_LAST_GUARD_PACKET, now);
       if (entity instanceof ServerPlayer player) sync(player, true);
       return true;
    }
 
+   /** Also covers native techniques and hitscan shots that publish no shared telegraph. */
+   public static boolean prepareNpcGuard(ServantEntity defender, DamageSource source, float amount) {
+      if (defender == null || !isGuarding(defender)
+         && defender.level().getGameTime() < defender.getPersistentData().getLong(NPC_PARRY_READY)) return false;
+      return reactToIncomingAttack(defender, source, amount, true, true, true) == NpcReaction.GUARD;
+   }
+
+   public static NpcReaction reactToIncomingAttack(ServantEntity defender, DamageSource source, float amount,
+                                                  boolean allowGuard, boolean allowDodge) {
+      return reactToIncomingAttack(defender, source, amount, allowGuard, allowDodge, false);
+   }
+
+   private static NpcReaction reactToIncomingAttack(ServantEntity defender, DamageSource source, float amount,
+                                                   boolean allowGuard, boolean allowDodge, boolean guardOnly) {
+      if (defender == null || source == null || defender.level().isClientSide() || !canAct(defender)
+         || !Float.isFinite(amount) || amount <= 0) return NpcReaction.NONE;
+      if (allowGuard && isGuarding(defender) && canGuardHit(defender, source, amount)) return NpcReaction.GUARD;
+      boolean melee = source.getEntity() instanceof LivingEntity attacker
+         && source.getDirectEntity() == attacker && defender.distanceTo(attacker) <= 6.0;
+      boolean bypass = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.poison(source)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.isInfection(source)
+         || net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper.isOriginBulletDamage(source)
+         || source.is(DamageTypeTags.IS_FIRE) && !source.is(DamageTypeTags.IS_PROJECTILE);
+      boolean guard = allowGuard && canGuardHit(defender, source, amount) && DefenseRules.npcGuardCandidate(amount, melee, bypass,
+         NoblePhantasmDamageClassifier.typeOf(source) != null
+            || NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, amount),
+         source.is(DamageTypeTags.IS_EXPLOSION));
+      boolean dodge = allowDodge && !bypass && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+         && !source.is(FanaticDamageTypes.GUARANTEED_HITS) && !source.is(FanaticDamageTypes.BYPASSES_DEFENSES)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTsubameGaeshi(source)
+         && source.getEntity() != defender && source.getDirectEntity() != defender
+         && (source.getEntity() != null || source.getDirectEntity() != null);
+      if (!guard && !dodge) return NpcReaction.NONE;
+      long now = defender.level().getGameTime();
+      Entity direct = source.getDirectEntity();
+      CombatThreat threat = CombatThreatService.incoming((ServerLevel)defender.level(), defender, now, 10,
+         incoming -> source.getEntity() != null && incoming.sourceUuid().equals(source.getEntity().getUUID()));
+      Object key = threat != null ? threatKey(threat) : ProjectileThreatClassifier.isProjectileLike(direct) ? direct.getUUID()
+         : new HitKey(source.getEntity() == null ? null : source.getEntity().getUUID(),
+            direct == null ? null : direct.getUUID(), now);
+      int danger = threat != null ? threat.danger() : source.is(DamageTypeTags.IS_EXPLOSION)
+         || NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, amount) ? 5 : 1;
+      NpcDecision decision = npcDecision(defender, key, threat == null ? now + 16 : threat.endTick() + 2,
+         amount, danger, guard, dodge);
+      if (guardOnly && decision.reaction != NpcReaction.GUARD) return NpcReaction.NONE;
+      return executeNpcDecision(defender, decision, guard, dodge);
+   }
+
+   public static NpcReaction reactToThreat(ServantEntity defender, CombatThreat threat) {
+      if (!canAct(defender) || isGuarding(defender)) return NpcReaction.NONE;
+      boolean noblePhantasm = threat.actionId().getPath().startsWith("noble_phantasm/");
+      NpcDecision decision = npcDecision(defender, threatKey(threat), threat.endTick() + 2,
+         0, threat.danger(), threat.blockable() && !noblePhantasm, threat.dodgeable());
+      // Choose once, but time the movement so its existing invulnerability
+      // window actually covers impact rather than expiring during the windup.
+      long lead = decision.reaction == NpcReaction.DODGE
+         ? Math.max(1, ServantCombatFormulas.dodgeInvulnerabilityTicks(params(defender)) - 1) : 8;
+      if (threat.ticksToImpact(defender.level().getGameTime()) > lead) return NpcReaction.NONE;
+      return executeNpcDecision(defender, decision);
+   }
+
+   /** Called only after the projectile sensor has verified an incoming hostile trajectory. */
+   public static boolean reactToProjectile(ServantEntity defender, Entity projectile, double damage,
+                                            java.util.Set<net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass> bypasses) {
+      if (!canAct(defender) || isGuarding(defender)) return false;
+      boolean special = ProjectileThreatClassifier.bypassesProjectileNegation(bypasses);
+      boolean sureHit = bypasses.contains(net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass.SURE_HIT);
+      return executeNpcDecision(defender, npcDecision(defender, projectile.getUUID(), defender.level().getGameTime() + 40,
+         damage, special ? 5 : 1, !special && damage <= DefenseRules.NPC_LIGHT_RANGED_DAMAGE_LIMIT, !sureHit)) != NpcReaction.NONE;
+   }
+
+   public static double estimatedProjectileDamage(Entity projectile) {
+      if (projectile instanceof AbstractArrow arrow) return arrow.getBaseDamage() * arrow.getDeltaMovement().length();
+      if (projectile instanceof net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshGateWeaponProjectileEntity gate) return gate.getDamage();
+      return 30.0;
+   }
+
+   private static ThreatKey threatKey(CombatThreat threat) {
+      return new ThreatKey(threat.sourceUuid(), threat.actionId(), threat.startTick(), threat.impactTick());
+   }
+
+   private static NpcDecision npcDecision(ServantEntity defender, Object key, long expires, double damage,
+                                          int danger, boolean guard, boolean dodge) {
+      long now = defender.level().getGameTime();
+      NpcDefenseMemory memory = NPC_REACTIONS.computeIfAbsent(defender, ignored -> new NpcDefenseMemory());
+      memory.decisions.values().removeIf(decision -> now > decision.expires);
+      NpcDecision previous = memory.decisions.get(key);
+      if (previous != null) return previous;
+      if (now < memory.nextDecision) {
+         NpcDecision skipped = new NpcDecision(NpcReaction.NONE, false, expires);
+         if (memory.decisions.size() >= 32) memory.decisions.remove(memory.decisions.keySet().iterator().next());
+         memory.decisions.put(key, skipped);
+         return skipped;
+      }
+      initialize(defender);
+      ServantParams p = params(defender);
+      var chances = DefenseRules.npcReactionChances(ServantCombatFormulas.defenseStep(p),
+         ServantCombatFormulas.agilityStep(p), damage, defender.getMaxHealth(), danger, guard, dodge);
+      double dodgeRoll = defender.getRandom().nextDouble();
+      double guardRoll = defender.getRandom().nextDouble();
+      NpcDecision decision = new NpcDecision(chances.choose(dodgeRoll, guardRoll), guardRoll < chances.guard(), expires);
+      memory.nextDecision = now + NPC_REACTION_INTERVAL_TICKS;
+      if (memory.decisions.size() >= 32) memory.decisions.remove(memory.decisions.keySet().iterator().next());
+      memory.decisions.put(key, decision);
+      return decision;
+   }
+
+   private static NpcReaction executeNpcDecision(ServantEntity defender, NpcDecision decision) {
+      return executeNpcDecision(defender, decision, true, true);
+   }
+
+   private static NpcReaction executeNpcDecision(ServantEntity defender, NpcDecision decision,
+                                                  boolean allowGuard, boolean allowDodge) {
+      if (decision.attempted) return NpcReaction.NONE;
+      decision.attempted = true;
+      NpcReaction executed = NpcReaction.NONE;
+      if (decision.reaction == NpcReaction.DODGE && allowDodge && requestDodge(defender, 0.0F, 1.0F)) {
+         executed = NpcReaction.DODGE;
+      } else if (decision.fallbackGuard && allowGuard && setGuarding(defender, true)) {
+         // The same cached guard roll also covers an evasion rejected by cooldown or MP.
+         executed = NpcReaction.GUARD;
+      }
+      if (executed != NpcReaction.NONE) {
+         defender.getNavigation().stop();
+         net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor.interrupt(defender, 5, defender.level().getGameTime());
+      }
+      return executed;
+   }
+
+   private static boolean canGuardHit(LivingEntity defender, DamageSource source, float amount) {
+      boolean guardable = defender != null && source != null && Float.isFinite(amount) && amount > 0
+         && source.getEntity() != defender && source.getDirectEntity() != defender
+         && (source.getEntity() != null || source.getDirectEntity() != null)
+         && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+         && !source.is(FanaticDamageTypes.GUARANTEED_HITS) && !source.is(FanaticDamageTypes.BYPASSES_DEFENSES)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTsubameGaeshi(source);
+      if (!guardable) return false;
+      // Ordinary low-damage magic bolts bypass armor, not an active weapon guard.
+      return !source.is(DamageTypeTags.BYPASSES_ARMOR)
+         || source.is(DamageTypes.INDIRECT_MAGIC) && amount <= DefenseRules.NPC_LIGHT_RANGED_DAMAGE_LIMIT
+            && !NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, amount)
+            && NoblePhantasmDamageClassifier.typeOf(source) == null;
+   }
+
    /** Active, automatic and perfect guards share the same resource transaction. */
    public static Float applyGuardHit(LivingEntity defender, DamageSource source, float amount) {
-      if (defender == null || source == null || amount <= 0 || source.getEntity() == defender
-         || source.getEntity() == null && source.getDirectEntity() == null
-         || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || source.is(DamageTypeTags.BYPASSES_ARMOR)
-         || source.is(FanaticDamageTypes.GUARANTEED_HITS) || source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) return null;
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTsubameGaeshi(source)) return null;
+      if (!canGuardHit(defender, source, amount)) return null;
       initialize(defender);
       CompoundTag data = defender.getPersistentData();
       long now = defender.level().getGameTime();
@@ -338,8 +505,9 @@ public final class ServantCombatDefenseService {
       if (broken(defender) || stamina(defender) <= 0) return null;
       ServantParams p = params(defender);
       if (p == null) return null;
-      boolean active = isGuarding(defender);
-      int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) + PLAYER_PARRY_GRACE_TICKS : 10;
+      boolean active = isGuarding(defender) && canAct(defender);
+      // Passive defense remains available while attacking and never raises a guard pose.
+      int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) + PLAYER_PARRY_GRACE_TICKS : NPC_PARRY_WINDOW_TICKS;
       boolean perfect = active && now - data.getLong(TAG_GUARD_START) <= window
          && (!(defender instanceof ServantEntity) || !data.getBoolean(NPC_PARRY_USED));
       double cost = DefenseRules.guardCost(ServantCombatFormulas.blockStaminaCost(p), ServantDefenseTraits.resolve(defender).guardBonus(),
@@ -350,6 +518,7 @@ public final class ServantCombatDefenseService {
          data.putInt("TypeMoonDefenseParryCount", data.getInt("TypeMoonDefenseParryCount") + 1);
          data.putLong(TAG_GUARD_START, now - 100);
          data.putBoolean(NPC_PARRY_USED, true);
+         if (defender instanceof ServantEntity) data.putLong(NPC_PARRY_READY, now + NPC_PARRY_COOLDOWN_TICKS);
          setResult(defender, RESULT_PARRY, now + 16);
       } else setResult(defender, RESULT_GUARD, now + 12);
       net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.onSuccessfulGuard(defender, source.getEntity());
@@ -412,6 +581,8 @@ public final class ServantCombatDefenseService {
       if (entity == null) return;
       CompoundTag data = entity.getPersistentData();
       data.remove(TAG_GUARDING); data.remove(TAG_GUARD_START); data.remove(TAG_LAST_GUARD_PACKET);
+      data.remove(NPC_GUARD_UNTIL);
+      if (entity instanceof ServantEntity servant) NPC_REACTIONS.remove(servant);
       data.remove(TAG_LAST_RESULT); data.remove(TAG_RESULT_UNTIL);
       data.remove(TAG_DODGE_UNTIL); data.remove(TAG_DODGE_X); data.remove(TAG_DODGE_Z);
       data.remove("ServantCardCombatGuardBrokenUntil");
@@ -419,6 +590,7 @@ public final class ServantCombatDefenseService {
    }
 
    private static boolean canAct(LivingEntity entity) {
+      if (!entity.isAlive() || net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) return false;
       if (entity instanceof ServerPlayer player) {
          return isCardActive(player) && !player.isDeadOrDying() && !player.isPassenger()
             && !BindingService.isBound(player.getUUID());

@@ -139,6 +139,11 @@ public final class ServantCombatSystem {
          entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.25, 1.0, 0.25));
          return true;
       }
+      if (ServantCombatDefenseService.isGuarding(entity) || ServantCombatDefenseService.isDodgeActive(entity, now)) {
+         entity.getNavigation().stop();
+         if (ServantCombatDefenseService.isGuarding(entity)) entity.setCombatPose(2, 6);
+         return true;
+      }
       return false;
    }
 
@@ -233,12 +238,14 @@ public final class ServantCombatSystem {
             && ServantCombatDefenseService.trySkillAutoDodge(servant,source,event.getAmount())) {
             event.setCanceled(true); event.setAmount(0); return;
          }
-         // NPC servants keep their reaction-based defense.  Player cards use
-         // the explicit guard/dodge inputs handled by ServantCombatDefenseService.
-         if (!(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity) && !ushiwakamaruMelee && !unavoidable
-            && !PaleRiderDamageTypes.isInfection(source)
-            && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
-            && tryAutoDodge(servant, source, params, now)) {
+         boolean guardBypass = LancelotCombatHelper.rollsEternalArmsGuardBypass(source);
+         // Counted skill evasion remains first, then ordinary evasion, then a
+         // probabilistic active guard. Passive defense still applies on contact.
+         var reaction = ServantCombatDefenseService.reactToIncomingAttack(servant, source, event.getAmount(),
+            !unavoidable && !guardBypass, !ushiwakamaruMelee && !unavoidable
+               && !PaleRiderDamageTypes.isInfection(source)
+               && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source));
+         if (reaction == DefenseRules.NpcReaction.DODGE) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount(Math.min(event.getAmount(), event.getAmount() * 0.5F));
             } else {
@@ -246,7 +253,7 @@ public final class ServantCombatSystem {
             }
             return;
          }
-         Float reduced = LancelotCombatHelper.rollsEternalArmsGuardBypass(source)
+         Float reduced = guardBypass || unavoidable
             ? null : ServantCombatDefenseService.applyGuardHit(servant, source, event.getAmount());
          if (reduced != null) {
             ServantCombatDefenseService.markGuarded(event);
@@ -667,14 +674,8 @@ public final class ServantCombatSystem {
          spawnGuardFx(responder, ParticleTypes.END_ROD, SoundEvents.BEACON_ACTIVATE, 1.2F);
          return;
       }
-      DamageSource responseSource = caster.damageSources().mobAttack(caster);
-      if (ServantCombatFormulas.agilityStep(params) >= 3
-         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(responseSource)
-         && tryAutoDodge(responder, responseSource, params, now)) {
-         return;
-      }
-      if (!LancelotCombatHelper.rollsEternalArmsGuardBypass(responseSource)
-         && ServantCombatDefenseService.setGuarding(responder, true)) return;
+      // The published telegraph uses the shared weighted reaction near impact.
+      // Reacting here would both reroll that decision and waste a dodge at chant start.
       if (ServantCombatDefenseService.isGuarding(responder)
          || now < responder.getPersistentData().getLong(TAG_INVULN_UNTIL)) {
          return;

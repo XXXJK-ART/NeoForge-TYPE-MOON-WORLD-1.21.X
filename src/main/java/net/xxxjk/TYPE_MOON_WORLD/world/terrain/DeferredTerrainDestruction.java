@@ -44,6 +44,10 @@ public final class DeferredTerrainDestruction {
    public static void queueSphere(ServerLevel level, Vec3 center, double radius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
       if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback).schedule(targetTicks));
    }
+   /** Clears the complete sphere in distance order, including its center voxel. */
+   public static void queueRadialSphere(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
+      if (level != null && radius > 0) add(level, new RadialSphereJob(level, center, radius, callback));
+   }
    public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
       if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius).schedule(targetTicks));
    }
@@ -242,6 +246,29 @@ public final class DeferredTerrainDestruction {
       SphereJob schedule(int targetTicks) { super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * (scan * 2 + 1)); return this; }
       void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
       void cursor(){if(++z>scan){z=-scan;if(++y>scan){y=-scan;if(++x>scan)done=true;}}}
+   }
+   private static final class RadialSphereJob extends Job {
+      final Vec3 center;
+      final RadialSphereCursor cursor;
+      final RemovalCallback callback;
+      int removed;
+
+      RadialSphereJob(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
+         super(level);
+         this.center = center;
+         this.cursor = new RadialSphereCursor(radius);
+         this.callback = callback;
+      }
+
+      @Override void advance() {
+         var offset = cursor.next();
+         BlockPos pos = BlockPos.containing(center.x + offset.x(), center.y + offset.y(), center.z + offset.z());
+         done = !cursor.hasNext();
+         if (valid(pos, Float.MAX_VALUE) && level.removeBlock(pos, false)) {
+            removed++;
+            if (callback != null) callback.onRemoved(level, pos, removed);
+         }
+      }
    }
    private static final class EllipsoidJob extends Job {
       final Vec3 center; final int radius,height; final float hardness; int x,y,z;

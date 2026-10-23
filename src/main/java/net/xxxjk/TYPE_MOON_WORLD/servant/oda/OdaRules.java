@@ -6,6 +6,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.Np
 /** The numerical contract shared by the servant card, NPC, projectiles and tests. */
 public final class OdaRules {
    private OdaRules() {}
+   public static final float COMBAT_GUN_HEALTH = 10.0F;
+   public static final float FLIGHT_GUN_HEALTH = 50.0F;
+   public static final int FLIGHT_DESTROYED_COOLDOWN = 60 * 20;
+   /** Full sphere around the caster, shared by player and NPC field entry. */
+   public static final double HAJUN_PULL_RADIUS = 48.0;
    /** Three tiers of eleven guns make the requested thirty-three-gun wave. */
    public static final int THREE_THOUSAND_TIER_COUNT = 3;
    public static final int THREE_THOUSAND_GUNS_PER_TIER = 11;

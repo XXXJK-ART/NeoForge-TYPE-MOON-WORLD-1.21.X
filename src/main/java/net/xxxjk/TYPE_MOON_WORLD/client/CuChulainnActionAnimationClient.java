@@ -63,11 +63,17 @@ public final class CuChulainnActionAnimationClient {
          :type==TransformType.ROTATION?new Vec3f(value.getX(),-value.getY(),-value.getZ()):value;
    }
    private static Vec3f transform(LivingEntity owner,CuChulainnVisualClient.Action action,float age,String part,TransformType type,Vec3f base) {
+      if(action.slot()==10 || action.slot()==11) {
+         String arm=action.left()?"left":"right";
+         if(!part.equals(arm+"Arm") && !part.equals(arm+"Item"))return base;
+      }
       var value=sample(action,age);if(value==null)return base;
       boolean mirror=action.left();String source=part;
       if(mirror && part.startsWith("right"))source="left"+part.substring(5);
       else if(mirror && part.startsWith("left"))source="right"+part.substring(4);
       var result=value.get3DTransform(source,type,0,mirror?reflect(base,type):base);
+      if((action.slot()==8 || action.slot()==9) && source.equals("rightItem") && type==TransformType.ROTATION)
+         result=new Vec3f(result.getX()+(float)Math.PI,result.getY(),result.getZ());
       return mirror?reflect(result,type):result;
    }
    private static void part(LivingEntity owner,CuChulainnVisualClient.Action action,float age,String name,ModelPart part) {
