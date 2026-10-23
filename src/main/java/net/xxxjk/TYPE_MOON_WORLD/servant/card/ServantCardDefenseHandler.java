@@ -67,6 +67,7 @@ public final class ServantCardDefenseHandler {
    }
 
    public static void clear(ServerPlayer player) {
+      if (ServantCombatDefenseService.isGuarding(player)) ServantCombatDefenseService.setGuarding(player, false);
       CompoundTag data = player.getPersistentData();
       data.remove(ServantCombatDefenseService.TAG_GUARDING);
       data.remove(ServantCombatDefenseService.TAG_GUARD_START);
@@ -193,6 +194,16 @@ public final class ServantCardDefenseHandler {
          }
       }
 
+      ServantCombatDefenseService.afterArmor(event, hit -> handleAfterBaseDefense(player, vars, hit,
+         guaranteedHit, infectionDamage, specialNoblePhantasmDamage, divineDefenseBroken, defensePiercing, elementalSwordDamage));
+      return false;
+   }
+
+   private static boolean handleAfterBaseDefense(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars,
+      LivingIncomingDamageEvent event, boolean guaranteedHit, boolean infectionDamage, boolean specialNoblePhantasmDamage,
+      boolean divineDefenseBroken, boolean defensePiercing, boolean elementalSwordDamage) {
+      CompoundTag data = player.getPersistentData();
+      long now = player.level().getGameTime();
       if (!guaranteedHit && !infectionDamage && !specialNoblePhantasmDamage && !divineDefenseBroken
          && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(event.getSource())
          && tryLiShuwenPassiveDodge(player, vars, event, now)) {

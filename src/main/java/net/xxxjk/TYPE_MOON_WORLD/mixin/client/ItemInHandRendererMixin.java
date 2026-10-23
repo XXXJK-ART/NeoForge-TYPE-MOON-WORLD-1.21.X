@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.mixin.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,6 +18,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin({ItemInHandRenderer.class})
 public abstract class ItemInHandRendererMixin {
+   @Inject(
+      method = "renderArmWithItem(Lnet/minecraft/client/player/AbstractClientPlayer;FFLnet/minecraft/world/InteractionHand;FLnet/minecraft/world/item/ItemStack;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
+      at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V", shift = At.Shift.AFTER)
+   )
+   private void typemoonworld$guardHeldItem(AbstractClientPlayer player, float partialTicks, float pitch,
+      InteractionHand hand, float swingProgress, ItemStack stack, float equippedProgress,
+      PoseStack poseStack, MultiBufferSource buffer, int combinedLight, CallbackInfo ci) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.isGuarding(player)) return;
+      HumanoidArm arm = hand == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
+      float side = arm == HumanoidArm.RIGHT ? 1.0F : -1.0F;
+      poseStack.translate(-side * 0.10F, 0.12F, -0.12F);
+      poseStack.mulPose(Axis.XP.rotationDegrees(-18.0F));
+      poseStack.mulPose(Axis.YP.rotationDegrees(side * 20.0F));
+   }
+
    @Invoker("renderPlayerArm")
    protected abstract void typemoonworld$renderPlayerArm(PoseStack var1, MultiBufferSource var2, int var3, float var4, float var5, HumanoidArm var6);
 

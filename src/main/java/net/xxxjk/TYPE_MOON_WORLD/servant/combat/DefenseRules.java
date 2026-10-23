@@ -36,7 +36,11 @@ public final class DefenseRules {
    }
 
    private static double clamp(double value) { return Math.max(0.0, Math.min(1.0, value)); }
-   public static double poiseLoss(double actualDamage) { return Math.max(10.0, actualDamage * 0.5); }
+   /** Damage remaining after base defenses, before the guard's own reduction. */
+   public static double defenseResourceLoss(double postDefenseDamage) {
+      return Math.max(0.0, postDefenseDamage) / 5.0;
+   }
+   public static double poiseLoss(double postDefenseDamage) { return defenseResourceLoss(postDefenseDamage); }
    public static int safeDodgeCooldown(int proposedTicks, int longestInvulnerability) {
       return Math.max(proposedTicks, longestInvulnerability + 10);
    }
@@ -46,7 +50,7 @@ public final class DefenseRules {
    public static double guardCost(double base, double defenderReduction, boolean active,
                                   boolean perfect, double attackerSouwaBonus) {
       return net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroRules.guardStaminaCost(
-         base, defenderReduction, active, perfect, attackerSouwaBonus);
+         defenseResourceLoss(base), defenderReduction, true, perfect, attackerSouwaBonus);
    }
    public static float guardedDamage(float amount, boolean active, boolean perfect) {
       return perfect ? 0 : amount * (active ? 0.2F : 0.5F);

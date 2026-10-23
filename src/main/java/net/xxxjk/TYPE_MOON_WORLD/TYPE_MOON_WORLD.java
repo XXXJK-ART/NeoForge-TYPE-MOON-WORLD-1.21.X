@@ -130,6 +130,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardReleaseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDodgeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CombatThreatStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSelectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderCommandMessage;
@@ -342,6 +343,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardDodgeMessage.TYPE, ServantCardDodgeMessage.STREAM_CODEC, ServantCardDodgeMessage::handleData);
       registrar.playToServer(ServantCardGuardMessage.TYPE, ServantCardGuardMessage.STREAM_CODEC, ServantCardGuardMessage::handleData);
       registrar.playToClient(ServantCardDefenseStateMessage.TYPE, ServantCardDefenseStateMessage.STREAM_CODEC, ServantCardDefenseStateMessage::handleData);
+      registrar.playToClient(ServantCardGuardPoseMessage.TYPE, ServantCardGuardPoseMessage.STREAM_CODEC, ServantCardGuardPoseMessage::handleData);
       registrar.playToClient(CombatThreatStateMessage.TYPE, CombatThreatStateMessage.STREAM_CODEC, CombatThreatStateMessage::handleData);
       registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
       registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);

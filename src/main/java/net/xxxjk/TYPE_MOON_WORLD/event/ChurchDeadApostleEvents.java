@@ -167,7 +167,9 @@ public final class ChurchDeadApostleEvents {
    private static boolean hasStigma(LivingEntity entity) {
       if (entity instanceof StigmaBearer bearer && bearer.hasStigma()) return true;
       if (entity instanceof ServerPlayer player) {
-         return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).learned_magics.contains("stigma");
+         var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         // Personal magic must not defer the manifested servant's damage.
+         return !vars.servant_card_transformed && vars.learned_magics.contains("stigma");
       }
       return false;
    }

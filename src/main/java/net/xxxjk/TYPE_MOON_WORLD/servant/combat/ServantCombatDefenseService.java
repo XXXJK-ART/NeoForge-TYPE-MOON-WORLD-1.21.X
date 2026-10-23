@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardActionTimeline;
@@ -37,11 +38,9 @@ public final class ServantCombatDefenseService {
    public static final String LAST_HIT = "TypeMoonDefenseLastHit";
    public static final String AUTO_CHARGES = "TypeMoonDefenseAutoCharges";
    public static final String AUTO_RESTORE = "TypeMoonDefenseAutoRestore";
-   private static final String NPC_PARRY_READY = "TypeMoonDefenseNpcParryReady";
    private static final String NPC_PARRY_USED = "TypeMoonDefenseNpcParryUsed";
    private static final String NPC_GUARD_UNTIL = "TypeMoonDefenseNpcGuardUntil";
    private static final int NPC_PARRY_WINDOW_TICKS = 10;
-   private static final int NPC_PARRY_COOLDOWN_TICKS = 40;
    private static final int NPC_REACTION_INTERVAL_TICKS = 16;
    private static final java.util.Map<ServantEntity, NpcDefenseMemory> NPC_REACTIONS = new java.util.WeakHashMap<>();
    private static final class NpcDefenseMemory {
@@ -60,7 +59,9 @@ public final class ServantCombatDefenseService {
    private record ThreatKey(java.util.UUID source, net.minecraft.resources.ResourceLocation action, long start, long impact) { }
    private record HitKey(java.util.UUID source, java.util.UUID direct, long tick) { }
    private static final java.util.Map<net.neoforged.neoforge.common.damagesource.DamageContainer, Boolean> GUARDED = new java.util.WeakHashMap<>();
-   private record PendingDamage(boolean exhausted, boolean guarded) { }
+   private static final java.util.Map<net.neoforged.neoforge.common.damagesource.DamageContainer,
+      java.util.function.Predicate<net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent>> AFTER_ARMOR = new java.util.WeakHashMap<>();
+   private record PendingDamage(boolean exhausted, boolean guarded, float postDefenseDamage) { }
    private static final java.util.Map<LivingEntity, java.util.Deque<PendingDamage>> PENDING = new java.util.WeakHashMap<>();
 
    public static void initialize(LivingEntity entity) {
@@ -145,13 +146,30 @@ public final class ServantCombatDefenseService {
       GUARDED.put(event.getContainer(), true);
    }
 
+   /** Keep each hit's eligibility, but resolve its reaction only after vanilla base defenses. */
+   public static void afterArmor(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event,
+      java.util.function.Predicate<net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent> defense) {
+      AFTER_ARMOR.put(event.getContainer(), defense);
+   }
+
+   @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+   public static void resolveDefense(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
+      var defense = AFTER_ARMOR.remove(event.getContainer());
+      if (defense == null || event.getNewDamage() <= 0.0F) return;
+      // Reuse the defense handlers with this hit's real, already reduced container.
+      // This is the same synchronous hurt call, not a later tick or another hurt().
+      var hit = new net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent(event.getEntity(), event.getContainer());
+      if (defense.test(hit) || hit.isCanceled()) event.setNewDamage(0.0F);
+   }
+
    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
    public static void beforeDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
       LivingEntity e = event.getEntity();
       if (!(e instanceof ServantEntity) && !(e instanceof ServerPlayer p && isCardActive(p))) return;
       initialize(e);
       boolean guarded = GUARDED.remove(event.getContainer()) != null;
-      PENDING.computeIfAbsent(e, unused -> new java.util.ArrayDeque<>()).push(new PendingDamage(!guarded && stamina(e) <= 0, guarded));
+      PENDING.computeIfAbsent(e, unused -> new java.util.ArrayDeque<>()).push(
+         new PendingDamage(!guarded && stamina(e) <= 0, guarded, event.getNewDamage()));
    }
 
    @net.neoforged.bus.api.SubscribeEvent
@@ -161,9 +179,12 @@ public final class ServantCombatDefenseService {
       if (pending == null || pending.isEmpty()) return;
       PendingDamage hit = pending.pop();
       if (pending.isEmpty()) PENDING.remove(e);
+      if (hit.exhausted() && hit.postDefenseDamage() > 0) {
+         e.getPersistentData().putLong(LAST_HIT, e.level().getGameTime());
+         losePoise(e, DefenseRules.poiseLoss(hit.postDefenseDamage()));
+      }
       if (event.getNewDamage() <= 0) return;
       e.getPersistentData().putLong(LAST_HIT, e.level().getGameTime());
-      if (hit.exhausted()) losePoise(e, DefenseRules.poiseLoss(event.getNewDamage()));
       if (event.getSource().getEntity() instanceof ServantEntity attacker) {
          ServantCombatExchangeService.recordContact(attacker, e, e.level().getGameTime());
          if (!hit.guarded() && event.getSource().getDirectEntity() == attacker
@@ -200,7 +221,10 @@ public final class ServantCombatDefenseService {
    }
 
    private static final long PLAYER_GUARD_PACKET_TIMEOUT_TICKS = 15L;
-   private static final int PLAYER_PARRY_GRACE_TICKS = 3;
+   private static final int PLAYER_PARRY_GRACE_TICKS = 5;
+   public static final int GUARD_RELEASE_COOLDOWN_TICKS = 20;
+   public static final String TAG_GUARD_COOLDOWN = "TypeMoonDefenseGuardCooldown";
+   private static final String TAG_GUARD_PARRY_RELEASE = "TypeMoonDefenseGuardParryRelease";
    public static final String TAG_GUARDING = "TypeMoonDefenseGuarding";
    public static final String TAG_GUARD_START = "TypeMoonDefenseGuardStart";
    public static final String TAG_LAST_RESULT = "TypeMoonDefenseLastResult";
@@ -264,7 +288,7 @@ public final class ServantCombatDefenseService {
       }
       if (entity instanceof ServerPlayer && data.getBoolean(TAG_GUARDING)
          && now - data.getLong(TAG_LAST_GUARD_PACKET) > PLAYER_GUARD_PACKET_TIMEOUT_TICKS) {
-         data.remove(TAG_GUARDING);
+         setGuarding(entity, false);
       }
       if (entity instanceof ServerPlayer player && isCardActive(player)
          && (entity.tickCount % 5 == 0 || data.getLong(TAG_LAST_SYNC) != now)) {
@@ -325,21 +349,27 @@ public final class ServantCombatDefenseService {
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
       if (!active) {
+         if (data.getBoolean(TAG_GUARDING)) {
+            if (!data.getBoolean(TAG_GUARD_PARRY_RELEASE)) data.putLong(TAG_GUARD_COOLDOWN, now + GUARD_RELEASE_COOLDOWN_TICKS);
+            else data.remove(TAG_GUARD_COOLDOWN);
+         }
+         data.remove(TAG_GUARD_PARRY_RELEASE);
          data.remove(TAG_GUARDING);
          data.remove(NPC_GUARD_UNTIL);
          if (entity instanceof ServantEntity servant && servant.getCombatPose() == 2) servant.setCombatPose(0, 0);
          if (entity instanceof ServerPlayer player) sync(player, true);
          return true;
       }
-      if (!canAct(entity) || broken(entity) || !hasGuardResource(entity)) {
+      if (!canAct(entity) || broken(entity) || !hasGuardResource(entity)
+         || !data.getBoolean(TAG_GUARDING) && now < data.getLong(TAG_GUARD_COOLDOWN)) {
          setResult(entity, RESULT_FAIL, now + 8L);
          return false;
       }
       if (!data.getBoolean(TAG_GUARDING)) {
          data.putLong(TAG_GUARD_START, now);
+         data.remove(TAG_GUARD_PARRY_RELEASE);
          if (entity instanceof ServantEntity) {
-            boolean ready = now >= data.getLong(NPC_PARRY_READY);
-            data.putBoolean(NPC_PARRY_USED, !ready);
+            data.putBoolean(NPC_PARRY_USED, false);
          }
       }
       data.putBoolean(TAG_GUARDING, true);
@@ -353,8 +383,7 @@ public final class ServantCombatDefenseService {
 
    /** Also covers native techniques and hitscan shots that publish no shared telegraph. */
    public static boolean prepareNpcGuard(ServantEntity defender, DamageSource source, float amount) {
-      if (defender == null || !isGuarding(defender)
-         && defender.level().getGameTime() < defender.getPersistentData().getLong(NPC_PARRY_READY)) return false;
+      if (defender == null) return false;
       return reactToIncomingAttack(defender, source, amount, true, true, true) == NpcReaction.GUARD;
    }
 
@@ -506,26 +535,29 @@ public final class ServantCombatDefenseService {
       ServantParams p = params(defender);
       if (p == null) return null;
       boolean active = isGuarding(defender) && canAct(defender);
-      // Passive defense remains available while attacking and never raises a guard pose.
+      // Both guard modes spend the damage remaining after base defense / 5.
       int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) + PLAYER_PARRY_GRACE_TICKS : NPC_PARRY_WINDOW_TICKS;
       boolean perfect = active && now - data.getLong(TAG_GUARD_START) <= window
          && (!(defender instanceof ServantEntity) || !data.getBoolean(NPC_PARRY_USED));
-      double cost = DefenseRules.guardCost(ServantCombatFormulas.blockStaminaCost(p), ServantDefenseTraits.resolve(defender).guardBonus(),
+      double cost = DefenseRules.guardCost(amount, ServantDefenseTraits.resolve(defender).guardBonus(),
          active, perfect, net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.souwaBonus(source.getEntity() instanceof LivingEntity attacker ? attacker : null));
       setStamina(defender, Math.max(0, stamina(defender) - cost));
       data.putInt("TypeMoonDefenseGuardCount", data.getInt("TypeMoonDefenseGuardCount") + 1);
       if (perfect) {
+         data.putBoolean(TAG_GUARD_PARRY_RELEASE, true);
          data.putInt("TypeMoonDefenseParryCount", data.getInt("TypeMoonDefenseParryCount") + 1);
          data.putLong(TAG_GUARD_START, now - 100);
          data.putBoolean(NPC_PARRY_USED, true);
-         if (defender instanceof ServantEntity) data.putLong(NPC_PARRY_READY, now + NPC_PARRY_COOLDOWN_TICKS);
          setResult(defender, RESULT_PARRY, now + 16);
-      } else setResult(defender, RESULT_GUARD, now + 12);
+      } else {
+         data.remove(TAG_GUARD_PARRY_RELEASE);
+         setResult(defender, RESULT_GUARD, now + 12);
+      }
       net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.onSuccessfulGuard(defender, source.getEntity());
       net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.onSuccessfulGuard(defender, source.getEntity());
       if (source.getEntity() instanceof ServantEntity attacker) {
          ServantCombatExchangeService.recordContact(attacker, defender, now);
-         ServantCombatSpectacleService.exchangeFx(attacker, defender, false, true);
+         if (!perfect) ServantCombatSpectacleService.exchangeFx(attacker, defender, false, true);
          if (ServantCombatExchangeService.ordinary(attacker, defender)) {
             Vec3 away = defender.position().subtract(attacker.position()).multiply(1, 0, 1).normalize();
             if (perfect) {
@@ -544,10 +576,24 @@ public final class ServantCombatDefenseService {
             }
          }
       }
-      fx(defender, perfect ? ParticleTypes.CRIT : ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, perfect ? 1.65F : 1.1F);
+      if (perfect) perfectGuardFx(defender, source);
+      else fx(defender, ParticleTypes.ENCHANT, SoundEvents.SHIELD_BLOCK, 1.1F);
       if (defender instanceof ServerPlayer player) sync(player, true);
       // The hit which empties defense still receives its reduction.
       return DefenseRules.guardedDamage(amount, active, perfect);
+   }
+
+   private static void perfectGuardFx(LivingEntity defender, DamageSource source) {
+      if (!(defender.level() instanceof ServerLevel level)) return;
+      Vec3 direction = source.getSourcePosition() == null ? defender.getLookAngle()
+         : source.getSourcePosition().subtract(defender.getEyePosition());
+      if (direction.lengthSqr() < 1.0E-4) direction = defender.getLookAngle();
+      Vec3 impact = defender.position().add(0, defender.getBbHeight() * 0.65, 0)
+         .add(direction.normalize().scale(0.45));
+      level.sendParticles(ParticleTypes.ELECTRIC_SPARK, impact.x, impact.y, impact.z, 5, 0.12, 0.12, 0.12, 0.025);
+      level.sendParticles(ParticleTypes.END_ROD, impact.x, impact.y, impact.z, 2, 0.06, 0.06, 0.06, 0.01);
+      level.playSound(null, impact.x, impact.y, impact.z, SoundEvents.AMETHYST_BLOCK_HIT,
+         defender instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE, 0.28F, 1.35F);
    }
 
    public static boolean isGuarding(LivingEntity entity) {
@@ -575,10 +621,20 @@ public final class ServantCombatDefenseService {
       ModNetwork.sendToPlayer(player, new ServantCardDefenseStateMessage(stamina(player), maxStamina, poise(player), maxPoise,
          isGuarding(player), data.getLong(TAG_DODGE_COOLDOWN), data.getLong(TAG_GUARD_BROKEN),
          data.getString(TAG_LAST_RESULT), data.getLong(TAG_RESULT_UNTIL), shieldHp, shieldMax, shieldActive, data.getInt(AUTO_CHARGES), ServantDefenseTraits.resolve(player).autoDodges(), data.getLong(AUTO_RESTORE), broken(player)));
+      boolean guarding = isCardActive(player) && isGuarding(player);
+      if (force || guarding || data.getBoolean("TypeMoonDefenseGuardPoseSent")) {
+         var pose = new ServantCardGuardPoseMessage(player.getUUID(), guarding);
+         // Use connection-aware sends so embedded/test players need no client channel.
+         for (ServerPlayer viewer : ((ServerLevel)player.level()).players()) {
+            if (viewer == player || viewer.distanceToSqr(player) <= 128.0 * 128.0) ModNetwork.sendToPlayer(viewer, pose);
+         }
+         data.putBoolean("TypeMoonDefenseGuardPoseSent", guarding);
+      }
    }
 
    public static void clear(LivingEntity entity) {
       if (entity == null) return;
+      if (isGuarding(entity)) setGuarding(entity, false);
       CompoundTag data = entity.getPersistentData();
       data.remove(TAG_GUARDING); data.remove(TAG_GUARD_START); data.remove(TAG_LAST_GUARD_PACKET);
       data.remove(NPC_GUARD_UNTIL);

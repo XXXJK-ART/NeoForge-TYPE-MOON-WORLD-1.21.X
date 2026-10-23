@@ -230,6 +230,16 @@ public final class ServantCombatSystem {
          event.setAmount((float)(event.getAmount() * (1.0 + ServantCombatFormulas.guardBreakDamageBonus(params))));
       }
 
+      ServantCombatDefenseService.afterArmor(event, hit -> {
+         handleAfterBaseDefense(servant, hit);
+         return hit.isCanceled();
+      });
+   }
+
+   private static void handleAfterBaseDefense(ServantEntity servant, LivingIncomingDamageEvent event) {
+      DamageSource source = event.getSource();
+      long now = servant.level().getGameTime();
+      boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();

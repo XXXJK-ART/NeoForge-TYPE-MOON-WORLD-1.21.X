@@ -65,11 +65,15 @@ class DefenseRulesTest {
       assertEquals(50, DefenseRules.guardedDamage(100, false, false));
       assertEquals(20, DefenseRules.guardedDamage(100, true, false));
       assertEquals(0, DefenseRules.guardedDamage(100, true, true));
-      assertEquals(24, DefenseRules.guardCost(12, 0, false, false));
-      assertEquals(12, DefenseRules.guardCost(12, 0, true, false));
+      assertEquals(2.4, DefenseRules.guardCost(12, 0, false, false), 1e-9);
+      assertEquals(2.4, DefenseRules.guardCost(12, 0, true, false), 1e-9);
       assertEquals(0, DefenseRules.guardCost(12, 0.25, true, true));
-      assertEquals(10, DefenseRules.poiseLoss(12));
-      assertEquals(30, DefenseRules.poiseLoss(60));
+      assertEquals(2.4, DefenseRules.poiseLoss(12), 1e-9);
+      assertEquals(12, DefenseRules.poiseLoss(60));
+      assertEquals(0, DefenseRules.poiseLoss(0));
+      assertEquals(0, DefenseRules.guardCost(0, 0, false, false));
+      assertEquals(0.1, DefenseRules.guardCost(0.5, 0, false, false), 1e-9);
+      assertEquals(1.98, DefenseRules.guardCost(12, 0.25, false, false, 0.1), 1e-9);
    }
    @Test void everyAgilityAndSkillRankLeavesHalfASecondWithoutInvulnerability() {
       for (String agility : new String[]{"E", "D", "C", "B", "A", "A++"})

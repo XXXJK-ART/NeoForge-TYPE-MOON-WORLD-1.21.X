@@ -58,7 +58,7 @@ public final class ServantPerfectGuardGameTests {
       double stamina = defender.getPersistentData().getDouble(ServantCombatDefenseService.TAG_STAMINA);
       double mana = defender.getCurrentMp();
       var event = new LivingIncomingDamageEvent(defender, new DamageContainer(source, damage));
-      ServantCombatSystem.handleIncomingDamage(defender, event);
+      resolveHit(defender, event);
       h.assertTrue(event.isCanceled(), defender.getServantId() + " failed to cancel a parried hit");
       h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 1,
          defender.getServantId() + " dodged or blocked instead of perfect guarding");
@@ -67,6 +67,15 @@ public final class ServantPerfectGuardGameTests {
       h.assertTrue(defender.getPersistentData().getDouble(ServantCombatDefenseService.TAG_STAMINA) == stamina,
          "perfect guard spent stamina");
       h.assertTrue(defender.getCurrentMp() == mana, "perfect guard spent dodge MP");
+   }
+
+   /** Component fixtures supply damage already reduced by base defense; real-bus tests also cover armor. */
+   private static void resolveHit(ServantEntity defender, LivingIncomingDamageEvent event) {
+      ServantCombatSystem.handleIncomingDamage(defender, event);
+      if (!event.isCanceled()) {
+         ServantCombatDefenseService.resolveDefense(new net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre(defender, event.getContainer()));
+         if (event.getAmount() <= 0) event.setCanceled(true);
+      }
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
@@ -138,14 +147,14 @@ public final class ServantPerfectGuardGameTests {
       h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "explicit guard rejected");
       assertPerfect(h, defender, attacker.damageSources().mobAttack(attacker), 30);
       var second = new LivingIncomingDamageEvent(defender, new DamageContainer(attacker.damageSources().mobAttack(attacker), 30));
-      ServantCombatSystem.handleIncomingDamage(defender, second);
+      resolveHit(defender, second);
       h.assertTrue(!second.isCanceled() && Math.abs(second.getAmount() - 6) < 0.001,
          "second hit dodged or received another free parry");
       h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 1, "one guard parried multiple hits");
       ServantCombatDefenseService.setGuarding(defender, false);
       chooseRoll(defender, 0.90, 1, 0, 0.05);
       h.assertTrue(!ServantCombatDefenseService.prepareNpcGuard(defender, attacker.damageSources().mobAttack(attacker), 30),
-         "parry ignored its shared two-second cooldown");
+         "ordinary hit after parry bypassed the release cooldown");
       defender.discard(); attacker.discard(); h.succeed();
    }
 
@@ -156,7 +165,7 @@ public final class ServantPerfectGuardGameTests {
       defender.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES, 1);
       h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "guard rejected");
       var event = new LivingIncomingDamageEvent(defender, new DamageContainer(attacker.damageSources().mobAttack(attacker), 30));
-      ServantCombatSystem.handleIncomingDamage(defender, event);
+      resolveHit(defender, event);
       h.assertTrue(event.isCanceled() && defender.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES) == 0,
          "guard displaced counted skill evasion");
       h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 0, "skill evasion also triggered perfect guard");
@@ -164,32 +173,26 @@ public final class ServantPerfectGuardGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
-   public static void unusedGuardDoesNotConsumePerfectGuardCooldown(GameTestHelper h) {
+   public static void unusedGuardStartsReleaseCooldown(GameTestHelper h) {
       var defender = defender(h, "diarmuid_ua_duibhne");
       LivingEntity attacker = attacker(h);
       h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "first guard rejected");
       ServantCombatDefenseService.setGuarding(defender, false);
-      assertPerfect(h, defender, attacker.damageSources().mobAttack(attacker), 30);
+      h.assertTrue(!ServantCombatDefenseService.setGuarding(defender, true), "unused guard could be spammed to refresh the parry window");
       defender.discard(); attacker.discard(); h.succeed();
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 55)
-   public static void npcPerfectGuardBecomesAvailableAgainAfterFortyTicks(GameTestHelper h) {
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void perfectGuardCanRestartImmediatelyAfterRelease(GameTestHelper h) {
       var defender = defender(h, "heracles");
       LivingEntity attacker = attacker(h);
       var source = attacker.damageSources().mobAttack(attacker);
       assertPerfect(h, defender, source, 30);
       ServantCombatDefenseService.setGuarding(defender, false);
-      h.runAfterDelay(39, () -> h.assertTrue(defender.getPersistentData().getLong("TypeMoonDefenseNpcParryReady")
-         > h.getLevel().getGameTime(), "perfect guard cooldown ended before forty ticks"));
-      h.runAfterDelay(40, () -> {
-         chooseRoll(defender, 0.90, 1, 0, 0.05);
-         h.assertTrue(ServantCombatDefenseService.prepareNpcGuard(defender, source, 30), "perfect guard did not recover");
-         h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, source, 30) == 0,
-            "recovered guard did not parry");
-         h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 2, "second parry not recorded");
-         defender.discard(); attacker.discard(); h.succeed();
-      });
+      h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "perfect guard inherited a release cooldown");
+      h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, source, 30) == 0, "fresh guard failed to parry");
+      h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 2, "second parry not recorded");
+      defender.discard(); attacker.discard(); h.succeed();
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
@@ -279,7 +282,7 @@ public final class ServantPerfectGuardGameTests {
             double stamina = defender.getPersistentData().getDouble(ServantCombatDefenseService.TAG_STAMINA);
             double mana = defender.getCurrentMp();
             var event = new LivingIncomingDamageEvent(defender, new DamageContainer(source, 30));
-            ServantCombatSystem.handleIncomingDamage(defender, event);
+            resolveHit(defender, event);
             if (choice == 0) {
                h.assertTrue(event.isCanceled() && defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 1, id + " never chose guard");
             } else if (choice == 1) {
@@ -290,7 +293,7 @@ public final class ServantPerfectGuardGameTests {
                h.assertTrue(!event.isCanceled() && event.getAmount() == 15, id + " lost passive defense while attacking");
                h.assertTrue(!ServantCombatDefenseService.isGuarding(defender), id + " guarded on the offensive branch");
                double passiveCost = net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.guardCost(
-                  net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas.blockStaminaCost(params),
+                  30.0,
                   net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits.resolve(defender).guardBonus(), false, false);
                h.assertTrue(defender.getCurrentMp() == mana && Math.abs(defender.getPersistentData().getDouble(
                   ServantCombatDefenseService.TAG_STAMINA) - Math.max(0, stamina - passiveCost)) < 0.001,
@@ -309,10 +312,14 @@ public final class ServantPerfectGuardGameTests {
       var source = attacker.damageSources().mobAttack(attacker);
       for (String id : RESET_SERVANTS) {
          var light = defender(h, id); var heavy = defender(h, id);
+         // Isolate absolute attack severity from a freshly spawned entity's small health pool.
+         light.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);
+         heavy.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(1000);
          chooseRoll(light, 0.48, 0.49, 0, 0.05); chooseRoll(heavy, 0.48, 0.49, 0, 0.05);
          var lightReaction = ServantCombatDefenseService.reactToIncomingAttack(light, source, 30, true, true);
          var heavyReaction = ServantCombatDefenseService.reactToIncomingAttack(heavy, source, 200, true, true);
-         h.assertTrue(lightReaction == net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.NpcReaction.GUARD, id + " light hit did not guard");
+         h.assertTrue(lightReaction == net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.NpcReaction.GUARD,
+            id + " light hit did not guard: " + lightReaction);
          h.assertTrue(heavyReaction == net.xxxjk.TYPE_MOON_WORLD.servant.combat.DefenseRules.NpcReaction.DODGE, id + " heavy hit did not favor dodge");
          light.discard(); heavy.discard();
       }
@@ -333,7 +340,7 @@ public final class ServantPerfectGuardGameTests {
                chooseRoll(defender, 0, 0.05, guardSucceeds ? 0 : 0.90, guardSucceeds ? 0.05 : 1);
                double mana = defender.getCurrentMp();
                var event = new LivingIncomingDamageEvent(defender, new DamageContainer(source, 30));
-               ServantCombatSystem.handleIncomingDamage(defender, event);
+               resolveHit(defender, event);
                h.assertTrue(defender.getCurrentMp() == mana, id + " spent MP on an unavailable dodge");
                h.assertTrue(event.isCanceled() == guardSucceeds, id + " failed probabilistic guard fallback");
                h.assertTrue(ServantCombatDefenseService.isGuarding(defender) == guardSucceeds, id + " wrong fallback pose");
@@ -405,7 +412,7 @@ public final class ServantPerfectGuardGameTests {
          chooseRoll(defender, 0.90, 1, 0, 0.05);
          ServantCombatDefenseService.tick(defender);
          var event = new LivingIncomingDamageEvent(defender, new DamageContainer(attacker.damageSources().mobAttack(attacker), 30));
-         ServantCombatSystem.handleIncomingDamage(defender, event);
+         resolveHit(defender, event);
          h.assertTrue(!event.isCanceled() && event.getAmount() == 15, "offensive decision lost passive defense or rerolled");
          CombatThreatService.clearForSource(h.getLevel(), attacker.getUUID());
          defender.discard(); attacker.discard(); h.succeed();
@@ -420,7 +427,7 @@ public final class ServantPerfectGuardGameTests {
       h.assertTrue(!ServantCombatDefenseService.reactToProjectile(defender, arrow, 30, java.util.Set.of()), "offensive projectile choice defended");
       chooseRoll(defender, 0.90, 1, 0, 0.05);
       var event = new LivingIncomingDamageEvent(defender, new DamageContainer(attacker.damageSources().arrow(arrow, attacker), 30));
-      ServantCombatSystem.handleIncomingDamage(defender, event);
+      resolveHit(defender, event);
       h.assertTrue(!event.isCanceled() && event.getAmount() == 15, "projectile lost passive defense or rerolled sensor decision");
       defender.discard(); attacker.discard(); h.succeed();
    }
