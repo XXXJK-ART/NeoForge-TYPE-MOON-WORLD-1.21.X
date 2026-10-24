@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -110,10 +109,7 @@ public final class ServantCardTraitService {
 
       double multiplier = 1.0;
       multiplier *= ServantDamageCalculator.computeFactionMultiplier(attackerDefinition.faction(), ServantIdentityHelper.factionOf(defender));
-      multiplier *= ServantDamageCalculator.computeTraitMultiplier(
-         specialAttackConditions(attackerDefinition),
-         ServantIdentityHelper.traitsOf(defender)
-      );
+      // Target-specific bonuses belong to the skill or NP that defines them.
 
       CompoundTag data = attacker.getPersistentData();
       if (data.getBoolean("MadEnhancementActive") && net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(attackerDefinition.skillIds(),"mad_enhancement_")==0) {
@@ -153,13 +149,17 @@ public final class ServantCardTraitService {
       }
       if (hasSkill(definition, "artoria_instinct_a")) {
          data.putBoolean("ArtoriaInstinctAActive", true);
-         data.putFloat("ArtoriaInstinctCertainHitNegationChance", 0.95F);
+         data.putFloat("ArtoriaInstinctCertainHitNegationChance", 0.50F);
       }
       if (hasSkill(definition, "mana_burst_a")) {
          data.putBoolean("ArtoriaManaBurstAAvailable", true);
       }
       if (hasSkill(definition, "charisma_b")) {
          data.putBoolean("ArtoriaCharismaBAvailable", true);
+      }
+      if (hasSkill(definition, "dragon_core")) {
+         data.putBoolean("DragonCoreActive", true);
+         data.putDouble("DragonCoreManaRegenMultiplier", 2.0D);
       }
       if (hasSkillPrefix(definition, "divinity_") || definition.traits().contains(ServantTraitTag.DIVINE)) {
          data.putBoolean("DivinityActive", true);
@@ -216,8 +216,11 @@ public final class ServantCardTraitService {
       data.remove("EmiyaStyleBattleContinuationActive");
       data.remove("ArtoriaInstinctAActive");
       data.remove("ArtoriaInstinctCertainHitNegationChance");
+      data.remove("ArtoriaInstinctCharges");
       data.remove("ArtoriaManaBurstAAvailable");
       data.remove("ArtoriaCharismaBAvailable");
+      data.remove("DragonCoreActive");
+      data.remove("DragonCoreManaRegenMultiplier");
       data.remove("DivinityActive");
       data.remove("DivinityFlatDamage");
       data.remove("MadEnhancementActive");
@@ -241,26 +244,6 @@ public final class ServantCardTraitService {
       data.remove("RidingBActive");
       data.remove("RidingBSpeedBonus");
       data.remove("RidingBArmorBonus");
-   }
-
-   private static List<ServantTraitTag> specialAttackConditions(ServantDefinition definition) {
-      EnumSet<ServantTraitTag> conditions = EnumSet.noneOf(ServantTraitTag.class);
-      switch (definition.id()) {
-         case "oda_nobunaga" -> { }
-         case "enkidu" -> {
-            conditions.add(ServantTraitTag.DIVINE);
-            conditions.add(ServantTraitTag.CELESTIAL);
-         }
-         case "medusa" -> conditions.add(ServantTraitTag.MALE);
-         case "artoria_pendragon", "gawain" -> conditions.add(ServantTraitTag.DRAGON);
-         case "cursed_arm_hassan", "li_shuwen", "sasaki_kojiro" -> {
-            conditions.add(ServantTraitTag.HUMANOID);
-            conditions.add(ServantTraitTag.LIVING_HUMAN);
-         }
-         default -> {
-         }
-      }
-      return new ArrayList<>(conditions);
    }
 
    private static String traitKeyList(List<ServantTraitTag> traits) {

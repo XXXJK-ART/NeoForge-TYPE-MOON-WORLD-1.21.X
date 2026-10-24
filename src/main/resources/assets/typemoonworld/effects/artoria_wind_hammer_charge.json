@@ -1,0 +1,68 @@
+{
+  "duration": 0.5,
+  "notes": "Wind King Hammer windup: dense pale-cyan air twists rapidly around the raised blade before releasing forward.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.5,
+      "rate": 360,
+      "particle_lifetime": 0.24,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.06,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.04,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.72], "rotate_with_entity": true },
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(0.1 + 0.14 * t) * cos(t * 18.84 - time * 30.0)", "expr_y": "(0.1 + 0.14 * t) * sin(t * 18.84 - time * 30.0)", "expr_z": "0.05 + t * 0.45", "t_start": 0.0, "t_end": 1.0, "segments": 72 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88DDF4F8" },
+        { "t": 0.55, "color": "#C7F5FFFF" },
+        { "t": 1.0, "color": "#005C8F00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.45, "size": 0.095 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.3, "soft_particles": true },
+      "particle_role": "WIND_HAMMER_PRE_RELEASE_COMPRESSION",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 0.5,
+      "rate": 110,
+      "particle_lifetime": 0.24,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.06,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.01, 0.0],
+      "velocity_variance": 0.025,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.16, 0.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 0.42, "segments": 36 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#80B9D5DD" },
+        { "t": 0.65, "color": "#577C92AA" },
+        { "t": 1.0, "color": "#002C4400" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.5, "size": 0.042 },
+        { "t": 1.0, "size": 0.008 }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "renderer": "BILLBOARD",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.12, "soft_particles": true },
+      "particle_role": "WIND_HAMMER_SIMPLE_GROUND_AIR_MOTES",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.04, 0.015, 0.04], "offset": [0.0, 0.0, 0.0], "speed": 0.015, "chance": 0.24 }
+      ]
+    }
+  ]
+}

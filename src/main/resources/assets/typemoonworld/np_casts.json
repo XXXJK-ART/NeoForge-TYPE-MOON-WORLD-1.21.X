@@ -4,6 +4,11 @@
     "sound": "typemoonworld:voice/artoria_pendragon/excalibur",
     "pitch": 1.0
   },
+  "artoria_excalibur_short": {
+    "voice_ticks": 120,
+    "sound": "typemoonworld:voice/artoria_pendragon/excalibur",
+    "pitch": 1.12
+  },
   "gilgamesh_ea": {
     "voice_ticks": 228,
     "sound": "typemoonworld:voice/gilgamesh/ea_half",

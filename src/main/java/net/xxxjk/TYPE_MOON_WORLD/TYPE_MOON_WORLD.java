@@ -131,6 +131,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDodgeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantDefenseAnimationMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CombatThreatStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSelectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderCommandMessage;
@@ -344,6 +345,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToServer(ServantCardGuardMessage.TYPE, ServantCardGuardMessage.STREAM_CODEC, ServantCardGuardMessage::handleData);
       registrar.playToClient(ServantCardDefenseStateMessage.TYPE, ServantCardDefenseStateMessage.STREAM_CODEC, ServantCardDefenseStateMessage::handleData);
       registrar.playToClient(ServantCardGuardPoseMessage.TYPE, ServantCardGuardPoseMessage.STREAM_CODEC, ServantCardGuardPoseMessage::handleData);
+      registrar.playToClient(ServantDefenseAnimationMessage.TYPE, ServantDefenseAnimationMessage.STREAM_CODEC, ServantDefenseAnimationMessage::handleData);
       registrar.playToClient(CombatThreatStateMessage.TYPE, CombatThreatStateMessage.STREAM_CODEC, CombatThreatStateMessage::handleData);
       registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
       registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);
@@ -383,7 +385,8 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(FirearmPoseMessage.TYPE, FirearmPoseMessage.STREAM_CODEC, FirearmPoseMessage::handleData);
       registrar.playToClient(OdaNobunagaActionAnimationMessage.TYPE, OdaNobunagaActionAnimationMessage.STREAM_CODEC, OdaNobunagaActionAnimationMessage::handleData);
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage::handleData);
-      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage::handleData);
+       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.SasakiKojiroActionAnimationMessage::handleData);
+       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.ArtoriaExcaliburAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.ArtoriaExcaliburAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.ArtoriaExcaliburAnimationMessage::handleData);
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage.TYPE, net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage.STREAM_CODEC, net.xxxjk.TYPE_MOON_WORLD.network.DiarmuidActionAnimationMessage::handleData);
       registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage.TYPE,net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage.STREAM_CODEC,net.xxxjk.TYPE_MOON_WORLD.network.CuChulainnVisualMessage::handle);
       registrar.playToClient(BajiquanPoseMessage.TYPE, BajiquanPoseMessage.STREAM_CODEC, BajiquanPoseMessage::handleData);

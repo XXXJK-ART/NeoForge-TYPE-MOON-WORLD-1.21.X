@@ -161,13 +161,13 @@ public final class ServantCardDefenseGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
-   public static void widerPerfectWindowIsFreeAndReleaseHasNoCooldown(GameTestHelper h) {
+   public static void halfSecondPerfectWindowAndImmediatePerfectRestart(GameTestHelper h) {
       var player = card(h); var attacker = attacker(h); var source = attacker.damageSources().mobAttack(attacker);
       h.assertTrue(ServantCombatDefenseService.setGuarding(player, true), "guard rejected");
       var params = ServantDefenseTraits.definition(player).parameters();
       long now = h.getLevel().getGameTime();
       player.getPersistentData().putLong(ServantCombatDefenseService.TAG_GUARD_START,
-         now - ServantCombatFormulas.parryWindowTicks(params) - 5);
+         now - ServantCombatFormulas.parryWindowTicks(params));
       double stamina = player.getPersistentData().getDouble("ServantCardCombatStamina");
       float health = player.getHealth();
       player.hurt(source, 50);
@@ -175,15 +175,14 @@ public final class ServantCardDefenseGameTests {
       close(h, stamina, player.getPersistentData().getDouble("ServantCardCombatStamina"), "perfect guard spent stamina");
       h.assertTrue(player.getPersistentData().getInt("TypeMoonDefenseParryCount") == 1, "perfect guard not recorded");
       ServantCombatDefenseService.setGuarding(player, false);
-      h.assertTrue(ServantCombatDefenseService.setGuarding(player, true), "perfect guard added a release cooldown");
+       h.assertTrue(ServantCombatDefenseService.setGuarding(player, true), "perfect guard inherited a release cooldown");
       player.invulnerableTime = 0;
       player.getPersistentData().putLong(ServantCombatDefenseService.TAG_GUARD_START,
-         now - ServantCombatFormulas.parryWindowTicks(params) - 6);
+         h.getLevel().getGameTime() - ServantCombatFormulas.parryWindowTicks(params) - 1);
       player.hurt(source, 50);
       h.assertTrue(player.getHealth() < health, "outside-window hit also received a perfect guard");
       h.assertTrue(player.getPersistentData().getInt("TypeMoonDefenseParryCount") == 1, "window extended beyond its boundary");
       ServantCombatDefenseService.setGuarding(player, false);
-      h.assertTrue(!ServantCombatDefenseService.setGuarding(player, true), "ordinary guard inherited old perfect exemption");
       player.discard(); attacker.discard(); h.succeed();
    }
 }

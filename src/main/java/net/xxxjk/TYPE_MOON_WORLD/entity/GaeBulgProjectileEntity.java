@@ -522,7 +522,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().generic();
-      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile")) {
+      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile", this)) {
          this.spawnSingleTargetImpact(target);
          this.discard();
          return;

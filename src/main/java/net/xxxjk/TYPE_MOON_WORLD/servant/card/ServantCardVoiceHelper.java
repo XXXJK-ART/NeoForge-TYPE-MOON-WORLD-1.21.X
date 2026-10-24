@@ -75,7 +75,11 @@ public final class ServantCardVoiceHelper {
          case "rho_aias" -> ModSounds.EMIYA_ARCHER_VOICE_RHO_AIAS.get();
          case "emiya_spiral" -> ModSounds.EMIYA_ARCHER_VOICE_SPIRAL.get();
          case "copy_weapon", "emiya_kb", "emiya_hound", "emiya_layered_projection" -> ModSounds.EMIYA_ARCHER_VOICE_PROJECTION.get();
-         case "invisible_air_hammer", "invisible_air_release" -> ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get();
+         case "artoria_invisible_air_toggle", "artoria_wind_defense",
+            "invisible_air_hammer", "invisible_air_release" -> ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get();
+         case "mana_burst", "artoria_small_combo", "artoria_knight_triple_slash",
+            "artoria_intercept_thrust", "artoria_spinning_slash", "artoria_upward_slash",
+            "artoria_guard_counter", "artoria_knight_heavy_slash" -> ModSounds.ARTORIA_VOICE_ATTACK.get();
          case "enuma_elish" -> ModSounds.ENKIDU_VOICE_NP.get();
          case "gilgamesh_cross_slash" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
          case "caster_gilgamesh_cannon_calibration", "caster_gilgamesh_royal_cannon" -> ModSounds.CASTER_GILGAMESH_VOICE_NP.get();

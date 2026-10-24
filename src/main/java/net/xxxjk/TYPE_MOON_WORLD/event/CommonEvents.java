@@ -549,6 +549,14 @@ public class CommonEvents {
             event.setAmount(0.0F);
             return;
          }
+         if (event.getSource().is(net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.GUARANTEED_HITS)) {
+            Object token = event.getSource().getDirectEntity() instanceof Projectile ? event.getSource().getDirectEntity()
+               : event.getSource().getEntity() instanceof LivingEntity attacker
+                  ? net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(attacker) : event.getSource();
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.negateSpecial(event.getEntity(), token)) {
+               event.setCanceled(true); event.setAmount(0); return;
+            }
+         }
          if (event.getSource().is(MuramasaDamageTypes.TSUMUKARI_MURAMASA)) {
             event.setCanceled(false);
             event.setAmount(Float.MAX_VALUE);
@@ -611,12 +619,14 @@ public class CommonEvents {
                boolean qinggangSecondHit = event.getSource().is(
                   net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes.QINGGANG_SECOND_HIT);
                if (!qinggangSecondHit) {
-                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event.getAmount()));
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event));
                   if (!attacker.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)) {
                      event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
                   }
+                  event.setAmount(ArtoriaPendragonCombatHelper.applyRevealedSwordBonus(attacker, event.getSource(), event.getAmount()));
                }
             }
+            event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(event.getEntity(), event.getSource(), event.getAmount()));
             if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.beforeDefense(event)) return;
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
@@ -722,21 +732,8 @@ public class CommonEvents {
                      }
                      return;
                   }
-                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity artoria
-                     && ArtoriaPendragonCombatHelper.tryNegateMedeaSmallMagic(artoria, event.getSource(), event.getAmount())) {
-                     event.setCanceled(true);
-                     return;
-                  }
-                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity artoria
-                     && directEntity instanceof Projectile projectile
-                     && ArtoriaPendragonCombatHelper.tryDodgeProjectileWithInstinct(artoria, projectile)) {
-                     event.setCanceled(true);
-                     return;
-                  }
                   event.setAmount(MagicResistanceHelper.applyMagicDamageReduction(living, event.getSource(), event.getAmount()));
-                  if (living instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity) {
-                     event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(living, event.getSource(), event.getAmount()));
-                  }
+
                   event.setAmount(ArtoriaPendragonCombatHelper.applyAvalonDamageReduction(living, event.getSource(), event.getAmount()));
                   if (event.getAmount() <= 0.0F) {
                      event.setCanceled(true);

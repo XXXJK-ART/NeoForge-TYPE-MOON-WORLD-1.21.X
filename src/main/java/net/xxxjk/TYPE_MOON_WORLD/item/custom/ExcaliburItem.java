@@ -75,7 +75,10 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
          return InteractionResultHolder.fail(stack);
       }
       if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-         PlayerNoblePhantasmHelper.startExcaliburCharge(serverPlayer);
+         boolean started = player.isCrouching()
+            ? PlayerNoblePhantasmHelper.startExcaliburCharge(serverPlayer)
+            : PlayerNoblePhantasmHelper.startShortExcaliburCharge(serverPlayer);
+         if (!started) return InteractionResultHolder.fail(stack);
       }
       player.startUsingItem(hand);
       return InteractionResultHolder.consume(stack);
@@ -92,12 +95,16 @@ public class ExcaliburItem extends SwordItem implements GeoItem, NoblePhantasmIt
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
       if (net.xxxjk.TYPE_MOON_WORLD.servant.summon.SummoningRitualService.isRitualUsing(living, stack)) return;
       int useTicks = this.getUseDuration(stack, living) - remainingUseDuration;
-      PlayerNoblePhantasmHelper.tickExcaliburCharge(level, living, useTicks);
+       if (living.getPersistentData().contains("TypeMoonExcaliburShortCharge"))
+          PlayerNoblePhantasmHelper.tickShortExcaliburCharge(level, living, useTicks);
+       else PlayerNoblePhantasmHelper.tickExcaliburCharge(level, living, useTicks);
    }
 
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
       if (!level.isClientSide() && living instanceof ServerPlayer player) {
-         PlayerNoblePhantasmHelper.releaseExcalibur(player);
+          if (player.getPersistentData().contains("TypeMoonExcaliburShortCharge"))
+             PlayerNoblePhantasmHelper.releaseShortExcalibur(player);
+          else PlayerNoblePhantasmHelper.releaseExcalibur(player);
       }
    }
 

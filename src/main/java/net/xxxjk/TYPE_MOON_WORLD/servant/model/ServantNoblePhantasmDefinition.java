@@ -32,7 +32,7 @@ public record ServantNoblePhantasmDefinition(
       Codec.DOUBLE.optionalFieldOf("base_damage_multiplier", 1.0).forGetter(ServantNoblePhantasmDefinition::baseDamageMultiplier),
       Codec.DOUBLE.optionalFieldOf("range", 16.0).forGetter(ServantNoblePhantasmDefinition::range),
       SkillEffectEntry.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(ServantNoblePhantasmDefinition::effects),
-      Codec.STRING.listOf().xmap(values -> values.stream().map(ServantTraitTag::fromKey).toList(), values -> values.stream().map(ServantTraitTag::key).toList()).optionalFieldOf("special_attack_conditions", List.of()).forGetter(ServantNoblePhantasmDefinition::specialAttackConditions),
+      Codec.STRING.listOf().xmap(values -> values.stream().flatMap(key -> ServantTraitTag.findByKey(key).stream()).distinct().toList(), values -> values.stream().map(ServantTraitTag::key).toList()).optionalFieldOf("special_attack_conditions", List.of()).forGetter(ServantNoblePhantasmDefinition::specialAttackConditions),
       Codec.STRING.listOf().xmap(values -> values.stream().map(ServantClassType::fromKey).toList(), values -> values.stream().map(ServantClassType::key).toList()).optionalFieldOf("class_restrictions", List.of()).forGetter(ServantNoblePhantasmDefinition::classRestrictions),
       Codec.STRING.optionalFieldOf("release_policy", "").forGetter(ServantNoblePhantasmDefinition::releasePolicy)
    ).apply(instance, ServantNoblePhantasmDefinition::new));

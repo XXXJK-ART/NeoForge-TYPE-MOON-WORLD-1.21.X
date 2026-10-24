@@ -1,0 +1,22 @@
+{
+  "name": "artoria_excalibur_charge_full",
+  "version": 3,
+  "description": "Converted from the Victory and Contract Sword animation with a full Excalibur charge and release timing.",
+  "source_file": "shengli_yu_qiyue_zhi_jian.animation.json",
+  "source_animation": "galibang",
+  "motion_ticks": 302,
+  "emote": {
+    "beginTick": 0,
+    "endTick": 302,
+    "stopTick": 302,
+    "degrees": true,
+    "moves": [
+      {"tick":0,"body":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":5,"yaw":-5,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":0,"yaw":0,"roll":7.5},"leftArm":{"x":5,"y":2,"z":0,"pitch":-24.6381,"yaw":-2.4897,"roll":-7.303},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":-10.0039,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":9.9905,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":5,"body":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":5,"yaw":-5,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":-58.2044,"yaw":-23.637,"roll":1.0475},"leftArm":{"x":5,"y":2,"z":0,"pitch":-79.6426,"yaw":12.1594,"roll":-5.0229},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":-10.0039,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":9.9905,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":10,"body":{"x":0,"y":0,"z":0,"pitch":-8,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":-1.6667,"yaw":-5.8333,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":-8,"yaw":0,"roll":0},"rightArm":{"x":-6,"y":2,"z":0,"pitch":-105.5545,"yaw":-23.8424,"roll":0.6277},"leftArm":{"x":6,"y":2,"z":0,"pitch":-132.3994,"yaw":22.8256,"roll":-7.3017},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":-5.0039,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":-2.5095,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":-2,"y":-5,"z":0,"pitch":-55,"yaw":18,"roll":-35},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":151,"body":{"x":0,"y":0,"z":0,"pitch":-10,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":-2.9167,"yaw":-7.0833,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":-10,"yaw":0,"roll":0},"rightArm":{"x":-6,"y":2,"z":0,"pitch":-108.0545,"yaw":-23.8424,"roll":0.6277},"leftArm":{"x":6,"y":2,"z":0,"pitch":-134.8994,"yaw":22.8256,"roll":-7.3017},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":-5.0039,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":-2.5095,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":-2,"y":-5,"z":0,"pitch":-55,"yaw":18,"roll":-35},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":152,"body":{"x":0,"y":0,"z":0,"pitch":12.5,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":0,"yaw":-7.5,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":12.5,"yaw":0,"roll":0},"rightArm":{"x":-6,"y":2,"z":0,"pitch":-65.9535,"yaw":-18.947,"roll":1.7206},"leftArm":{"x":6,"y":2,"z":0,"pitch":-89.8994,"yaw":22.8256,"roll":-7.3017},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":9.9961,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":4.9905,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":-1,"y":-6,"z":0,"pitch":-30,"yaw":5,"roll":-25},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":302,"body":{"x":0,"y":0,"z":0,"pitch":12.5,"yaw":0,"roll":0},"head":{"x":0,"y":0,"z":0,"pitch":0,"yaw":-7.5,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":12.5,"yaw":0,"roll":0},"rightArm":{"x":-6,"y":2,"z":0,"pitch":-65.9535,"yaw":-18.947,"roll":1.7206},"leftArm":{"x":6,"y":2,"z":0,"pitch":-89.8994,"yaw":22.8256,"roll":-7.3017},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":9.9961,"yaw":-0.0871,"roll":4.9992},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":4.9905,"yaw":0.2178,"roll":-4.9952},"rightItem":{"x":-1,"y":-6,"z":0,"pitch":-30,"yaw":5,"roll":-25},"leftItem":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0}}
+    ]
+  }
+}

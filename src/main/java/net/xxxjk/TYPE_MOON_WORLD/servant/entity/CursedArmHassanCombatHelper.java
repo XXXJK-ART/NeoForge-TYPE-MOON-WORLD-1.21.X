@@ -577,7 +577,7 @@ public final class CursedArmHassanCombatHelper {
       DamageSource source = entity.damageSources().magic();
       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,50,"cursed_arm_hassan:zabaniya",killed)) { spawnZabaniyaImpactFx(entity,target,killed);return; }
       if (killed) {
-         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya")) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(entity))) {
             spawnZabaniyaImpactFx(entity, target, false);
             return;
          }

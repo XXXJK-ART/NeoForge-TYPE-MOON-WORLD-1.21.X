@@ -8,12 +8,14 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(targets = "net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity", remap = false)
 public abstract class ArtoriaExcaliburBeamMixin {
+    @Unique private boolean fatesupport$terminalVehiclesDamaged;
     @Shadow
     public abstract Vec3 getEndPos();
 
@@ -41,35 +43,35 @@ public abstract class ArtoriaExcaliburBeamMixin {
                 getEndPos(),
                 beamHalfWidth(),
                 beamHalfHeight(),
-                133.33333F
+                ((ArtoriaExcaliburBeamEntity) (Object) this).pulseDamage()
         );
     }
 
     @Inject(
-            method = "damageCraterSlice(Lnet/xxxjk/TYPE_MOON_WORLD/entity/ArtoriaExcaliburBeamEntity;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/phys/Vec3;IIIIF)V",
+            method = "queueCrater(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/phys/Vec3;)V",
             at = @At("TAIL")
     )
-    private static void fatesupport$damageVehiclesInCrater(
-            ArtoriaExcaliburBeamEntity beam,
+    private void fatesupport$damageVehiclesInCrater(
             ServerLevel level,
             LivingEntity owner,
             Vec3 center,
-            int radius,
-            int halfHeight,
-            int fromY,
-            int batchHeight,
-            float powerScale,
             CallbackInfo callbackInfo
     ) {
+        ArtoriaExcaliburBeamEntity beam = (ArtoriaExcaliburBeamEntity) (Object) this;
+        if (fatesupport$terminalVehiclesDamaged || !beam.hasTerminalImpact() || beam.isGoldenVariant() || owner == null) return;
+        fatesupport$terminalVehiclesDamaged = true;
+        float powerScale = beam.impactPower();
+        int radius = Math.max(6, (int)Math.floor(28 * (.25 + powerScale * .75)));
+        int halfHeight = Math.max(18, (int)Math.floor(112 * (.22 + powerScale * .78)));
         Entity beamEntity = (Entity) (Object) beam;
         SuperbWarfareLoader.damageVehiclesInBox(
                 level,
                 new net.minecraft.world.phys.AABB(
                         center.x - radius,
-                        center.y + fromY - 1.5D,
+                        center.y - halfHeight,
                         center.z - radius,
                         center.x + radius,
-                        center.y + Math.min(halfHeight, fromY + batchHeight) + 1.5D,
+                        center.y + halfHeight,
                         center.z + radius
                 ),
                 owner,

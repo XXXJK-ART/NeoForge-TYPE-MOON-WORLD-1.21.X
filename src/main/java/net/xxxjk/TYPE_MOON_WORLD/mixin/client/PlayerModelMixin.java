@@ -124,7 +124,7 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
          if (vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id))
             net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyHandPose(player,(PlayerModel<?>)(Object)this,ageInTicks-player.tickCount);
          if (net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.isGuarding(player))
-            net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose((PlayerModel<?>)(Object)this);
+            net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose(player, (PlayerModel<?>)(Object)this);
       }
    }
 

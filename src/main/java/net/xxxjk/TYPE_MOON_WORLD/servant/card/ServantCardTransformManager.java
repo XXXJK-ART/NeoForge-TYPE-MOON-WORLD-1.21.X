@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.passive.PassiveService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.GilgameshDivineShield;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatFormulas;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -556,6 +557,14 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.skill_suppressed"), true);
          return false;
       }
+      if ("artoria_pendragon".equals(vars.servantCardState().id()) && slot == 0
+         && ServantCardArtoriaSkills.isManaBurstActive(player)) {
+         ServantCardArtoriaSkills.performManaBurst(player); vars.syncPlayerVariables(player); return true;
+      }
+      if ("artoria_pendragon".equals(vars.servantCardState().id())
+         && net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.busy(player)) return false;
+      if ("artoria_pendragon".equals(vars.servantCardState().id())
+         && net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isWindDefenseActive(player)) return false;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)
          && !("oda_nobunaga".equals(vars.servantCardState().id()) && slot == 9 && player.getPersistentData().getBoolean("ServantCardOdaHajunCardActive"))) return false;
       if ("heracles".equals(vars.servantCardState().id())) return net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.start(player, slot);
@@ -700,6 +709,8 @@ public final class ServantCardTransformManager {
       }
       int cooldownSlot = slot < 0 ? 6 : slot;
       int currentCooldown = unlimited ? 0 : npSlot ? vars.servantCardState().npCooldown() : getSkillCooldown(vars, cooldownSlot);
+      if (slot == -1 && "artoria_pendragon".equals(vars.servantCardState().id())) currentCooldown = unlimited ? 0
+         : (int)Math.max(0, player.getPersistentData().getLong(net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.COMBO_READY) - player.level().getGameTime());
       if (!unlimited && slot == -1 && "oda_nobunaga".equals(vars.servantCardState().id())) currentCooldown = (int)Math.max(0, player.getPersistentData().getLong("OdaThrustCooldown") - player.level().getGameTime());
       if (!unlimited && "zhao_yun_summon_hakuryu".equals(action.effectId())) {
          currentCooldown = Math.max(currentCooldown, ServantCardZhaoYunSkills.summonCooldownRemaining(player));
@@ -714,6 +725,11 @@ public final class ServantCardTransformManager {
       }
       if (currentCooldown > 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.cooldown", String.format(java.util.Locale.ROOT, "%.1f", currentCooldown / 20.0F)), true);
+         return false;
+      }
+      if ("mana_burst".equals(action.effectId())
+         && !ServantCardArtoriaSkills.isManaBurstActive(player)
+         && player.level().getGameTime() < player.getPersistentData().getLong(ArtoriaPendragonCombatHelper.TAG_MANA_BURST_REOPEN_AT)) {
          return false;
       }
       if ("mana_burst".equals(action.effectId())
@@ -797,6 +813,17 @@ public final class ServantCardTransformManager {
       if ("baobhan_sith_fetch_failnaught".equals(action.effectId())) {
          return ServantCardBaobhanSithSkills.openFetchFailnaughtMap(player);
       }
+      if ("artoria_small_combo".equals(action.effectId())
+         && net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.comboTarget(player) == null) return false;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.isTargetedSwordSkill(action.effectId())
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.canPerformSwordSkill(player, action.effectId())) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      if (ServantCardArtoriaSkills.isWindAction(action)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.canWind(player)) return false;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE.equals(action.effectId())
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.canStartWindDefense(player)) return false;
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
       boolean zhaoYunBreakthroughDiscount =
          "zhao_yun_rider".equals(vars.servantCardState().id())
@@ -854,6 +881,8 @@ public final class ServantCardTransformManager {
       }
       if (slot == -1 && "oda_nobunaga".equals(vars.servantCardState().id())) {
          if (!unlimited) player.getPersistentData().putLong("OdaThrustCooldown", player.level().getGameTime() + cooldownTicks);
+      } else if (slot == -1 && "artoria_pendragon".equals(vars.servantCardState().id())) {
+         if (!unlimited) player.getPersistentData().putLong(net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.COMBO_READY, player.level().getGameTime() + cooldownTicks);
       } else if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
@@ -947,6 +976,9 @@ public final class ServantCardTransformManager {
                ServantCardOdaNobunagaSkills.markOdaThreeThousandRelease(player);
             }
          }
+      } else if ("artoria_pendragon".equals(vars.servantCardState().id()) && slot == 6) {
+         if (pressed) triggerAction(player, slot);
+         else ServantCardArtoriaSkills.stopWindDefense(player);
       }
    }
 
@@ -1577,7 +1609,8 @@ public final class ServantCardTransformManager {
             if (!ServantCardArashSkills.performArrowCreation(player)) return false;
          }
          case "mana_burst" -> ServantCardArtoriaSkills.performManaBurst(player);
-         case "charisma" -> ServantCardArtoriaSkills.performCharisma(player);
+          case "artoria_invisible_air_toggle" -> { if (!ServantCardArtoriaSkills.toggleWindBarrier(player)) return false; }
+         case "artoria_wind_defense" -> { if (!ServantCardArtoriaSkills.startWindDefense(player)) return false; }
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);
          case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, vars.servantCardState().id());
          case "circle_realm" -> ServantCardLiShuwenSkills.performCircleRealm(player);
@@ -1587,9 +1620,9 @@ public final class ServantCardTransformManager {
          case "invisible_air_hammer" -> ServantCardArtoriaSkills.performInvisibleAirHammer(player, action.cooldownTicks());
          case "invisible_air_release" -> ServantCardArtoriaSkills.performInvisibleAirRelease(player, action.cooldownTicks());
          case "artoria_small_combo" -> ServantCardArtoriaSkills.performSmallCombo(player);
-         case "artoria_instinct" -> ServantCardArtoriaSkills.performInstinct(player);
-         case "artoria_riding" -> ServantCardArtoriaSkills.performRiding(player);
-         case "mana_burst_beam" -> ServantCardArtoriaSkills.performManaBurstBeam(player);
+          case "artoria_knight_triple_slash", "artoria_intercept_thrust", "artoria_spinning_slash",
+               "artoria_upward_slash", "artoria_guard_counter", "artoria_knight_heavy_slash" ->
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.performSwordSkill(player, id);
          case "sasaki_presence_concealment" -> { if (!ServantCardSasakiKojiroSkills.enablePresenceConcealment(player)) return false; }
          case "sasaki_crouch_cutback" -> { if (!ServantCardSasakiKojiroSkills.perform(player, net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroRules.Technique.CROUCH_CUTBACK)) return false; }
          case "sasaki_vertical_slash" -> { if (!ServantCardSasakiKojiroSkills.perform(player, net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroRules.Technique.VERTICAL_SLASH)) return false; }
@@ -1901,7 +1934,7 @@ public final class ServantCardTransformManager {
       return isUshiwakamaruNoblePhantasmSlot(servantId, slot)
          || "zhao_yun_rider".equals(servantId) && (slot == 8 || slot == 9)
          || "okita_souji_saber".equals(servantId) && (slot == 8 || slot == 9)
-         || slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
+          || slot == 9 && !"artoria_pendragon".equals(servantId) && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
             && !"sasaki_kojiro".equals(servantId) && !"diarmuid_ua_duibhne".equals(servantId);
    }
 
@@ -1910,7 +1943,7 @@ public final class ServantCardTransformManager {
    }
 
    static boolean usesSharedNoblePhantasmCooldown(String servantId, int slot) {
-      return slot == 9 && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
+       return slot == 9 && !"artoria_pendragon".equals(servantId) && !"gilgamesh".equals(servantId) && !"gilgamesh_caster".equals(servantId)
          && !"okita_souji_saber".equals(servantId)
          && !"sasaki_kojiro".equals(servantId)
          && !"diarmuid_ua_duibhne".equals(servantId)

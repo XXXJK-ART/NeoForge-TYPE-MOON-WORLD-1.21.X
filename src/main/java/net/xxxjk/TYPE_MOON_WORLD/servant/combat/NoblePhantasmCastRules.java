@@ -8,7 +8,7 @@ public final class NoblePhantasmCastRules {
       "okita_mumyoudan_zuki", "cursed_arm_hassan_zabaniya", "li_shuwen_wu_er_da", "lancelot_arondight"
    );
    private static final Set<String> INTERRUPTIBLE = Set.of(
-      "artoria_excalibur", "gilgamesh_ea", "cu_gae_bolg", "gawain_gallatin", "muramasa_tsumukari",
+      "artoria_excalibur", "artoria_excalibur_short", "gilgamesh_ea", "cu_gae_bolg", "gawain_gallatin", "muramasa_tsumukari",
       "medusa_bellerophon", "paracelsus_elemental_sword", "jeanne_alter_np", "nightingale_pledge",
       "baobhan_sith_failnaught",
       "zhao_yun_changbanpo", "oda_three_thousand", "oda_hajun", "muramasa_summon"

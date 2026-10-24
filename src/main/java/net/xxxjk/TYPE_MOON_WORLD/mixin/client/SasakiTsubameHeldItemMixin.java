@@ -31,6 +31,7 @@ public abstract class SasakiTsubameHeldItemMixin<T extends LivingEntity, M exten
       if (getParentModel() instanceof HumanoidModel<?> model
          && (SasakiTsubameAfterimageClient.renderHeldItem(entity, model, arm, stack, display, poses, buffers, light)
             || SasakiKojiroActionAnimationClient.renderImportedHeldItem(entity, model, arm, stack, display, poses, buffers, light)
+            || net.xxxjk.TYPE_MOON_WORLD.client.ArtoriaExcaliburAnimationClient.renderHeldItem(entity, model, arm, stack, display, poses, buffers, light)
             || net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.renderImportedHeldItem(entity, model, arm, stack, display, poses, buffers, light)
             || net.xxxjk.TYPE_MOON_WORLD.client.CuChulainnActionAnimationClient.renderHeldItem(entity, model, arm, stack, display, poses, buffers, light))) {
          ci.cancel();

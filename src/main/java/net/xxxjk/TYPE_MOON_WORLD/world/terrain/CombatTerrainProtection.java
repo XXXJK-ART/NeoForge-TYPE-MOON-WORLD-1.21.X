@@ -46,6 +46,10 @@ public final class CombatTerrainProtection {
    public static boolean destroyBlock(Level level, BlockPos pos, boolean drops, net.minecraft.world.entity.Entity source) {
       return canRemove(level, pos) && level.destroyBlock(pos, drops, source);
    }
+   public static boolean destroyBlockWithinSurfaceDepth(Level level, BlockPos pos, boolean drops,
+                                                        net.minecraft.world.entity.Entity source, int depth) {
+      return canRemoveWithinSurfaceDepth(level, pos, depth) && level.destroyBlock(pos, drops, source);
+   }
    @SubscribeEvent public static void explosion(ExplosionEvent.Detonate event) {
       var source = event.getExplosion().getDirectSourceEntity();
       if (source == null) return;

@@ -182,7 +182,8 @@ public final class ManaBurstService {
       if (player == null) {
          return;
       }
-      player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(player))
+         player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
    }
 
    public static void tickExternalJetMovement(ServerPlayer player, int level) {
@@ -264,6 +265,15 @@ public final class ManaBurstService {
    }
 
    private static void applyBodyJetMovement(ServerPlayer player, CompoundTag data, int level, long now) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(player)) {
+         boolean fresh = now - data.getLong(INPUT_TICK_TAG) <= 6;
+         Vec3 forward = net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.horizontal(player);
+         Vec3 right = new Vec3(-forward.z, 0, forward.x);
+         Vec3 desired = fresh ? forward.scale(data.getFloat(INPUT_FORWARD_TAG)).add(right.scale(data.getFloat(INPUT_STRAFE_TAG))) : Vec3.ZERO;
+         net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.jet(player, desired,
+            fresh && data.getBoolean(INPUT_JUMP_TAG), fresh && data.getBoolean(INPUT_SNEAK_TAG));
+         return;
+      }
       boolean grounded = player.onGround();
       if (grounded) {
          data.putInt(JET_TICKS_TAG, maxJetTicks(level));

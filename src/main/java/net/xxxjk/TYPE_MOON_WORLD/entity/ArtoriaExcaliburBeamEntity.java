@@ -1,8 +1,17 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.server.level.ServerPlayer;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamSweepGeometry;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.Config;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -24,9 +33,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashParticipant;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
-import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 
 public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParticipant {
    private static final EntityDataAccessor<Float> END_X = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
@@ -36,24 +43,27 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    private static final EntityDataAccessor<Integer> DAMAGE_START_TICK = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.INT);
    private static final EntityDataAccessor<Float> POWER_SCALE = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Boolean> GOLDEN_VARIANT = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> SHORT_VARIANT = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.BOOLEAN);
    private static final double LENGTH = 150.0;
    private static final double HALF_WIDTH = 12.0;
    private static final double HALF_HEIGHT = 7.0;
-   private static final double POINT_BLANK_DAMAGE_LENGTH = 3.0;
-   private static final int DAMAGE_INTERVAL = 5;
    private static final int BLOCK_DESTROY_PHASE_TICKS = 5;
-   private static final float DAMAGE_TOTAL = 4500.0F;
-   private static final int EXCALIBUR_DAMAGE_START = 58;
-   private static final int DAMAGE_PULSE_COUNT = (150 - EXCALIBUR_DAMAGE_START) / DAMAGE_INTERVAL + 1;
-   private static final float DAMAGE_PER_PULSE = DAMAGE_TOTAL / DAMAGE_PULSE_COUNT;
+   private static final float DAMAGE_TOTAL = 7500.0F;
    private static final float CRATER_DAMAGE = 180.0F;
    private static final double GOLDEN_LENGTH = 45.0;
    private static final double GOLDEN_HALF_WIDTH = 4.0;
    private static final double GOLDEN_HALF_HEIGHT = 2.5;
    private static final float GOLDEN_DAMAGE_TOTAL = 300.0F;
-   private static final float GOLDEN_DAMAGE_PER_PULSE = GOLDEN_DAMAGE_TOTAL / (30.0F / DAMAGE_INTERVAL);
+   private static final float GOLDEN_DAMAGE_PER_PULSE = GOLDEN_DAMAGE_TOTAL / (30.0F / 5.0F);
    private UUID ownerUuid;
    private boolean craterQueued;
+   private int shortBlocksDestroyed;
+   private boolean restored;
+   private int activeTicks, emittedPulses;
+   private String ownerForm = "";
+   private Vec3 lastDirection;
+   private List<Vec3> terrainDirections = List.of();
+   private final List<Vec3> pulseDirections = new ArrayList<>();
    private boolean clashing;
    private float clashDamageScale = 1.0F;
 
@@ -76,13 +86,23 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    }
 
    public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick, float powerScale, boolean goldenVariant) {
+      this(level, owner, start, duration, damageStartTick, powerScale, goldenVariant, false);
+   }
+
+   public ArtoriaExcaliburBeamEntity(Level level, LivingEntity owner, Vec3 start, int duration, int damageStartTick,
+                                     float powerScale, boolean goldenVariant, boolean shortVariant) {
       this(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), level);
       this.ownerUuid = owner.getUUID();
+      if (owner instanceof ServerPlayer player) {
+         var card = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState();
+         if (card.transformed()) this.ownerForm = card.id();
+      }
       this.setPos(start);
       this.entityData.set(DURATION, duration);
       this.entityData.set(DAMAGE_START_TICK, Math.max(0, Math.min(duration, damageStartTick)));
       this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, powerScale)));
       this.entityData.set(GOLDEN_VARIANT, goldenVariant);
+      this.entityData.set(SHORT_VARIANT, shortVariant);
       this.updateEndFromOwner(owner);
    }
 
@@ -95,6 +115,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       builder.define(DAMAGE_START_TICK, 0);
       builder.define(POWER_SCALE, 1.0F);
       builder.define(GOLDEN_VARIANT, false);
+      builder.define(SHORT_VARIANT, false);
    }
 
    public Vec3 getEndPos() {
@@ -112,42 +133,79 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    @Override
    public void tick() {
       super.tick();
-      if (this.level() instanceof ServerLevel level) {
-         LivingEntity owner = this.getOwner(level);
-         if (owner == null || !owner.isAlive()) {
-            if (this.isBeamActive()) {
-               this.queueCrater(level, null, this.getEndPos());
-            }
-            this.discard();
-            return;
-         }
-         this.updateEndFromOwner(owner);
-         this.setPos(owner.position().add(0.0, owner.getBbHeight() * 0.66, 0.0).add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(1.2)));
-         BeamClashManager.tick(level, this);
-         if (this.clashing) {
-            // A clash is its own active phase and must not consume Excalibur's remaining beam time.
-            this.entityData.set(DURATION, this.getDuration() + 1);
-         }
-         if (this.isBeamActive() && this.tickCount % DAMAGE_INTERVAL == 0) {
-            if (!this.clashing) {
-               this.applyBeamDamage(level, owner);
-            }
-         }
-         if (this.isBeamActive() && !this.clashing) {
-            this.destroyBeamBlocks(level, owner);
-         }
+      if (!(this.level() instanceof ServerLevel level)) return;
+      LivingEntity owner = this.getOwner(level);
+      if (this.restored || !validOwner(owner)) { this.discard(); return; }
+      this.setPos(owner.position().add(0, owner.getBbHeight() * .66, 0).add(ArtoriaPendragonCombatHelper.excaliburLook(owner).scale(1.2)));
+      this.updateEndFromOwner(owner);
+      Vec3 direction = this.getEndPos().subtract(this.position()).normalize();
+      List<Vec3> sweep = BeamSweepGeometry.directions(lastDirection, direction);
+      lastDirection = direction;
+      terrainDirections = sweep;
+      BeamClashManager.tick(level, this);
+      if (this.clashing) {
+         this.entityData.set(DURATION, getDuration() + 1);
+         pulseDirections.clear();
+         return;
       }
-
-      if (this.tickCount >= this.getDuration()) {
-         if (this.level() instanceof ServerLevel level) {
-            this.queueCrater(level, this.getOwner(level), this.getEndPos());
+      activeTicks++;
+      if (isBeamActive()) {
+         pulseDirections.addAll(sweep);
+         int interval = isShortVariant() ? ArtoriaRules.EXCALIBUR_SHORT_PULSE_INTERVAL
+            : isGoldenVariant() ? 5 : ArtoriaRules.PULSE_INTERVAL;
+         int maxPulses = isShortVariant() ? ArtoriaRules.EXCALIBUR_SHORT_PULSES : ArtoriaRules.PULSES;
+         if ((activeTicks - getDamageStartTick()) % interval == 0
+            && (isGoldenVariant() || emittedPulses < maxPulses)) {
+            this.applyBeamDamage(level, owner);
+            emittedPulses++;
+            pulseDirections.clear();
+         }
+         this.destroyBeamBlocks(level, owner);
+      }
+      if (this.tickCount >= getDuration()) {
+         if (!isShortVariant()) {
+            this.queueCrater(level, owner, getEndPos());
+            if (ArtoriaStateService.isArtoria(owner)) ArtoriaAbilityService.reveal(owner, ArtoriaRules.REVEAL_AFTER_NP);
          }
          this.discard();
       }
    }
 
+   private boolean validOwner(LivingEntity owner) {
+      if (owner == null || !owner.isAlive() || owner.isRemoved()) return false;
+      if (owner instanceof ServerPlayer player) {
+         if (player.hasDisconnected()) return false;
+         if (!ownerForm.isEmpty()) {
+            var card = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState();
+            if (!card.transformed() || !ownerForm.equals(card.id())) return false;
+         }
+      }
+      return true;
+   }
+
+   @Override public void remove(RemovalReason reason) {
+      if (level() instanceof ServerLevel level) {
+         LivingEntity owner = getOwner(level);
+         if (owner != null && owner.getPersistentData().hasUUID(ArtoriaStateService.NP_BEAM)
+            && getUUID().equals(owner.getPersistentData().getUUID(ArtoriaStateService.NP_BEAM))) {
+            owner.getPersistentData().remove(ArtoriaStateService.NP_BEAM);
+            owner.getPersistentData().remove(ArtoriaPendragonCombatHelper.TAG_EXCALIBUR_RELEASE_UNTIL);
+         }
+      }
+      super.remove(reason);
+   }
+
+   public int emittedPulses() { return emittedPulses; }
+   public float pulseDamage() {
+      return (isShortVariant() ? ArtoriaRules.EXCALIBUR_SHORT_PULSE_DAMAGE
+         : isGoldenVariant() ? GOLDEN_DAMAGE_PER_PULSE * powerScale() : ArtoriaRules.PULSE_DAMAGE) * clashDamageScale;
+   }
+   public float impactPower() { return powerScale() * clashDamageScale; }
+   public boolean hasTerminalImpact() { return craterQueued; }
+
    @Override
    protected void readAdditionalSaveData(CompoundTag tag) {
+      this.restored = true; // A saved beam cannot resume a cast after server reload.
       this.entityData.set(END_X, tag.getFloat("EndX"));
       this.entityData.set(END_Y, tag.getFloat("EndY"));
       this.entityData.set(END_Z, tag.getFloat("EndZ"));
@@ -155,6 +213,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       this.entityData.set(DAMAGE_START_TICK, tag.getInt("DamageStartTick"));
       this.entityData.set(POWER_SCALE, Math.max(0.2F, Math.min(1.0F, tag.contains("PowerScale") ? tag.getFloat("PowerScale") : 1.0F)));
       this.entityData.set(GOLDEN_VARIANT, tag.getBoolean("GoldenVariant"));
+      this.entityData.set(SHORT_VARIANT, tag.getBoolean("ShortVariant"));
       this.craterQueued = tag.getBoolean("CraterQueued");
       this.clashDamageScale = Math.max(0.0F, Math.min(1.0F,
          tag.contains("ClashDamageScale") ? tag.getFloat("ClashDamageScale") : 1.0F));
@@ -172,6 +231,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       tag.putInt("DamageStartTick", this.entityData.get(DAMAGE_START_TICK));
       tag.putFloat("PowerScale", this.entityData.get(POWER_SCALE));
       tag.putBoolean("GoldenVariant", this.entityData.get(GOLDEN_VARIANT));
+      tag.putBoolean("ShortVariant", this.entityData.get(SHORT_VARIANT));
       tag.putBoolean("CraterQueued", this.craterQueued);
       tag.putFloat("ClashDamageScale", this.clashDamageScale);
       if (this.ownerUuid != null) {
@@ -215,17 +275,22 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
    }
 
    private double beamLength() {
+      if (this.entityData.get(SHORT_VARIANT)) return ArtoriaRules.EXCALIBUR_SHORT_RANGE * powerScale();
       double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_LENGTH : LENGTH;
       return base * (0.35 + this.powerScale() * 0.65);
    }
 
    public double beamHalfWidth() {
       double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_HALF_WIDTH : HALF_WIDTH;
-      return base * (0.28 + this.powerScale() * 0.72);
+      return base * (isShortVariant() ? 0.25 : (0.28 + this.powerScale() * 0.72));
    }
 
    public boolean isGoldenVariant() {
       return this.entityData.get(GOLDEN_VARIANT);
+   }
+
+   public boolean isShortVariant() {
+      return this.entityData.get(SHORT_VARIANT);
    }
 
    @Override
@@ -233,158 +298,104 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
 
    @Override
    public float clashBaseDamage() {
-      return (this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_DAMAGE_TOTAL : DAMAGE_TOTAL) * this.powerScale();
+      if (this.entityData.get(SHORT_VARIANT))
+         return ArtoriaRules.EXCALIBUR_SHORT_PULSES * ArtoriaRules.EXCALIBUR_SHORT_PULSE_DAMAGE;
+      return (this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_DAMAGE_TOTAL : DAMAGE_TOTAL)
+         * this.powerScale();
    }
 
-   private double beamHalfHeight() {
+   public double beamHalfHeight() {
       double base = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_HALF_HEIGHT : HALF_HEIGHT;
-      return base * (0.35 + this.powerScale() * 0.65);
+      return base * (isShortVariant() ? 0.25 : (0.35 + this.powerScale() * 0.65));
    }
 
    private boolean isBeamActive() {
-      return this.tickCount >= this.entityData.get(DAMAGE_START_TICK);
+      return this.activeTicks >= this.entityData.get(DAMAGE_START_TICK);
    }
 
    private void applyBeamDamage(ServerLevel level, LivingEntity owner) {
-      Vec3 start = this.position();
-      Vec3 dir = this.getEndPos().subtract(start);
-      if (dir.lengthSqr() < 1.0E-4) {
-         return;
+      Vec3 start = position();
+      List<Vec3> directions = pulseDirections.isEmpty() ? List.of(lastDirection) : pulseDirections;
+      AABB search = new AABB(start, start);
+      for (Vec3 direction : directions) {
+         Vec3 end = start.add(direction.scale(beamLength()));
+         search = search.minmax(new AABB(end, end));
       }
-      Vec3 forward = dir.normalize();
-      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
-      Vec3 right = forward.cross(worldUp);
-      if (right.lengthSqr() < 1.0E-4) {
-         right = forward.cross(new Vec3(1.0, 0.0, 0.0));
-      }
-      right = right.normalize();
-      Vec3 up = right.cross(forward).normalize();
-      AABB search = new AABB(owner.position(), owner.position())
-         .minmax(new AABB(this.getEndPos(), this.getEndPos()))
-         .inflate(this.beamHalfWidth() + 2.0, this.beamHalfHeight() + 2.0, this.beamHalfWidth() + 2.0);
-      DamageSource source = owner.damageSources().mobProjectile(this, owner);
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
-         Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(start);
-         double along = rel.dot(forward);
-         double length = this.beamLength();
-         if (along < -POINT_BLANK_DAMAGE_LENGTH || along > length) {
-            continue;
-         }
-         double side = Math.abs(rel.dot(right));
-         double vertical = Math.abs(rel.dot(up));
-         double beamAlong = Math.max(0.0, along);
-         double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / length));
-         double allowedWidth = along < 0.0 ? 2.8 : this.beamHalfWidth() * Math.pow(widthScale, 0.35);
-         if (side <= allowedWidth && vertical <= this.beamHalfHeight()) {
-            float baseDamage = this.entityData.get(GOLDEN_VARIANT) ? GOLDEN_DAMAGE_PER_PULSE : DAMAGE_PER_PULSE;
-            hurtWithoutIFrames(living, source, baseDamage * this.powerScale() * this.clashDamageScale);
-            living.push(forward.x * 0.15, 0.0, forward.z * 0.15);
-            living.hurtMarked = true;
+      search = search.inflate(beamHalfWidth() + 2, beamHalfHeight() + 2, beamHalfWidth() + 2);
+      DamageSource source = NoblePhantasmDamageClassifier.withNoblePhantasm(owner.damageSources().mobProjectile(this, owner), "excalibur_beam");
+       float amount = pulseDamage();
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search, e -> ArtoriaAbilityService.enemy(owner, e))) {
+         for (Vec3 direction : directions) {
+            if (!BeamSweepGeometry.intersects(target.getBoundingBox(), start, direction, beamLength(), beamHalfWidth(), beamHalfHeight())) continue;
+            hurtWithoutIFrames(target, source, amount);
+            target.push(direction.x * .15, direction.y * .08, direction.z * .15);
+            target.hurtMarked = true;
+            break; // A target can receive this pulse only once across every sweep sample.
          }
       }
    }
 
    private void destroyBeamBlocks(ServerLevel level, LivingEntity owner) {
-      Vec3 start = this.position();
-      Vec3 forward = ArtoriaPendragonCombatHelper.excaliburLook(owner);
-      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
-      Vec3 right = forward.cross(worldUp);
-      if (right.lengthSqr() < 1.0E-4) {
-         right = forward.cross(new Vec3(1.0, 0.0, 0.0));
-      }
-      right = right.normalize();
-      Vec3 up = right.cross(forward).normalize();
-      int phase = this.tickCount % BLOCK_DESTROY_PHASE_TICKS;
-      int broken = 0;
-      int maxBroken = this.entityData.get(GOLDEN_VARIANT) ? Math.max(8, (int)Math.floor(36.0F * this.powerScale())) : Math.max(36, (int)Math.floor(260.0F * this.powerScale()));
-      double length = this.beamLength();
-      for (double along = phase + 0.75; along <= length && broken < maxBroken; along += BLOCK_DESTROY_PHASE_TICKS) {
-         double widthScale = Math.max(0.25, Math.sin(Math.PI * along / length));
-         double allowedWidth = this.beamHalfWidth() * Math.pow(widthScale, 0.35);
-         for (double side = -allowedWidth; side <= allowedWidth && broken < maxBroken; side += 0.85) {
-            for (double y = -this.beamHalfHeight() * 0.34; y <= this.beamHalfHeight() * 0.6 && broken < maxBroken; y += 0.85) {
-               Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(up.scale(y));
-               if (owner.position().distanceToSqr(sample) <= 2.25) {
-                  continue;
+      Vec3 start = position();
+      int broken = 0, examined = 0;
+      // A finite per-tick budget includes empty samples, preventing rapid turns from stalling the server.
+      for (Vec3 forward : terrainDirections) {
+         Vec3 worldUp = Math.abs(forward.y) > .95 ? new Vec3(0, 0, 1) : new Vec3(0, 1, 0);
+         Vec3 right = forward.cross(worldUp).normalize(), up = right.cross(forward).normalize();
+         int phase = activeTicks % 5;
+         for (double along = phase + .75; along <= beamLength(); along += 5) {
+            double width = beamHalfWidth() * Math.pow(Math.max(.25, Math.sin(Math.PI * along / beamLength())), .35);
+            for (double side = -width; side <= width; side += 1.7)
+               for (double y = -beamHalfHeight(); y <= beamHalfHeight(); y += 1.7) {
+                   if (++examined > 8192 || broken >= (isShortVariant() ? 6 : 260)) return;
+                  Vec3 sample = start.add(forward.scale(along)).add(right.scale(side)).add(up.scale(y));
+                  if (owner.position().distanceToSqr(sample) <= 2.25) continue;
+                  if (destroyBlock(level, owner, BlockPos.containing(sample))) broken++;
                }
-               BlockPos pos = BlockPos.containing(sample);
-               if (destroyBlock(level, owner, pos)) {
-                  broken++;
-               }
-            }
          }
       }
    }
 
+
+
    private boolean destroyBlock(ServerLevel level, LivingEntity owner, BlockPos pos) {
+      if (!Config.terrainDestructionEnabled || !level.hasChunkAt(pos) || owner == null) return false;
+      if (owner instanceof ServerPlayer player) {
+         if (!Config.playerTerrainDestructionEnabled || !level.mayInteract(player, pos)) return false;
+      } else if (!Config.npcTerrainDestructionEnabled || !net.neoforged.neoforge.event.EventHooks.canEntityGrief(level, owner)) return false;
       BlockState state = level.getBlockState(pos);
       float hardness = state.getDestroySpeed(level, pos);
-      float maxHardness = this.entityData.get(GOLDEN_VARIANT) ? 25.0F : 100.0F;
-      if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0.0F || hardness > maxHardness || state.getExplosionResistance(level, pos, null) >= 1200.0F) {
-         return false;
-      }
+       float max = isShortVariant() ? 0.6F : (isGoldenVariant() ? 25 : 100);
+      if (state.isAir() || state.is(Blocks.BEDROCK) || hardness < 0 || hardness > max || level.getBlockEntity(pos) != null
+         || state.getExplosionResistance(level, pos, null) >= 1200 || !state.canEntityDestroy(level, pos, owner)
+         || !net.neoforged.neoforge.event.EventHooks.onEntityDestroyBlock(owner, pos, state)) return false;
       return level.removeBlock(pos, false);
    }
 
    private void queueCrater(ServerLevel level, LivingEntity owner, Vec3 center) {
-      if (this.craterQueued || center == null) {
-         return;
+       if (craterQueued || isGoldenVariant() || isShortVariant() || !validOwner(owner) || center == null) return;
+      craterQueued = true;
+      level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5, .45F);
+      VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192);
+      float power = powerScale() * clashDamageScale;
+      int radius = Math.max(6, (int)Math.floor(28 * (.25 + power * .75)));
+      int height = Math.max(18, (int)Math.floor(112 * (.22 + power * .78)));
+      AABB area = new AABB(center, center).inflate(radius, height, radius);
+      DamageSource source = NoblePhantasmDamageClassifier.withNoblePhantasm(level.damageSources().explosion(this, owner), "excalibur_beam");
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> ArtoriaAbilityService.enemy(owner, e))) {
+         Vec3 rel = target.getBoundingBox().getCenter().subtract(center);
+         double normalized = (rel.x * rel.x + rel.z * rel.z) / (radius * radius) + rel.y * rel.y / (height * height);
+         if (normalized > 1.18) continue;
+         hurtWithoutIFrames(target, source, (float)(CRATER_DAMAGE * power * Math.max(.35, 1.15 - normalized)));
       }
-      if (this.entityData.get(GOLDEN_VARIANT)) {
-         this.craterQueued = true;
-         return;
-      }
-      this.craterQueued = true;
-      level.playSound(null, BlockPos.containing(center), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 5.0F, 0.45F);
-      level.playSound(null, BlockPos.containing(center), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 1.6F, 1.35F);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 10, 1.0, 0.8, 1.0, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.35, 0.35, 0.35, 0.0);
-      VFXServerEffects.spawn(level, "artoria_excalibur_impact", center, 192.0);
-      float powerScale = this.powerScale() * this.clashDamageScale;
-      int radius = Math.max(6, (int)Math.floor(28.0F * (0.25F + powerScale * 0.75F)));
-      int halfHeight = Math.max(18, (int)Math.floor(112.0F * (0.22F + powerScale * 0.78F)));
-      int batchHeight = 3;
-      DeferredTerrainDestruction.queueEllipsoid(level, center, radius, halfHeight, 120.0F, 80);
-      for (int yStart = -halfHeight; yStart <= halfHeight; yStart += batchHeight) {
-         final int fromY = yStart;
-         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork((yStart + halfHeight) / batchHeight, () -> {
-            damageCraterSlice(this, level, owner, center, radius, halfHeight, fromY, batchHeight, powerScale);
-            spawnCraterSliceFx(level, center, radius, fromY);
-         });
-      }
-   }
-
-   private static void damageCraterSlice(ArtoriaExcaliburBeamEntity beam, ServerLevel level, LivingEntity owner, Vec3 center, int radius, int halfHeight, int fromY, int batchHeight, float powerScale) {
-      double yMin = center.y + fromY - 1.5;
-      double yMax = center.y + Math.min(halfHeight, fromY + batchHeight) + 1.5;
-      AABB box = new AABB(center.x - radius, yMin, center.z - radius, center.x + radius, yMax, center.z + radius);
-      DamageSource source = level.damageSources().explosion(beam, owner);
-      for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e))) {
-         Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(center);
-         double normalized = (rel.x * rel.x + rel.z * rel.z) / (double)(radius * radius) + (rel.y * rel.y) / (double)(halfHeight * halfHeight);
-         if (normalized > 1.18) {
-            continue;
-         }
-         float scaledDamage = (float)(CRATER_DAMAGE * powerScale * Math.max(0.35, 1.15 - normalized));
-         hurtWithoutIFrames(living, source, scaledDamage);
-         Vec3 horizontal = new Vec3(rel.x, 0.0, rel.z);
-         Vec3 push = horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 0.0) : horizontal.normalize().scale(0.42);
-         living.push(push.x, 0.38, push.z);
-         living.hurtMarked = true;
-      }
-   }
-
-   private static void spawnCraterSliceFx(ServerLevel level, Vec3 center, int radius, int fromY) {
-      double y = center.y + fromY;
-      level.sendParticles(ParticleTypes.EXPLOSION, center.x, y, center.z, 4, radius * 0.22, 0.9, radius * 0.22, 0.0);
-      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, y, center.z, 95, radius * 0.55, 1.9, radius * 0.55, 0.055);
-      level.sendParticles(ParticleTypes.CLOUD, center.x, y + 0.4, center.z, 80, radius * 0.48, 1.2, radius * 0.48, 0.11);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.5, center.z, 70, radius * 0.38, 1.6, radius * 0.38, 0.08);
-      level.sendParticles(ParticleTypes.END_ROD, center.x, y + 0.6, center.z, 2, radius * 0.08, 0.4, radius * 0.08, 0.0);
-      level.levelEvent(2008, BlockPos.containing(center.x, y, center.z), 0);
-      if (fromY % 9 == 0) {
-         level.playSound(null, BlockPos.containing(center.x, y, center.z), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.8F, 0.72F + (fromY + 25) * 0.006F);
-      }
+      // Finish the endpoint in this cast transaction; no post-discard damage or terrain jobs.
+      int removed = 0;
+      for (int y = -height; y <= height && removed < 512; y += 3)
+         for (int x = -radius; x <= radius && removed < 512; x += 2)
+            for (int z = -radius; z <= radius && removed < 512; z += 2) {
+               if ((x * x + z * z) / (double)(radius * radius) + y * y / (double)(height * height) > 1) continue;
+               if (destroyBlock(level, owner, BlockPos.containing(center.add(x, y, z)))) removed++;
+            }
    }
 
    private static Vec3 horizontalLook(LivingEntity entity) {

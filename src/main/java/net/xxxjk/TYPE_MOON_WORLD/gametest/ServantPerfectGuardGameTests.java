@@ -189,9 +189,9 @@ public final class ServantPerfectGuardGameTests {
       var source = attacker.damageSources().mobAttack(attacker);
       assertPerfect(h, defender, source, 30);
       ServantCombatDefenseService.setGuarding(defender, false);
-      h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "perfect guard inherited a release cooldown");
-      h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, source, 30) == 0, "fresh guard failed to parry");
-      h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 2, "second parry not recorded");
+       h.assertTrue(ServantCombatDefenseService.setGuarding(defender, true), "perfect guard inherited a release cooldown");
+       h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, source, 30) == 0, "fresh guard failed to parry");
+       h.assertTrue(defender.getPersistentData().getInt("TypeMoonDefenseParryCount") == 2, "second parry not recorded");
       defender.discard(); attacker.discard(); h.succeed();
    }
 

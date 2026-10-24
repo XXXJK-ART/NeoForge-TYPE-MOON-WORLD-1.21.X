@@ -17,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaWindDefenseSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
@@ -306,6 +307,11 @@ public class ModEntities {
          .clientTrackingRange(96)
          .updateInterval(1)
          .build("spiritron_cannon_beam")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaWindDefenseSwordEntity>> ARTORIA_WIND_DEFENSE_SWORD = ENTITY_TYPES.register(
+      "artoria_wind_defense_sword",
+      () -> Builder.<ArtoriaWindDefenseSwordEntity>of(ArtoriaWindDefenseSwordEntity::new, MobCategory.MISC)
+         .sized(0.25F, 1.0F).clientTrackingRange(32).updateInterval(1).build("artoria_wind_defense_sword")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RyougiShikiEntity>> RYOUGI_SHIKI = ENTITY_TYPES.register(
       "ryougi_shiki", () -> Builder.of(RyougiShikiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ryougi_shiki")

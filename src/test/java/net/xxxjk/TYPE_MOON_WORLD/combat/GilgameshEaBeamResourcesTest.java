@@ -25,8 +25,10 @@ class GilgameshEaBeamResourcesTest {
       String source = Files.readString(JAVA.resolve("GilgameshEaBeamEntity.java"));
 
       assertTrue(source.contains("intersectsBeam(target.getBoundingBox(), start, forward)"));
-      assertTrue(source.contains("projectedRadius(direction, halfX, halfY, halfZ)"));
-      assertTrue(source.contains("projectedRadius(right, halfX, halfY, halfZ)"));
-      assertTrue(source.contains("projectedRadius(up, halfX, halfY, halfZ)"));
+      assertTrue(source.contains("BeamSweepGeometry.intersects(targetBounds, start, forward"));
+      String geometry = Files.readString(JAVA.resolve("../servant/combat/BeamSweepGeometry.java"));
+      assertTrue(geometry.contains("radius(bounds, direction)"));
+      assertTrue(geometry.contains("radius(bounds, right)"));
+      assertTrue(geometry.contains("radius(bounds, up)"));
    }
 }

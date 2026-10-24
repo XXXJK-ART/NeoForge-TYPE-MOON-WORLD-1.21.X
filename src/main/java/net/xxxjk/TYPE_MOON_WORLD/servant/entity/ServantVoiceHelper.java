@@ -478,6 +478,15 @@ public final class ServantVoiceHelper {
       playVoice(servant, "invisible_air", SPECIAL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get());
    }
 
+   /** Plays Artoria's attack line for an NPC skill that has no separate voice clip. */
+   public static void tryPlayArtoriaSkill(ServantEntity servant) {
+      if (!isArtoria(servant)) {
+         return;
+      }
+
+      playVoice(servant, "artoria_skill", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_ATTACK.get());
+   }
+
    public static void tryPlayArtoriaExcaliburRelease(ServantEntity servant) {
       if (!isArtoria(servant)) {
          return;

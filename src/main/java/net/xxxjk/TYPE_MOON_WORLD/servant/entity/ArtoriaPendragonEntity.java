@@ -31,6 +31,12 @@ public class ArtoriaPendragonEntity extends ServantEntity {
    }
 
    @Override
+   public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
+      int amount = this.calculateFallDamage(distance, multiplier);
+      return amount > 0 && this.hurt(source, amount);
+   }
+
+   @Override
    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
       ItemStack stack = player.getItemInHand(hand);
       CompoundTag data = this.getPersistentData();

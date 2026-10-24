@@ -63,6 +63,7 @@ public enum ServantTraitTag {
    MAD("mad"),
 
    KING("king"),
+   ARTHUR("arthur"),
    NOBUNAGA("nobunaga"),
    ROMAN("roman"),
    GENJI("genji"),
@@ -96,16 +97,20 @@ public enum ServantTraitTag {
    }
 
    public static ServantTraitTag fromKey(String key) {
+      return findByKey(key).orElse(SERVANT);
+   }
+
+   public static java.util.Optional<ServantTraitTag> findByKey(String key) {
       if (key == null) {
-         return SERVANT;
+         return java.util.Optional.empty();
       }
 
       for (ServantTraitTag tag : values()) {
-         if (tag.key.equals(key.toLowerCase())) {
-            return tag;
+         if (tag.key.equals(key.toLowerCase(java.util.Locale.ROOT))) {
+            return java.util.Optional.of(tag);
          }
       }
 
-      return SERVANT;
+      return java.util.Optional.empty();
    }
 }

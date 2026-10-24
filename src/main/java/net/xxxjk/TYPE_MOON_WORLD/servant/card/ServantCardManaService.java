@@ -37,7 +37,12 @@ public final class ServantCardManaService {
       }
       ServantParams params = definition.parameters();
       double regen = params.manaPool() / fullRegenSeconds(params) * SERVANT_CARD_REGEN_MULTIPLIER;
-      return "artoria_pendragon".equals(servantId) ? regen * 2.0 : regen;
+      // Passive regeneration is data driven by the servant's skill list. This
+      // keeps Dragon Core from being applied again to linked supply or items.
+      if (params != null && definition.skillIds() != null && definition.skillIds().contains("dragon_core")) {
+         regen *= 2.0;
+      }
+      return regen;
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {

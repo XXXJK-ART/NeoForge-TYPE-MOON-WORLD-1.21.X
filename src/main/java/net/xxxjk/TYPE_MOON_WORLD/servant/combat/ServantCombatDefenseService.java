@@ -18,6 +18,7 @@ import net.xxxjk.TYPE_MOON_WORLD.chain.service.BindingService;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardPoseMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantDefenseAnimationMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardActionTimeline;
@@ -126,6 +127,7 @@ public final class ServantCombatDefenseService {
    }
 
    public static boolean trySkillAutoDodge(LivingEntity entity) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.syncInstinct(entity);
       initialize(entity);
       CompoundTag d = entity.getPersistentData();
       long now = entity.level().getGameTime();
@@ -135,7 +137,8 @@ public final class ServantCombatDefenseService {
       if (max == 0 || d.getInt(AUTO_CHARGES) <= 0) return false;
       int remaining = Math.min(max, d.getInt(AUTO_CHARGES)) - 1;
       d.putInt(AUTO_CHARGES, remaining);
-      if (remaining == 0) d.putLong(AUTO_RESTORE, now + 400);
+      if (remaining == 0) d.putLong(AUTO_RESTORE, now + (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(entity) ? 300 : 400));
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.recordDodge(entity, remaining);
       setResult(entity, RESULT_DODGE, now + 12);
       if (entity instanceof ServerPlayer player) sync(player, true);
       return true;
@@ -221,7 +224,6 @@ public final class ServantCombatDefenseService {
    }
 
    private static final long PLAYER_GUARD_PACKET_TIMEOUT_TICKS = 15L;
-   private static final int PLAYER_PARRY_GRACE_TICKS = 5;
    public static final int GUARD_RELEASE_COOLDOWN_TICKS = 20;
    public static final String TAG_GUARD_COOLDOWN = "TypeMoonDefenseGuardCooldown";
    private static final String TAG_GUARD_PARRY_RELEASE = "TypeMoonDefenseGuardParryRelease";
@@ -251,6 +253,7 @@ public final class ServantCombatDefenseService {
       if (entity == null || entity.level().isClientSide()) return;
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.syncInstinct(entity);
       continueNpcDodge(entity, data, now);
       if (entity instanceof ServantEntity servant) ServantDefenseTraits.tickNpcActiveSkills(servant);
       initialize(entity);
@@ -263,7 +266,7 @@ public final class ServantCombatDefenseService {
             data.remove(AUTO_RESTORE);
          }
          // Activating or switching a skill never refills a depleted group.
-         if (data.getInt(AUTO_CHARGES) == 0 && max > 0 && !data.contains(AUTO_RESTORE)) data.putLong(AUTO_RESTORE, now + 400);
+         if (data.getInt(AUTO_CHARGES) == 0 && max > 0 && !data.contains(AUTO_RESTORE)) data.putLong(AUTO_RESTORE, now + (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(entity) ? 300 : 400));
          if (!data.contains(LAST_HIT) || now - data.getLong(LAST_HIT) >= 60) {
             String st = entity instanceof ServerPlayer ? "ServantCardCombatStamina" : TAG_STAMINA;
             String po = entity instanceof ServerPlayer ? "ServantCardCombatPoise" : TAG_POISE;
@@ -356,6 +359,7 @@ public final class ServantCombatDefenseService {
          data.remove(TAG_GUARD_PARRY_RELEASE);
          data.remove(TAG_GUARDING);
          data.remove(NPC_GUARD_UNTIL);
+         broadcastDefenseAnimation(entity, 0);
          if (entity instanceof ServantEntity servant && servant.getCombatPose() == 2) servant.setCombatPose(0, 0);
          if (entity instanceof ServerPlayer player) sync(player, true);
          return true;
@@ -379,6 +383,14 @@ public final class ServantCombatDefenseService {
       data.putLong(TAG_LAST_GUARD_PACKET, now);
       if (entity instanceof ServerPlayer player) sync(player, true);
       return true;
+   }
+
+   private static void broadcastDefenseAnimation(LivingEntity entity, int animation) {
+      if (!(entity.level() instanceof ServerLevel level)) return;
+      ServantDefenseAnimationMessage payload = new ServantDefenseAnimationMessage(entity.getUUID(), animation);
+      for (ServerPlayer viewer : level.players()) {
+         if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) ModNetwork.sendToPlayer(viewer, payload);
+      }
    }
 
    /** Also covers native techniques and hitscan shots that publish no shared telegraph. */
@@ -536,7 +548,7 @@ public final class ServantCombatDefenseService {
       if (p == null) return null;
       boolean active = isGuarding(defender) && canAct(defender);
       // Both guard modes spend the damage remaining after base defense / 5.
-      int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) + PLAYER_PARRY_GRACE_TICKS : NPC_PARRY_WINDOW_TICKS;
+      int window = defender instanceof ServerPlayer ? ServantCombatFormulas.parryWindowTicks(p) : NPC_PARRY_WINDOW_TICKS;
       boolean perfect = active && now - data.getLong(TAG_GUARD_START) <= window
          && (!(defender instanceof ServantEntity) || !data.getBoolean(NPC_PARRY_USED));
       double cost = DefenseRules.guardCost(amount, ServantDefenseTraits.resolve(defender).guardBonus(),
@@ -553,6 +565,7 @@ public final class ServantCombatDefenseService {
          data.remove(TAG_GUARD_PARRY_RELEASE);
          setResult(defender, RESULT_GUARD, now + 12);
       }
+      broadcastDefenseAnimation(defender, 2);
       net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.onSuccessfulGuard(defender, source.getEntity());
       net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.onSuccessfulGuard(defender, source.getEntity());
       if (source.getEntity() instanceof ServantEntity attacker) {

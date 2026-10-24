@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.world.IonioiHetairoiDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BloodstainEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaWindDefenseSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
@@ -356,6 +357,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_WIND_DEFENSE_SWORD.get(), ArtoriaWindDefenseSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.SPIRITRON_CANNON_BEAM.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_GATE_PROJECTILE.get(), GilgameshGateWeaponRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_CROSS_SLASH.get(), GilgameshCrossSlashRenderer::new);

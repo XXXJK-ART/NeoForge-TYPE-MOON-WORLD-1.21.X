@@ -1,0 +1,117 @@
+{
+  "duration": 0.34,
+  "notes": "Invisible Air recovery: pale-blue wind streams spin upward around the body and tighten toward the covered sword tip as the barrier regathers.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.34,
+      "rate": 240,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.035,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.72, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(1.8 - 1.48 * t) * cos(t * 18.84 + time * 24.0)",
+        "expr_y": "-0.65 + t * 2.45 + 0.2 * sin(t * 18.84 + time * 18.0)",
+        "expr_z": "(1.8 - 1.48 * t) * sin(t * 18.84 + time * 24.0) + 0.78 * t",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 30
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#66B7E5EE" },
+        { "t": 0.55, "color": "#B6EAF5CC" },
+        { "t": 1.0, "color": "#005A7A00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.48, "size": 0.105 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "TRANSLUCENT",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.32, "soft_particles": true },
+      "particle_role": "WIND_KING_BARRIER_REGATHER_STREAM",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.34,
+      "rate": 64,
+      "particle_lifetime": 0.3,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.02,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.7], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 0.22, "segments": 24 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#8ADDF1CC" },
+        { "t": 0.7, "color": "#AEEFFFAA" },
+        { "t": 1.0, "color": "#005A7A00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.018 },
+        { "t": 0.55, "size": 0.055 },
+        { "t": 1.0, "size": 0.008 }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.18 },
+      "particle_role": "WIND_KING_BARRIER_TIP_FOCUS",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 0.34,
+      "rate": 180,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.26,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.05,
+      "max_vanilla_particles_per_tick": 1,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.1, 0.0], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(0.3 + 1.35 * t) * cos(t * 12.56 - time * 22.0)",
+        "expr_y": "0.08 + t * 1.9",
+        "expr_z": "(0.3 + 1.35 * t) * sin(t * 12.56 - time * 22.0)",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 72
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#88C5EFFF" },
+        { "t": 0.5, "color": "#C8F5FFFF" },
+        { "t": 1.0, "color": "#005A7A00" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.026 },
+        { "t": 0.5, "size": 0.085 },
+        { "t": 1.0, "size": 0.012 }
+      ],
+      "visibility_condition": "random() > 0.12",
+      "blend": "TRANSLUCENT",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.25, "soft_particles": true },
+      "particle_role": "WIND_KING_REGATHER_OUTER_TORNADO",
+      "enable_trail": true,
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.18, 0.18, 0.18], "offset": [0.0, 0.2, 0.0], "speed": 0.035, "chance": 0.25 }
+      ]
+    }
+  ]
+}

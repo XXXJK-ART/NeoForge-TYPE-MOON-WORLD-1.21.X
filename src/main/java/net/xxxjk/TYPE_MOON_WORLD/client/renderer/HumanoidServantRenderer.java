@@ -143,6 +143,10 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          super.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
          if (entity.getCombatPose() != 2) applyCombatPose(entity);
          applyArtoriaCombatPose(entity, ageInTicks);
+          if (entity instanceof ArtoriaPendragonEntity artoria)
+             net.xxxjk.TYPE_MOON_WORLD.client.SasakiKojiroActionAnimationClient.applyImportedPose(artoria, this, ageInTicks - entity.tickCount);
+          if (entity instanceof ArtoriaPendragonEntity artoria)
+             net.xxxjk.TYPE_MOON_WORLD.client.ArtoriaExcaliburAnimationClient.applyPose(artoria, this, ageInTicks - entity.tickCount);
          if(entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity)net.xxxjk.TYPE_MOON_WORLD.client.CuChulainnVisualClient.pose(entity,this,ageInTicks-entity.tickCount);
          if (entity instanceof OdaNobunagaEntity oda) {
             applyOdaIdlePose(oda, ageInTicks, limbSwingAmount);
@@ -187,6 +191,8 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.leftArm.zRot = 0.0F;
             this.leftSleeve.copyFrom(this.leftArm);
          }
+         net.xxxjk.TYPE_MOON_WORLD.client.ServantDefenseAnimationClient.applyImportedPose(
+            entity, this, ageInTicks - entity.tickCount);
       }
 
       private void applyCombatPose(T entity) {

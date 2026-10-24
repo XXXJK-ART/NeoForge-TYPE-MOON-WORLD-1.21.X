@@ -99,6 +99,10 @@ public final class NoblePhantasmCastService {
       cast.released = true;
       return false;
    }
+   public static Object attackToken(LivingEntity caster) {
+      Cast cast = CASTS.get(caster.getUUID());
+      return cast == null || cast.cancelled ? new Object() : cast;
+   }
    public static boolean configured(String action) { return POLICIES.containsKey(action); }
    public static long voiceEnd(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
@@ -134,7 +138,7 @@ public final class NoblePhantasmCastService {
       caster.getPersistentData().putLong("TypeMoonNpVoiceEnd", cast.voiceEnd);
       if ("cu_gae_bolg".equals(action)) {
          net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.chant(caster);
-      } else if (!NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
+      } else if (!action.endsWith("_short") && !NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
          SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + action));
          level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
       }
@@ -301,7 +305,7 @@ public final class NoblePhantasmCastService {
       if (NoblePhantasmCastRules.instant(cast.action)) return false;
       String key = BuiltInRegistries.SOUND_EVENT.getKey(sound).getPath();
       if (key.endsWith("_short")) return false;
-      return key.contains("voice_np") || key.contains("voice_excalibur") || key.contains("voice_gae_bolg")
+      return key.contains("voice_np") || (key.contains("voice_excalibur") && !key.contains("voice_excalibur_release")) || key.contains("voice_gae_bolg")
          || key.contains("voice_zabaniya") || key.contains("voice_wu_er_da") || key.contains("voice_ea_") || key.contains("voice_bellerophon")
          || key.contains("voice_tsumukari") || key.contains("voice_gallatin") || key.contains("voice_hajun");
    }

@@ -139,7 +139,7 @@ public abstract class PlayerRendererMixin {
 
    private void applyFirstPersonCastingPose(AbstractClientPlayer player, HumanoidArm armToRender) {
       if (net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.isGuarding(player)) {
-         net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose(((PlayerRenderer)(Object)this).getModel());
+         net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose(player, ((PlayerRenderer)(Object)this).getModel());
          return;
       }
       Minecraft minecraft = Minecraft.getInstance();

@@ -384,7 +384,7 @@ public final class LiShuwenCombatHelper {
       boolean killed = instantDeathTarget && roll < chance;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,wuErDaDamage(attacker),200,"li_shuwen:wu_er_da",killed)) { spawnWuErDaImpact(level,target,killed);return; }
       if (killed) {
-         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "wu_er_da")) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "wu_er_da", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(attacker))) {
             spawnWuErDaImpact(level, target, false);
             return;
          }

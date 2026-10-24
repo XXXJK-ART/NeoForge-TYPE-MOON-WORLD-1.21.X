@@ -19,6 +19,7 @@ public final class CommonServantSkills {
       registry.register("riding_b", CommonServantSkills::executeRidingB, "typemoonworld_core");
       registry.register("artoria_instinct_a", CommonServantSkills::executeArtoriaInstinctA, "typemoonworld_core");
       registry.register("mana_burst_a", CommonServantSkills::executeManaBurstA, "typemoonworld_core");
+      registry.register("dragon_core", CommonServantSkills::executeDragonCore, "typemoonworld_core");
       registry.register("charisma_b", CommonServantSkills::executeCharismaB, "typemoonworld_core");
       registry.register("independent_action_a", CommonServantSkills::executeIndependentActionA, "typemoonworld_core");
       registry.register("independent_action_b", CommonServantSkills::executeIndependentActionB, "typemoonworld_core");
@@ -189,7 +190,17 @@ public final class CommonServantSkills {
       }
 
       entity.getPersistentData().putBoolean("ArtoriaInstinctAActive", true);
-      entity.getPersistentData().putFloat("ArtoriaInstinctCertainHitNegationChance", 0.95F);
+      entity.getPersistentData().putFloat("ArtoriaInstinctCertainHitNegationChance", 0.50F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeDragonCore(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) {
+         return ServantExecutionResult.FAILED;
+      }
+      entity.getPersistentData().putBoolean("DragonCoreActive", true);
+      entity.getPersistentData().putDouble("DragonCoreManaRegenMultiplier", 2.0D);
       return ServantExecutionResult.SUCCESS;
    }
 

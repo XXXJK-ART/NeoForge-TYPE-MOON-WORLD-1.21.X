@@ -1,0 +1,17 @@
+{
+  "name": "servant_defense_passive",
+  "version": 3,
+  "description": "Shared passive guard-hit animation imported from the common Blockbench guard motion.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 7,
+    "stopTick": 7,
+    "degrees": true,
+    "moves": [
+      {"tick":0,"head":{"pitch":0,"yaw":0,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":0,"yaw":0,"roll":0},"leftArm":{"x":5,"y":2,"z":0,"pitch":0,"yaw":0,"roll":0},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":0,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":3,"head":{"pitch":15,"yaw":0,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":-10,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":-85.4096,"yaw":-22.4098,"roll":2.0675},"leftArm":{"x":5,"y":2,"z":0,"pitch":-99.7934,"yaw":24.9837,"roll":0.9323},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":7.5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":6,"head":{"pitch":17.5,"yaw":0,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":-12.5,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":-85.4096,"yaw":-22.4098,"roll":2.0675},"leftArm":{"x":5,"y":2,"z":0,"pitch":-99.7934,"yaw":24.9837,"roll":0.9323},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":12.5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":0,"yaw":0,"roll":0}},
+      {"tick":7,"head":{"pitch":17.5,"yaw":0,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":-12.5,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":-85.4096,"yaw":-22.4098,"roll":2.0675},"leftArm":{"x":5,"y":2,"z":0,"pitch":-99.7934,"yaw":24.9837,"roll":0.9323},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":12.5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":0,"yaw":0,"roll":0}}
+    ]
+  }
+}

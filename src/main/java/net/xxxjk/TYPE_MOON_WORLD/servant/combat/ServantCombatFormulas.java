@@ -117,7 +117,8 @@ public final class ServantCombatFormulas {
    }
 
    public static int parryWindowTicks(ServantParams params) {
-      return secondsToTicks(0.20 + defenseStep(params) * 0.01);
+      // Keep the perfect-defense input window readable and consistent across players and NPCs.
+      return secondsToTicks(0.50);
    }
 
    public static double blockStaminaCost(ServantParams params) {

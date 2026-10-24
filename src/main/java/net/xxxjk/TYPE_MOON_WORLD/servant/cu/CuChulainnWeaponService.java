@@ -256,7 +256,7 @@ public final class CuChulainnWeaponService {
          && owner.level().noCollision(owner,owner.getBoundingBox().expandTowards(0,.25,0));
    }
    private static void thornHit(LivingEntity owner,LivingEntity target) {
-      if(ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target,"gae_bolg") || ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target))return;
+      if(ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target,"gae_bolg",NoblePhantasmCastService.attackToken(owner)) || ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target))return;
       boolean death=!(target instanceof EmiyaArcherEntity) && !(target instanceof EnkiduEntity)
          && owner.getRandom().nextFloat()<CuChulainnCombatHelper.getDeathThornChance(target);
       var base=owner.damageSources().mobAttack(owner);

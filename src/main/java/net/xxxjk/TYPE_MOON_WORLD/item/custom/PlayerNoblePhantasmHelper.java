@@ -4,6 +4,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -79,6 +83,8 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GAE_LOCKED_MELEE_PURSUIT_TAG = "TypeMoonGaeBulgLockedMeleePursuit";
    private static final String GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG = "TypeMoonGaeBulgLockedMeleePursuitUntil";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
+   private static final String EXCALIBUR_SHORT_CHARGE_TAG = "TypeMoonExcaliburShortCharge";
+   private static final String EXCALIBUR_SHORT_LAST_VFX_TAG = "TypeMoonExcaliburShortLastChargeVfx";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
    private static final String GOLDEN_EXCALIBUR_CHARGE_TAG = "TypeMoonGoldenExcaliburCharge";
@@ -104,9 +110,11 @@ public final class PlayerNoblePhantasmHelper {
    private static final double GAE_BULG_MELEE_PURSUIT_END_SPEED = 0.35;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
+   private static final int EXCALIBUR_SHORT_MAX_CHARGE_TICKS = ArtoriaRules.EXCALIBUR_SHORT_CHARGE_TICKS;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
-   private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
-   private static final int EXCALIBUR_PLAYER_COOLDOWN = 1200;
+   private static final int EXCALIBUR_DAMAGE_START_TICK = 0;
+   private static final int EXCALIBUR_PLAYER_COOLDOWN = 3600;
+   private static final double EXCALIBUR_MANA_COST = 150.0;
    private static final int GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS = 10;
    private static final int GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS = 40;
    private static final int GOLDEN_EXCALIBUR_RELEASE_TICKS = 30;
@@ -406,68 +414,125 @@ public final class PlayerNoblePhantasmHelper {
       data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
    }
 
-   public static void startExcaliburCharge(ServerPlayer player) {
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "artoria_excalibur", EXCALIBUR_PLAYER_COOLDOWN, ticks -> addExcaliburCooldown(player, ticks), () -> { player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG); });
-      player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
-      player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
-      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
-      startServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get());
+   public static boolean startExcaliburCharge(ServerPlayer player) {
+      long now = player.level().getGameTime();
+      var d = player.getPersistentData();
+      if (NoblePhantasmCastService.chanting(player) || d.hasUUID(ArtoriaStateService.NP_BEAM)
+         || now < d.getLong(ArtoriaStateService.NP_READY) || !consumeStrict(player, ArtoriaRules.EXCALIBUR_MP)) return false;
+      NoblePhantasmCastService.begin(player, "artoria_excalibur", ArtoriaRules.EXCALIBUR_COOLDOWN,
+         ticks -> { d.putLong(ArtoriaStateService.NP_READY, player.level().getGameTime() + ticks); addExcaliburCooldown(player, ticks); },
+          () -> {
+             d.remove(EXCALIBUR_CHARGE_TAG); d.remove(EXCALIBUR_LAST_CHARGE_VFX_TAG); clearArtoriaExcaliburWindLock(player);
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+                player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.CANCEL);
+          });
+      d.putInt(EXCALIBUR_CHARGE_TAG, 0);
+      d.putLong(ArtoriaStateService.NP_READY, now + ArtoriaRules.EXCALIBUR_COOLDOWN);
+      addExcaliburCooldown(player, ArtoriaRules.EXCALIBUR_COOLDOWN);
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+         player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.FULL_NP);
+      revealArtoriaWindVeiledExcaliburForNp(player, (int)(NoblePhantasmCastService.releaseAt(player) - now) + 1);
+      TYPE_MOON_WORLD.queueServerWork(20, () -> {
+         if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);
+      });
+      NoblePhantasmCastService.deferEffect(player, () -> fireExcalibur(player));
+      return true;
+   }
+
+   /** Starts the three-second, quarter-power Excalibur release used by a normal right click. */
+   public static boolean startShortExcaliburCharge(ServerPlayer player) {
+      long now = player.level().getGameTime();
+      var d = player.getPersistentData();
+      if (!ArtoriaStateService.isArtoria(player) || NoblePhantasmCastService.chanting(player)
+         || d.hasUUID(ArtoriaStateService.NP_BEAM) || now < d.getLong(ArtoriaStateService.NP_SHORT_READY)
+         || !consumeStrict(player, ArtoriaRules.EXCALIBUR_SHORT_MP)) return false;
+      NoblePhantasmCastService.begin(player, "artoria_excalibur_short", ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN,
+         ticks -> { d.putLong(ArtoriaStateService.NP_SHORT_READY, player.level().getGameTime() + ticks); },
+          () -> {
+             d.remove(EXCALIBUR_SHORT_CHARGE_TAG); d.remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+                player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.CANCEL);
+          });
+      d.putInt(EXCALIBUR_SHORT_CHARGE_TAG, 0);
+      d.putLong(ArtoriaStateService.NP_SHORT_READY, now + ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN);
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+         player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.SHORT_RELEASE);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_SHORT_CHARGE_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      TYPE_MOON_WORLD.queueServerWork(20, () -> {
+         if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);
+      });
+      NoblePhantasmCastService.deferEffect(player, () -> fireShortExcalibur(player));
+      return true;
+   }
+
+   private static void fireExcalibur(ServerPlayer player) {
+      if (!player.getPersistentData().contains(EXCALIBUR_CHARGE_TAG) || !player.isUsingItem()
+         || !player.getUseItem().is(ModItems.EXCALIBUR.get()) || !(player.level() instanceof ServerLevel level)) return;
+      var d = player.getPersistentData();
+      d.remove(EXCALIBUR_CHARGE_TAG);
+      d.remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
+      Vec3 start = player.position().add(0, player.getBbHeight() * .66, 0).add(player.getLookAngle().scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, ArtoriaRules.EXCALIBUR_TICKS, 0, 1);
+      d.putUUID(ArtoriaStateService.NP_BEAM, beam.getUUID());
+      level.addFreshEntity(beam);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      revealArtoriaWindVeiledExcaliburForNp(player, ArtoriaRules.EXCALIBUR_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150);
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5F, .85F);
+   }
+
+   private static void fireShortExcalibur(ServerPlayer player) {
+      if (!player.getPersistentData().contains(EXCALIBUR_SHORT_CHARGE_TAG)
+         || !player.isUsingItem() || !player.getUseItem().is(ModItems.EXCALIBUR.get())
+         || !(player.level() instanceof ServerLevel level)) return;
+      var d = player.getPersistentData();
+      d.remove(EXCALIBUR_SHORT_CHARGE_TAG);
+      d.remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
+      Vec3 start = player.position().add(0, player.getBbHeight() * .66, 0).add(player.getLookAngle().scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start,
+         ArtoriaRules.EXCALIBUR_SHORT_TICKS, 0, 1.0F, false, true);
+      d.putUUID(ArtoriaStateService.NP_BEAM, beam.getUUID());
+      level.addFreshEntity(beam);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_SHORT_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      level.playSound(null, player.blockPosition(), ModSounds.ARTORIA_VOICE_EXCALIBUR_RELEASE.get(), SoundSource.VOICE, 1.1F, 1.0F);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, ArtoriaRules.EXCALIBUR_SHORT_TICKS);
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.4F, 1.15F);
    }
 
    public static void tickExcaliburCharge(Level level, LivingEntity living, int useTicks) {
-      if (!(living instanceof ServerPlayer player)) {
-         return;
-      }
-      int charged = Math.min(EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
-      player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, charged);
+      if (!(living instanceof ServerPlayer player) || !NoblePhantasmCastService.chanting(player)) return;
       applyNoblePhantasmChargeSlow(player);
-      tickServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
-      if (useTicks >= SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS) {
-         revealArtoriaWindVeiledExcaliburForNp(player, 12);
+      var d = player.getPersistentData();
+      d.putInt(EXCALIBUR_CHARGE_TAG, useTicks);
+      if (level.getGameTime() - d.getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32) {
+         d.putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, level.getGameTime());
+         VFXServerEffects.spawn((ServerLevel)level, "artoria_excalibur_charge", player, 128);
       }
-      if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
-         double cost = player.getPersistentData().getBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG)
-            ? CHARGE_MANA_PER_TICK
-            : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
-         if (!consumeStrict(player, cost)) {
-            stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
-            player.releaseUsingItem();
-         } else {
-            player.getPersistentData().putBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
-            if (level instanceof ServerLevel serverLevel) {
-            long now = serverLevel.getGameTime();
-            if (now - player.getPersistentData().getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32L) {
-               player.getPersistentData().putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, now);
-               VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 128.0);
-            }
-            }
-         }
+   }
+
+   public static void tickShortExcaliburCharge(Level level, LivingEntity living, int useTicks) {
+      if (!(living instanceof ServerPlayer player) || !NoblePhantasmCastService.chanting(player)) return;
+      applyNoblePhantasmChargeSlow(player);
+      var d = player.getPersistentData();
+      int charge = Math.min(EXCALIBUR_SHORT_MAX_CHARGE_TICKS, useTicks);
+      d.putInt(EXCALIBUR_SHORT_CHARGE_TAG, charge);
+      if (level instanceof ServerLevel serverLevel && serverLevel.getGameTime() - d.getLong(EXCALIBUR_SHORT_LAST_VFX_TAG) >= 12) {
+         d.putLong(EXCALIBUR_SHORT_LAST_VFX_TAG, serverLevel.getGameTime());
+         VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 96);
       }
    }
 
    public static void releaseExcalibur(ServerPlayer player) {
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseExcalibur(player))) return;
-      int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
-      stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
+      // Releasing before the shared release point cancels; it never queues a short beam.
+      if (NoblePhantasmCastService.chanting(player)) NoblePhantasmCastService.cancel(player, true);
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
-      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
-      if (!(player.level() instanceof ServerLevel level)) {
-         return;
-      }
-      if (charged < MIN_CHARGE_NP_RELEASE_TICKS) {
-         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
-         return;
-      }
-      float powerScale = chargePower(charged, EXCALIBUR_MAX_CHARGE_TICKS);
-      Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
-      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK, powerScale);
-      level.addFreshEntity(beam);
-      revealArtoriaWindVeiledExcaliburForNp(player, EXCALIBUR_RELEASE_TICKS + 100);
-      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150.0);
-      addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
-      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
-      level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
+   }
+
+   public static void releaseShortExcalibur(ServerPlayer player) {
+      if (NoblePhantasmCastService.chanting(player)) NoblePhantasmCastService.cancel(player, true);
+      player.getPersistentData().remove(EXCALIBUR_SHORT_CHARGE_TAG);
+      player.getPersistentData().remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
    }
 
    public static void startGoldenExcaliburCharge(ServerPlayer player) {
@@ -596,7 +661,7 @@ public final class PlayerNoblePhantasmHelper {
       return data.getInt(EXCALIBUR_CHARGE_TAG) > 0 || data.getInt(GALLATIN_CHARGE_TAG) > 0;
    }
 
-   private static void applyNoblePhantasmChargeSlow(ServerPlayer player) {
+   public static void applyNoblePhantasmChargeSlow(ServerPlayer player) {
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 6, 1, false, false, true));
    }
 

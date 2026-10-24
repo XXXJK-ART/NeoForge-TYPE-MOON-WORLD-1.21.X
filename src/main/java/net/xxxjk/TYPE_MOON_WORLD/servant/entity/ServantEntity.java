@@ -703,8 +703,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (target == null || !(this.level() instanceof net.minecraft.server.level.ServerLevel)) {
          return false;
       }
-      if (ServantTrueSweepService.triggerNpcAttack(this, target, this.level().getGameTime())) {
-         return true;
+      if (ServantTrueSweepService.usesNpcSweep(this)) {
+         return ServantTrueSweepService.triggerNpcAttack(this, target, this.level().getGameTime());
       }
       LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
       return resolvedTarget != null && this.doHurtTarget(resolvedTarget);

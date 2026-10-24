@@ -162,7 +162,7 @@ public final class ServantCardHassanSkills {
       if (target.getPersistentData().getBoolean("CausalSevered")) {
          killed = false;
       }
-      if (killed && ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya")) {
+      if (killed && ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(player))) {
          spawnHassanZabaniyaImpact(player, target, false);
          return;
       }

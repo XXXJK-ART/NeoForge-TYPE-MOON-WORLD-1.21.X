@@ -11,7 +11,8 @@
     {
       "effect_type": "mana_regeneration_multiplier",
       "params": {
-        "multiplier": 2.0
+        "multiplier": 2.0,
+        "scope": "self_natural_regeneration"
       }
     }
   ]

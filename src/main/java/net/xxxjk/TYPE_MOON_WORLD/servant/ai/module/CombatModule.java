@@ -2240,7 +2240,7 @@ public final class CombatModule implements ServantAiModule {
             || !CuChulainnCombatRules.canReleaseMeleeGaeBolg(entity.distanceTo(resolvedTarget))) {
             return;
          }
-         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg")) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(resolvedTarget, "gae_bolg", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(entity))) {
             sl.sendParticles(ParticleTypes.END_ROD,
                resolvedTarget.getX(), resolvedTarget.getY() + resolvedTarget.getBbHeight() * 0.6, resolvedTarget.getZ(),
                18, 0.3, 0.3, 0.3, 0.03);

@@ -60,4 +60,9 @@ public final class ServantGuardPoseClient {
          playerModel.jacket.copyFrom(model.body);
       }
    }
+
+   public static void applyPose(Player player, HumanoidModel<?> model) {
+      float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+      if (!ServantDefenseAnimationClient.applyPose(player, model, partialTick)) applyPose(model);
+   }
 }

@@ -2,6 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.client;
 
 import java.util.UUID;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 import dev.kosmx.playerAnim.api.TransformType;
 import dev.kosmx.playerAnim.core.util.Vec3f;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
@@ -39,6 +41,8 @@ public final class SasakiKojiroActionAnimationClient {
    private static final ResourceLocation PLAYER_ANIMATION_LAYER = ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "sasaki_kojiro_action");
    private static final EnumMap<SasakiKojiroAction, KeyframeAnimationPlayer> SAMPLES = new EnumMap<>(SasakiKojiroAction.class);
+   private static final Map<UUID, NpcPlayback> NPC_PLAYBACKS = new HashMap<>();
+   private static net.minecraft.client.multiplayer.ClientLevel activePlaybackLevel;
    private static PlayerModel<LivingEntity> bladeTipModel;
 
    private SasakiKojiroActionAnimationClient() { }
@@ -53,9 +57,15 @@ public final class SasakiKojiroActionAnimationClient {
       Minecraft minecraft = Minecraft.getInstance();
       SasakiKojiroAction action = SasakiKojiroAction.byNetworkId(actionId);
       if (minecraft.level == null || playerId == null || action == null) return;
+      if (activePlaybackLevel != minecraft.level) {
+         NPC_PLAYBACKS.clear();
+         activePlaybackLevel = minecraft.level;
+      }
       for (var entity : minecraft.level.entitiesForRendering()) {
          if (entity instanceof net.minecraft.world.entity.LivingEntity owner && playerId.equals(owner.getUUID())) {
             SasakiSwordTrailClient.begin(owner, action);
+            if (!(owner instanceof SasakiKojiroEntity) && !(owner instanceof AbstractClientPlayer))
+               NPC_PLAYBACKS.put(owner.getUUID(), new NpcPlayback(action, minecraft.level.getGameTime()));
             break;
          }
       }
@@ -94,6 +104,23 @@ public final class SasakiKojiroActionAnimationClient {
       KeyframeAnimationPlayer sample = sample(action, age);
       if (sample == null) return;
       applySample(model, sample);
+   }
+
+   public static void applyImportedPose(net.minecraft.world.entity.LivingEntity owner, HumanoidModel<?> model, float partialTick) {
+      var level = Minecraft.getInstance().level;
+      if (level != activePlaybackLevel) {
+         NPC_PLAYBACKS.clear();
+         activePlaybackLevel = level;
+      }
+      if (owner == null || level == null) return;
+      NpcPlayback playback = NPC_PLAYBACKS.get(owner.getUUID());
+      if (playback == null) return;
+      float age = level.getGameTime() - playback.startedAt() + partialTick;
+      if (age < 0 || age >= playback.action().durationTicks()) {
+         NPC_PLAYBACKS.remove(owner.getUUID());
+         return;
+      }
+      applyImportedPose(model, playback.action(), age);
    }
 
    private static void applySample(HumanoidModel<?> model, KeyframeAnimationPlayer sample) {
@@ -203,4 +230,6 @@ public final class SasakiKojiroActionAnimationClient {
       part.setPos(position.getX(), position.getY(), position.getZ());
       part.setRotation(rotation.getX(), rotation.getY(), rotation.getZ());
    }
+
+   private record NpcPlayback(SasakiKojiroAction action, long startedAt) { }
 }

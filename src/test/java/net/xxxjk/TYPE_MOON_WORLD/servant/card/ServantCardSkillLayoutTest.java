@@ -8,12 +8,15 @@ import org.junit.jupiter.api.Test;
 
 class ServantCardSkillLayoutTest {
    @Test
-   void artoriaManaBurstBeamUsesRequestedCost() {
+   void artoriaWindDefenseAndToggleUseTheirFinalSlots() {
       ServantCardSkillAction action = ServantCardSkillLayout.actionFor("artoria_pendragon", 6, false);
       assertNotNull(action);
-      assertEquals("mana_burst_beam", action.effectId());
-      assertEquals(100.0, action.mpCost());
-      assertEquals(300, action.cooldownTicks());
+      assertEquals("artoria_wind_defense", action.effectId());
+      assertEquals(35.0, action.mpCost());
+      assertEquals(240, action.cooldownTicks());
+      ServantCardSkillAction toggle = ServantCardSkillLayout.actionFor("artoria_pendragon", 9, false);
+      assertNotNull(toggle);
+      assertEquals("artoria_invisible_air_toggle", toggle.effectId());
    }
 
    @Test

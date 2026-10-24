@@ -2,9 +2,7 @@
   "rank": "A",
   "defense": {
     "evasion": true,
-    "activation_actions": [
-      "artoria_instinct"
-    ]
+    "activation_actions": []
   },
   "id": "artoria_instinct_a",
   "display_name": "Instinct A",
@@ -17,9 +15,18 @@
     {
       "effect_type": "special_judgement_negation",
       "params": {
-        "certain_hit_or_death_chance": 0.95
+        "certain_hit_or_death_chance": 0.5,
+        "auto_dodges": 3,
+        "group_recovery_ticks": 300
       }
     }
   ],
-  "ai": {"facts": [{"type": "prediction", "strength": 0.95}]}
+  "ai": {
+    "facts": [
+      {
+        "type": "prediction",
+        "strength": 0.5
+      }
+    ]
+  }
 }

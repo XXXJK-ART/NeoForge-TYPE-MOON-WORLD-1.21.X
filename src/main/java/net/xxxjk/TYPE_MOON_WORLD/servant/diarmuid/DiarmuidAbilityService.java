@@ -509,7 +509,7 @@ public final class DiarmuidAbilityService {
          || (heldSpear.spearType() == DiarmuidSpearItem.SpearType.GAE_DEARG) != strike.red()) return;
       ItemStack stack = owner.getItemInHand(hand);
       var source = new CombatDamageSource(owner instanceof ServerPlayer player ? owner.damageSources().playerAttack(player)
-         : owner.damageSources().mobAttack(owner), AttackOrigin.skill("diarmuid_ua_duibhne", cast.action.skillId()));
+         : owner.damageSources().mobAttack(owner), AttackOrigin.skill("diarmuid_ua_duibhne", cast.action.skillId()), 1.0F, strike.red());
       int previous = target.invulnerableTime;
       boolean damaged;
       try {

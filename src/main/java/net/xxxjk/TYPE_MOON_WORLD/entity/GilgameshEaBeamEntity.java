@@ -286,37 +286,12 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    static List<Vec3> sweepDirections(Vec3 previous, Vec3 current) {
-      Vec3 to = normalized(current);
-      Vec3 from = previous == null ? to : normalized(previous);
-      double angle = Math.acos(Math.max(-1.0, Math.min(1.0, from.dot(to))));
-      int steps = Math.max(1, (int)Math.ceil(angle / BEAM_SWEEP_STEP_RADIANS));
-      List<Vec3> directions = new ArrayList<>(steps + 1);
-      for (int step = 0; step <= steps; step++) {
-         double progress = step / (double)steps;
-         Vec3 interpolated = from.scale(1.0 - progress).add(to.scale(progress));
-         directions.add(interpolated.lengthSqr() < 1.0E-6 ? to : interpolated.normalize());
-      }
-      return directions;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamSweepGeometry.directions(previous, current);
    }
 
    static boolean intersectsBeam(AABB targetBounds, Vec3 start, Vec3 forward) {
-      Vec3 direction = normalized(forward);
-      Vec3 worldUp = Math.abs(direction.y) > 0.95 ? new Vec3(0, 0, 1) : new Vec3(0, 1, 0);
-      Vec3 right = direction.cross(worldUp).normalize();
-      Vec3 up = right.cross(direction).normalize();
-      Vec3 center = targetBounds.getCenter();
-      Vec3 rel = center.subtract(start);
-      double halfX = targetBounds.getXsize() * 0.5;
-      double halfY = targetBounds.getYsize() * 0.5;
-      double halfZ = targetBounds.getZsize() * 0.5;
-      double alongRadius = projectedRadius(direction, halfX, halfY, halfZ);
-      double along = rel.dot(direction);
-      if (along + alongRadius < -3.0 || along - alongRadius > BEAM_LENGTH) return false;
-      double beamAlong = Math.max(0.0, Math.min(BEAM_LENGTH, along));
-      double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / BEAM_LENGTH));
-      double allowedWidth = along < 0.0 ? 2.8 : BEAM_HALF_WIDTH * Math.pow(widthScale, 0.35);
-      return Math.abs(rel.dot(right)) <= allowedWidth + projectedRadius(right, halfX, halfY, halfZ)
-         && Math.abs(rel.dot(up)) <= BEAM_HALF_HEIGHT + projectedRadius(up, halfX, halfY, halfZ);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamSweepGeometry.intersects(targetBounds, start, forward,
+         BEAM_LENGTH, BEAM_HALF_WIDTH, BEAM_HALF_HEIGHT);
    }
 
    private static double projectedRadius(Vec3 axis, double halfX, double halfY, double halfZ) {

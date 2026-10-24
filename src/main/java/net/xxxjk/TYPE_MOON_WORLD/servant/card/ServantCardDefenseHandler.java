@@ -83,7 +83,7 @@ public final class ServantCardDefenseHandler {
       if (!vars.servant_card_transformed || event.isCanceled()) {
          return false;
       }
-      if (event.getSource().is(DamageTypes.FALL)) {
+      if (event.getSource().is(DamageTypes.FALL) && !"artoria_pendragon".equals(vars.servant_card_id)) {
          event.setCanceled(true);
          event.setAmount(0.0F);
          player.fallDistance = 0.0F;
@@ -113,9 +113,6 @@ public final class ServantCardDefenseHandler {
       CompoundTag data = player.getPersistentData();
       ServantCombatDefenseService.initialize(player);
       long now = player.level().getGameTime();
-      if (!defensePiercing && "artoria_pendragon".equals(vars.servant_card_id)) {
-         event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstDefense(player, event.getSource(), event.getAmount()));
-      }
       boolean specialNoblePhantasmDamage = isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount());
       boolean elementalSwordDamage = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier
          .isParacelsusElementalSwordDamage(event.getSource());

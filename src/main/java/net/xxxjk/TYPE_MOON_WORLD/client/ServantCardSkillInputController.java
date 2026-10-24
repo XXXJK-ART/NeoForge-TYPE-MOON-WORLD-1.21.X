@@ -126,11 +126,12 @@ public final class ServantCardSkillInputController {
          || ("li_shuwen".equals(servantId) && slot == 2)
          || ("arash".equals(servantId) && slot == 9)
          || ("diarmuid_ua_duibhne".equals(servantId) && slot == 8)
-         || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8));
+         || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8))
+         || ("artoria_pendragon".equals(servantId) && slot == 6);
    }
 
    public static boolean isHoldSkill(String servantId, int slot) {
-      // The existing server hold handler has release behavior only for these special skills.
+      // Hold actions send an explicit release packet; the server enforces the maximum duration.
       return isForcedHoldSkill(servantId, slot);
    }
 
