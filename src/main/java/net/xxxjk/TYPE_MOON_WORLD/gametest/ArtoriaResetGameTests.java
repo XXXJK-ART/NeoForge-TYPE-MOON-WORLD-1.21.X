@@ -19,6 +19,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaWindDefenseSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
@@ -182,8 +183,9 @@ public final class ArtoriaResetGameTests {
       h.assertTrue(ArtoriaStateService.startWindDefense(owner, false), "NPC wind defense did not start");
       h.assertTrue(Math.abs(owner.getCurrentMp() - (mpBefore - ArtoriaRules.WIND_DEFENSE_MP)) < 0.001,
          "Wind defense payment mismatch");
-      h.assertTrue(ArtoriaStateService.isWindDefenseActive(owner)
-         && owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Defense field or planted sword missing");
+       h.assertTrue(ArtoriaStateService.isWindDefenseActive(owner)
+          && !owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD),
+          "Defense field did not start as an animation-only action");
 
       var projectile = new net.minecraft.world.entity.projectile.Snowball(h.getLevel(), shooter);
       projectile.setPos(owner.getX(), owner.getY() + 1.0, owner.getZ() + 3.0);
@@ -199,8 +201,8 @@ public final class ArtoriaResetGameTests {
       Vec3 away = enemy.position().subtract(owner.position()).multiply(1, 0, 1).normalize();
       h.assertTrue(enemy.getDeltaMovement().multiply(1, 0, 1).dot(away) > 0.1, "Wind field did not push the nearby enemy");
       ArtoriaStateService.stopWindDefense(owner);
-      h.assertTrue(!ArtoriaStateService.isWindDefenseActive(owner)
-         && !owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Release did not clear the field and sword");
+       h.assertTrue(!ArtoriaStateService.isWindDefenseActive(owner)
+          && !owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Release did not clear the field");
       h.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 12)
@@ -214,6 +216,9 @@ public final class ArtoriaResetGameTests {
       ServantCardTransformManager.handleHoldAction(owner, 6, false);
       h.assertTrue(!ArtoriaStateService.isWindDefenseActive(owner)
          && !owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Key release did not end the field");
+      h.assertTrue(owner.getPersistentData().getLong(ArtoriaStateService.WIND_READY)
+         >= owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS,
+         "Key release did not start shared wind recovery");
       h.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 112)
@@ -222,7 +227,7 @@ public final class ArtoriaResetGameTests {
       h.assertTrue(ArtoriaStateService.startWindDefense(owner, false), "Wind defense did not start for timeout test");
       h.runAtTickTime(ArtoriaRules.WIND_DEFENSE_MAX_TICKS + 2, () -> {
          h.assertTrue(!ArtoriaStateService.isWindDefenseActive(owner), "Wind defense exceeded its five-second cap");
-         h.assertTrue(!owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Timed defense left planted sword behind");
+          h.assertTrue(!owner.getPersistentData().hasUUID(ArtoriaStateService.WIND_DEFENSE_SWORD), "Timed defense left sword state behind");
          h.succeed();
       });
    }
@@ -343,6 +348,36 @@ public final class ArtoriaResetGameTests {
       ArtoriaStateService.clearTemporary(owner);
       h.assertTrue(!ArtoriaAbilityService.canWind(owner), "Form cleanup bypassed wind cooldown");
       h.assertTrue(Math.abs(ServantCardManaService.regenPerSecondFor(ArtoriaRules.ID) - 1000.0 / 30) < .001, "Dragon Core regen duplicated or missing");
+      h.succeed();
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 30)
+   public static void windHammerDelayedHitUsesRestoredDamageAndStartsRecovery(GameTestHelper h) {
+      var owner = npc(h);
+      var target = target(h, owner.position().add(0, 0, 3));
+      h.assertTrue(ArtoriaAbilityService.hammer(owner), "NPC hammer was rejected while wind was ready");
+      h.runAtTickTime(12, () -> {
+         h.assertTrue(Math.abs(target.getHealth() - 700.0F) < 0.02F,
+            "Delayed Wind Hammer hit did not deal the restored 300 damage: " + target.getHealth());
+         h.assertTrue(owner.getPersistentData().getLong(ArtoriaStateService.WIND_READY) > owner.level().getGameTime(),
+            "Wind recovery was not active after the hammer hit");
+         h.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 30)
+   public static void windDefenseAnchorsThePlayerWithoutSpawningAWorldSword(GameTestHelper h) {
+      var owner = card(h);
+      Vec3 anchor = owner.position();
+      h.assertTrue(ArtoriaStateService.startWindDefense(owner, true), "Player wind defense did not start from active wind");
+      h.assertTrue(ArtoriaStateService.isWindDefenseActive(owner), "Player wind defense state was not activated");
+      owner.setPos(anchor.x + 2.0, anchor.y + 1.0, anchor.z + 2.0);
+      owner.setDeltaMovement(1.0, 1.0, 1.0);
+      ArtoriaStateService.tick(owner);
+      h.assertTrue(owner.position().distanceToSqr(anchor) < 1.0E-4,
+         "Player escaped the planted-sword defense anchor");
+      h.assertTrue(owner.getDeltaMovement().lengthSqr() < 1.0E-6,
+         "Player kept movement during planted-sword defense");
+      h.assertTrue(h.getLevel().getEntitiesOfClass(ArtoriaWindDefenseSwordEntity.class,
+         owner.getBoundingBox().inflate(8.0)).isEmpty(), "Wind defense spawned a separate sword entity");
       h.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 180)

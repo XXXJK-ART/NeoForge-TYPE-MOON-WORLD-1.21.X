@@ -11,7 +11,7 @@ public class ExcaliburGoldenModel extends GeoModel<ExcaliburGoldenItem> {
    }
 
    public ResourceLocation getTextureResource(ExcaliburGoldenItem object) {
-      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/item/excalibur2.png");
+      return ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/item/excalibur2_gold.png");
    }
 
    public ResourceLocation getAnimationResource(ExcaliburGoldenItem object) {

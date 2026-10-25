@@ -58,7 +58,20 @@ class ArtoriaRulesTest {
       assertEquals(100, ArtoriaRules.WIND_DEFENSE_MAX_TICKS);
       assertEquals(6.0, ArtoriaRules.WIND_DEFENSE_RADIUS);
       assertEquals(35.0, ArtoriaRules.WIND_DEFENSE_MP);
-      assertEquals(240, ArtoriaRules.WIND_DEFENSE_COOLDOWN);
+      assertEquals(40, ArtoriaRules.WIND_DEFENSE_COOLDOWN);
+   }
+   @Test void windHammerRestoresTheFormerHitProfilesAndConeDimensions() {
+      assertEquals(90.0F, ArtoriaRules.WIND_HAMMER_PLAYER_DAMAGE);
+      assertEquals(125.0F, ArtoriaRules.WIND_HAMMER_PLAYER_BURST_DAMAGE);
+      assertEquals(10.5, ArtoriaRules.WIND_HAMMER_PLAYER_RANGE);
+      assertEquals(12.5, ArtoriaRules.WIND_HAMMER_PLAYER_BURST_RANGE);
+      assertEquals(.48, ArtoriaRules.WIND_HAMMER_PLAYER_WIDTH_SCALE);
+      assertEquals(.58, ArtoriaRules.WIND_HAMMER_PLAYER_BURST_WIDTH_SCALE);
+      assertEquals(300.0F, ArtoriaRules.WIND_HAMMER_NPC_DAMAGE);
+      assertEquals(400.0F, ArtoriaRules.WIND_HAMMER_NPC_BURST_DAMAGE);
+      assertEquals(10.0, ArtoriaRules.WIND_HAMMER_NPC_RANGE);
+      assertEquals(.45, ArtoriaRules.WIND_HAMMER_NPC_WIDTH_SCALE);
+      assertEquals(40, ArtoriaRules.WIND_REGATHER_TICKS);
    }
    @Test void manaBurstOwnsTheTenfoldExposedSwordMultiplierAndHitCost() {
       assertEquals(10.0, ArtoriaRules.BURST_SWORD_MULTIPLIER);

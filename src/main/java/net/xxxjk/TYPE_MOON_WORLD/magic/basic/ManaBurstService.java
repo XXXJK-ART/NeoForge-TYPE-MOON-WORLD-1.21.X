@@ -23,8 +23,10 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ManaBurstService {
    public static final String MAGIC_ID = "mana_burst";
@@ -359,6 +361,25 @@ public final class ManaBurstService {
 
    private static void spawnJetFx(ServerLevel level, ServerPlayer player, Vec3 desired, boolean jump, boolean sneak, int levelRank) {
       Vec3 base = player.position().add(0.0, 0.18, 0.0);
+      if (ArtoriaStateService.isArtoria(player)) {
+         boolean emitted = false;
+         if (desired.lengthSqr() > 1.0E-4) {
+            spawnArtoriaJetFx(level, base, desired.normalize().scale(-1.0), false);
+            emitted = true;
+         }
+         if (jump) {
+            spawnArtoriaJetFx(level, player.position().add(0.0, 0.12, 0.0), JUMP_EXHAUST_DIRECTION, true);
+            emitted = true;
+         } else if (sneak) {
+            spawnArtoriaJetFx(level, player.position().add(0.0, player.getBbHeight() * 0.72, 0.0), SNEAK_EXHAUST_DIRECTION, false);
+            emitted = true;
+         }
+         if (!emitted) {
+            Vec3 lookBack = player.getLookAngle().multiply(-1.0, 0.0, -1.0);
+            spawnArtoriaJetFx(level, base, lookBack, false);
+         }
+         return;
+      }
       boolean emitted = false;
       if (desired.lengthSqr() > 1.0E-4) {
          Vec3 horizontalExhaust = desired.normalize().scale(-1.0);
@@ -375,6 +396,12 @@ public final class ManaBurstService {
       if (!emitted) {
          spawnJetStream(level, base, player.getLookAngle().multiply(-1.0, 0.0, -1.0), levelRank, false);
       }
+   }
+
+   private static void spawnArtoriaJetFx(ServerLevel level, Vec3 origin, Vec3 exhaustDirection, boolean intense) {
+      Vec3 direction = exhaustDirection.lengthSqr() > 1.0E-4 ? exhaustDirection.normalize() : JUMP_EXHAUST_DIRECTION;
+      VFXServerEffects.spawnOrientedScaled(level, "artoria_mana_burst_jet", origin, direction, 64.0,
+         intense ? 1.18F : 0.92F);
    }
 
    private static void spawnJetStream(ServerLevel level, Vec3 origin, Vec3 exhaustDirection, int levelRank, boolean intense) {

@@ -16,9 +16,9 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.5], "rotate_with_entity": true },
       "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "0.025 * sin(t * 25.12 + time * 3.5)", "expr_y": "0.035 * cos(t * 18.84 + time * 3.0)", "expr_z": "-0.48 + t * 1.15", "t_start": 0.0, "t_end": 1.0, "segments": 72 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFF6D0" },
-        { "t": 0.42, "color": "#FFFFC52A" },
-        { "t": 1.0, "color": "#00E5A414" }
+        { "t": 0.0, "color": "#FFFFE45A" },
+        { "t": 0.42, "color": "#FFFFB20A" },
+        { "t": 1.0, "color": "#00D98F00" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.055 },
@@ -28,7 +28,7 @@
       "visibility_condition": "true",
       "blend": "ADDITIVE",
       "renderer": "RIBBON",
-      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.72, "soft_particles": true },
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 2.2, "soft_particles": true },
       "particle_role": "MANA_BURST_EXCALIBUR_EDGE",
       "enable_trail": true,
       "vanilla_particles": [
@@ -49,8 +49,8 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.25], "rotate_with_entity": true },
       "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "0.12 * sin(t * 12.56 + time * 4.0)", "expr_y": "0.1 * cos(t * 12.56 + time * 3.2)", "expr_z": "-0.1 - t * 1.1", "t_start": 0.0, "t_end": 1.0, "segments": 24 },
       "color_over_life": [
-        { "t": 0.0, "color": "#FFFFEBAA" },
-        { "t": 0.65, "color": "#E8A321BB" },
+        { "t": 0.0, "color": "#FFFFC400" },
+        { "t": 0.65, "color": "#E8D27AB0" },
         { "t": 1.0, "color": "#003B5C00" }
       ],
       "size_over_life": [
@@ -61,7 +61,7 @@
       "visibility_condition": "random() > 0.3",
       "blend": "ADDITIVE",
       "renderer": "RIBBON",
-      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.34, "soft_particles": true },
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.7, "soft_particles": true },
       "particle_role": "MANA_BURST_EXCALIBUR_WAKE",
       "enable_trail": true
     }

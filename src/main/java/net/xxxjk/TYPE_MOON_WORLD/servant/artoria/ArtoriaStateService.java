@@ -23,6 +23,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantVoiceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroActionAnimationService;
 
 /** Persistent resources are separate from the temporary state of the current form. */
 @EventBusSubscriber(modid = "typemoonworld")
@@ -40,6 +42,9 @@ public final class ArtoriaStateService {
    public static final String WIND_DEFENSE_NEXT_PULSE = "ArtoriaWindDefenseNextPulse";
    public static final String WIND_DEFENSE_READY = "ArtoriaWindDefenseReadyAt";
    public static final String WIND_DEFENSE_SWORD = "ArtoriaWindDefenseSword";
+   private static final String WIND_DEFENSE_ANCHOR_X = "ArtoriaWindDefenseAnchorX";
+   private static final String WIND_DEFENSE_ANCHOR_Y = "ArtoriaWindDefenseAnchorY";
+   private static final String WIND_DEFENSE_ANCHOR_Z = "ArtoriaWindDefenseAnchorZ";
    public static final String COMBO_READY = "ArtoriaComboReadyAt";
    private static final Map<Object, Map<UUID, Boolean>> JUDGMENTS = new WeakHashMap<>();
    private ArtoriaStateService() { }
@@ -75,19 +80,36 @@ public final class ArtoriaStateService {
          && !ArtoriaAbilityService.actionLocked(owner) && ArtoriaAbilityService.canWind(owner);
    }
 
+   /** Failed wind actions still consume the shared recovery window when the veil is disabled. */
+   public static void lockWindRecoveryIfVeilMissing(LivingEntity owner) {
+      if (owner == null || isWindBarrierEnabled(owner)) return;
+      long recoveryAt = owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS;
+      var data = owner.getPersistentData();
+      if (data.getLong(WIND_READY) < recoveryAt) data.putLong(WIND_READY, recoveryAt);
+      if (data.getLong(WIND_DEFENSE_READY) < recoveryAt) data.putLong(WIND_DEFENSE_READY, recoveryAt);
+   }
+
    /** Starts the held defensive field. Card actions pay through their normal transaction. */
    public static boolean startWindDefense(LivingEntity owner, boolean alreadyPaid) {
-      if (!canStartWindDefense(owner) || !(owner.level() instanceof net.minecraft.server.level.ServerLevel level)) return false;
+      if (!canStartWindDefense(owner)) {
+         lockWindRecoveryIfVeilMissing(owner);
+         return false;
+      }
+      if (!(owner.level() instanceof net.minecraft.server.level.ServerLevel level)) return false;
       long now = level.getGameTime();
-      if (owner instanceof ArtoriaPendragonEntity && now < owner.getPersistentData().getLong(WIND_DEFENSE_READY)) return false;
+      if (now < owner.getPersistentData().getLong(WIND_READY)) return false;
       if (!alreadyPaid && !consume(owner, ArtoriaRules.WIND_DEFENSE_MP)) return false;
       var data = owner.getPersistentData();
       data.putLong(WIND_DEFENSE_UNTIL, now + ArtoriaRules.WIND_DEFENSE_MAX_TICKS);
       data.putLong(WIND_DEFENSE_NEXT_PULSE, now);
       data.putLong(ArtoriaAbilityService.ACTION_LOCK_UNTIL, now + ArtoriaRules.WIND_DEFENSE_MAX_TICKS);
-      if (owner instanceof ArtoriaPendragonEntity)
-         data.putLong(WIND_DEFENSE_READY, now + ArtoriaRules.WIND_DEFENSE_COOLDOWN);
-      spawnPlantedSword(owner, level);
+      long windReadyAt = now + ArtoriaRules.WIND_DEFENSE_COOLDOWN;
+      data.putLong(WIND_READY, windReadyAt);
+      data.putLong(WIND_DEFENSE_READY, windReadyAt);
+      data.putDouble(WIND_DEFENSE_ANCHOR_X, owner.getX());
+      data.putDouble(WIND_DEFENSE_ANCHOR_Y, owner.getY());
+      data.putDouble(WIND_DEFENSE_ANCHOR_Z, owner.getZ());
+      SasakiKojiroActionAnimationService.play(owner, SasakiKojiroAction.DOWNWARD_SLASH);
       syncSwordVisibility(owner);
       level.playSound(null, owner.blockPosition(), net.minecraft.sounds.SoundEvents.TRIDENT_RETURN,
          owner instanceof ServerPlayer ? net.minecraft.sounds.SoundSource.PLAYERS : net.minecraft.sounds.SoundSource.HOSTILE,
@@ -101,8 +123,19 @@ public final class ArtoriaStateService {
    public static void stopWindDefense(LivingEntity owner) {
       if (owner == null) return;
       var data = owner.getPersistentData();
+      boolean hadDefenseState = data.contains(WIND_DEFENSE_UNTIL)
+         || data.contains(WIND_DEFENSE_ANCHOR_X) || data.contains(WIND_DEFENSE_ANCHOR_Y)
+         || data.contains(WIND_DEFENSE_ANCHOR_Z);
+      long recoveryAt = owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS;
+      if (hadDefenseState) {
+         if (data.getLong(WIND_READY) < recoveryAt) data.putLong(WIND_READY, recoveryAt);
+         if (data.getLong(WIND_DEFENSE_READY) < recoveryAt) data.putLong(WIND_DEFENSE_READY, recoveryAt);
+      }
       data.remove(WIND_DEFENSE_UNTIL);
       data.remove(WIND_DEFENSE_NEXT_PULSE);
+      data.remove(WIND_DEFENSE_ANCHOR_X);
+      data.remove(WIND_DEFENSE_ANCHOR_Y);
+      data.remove(WIND_DEFENSE_ANCHOR_Z);
       if (data.getLong(ArtoriaAbilityService.ACTION_LOCK_UNTIL) <= owner.level().getGameTime() + ArtoriaRules.WIND_DEFENSE_MAX_TICKS)
          data.remove(ArtoriaAbilityService.ACTION_LOCK_UNTIL);
       if (data.hasUUID(WIND_DEFENSE_SWORD) && owner.level() instanceof net.minecraft.server.level.ServerLevel level) {
@@ -110,6 +143,16 @@ public final class ArtoriaStateService {
          if (sword != null) sword.discard();
       }
       data.remove(WIND_DEFENSE_SWORD);
+      if (hadDefenseState && owner instanceof ServerPlayer player && isArtoria(player)) {
+         var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
+            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_HAMMER_SLOT, recoveryAt);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
+            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, recoveryAt);
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
+            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_RELEASE_SLOT, recoveryAt);
+         vars.syncPlayerVariables(player);
+      }
       syncSwordVisibility(owner);
    }
 
@@ -125,22 +168,6 @@ public final class ArtoriaStateService {
          || owner.getCurrentMp() < ArtoriaRules.WIND_DEFENSE_MP
          || threats.isEmpty()) return false;
       return startWindDefense(owner, false);
-   }
-
-   private static void spawnPlantedSword(LivingEntity owner, net.minecraft.server.level.ServerLevel level) {
-      var oldData = owner.getPersistentData();
-      if (oldData.hasUUID(WIND_DEFENSE_SWORD)) {
-         var oldSword = level.getEntity(oldData.getUUID(WIND_DEFENSE_SWORD));
-         if (oldSword != null) oldSword.discard();
-      }
-      Vec3 forward = ArtoriaAbilityService.horizontal(owner);
-      Vec3 position = owner.position().add(forward.scale(0.78));
-      var sword = net.xxxjk.TYPE_MOON_WORLD.init.ModEntities.ARTORIA_WIND_DEFENSE_SWORD.get().create(level);
-      if (sword == null) return;
-      sword.setPos(position.x, owner.getY(), position.z);
-      sword.setYRot(owner.getYRot());
-      level.addFreshEntity(sword);
-      oldData.putUUID(WIND_DEFENSE_SWORD, sword.getUUID());
    }
 
    /** Toggle the veil without charging mana. Wind skills remain unavailable while regathering. */
@@ -176,9 +203,9 @@ public final class ArtoriaStateService {
       long until = visible && isWindBarrierEnabled(owner)
          ? Math.max(now + 2, owner.getPersistentData().getLong(ArtoriaPendragonCombatHelper.TAG_EXCALIBUR_VISIBLE_UNTIL)) : 0;
       boolean burst = ArtoriaPendragonCombatHelper.isManaBurstActive(owner);
-      boolean planted = isWindDefenseActive(owner);
-      syncSword(player.getMainHandItem(), visible, until, burst, planted);
-      syncSword(player.getOffhandItem(), visible, until, burst, planted);
+      boolean defenseAction = isWindDefenseActive(owner);
+      syncSword(player.getMainHandItem(), visible, until, burst, defenseAction);
+      syncSword(player.getOffhandItem(), visible, until, burst, defenseAction);
       player.getInventory().setChanged();
    }
 
@@ -269,7 +296,8 @@ public final class ArtoriaStateService {
             stopWindDefense(owner);
          } else if (owner.level() instanceof net.minecraft.server.level.ServerLevel level) {
             if (owner instanceof ArtoriaPendragonEntity npc) npc.getNavigation().stop();
-            owner.setDeltaMovement(0.0, owner.getDeltaMovement().y, 0.0);
+            enforceWindDefenseAnchor(owner, d);
+            owner.setDeltaMovement(Vec3.ZERO);
             owner.hurtMarked = true;
             if (now % 8 == 0) net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(level, "artoria_wind_defense", owner, 96);
             repelIncomingProjectiles(owner, level);
@@ -285,6 +313,20 @@ public final class ArtoriaStateService {
          net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(level, "artoria_wind_regather", owner, 96);
       }
       ArtoriaPendragonCombatHelper.syncManaBurstModifiers(owner);
+   }
+
+   private static void enforceWindDefenseAnchor(LivingEntity owner, CompoundTag data) {
+      if (!data.contains(WIND_DEFENSE_ANCHOR_X) || !data.contains(WIND_DEFENSE_ANCHOR_Y)
+         || !data.contains(WIND_DEFENSE_ANCHOR_Z)) return;
+      double x = data.getDouble(WIND_DEFENSE_ANCHOR_X);
+      double y = data.getDouble(WIND_DEFENSE_ANCHOR_Y);
+      double z = data.getDouble(WIND_DEFENSE_ANCHOR_Z);
+      if (owner.distanceToSqr(x, y, z) <= 1.0E-5) return;
+      if (owner instanceof ServerPlayer player) {
+         player.connection.teleport(x, y, z, player.getYRot(), player.getXRot());
+      } else {
+         owner.setPos(x, y, z);
+      }
    }
 
    public static boolean trulyGrounded(LivingEntity owner) {

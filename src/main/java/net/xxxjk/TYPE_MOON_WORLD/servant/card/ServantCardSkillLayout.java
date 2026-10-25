@@ -10,10 +10,12 @@ public final class ServantCardSkillLayout {
             case -1 -> new ServantCardSkillAction("Knight Combo", "artoria_small_combo", 16.0, 30);
             case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst",
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.BURST_START_MP, 0);
-            case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0, 220);
+            case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS);
             case 2 -> new ServantCardSkillAction("Knight Triple Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.KNIGHT_TRIPLE_SLASH,
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_COOLDOWN);
-            case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0, 100);
+            case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS);
             case 4 -> new ServantCardSkillAction("Intercepting Thrust", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST,
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_COOLDOWN);
             case 5 -> new ServantCardSkillAction("Turning Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.SPINNING_SLASH,

@@ -1,0 +1,45 @@
+{
+  "duration": 0.42,
+  "notes": "Short cyan blade wake for Artoria sword skills while Excalibur remains veiled.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.3,
+      "rate": 360,
+      "particle_lifetime": 0.3,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.012,
+      "velocity": [0.0, 0.0, -2.0],
+      "velocity_variance": 0.35,
+      "max_vanilla_particles_per_tick": 0,
+      "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.32, 0.18, 0.5], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "0.035 * sin(t * 6.283 + time * 16.0)",
+        "expr_y": "0.025 * cos(t * 6.283 + time * 13.0)",
+        "expr_z": "-0.48 + t * 1.12",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 56
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#D94BC9F2" },
+        { "t": 0.42, "color": "#D92CA8F0" },
+        { "t": 1.0, "color": "#003D7FAF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.06 },
+        { "t": 0.3, "size": 0.18 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.85, "soft_particles": true },
+      "particle_role": "ARTORIA_WIND_VEIL_SWORD_TRAIL",
+      "enable_trail": true
+    }
+  ]
+}

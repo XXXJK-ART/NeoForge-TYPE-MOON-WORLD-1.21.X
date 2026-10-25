@@ -2,7 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService;
-import net.minecraft.core.particles.ParticleTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -15,13 +15,16 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 
 public final class ServantCardArtoriaSkills {
    public static final int WIND_HAMMER_SLOT = 1;
+   public static final int WIND_DEFENSE_SLOT = 6;
    public static final int WIND_RELEASE_SLOT = 3;
 
    private ServantCardArtoriaSkills() {
    }
 
    public static boolean isWindAction(ServantCardSkillAction action) {
-      return action != null && ("invisible_air_hammer".equals(action.effectId()) || "invisible_air_release".equals(action.effectId()));
+      return action != null && ("invisible_air_hammer".equals(action.effectId())
+         || ArtoriaRules.WIND_DEFENSE.equals(action.effectId())
+         || "invisible_air_release".equals(action.effectId()));
    }
 
    public static boolean isWindToggle(ServantCardSkillAction action) {
@@ -51,12 +54,12 @@ public final class ServantCardArtoriaSkills {
       if (ArtoriaPendragonCombatHelper.isManaBurstActive(player)) ManaBurstService.tickExternalJetMovement(player, 5);
    }
 
-   public static void performInvisibleAirHammer(ServerPlayer player, int revealTicks) {
-      ArtoriaAbilityService.hammer(player);
+    public static boolean performInvisibleAirHammer(ServerPlayer player, int revealTicks) {
+       return ArtoriaAbilityService.hammer(player);
    }
 
-   public static void performInvisibleAirRelease(ServerPlayer player, int revealTicks) {
-      ArtoriaAbilityService.windRelease(player);
+    public static boolean performInvisibleAirRelease(ServerPlayer player, int revealTicks) {
+       return ArtoriaAbilityService.windRelease(player);
    }
 
    public static boolean toggleWindBarrier(ServerPlayer player) {
@@ -78,7 +81,6 @@ public final class ServantCardArtoriaSkills {
    private static void spawnManaBurstActivationFx(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) {
          net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects.spawn(level, "artoria_mana_burst_aura", player, 96);
-         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + player.getBbHeight() * 0.58, player.getZ(), 3, 0.12, 0.22, 0.12, 0.025);
          level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.25F, 1.28F);
          level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.8F, 1.35F);
       }

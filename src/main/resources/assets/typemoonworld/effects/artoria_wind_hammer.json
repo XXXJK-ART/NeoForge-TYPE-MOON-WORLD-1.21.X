@@ -1,184 +1,277 @@
 {
-  "duration": 0.82,
-  "notes": "Strike Air: a dense white-cyan pressure blast drives forward from Excalibur, wrapped in rapidly rotating wind bands and a broad leading shock front.",
+  "duration": 1.15,
+  "notes": "Strike Air: Hammer of the Wind King. A compressed white-cyan pressure blade with a readable launch, cone body and impact ring.",
   "screen_effects": [
-    { "type": "white_flash", "intensity": 0.055, "duration": 0.1 },
-    { "type": "radial_blur", "intensity": 0.065, "duration": 0.16 }
+    { "type": "white_flash", "intensity": 0.08, "duration": 0.12 },
+    { "type": "radial_blur", "intensity": 0.10, "duration": 0.20 }
   ],
   "emitters": [
     {
       "start_time": 0.0,
-      "end_time": 0.68,
-      "rate": 1700,
-      "particle_lifetime": 0.4,
-      "size_variance": 0.3,
-      "lifetime_variance": 0.14,
-      "position_variance": 0.08,
-      "velocity": [0.0, 0.0, 17.0],
-      "velocity_variance": 0.7,
+      "end_time": 0.18,
+      "rate": 500,
+      "particle_lifetime": 0.26,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.0, 0.3],
+      "velocity_variance": 0.04,
       "max_vanilla_particles_per_tick": 2,
-      "binding": { "mode": "entity_look", "offset": [0.0, 0.32, 0.9], "rotate_with_entity": true },
-      "component": {
-        "type": "parametric",
-        "mode": "EXPRESSION",
-        "expr_x": "(0.25 + 1.6 * t) * sin(t * 12.56 + time * 2.4)",
-        "expr_y": "(0.3 + 1.4 * t) * sin(t * 9.42 + time * 1.8)",
-        "expr_z": "0.2 + t * 13.8",
-        "t_start": 0.0,
-        "t_end": 1.0,
-        "segments": 280
-      },
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.35, 1.05], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 96 },
       "color_over_life": [
-        { "t": 0.0, "color": "#F7FFFFFF" },
-        { "t": 0.24, "color": "#F0F8FFFF" },
-        { "t": 0.7, "color": "#B8C9F8FF" },
-        { "t": 1.0, "color": "#006D96CC" }
-      ],
-      "size_over_life": [
-        { "t": 0.0, "size": 0.34 },
-        { "t": 0.24, "size": 1.55 },
-        { "t": 0.68, "size": 2.3 },
-        { "t": 1.0, "size": 0.12 }
-      ],
-      "visibility_condition": "true",
-      "blend": "ADDITIVE",
-      "renderer": "RIBBON",
-      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 1.25, "soft_particles": true, "distortion": true },
-      "particle_role": "WIND_HAMMER_WHITE_PRESSURE_CORE",
-      "enable_trail": true,
-      "vanilla_particles": [
-        { "type": "gust", "count": 1, "spread": [0.4, 0.45, 0.4], "offset": [0.0, 0.0, 2.0], "speed": 0.12, "chance": 0.4 },
-        { "type": "cloud", "count": 1, "spread": [0.5, 0.35, 0.5], "offset": [0.0, 0.0, 3.0], "speed": 0.08, "chance": 0.35 }
-      ]
-    },
-    {
-      "start_time": 0.0,
-      "end_time": 0.72,
-      "rate": 1900,
-      "particle_lifetime": 0.48,
-      "size_variance": 0.28,
-      "lifetime_variance": 0.16,
-      "position_variance": 0.1,
-      "velocity": [0.0, 0.0, 14.0],
-      "velocity_variance": 0.6,
-      "max_vanilla_particles_per_tick": 2,
-      "binding": { "mode": "entity_look", "offset": [0.0, 0.32, 0.9], "rotate_with_entity": true },
-      "component": {
-        "type": "parametric",
-        "mode": "EXPRESSION",
-        "expr_x": "(0.8 + 3.4 * t) * cos(t * 31.4 - time * 36.0)",
-        "expr_y": "(0.65 + 2.7 * t) * sin(t * 31.4 - time * 36.0) + 0.32 * sin(t * 62.8 + time * 17.0)",
-        "expr_z": "0.2 + t * 14.8",
-        "t_start": 0.0,
-        "t_end": 1.0,
-        "segments": 360
-      },
-      "color_over_life": [
-        { "t": 0.0, "color": "#CFFFFFFF" },
-        { "t": 0.22, "color": "#DDF6FFFF" },
-        { "t": 0.62, "color": "#A1A4EFFF" },
-        { "t": 1.0, "color": "#004C82AA" }
+        { "t": 0.0, "color": "#FFFFFFFF" },
+        { "t": 0.45, "color": "#D8D8F7FF" },
+        { "t": 1.0, "color": "#0080D8FF" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.08 },
-        { "t": 0.32, "size": 0.32 },
-        { "t": 0.72, "size": 0.42 },
-        { "t": 1.0, "size": 0.025 }
+        { "t": 0.35, "size": 0.54 },
+        { "t": 1.0, "size": 0.06 }
       ],
-      "visibility_condition": "random() > 0.08",
-      "blend": "TRANSLUCENT",
-      "renderer": "RIBBON",
-      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.72, "soft_particles": true, "distortion": true },
-      "particle_role": "WIND_HAMMER_ROTATING_CYAN_WIND_BANDS",
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.16, 0.16, 0.16] },
+        { "t": 0.42, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [4.2, 4.2, 4.2], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.6, 5.6, 5.6] }
+      ],
+      "visibility_condition": "true",
+      "blend": "ADDITIVE",
+      "renderer": "SHADER_QUAD",
+      "material": { "shader": "vfx_sdf", "texture": "typemoonworld:textures/particle/beam_gradient.png", "bloom": 0.9, "distortion": true },
+      "particle_role": "WIND_HAMMER_MUZZLE_RING"
+    },
+    {
+      "start_time": 0.04,
+      "end_time": 0.62,
+      "rate": 1150,
+      "particle_lifetime": 0.32,
+      "size_variance": 0.25,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.045,
+      "velocity": [0.0, 0.0, 10.5],
+      "velocity_variance": 0.25,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.35, 1.0], "rotate_with_entity": true },
+      "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 11.0], "segments": 120 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#EEFFFFFF" },
+        { "t": 0.20, "color": "#B8E7F5FF" },
+        { "t": 0.72, "color": "#6699D9FF" },
+        { "t": 1.0, "color": "#003C7AB8" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.12 },
+        { "t": 0.24, "size": 0.42 },
+        { "t": 0.70, "size": 0.32 },
+        { "t": 1.0, "size": 0.04 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.18, 0.18, 0.16] },
+        { "t": 0.22, "pos": [0.0, 0.0, 0.0], "scale": [1.0, 0.42, 1.0], "easing": "ease_out_back" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "scale": [1.3, 0.75, 1.0] }
+      ],
+      "visibility_condition": "random() > 0.07",
+      "blend": "ADDITIVE",
+      "renderer": "BEAM",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/beam_gradient.png", "bloom": 1.15, "soft_particles": true, "distortion": true },
+      "particle_role": "WIND_HAMMER_PRESSURE_CORE",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "gust", "count": 1, "spread": [0.45, 0.55, 0.45], "offset": [0.0, 0.0, 4.0], "speed": 0.11, "chance": 0.42 }
+        { "type": "cloud", "count": 1, "spread": [0.2, 0.16, 0.2], "offset": [0.0, 0.0, 0.0], "speed": 0.08, "chance": 0.35 }
       ]
     },
     {
-      "start_time": 0.025,
-      "end_time": 0.62,
-      "rate": 1050,
-      "particle_lifetime": 0.38,
-      "size_variance": 0.32,
-      "lifetime_variance": 0.14,
-      "position_variance": 0.06,
-      "velocity": [0.0, 0.0, 12.0],
-      "velocity_variance": 0.55,
+      "start_time": 0.10,
+      "end_time": 0.72,
+      "rate": 520,
+      "particle_lifetime": 0.45,
+      "size_variance": 0.45,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.12,
+      "velocity": [0.0, 0.04, 8.0],
+      "velocity_variance": 0.35,
       "max_vanilla_particles_per_tick": 2,
-      "binding": { "mode": "entity_look", "offset": [0.0, 0.35, 1.1], "rotate_with_entity": true },
-      "component": {
-        "type": "parametric",
-        "mode": "EXPRESSION",
-        "expr_x": "(t - 0.5) * (3.0 + 2.5 * sin(time * 18.0 + t * 18.84))",
-        "expr_y": "(t - 0.5) * (2.4 + 1.8 * cos(time * 16.0 + t * 18.84))",
-        "expr_z": "0.15 + t * 13.5",
-        "t_start": 0.0,
-        "t_end": 1.0,
-        "segments": 220
-      },
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.35, 1.05], "rotate_with_entity": true },
+      "component": { "type": "parametric", "mode": "EXPRESSION", "expr_x": "(0.35 + 2.1 * t) * cos(t * 37.7 + time * 11.0)", "expr_y": "(0.35 + 1.1 * t) * sin(t * 37.7 + time * 11.0)", "expr_z": "0.4 + t * 11.5", "t_start": 0.0, "t_end": 1.0, "segments": 120 },
       "color_over_life": [
-        { "t": 0.0, "color": "#D8FFFFFF" },
-        { "t": 0.32, "color": "#BCEFFFFF" },
-        { "t": 0.78, "color": "#8198DDEB" },
-        { "t": 1.0, "color": "#003D6888" }
+        { "t": 0.0, "color": "#A8FFFFFF" },
+        { "t": 0.45, "color": "#669DDCFF" },
+        { "t": 1.0, "color": "#000A66AA" }
       ],
       "size_over_life": [
         { "t": 0.0, "size": 0.06 },
-        { "t": 0.28, "size": 0.28 },
-        { "t": 0.72, "size": 0.36 },
-        { "t": 1.0, "size": 0.02 }
+        { "t": 0.38, "size": 0.2 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.42, "pos": [0.0, 0.0, 0.0], "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.2], "scale": [1.1, 0.85, 1.0] }
       ],
       "visibility_condition": "random() > 0.16",
       "blend": "TRANSLUCENT",
       "renderer": "RIBBON",
-      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.42, "soft_particles": true },
-      "particle_role": "WIND_HAMMER_CROSSING_AIR_SHEETS",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.55, "distortion": true },
+      "particle_role": "WIND_HAMMER_SPIRAL",
       "enable_trail": true
     },
     {
-      "start_time": 0.12,
-      "end_time": 0.72,
-      "rate": 720,
+      "start_time": 0.48,
+      "end_time": 1.15,
+      "rate": 850,
       "particle_lifetime": 0.5,
-      "size_variance": 0.3,
-      "lifetime_variance": 0.16,
-      "position_variance": 0.04,
-      "velocity": [0.0, 0.0, 5.0],
-      "velocity_variance": 0.45,
+      "size_variance": 0.4,
+      "lifetime_variance": 0.2,
+      "position_variance": 0.1,
+      "velocity": [0.0, 0.02, 0.0],
+      "velocity_variance": 0.2,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.05, 11.0], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 150 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#CCFFFFFF" },
+        { "t": 0.35, "color": "#88A7E2FF" },
+        { "t": 1.0, "color": "#001D5AA0" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.35, "size": 0.46 },
+        { "t": 1.0, "size": 0.03 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.1, 0.1, 0.1] },
+        { "t": 0.38, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.0, 5.0, 5.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [7.0, 7.0, 7.0] }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "ADDITIVE",
+      "renderer": "SHADER_QUAD",
+      "material": { "shader": "vfx_sdf", "texture": "typemoonworld:textures/particle/ring_shockwave.png", "bloom": 0.85, "distortion": true },
+      "particle_role": "WIND_HAMMER_IMPACT_RING",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [1.6, 0.4, 1.6], "offset": [0.0, 0.0, 0.0], "speed": 0.12, "chance": 0.55 },
+        { "type": "flash", "count": 1, "spread": [0.02, 0.02, 0.02], "offset": [0.0, 0.0, 0.0], "speed": 0.0, "chance": 0.55 }
+      ]
+    },
+    {
+      "start_time": 0.02,
+      "end_time": 0.9,
+      "rate": 880,
+      "particle_lifetime": 0.46,
+      "size_variance": 0.36,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.06,
+      "velocity": [0.0, 0.0, 13.0],
+      "velocity_variance": 0.5,
       "max_vanilla_particles_per_tick": 2,
-      "binding": { "mode": "entity_look", "offset": [0.0, 0.3, 10.8], "rotate_with_entity": true },
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.3, 1.0], "rotate_with_entity": true },
       "component": {
         "type": "parametric",
         "mode": "EXPRESSION",
-        "expr_x": "(0.3 + 3.8 * t) * cos(t * 6.283 + time * 28.0)",
-        "expr_y": "(0.3 + 3.0 * t) * sin(t * 6.283 + time * 28.0)",
-        "expr_z": "0.0",
+        "expr_x": "(0.35 + 2.5 * t) * cos(t * 25.132 + time * 28.0)",
+        "expr_y": "(0.35 + 2.1 * t) * sin(t * 25.132 + time * 28.0)",
+        "expr_z": "0.2 + t * 13.5",
+        "t_start": 0.0,
+        "t_end": 1.0,
+        "segments": 180
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#EFF8FFFF" },
+        { "t": 0.28, "color": "#C9F3FFFF" },
+        { "t": 0.7, "color": "#78B6DFFF" },
+        { "t": 1.0, "color": "#003E69AA" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.32, "size": 0.22 },
+        { "t": 0.78, "size": 0.34 },
+        { "t": 1.0, "size": 0.018 }
+      ],
+      "visibility_condition": "random() > 0.08",
+      "blend": "TRANSLUCENT",
+      "renderer": "RIBBON",
+      "material": { "shader": "vfx_polar", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.45, "soft_particles": true },
+      "particle_role": "WIND_HAMMER_OUTER_PRESSURE_SPIRAL",
+      "enable_trail": true
+    },
+    {
+      "start_time": 0.28,
+      "end_time": 1.05,
+      "rate": 720,
+      "particle_lifetime": 0.38,
+      "size_variance": 0.28,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.035,
+      "velocity": [0.0, 0.0, 5.0],
+      "velocity_variance": 0.3,
+      "max_vanilla_particles_per_tick": 2,
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.35, 9.6], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 1.0, "segments": 144 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#EEFFFFFF" },
+        { "t": 0.3, "color": "#BCEBFFFF" },
+        { "t": 1.0, "color": "#005486CC" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.08 },
+        { "t": 0.32, "size": 0.42 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [0.18, 0.18, 0.18] },
+        { "t": 0.42, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [3.8, 3.8, 3.8], "easing": "ease_out_cubic" },
+        { "t": 1.0, "pos": [0.0, 0.0, 0.0], "rot": [0.7071068, 0.0, 0.0, 0.7071068], "scale": [5.8, 5.8, 5.8] }
+      ],
+      "visibility_condition": "random() > 0.06",
+      "blend": "ADDITIVE",
+      "renderer": "SHADER_QUAD",
+      "material": { "shader": "vfx_sdf", "texture": "typemoonworld:textures/particle/ring_shockwave.png", "bloom": 0.62, "distortion": true },
+      "particle_role": "WIND_HAMMER_SECONDARY_PRESSURE_RING",
+      "vanilla_particles": [
+        { "type": "gust", "count": 1, "spread": [0.9, 0.5, 0.9], "offset": [0.0, 0.0, 0.0], "speed": 0.1, "chance": 0.35 }
+      ]
+    },
+    {
+      "start_time": 0.05,
+      "end_time": 0.82,
+      "rate": 640,
+      "particle_lifetime": 0.34,
+      "size_variance": 0.42,
+      "lifetime_variance": 0.18,
+      "position_variance": 0.08,
+      "velocity": [0.0, 0.0, 15.0],
+      "velocity_variance": 0.8,
+      "max_vanilla_particles_per_tick": 3,
+      "binding": { "mode": "entity_look", "offset": [0.0, 0.32, 0.9], "rotate_with_entity": true },
+      "component": {
+        "type": "parametric",
+        "mode": "EXPRESSION",
+        "expr_x": "(random() - 0.5) * (1.0 + 4.2 * t)",
+        "expr_y": "(random() - 0.5) * (0.8 + 3.0 * t)",
+        "expr_z": "0.15 + t * 14.0",
         "t_start": 0.0,
         "t_end": 1.0,
         "segments": 160
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#EFFFFFFF" },
-        { "t": 0.24, "color": "#CEF0FFFF" },
-        { "t": 0.65, "color": "#879CCEEB" },
-        { "t": 1.0, "color": "#003A6380" }
+        { "t": 0.0, "color": "#FFF9FFFF" },
+        { "t": 0.3, "color": "#DDF8FFFF" },
+        { "t": 0.75, "color": "#78B8E8FF" },
+        { "t": 1.0, "color": "#00355288" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.09 },
-        { "t": 0.32, "size": 0.45 },
-        { "t": 0.78, "size": 0.58 },
-        { "t": 1.0, "size": 0.025 }
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.28, "size": 0.19 },
+        { "t": 1.0, "size": 0.015 }
       ],
-      "visibility_condition": "true",
+      "visibility_condition": "random() > 0.12",
       "blend": "ADDITIVE",
       "renderer": "RIBBON",
-      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.9, "soft_particles": true, "distortion": true },
-      "particle_role": "WIND_HAMMER_LEADING_PRESSURE_FRONT",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.4, "soft_particles": true },
+      "particle_role": "WIND_HAMMER_COMPRESSED_AIR_FLECKS",
       "enable_trail": true,
       "vanilla_particles": [
-        { "type": "gust", "count": 1, "spread": [0.7, 0.55, 0.7], "offset": [0.0, 0.0, 0.0], "speed": 0.14, "chance": 0.5 },
-        { "type": "cloud", "count": 1, "spread": [0.9, 0.7, 0.9], "offset": [0.0, 0.0, 0.0], "speed": 0.08, "chance": 0.3 }
+        { "type": "cloud", "count": 1, "spread": [0.6, 0.45, 0.6], "offset": [0.0, 0.0, 3.5], "speed": 0.07, "chance": 0.22 }
       ]
     }
   ]

@@ -57,6 +57,30 @@ class ArtoriaResourcesTest {
       assertEquals("parametric", bladeSamples.get("type").getAsString());
       assertEquals(72, bladeSamples.get("segments").getAsInt());
    }
+   @Test void swordSkillsHaveSeparateWindAndManaBurstBladeTrails() throws Exception {
+      var wind = json("assets/typemoonworld/effects/artoria_sword_trail_wind.json").getAsJsonArray("emitters").get(0).getAsJsonObject();
+      var goldEmitters = json("assets/typemoonworld/effects/artoria_sword_trail_gold.json").getAsJsonArray("emitters");
+      var gold = goldEmitters.get(0).getAsJsonObject();
+      assertTrue(goldEmitters.size() >= 2);
+      for (var emitter : java.util.List.of(wind, gold)) {
+         assertEquals("artoria_blade", emitter.getAsJsonObject("binding").get("mode").getAsString());
+         assertEquals("RIBBON", emitter.get("renderer").getAsString());
+         assertTrue(emitter.get("enable_trail").getAsBoolean());
+         assertEquals(56, emitter.getAsJsonObject("component").get("segments").getAsInt());
+      }
+      assertTrue(wind.getAsJsonArray("color_over_life").get(0).getAsJsonObject().get("color").getAsString().endsWith("4BC9F2"));
+      assertEquals("#FFFFE45A", gold.getAsJsonArray("color_over_life").get(0).getAsJsonObject().get("color").getAsString());
+      assertEquals("ARTORIA_MANA_BURST_SWORD_TRAIL_CORE", goldEmitters.get(1).getAsJsonObject().get("particle_role").getAsString());
+      assertTrue(goldEmitters.get(1).getAsJsonObject().getAsJsonObject("material").get("bloom").getAsFloat() >= 2.5F);
+   }
+   @Test void goldSwordTexturesAreDedicatedEmissiveVariants() throws Exception {
+      assertTrue(Files.exists(Path.of("src/main/resources/assets/typemoonworld/textures/item/excalibur_mana_burst.png")));
+      assertTrue(Files.exists(Path.of("src/main/resources/assets/typemoonworld/textures/item/excalibur2_gold.png")));
+      var goldenModel = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/model/ExcaliburGoldenModel.java"));
+      var renderer = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/client/renderer/ExcaliburRenderer.java"));
+      assertTrue(goldenModel.contains("textures/item/excalibur2_gold.png"));
+      assertTrue(renderer.contains("textures/item/excalibur_mana_burst.png"));
+   }
    @Test void invisibleAirHasVisibleTranslucentBladeParticles() throws Exception {
       var effect = json("assets/typemoonworld/effects/artoria_invisible_air.json");
       var emitters = effect.getAsJsonArray("emitters");
@@ -74,13 +98,22 @@ class ArtoriaResourcesTest {
       assertEquals(ArtoriaRules.BURST_DRAIN_MP,
          skill.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params").get("drain_per_second").getAsInt());
    }
-   @Test void windEffectsUseDenseTornadoAndForwardBlastLayers() throws Exception {
+   @Test void windEffectsKeepTheLegacyHammerCoreAndLayerTheGuardAndRelease() throws Exception {
       var hammer = json("assets/typemoonworld/effects/artoria_wind_hammer.json").getAsJsonArray("emitters");
-      assertTrue(hammer.size() >= 4);
-      assertTrue(hammer.get(0).getAsJsonObject().get("rate").getAsInt() >= 1000);
-      assertTrue(hammer.get(1).getAsJsonObject().get("particle_role").getAsString().contains("ROTATING"));
-      assertTrue(hammer.get(hammer.size() - 1).getAsJsonObject().get("particle_role").getAsString().contains("FRONT"));
-      assertTrue(json("assets/typemoonworld/effects/artoria_wind_release.json").getAsJsonArray("emitters").size() >= 3);
-      assertTrue(json("assets/typemoonworld/effects/artoria_wind_defense.json").getAsJsonArray("emitters").get(0).getAsJsonObject().get("rate").getAsInt() >= 400);
+      assertEquals(1.15F, json("assets/typemoonworld/effects/artoria_wind_hammer.json").get("duration").getAsFloat(), 0.0001F);
+      assertTrue(hammer.size() >= 7);
+      var hammerRoles = hammer.asList().stream().map(v -> v.getAsJsonObject().get("particle_role").getAsString()).collect(Collectors.toSet());
+      assertTrue(hammerRoles.containsAll(java.util.Set.of("WIND_HAMMER_MUZZLE_RING", "WIND_HAMMER_PRESSURE_CORE",
+         "WIND_HAMMER_SPIRAL", "WIND_HAMMER_IMPACT_RING", "WIND_HAMMER_OUTER_PRESSURE_SPIRAL")));
+
+      var release = json("assets/typemoonworld/effects/artoria_wind_release.json").getAsJsonArray("emitters");
+      assertTrue(release.size() >= 6);
+      assertTrue(release.asList().stream().map(v -> v.getAsJsonObject().get("particle_role").getAsString())
+         .anyMatch(role -> role.contains("WHITE_GEM_STYLE_PRIMARY_RING")));
+
+      var defenseEffect = json("assets/typemoonworld/effects/artoria_wind_defense.json");
+      assertTrue(defenseEffect.getAsJsonArray("emitters").size() >= 5);
+      assertTrue(defenseEffect.getAsJsonArray("emitters").asList().stream()
+         .noneMatch(v -> v.getAsJsonObject().get("particle_role").getAsString().contains("SWORD")));
    }
 }

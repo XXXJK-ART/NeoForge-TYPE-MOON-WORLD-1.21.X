@@ -717,7 +717,12 @@ public final class ServantCardTransformManager {
       }
       if (!unlimited && ServantCardArtoriaSkills.isWindAction(action)) {
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT));
+          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT));
          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT));
+          long windReadyAt = player.getPersistentData().getLong(
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY);
+          currentCooldown = Math.max(currentCooldown,
+             (int)Math.min(Integer.MAX_VALUE, Math.max(0L, windReadyAt - player.level().getGameTime())));
       }
       if (ServantCardArtoriaSkills.isWindAction(action) && ServantCardArtoriaSkills.isWindLockedByExcalibur(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.artoria_excalibur_wind_locked"), true);
@@ -820,8 +825,20 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
-      if (ServantCardArtoriaSkills.isWindAction(action)
-         && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.canWind(player)) return false;
+       if (ServantCardArtoriaSkills.isWindAction(action)
+          && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.canWind(player)) {
+          if (!net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isWindBarrierEnabled(player)) {
+             long windReadyAt = player.level().getGameTime()
+                + net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS;
+             player.getPersistentData().putLong(
+                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY, windReadyAt);
+             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, windReadyAt);
+             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, windReadyAt);
+             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, windReadyAt);
+             vars.syncPlayerVariables(player);
+          }
+          return false;
+       }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE.equals(action.effectId())
          && !net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.canStartWindDefense(player)) return false;
       double mpCost = ServantCardSkillCostRules.effectiveMpCost(vars, action);
@@ -885,9 +902,12 @@ public final class ServantCardTransformManager {
          if (!unlimited) player.getPersistentData().putLong(net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.COMBO_READY, player.level().getGameTime() + cooldownTicks);
       } else if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
-      } else if (ServantCardArtoriaSkills.isWindAction(action)) {
-         setSkillCooldown(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, cooldownTicks);
-         setSkillCooldown(player, vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, cooldownTicks);
+       } else if (ServantCardArtoriaSkills.isWindAction(action)) {
+          long windReadyAt = player.getPersistentData().getLong(
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY);
+          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, windReadyAt);
+          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, windReadyAt);
+          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, windReadyAt);
       } else {
          setSkillCooldown(player, vars, cooldownSlot, cooldownTicks);
       }

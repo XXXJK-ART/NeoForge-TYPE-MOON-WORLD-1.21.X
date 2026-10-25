@@ -95,7 +95,7 @@ public final class ArtoriaPendragonCombatHelper {
          return true;
       }
       if (phase.id() >= ServantCombatPhase.NORMAL.id() && tryManaBurst(entity, level, data, now)) return true;
-      boolean windHammerRange = distance >= 3 && distance <= 10.5;
+      boolean windHammerRange = distance >= 3 && distance <= 12.0;
       if (windHammerRange && ArtoriaRules.npcPrioritizesWindHammer(phase, entity.getRandom().nextFloat())
          && tryInvisibleAir(entity, target, level, data, now)) return true;
       if (phase == ServantCombatPhase.DECISIVE && tryStartExcalibur(entity, target, level, data, now)) return true;
@@ -447,8 +447,6 @@ public final class ArtoriaPendragonCombatHelper {
       ArtoriaStateService.tick(entity);
       if (isManaBurstActive(entity) && entity.level() instanceof ServerLevel level) {
          tickManaBurstJetMovement(entity, level);
-         if (now % 6 == 0) level.sendParticles(ParticleTypes.END_ROD, entity.getX(), entity.getY() + .8,
-            entity.getZ(), 3, .2, .3, .2, .02);
       }
    }
 
@@ -461,8 +459,13 @@ public final class ArtoriaPendragonCombatHelper {
          if (offset.horizontalDistance() > 2.35) desired = offset.multiply(1, 0, 1);
          lift |= offset.y > .75 && offset.horizontalDistance() < 13;
       }
-      if (ArtoriaStateService.jet(entity, desired, lift, false) && entity.tickCount % 4 == 0)
-         level.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + .3, entity.getZ(), 2, .1, .1, .1, .02);
+      if (!ArtoriaStateService.jet(entity, desired, lift, false) || entity.tickCount % 4 != 0) return;
+      Vec3 exhaust = desired.lengthSqr() > 1.0E-4
+         ? desired.normalize().scale(-1.0)
+         : lift ? new Vec3(0.0, -1.0, 0.0) : entity.getDeltaMovement().multiply(-1.0, 0.0, -1.0);
+      if (exhaust.lengthSqr() < 1.0E-4) exhaust = new Vec3(0.0, -1.0, 0.0);
+      VFXServerEffects.spawnOrientedScaled(level, "artoria_mana_burst_jet",
+         entity.position().add(0.0, 0.18, 0.0), exhaust, 64.0, 1.0F);
    }
 
    private static Vec3 clampHorizontal(Vec3 motion, double cap) {
@@ -557,13 +560,18 @@ public final class ArtoriaPendragonCombatHelper {
 
    private static boolean tryInvisibleAir(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
       if (!ArtoriaAbilityService.canWind(entity) || !entity.hasLineOfSight(target) || !ArtoriaStateService.consume(entity, 60)) return false;
-      entity.faceToward(target.position()); ArtoriaAbilityService.hammer(entity); return true;
+      entity.faceToward(target.position());
+      if (!ArtoriaAbilityService.hammer(entity)) return false;
+      ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);
+      return true;
    }
 
    private static boolean tryInvisibleAirRelease(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
       if (!ArtoriaAbilityService.canWind(entity) || !entity.hasLineOfSight(target) || entity.getRandom().nextFloat() > .34F
          || !ArtoriaStateService.consume(entity, 28)) return false;
-      ArtoriaAbilityService.windRelease(entity); return true;
+      if (!ArtoriaAbilityService.windRelease(entity)) return false;
+      ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);
+      return true;
    }
 
    private static void tickInvisibleAirWrapVfx(ArtoriaPendragonEntity entity, ServerLevel level, CompoundTag data, long now) {
@@ -572,15 +580,6 @@ public final class ArtoriaPendragonCombatHelper {
 
    private static void spawnManaBurstActivationFx(ArtoriaPendragonEntity entity, ServerLevel level) {
       VFXServerEffects.spawn(level, "artoria_mana_burst_aura", entity, 96);
-      double cx = entity.getX();
-      double cy = entity.getY();
-      double cz = entity.getZ();
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.72, cz, fxCount(3), 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.58, cz, fxCount(56), 0.32, 0.58, 0.32, 0.075);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + 0.18, cz, fxCount(38), 0.46, 0.08, 0.46, 0.075);
-      level.sendParticles(ParticleTypes.END_ROD, cx, cy + entity.getBbHeight() * 0.62, cz, fxCount(22), 0.26, 0.42, 0.26, 0.04);
-      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + 0.12, cz, 0.22F, 2.1F, 0.08F, 18, 0xFFFFE8, 0.48F, 0.035F));
-      level.addFreshEntity(new ExpandingRingEffectEntity(level, cx, cy + entity.getBbHeight() * 0.5, cz, 0.12F, 1.2F, 0.06F, 16, 0xFFFFFF, 0.34F, 0.025F, 78.0F, entity.tickCount * 5.0F));
    }
 
    private static boolean consumeSmallSkill(ArtoriaPendragonEntity entity, CompoundTag data, long now, String tag, int cooldown, double mpCost) {

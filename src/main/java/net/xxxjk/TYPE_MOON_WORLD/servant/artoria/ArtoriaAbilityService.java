@@ -316,6 +316,14 @@ public final class ArtoriaAbilityService {
       SasakiKojiroActionAnimationService.play(owner, action);
       if (owner instanceof ServerPlayer player) player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
       else if (owner instanceof ArtoriaPendragonEntity artoria) artoria.triggerAttackSwing();
+      if (action != SasakiKojiroAction.COUNTER_STANCE && owner.level() instanceof ServerLevel level) {
+         spawnSwordTrail(owner, level);
+      }
+   }
+   private static void spawnSwordTrail(LivingEntity owner, ServerLevel level) {
+      String effect = ArtoriaPendragonCombatHelper.isManaBurstActive(owner)
+         ? "artoria_sword_trail_gold" : "artoria_sword_trail_wind";
+      VFXServerEffects.spawn(level, effect, owner, 72);
    }
    private static void skillStartFx(LivingEntity owner, ServerLevel level) {
       level.playSound(null, owner.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP,
@@ -349,8 +357,12 @@ public final class ArtoriaAbilityService {
             defender instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE, 1.0F, 0.85F);
       }
    }
-   public static void hammer(LivingEntity owner) {
-      if (!(owner.level() instanceof ServerLevel level) || !canWind(owner)) return;
+   public static boolean hammer(LivingEntity owner) {
+      if (!(owner.level() instanceof ServerLevel level)) return false;
+      if (!canWind(owner)) {
+         ArtoriaStateService.lockWindRecoveryIfVeilMissing(owner);
+         return false;
+      }
       Vec3 forward = horizontal(owner);
       lockAction(owner, ArtoriaRules.WIND_HAMMER_WINDUP_TICKS);
       owner.getPersistentData().putLong(ArtoriaStateService.WIND_READY,
@@ -365,10 +377,14 @@ public final class ArtoriaAbilityService {
       owner.hurtMarked = true;
       TYPE_MOON_WORLD.queueServerWork(ArtoriaRules.WIND_HAMMER_WINDUP_TICKS,
          () -> releaseHammer(owner, level, forward));
+      return true;
    }
 
    private static void releaseHammer(LivingEntity owner, ServerLevel level, Vec3 forward) {
-      if (!validDelayed(owner, level) || !canWind(owner)) return;
+      // The cast itself has already started the shared refill timer. Requiring
+      // canWind here would cancel every delayed hammer before its hit frame.
+      if (!validDelayed(owner, level) || !ArtoriaStateService.isWindBarrierEnabled(owner)
+         || ArtoriaStateService.isWindDefenseActive(owner)) return;
       Vec3 right = new Vec3(-forward.z, 0, forward.x);
       Vec3 start = owner.position().add(0, owner.getBbHeight() * 0.55, 0);
       reveal(owner, ArtoriaRules.WIND_REGATHER_TICKS);
@@ -376,14 +392,36 @@ public final class ArtoriaAbilityService {
          owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS);
       animate(owner, SasakiKojiroAction.THRUST);
       Set<Integer> hits = new HashSet<>();
+      boolean npc = owner instanceof ArtoriaPendragonEntity;
+      boolean burst = ArtoriaPendragonCombatHelper.isManaBurstActive(owner);
+      double range = npc ? ArtoriaRules.WIND_HAMMER_NPC_RANGE
+         : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_RANGE : ArtoriaRules.WIND_HAMMER_PLAYER_RANGE;
+      double widthScale = npc ? ArtoriaRules.WIND_HAMMER_NPC_WIDTH_SCALE
+         : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_WIDTH_SCALE : ArtoriaRules.WIND_HAMMER_PLAYER_WIDTH_SCALE;
+      float damage = npc
+         ? burst ? ArtoriaRules.WIND_HAMMER_NPC_BURST_DAMAGE : ArtoriaRules.WIND_HAMMER_NPC_DAMAGE
+         : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_DAMAGE : ArtoriaRules.WIND_HAMMER_PLAYER_DAMAGE;
       int sample = 0;
-      for (double distance = 1.2; distance <= 10.5; distance += 0.75, sample++) {
+      double step = npc ? 0.8 : 0.75;
+      for (double distance = npc ? 1.5 : 1.2; distance <= range; distance += step, sample++) {
          Vec3 center = start.add(forward.scale(distance));
-         double width = distance * 0.48;
-         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
-            new AABB(center, center).inflate(width, 0.7 + distance * 0.32, width), t -> enemy(owner, t))) {
-            if (owner.hasLineOfSight(target) && hits.add(target.getId()) && hit(owner, target, 90, "invisible_air_hammer", false, false)) {
-               target.push(forward.x * 1.05, 0.34, forward.z * 1.05); target.hurtMarked = true;
+         double halfHeight = 0.7 + distance * (npc ? 0.32 : 0.28);
+         double halfWidth = distance * widthScale;
+         for (double side = -halfWidth; side <= halfWidth; side += 0.8) {
+            double firstVertical = npc ? -0.7 : halfHeight * 0.18;
+            double lastVertical = npc ? halfHeight : firstVertical;
+            double verticalStep = npc ? 0.7 : 1.0;
+            for (double vertical = firstVertical; vertical <= lastVertical; vertical += verticalStep) {
+               Vec3 point = center.add(right.scale(side)).add(0.0, vertical, 0.0);
+               double verticalRadius = npc ? 0.75 : 0.85 + distance * 0.04;
+               AABB area = new AABB(point, point).inflate(0.9, verticalRadius, 0.9);
+               for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, t -> enemy(owner, t))) {
+                  if (owner.hasLineOfSight(target) && hits.add(target.getId())) {
+                     damageWindHammer(owner, target, damage);
+                     target.push(forward.x * 1.05, 0.34, forward.z * 1.05);
+                     target.hurtMarked = true;
+                  }
+               }
             }
          }
          if (sample % 2 == 0) {
@@ -398,37 +436,69 @@ public final class ArtoriaAbilityService {
       VFXServerEffects.spawnOriented(level, "artoria_wind_hammer", start.add(forward.scale(0.8)), forward, 128);
       level.playSound(null, owner.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 1, 1.3F);
    }
-   public static void windRelease(LivingEntity owner) {
-      if (!(owner.level() instanceof ServerLevel level)) return;
+   private static void damageWindHammer(LivingEntity owner, LivingEntity target, float damage) {
+      target.getPersistentData().putLong(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL,
+         target.level().getGameTime() + 2L);
+      target.invulnerableTime = 0;
+      DamageSource base = owner instanceof ServerPlayer player
+         ? owner.damageSources().playerAttack(player) : owner.damageSources().magic();
+      target.hurt(new CombatDamageSource(base, AttackOrigin.skill(ArtoriaRules.ID, "invisible_air_hammer")), damage);
+      target.invulnerableTime = 0;
+   }
+
+   public static boolean windRelease(LivingEntity owner) {
+      if (!(owner.level() instanceof ServerLevel level)) return false;
+      if (!canWind(owner)) {
+         ArtoriaStateService.lockWindRecoveryIfVeilMissing(owner);
+         return false;
+      }
       VFXServerEffects.spawn(level, "artoria_wind_release", owner, 96);
       reveal(owner, ArtoriaRules.WIND_REGATHER_TICKS);
       owner.getPersistentData().putLong(ArtoriaStateService.WIND_READY,
          owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS);
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(6, 2.2, 6), t -> enemy(owner, t))) {
+      double radius = 8.0;
+      boolean burst = ArtoriaPendragonCombatHelper.isManaBurstActive(owner);
+      boolean npc = owner instanceof ArtoriaPendragonEntity;
+      double verticalRange = 3.5 + (burst ? 1.5 : 0.0);
+      float baseDamage = burst ? (npc ? 34.0F : 32.0F) : 22.0F;
+      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
+         owner.getBoundingBox().inflate(radius, verticalRange, radius), t -> enemy(owner, t))) {
          Vec3 away = target.position().subtract(owner.position()).multiply(1, 0, 1);
          double distance = away.length();
-         if (distance > 6 || !owner.hasLineOfSight(target)) continue;
-         float amount = (float)(22 * Math.clamp(1 - distance / 8.1, .35, 1));
-         if (hit(owner, target, amount, "invisible_air_release", false, false)) {
-            Vec3 dir = away.lengthSqr() > 1.0E-6 ? away.normalize() : horizontal(owner);
-            target.push(dir.x * 1.1, .28, dir.z * 1.1); target.hurtMarked = true;
-         }
+         if (distance > radius || !owner.hasLineOfSight(target)) continue;
+         float amount = (float)(baseDamage * Math.clamp(1.0 - distance / (radius * 1.35), .35, 1.0));
+         hit(owner, target, amount, "invisible_air_release", false, true);
+         Vec3 dir = away.lengthSqr() > 1.0E-6 ? away.normalize() : horizontal(owner);
+         double falloff = 1.0 - Math.min(1.0, distance / radius);
+         double horizontalImpulse = 3.6 * (0.35 + 0.65 * falloff);
+         double verticalImpulse = (burst ? 1.05 : 0.8) * (0.45 + 0.55 * falloff);
+         target.push(dir.x * horizontalImpulse, verticalImpulse, dir.z * horizontalImpulse);
+         target.hurtMarked = true;
       }
-      for (Projectile projectile : level.getEntitiesOfClass(Projectile.class, owner.getBoundingBox().inflate(6))) {
+      for (double[] ring : new double[][]{{0.4, 8.0, 0.18, 14, 0xFFFFFF, 0.92F},
+         {0.24, 6.56, 0.12, 18, 0xF7F7FF, 0.7F}, {0.15, 4.48, 0.09, 22, 0xFFFFFF, 0.48F}}) {
+         level.addFreshEntity(new net.xxxjk.TYPE_MOON_WORLD.entity.ExpandingRingEffectEntity(level,
+            owner.getX(), owner.getY() + 1.0, owner.getZ(), (float)ring[0], (float)ring[1], (float)ring[2],
+            (int)ring[3], (int)ring[4], (float)ring[5], 0.0F));
+      }
+      for (Projectile projectile : level.getEntitiesOfClass(Projectile.class, owner.getBoundingBox().inflate(radius + 1.5))) {
          if (!(projectile.getOwner() instanceof LivingEntity shooter) || !enemy(owner, shooter)) continue;
          Vec3 away = projectile.position().subtract(owner.position());
-         if (away.lengthSqr() > 36) continue;
-         projectile.setDeltaMovement(projectile.getDeltaMovement().add(away.normalize().scale(1.9)).add(0, .18, 0));
+         if (away.lengthSqr() > (radius + 1.5) * (radius + 1.5)) continue;
+         Vec3 outward = away.lengthSqr() > 1.0E-6 ? away.normalize() : horizontal(owner).scale(-1.0);
+         projectile.setDeltaMovement(projectile.getDeltaMovement().add(outward.scale(2.6)).add(0, .24, 0));
          projectile.hurtMarked = true;
       }
       level.sendParticles(ParticleTypes.GUST, owner.getX(), owner.getY() + .6, owner.getZ(), 12, 1.4, 1.0, 1.4, .12);
       level.sendParticles(ParticleTypes.CLOUD, owner.getX(), owner.getY() + .6, owner.getZ(), 72, 2.4, 1.0, 2.4, .11);
       level.sendParticles(ParticleTypes.END_ROD, owner.getX(), owner.getY() + .9, owner.getZ(), 24, 1.2, 1.1, 1.2, .10);
       level.playSound(null, owner.blockPosition(), SoundEvents.TRIDENT_RIPTIDE_1.value(), SoundSource.PLAYERS, 1, 1.45F);
+      return true;
    }
    public static void combo(LivingEntity owner) {
       LivingEntity target = comboTarget(owner);
       if (target == null || !(owner.level() instanceof ServerLevel level)) return;
+      spawnSwordTrail(owner, level);
       if (owner.distanceTo(target) > 5) {
          Vec3 dir = target.position().subtract(owner.position()).multiply(1, 0, 1).normalize();
          owner.setDeltaMovement(owner.getDeltaMovement().add(dir.scale(1.65)).add(0, .24, 0)); owner.hurtMarked = true;
@@ -438,7 +508,12 @@ public final class ArtoriaAbilityService {
          });
       } else {
          arc(owner, 4.8, 28);
-         TYPE_MOON_WORLD.queueServerWork(4, () -> { if (validDelayed(owner, level)) arc(owner, 5.5, 24); });
+         TYPE_MOON_WORLD.queueServerWork(4, () -> {
+            if (validDelayed(owner, level)) {
+               spawnSwordTrail(owner, level);
+               arc(owner, 5.5, 24);
+            }
+         });
       }
       owner.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
       level.playSound(null, owner.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, .95F, 1.3F);

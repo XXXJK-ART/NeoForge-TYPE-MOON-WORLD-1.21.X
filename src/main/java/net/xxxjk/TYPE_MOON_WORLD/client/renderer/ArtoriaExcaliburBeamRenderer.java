@@ -34,10 +34,10 @@ public class ArtoriaExcaliburBeamRenderer extends EntityRenderer<ArtoriaExcalibu
       float fade = 1.0F - Math.max(0.0F, progress - 0.82F) / 0.18F;
       float scale = entity.isGoldenVariant() ? 0.72F : entity.isShortVariant() ? 0.9F : 1.0F;
       float width = (float)entity.beamHalfWidth() * scale;
-      int color = entity.isGoldenVariant() ? 0xFFFFC44A : entity.isShortVariant() ? 0xFFE8FBFF : 0xFFDDFBFF;
+      int color = entity.isGoldenVariant() ? 0xFFFFE04A : entity.isShortVariant() ? 0xFFE8FBFF : 0xFFDDFBFF;
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(BEAM_TEXTURE));
-      drawTaperedQuad(poseStack, consumer, end, right, width, color, fade * (entity.isShortVariant() ? 0.34F : 0.26F));
-      drawQuad(poseStack, consumer, end, up, (float)entity.beamHalfHeight(), 0xFFFFFFFF, fade * (entity.isShortVariant() ? 0.72F : 0.9F));
+      drawTaperedQuad(poseStack, consumer, end, right, width, color, fade * (entity.isShortVariant() ? 0.5F : 0.42F));
+      drawQuad(poseStack, consumer, end, up, (float)entity.beamHalfHeight(), 0xFFFFFFFF, fade * (entity.isShortVariant() ? 0.82F : 0.96F));
       drawQuad(poseStack, consumer, end, right, width * (entity.isShortVariant() ? 0.3F : 0.22F), 0xFFFFFFFF, fade);
    }
 

@@ -61,7 +61,7 @@
         "segments": 96
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#88DAA520" },
+        { "t": 0.0, "color": "#88E5B52A" },
         { "t": 0.42, "color": "#FFFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
@@ -103,8 +103,8 @@
       },
       "color_over_life": [
         { "t": 0.0, "color": "#44FFD700" },
-        { "t": 0.35, "color": "#FFFFD700" },
-        { "t": 0.62, "color": "#FFFFFFFF" },
+        { "t": 0.35, "color": "#FFFFD04A" },
+        { "t": 0.62, "color": "#FFFFF0A0" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [

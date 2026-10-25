@@ -13,7 +13,7 @@ class ServantCardSkillLayoutTest {
       assertNotNull(action);
       assertEquals("artoria_wind_defense", action.effectId());
       assertEquals(35.0, action.mpCost());
-      assertEquals(240, action.cooldownTicks());
+      assertEquals(net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE_COOLDOWN, action.cooldownTicks());
       ServantCardSkillAction toggle = ServantCardSkillLayout.actionFor("artoria_pendragon", 9, false);
       assertNotNull(toggle);
       assertEquals("artoria_invisible_air_toggle", toggle.effectId());
