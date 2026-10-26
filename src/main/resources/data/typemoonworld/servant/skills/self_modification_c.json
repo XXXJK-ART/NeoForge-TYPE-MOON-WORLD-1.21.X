@@ -1,0 +1,12 @@
+{
+  "rank": "C",
+  "id": "self_modification_c",
+  "display_name": "Self-Modification C",
+  "display_name_zh": "自我改造 C",
+  "type": "active",
+  "mp_cost": 28,
+  "cooldown_ticks": 360,
+  "duration_ticks": 0,
+  "effects": [{"effect_type":"self_modification_stages","params":{"max_stages":3,"max_health_per_stage":50.0,"attack_per_stage":5.0,"heal_per_stage":50.0}}],
+  "ai": {"facts":[{"type":"damage_threshold","strength":0.6,"requires":["low_health","has_mana"]}]}
+}

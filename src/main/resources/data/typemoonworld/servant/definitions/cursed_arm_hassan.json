@@ -5,7 +5,7 @@
   "display_name_zh": "咒腕哈桑",
   "class_type": "assassin",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "lawful", "evil"],
+  "traits": ["servant", "humanoid", "human", "human_kind", "seven_knights", "assassin", "male", "lawful", "evil"],
   "parameters": {
     "endurance": "C",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "C",
     "magic_plus": false,
     "luck": "E",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "C"
   },
   "model": {
     "geometry": "typemoonworld:geo/cursed_arm_hassan.geo.json",
@@ -63,8 +64,8 @@
       "horizontal_swing"
     ]
   },
-  "skills": ["stealth_d", "spiritualization_b_plus"],
-  "noble_phantasm": "",
+  "skills": ["presence_concealment_a_plus_cursed_arm", "throwing_dagger_b", "self_modification_c", "wind_protection_a"],
+  "noble_phantasm": "zabaniya_cursed_arm",
   "personality": {
     "obedience": "cooperative",
     "principle": "lawful",

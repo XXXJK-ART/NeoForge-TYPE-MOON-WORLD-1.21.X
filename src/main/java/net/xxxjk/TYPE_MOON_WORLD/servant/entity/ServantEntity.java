@@ -521,8 +521,11 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             combatHandled = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
          }
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
-         boolean pacingHandled = !(this instanceof HeraclesEntity) && !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
-         boolean tacticalHandled = pacingHandled || !(this instanceof HeraclesEntity) && !combatHandled && ServantTacticalController.tick(this);
+          boolean dedicatedArtoria = this instanceof ArtoriaPendragonEntity;
+          boolean pacingHandled = !dedicatedArtoria && !(this instanceof HeraclesEntity) && !combatHandled
+             && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
+          boolean tacticalHandled = pacingHandled || !dedicatedArtoria && !(this instanceof HeraclesEntity)
+             && !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
          if (!combatHandled && !tacticalHandled) {
             super.customServerAiStep();
@@ -1452,6 +1455,20 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
+      // God Hand can cancel the death from inside super.die after restoring
+      // health. Do not leave a revived Heracles in the spiritual-death lock.
+      if (this.isAlive() || this.getHealth() > 0.0F) {
+         this.entityData.set(SPIRITUAL_DISSOLVING, false);
+         this.spiritualDissolveTicks = 0;
+         this.releaseSpiritualLock();
+         this.deathTime = 0;
+         this.hurtTime = 0;
+         this.hurtDuration = 0;
+         this.setPose(Pose.STANDING);
+         this.setTarget(null);
+         this.getNavigation().stop();
+         return;
+      }
       net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onEntityServantDeath(this);
       ServantVoiceHelper.tryPlayFail(this);
       this.entityData.set(SPIRITUAL_DISSOLVING, true);

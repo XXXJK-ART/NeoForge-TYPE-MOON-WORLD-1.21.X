@@ -95,22 +95,17 @@ public final class ArtoriaPendragonCombatHelper {
          return true;
       }
       if (phase.id() >= ServantCombatPhase.NORMAL.id() && tryManaBurst(entity, level, data, now)) return true;
-      boolean windHammerRange = distance >= 3 && distance <= 12.0;
+      boolean windHammerRange = distance > 5.8 && distance <= 12.0;
       if (windHammerRange && ArtoriaRules.npcPrioritizesWindHammer(phase, entity.getRandom().nextFloat())
          && tryInvisibleAir(entity, target, level, data, now)) return true;
       if (phase == ServantCombatPhase.DECISIVE && tryStartExcalibur(entity, target, level, data, now)) return true;
-      if (distance >= 3.5 && distance <= 4.5
+      if (distance >= 3.8 && distance <= 5.8
          && ArtoriaAbilityService.tryNpcSkill(entity, ArtoriaRules.INTERCEPT_THRUST)) return true;
-      if (distance <= 3.5) {
+      if (distance <= 5.8) {
          if (entity.getLastHurtByMob() == target && entity.tickCount - entity.getLastHurtByMobTimestamp() <= 8
             && ArtoriaAbilityService.tryNpcSkill(entity, ArtoriaRules.GUARD_COUNTER)) return true;
          if (phase == ServantCombatPhase.DECISIVE && ArtoriaAbilityService.tryNpcSkill(entity, ArtoriaRules.KNIGHT_HEAVY_SLASH)) return true;
-         String swordSkill = switch (Math.floorMod(entity.tickCount / 20, 3)) {
-            case 0 -> ArtoriaRules.KNIGHT_TRIPLE_SLASH;
-            case 1 -> ArtoriaRules.SPINNING_SLASH;
-            default -> ArtoriaRules.UPWARD_SLASH;
-         };
-         if (ArtoriaAbilityService.tryNpcSkill(entity, swordSkill)) return true;
+         if (tryNpcSwordSkill(entity, distance)) return true;
       }
       if (distance <= 5.5 && tryInvisibleAirRelease(entity, target, level, data, now)) return true;
       if (phase == ServantCombatPhase.DECISIVE && distance > 10.5 && distance <= ArtoriaRules.EXCALIBUR_SHORT_RANGE && entity.hasLineOfSight(target)
@@ -120,6 +115,17 @@ public final class ArtoriaPendragonCombatHelper {
          if (ArtoriaAbilityService.tryNpcLightCannon(entity)) return true;
       }
       return tryArtoriaSmallSkill(entity, target, level, data, now, distance);
+   }
+
+   /** Try the whole close-range rotation so one cooldown cannot make the NPC idle. */
+   private static boolean tryNpcSwordSkill(ArtoriaPendragonEntity entity, double distance) {
+      if (distance > 5.0) return false;
+      String[] rotation = {ArtoriaRules.KNIGHT_TRIPLE_SLASH, ArtoriaRules.SPINNING_SLASH, ArtoriaRules.UPWARD_SLASH};
+      int start = Math.floorMod(entity.tickCount / 20, rotation.length);
+      for (int offset = 0; offset < rotation.length; offset++) {
+         if (ArtoriaAbilityService.tryNpcSkill(entity, rotation[(start + offset) % rotation.length])) return true;
+      }
+      return false;
    }
 
    public static boolean hasAvalon(LivingEntity entity) {
@@ -516,6 +522,7 @@ public final class ArtoriaPendragonCombatHelper {
          () -> { data.remove(TAG_EXCALIBUR_WINDUP_UNTIL); data.remove(TAG_EXCALIBUR_VISIBLE_UNTIL); });
       int windup = (int)(NoblePhantasmCastService.releaseAt(entity) - now);
       data.putLong(TAG_EXCALIBUR_WINDUP_UNTIL, now + windup);
+      ArtoriaStateService.autoReleaseWindBarrier(entity);
       TYPE_MOON_WORLD.queueServerWork(20, () -> {
          if (NoblePhantasmCastService.chanting(entity)) ArtoriaStateService.autoReleaseWindBarrier(entity);
       });
@@ -559,15 +566,22 @@ public final class ArtoriaPendragonCombatHelper {
    }
 
    private static boolean tryInvisibleAir(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
-      if (!ArtoriaAbilityService.canWind(entity) || !entity.hasLineOfSight(target) || !ArtoriaStateService.consume(entity, 60)) return false;
+      if (!ArtoriaAbilityService.canWind(entity)
+         || now < data.getLong(ArtoriaStateService.WIND_HAMMER_READY)
+         || !entity.hasLineOfSight(target) || !ArtoriaStateService.consume(entity, 60)) return false;
       entity.faceToward(target.position());
-      if (!ArtoriaAbilityService.hammer(entity)) return false;
+      if (!ArtoriaAbilityService.hammer(entity)) {
+         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + 60.0));
+         return false;
+      }
       ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);
       return true;
    }
 
    private static boolean tryInvisibleAirRelease(ArtoriaPendragonEntity entity, LivingEntity target, ServerLevel level, CompoundTag data, long now) {
-      if (!ArtoriaAbilityService.canWind(entity) || !entity.hasLineOfSight(target) || entity.getRandom().nextFloat() > .34F
+      if (!ArtoriaAbilityService.canWind(entity)
+         || now < data.getLong(ArtoriaStateService.WIND_RELEASE_READY)
+         || !entity.hasLineOfSight(target) || entity.getRandom().nextFloat() > .34F
          || !ArtoriaStateService.consume(entity, 28)) return false;
       if (!ArtoriaAbilityService.windRelease(entity)) return false;
       ServantVoiceHelper.tryPlayArtoriaInvisibleAir(entity);

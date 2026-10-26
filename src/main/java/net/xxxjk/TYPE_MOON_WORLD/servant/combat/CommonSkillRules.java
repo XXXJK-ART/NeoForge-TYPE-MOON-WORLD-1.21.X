@@ -28,6 +28,6 @@ public final class CommonSkillRules {
    }
    public static Continuation continuation(int rank) {
       int r = Math.clamp(rank, 1, 5);
-      return new Continuation(new double[]{.05,.08,.12,.16,.20}[r-1], r * 20, r * 2, (20 - r * 2) * 1200);
+      return new Continuation(new double[]{.01,.03,.05,.07,.10}[r-1], r * 20, r * 2, (20 - r * 2) * 1200);
    }
 }

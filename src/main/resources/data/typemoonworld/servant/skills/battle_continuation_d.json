@@ -11,7 +11,7 @@
     {
       "effect_type": "lethal_survival",
       "params": {
-        "health_ratio": 0.08,
+        "health_ratio": 0.03,
         "protection_ticks": 40,
         "reduction": 0.8,
         "heal_per_second": 4

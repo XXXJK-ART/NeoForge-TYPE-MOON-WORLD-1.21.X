@@ -37,6 +37,8 @@ public final class ArtoriaStateService {
    public static final String NP_SHORT_READY = "ArtoriaExcaliburShortReadyAt";
    public static final String NP_BEAM = "ArtoriaActiveExcalibur";
    public static final String WIND_READY = "ArtoriaWindReadyAt";
+   public static final String WIND_HAMMER_READY = "ArtoriaWindHammerReadyAt";
+   public static final String WIND_RELEASE_READY = "ArtoriaWindReleaseReadyAt";
    public static final String WIND_BARRIER = "ArtoriaWindBarrierActive";
    public static final String WIND_DEFENSE_UNTIL = "ArtoriaWindDefenseUntil";
    public static final String WIND_DEFENSE_NEXT_PULSE = "ArtoriaWindDefenseNextPulse";
@@ -77,7 +79,18 @@ public final class ArtoriaStateService {
 
    public static boolean canStartWindDefense(LivingEntity owner) {
       return owner != null && isArtoria(owner) && !isWindDefenseActive(owner) && !busy(owner)
-         && !ArtoriaAbilityService.actionLocked(owner) && ArtoriaAbilityService.canWind(owner);
+         && !ArtoriaAbilityService.actionLocked(owner) && ArtoriaAbilityService.canWind(owner)
+         && owner.level().getGameTime() >= owner.getPersistentData().getLong(WIND_DEFENSE_READY);
+   }
+
+   public static long windSkillReadyAt(LivingEntity owner, String skill) {
+      if (owner == null) return 0L;
+      return owner.getPersistentData().getLong(switch (skill) {
+         case ArtoriaRules.WIND_HAMMER -> WIND_HAMMER_READY;
+         case ArtoriaRules.WIND_RELEASE -> WIND_RELEASE_READY;
+         case ArtoriaRules.WIND_DEFENSE -> WIND_DEFENSE_READY;
+         default -> "";
+      });
    }
 
    /** Failed wind actions still consume the shared recovery window when the veil is disabled. */
@@ -103,9 +116,8 @@ public final class ArtoriaStateService {
       data.putLong(WIND_DEFENSE_UNTIL, now + ArtoriaRules.WIND_DEFENSE_MAX_TICKS);
       data.putLong(WIND_DEFENSE_NEXT_PULSE, now);
       data.putLong(ArtoriaAbilityService.ACTION_LOCK_UNTIL, now + ArtoriaRules.WIND_DEFENSE_MAX_TICKS);
-      long windReadyAt = now + ArtoriaRules.WIND_DEFENSE_COOLDOWN;
-      data.putLong(WIND_READY, windReadyAt);
-      data.putLong(WIND_DEFENSE_READY, windReadyAt);
+      data.putLong(WIND_READY, now + ArtoriaRules.WIND_DEFENSE_MAX_TICKS + ArtoriaRules.WIND_REGATHER_TICKS);
+      data.putLong(WIND_DEFENSE_READY, now + ArtoriaRules.WIND_DEFENSE_COOLDOWN);
       data.putDouble(WIND_DEFENSE_ANCHOR_X, owner.getX());
       data.putDouble(WIND_DEFENSE_ANCHOR_Y, owner.getY());
       data.putDouble(WIND_DEFENSE_ANCHOR_Z, owner.getZ());
@@ -129,7 +141,8 @@ public final class ArtoriaStateService {
       long recoveryAt = owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS;
       if (hadDefenseState) {
          if (data.getLong(WIND_READY) < recoveryAt) data.putLong(WIND_READY, recoveryAt);
-         if (data.getLong(WIND_DEFENSE_READY) < recoveryAt) data.putLong(WIND_DEFENSE_READY, recoveryAt);
+         if (data.getLong(WIND_DEFENSE_READY) <= owner.level().getGameTime())
+            data.putLong(WIND_DEFENSE_READY, owner.level().getGameTime() + ArtoriaRules.WIND_DEFENSE_COOLDOWN);
       }
       data.remove(WIND_DEFENSE_UNTIL);
       data.remove(WIND_DEFENSE_NEXT_PULSE);
@@ -146,11 +159,8 @@ public final class ArtoriaStateService {
       if (hadDefenseState && owner instanceof ServerPlayer player && isArtoria(player)) {
          var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
-            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_HAMMER_SLOT, recoveryAt);
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
-            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, recoveryAt);
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setSkillCooldownUntil(
-            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_RELEASE_SLOT, recoveryAt);
+            player, vars, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArtoriaSkills.WIND_DEFENSE_SLOT,
+            data.getLong(WIND_DEFENSE_READY));
          vars.syncPlayerVariables(player);
       }
       syncSwordVisibility(owner);
@@ -199,10 +209,10 @@ public final class ArtoriaStateService {
    public static void syncSwordVisibility(LivingEntity owner) {
       if (!(owner instanceof ServerPlayer player)) return;
       long now = player.level().getGameTime();
+      boolean burst = ArtoriaPendragonCombatHelper.isManaBurstActive(owner);
       boolean visible = !isWindBarrierActive(owner) && !isWindDefenseActive(owner);
       long until = visible && isWindBarrierEnabled(owner)
          ? Math.max(now + 2, owner.getPersistentData().getLong(ArtoriaPendragonCombatHelper.TAG_EXCALIBUR_VISIBLE_UNTIL)) : 0;
-      boolean burst = ArtoriaPendragonCombatHelper.isManaBurstActive(owner);
       boolean defenseAction = isWindDefenseActive(owner);
       syncSword(player.getMainHandItem(), visible, until, burst, defenseAction);
       syncSword(player.getOffhandItem(), visible, until, burst, defenseAction);
@@ -351,8 +361,12 @@ public final class ArtoriaStateService {
          if (speed > 0.72) next = new Vec3(next.x * 0.72 / speed, next.y, next.z * 0.72 / speed);
       }
       if (descend) next = next.add(0, -0.17, 0);
-      else if (jump) next = new Vec3(next.x, Math.min(0.55,
-         Math.max(ground ? 0.38 : next.y, next.y + (ground ? 0.38 : 0.065))), next.z);
+      else if (jump) {
+         double requested = Math.max(ground ? 0.38 : next.y,
+            next.y + (ground ? 0.38 : 0.065));
+         double lift = next.y > 0.55 ? next.y : Math.min(0.55, requested);
+         next = new Vec3(next.x, lift, next.z);
+      }
       else if (!ground && next.y < -0.28) next = new Vec3(next.x, next.y * 0.78, next.z);
       if (next.equals(motion)) return false;
       if (!ground) data.putInt(JET_USED, used + 1);
@@ -525,7 +539,9 @@ public final class ArtoriaStateService {
    }
    @SubscribeEvent public static void clone(net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone e) {
       CompoundTag from = e.getOriginal().getPersistentData(), to = e.getEntity().getPersistentData();
-      for (String key : new String[]{JET_USED, CHARGES, RESTORE, NP_READY, NP_SHORT_READY, WIND_READY, COMBO_READY, ArtoriaPendragonCombatHelper.TAG_MANA_BURST_REOPEN_AT})
+      for (String key : new String[]{JET_USED, CHARGES, RESTORE, NP_READY, NP_SHORT_READY, WIND_READY,
+         WIND_HAMMER_READY, WIND_RELEASE_READY, WIND_DEFENSE_READY, COMBO_READY,
+         ArtoriaPendragonCombatHelper.TAG_MANA_BURST_REOPEN_AT})
          if (from.contains(key)) to.put(key, from.get(key).copy());
    }
    @SubscribeEvent public static void stopped(net.neoforged.neoforge.event.server.ServerStoppedEvent e) { JUDGMENTS.clear(); }

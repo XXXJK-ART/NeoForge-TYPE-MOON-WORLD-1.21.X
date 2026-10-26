@@ -11,6 +11,7 @@ public final class ServantCardActionPreconditions {
             "shadow_hassan_ambush", "shadow_hassan_bind", "shadow_hassan_flurry", "shadow_hassan_slash", "shadow_hassan_meditative_sensitivity",
             "fanatic_heartbeat", "fanatic_computer",
             "okita_ichimonji", "okita_kaifuu", "okita_stance_break", "okita_mumyoudan_zuki",
+            "shadow_step", "shadow_lunge", "knife_feint", "elbow_strike", "trip_sweep",
             "sasaki_tsubame_gaeshi" -> true;
          default -> false;
       };
@@ -30,6 +31,10 @@ public final class ServantCardActionPreconditions {
          case "okita_ichimonji" -> 4.5;
          case "okita_kaifuu" -> 3.0;
          case "okita_mumyoudan_zuki" -> 4.0;
+         case "shadow_step" -> 8.0;
+         case "shadow_lunge" -> 6.5;
+         case "knife_feint" -> 9.0;
+         case "elbow_strike", "trip_sweep" -> 3.0;
          case "okita_stance_break" -> 4.0;
          case "sasaki_crouch_cutback", "sasaki_vertical_slash", "sasaki_downward_slash", "sasaki_upward_slash",
             "sasaki_horizontal_slash", "sasaki_thrust", "sasaki_spinning_slash", "sasaki_counter_stance" -> 4.0;

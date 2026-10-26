@@ -348,6 +348,7 @@ public final class ServantCardHundredFacesHassanSkills {
 
    public static boolean performPresenceConcealment(ServerPlayer player) {
       if (!isActiveCard(player)) return false;
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(player)) return false;
       ServantCardConcealmentHelper.apply(player, 240);
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 240, 0, false, true, true));
       return true;

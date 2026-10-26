@@ -355,10 +355,16 @@ public final class SasakiKojiroGameTests {
       defender.hurt(defender.damageSources().genericKill(), 1.0F);
       helper.assertTrue(defender.getHealth() < health && !SasakiKojiroCombatService.isConcealed(defender),
          "Actual damage failed to remove concealment");
+      helper.assertTrue(defender.getPersistentData().getLong(
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.TAG_ATTACK_BREAK_COOLDOWN_UNTIL)
+            == defender.level().getGameTime() + net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.ATTACK_BREAK_COOLDOWN_TICKS,
+         "Actual damage did not start the five-second concealment cooldown");
+      helper.assertTrue(!SasakiKojiroCombatService.setConcealed(defender, true),
+         "Presence concealment reactivated after actual damage");
       helper.succeed();
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   @GameTest(template = "ancient_temple", timeoutTicks = 130)
    public static void attackingBreaksConcealmentAndTsubameCanBeDodged(GameTestHelper helper) {
       SasakiKojiroEntity attacker = sasaki(helper, new BlockPos(4, 2, 4));
       SasakiKojiroEntity defender = sasaki(helper, new BlockPos(6, 2, 4));
@@ -368,6 +374,12 @@ public final class SasakiKojiroGameTests {
       float health = defender.getHealth();
       SasakiKojiroCombatService.performTsubameGaeshi(attacker, defender);
       helper.assertTrue(!SasakiKojiroCombatService.isConcealed(attacker), "Attack retained concealment");
+      helper.assertTrue(attacker.getPersistentData().getLong(
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.TAG_ATTACK_BREAK_COOLDOWN_UNTIL)
+            == attacker.level().getGameTime() + net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.ATTACK_BREAK_COOLDOWN_TICKS,
+         "Attack break did not start the five-second concealment cooldown");
+      helper.assertTrue(!SasakiKojiroCombatService.setConcealed(attacker, true),
+         "Presence concealment reactivated during its attack-break cooldown");
       helper.assertTrue(attacker.getSasakiAction() == net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction.TSUBAME_WINDUP,
          "NPC Tsubame did not start with the imported Ganryu stance");
       helper.runAfterDelay(11, () -> {
@@ -376,6 +388,10 @@ public final class SasakiKojiroGameTests {
             "Tsubame did not use the shared dodge charge");
          helper.assertTrue(attacker.getSasakiAction() == net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction.TSUBAME_GAESHI,
             "NPC Tsubame never transitioned to the three-blade release");
+      });
+      helper.runAfterDelay(100, () -> {
+         helper.assertTrue(SasakiKojiroCombatService.setConcealed(attacker, true),
+            "Presence concealment cooldown did not end after 100 ticks");
          helper.succeed();
       });
    }

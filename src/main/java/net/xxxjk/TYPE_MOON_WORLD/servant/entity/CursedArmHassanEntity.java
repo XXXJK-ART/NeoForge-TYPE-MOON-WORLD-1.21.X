@@ -32,6 +32,8 @@ public class CursedArmHassanEntity extends ServantEntity {
    private static final String TAG_NO_CAPE = "CursedArmNoCape";
    private static final String TAG_NO_BANDAGES = "CursedArmNoBandages";
    private static final String TAG_SELF_MODIFICATION_LEVEL = "CursedArmSelfModificationLevel";
+   public static final String TAG_DIRK_AMMO = "CursedArmDirkAmmo";
+   public static final String TAG_DIRK_REPLENISH_TICK = "CursedArmDirkReplenishTick";
    private static final net.minecraft.resources.ResourceLocation HEALTH_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "cursed_arm_self_mod_health");
    private static final net.minecraft.resources.ResourceLocation ATTACK_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
@@ -53,6 +55,8 @@ public class CursedArmHassanEntity extends ServantEntity {
    @Override
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData) {
       SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, groupData);
+      this.getPersistentData().putInt(TAG_DIRK_AMMO, 16);
+      this.getPersistentData().putLong(TAG_DIRK_REPLENISH_TICK, this.level().getGameTime());
       this.applySelfModificationAttributes();
       this.enforceEmptyRightHand();
       return data;
@@ -79,7 +83,7 @@ public class CursedArmHassanEntity extends ServantEntity {
       if (hand == InteractionHand.MAIN_HAND && !stack.isEmpty()) {
          ItemStack rightHandStack = stack.copy();
          if (rightHandStack.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-            rightHandStack.setCount(Math.max(30, rightHandStack.getCount()));
+            rightHandStack.setCount(Math.max(16, rightHandStack.getCount()));
          }
          if (this.getOffhandItem().isEmpty()) {
             super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
@@ -97,7 +101,7 @@ public class CursedArmHassanEntity extends ServantEntity {
       }
       ItemStack moved = mainHand.copy();
       if (moved.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         moved.setCount(Math.max(30, moved.getCount()));
+         moved.setCount(Math.max(16, moved.getCount()));
       }
       if (this.getOffhandItem().isEmpty()) {
          super.setItemInHand(InteractionHand.OFF_HAND, moved);
@@ -110,12 +114,14 @@ public class CursedArmHassanEntity extends ServantEntity {
       if (amount <= 0.0F) {
          return false;
       }
-      return super.hurt(source, amount);
+      boolean hurt = super.hurt(source, amount);
+      if (hurt) CursedArmHassanCombatHelper.cancelZabaniyaWindup(this);
+      return hurt;
    }
 
    @Override
    public boolean doHurtTarget(Entity target) {
-      if (target instanceof net.minecraft.world.entity.LivingEntity living && CursedArmHassanCombatHelper.isProtectedPigKind(living)) {
+      if (target instanceof net.minecraft.world.entity.LivingEntity living && CursedArmHassanCombatHelper.refusesToHarm(this, living)) {
          this.setTarget(null);
          return false;
       }
@@ -176,7 +182,7 @@ public class CursedArmHassanEntity extends ServantEntity {
    }
 
    public double getZabaniyaRange() {
-      return 5.0 + this.getSelfModificationLevel();
+      return 7.0;
    }
 
    public void triggerZabaniyaAnimation() {

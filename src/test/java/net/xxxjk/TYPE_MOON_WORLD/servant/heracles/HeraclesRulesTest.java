@@ -19,7 +19,7 @@ class HeraclesRulesTest {
       assertEquals(0,CommonSkillRules.rank("EX"));assertEquals(4,CommonSkillRules.rank("B+"));
    }
    @Test void continuationHasNoConstantBonusAndUsesDoubledCooldown() {
-      double[] ratios={.05,.08,.12,.16,.2};
+      double[] ratios={.01,.03,.05,.07,.10};
       for(int r=1;r<=5;r++) {
          var rule=CommonSkillRules.continuation(r);
          assertEquals(ratios[r-1],rule.healthRatio());assertEquals(20*r,rule.protectionTicks());

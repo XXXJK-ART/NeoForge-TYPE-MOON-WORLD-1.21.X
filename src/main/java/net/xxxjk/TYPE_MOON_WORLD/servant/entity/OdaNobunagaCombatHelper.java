@@ -28,6 +28,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -46,6 +47,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
@@ -519,8 +521,17 @@ public final class OdaNobunagaCombatHelper {
    }
 
    private static boolean isHajunPullTarget(OdaNobunagaEntity owner, LivingEntity living, ServerLevel source) {
-      if (living == null || living.level() != source || OdaHajunDuelService.active(living)
-         || !OdaAbilityService.enemy(owner, living) || owner.isAlliedTo(living)) {
+      if (living == null || living == owner || !living.isAlive() || living.level() != source
+         || OdaHajunDuelService.active(living) || owner.isAlliedTo(living) || living.isAlliedTo(owner)
+         || ServantMasterTargeting.isContractMaster(owner, living)) {
+         return false;
+      }
+      // Hajun captures the players in its area even when they are in creative
+      // or spectator mode. Those modes remain immune to ordinary damage, but
+      // they must not make the field entry fail or leave them behind.
+      boolean bypassImmunePlayerFilter = living instanceof Player player
+         && (player.isCreative() || player.isSpectator());
+      if (!bypassImmunePlayerFilter && EntityUtils.isImmunePlayerTarget(living)) {
          return false;
       }
       Vec3 rel = living.position().subtract(owner.position());

@@ -197,6 +197,7 @@ public final class ServantCombatSystem {
       }
       DamageSource source = event.getSource();
       boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean deathFlight = NoblePhantasmDamageClassifier.isCuDeathFlightDamage(source);
       if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
          recordIncomingDamage(servant, event.getAmount());
          return;
@@ -204,7 +205,7 @@ public final class ServantCombatSystem {
 
       long now = servant.level().getGameTime();
       CompoundTag data = servant.getPersistentData();
-      if (!guaranteedHit && !PaleRiderDamageTypes.isInfection(source)
+      if (!guaranteedHit && !deathFlight && !PaleRiderDamageTypes.isInfection(source)
          && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
          event.setCanceled(true);
          spawnGuardFx(servant, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
@@ -240,11 +241,12 @@ public final class ServantCombatSystem {
       DamageSource source = event.getSource();
       long now = servant.level().getGameTime();
       boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean deathFlight = NoblePhantasmDamageClassifier.isCuDeathFlightDamage(source);
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
          boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
-         if (!unavoidable && !PaleRiderDamageTypes.isInfection(source)
+         if (!unavoidable && !deathFlight && !PaleRiderDamageTypes.isInfection(source)
             && ServantCombatDefenseService.trySkillAutoDodge(servant,source,event.getAmount())) {
             event.setCanceled(true); event.setAmount(0); return;
          }
@@ -253,6 +255,7 @@ public final class ServantCombatSystem {
          // probabilistic active guard. Passive defense still applies on contact.
          var reaction = ServantCombatDefenseService.reactToIncomingAttack(servant, source, event.getAmount(),
             !unavoidable && !guardBypass, !ushiwakamaruMelee && !unavoidable
+               && !deathFlight
                && !PaleRiderDamageTypes.isInfection(source)
                && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source));
          if (reaction == DefenseRules.NpcReaction.DODGE) {
@@ -285,6 +288,12 @@ public final class ServantCombatSystem {
    }
 
    public static void broadcastNoblePhantasmWindup(ServantEntity caster, LivingEntity target, int windupTicks, boolean ranged) {
+      broadcastNoblePhantasmWindup(caster, target, windupTicks, ranged, true);
+   }
+
+   public static void broadcastNoblePhantasmWindup(
+      ServantEntity caster, LivingEntity target, int windupTicks, boolean ranged, boolean dodgeable
+   ) {
       if (!(caster.level() instanceof ServerLevel level) || windupTicks <= 0) {
          return;
       }
@@ -294,7 +303,8 @@ public final class ServantCombatSystem {
          ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "noble_phantasm/" + caster.getServantId()),
          windupTicks,
          ranged,
-         5
+         5,
+         dodgeable
       );
       AABB box = caster.getBoundingBox().inflate(20.0);
       List<ServantEntity> responders = level.getEntitiesOfClass(

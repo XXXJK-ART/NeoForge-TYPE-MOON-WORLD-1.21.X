@@ -53,6 +53,7 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityMountEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -631,6 +632,17 @@ public class CommonEvents {
             boolean fanaticDefensePiercing = event.getSource().is(
                net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes.BYPASSES_DEFENSES);
             if (event.getEntity() instanceof ServerPlayer player) {
+                TypeMoonWorldModVariables.PlayerVariables servantVars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+                if (!fanaticDefensePiercing && servantVars.servant_card_transformed
+                   && "cursed_arm_hassan".equals(servantVars.servant_card_id)
+                   && CursedArmHassanCombatHelper.tryWindProtectionDodge(player, event.getSource())) {
+                   event.setCanceled(true);
+                   event.setAmount(0.0F);
+                   return;
+                }
+                if (servantVars.servant_card_transformed && "cursed_arm_hassan".equals(servantVars.servant_card_id)) {
+                   event.setAmount(CursedArmHassanCombatHelper.applyWindProtectionReduction(player, event.getSource(), event.getAmount()));
+                }
                if (!fanaticDefensePiercing
                   && !ServantCardDefenseHandler.isSpecialNoblePhantasmDamage(event.getSource(), event.getAmount())
                   && PassiveService.tryDodge(player, event.getSource())) {
@@ -891,6 +903,17 @@ public class CommonEvents {
       // ========== God Hand and battle continuation servant damage handling ==========
       if (event.getEntity() instanceof ServantEntity servant && !event.isCanceled()) {
          handleServantDamage(servant, event);
+      }
+   }
+
+   @SubscribeEvent
+   public static void onCursedArmActualDamage(LivingDamageEvent.Post event) {
+      if (!(event.getEntity() instanceof ServerPlayer player) || event.getNewDamage() <= 0.0F) return;
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.servant_card_transformed && "cursed_arm_hassan".equals(vars.servant_card_id)) {
+         player.getPersistentData().remove(CursedArmHassanCombatHelper.ZABANIYA_WINDUP_UNTIL);
+         vars.servant_card_hassan_zabaniya_animation_until = 0;
+         vars.syncPlayerVariables(player);
       }
    }
 
@@ -1159,11 +1182,15 @@ public class CommonEvents {
             return;
          }
       }
-      if (invisibleAirBypass && servant instanceof CursedArmHassanEntity hassan && CursedArmHassanCombatHelper.tryDodge(hassan, event.getSource())) {
+       if (servant instanceof CursedArmHassanEntity hassan && CursedArmHassanCombatHelper.tryWindProtectionDodge(hassan, event.getSource())) {
          event.setCanceled(true);
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
          return;
       }
+       if (servant instanceof CursedArmHassanEntity) {
+          event.setAmount(CursedArmHassanCombatHelper.applyWindProtectionReduction(servant, event.getSource(), event.getAmount()));
+          damage = event.getAmount();
+       }
       if (invisibleAirBypass) {
          data.remove(ArtoriaPendragonCombatHelper.TAG_INVISIBLE_AIR_DAMAGE_BYPASS_UNTIL);
       }

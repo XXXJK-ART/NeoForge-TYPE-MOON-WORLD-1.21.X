@@ -1,0 +1,12 @@
+{
+  "rank": "B",
+  "id": "throwing_dagger_b",
+  "display_name": "Throwing (Dagger) B",
+  "display_name_zh": "投掷（短刀）B",
+  "type": "active",
+  "mp_cost": 8,
+  "cooldown_ticks": 40,
+  "duration_ticks": 0,
+  "effects": [{"effect_type":"projectile_attack","params":{"count":3,"damage":14.0,"range":18.0}}],
+  "ai": {"facts":[{"type":"projectile_pressure","strength":0.8}]}
+}

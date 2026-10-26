@@ -360,6 +360,13 @@ public final class CombatModule implements ServantAiModule {
          net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidCombatAi.tick(diarmuid, level);
          return;
       }
+      // Artoria's sword/wind decision loop owns her combat cadence. It must run
+      // before the generic exchange and launcher systems, which otherwise consume
+      // the same close-range tick without giving her Saber actions a chance.
+      if (entity instanceof ArtoriaPendragonEntity artoria
+         && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
+         return;
+      }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.ordinary(entity, sharedTarget)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.skillDecisionAllowed(entity)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.nativeNpActive(entity)) {
@@ -579,9 +586,6 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof CursedArmHassanEntity cursedArm) {
          CursedArmHassanCombatHelper.tick(cursedArm, context);
-         return;
-      }
-      if (entity instanceof ArtoriaPendragonEntity artoria && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
          return;
       }
       if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {
@@ -2209,7 +2213,7 @@ public final class CombatModule implements ServantAiModule {
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       CuChulainnCombatHelper.markArmyGaeBolg(entity);
       CuChulainnCombatHelper.startGaeBolgWindup(entity, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
-      ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true);
+      ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS, true, false);
       entity.triggerGaeBolgThrowAnimation(CuChulainnCombatHelper.GAE_BOLG_WINDUP_TICKS);
       entity.jumpFromGround();
       Vec3 launch = entity.getDeltaMovement();

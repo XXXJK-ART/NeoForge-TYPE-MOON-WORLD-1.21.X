@@ -63,7 +63,11 @@ public final class SasakiKojiroActionAnimationClient {
       }
       for (var entity : minecraft.level.entitiesForRendering()) {
          if (entity instanceof net.minecraft.world.entity.LivingEntity owner && playerId.equals(owner.getUUID())) {
-            SasakiSwordTrailClient.begin(owner, action);
+            if (ArtoriaSwordTrailClient.isArtoria(owner)) {
+               ArtoriaSwordTrailClient.begin(owner, action);
+            } else {
+               SasakiSwordTrailClient.begin(owner, action);
+            }
             if (!(owner instanceof SasakiKojiroEntity) && !(owner instanceof AbstractClientPlayer))
                NPC_PLAYBACKS.put(owner.getUUID(), new NpcPlayback(action, minecraft.level.getGameTime()));
             break;
@@ -162,7 +166,8 @@ public final class SasakiKojiroActionAnimationClient {
       Vec3f position = sample.get3DTransform(left ? "leftItem" : "rightItem", TransformType.POSITION, 0.0F, Vec3f.ZERO);
       Vec3f rotation = sample.get3DTransform(left ? "leftItem" : "rightItem", TransformType.ROTATION, 0.0F, Vec3f.ZERO);
       PoseStack poses = new PoseStack();
-      float scale = owner instanceof SasakiKojiroEntity ? 0.926F : 1.0F;
+      float scale = owner instanceof SasakiKojiroEntity ? 0.926F
+         : owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity ? 0.811F : 1.0F;
       poses.scale(-scale, -scale, scale);
       poses.translate(0.0F, -1.501F, 0.0F);
       model.translateToHand(arm, poses);
@@ -199,11 +204,35 @@ public final class SasakiKojiroActionAnimationClient {
    public static boolean renderImportedHeldItem(LivingEntity owner, HumanoidModel<?> model, HumanoidArm arm,
                                                 ItemStack stack, ItemDisplayContext display, PoseStack poses,
                                                 MultiBufferSource buffers, int light) {
-      if (!(owner instanceof SasakiKojiroEntity npc) || !npc.isSasakiActionActive() || stack.isEmpty()) return false;
-      SasakiKojiroAction action = npc.getSasakiAction();
-      if (action == SasakiKojiroAction.TSUBAME_GAESHI) return false;
+      if (stack.isEmpty()) return false;
+      SasakiKojiroAction action;
+      float age;
       float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-      KeyframeAnimationPlayer sample = sample(action, npc.getSasakiActionAge(partial));
+      if (owner instanceof SasakiKojiroEntity npc) {
+         if (!npc.isSasakiActionActive()) return false;
+         action = npc.getSasakiAction();
+         age = npc.getSasakiActionAge(partial);
+      } else if (owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity) {
+         var level = Minecraft.getInstance().level;
+         if (level == null) return false;
+         if (activePlaybackLevel != level) {
+            NPC_PLAYBACKS.clear();
+            activePlaybackLevel = level;
+         }
+         NpcPlayback playback = NPC_PLAYBACKS.get(owner.getUUID());
+         if (playback == null) return false;
+         action = playback.action();
+         age = level.getGameTime() - playback.startedAt() + partial;
+         if (age < 0 || age >= action.durationTicks()) {
+            NPC_PLAYBACKS.remove(owner.getUUID());
+            return false;
+         }
+         if (!stack.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.EXCALIBUR.get())) return false;
+      } else {
+         return false;
+      }
+      if (action == SasakiKojiroAction.TSUBAME_GAESHI) return false;
+      KeyframeAnimationPlayer sample = sample(action, age);
       if (sample == null) return false;
       String part = arm == HumanoidArm.LEFT ? "leftItem" : "rightItem";
       Vec3f position = sample.get3DTransform(part, TransformType.POSITION, 0.0F, Vec3f.ZERO);

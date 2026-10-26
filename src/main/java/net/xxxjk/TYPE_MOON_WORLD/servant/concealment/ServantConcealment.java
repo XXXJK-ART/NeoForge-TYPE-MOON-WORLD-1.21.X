@@ -27,6 +27,8 @@ import org.joml.Vector3f;
 
 /** Shared server-side controller for servant concealment and visibility leakage. */
 public final class ServantConcealment {
+   public static final String TAG_ATTACK_BREAK_COOLDOWN_UNTIL = "TypeMoonPresenceConcealmentCooldownUntil";
+   public static final int ATTACK_BREAK_COOLDOWN_TICKS = 100;
    private static final String TAG_MANAGED_SILENCE = "TypeMoonConcealmentManagedSilence";
    private static final String TAG_PREVIOUS_SILENCE = "TypeMoonConcealmentPreviousSilence";
    private static final String TAG_NEXT_PARTICLE_TICK = "TypeMoonConcealmentNextParticleTick";
@@ -59,10 +61,25 @@ public final class ServantConcealment {
       return isFullyConcealed(entity) && (!(observer instanceof ServantEntity) || rankOf(entity).isPerfect());
    }
 
+   public static boolean canActivatePresenceConcealment(LivingEntity entity) {
+      if (entity == null || !hasRankedPresenceConcealment(entity) || rankOf(entity).isPerfect()) return true;
+      return entity.getPersistentData().getLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL) <= entity.level().getGameTime();
+   }
+
+   public static void startAttackBreakCooldown(LivingEntity entity) {
+      if (entity == null || entity.level().isClientSide() || !isConcealedForCooldown(entity)
+         || !hasRankedPresenceConcealment(entity) || rankOf(entity).isPerfect()) return;
+      long until = entity.level().getGameTime() + ATTACK_BREAK_COOLDOWN_TICKS;
+      entity.getPersistentData().putLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL,
+         Math.max(until, entity.getPersistentData().getLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL)));
+   }
+
    public static void breakConcealment(LivingEntity entity) {
       if (entity == null || entity.level().isClientSide() || !isFullyConcealed(entity)) return;
       if (!(entity instanceof ServantEntity) && ServantIdentityHelper.definitionOf(entity) == null
          && !(entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player))) return;
+
+      startAttackBreakCooldown(entity);
 
       SasakiKojiroCombatService.setConcealed(entity, false);
       if (entity instanceof ShadowHassanEntity hassan) hassan.revealForAttack();
@@ -129,6 +146,21 @@ public final class ServantConcealment {
          }
       }
       return best == ConcealmentRank.NONE ? ConcealmentRank.E : best;
+   }
+
+   private static boolean hasRankedPresenceConcealment(LivingEntity entity) {
+      for (String skillId : ServantIdentityHelper.skillIdsOf(entity)) {
+         if (ConcealmentRank.fromSkillId(skillId) != ConcealmentRank.NONE) return true;
+      }
+      return false;
+   }
+
+   private static boolean isConcealedForCooldown(LivingEntity entity) {
+      if (isFullyConcealed(entity)) return true;
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity hundredFaces) {
+         return hundredFaces.isPresenceConcealed();
+      }
+      return false;
    }
 
    private static void tickLeakParticles(LivingEntity entity) {

@@ -73,7 +73,10 @@ public class SasakiKojiroEntity extends ServantEntity {
 
    @Override
    public void triggerAttackSwing() {
-      if (SasakiKojiroCombatService.isConcealed(this)) SasakiKojiroCombatService.setConcealed(this, false);
+      if (SasakiKojiroCombatService.isConcealed(this)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
+         SasakiKojiroCombatService.setConcealed(this, false);
+      }
       super.triggerAttackSwing();
    }
 

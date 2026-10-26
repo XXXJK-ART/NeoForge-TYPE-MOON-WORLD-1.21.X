@@ -124,6 +124,7 @@ public final class SasakiKojiroCombatService {
          return true;
       }
       if (isConcealed(entity)) return false;
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(entity)) return false;
       data.putBoolean(CONCEALED, true);
       data.putLong(CONCEALMENT_UNTIL, 0L);
       maintainInvisibility(entity, Integer.MAX_VALUE);
@@ -590,7 +591,10 @@ public final class SasakiKojiroCombatService {
    private static double TRANSPARENCY_COST() { return 20.0; }
 
    private static void breakConcealment(LivingEntity entity) {
-      if (isConcealed(entity)) setConcealed(entity, false);
+      if (isConcealed(entity)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(entity);
+         setConcealed(entity, false);
+      }
    }
 
    private static void beforeAttack(LivingEntity attacker) {

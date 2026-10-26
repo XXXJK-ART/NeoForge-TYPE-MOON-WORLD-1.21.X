@@ -11,11 +11,11 @@ public final class ServantCardSkillLayout {
             case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst",
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.BURST_START_MP, 0);
             case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0,
-               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS);
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_HAMMER_COOLDOWN);
             case 2 -> new ServantCardSkillAction("Knight Triple Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.KNIGHT_TRIPLE_SLASH,
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_COOLDOWN);
             case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0,
-               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS);
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_RELEASE_COOLDOWN);
             case 4 -> new ServantCardSkillAction("Intercepting Thrust", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST,
                net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_COOLDOWN);
             case 5 -> new ServantCardSkillAction("Turning Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.SPINNING_SLASH,
@@ -98,12 +98,15 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 180);
-            case 1 -> new ServantCardSkillAction("Self Modification", "self_mod", 28.0, 360);
+            case 0 -> new ServantCardSkillAction("Presence Concealment A+", "stealth", 18.0, 180);
+            case 1 -> new ServantCardSkillAction("Self Modification C", "self_mod", 28.0, 360);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
-            case 3 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
-            case 4 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
-            case 5 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            case 3 -> new ServantCardSkillAction("Throwing (Dagger) B", "dirk_throw", 8.0, 40);
+            case 4 -> new ServantCardSkillAction("Shadow Ambush", "shadow_step", 10.0, 120);
+            case 5 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 7.0, 85);
+            case 6 -> new ServantCardSkillAction("Dagger Feint", "knife_feint", 5.0, 70);
+            case 7 -> new ServantCardSkillAction("Elbow Strike", "elbow_strike", 6.0, 80);
+            case 8 -> new ServantCardSkillAction("Trip Sweep", "trip_sweep", 8.0, 160);
             case 9 -> new ServantCardSkillAction("Zabaniya", "zabaniya", 80.0, 1400);
             default -> null;
          };

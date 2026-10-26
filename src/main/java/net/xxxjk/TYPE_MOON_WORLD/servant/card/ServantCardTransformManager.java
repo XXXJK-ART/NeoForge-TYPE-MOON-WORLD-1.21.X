@@ -208,6 +208,7 @@ public final class ServantCardTransformManager {
       if ("iskandar".equals(vars.servantCardState().id())) ServantCardIskandarSkills.clear(player);
       if ("shadow_hassan".equals(vars.servantCardState().id())) ServantCardShadowHassanSkills.clear(player);
       if ("fanatic_assassin".equals(vars.servantCardState().id())) ServantCardFanaticAssassinSkills.clear(player);
+      if ("cursed_arm_hassan".equals(vars.servantCardState().id())) ServantCardHassanSkills.clear(player);
       if ("senko_muramasa".equals(vars.servantCardState().id())) ServantCardSenkoMuramasaSkills.clear(player, vars);
       if ("zhao_yun_rider".equals(vars.servantCardState().id())) ServantCardZhaoYunSkills.clear(player);
       if ("gilgamesh_caster".equals(vars.servantCardState().id())) ServantCardCasterGilgameshSkills.clear(player);
@@ -543,6 +544,10 @@ public final class ServantCardTransformManager {
       if (ServantCardActionTimeline.isActive(player) && !"heracles".equals(vars.servantCardState().id())) {
          return false;
       }
+      if ("cursed_arm_hassan".equals(vars.servantCardState().id())
+         && player.getPersistentData().getLong(net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper.ZABANIYA_WINDUP_UNTIL) > player.level().getGameTime()) {
+         return false;
+      }
       if (ServantCardArashSkills.isPlayerChanting(player)) {
          return false;
       }
@@ -716,13 +721,15 @@ public final class ServantCardTransformManager {
          currentCooldown = Math.max(currentCooldown, ServantCardZhaoYunSkills.summonCooldownRemaining(player));
       }
       if (!unlimited && ServantCardArtoriaSkills.isWindAction(action)) {
-         currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT));
-          currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT));
-         currentCooldown = Math.max(currentCooldown, getSkillCooldown(vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT));
-          long windReadyAt = player.getPersistentData().getLong(
-             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY);
-          currentCooldown = Math.max(currentCooldown,
-             (int)Math.min(Integer.MAX_VALUE, Math.max(0L, windReadyAt - player.level().getGameTime())));
+         long now = player.level().getGameTime();
+         long skillReadyAt = net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.windSkillReadyAt(
+            player, action.effectId());
+         currentCooldown = Math.max(currentCooldown,
+            (int)Math.min(Integer.MAX_VALUE, Math.max(0L, skillReadyAt - now)));
+         long windReadyAt = player.getPersistentData().getLong(
+            net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY);
+         currentCooldown = Math.max(currentCooldown,
+            (int)Math.min(Integer.MAX_VALUE, Math.max(0L, windReadyAt - now)));
       }
       if (ServantCardArtoriaSkills.isWindAction(action) && ServantCardArtoriaSkills.isWindLockedByExcalibur(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.artoria_excalibur_wind_locked"), true);
@@ -757,6 +764,10 @@ public final class ServantCardTransformManager {
          return false;
       }
       if ("zabaniya".equals(action.effectId()) && ServantCardHassanSkills.findZabaniyaTarget(player) == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      if ("dirk_throw".equals(action.effectId()) && !ServantCardHassanSkills.hasDirks(player)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return false;
       }
@@ -832,9 +843,6 @@ public final class ServantCardTransformManager {
                 + net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_REGATHER_TICKS;
              player.getPersistentData().putLong(
                 net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY, windReadyAt);
-             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, windReadyAt);
-             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, windReadyAt);
-             setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, windReadyAt);
              vars.syncPlayerVariables(player);
           }
           return false;
@@ -903,11 +911,7 @@ public final class ServantCardTransformManager {
       } else if (npSlot) {
          setNoblePhantasmCooldown(player, vars, cooldownTicks);
        } else if (ServantCardArtoriaSkills.isWindAction(action)) {
-          long windReadyAt = player.getPersistentData().getLong(
-             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.WIND_READY);
-          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_HAMMER_SLOT, windReadyAt);
-          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_DEFENSE_SLOT, windReadyAt);
-          setSkillCooldownUntil(player, vars, ServantCardArtoriaSkills.WIND_RELEASE_SLOT, windReadyAt);
+          setSkillCooldown(player, vars, cooldownSlot, cooldownTicks);
       } else {
          setSkillCooldown(player, vars, cooldownSlot, cooldownTicks);
       }
@@ -1632,7 +1636,7 @@ public final class ServantCardTransformManager {
           case "artoria_invisible_air_toggle" -> { if (!ServantCardArtoriaSkills.toggleWindBarrier(player)) return false; }
          case "artoria_wind_defense" -> { if (!ServantCardArtoriaSkills.startWindDefense(player)) return false; }
          case "strategy" -> ServantCardOdaNobunagaSkills.performOdaStrategy(player);
-         case "stealth" -> ServantCardCommonSkills.performPresenceConcealment(player, vars.servantCardState().id());
+         case "stealth" -> { if (!ServantCardCommonSkills.performPresenceConcealment(player, vars.servantCardState().id())) return false; }
          case "circle_realm" -> ServantCardLiShuwenSkills.performCircleRealm(player);
          case "berkana" -> ServantCardCommonSkills.performBerkana(player);
          case "perfect_form" -> ServantCardEnkiduSkills.performEnkiduPerfectForm(player);
@@ -1672,10 +1676,13 @@ public final class ServantCardTransformManager {
          case "algiz" -> ServantCardGawainSkills.performGuard(player);
          case "barrier" -> ServantCardMedeaSkills.performMedeaBarrier(player);
          case "bulwark" -> ServantCardEnkiduSkills.performEnkiduBulwark(player);
-         case "self_mod" -> ServantCardHassanSkills.performSelfModification(player);
+          case "self_mod" -> { if (!ServantCardHassanSkills.performSelfModification(player)) return false; }
          case "dirk_throw" -> ServantCardHassanSkills.performDirkThrow(player);
-         case "shadow_step" -> ServantCardHassanSkills.performShadowStep(player);
-         case "shadow_lunge" -> ServantCardHassanSkills.performShadowLunge(player);
+          case "shadow_step" -> { if (!ServantCardHassanSkills.performShadowStep(player)) return false; }
+          case "shadow_lunge" -> { if (!ServantCardHassanSkills.performShadowLunge(player)) return false; }
+          case "knife_feint" -> { if (!ServantCardHassanSkills.performKnifeFeint(player)) return false; }
+          case "elbow_strike" -> { if (!ServantCardHassanSkills.performElbowStrike(player)) return false; }
+          case "trip_sweep" -> { if (!ServantCardHassanSkills.performTripSweep(player)) return false; }
          case "transfiguration" -> ServantCardEnkiduSkills.performEnkiduTransfiguration(player);
          case "maou" -> ServantCardOdaNobunagaSkills.performOdaMaou(player);
          case "workshop" -> {
@@ -1896,7 +1903,7 @@ public final class ServantCardTransformManager {
          case "shadow_hassan_retreat" -> { if (!ServantCardShadowHassanSkills.performShadowRetreat(player)) return false; }
          case "shadow_hassan_slash" -> { if (!ServantCardShadowHassanSkills.performSlash(player)) return false; }
          case "shadow_hassan_meditative_sensitivity" -> { if (!ServantCardShadowHassanSkills.performMeditativeSensitivity(player)) return false; }
-         case "fanatic_concealment" -> ServantCardFanaticAssassinSkills.performConcealment(player);
+         case "fanatic_concealment" -> { if (!ServantCardFanaticAssassinSkills.performConcealment(player)) return false; }
          case "fanatic_heartbeat" -> { if (!ServantCardFanaticAssassinSkills.performHeartbeat(player)) return false; }
          case "fanatic_marrow" -> { if (!ServantCardFanaticAssassinSkills.performMarrow(player)) return false; }
          case "fanatic_hair" -> { if (!ServantCardFanaticAssassinSkills.performHair(player)) return false; }

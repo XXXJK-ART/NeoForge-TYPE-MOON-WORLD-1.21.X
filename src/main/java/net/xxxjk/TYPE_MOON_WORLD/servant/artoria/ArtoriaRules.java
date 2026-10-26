@@ -5,21 +5,22 @@ public final class ArtoriaRules {
    public static final String ID = "artoria_pendragon";
    public static final int BURST_START_MP = 60, BURST_DRAIN_MP = 30, BURST_REOPEN_TICKS = 120;
    /** Shared Wind King barrier recovery after the wind has been released. */
-   public static final int WIND_REGATHER_TICKS = 40;
+   /** Wind King barrier needs eight seconds to condense again after a release. */
+   public static final int WIND_REGATHER_TICKS = 160;
    public static final int WIND_HAMMER_WINDUP_TICKS = 10;
+   public static final int WIND_HAMMER_COOLDOWN = 600;
+   public static final int WIND_RELEASE_COOLDOWN = 400;
    public static final float NPC_EXCALIBUR_SELECTION_CHANCE = 0.95F;
    public static final float NPC_DECISIVE_WIND_HAMMER_CHANCE = 0.12F;
    public static final String WIND_BARRIER_TOGGLE = "artoria_invisible_air_toggle";
+   public static final String WIND_HAMMER = "invisible_air_hammer";
+   public static final String WIND_RELEASE = "invisible_air_release";
    public static final String WIND_DEFENSE = "artoria_wind_defense";
    public static final double WIND_DEFENSE_MP = 35.0;
    public static final int WIND_DEFENSE_MAX_TICKS = 100;
-   /** All three Invisible Air actions share the same wind regather cooldown. */
-   public static final int WIND_DEFENSE_COOLDOWN = WIND_REGATHER_TICKS;
+   public static final int WIND_DEFENSE_COOLDOWN = 400;
    public static final double WIND_DEFENSE_RADIUS = 6.0;
-   public static final float WIND_HAMMER_PLAYER_DAMAGE = 90.0F;
-   public static final float WIND_HAMMER_PLAYER_BURST_DAMAGE = 125.0F;
-   public static final float WIND_HAMMER_NPC_DAMAGE = 300.0F;
-   public static final float WIND_HAMMER_NPC_BURST_DAMAGE = 400.0F;
+   public static final float WIND_HAMMER_DAMAGE = 300.0F;
    public static final double WIND_HAMMER_PLAYER_RANGE = 10.5;
    public static final double WIND_HAMMER_PLAYER_BURST_RANGE = 12.5;
    public static final double WIND_HAMMER_NPC_RANGE = 10.0;
@@ -27,7 +28,7 @@ public final class ArtoriaRules {
    public static final double WIND_HAMMER_PLAYER_BURST_WIDTH_SCALE = 0.58;
    public static final double WIND_HAMMER_NPC_WIDTH_SCALE = 0.45;
    public static final double BURST_SWORD_MULTIPLIER = 10.0, BURST_DEFENSE_MULTIPLIER = .30, BURST_SPEED_BONUS = .15;
-   public static final double BURST_SWORD_HIT_COST = 20.0;
+   public static final double BURST_SWORD_HIT_COST = 60.0;
    public static final int JET_TICKS = 40, INSTINCT_RECOVERY_TICKS = 300;
    public static final double EXCALIBUR_WEAPON_DAMAGE = 13;
    public static final int EXCALIBUR_MP = 150, EXCALIBUR_COOLDOWN = 3600, EXCALIBUR_TICKS = 150;
@@ -98,6 +99,8 @@ public final class ArtoriaRules {
          case UPWARD_SLASH -> UPWARD_SLASH_COOLDOWN;
          case GUARD_COUNTER -> GUARD_COUNTER_COOLDOWN;
          case KNIGHT_HEAVY_SLASH -> KNIGHT_HEAVY_SLASH_COOLDOWN;
+         case WIND_HAMMER -> WIND_HAMMER_COOLDOWN;
+         case WIND_RELEASE -> WIND_RELEASE_COOLDOWN;
          case WIND_DEFENSE -> WIND_DEFENSE_COOLDOWN;
          case "mana_burst_beam" -> MANA_BURST_BEAM_COOLDOWN;
          case EXCALIBUR_SHORT_SKILL -> EXCALIBUR_SHORT_COOLDOWN;

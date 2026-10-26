@@ -84,4 +84,13 @@ public final class NoblePhantasmDamageClassifier {
       if (direct instanceof SwordBarrelProjectileEntity swordBarrel) return swordBarrel.isBrokenPhantasm();
       return direct instanceof EmiyaArcherEntity;
    }
+
+   /** Death Flight is a sure hit; its damage may still be reduced by other defenses. */
+   public static boolean isCuDeathFlightDamage(DamageSource source) {
+      if (source == null) return false;
+      if (source instanceof TypedSource typed && "cu_gae_bolg_flight".equals(typed.npId)) return true;
+      Entity direct = source.getDirectEntity();
+      return direct instanceof net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity spear
+         && spear.getMode() != net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity.Mode.SINGLE;
+   }
 }

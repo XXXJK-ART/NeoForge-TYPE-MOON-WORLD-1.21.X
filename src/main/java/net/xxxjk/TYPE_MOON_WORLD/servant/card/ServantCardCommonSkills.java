@@ -14,11 +14,15 @@ public final class ServantCardCommonSkills {
    private ServantCardCommonSkills() {
    }
 
-   public static void performPresenceConcealment(ServerPlayer player, String servantId) {
+   public static boolean performPresenceConcealment(ServerPlayer player, String servantId) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(player)) return false;
       int duration = "sasaki_kojiro".equals(servantId) ? 600 : 220;
       ServantCardConcealmentHelper.apply(player, duration);
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 1, false, false, false));
+      if (!"cursed_arm_hassan".equals(servantId)) {
+         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 1, false, false, false));
+      }
       player.getPersistentData().putInt("ServantCardConcealmentUntil", player.tickCount + duration);
+      return true;
    }
 
    public static void performBerkana(ServerPlayer player) {

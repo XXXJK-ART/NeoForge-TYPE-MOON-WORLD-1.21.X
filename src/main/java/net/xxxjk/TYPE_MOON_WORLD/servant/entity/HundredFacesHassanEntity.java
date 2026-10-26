@@ -127,6 +127,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    public void startRetreat(long now) {
       this.getPersistentData().putLong(TAG_RETREAT_UNTIL, now + HundredFacesHassanRules.RETREAT_DURATION_TICKS);
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
    }
 
@@ -195,6 +196,9 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    }
 
    private void setPresenceConcealed(boolean concealed) {
+      if (concealed && !net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(this)) {
+         concealed = false;
+      }
       boolean changed = this.entityData.get(PRESENCE_CONCEALED) != concealed;
       if (changed) this.entityData.set(PRESENCE_CONCEALED, concealed);
       this.setInvisible(false);
@@ -236,6 +240,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       if (target instanceof LivingEntity living && HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, living)) {
          return false;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof LivingEntity living && this.getPersonaMode() == PersonaMode.POISON) {
@@ -248,6 +253,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    public boolean hurt(DamageSource source, float amount) {
       boolean hurt = super.hurt(source, amount);
       if (hurt) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
          this.revealForCombat();
          HundredFacesHassanCombatHelper.tryReactiveDodge(this, source);
       }

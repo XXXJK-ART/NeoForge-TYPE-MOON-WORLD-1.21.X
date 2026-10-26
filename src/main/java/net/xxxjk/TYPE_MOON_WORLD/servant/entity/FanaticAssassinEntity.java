@@ -188,6 +188,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof net.minecraft.world.entity.LivingEntity living) {
@@ -202,7 +203,10 @@ public final class FanaticAssassinEntity extends ServantEntity {
       if (source.is(FanaticDamageTypes.MENTAL_ATTACKS)
          && FanaticAssassinRules.shouldCancelMentalAttack(this.getRandom().nextFloat())) return false;
       boolean hurt = super.hurt(source, amount);
-      if (hurt) this.revealForCombat();
+      if (hurt) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
+         this.revealForCombat();
+      }
       return hurt;
    }
 

@@ -338,8 +338,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          if (finalDamage <= 0.0F) {
             continue;
          }
-         if (!this.tryConsumeGodHandLife(living, finalDamage, false)) {
-            this.applyGuaranteedDamage(living, source, finalDamage);
+         if (this.tryConsumeGodHandLife(living, finalDamage, false)
+            || !this.applyGuaranteedDamage(living, source, finalDamage)) {
+            continue;
          }
          Vec3 push = living.position().subtract(burstCenter).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {
@@ -666,7 +667,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         this.applyGuaranteedDamage(living, source, finalDamage);
+         if (!this.applyGuaranteedDamage(living, source, finalDamage)) {
+            continue;
+         }
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
          if (horizontal > 1.0E-4) {
@@ -722,12 +725,17 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       });
    }
 
-   private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
+   private boolean applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
       if (EntityUtils.isImmunePlayerTarget(target)) {
-         return;
+         return false;
       }
-      int previous=target.invulnerableTime;target.invulnerableTime=0;
-      try {target.hurt(source, damage);}finally{target.invulnerableTime=previous;}
+      int previous = target.invulnerableTime;
+      target.invulnerableTime = 0;
+      try {
+         return target.hurt(source, damage);
+      } finally {
+         target.invulnerableTime = previous;
+      }
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {

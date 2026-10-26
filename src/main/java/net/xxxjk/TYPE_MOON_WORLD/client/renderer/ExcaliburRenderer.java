@@ -41,17 +41,19 @@ public final class ExcaliburRenderer extends GeoItemRenderer<ExcaliburItem> {
 
    @Override
    public ResourceLocation getTextureLocation(ExcaliburItem animatable) {
-      return isManaBurstBlade(getCurrentItemStack()) ? MANA_BURST_TEXTURE : super.getTextureLocation(animatable);
+      ItemStack stack = getCurrentItemStack();
+      return isWindVeiledBlade(stack) ? super.getTextureLocation(animatable)
+         : isManaBurstBlade(stack) ? MANA_BURST_TEXTURE : super.getTextureLocation(animatable);
    }
 
    @Override
    public Color getRenderColor(ExcaliburItem animatable, float partialTick, int packedLight) {
       ItemStack stack = getCurrentItemStack();
-      if (isManaBurstBlade(stack)) {
-         return MANA_BURST_COLOR;
-      }
       if (isWindVeiledBlade(stack)) {
          return WIND_VEIL_COLOR;
+      }
+      if (isManaBurstBlade(stack)) {
+         return MANA_BURST_COLOR;
       }
       return Color.WHITE;
    }

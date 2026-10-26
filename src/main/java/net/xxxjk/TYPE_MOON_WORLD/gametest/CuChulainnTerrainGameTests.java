@@ -67,7 +67,7 @@ public final class CuChulainnTerrainGameTests {
       BlockPos center = helper.absolutePos(new BlockPos(7, 40, 7));
       var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(7, 65, 7));
       owner.setNoAi(true); owner.setNoGravity(true);
-      var target = helper.spawn(EntityType.ZOMBIE, new BlockPos(7, 40, 7));
+      var target = helper.spawn(EntityType.ZOMBIE, center.offset(1, 0, 0));
       target.setNoAi(true); target.setNoGravity(true); target.setInvulnerable(true);
       List<BlockPos> inner = List.of(center, center.offset(10, 0, 0), center.offset(0, 10, 0), center.offset(0, 0, 10));
       List<BlockPos> outer = List.of(center.offset(-17, 0, 0), center.offset(0, -17, 0), center.offset(0, 0, -17));
@@ -77,12 +77,14 @@ public final class CuChulainnTerrainGameTests {
       level.setBlockAndUpdate(outside, Blocks.STONE.defaultBlockState());
       var spear = new GaeBulgArmyProjectileEntity(level, owner);
       spear.setMode(GaeBulgProjectileEntity.Mode.SPLIT);
-      spear.setArmyDamage(0);
+      spear.setArmyDamage(200);
       spear.setTrackedTarget(target);
       spear.setPos(Vec3.atCenterOf(center));
       spear.setDeltaMovement(Vec3.ZERO);
       spear.tick();
       helper.assertTrue(spear.isRemoved(), "Fixture did not trigger the actual flight burst");
+      helper.assertTrue(target.getDeltaMovement().lengthSqr() < 1.0E-6,
+         "Flight burst launched a target whose damage was rejected");
       for (int tick = 1; tick <= 100; tick++) helper.runAfterDelay(tick, () -> {
          for (BlockPos rim : outer) {
             if (level.getBlockState(rim).isAir()) {

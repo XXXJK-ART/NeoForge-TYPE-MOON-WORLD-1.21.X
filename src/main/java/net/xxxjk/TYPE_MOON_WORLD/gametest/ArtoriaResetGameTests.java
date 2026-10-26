@@ -11,6 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Husk;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
@@ -25,6 +26,8 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.*;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.module.CombatModule;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
@@ -65,6 +68,13 @@ public final class ArtoriaResetGameTests {
       target.getAttribute(Attributes.ARMOR).setBaseValue(0);
       target.setHealth(1000); h.getLevel().addFreshEntity(target); return target;
    }
+   private static Warden warden(GameTestHelper h, Vec3 position) {
+      var target = EntityType.WARDEN.create(h.getLevel());
+      target.setPos(position); target.setNoAi(true); target.setNoGravity(true);
+      target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
+      target.getAttribute(Attributes.ARMOR).setBaseValue(0);
+      target.setHealth(1000); h.getLevel().addFreshEntity(target); return target;
+   }
    @GameTest(template = "ancient_temple", timeoutTicks = 20)
    public static void npcOnlyReleasesInvisibleAirInDecisivePhase(GameTestHelper h) {
       var owner = npc(h);
@@ -77,6 +87,41 @@ public final class ArtoriaResetGameTests {
       ServantCombatSystem.forcePhaseAtLeast(owner, ServantCombatPhase.DECISIVE);
       ArtoriaStateService.autoReleaseWindBarrier(owner);
       h.assertTrue(!ArtoriaStateService.isWindBarrierEnabled(owner), "NPC did not release Invisible Air in phase three");
+      h.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void probingNpcUsesItsSwordSkillAtFiveBlocks(GameTestHelper h) {
+      var owner = npc(h);
+      var target = target(h, owner.position().add(0, 0, 5.2));
+      owner.setTarget(target);
+      long now = h.getLevel().getGameTime();
+      owner.getPersistentData().putLong(ArtoriaStateService.WIND_HAMMER_READY, now + 1000);
+      ServantCombatSystem.forcePhaseAtLeast(owner, ServantCombatPhase.PROBING);
+
+      new CombatModule().tick(owner, ServantAiContext.forEntity(owner, target, now));
+
+      h.assertTrue(owner.getPersistentData().getLong("ArtoriaSkillReady:" + ArtoriaRules.INTERCEPT_THRUST) > now,
+         "Artoria did not use her mid-range sword thrust during the probing phase");
+      h.assertTrue(Math.abs(owner.getCurrentMp() - (500 - ArtoriaRules.INTERCEPT_THRUST_MP)) < 0.001,
+         "Mid-range sword thrust did not charge its MP cost");
+      h.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void npcSwordRotationFallsBackToAnAvailableTechnique(GameTestHelper h) {
+      var owner = npc(h);
+      var target = target(h, owner.position().add(0, 0, 3.2));
+      owner.setTarget(target);
+      long now = h.getLevel().getGameTime();
+      owner.getPersistentData().putLong(ArtoriaStateService.WIND_HAMMER_READY, now + 1000);
+      owner.getPersistentData().putLong("ArtoriaSkillReady:" + ArtoriaRules.KNIGHT_TRIPLE_SLASH, now + 100);
+      owner.getPersistentData().putLong("ArtoriaSkillReady:" + ArtoriaRules.UPWARD_SLASH, now + 100);
+
+      new CombatModule().tick(owner, ServantAiContext.forEntity(owner, target, now));
+
+      h.assertTrue(owner.getPersistentData().getLong("ArtoriaSkillReady:" + ArtoriaRules.SPINNING_SLASH) > now,
+         "Artoria idled instead of falling back to the ready spinning slash");
       h.succeed();
    }
 
@@ -105,7 +150,7 @@ public final class ArtoriaResetGameTests {
       target.hurt(new CombatDamageSource(owner.damageSources().mobAttack(owner), AttackOrigin.skill(ArtoriaRules.ID, "basic")), 33);
       h.assertTrue(Math.abs(target.getHealth() - 670) < .02, "Actual physical hit was not 330: " + target.getHealth());
       h.assertTrue(Math.abs(owner.getCurrentMp() - (500 - ArtoriaRules.BURST_SWORD_HIT_COST)) < .02,
-         "Mana Burst did not debit exactly 20 MP after the landed hit: " + owner.getCurrentMp());
+         "Mana Burst did not debit exactly 60 MP after the landed hit: " + owner.getCurrentMp());
       h.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 18)
@@ -351,15 +396,38 @@ public final class ArtoriaResetGameTests {
       h.succeed();
    }
    @GameTest(template = "ancient_temple", timeoutTicks = 30)
-   public static void windHammerDelayedHitUsesRestoredDamageAndStartsRecovery(GameTestHelper h) {
+   public static void windHammerDelayedHitUsesFixedDamageAndStartsRecovery(GameTestHelper h) {
       var owner = npc(h);
       var target = target(h, owner.position().add(0, 0, 3));
       h.assertTrue(ArtoriaAbilityService.hammer(owner), "NPC hammer was rejected while wind was ready");
       h.runAtTickTime(12, () -> {
          h.assertTrue(Math.abs(target.getHealth() - 700.0F) < 0.02F,
-            "Delayed Wind Hammer hit did not deal the restored 300 damage: " + target.getHealth());
+            "Delayed Wind Hammer hit did not deal 300 damage: " + target.getHealth());
          h.assertTrue(owner.getPersistentData().getLong(ArtoriaStateService.WIND_READY) > owner.level().getGameTime(),
             "Wind recovery was not active after the hammer hit");
+         h.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 30)
+   public static void playerWindHammerDealsFixedDamageDuringManaBurst(GameTestHelper h) {
+      var owner = card(h);
+      var target = warden(h, owner.position().add(0, 0, 11.5));
+      ArtoriaStateService.startBurst(owner);
+      h.assertTrue(ArtoriaAbilityService.hammer(owner), "Player hammer was rejected while wind was ready");
+      h.runAtTickTime(12, () -> {
+         h.assertTrue(Math.abs(target.getHealth() - 700.0F) < 0.02F,
+            "Mana Burst Wind Hammer missed or dealt other than 300 damage to the Warden at 11.5 blocks: " + target.getHealth());
+         h.succeed();
+      });
+   }
+   @GameTest(template = "ancient_temple", timeoutTicks = 30)
+   public static void playerWindHammerDealsFixedDamageToWardenAtNormalRange(GameTestHelper h) {
+      var owner = card(h);
+      var target = warden(h, owner.position().add(0, 0, 8.5));
+      h.assertTrue(ArtoriaAbilityService.hammer(owner), "Player hammer was rejected while wind was ready");
+      h.runAtTickTime(12, () -> {
+         h.assertTrue(Math.abs(target.getHealth() - 700.0F) < 0.02F,
+            "Normal Wind Hammer missed or dealt other than 300 damage to the Warden at 8.5 blocks: " + target.getHealth());
          h.succeed();
       });
    }

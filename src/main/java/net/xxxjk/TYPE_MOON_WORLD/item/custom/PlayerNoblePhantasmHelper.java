@@ -431,6 +431,7 @@ public final class PlayerNoblePhantasmHelper {
       addExcaliburCooldown(player, ArtoriaRules.EXCALIBUR_COOLDOWN);
       net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
          player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.FULL_NP);
+      ArtoriaStateService.autoReleaseWindBarrier(player);
       revealArtoriaWindVeiledExcaliburForNp(player, (int)(NoblePhantasmCastService.releaseAt(player) - now) + 1);
       TYPE_MOON_WORLD.queueServerWork(20, () -> {
          if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);
@@ -457,6 +458,7 @@ public final class PlayerNoblePhantasmHelper {
       d.putLong(ArtoriaStateService.NP_SHORT_READY, now + ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN);
       net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
          player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.SHORT_RELEASE);
+      ArtoriaStateService.autoReleaseWindBarrier(player);
       ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_SHORT_CHARGE_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
       TYPE_MOON_WORLD.queueServerWork(20, () -> {
          if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);

@@ -83,16 +83,18 @@ public final class ServantCardFanaticAssassinSkills {
    }
 
    public static void clear(ServerPlayer player) {
-      revealForAttack(player);
+      reveal(player);
       removeTemperatureArmor(player);
       discardOwnedJinn(player);
       clearRuntimeTags(player);
    }
 
-   public static void performConcealment(ServerPlayer player) {
+   public static boolean performConcealment(ServerPlayer player) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(player)) return false;
       long until = player.level().getGameTime() + 600L;
       player.getPersistentData().putLong(CONCEAL_UNTIL, until);
       ServantCardConcealmentHelper.apply(player, 600);
+      return true;
    }
 
    public static boolean performHeartbeat(ServerPlayer player) {
@@ -223,6 +225,11 @@ public final class ServantCardFanaticAssassinSkills {
    }
 
    public static void revealForAttack(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(player);
+      reveal(player);
+   }
+
+   private static void reveal(ServerPlayer player) {
       if (player == null || !player.getPersistentData().contains(CONCEAL_UNTIL)) return;
       player.getPersistentData().remove(CONCEAL_UNTIL);
       player.removeEffect(MobEffects.INVISIBILITY);

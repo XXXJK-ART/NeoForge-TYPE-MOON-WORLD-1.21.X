@@ -26,7 +26,9 @@ class ConcealmentRankTest {
    @Test
    void particleCapsFollowRankWithLargeGaps() {
       assertEquals(0, ConcealmentRank.EX.maxParticles());
-      assertEquals(0, ConcealmentRank.A_PLUS.maxParticles());
+      assertEquals(1, ConcealmentRank.A_PLUS.maxParticles());
+      assertEquals(ConcealmentRank.A.minimumDelay(), ConcealmentRank.A_PLUS.minimumDelay());
+      assertEquals(ConcealmentRank.A.maximumDelay(), ConcealmentRank.A_PLUS.maximumDelay());
       assertEquals(4, ConcealmentRank.A.maxParticles());
       assertEquals(8, ConcealmentRank.A_MINUS.maxParticles());
       assertEquals(12, ConcealmentRank.B.maxParticles());
@@ -34,7 +36,7 @@ class ConcealmentRankTest {
       assertEquals(30, ConcealmentRank.D.maxParticles());
       assertEquals(40, ConcealmentRank.E.maxParticles());
       assertTrue(ConcealmentRank.EX.isPerfect());
-      assertTrue(ConcealmentRank.A_PLUS.isPerfect());
+      assertFalse(ConcealmentRank.A_PLUS.isPerfect());
       assertFalse(ConcealmentRank.A.isPerfect());
    }
 

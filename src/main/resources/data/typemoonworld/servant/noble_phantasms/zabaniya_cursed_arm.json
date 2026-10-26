@@ -1,0 +1,14 @@
+{
+  "id": "zabaniya_cursed_arm",
+  "display_name": "Zabaniya: Delusional Heartbeat",
+  "display_name_zh": "妄想心音（扎巴尼央）",
+  "type": "anti_unit",
+  "rank": "C",
+  "mp_cost": 80,
+  "cooldown_ticks": 1400,
+  "windup_ticks": 20,
+  "range": 7.0,
+  "base_damage_multiplier": 55.0,
+  "effects": [{"effect_type":"conceptual_instant_death","params":{"chance":0.6,"failure_damage":55.0,"curse_ticks":160}}],
+  "description_zh": "对人单体概念宝具；合法目标有60%即死，失败造成55点伤害并施加160 ticks咒腕诅咒。"
+}

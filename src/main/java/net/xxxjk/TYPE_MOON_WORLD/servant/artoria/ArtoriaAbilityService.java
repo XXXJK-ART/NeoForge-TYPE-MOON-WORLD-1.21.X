@@ -149,6 +149,11 @@ public final class ArtoriaAbilityService {
       long now = owner.level().getGameTime();
       String readyKey = NPC_SKILL_READY_PREFIX + skill;
       if (now < owner.getPersistentData().getLong(readyKey) || !canPerformSwordSkill(owner, skill)) return false;
+      LivingEntity target = npc.getTarget();
+      if (enemy(owner, target)) {
+         npc.faceToward(target.position());
+         npc.getNavigation().stop();
+      }
       double mp = ArtoriaRules.skillMpCost(skill);
       if (!ArtoriaStateService.consume(owner, mp)) return false;
       if (!performSwordSkill(owner, skill)) {
@@ -163,6 +168,7 @@ public final class ArtoriaAbilityService {
       return owner != null && owner.level().getGameTime() < owner.getPersistentData().getLong(ACTION_LOCK_UNTIL);
    }
    private static void lockAction(LivingEntity owner, int ticks) {
+      if (owner instanceof net.minecraft.world.entity.Mob mob) mob.getNavigation().stop();
       owner.getPersistentData().putLong(ACTION_LOCK_UNTIL, owner.level().getGameTime() + ticks);
    }
    public static boolean tryNpcLightCannon(LivingEntity owner) {
@@ -182,6 +188,7 @@ public final class ArtoriaAbilityService {
       NoblePhantasmCastService.begin(owner, ArtoriaRules.EXCALIBUR_SHORT_SKILL, ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN,
          ticks -> owner.getPersistentData().putLong(ArtoriaStateService.NP_SHORT_READY, owner.level().getGameTime() + ticks),
          () -> owner.getPersistentData().remove(ArtoriaStateService.NP_BEAM));
+      ArtoriaStateService.autoReleaseWindBarrier(owner);
       TYPE_MOON_WORLD.queueServerWork(20, () -> {
          if (NoblePhantasmCastService.chanting(owner)) ArtoriaStateService.autoReleaseWindBarrier(owner);
       });
@@ -207,14 +214,14 @@ public final class ArtoriaAbilityService {
       animate(owner, SasakiKojiroAction.VERTICAL_SLASH);
       skillStartFx(owner, level);
       TYPE_MOON_WORLD.queueServerWork(4, () -> strikeIfValid(owner, level,
-         ArtoriaRules.TRIPLE_SLASH_FIRST_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 3.5));
+         ArtoriaRules.TRIPLE_SLASH_FIRST_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 5.0));
       TYPE_MOON_WORLD.queueServerWork(8, () -> {
          if (validDelayed(owner, level)) animate(owner, SasakiKojiroAction.HORIZONTAL_SLASH);
-         strikeIfValid(owner, level, ArtoriaRules.TRIPLE_SLASH_SECOND_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 3.5);
+          strikeIfValid(owner, level, ArtoriaRules.TRIPLE_SLASH_SECOND_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 5.0);
       });
       TYPE_MOON_WORLD.queueServerWork(12, () -> {
          if (validDelayed(owner, level)) animate(owner, SasakiKojiroAction.THRUST);
-         strikeIfValid(owner, level, ArtoriaRules.TRIPLE_SLASH_FINAL_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 3.5);
+          strikeIfValid(owner, level, ArtoriaRules.TRIPLE_SLASH_FINAL_DAMAGE, ArtoriaRules.KNIGHT_TRIPLE_SLASH, true, 5.0);
       });
       return true;
    }
@@ -234,7 +241,7 @@ public final class ArtoriaAbilityService {
       lunge(owner, forward, 1.2);
       skillStartFx(owner, level);
       TYPE_MOON_WORLD.queueServerWork(5, () -> strikeFixedDirection(owner, level, forward,
-         ArtoriaRules.INTERCEPT_THRUST_DAMAGE, ArtoriaRules.INTERCEPT_THRUST, 4.5));
+         ArtoriaRules.INTERCEPT_THRUST_DAMAGE, ArtoriaRules.INTERCEPT_THRUST, 5.8));
       return true;
    }
    private static void lunge(LivingEntity owner, Vec3 direction, double distance) {
@@ -268,9 +275,9 @@ public final class ArtoriaAbilityService {
          if (!validDelayed(owner, level)) return;
          Set<Integer> hitIds = new HashSet<>();
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
-            owner.getBoundingBox().inflate(3.5, 2, 3.5), t -> enemy(owner, t))) {
+            owner.getBoundingBox().inflate(4.8, 2, 4.8), t -> enemy(owner, t))) {
             Vec3 offset = target.position().subtract(owner.position());
-            if (owner.distanceTo(target) <= 3.5 && offset.multiply(1, 0, 1).normalize().dot(forward) >= 0.5
+            if (owner.distanceTo(target) <= 4.8 && offset.multiply(1, 0, 1).normalize().dot(forward) >= 0.5
                && owner.hasLineOfSight(target) && hitIds.add(target.getId()))
                hit(owner, target, ArtoriaRules.SPINNING_SLASH_DAMAGE, ArtoriaRules.SPINNING_SLASH, false, false);
          }
@@ -283,7 +290,7 @@ public final class ArtoriaAbilityService {
       skillStartFx(owner, level);
       TYPE_MOON_WORLD.queueServerWork(3, () -> {
          if (!validDelayed(owner, level)) return;
-         LivingEntity target = nearestForwardTarget(owner, 3.5, 0.35);
+         LivingEntity target = nearestForwardTarget(owner, 4.8, 0.35);
          if (target == null) return;
          if (hit(owner, target, ArtoriaRules.UPWARD_SLASH_DAMAGE, ArtoriaRules.UPWARD_SLASH, false, false)) {
             Vec3 motion = target.getDeltaMovement();
@@ -309,7 +316,7 @@ public final class ArtoriaAbilityService {
       animate(owner, SasakiKojiroAction.DOWNWARD_SLASH);
       skillStartFx(owner, level);
       TYPE_MOON_WORLD.queueServerWork(6, () -> strikeFixedDirection(owner, level, lockedDirection,
-         ArtoriaRules.KNIGHT_HEAVY_SLASH_DAMAGE, ArtoriaRules.KNIGHT_HEAVY_SLASH, 4.0));
+         ArtoriaRules.KNIGHT_HEAVY_SLASH_DAMAGE, ArtoriaRules.KNIGHT_HEAVY_SLASH, 5.2));
       return true;
    }
    private static void animate(LivingEntity owner, SasakiKojiroAction action) {
@@ -322,6 +329,8 @@ public final class ArtoriaAbilityService {
    }
    private static void spawnSwordTrail(LivingEntity owner, ServerLevel level) {
       String effect = ArtoriaPendragonCombatHelper.isManaBurstActive(owner)
+         && !ArtoriaStateService.isWindBarrierActive(owner)
+         && !ArtoriaStateService.isWindDefenseActive(owner)
          ? "artoria_sword_trail_gold" : "artoria_sword_trail_wind";
       VFXServerEffects.spawn(level, effect, owner, 72);
    }
@@ -359,11 +368,15 @@ public final class ArtoriaAbilityService {
    }
    public static boolean hammer(LivingEntity owner) {
       if (!(owner.level() instanceof ServerLevel level)) return false;
+      long now = level.getGameTime();
+      if (now < owner.getPersistentData().getLong(ArtoriaStateService.WIND_HAMMER_READY)) return false;
       if (!canWind(owner)) {
          ArtoriaStateService.lockWindRecoveryIfVeilMissing(owner);
          return false;
       }
       Vec3 forward = horizontal(owner);
+      owner.getPersistentData().putLong(ArtoriaStateService.WIND_HAMMER_READY,
+         now + ArtoriaRules.WIND_HAMMER_COOLDOWN);
       lockAction(owner, ArtoriaRules.WIND_HAMMER_WINDUP_TICKS);
       owner.getPersistentData().putLong(ArtoriaStateService.WIND_READY,
          level.getGameTime() + ArtoriaRules.WIND_HAMMER_WINDUP_TICKS + ArtoriaRules.WIND_REGATHER_TICKS);
@@ -398,9 +411,7 @@ public final class ArtoriaAbilityService {
          : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_RANGE : ArtoriaRules.WIND_HAMMER_PLAYER_RANGE;
       double widthScale = npc ? ArtoriaRules.WIND_HAMMER_NPC_WIDTH_SCALE
          : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_WIDTH_SCALE : ArtoriaRules.WIND_HAMMER_PLAYER_WIDTH_SCALE;
-      float damage = npc
-         ? burst ? ArtoriaRules.WIND_HAMMER_NPC_BURST_DAMAGE : ArtoriaRules.WIND_HAMMER_NPC_DAMAGE
-         : burst ? ArtoriaRules.WIND_HAMMER_PLAYER_BURST_DAMAGE : ArtoriaRules.WIND_HAMMER_PLAYER_DAMAGE;
+      float damage = ArtoriaRules.WIND_HAMMER_DAMAGE;
       int sample = 0;
       double step = npc ? 0.8 : 0.75;
       for (double distance = npc ? 1.5 : 1.2; distance <= range; distance += step, sample++) {
@@ -448,11 +459,15 @@ public final class ArtoriaAbilityService {
 
    public static boolean windRelease(LivingEntity owner) {
       if (!(owner.level() instanceof ServerLevel level)) return false;
+      long now = level.getGameTime();
+      if (now < owner.getPersistentData().getLong(ArtoriaStateService.WIND_RELEASE_READY)) return false;
       if (!canWind(owner)) {
          ArtoriaStateService.lockWindRecoveryIfVeilMissing(owner);
          return false;
       }
       VFXServerEffects.spawn(level, "artoria_wind_release", owner, 96);
+      owner.getPersistentData().putLong(ArtoriaStateService.WIND_RELEASE_READY,
+         now + ArtoriaRules.WIND_RELEASE_COOLDOWN);
       reveal(owner, ArtoriaRules.WIND_REGATHER_TICKS);
       owner.getPersistentData().putLong(ArtoriaStateService.WIND_READY,
          owner.level().getGameTime() + ArtoriaRules.WIND_REGATHER_TICKS);

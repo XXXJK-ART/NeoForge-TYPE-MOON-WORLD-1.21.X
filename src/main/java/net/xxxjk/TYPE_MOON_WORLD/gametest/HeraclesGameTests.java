@@ -98,6 +98,17 @@ public final class HeraclesGameTests {
       close(h,e.getHealth(),680,"full revival");close(h,e.getCurrentMp(),123,"revival restored mana");
       h.assertTrue(e.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES)==0&&e.getPersistentData().getLong("HeraclesCooldown:3")==999999,"revival refreshed resources");h.succeed();
    }
+   @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_revived_npc_ai")
+   public static void deathEventRevivalDoesNotLeaveNpcInSpiritualDeathLock(GameTestHelper h) {
+      var e=owner(h);var t=target(h,e.position().add(0,0,3));
+      GodHandService.write(e,new GodHandState(1,java.util.Set.of(),"",0,java.util.Set.of()));
+      var source=new CombatDamageSource(e.damageSources().generic(),AttackOrigin.skill("test","death_event"));
+      e.setHealth(0);e.die(source);
+      h.assertTrue(e.isAlive()&&e.getHealth()>0,"God Hand did not revive the death event");
+      h.assertTrue(!e.isSpiritualDissolving()&&!e.isSpiritualTransitionLocked(),"revived NPC retained its spiritual death lock");
+      e.setTarget(t);
+      h.assertTrue(HeraclesAbilityService.npcCombat(e),"revived NPC did not resume its combat AI");h.succeed();
+   }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_adaptation")
    public static void adaptationPersistsAndCompletesAt100Ticks(GameTestHelper h) {
       var e=owner(h);var source=new CombatDamageSource(e.damageSources().generic(),AttackOrigin.skill("test","sword"));
@@ -144,7 +155,7 @@ public final class HeraclesGameTests {
       var e=owner(h);GodHandService.write(e,new GodHandState(0,java.util.Set.of(),"",0,java.util.Set.of()));e.setHealth(10);e.getAttribute(Attributes.MAX_ABSORPTION).setBaseValue(30);e.setAbsorptionAmount(30);
       e.hurt(e.damageSources().generic(),20);close(h,e.getHealth(),10,"absorption triggered continuation");
       h.assertTrue(!e.getPersistentData().contains("CommonContinuationReady"),"absorption started cooldown");
-      e.invulnerableTime=0;e.hurt(e.damageSources().generic(),200);close(h,e.getHealth(),136,"A continuation health");
+      e.invulnerableTime=0;e.hurt(e.damageSources().generic(),200);close(h,e.getHealth(),68,"A continuation health");
       close(h,e.getPersistentData().getLong("CommonContinuationReady")-e.level().getGameTime(),12000,"A continuation cooldown");h.succeed();
    }
    @GameTest(template="ancient_temple",timeoutTicks=20,batch="heracles_origins")
