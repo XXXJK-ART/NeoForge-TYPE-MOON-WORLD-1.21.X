@@ -210,20 +210,24 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    private void ensureDirkLoadout() {
       ItemStack offhand = this.getOffhandItem();
+      ItemStack mainhand = this.getMainHandItem();
       if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
          offhand.setCount(1);
          if (offhand.getDamageValue() >= offhand.getMaxDamage()) offhand.setDamageValue(0);
+         if (mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          return;
       }
-      ItemStack mainhand = this.getMainHandItem();
-      if (offhand.isEmpty() && mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         this.setItemInHand(InteractionHand.OFF_HAND, mainhand.copy());
-         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-      } else if (offhand.isEmpty()) {
-         this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
-      } else {
-         this.spawnAtLocation(new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
+      if (mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         mainhand.setCount(1);
+         if (mainhand.getDamageValue() >= mainhand.getMaxDamage()) mainhand.setDamageValue(0);
+         if (offhand.isEmpty()) {
+            this.setItemInHand(InteractionHand.OFF_HAND, mainhand.copy());
+            this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+         }
+         return;
       }
+      if (HundredFacesHassanRules.shouldGenerateDirk(mainhand.isEmpty(), offhand.isEmpty()))
+         this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
    }
 
    private void setPresenceConcealed(boolean concealed) {
@@ -280,6 +284,10 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      if (target instanceof LivingEntity living && CursedArmHassanCombatHelper.refusesToHarm(this, living)) {
+         this.setTarget(null);
+         return false;
+      }
       if (target instanceof LivingEntity living && HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, living)) {
          return false;
       }

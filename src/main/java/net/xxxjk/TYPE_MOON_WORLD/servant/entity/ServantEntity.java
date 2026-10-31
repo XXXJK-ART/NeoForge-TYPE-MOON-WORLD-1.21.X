@@ -878,12 +878,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return;
       }
       if (this.getItemBySlot(slot).is(armor)) {
-         if (forceClientSync) {
-            ItemStack current = this.getItemBySlot(slot).copy();
-            this.setItemSlot(slot, ItemStack.EMPTY);
-            this.setItemSlot(slot, current);
-            this.setDropChance(slot, 0.0F);
-         }
+         this.setDropChance(slot, 0.0F);
          return;
       }
       this.setItemSlot(slot, new ItemStack(armor));

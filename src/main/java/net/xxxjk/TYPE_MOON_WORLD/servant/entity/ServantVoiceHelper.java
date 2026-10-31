@@ -25,6 +25,7 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
+      if (servant instanceof HundredFacesHassanPersonaEntity) return;
       if (isHeracles(servant)) {
          if (servant.getRandom().nextFloat() > 0.42F) return;
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,21 @@ class HundredFacesHassanRulesTest {
       assertEquals(5, HundredFacesHassanRules.affordableSummonCount(50.0, 0, 10));
       assertEquals(2, HundredFacesHassanRules.affordableSummonCount(1000.0, 78, 10));
       assertEquals(0, HundredFacesHassanRules.affordableSummonCount(1000.0, 80, 10));
+   }
+
+   @Test
+   void daggerGenerationRequiresBothHandsToBeEmpty() {
+      assertTrue(HundredFacesHassanRules.shouldGenerateDirk(true, true));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(false, true));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(true, false));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(false, false));
+   }
+
+   @Test
+   void personaDodgeChanceIsHalved() {
+      assertEquals(0.5, HundredFacesHassanRules.PERSONA_DODGE_CHANCE_MULTIPLIER, 1.0E-9);
+      assertEquals(4.0, HundredFacesHassanRules.personaThrowMinimumRange(true), 1.0E-9);
+      assertEquals(8.0, HundredFacesHassanRules.personaThrowMinimumRange(false), 1.0E-9);
    }
 
    @Test

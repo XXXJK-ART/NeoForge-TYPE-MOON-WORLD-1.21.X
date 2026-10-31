@@ -116,10 +116,17 @@ class HumanoidServantSkinResourcesTest {
       String servantEntity = Files.readString(JAVA.resolve("servant/entity/ServantEntity.java"));
       assertTrue(servantEntity.contains("public void ensureDefaultNpcServantCardArmor(boolean forceClientSync)"));
       assertTrue(servantEntity.contains("this.tickCount == 1"));
-      assertTrue(servantEntity.contains("this.setItemSlot(slot, ItemStack.EMPTY)"));
-      assertTrue(servantEntity.contains("this.setItemSlot(slot, current)"));
+      assertTrue(servantEntity.contains("this.setDropChance(slot, 0.0F)"));
+      assertFalse(servantEntity.contains("this.setItemSlot(slot, ItemStack.EMPTY);\n            this.setItemSlot(slot, current);"));
       assertTrue(servantEntity.contains("equipNpcServantCardArmorSlot(EquipmentSlot.CHEST, forceClientSync)"));
       assertTrue(servantEntity.contains("equipNpcServantCardArmorSlot(EquipmentSlot.LEGS, forceClientSync)"));
+
+      String jeanne = Files.readString(JAVA.resolve("servant/jeanne/JeanneAlterEntity.java"));
+      String lancelot = Files.readString(JAVA.resolve("servant/entity/LancelotBerserkerEntity.java"));
+      assertFalse(jeanne.contains("this.setItemInHand(hand, ItemStack.EMPTY)"));
+      assertTrue(lancelot.contains("if (!this.getItemBySlot(EquipmentSlot.HEAD).is("));
+      assertTrue(lancelot.contains("if (!this.getItemBySlot(EquipmentSlot.CHEST).is("));
+      assertTrue(lancelot.contains("if (!this.getItemBySlot(EquipmentSlot.LEGS).is("));
 
       String armorItem = Files.readString(JAVA.resolve("item/custom/ServantCardArmorItem.java"));
       assertTrue(armorItem.contains("EnumMap<EquipmentSlot, ServantCardArmorRenderer>"));

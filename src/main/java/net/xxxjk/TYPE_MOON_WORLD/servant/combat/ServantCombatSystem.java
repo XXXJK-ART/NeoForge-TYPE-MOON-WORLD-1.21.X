@@ -628,18 +628,25 @@ public final class ServantCombatSystem {
          * (1 - ServantDefenseTraits.resolve(servant).dodgeReduction())),
          Math.max(ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0), ServantCombatFormulas.perfectDodgeInvulnerabilityTicks(params)));
       if (now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + cooldown) return false;
-      double cost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45)
-         : ServantCombatFormulas.dodgeMpCost(params);
-      if (servant.getCurrentMp() < cost) return false;
+      boolean persona = servant instanceof HundredFacesHassanPersonaEntity;
+      double cost = 0.0;
+      if (!persona) {
+         cost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45)
+            : ServantCombatFormulas.dodgeMpCost(params);
+         if (servant.getCurrentMp() < cost) return false;
+      }
       int agility = ServantCombatFormulas.agilityStep(params);
       boolean urgent = servant.getHealth() <= servant.getMaxHealth() * (emiya ? 0.85F : 0.55F)
          || source.getDirectEntity() instanceof Projectile
          || getPhase(servant) == ServantCombatPhase.DECISIVE || emiya;
       if (agility < 3 && !urgent) return false;
       double chance = ServantCombatFormulas.baseDodgeChance(params, urgent) + (emiya ? 0.12 : 0.0);
+      if (servant instanceof HundredFacesHassanPersonaEntity) {
+         chance *= HundredFacesHassanRules.PERSONA_DODGE_CHANCE_MULTIPLIER;
+      }
       if (servant.getRandom().nextDouble() > Math.min(0.92, chance)) return false;
       CompoundTag data = servant.getPersistentData();
-      servant.setCurrentMp(servant.getCurrentMp() - cost);
+      if (!persona) servant.setCurrentMp(servant.getCurrentMp() - cost);
       data.putLong(TAG_LAST_DODGE_TICK, now);
       data.putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN, now + cooldown);
       data.putLong(TAG_INVULN_UNTIL, now + ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0));

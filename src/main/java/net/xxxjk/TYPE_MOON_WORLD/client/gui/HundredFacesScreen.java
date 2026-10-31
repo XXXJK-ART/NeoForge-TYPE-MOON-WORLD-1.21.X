@@ -85,7 +85,7 @@ public final class HundredFacesScreen extends Screen {
 
       if (this.kind == KIND_PERSONA_MODE) {
          int[] commands = personaModeCommands();
-         String[] keys = {"scout", "assassination", "throwing", "poison", "induce", "support"};
+         String[] keys = {"assassination", "throwing"};
          for (int i = 0; i < commands.length; i++) {
             int command = commands[i];
             int x = startX + i % columns * (buttonWidth + gap);
@@ -350,7 +350,7 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private int choiceCount() {
-      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_PERSONA_MODE ? 6
+      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_PERSONA_MODE ? 2
          : this.kind == KIND_GLOBAL_COMMAND ? this.selectedGlobalLimit == 0 ? 5 : 8 : 6;
    }
 
@@ -375,12 +375,8 @@ public final class HundredFacesScreen extends Screen {
 
    private static int[] personaModeCommands() {
       return new int[]{
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_SCOUT,
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_ASSASSINATION,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_THROWING,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_POISON,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_INDUCE,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_SUPPORT
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_THROWING
       };
    }
 

@@ -85,10 +85,12 @@ class HundredFacesHassanResourcesTest {
       JsonObject zh = jsonAsset("assets/typemoonworld/lang/zh_cn.json");
       JsonObject en = jsonAsset("assets/typemoonworld/lang/en_us.json");
       assertEquals("百貌哈桑", zh.get("entity.typemoonworld.hundred_faces_hassan").getAsString());
+      assertEquals("百貌哈桑", zh.get("entity.typemoonworld.hundred_faces_hassan_persona").getAsString());
       assertEquals("狂信子", zh.get("entity.typemoonworld.fanatic_assassin").getAsString());
       assertEquals("百貌哈桑（Assassin）刷怪蛋", zh.get("item.typemoonworld.hundred_faces_hassan_spawn_egg").getAsString());
       assertEquals("狂信子（Assassin）刷怪蛋", zh.get("item.typemoonworld.fanatic_assassin_spawn_egg").getAsString());
       assertEquals("Hassan of the Hundred Faces", en.get("entity.typemoonworld.hundred_faces_hassan").getAsString());
+      assertEquals("Hassan of the Hundred Faces", en.get("entity.typemoonworld.hundred_faces_hassan_persona").getAsString());
       assertEquals("Fanatic", en.get("entity.typemoonworld.fanatic_assassin").getAsString());
       assertEquals("Hassan of the Hundred Faces (Assassin) Spawn Egg", en.get("item.typemoonworld.hundred_faces_hassan_spawn_egg").getAsString());
       assertEquals("Fanatic (Assassin) Spawn Egg", en.get("item.typemoonworld.fanatic_assassin_spawn_egg").getAsString());
@@ -143,6 +145,20 @@ class HundredFacesHassanResourcesTest {
    }
 
    @Test
+   void hundredFacesCannotTargetProtectedPigKinds() throws IOException {
+      String policy = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/CursedArmHassanCombatHelper.java");
+      String body = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanEntity.java");
+      String persona = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/HundredFacesHassanPersonaEntity.java");
+      String projectile = readJava("net/xxxjk/TYPE_MOON_WORLD/entity/DirkProjectileEntity.java");
+      assertTrue(policy.contains("entity instanceof HundredFacesHassanEntity"));
+      assertTrue(policy.contains("entity instanceof HundredFacesHassanPersonaEntity"));
+      assertTrue(policy.contains("\"hundred_faces_hassan\""));
+      assertTrue(body.contains("refusesToHarm(this, living)"));
+      assertTrue(persona.contains("refusesToHarm(this, living)"));
+      assertTrue(projectile.contains("CursedArmHassanCombatHelper.refusesToHarm(owner, target)"));
+   }
+
+   @Test
    void assassinPersonalCombatActionsAreWired() throws IOException {
       String definition = Files.readString(RESOURCES.resolve("data/typemoonworld/servant/definitions/hundred_faces_hassan.json"), StandardCharsets.UTF_8);
       String actions = Files.readString(RESOURCES.resolve("data/typemoonworld/servant/actions/hundred_faces_hassan.json"), StandardCharsets.UTF_8);
@@ -157,13 +173,31 @@ class HundredFacesHassanResourcesTest {
       assertTrue(helper.contains("tryPersonaCombatSkill"));
       assertTrue(helper.contains("applyAssassinFootwork"));
       assertTrue(helper.contains("spawnDirkVolley"));
-      assertTrue(helper.contains("case THROWING -> tryPersonaThrowDirk"));
+      assertTrue(helper.contains("return tryPersonaThrowDirk(entity, target, distance, now)"));
+      assertFalse(helper.contains("tryPersonaInduce("));
       assertFalse(helper.contains("tryPersonaShadowStepBackstab"));
       assertFalse(helper.contains("tryPersonaShadowLunge"));
       assertTrue(entity.contains("DIRK_SMALL_KNIFE"));
       assertFalse(entity.contains("tryReactiveDodge(this, source)"));
       assertTrue(persona.contains("DIRK_SMALL_KNIFE"));
-      assertTrue(persona.contains("PERSONA_BACKSTAB_DAMAGE_BONUS"));
+      assertTrue(persona.contains("boolean activeAttack = playerOwner == null || ServantCardHundredFacesHassanSkills.hasActiveAttack(this)"));
+      assertTrue(persona.contains("command == ServantCardHundredFacesHassanSkills.COMMAND_HOLD"));
+      assertTrue(persona.contains("command == ServantCardHundredFacesHassanSkills.COMMAND_FOLLOW"));
+      assertTrue(persona.contains("COMMAND_SCATTER"));
+      assertTrue(persona.contains("TAG_SCATTER_X"));
+      assertTrue(persona.contains("return 0.0"));
+      assertTrue(persona.contains("this.setCurrentMp(0.0)"));
+      assertFalse(persona.contains("getCurrentMp()"));
+      assertTrue(persona.contains("setScatterDestination(Vec3 destination)"));
+      assertFalse(persona.contains("getCurrentMp() < HundredFacesHassanRules.MP_PRESENCE_CONCEALMENT"));
+      assertFalse(persona.contains("PERSONA_BACKSTAB_DAMAGE_BONUS"));
+      assertFalse(persona.contains("PersonaMode.POISON)"));
+
+      JsonObject npcDefinition = json("data/typemoonworld/servant/definitions/hundred_faces_hassan.json");
+      String npcCombatActions = npcDefinition.getAsJsonObject("specialization").getAsJsonArray("combat_actions").toString();
+      String npcActions = Files.readString(RESOURCES.resolve("data/typemoonworld/servant/actions/hundred_faces_hassan.json"), StandardCharsets.UTF_8);
+      assertFalse(npcCombatActions.contains("hundred_faces_dagger"));
+      assertFalse(npcActions.contains("hundred_faces_dagger"));
    }
 
    @Test
@@ -266,9 +300,17 @@ class HundredFacesHassanResourcesTest {
       String card = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardHundredFacesHassanSkills.java");
       String npc = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
       assertTrue(voice.contains("servant instanceof HundredFacesHassanPersonaEntity) return"));
+      assertTrue(voice.contains("if (servant instanceof HundredFacesHassanPersonaEntity) return;"));
       assertTrue(persona.contains("ServantVoiceHelper.tryPlayAttack(this)"));
       assertTrue(card.contains("if (payable >= 20)"));
       assertTrue(npc.contains("if (spawned >= 20)"));
+   }
+
+   @Test
+   void npcArmorSyncDoesNotUnequipAndReequipMatchingItems() throws IOException {
+      String servant = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/ServantEntity.java");
+      assertTrue(servant.contains("if (this.getItemBySlot(slot).is(armor))"));
+      assertFalse(servant.contains("this.setItemSlot(slot, ItemStack.EMPTY);\n            this.setItemSlot(slot, current);"));
    }
 
    private static JsonObject json(String path) throws IOException {

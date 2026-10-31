@@ -229,13 +229,20 @@ public final class CursedArmHassanCombatHelper {
    }
 
    public static boolean refusesToHarm(ServantEntity entity, LivingEntity target) {
-      return entity instanceof CursedArmHassanEntity && isForbiddenTarget(target);
+      return (entity instanceof CursedArmHassanEntity
+         || entity instanceof HundredFacesHassanEntity
+         || entity instanceof HundredFacesHassanPersonaEntity) && isForbiddenTarget(target);
    }
 
    public static boolean refusesToHarm(LivingEntity entity, LivingEntity target) {
       if (entity == null || target == null) return false;
+      if (entity instanceof net.minecraft.server.level.ServerPlayer player
+         && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.isActiveCard(player)) {
+         return isForbiddenTarget(target);
+      }
       var definition = ServantIdentityHelper.definitionOf(entity);
-      return definition != null && "cursed_arm_hassan".equals(definition.id()) && isForbiddenTarget(target);
+      return definition != null && java.util.Set.of("cursed_arm_hassan", "hundred_faces_hassan").contains(definition.id())
+         && isForbiddenTarget(target);
    }
 
    public static boolean shouldAvoidPassiveFellowHassanTarget(ServantEntity entity, LivingEntity target) {

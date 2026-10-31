@@ -318,13 +318,13 @@ public final class ServantCombatDefenseService {
       }
       ServantParams params = params(entity);
       if (params == null) return false;
-      double cost = ServantCombatFormulas.dodgeMpCost(params);
       if (entity instanceof ServerPlayer player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         double cost = ServantCombatFormulas.dodgeMpCost(params);
          if (!isCardActive(player) || !ServantCardManaService.consumeSilently(player, vars, cost)) return false;
-      } else if (entity instanceof ServantEntity servant && servant.getCurrentMp() < cost) {
-         return false;
-      } else if (entity instanceof ServantEntity servant) {
+      } else if (entity instanceof ServantEntity servant && !isPersona(entity)) {
+         double cost = ServantCombatFormulas.dodgeMpCost(params);
+         if (servant.getCurrentMp() < cost) return false;
          servant.setCurrentMp(servant.getCurrentMp() - cost);
       }
       int cooldown = DefenseRules.safeDodgeCooldown((int)Math.ceil(ServantCombatFormulas.dodgeCooldownTicks(params)
@@ -500,6 +500,10 @@ public final class ServantCombatDefenseService {
       ServantParams p = params(defender);
       var chances = DefenseRules.npcReactionChances(ServantCombatFormulas.defenseStep(p),
          ServantCombatFormulas.agilityStep(p), damage, defender.getMaxHealth(), danger, guard, dodge);
+      if (isPersona(defender)) {
+         chances = new DefenseRules.NpcReactionChances(chances.guard(),
+            chances.dodge() * net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.PERSONA_DODGE_CHANCE_MULTIPLIER);
+      }
       double dodgeRoll = defender.getRandom().nextDouble();
       double guardRoll = defender.getRandom().nextDouble();
       NpcDecision decision = new NpcDecision(chances.choose(dodgeRoll, guardRoll), guardRoll < chances.guard(), expires);

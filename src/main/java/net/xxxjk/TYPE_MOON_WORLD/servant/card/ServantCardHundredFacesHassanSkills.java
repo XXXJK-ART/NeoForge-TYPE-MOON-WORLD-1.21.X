@@ -107,7 +107,7 @@ public final class ServantCardHundredFacesHassanSkills {
       data.putBoolean(GLOBAL_ATTACK_ENABLED_TAG, true);
       data.putBoolean(GLOBAL_CONCEALMENT_TAG, false);
       data.putInt(GLOBAL_COMMAND_TAG, COMMAND_FOLLOW);
-      data.putInt(PERSONA_MODE_TAG, HundredFacesHassanEntity.PersonaMode.SCOUT.ordinal());
+      data.putInt(PERSONA_MODE_TAG, HundredFacesHassanEntity.PersonaMode.ASSASSINATION.ordinal());
       data.putInt(LAST_STATE_COUNT_TAG, 0);
       data.putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, 0);
       LAST_SENT_STATES.remove(player);
@@ -263,13 +263,7 @@ public final class ServantCardHundredFacesHassanSkills {
          if (all) player.getPersistentData().putInt(GLOBAL_COMMAND_TAG, COMMAND_FREE);
          for (HundredFacesHassanPersonaEntity persona : personas) {
             if (all && hasPersonalCommandOverride(persona)) continue;
-            setPersonaCommand(persona, COMMAND_FREE, !all);
-            Vec3 delta = persona.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
-            if (delta.lengthSqr() < 1.0E-4) {
-               delta = new Vec3(persona.getRandom().nextDouble() - 0.5, 0.0, persona.getRandom().nextDouble() - 0.5);
-            }
-            Vec3 destination = persona.position().add(delta.normalize().scale(8.0 + persona.getRandom().nextDouble() * 8.0));
-            persona.getNavigation().moveTo(destination.x, destination.y, destination.z, 1.05);
+            setPersonaCommand(persona, COMMAND_SCATTER, !all);
          }
       } else if (command == COMMAND_FREE) {
          if (all) player.getPersistentData().putInt(GLOBAL_COMMAND_TAG, COMMAND_FREE);
@@ -397,18 +391,20 @@ public final class ServantCardHundredFacesHassanSkills {
 
    public static boolean createDirk(ServerPlayer player) {
       if (!isActiveCard(player)) return false;
+      ItemStack mainhand = player.getMainHandItem();
       ItemStack offhand = player.getOffhandItem();
-      if (offhand.isEmpty()) {
-         ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
-         ServantCardTransformManager.markGeneratedItem(dirk, true, false);
-         player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, dirk);
-      } else if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+      if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
          offhand.setDamageValue(0);
-      } else {
-         ItemStack replacement = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
-         ServantCardTransformManager.markGeneratedItem(replacement, true, false);
-         if (!player.getInventory().add(replacement)) player.drop(replacement, false);
+         return true;
       }
+      if (mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         mainhand.setDamageValue(0);
+         return true;
+      }
+      if (!HundredFacesHassanRules.shouldGenerateDirk(mainhand.isEmpty(), offhand.isEmpty())) return false;
+      ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
+      ServantCardTransformManager.markGeneratedItem(dirk, true, false);
+      player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, dirk);
       return true;
    }
 
@@ -518,14 +514,8 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    private static HundredFacesHassanEntity.PersonaMode modeForCommand(int command) {
-      return switch (command) {
-         case COMMAND_MODE_ASSASSINATION -> HundredFacesHassanEntity.PersonaMode.ASSASSINATION;
-         case COMMAND_MODE_THROWING -> HundredFacesHassanEntity.PersonaMode.THROWING;
-         case COMMAND_MODE_POISON -> HundredFacesHassanEntity.PersonaMode.POISON;
-         case COMMAND_MODE_INDUCE -> HundredFacesHassanEntity.PersonaMode.INDUCE;
-         case COMMAND_MODE_SUPPORT -> HundredFacesHassanEntity.PersonaMode.SUPPORT;
-         default -> HundredFacesHassanEntity.PersonaMode.SCOUT;
-      };
+      return command == COMMAND_MODE_THROWING ? HundredFacesHassanEntity.PersonaMode.THROWING
+         : HundredFacesHassanEntity.PersonaMode.ASSASSINATION;
    }
 
    public static boolean isOwnedBy(HundredFacesHassanPersonaEntity persona, ServerPlayer player) {
@@ -708,6 +698,7 @@ public final class ServantCardHundredFacesHassanSkills {
    private static boolean isValidTarget(ServerPlayer player, LivingEntity target) {
       return target != null && target.isAlive() && target != player
          && !EntityUtils.isImmunePlayerTarget(target)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper.isForbiddenTarget(target)
          && !ServantMasterTargeting.isContractMaster(player, target)
          && !player.isAlliedTo(target) && !target.isAlliedTo(player);
    }
@@ -780,17 +771,20 @@ public final class ServantCardHundredFacesHassanSkills {
    private static HundredFacesHassanEntity.PersonaMode selectedPersonaMode(ServerPlayer player) {
       int ordinal = player.getPersistentData().getInt(PERSONA_MODE_TAG);
       HundredFacesHassanEntity.PersonaMode[] modes = HundredFacesHassanEntity.PersonaMode.values();
-      return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : HundredFacesHassanEntity.PersonaMode.SCOUT;
+      return ordinal >= 0 && ordinal < modes.length && modes[ordinal] == HundredFacesHassanEntity.PersonaMode.THROWING
+         ? HundredFacesHassanEntity.PersonaMode.THROWING : HundredFacesHassanEntity.PersonaMode.ASSASSINATION;
    }
 
    public static void setPersonaMode(ServerPlayer player, int ordinal) {
       if (!isActiveCard(player)) return;
       HundredFacesHassanEntity.PersonaMode[] modes = HundredFacesHassanEntity.PersonaMode.values();
       if (ordinal < 0 || ordinal >= modes.length) return;
-      player.getPersistentData().putInt(PERSONA_MODE_TAG, ordinal);
+      HundredFacesHassanEntity.PersonaMode mode = modes[ordinal] == HundredFacesHassanEntity.PersonaMode.THROWING
+         ? HundredFacesHassanEntity.PersonaMode.THROWING : HundredFacesHassanEntity.PersonaMode.ASSASSINATION;
+      player.getPersistentData().putInt(PERSONA_MODE_TAG, mode.ordinal());
       if (player.level() instanceof ServerLevel level) {
          for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), true)) {
-            persona.setPersonaMode(modes[ordinal]);
+            persona.setPersonaMode(mode);
          }
       }
    }
@@ -865,9 +859,24 @@ public final class ServantCardHundredFacesHassanSkills {
    private static void setPersonaCommand(HundredFacesHassanPersonaEntity persona, int command, boolean personal) {
       persona.getPersistentData().putInt(COMMAND_TAG, sanitizeMovementCommand(command));
       persona.getPersistentData().putBoolean(PERSONAL_COMMAND_TAG, personal);
-      if (command == COMMAND_HOLD) {
+      if (command == COMMAND_SCATTER && persona.level() instanceof ServerLevel level) {
+         ServerPlayer owner = persona.getOwnerPlayer(level);
+         if (owner != null) {
+            Vec3 away = persona.position().subtract(owner.position()).multiply(1.0, 0.0, 1.0);
+            if (away.lengthSqr() < 1.0E-4) {
+               double angle = (persona.getId() & 15) * Math.PI / 8.0;
+               away = new Vec3(Math.cos(angle), 0.0, Math.sin(angle));
+            }
+            Vec3 destination = persona.position().add(away.normalize().scale(8.0 + persona.getRandom().nextDouble() * 8.0));
+            persona.setScatterDestination(destination);
+         }
+      } else if (command == COMMAND_HOLD) {
          persona.getNavigation().stop();
          persona.setTarget(null);
+      } else {
+         persona.getPersistentData().remove("HundredFacesPersonaScatterX");
+         persona.getPersistentData().remove("HundredFacesPersonaScatterY");
+         persona.getPersistentData().remove("HundredFacesPersonaScatterZ");
       }
    }
 
@@ -909,7 +918,8 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    private static int sanitizeMovementCommand(int command) {
-      return command == COMMAND_HOLD || command == COMMAND_FOLLOW ? command : COMMAND_FREE;
+      return command == COMMAND_HOLD || command == COMMAND_FOLLOW || command == COMMAND_SCATTER
+         ? command : COMMAND_FREE;
    }
 
    private static HundredFacesHassanPersonaEntity findLookedAtOwnedPersona(ServerPlayer player, ServerLevel level) {

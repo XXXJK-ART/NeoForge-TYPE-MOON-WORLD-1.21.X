@@ -1,7 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.concealment;
 
 import java.util.List;
-import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
@@ -23,7 +23,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanRules;
-import org.joml.Vector3f;
 
 /** Shared server-side controller for servant concealment and visibility leakage. */
 public final class ServantConcealment {
@@ -33,9 +32,6 @@ public final class ServantConcealment {
    private static final String TAG_PREVIOUS_SILENCE = "TypeMoonConcealmentPreviousSilence";
    private static final String TAG_NEXT_PARTICLE_TICK = "TypeMoonConcealmentNextParticleTick";
    private static final String TAG_MANAGED_INVISIBLE = "TypeMoonConcealmentManagedInvisible";
-   private static final DustParticleOptions LEAK_PARTICLE = new DustParticleOptions(
-      new Vector3f(0.018F, 0.018F, 0.024F), 0.32F);
-
    private ServantConcealment() {
    }
 
@@ -186,7 +182,8 @@ public final class ServantConcealment {
 
       int count = entity.getRandom().nextIntBetweenInclusive(1, rank.maxParticles());
       double horizontalSpread = Math.max(0.16, entity.getBbWidth() * 0.32);
-      level.sendParticles(LEAK_PARTICLE,
+      // Use the same fixed-size renderer as Sasaki Kojiro; rank changes only the leak count and cadence.
+      level.sendParticles(ParticleTypes.SQUID_INK,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.52, entity.getZ(), count,
          horizontalSpread, Math.max(0.24, entity.getBbHeight() * 0.30), horizontalSpread, 0.004);
       scheduleNextLeak(entity, rank, now);

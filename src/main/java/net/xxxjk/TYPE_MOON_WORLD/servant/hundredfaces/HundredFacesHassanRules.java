@@ -18,6 +18,7 @@ public final class HundredFacesHassanRules {
    public static final int SHADOW_LUNGE_COOLDOWN_TICKS = 90;
    public static final int KNIFE_FEINT_COOLDOWN_TICKS = 75;
    public static final int REPOSITION_COOLDOWN_TICKS = 100;
+   public static final double PERSONA_DODGE_CHANCE_MULTIPLIER = 0.5;
 
    public static final float HUMANOID_BASE_WIDTH = 0.6F;
    public static final float HUMANOID_BASE_HEIGHT = 1.8F;
@@ -137,6 +138,14 @@ public final class HundredFacesHassanRules {
       int capacity = Math.max(0, MAX_PERSONAS - Math.max(0, splitCount));
       int mpLimited = (int)Math.floor(Math.max(0.0, currentMp) / MP_PER_PERSONA);
       return Math.max(0, Math.min(Math.max(0, requested), Math.min(capacity, mpLimited)));
+   }
+
+   public static boolean shouldGenerateDirk(boolean mainHandEmpty, boolean offHandEmpty) {
+      return mainHandEmpty && offHandEmpty;
+   }
+
+   public static double personaThrowMinimumRange(boolean throwingMode) {
+      return throwingMode ? 4.0 : 8.0;
    }
 
    private static double countRatio(int liveCount) {

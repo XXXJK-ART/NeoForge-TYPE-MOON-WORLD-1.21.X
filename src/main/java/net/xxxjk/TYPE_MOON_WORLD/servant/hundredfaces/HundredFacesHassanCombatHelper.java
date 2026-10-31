@@ -169,11 +169,7 @@ public final class HundredFacesHassanCombatHelper {
 
    public static boolean tryPersonaCombatSkill(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {
       if (target == null || !target.isAlive() || entity.isPerformingAction()) return false;
-      return switch (entity.getPersonaMode()) {
-         case THROWING -> tryPersonaThrowDirk(entity, target, distance, now);
-         case INDUCE -> tryPersonaInduce(entity, target, distance, now);
-         case ASSASSINATION, POISON, SCOUT, SUPPORT -> false;
-      };
+      return tryPersonaThrowDirk(entity, target, distance, now);
    }
 
    public static boolean isBehindTarget(LivingEntity attacker, LivingEntity target) {
@@ -481,28 +477,16 @@ public final class HundredFacesHassanCombatHelper {
    }
 
    private static boolean tryPersonaThrowDirk(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {
-      if (distance < 4.0 || distance > 18.0 || !entity.getSensing().hasLineOfSight(target)
+      double minimumRange = HundredFacesHassanRules.personaThrowMinimumRange(
+         entity.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.THROWING);
+      if (distance < minimumRange || distance > 18.0 || !entity.getSensing().hasLineOfSight(target)
          || !hasUsableDirks(entity, 1)
-         || !personaActionReady(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.MP_DIRK_THROW)) return false;
+         || now < entity.getPersistentData().getLong(LAST_PERSONA_DIRK_TICK)) return false;
       consumeDirks(entity, 1);
-      commitPersonaAction(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.DIRK_COOLDOWN_TICKS,
-         HundredFacesHassanRules.MP_DIRK_THROW);
+      entity.getPersistentData().putLong(LAST_PERSONA_DIRK_TICK, now + HundredFacesHassanRules.DIRK_COOLDOWN_TICKS);
       entity.revealForCombat(HundredFacesHassanRules.PERSONA_DIRK_EXPOSURE_TICKS);
       entity.triggerDirkThrowAnimation();
       spawnDirkProjectile(entity, target, (float)entity.getAttributeValue(Attributes.ATTACK_DAMAGE), 1.75F);
-      return true;
-   }
-
-   private static boolean tryPersonaInduce(HundredFacesHassanPersonaEntity entity, LivingEntity target, double distance, long now) {
-      if (distance < 2.5 || distance > 9.0 || !entity.getSensing().hasLineOfSight(target)
-         || !hasUsableDirks(entity, 1)
-         || !personaActionReady(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.MP_KNIFE_FEINT)) return false;
-      consumeDirks(entity, 1);
-      commitPersonaAction(entity, LAST_PERSONA_DIRK_TICK, now, HundredFacesHassanRules.KNIFE_FEINT_COOLDOWN_TICKS,
-         HundredFacesHassanRules.MP_KNIFE_FEINT);
-      entity.revealForCombat(HundredFacesHassanRules.PERSONA_DIRK_EXPOSURE_TICKS);
-      entity.triggerDirkThrowAnimation();
-      spawnDirkProjectile(entity, target, 10.0F, 2.2F, 35, 35);
       return true;
    }
 
@@ -600,6 +584,7 @@ public final class HundredFacesHassanCombatHelper {
       if (candidate == null || candidate == entity || !candidate.isAlive()
          || candidate instanceof HundredFacesHassanPersonaEntity
          || EntityUtils.isImmunePlayerTarget(candidate)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper.refusesToHarm(entity, candidate)
          || entity.isAlliedTo(candidate) || candidate.isAlliedTo(entity)
          || ServantMasterTargeting.isContractMaster(entity, candidate)) return false;
       if (candidate instanceof Player) return true;
@@ -650,16 +635,6 @@ public final class HundredFacesHassanCombatHelper {
          if (away.lengthSqr() > 1.0E-4) entity.getNavigation().moveTo(
             entity.getX() + away.normalize().x * 12.0, entity.getY(), entity.getZ() + away.normalize().z * 12.0, 1.25);
       }
-   }
-
-   private static boolean personaActionReady(ServantEntity entity, String key, long now, double manaCost) {
-      CompoundTag data = entity.getPersistentData();
-      return entity.getCurrentMp() >= manaCost && now >= data.getLong(key);
-   }
-
-   private static void commitPersonaAction(ServantEntity entity, String key, long now, int cooldown, double manaCost) {
-      entity.getPersistentData().putLong(key, now + cooldown);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - manaCost));
    }
 
    private static void spawnDirkProjectile(ServantEntity entity, LivingEntity target, float damage, float velocity) {
