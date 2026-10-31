@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public class CyanWindFieldEntity extends Entity {
    private static final EntityDataAccessor<Float> RADIUS = SynchedEntityData.defineId(CyanWindFieldEntity.class, EntityDataSerializers.FLOAT);
@@ -181,9 +182,11 @@ public class CyanWindFieldEntity extends Entity {
                if (!(dx * dx + dz * dz > currentRadius * currentRadius)) {
                   entity.fallDistance = 0.0F;
                   if (entity != ownerEntity) {
+                     if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(entity,
+                        MagecraftDamageSource.resolveComplexity("cyan_wind"))) continue;
                      if (tornado) {
                         if (this.tickCount % 10 == 0) {
-                           entity.hurt(this.damageSources().magic(), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.5F));
+                           entity.hurt(MagecraftDamageSource.of(this.damageSources().magic(), "cyan_wind", ownerEntity), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.5F));
                         }
 
                         double distSqr = dx * dx + dz * dz;
@@ -207,7 +210,7 @@ public class CyanWindFieldEntity extends Entity {
                         entity.hurtMarked = true;
                      } else {
                         if (this.tickCount % 10 == 0) {
-                           entity.hurt(this.damageSources().magic(), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.0F));
+                           entity.hurt(MagecraftDamageSource.of(this.damageSources().magic(), "cyan_wind", ownerEntity), MercurySwordMagicAmplifier.amplifyDamage(ownerEntity, 1.0F));
                         }
 
                         double centerRadius = currentRadius * 0.5;

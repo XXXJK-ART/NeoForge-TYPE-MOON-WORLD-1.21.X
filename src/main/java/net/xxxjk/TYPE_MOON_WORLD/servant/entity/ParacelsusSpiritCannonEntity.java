@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import java.util.UUID;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -316,15 +318,17 @@ public class ParacelsusSpiritCannonEntity extends Entity implements GeoEntity {
       if (owner instanceof ParacelsusEntity || isParacelsusCardOwner(owner)) {
          damage = ParacelsusBalanceRules.reduceDamage(damage * 0.5F);
       }
-      target.hurt(owner.damageSources().magic(), damage);
+      target.hurt(MagecraftDamageSource.of(owner.damageSources().magic(), "paracelsus_elemental_spirit", MagicComplexity.TWO_VERSE, owner), damage);
       target.invulnerableTime = 0;
-      if (element == 0) {
+      boolean resisted = net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(target, MagicComplexity.TWO_VERSE);
+      if (!resisted && element == 0) {
          ParacelsusBalanceRules.applyFire(target, 70);
-      } else if (element == 1) {
-         target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true, true));
-      } else if (element == 2) {
+      } else if (!resisted && element == 1) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects.add(target,
+            new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true, true), MagicComplexity.TWO_VERSE);
+      } else if (!resisted && element == 2) {
          target.push(0.0, 0.24, 0.0);
-      } else if (element == 3) {
+      } else if (!resisted && element == 3) {
          Vec3 push = target.position().subtract(this.position()).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {
             push = push.normalize().scale(0.55);

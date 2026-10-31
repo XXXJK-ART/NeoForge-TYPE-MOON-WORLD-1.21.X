@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.LinkedList;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
@@ -169,22 +172,22 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
                      damage = MercurySwordMagicAmplifier.amplifyDamage(owner, damage);
                   }
 
-                  target.hurt(this.damageSources().magic(), damage);
+                  target.hurt(MagecraftDamageSource.of(this.damageSources().indirectMagic(this, this.getOwner()), "jewel_machine_gun", this.getOwner() instanceof LivingEntity owner ? owner : null), damage);
                   livingTarget.invulnerableTime = 0;
                   if (this.level().random.nextFloat() < 0.3F) {
                      int effectId = this.level().random.nextInt(4);
                      switch (effectId) {
                         case 0:
-                           livingTarget.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1));
+                           MagecraftEffects.add(livingTarget, new MobEffectInstance(MobEffects.WEAKNESS, 100, 1), "jewel_machine_gun");
                            break;
                         case 1:
-                           livingTarget.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1));
+                           MagecraftEffects.add(livingTarget, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1), "jewel_machine_gun");
                            break;
                         case 2:
-                           livingTarget.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+                           MagecraftEffects.add(livingTarget, new MobEffectInstance(MobEffects.POISON, 100, 0), "jewel_machine_gun");
                            break;
                         case 3:
-                           livingTarget.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 0));
+                           MagecraftEffects.add(livingTarget, new MobEffectInstance(MobEffects.WITHER, 100, 0), "jewel_machine_gun");
                      }
                   }
                }
@@ -426,7 +429,11 @@ public class RubyProjectileEntity extends ThrowableItemProjectile {
          ownerFireTicks = livingOwner.getRemainingFireTicks();
       }
 
-      this.level().explode(this, this.getX(), this.getY(), this.getZ(), radius, fire, interaction);
+      var customData = this.getItem().get(DataComponents.CUSTOM_DATA);
+      String magicId = customData != null && customData.copyTag().getBoolean("IsRandomMode") ? "jewel_random_shoot" : "ruby_throw";
+      var source = MagecraftDamageSource.of(net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this),
+         magicId, owner instanceof LivingEntity caster ? caster : null);
+      this.level().explode(this, source, null, this.position(), radius, fire, interaction);
       if (owner instanceof LivingEntity livingOwner && ownerVelocity != null) {
          livingOwner.setDeltaMovement(ownerVelocity);
          livingOwner.hurtMarked = true;

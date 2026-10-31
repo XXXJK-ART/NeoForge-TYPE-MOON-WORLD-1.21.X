@@ -1,5 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -649,7 +653,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.25, center.z, 18, 0.45, 0.7, 0.45, 0.02);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 12, 0.3, 0.55, 0.3, 0.03);
       fractureTerrain(level, entity, center, 2.2, 4.8, 55.0F, 34);
-      target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
+      target.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
       target.invulnerableTime = 0;
       level.playSound(null, BlockPos.containing(center), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 0.9F, 1.2F);
       queueStaffClear(entity, 14);
@@ -685,7 +689,7 @@ public final class MedeaCombatHelper {
          level.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), center.x, center.y + 0.3, center.z, 18, 0.22, 0.35, 0.22, 0.04);
          level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.45, center.z, 1, 0.0, 0.0, 0.0, 0.0);
          victim.invulnerableTime = 0;
-         victim.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
+         victim.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 35.0F));
          victim.invulnerableTime = 0;
          fractureTerrain(level, entity, center, 1.9, 5.0, 60.0F, 24);
          spawnLightningBolts(level, center, 1);
@@ -931,9 +935,9 @@ public final class MedeaCombatHelper {
       spawnMagicCircle(level, anchor, direction, 0.85F);
       level.sendParticles(ParticleTypes.ENCHANT, anchor.x, anchor.y, anchor.z, 18, 0.45, 0.65, 0.45, 0.02);
       level.sendParticles(ParticleTypes.END_ROD, anchor.x, anchor.y + 0.3, anchor.z, 12, 0.35, 0.5, 0.35, 0.03);
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 0, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, true));
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 60, 0, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.GLOWING, 40, 0, false, false, true), MagicComplexity.TWO_VERSE);
 
       TYPE_MOON_WORLD.queueServerWork(10, () -> {
          if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive() || !target.isAlive()) {
@@ -944,10 +948,10 @@ public final class MedeaCombatHelper {
          boolean trapped = current.distanceToSqr(anchor) <= 2.75 * 2.75;
          float damage = MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, trapped ? 24.0F : 15.0F);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().magic(), damage);
+         target.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), damage);
          target.invulnerableTime = 0;
          if (trapped) {
-            target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 12, 0, false, true, true));
+            MagecraftEffects.add(target, new MobEffectInstance(MobEffects.LEVITATION, 12, 0, false, true, true), MagicComplexity.TWO_VERSE);
          }
          serverLevel.sendParticles(ModParticles.ELEMENTAL_LIGHTNING.get(), current.x, current.y, current.z, 16, 0.3, 0.55, 0.3, 0.03);
          serverLevel.sendParticles(CIRCLE_ACCENT, current.x, current.y + 0.2, current.z, 8, 0.18, 0.25, 0.18, 0.0);
@@ -1065,18 +1069,20 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.ITEM_SNOWBALL, anchor.x, anchor.y + 0.25, anchor.z, 20, 0.38, 0.55, 0.38, 0.01);
       level.sendParticles(CIRCLE_PRIMARY, anchor.x, anchor.y + 0.15, anchor.z, 10, 0.18, 0.18, 0.18, 0.0);
       fractureTerrain(level, entity, anchor, 1.75, 1.9, 38.0F, 22);
-      target.setTicksFrozen(Math.max(target.getTicksFrozen(), 160));
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false, true));
-      target.setDeltaMovement(target.getDeltaMovement().scale(0.25));
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(target, MagicComplexity.TWO_VERSE)) {
+         target.setTicksFrozen(Math.max(target.getTicksFrozen(), 160));
+         target.setDeltaMovement(target.getDeltaMovement().scale(0.25));
+      }
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false, true), MagicComplexity.TWO_VERSE);
       TYPE_MOON_WORLD.queueServerWork(10, () -> {
          if (!(entity.level() instanceof ServerLevel serverLevel) || !entity.isAlive() || !target.isAlive()) {
             return;
          }
          Vec3 current = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 14.0F));
+         target.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 14.0F));
          target.invulnerableTime = 0;
          serverLevel.sendParticles(ParticleTypes.SNOWFLAKE, current.x, current.y, current.z, 18, 0.28, 0.4, 0.28, 0.02);
       });
@@ -1109,9 +1115,11 @@ public final class MedeaCombatHelper {
          } else {
             push = push.normalize();
          }
-         living.push(push.x * 1.4, 0.55, push.z * 1.4);
-         living.hurt(entity.damageSources().magic(), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 13.0F));
-         living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 50, 0, false, true, true));
+         if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) {
+            living.push(push.x * 1.4, 0.55, push.z * 1.4);
+         }
+         living.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 13.0F));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.WEAKNESS, 50, 0, false, true, true), MagicComplexity.TWO_VERSE);
          living.hurtMarked = true;
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.05F, 0.8F);

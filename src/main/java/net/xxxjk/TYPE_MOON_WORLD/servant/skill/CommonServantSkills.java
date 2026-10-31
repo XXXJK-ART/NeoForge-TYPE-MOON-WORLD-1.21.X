@@ -13,6 +13,7 @@ public final class CommonServantSkills {
 
    public static void registerBuiltin(ServantSkillRegistry registry) {
       registry.register("magic_resistance_d", CommonServantSkills::executeMagicResistanceD, "typemoonworld_core");
+      registry.register("magic_resistance_e", CommonServantSkills::executeMagicResistanceE, "typemoonworld_core");
       registry.register("magic_resistance_a", CommonServantSkills::executeMagicResistanceA, "typemoonworld_core");
       registry.register("magic_resistance_b", CommonServantSkills::executeMagicResistanceB, "typemoonworld_core");
       registry.register("magic_resistance_c", CommonServantSkills::executeMagicResistanceC, "typemoonworld_core");
@@ -78,23 +79,27 @@ public final class CommonServantSkills {
    }
 
    private static ServantExecutionResult executeMagicResistanceD(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.D, 0.10F, 0.0F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.D, 0.12F, 0.15F);
+   }
+
+   private static ServantExecutionResult executeMagicResistanceE(ServantExecutionContext context) {
+      return applyMagicResistance(context.caster(), MagicResistanceRank.E, 0.06F, 0.06F);
    }
 
    private static ServantExecutionResult executeMagicResistanceA(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.A, 0.35F, 0.25F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.A, 0.45F, 0.75F);
    }
 
    private static ServantExecutionResult executeMagicResistanceB(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.B, 0.25F, 0.175F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.B, 0.35F, 0.55F);
    }
 
    private static ServantExecutionResult executeMagicResistanceC(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.15F, 0.10F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.22F, 0.35F);
    }
 
    private static ServantExecutionResult executeMagicResistanceCArash(ServantExecutionContext context) {
-      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.20F, 0.10F);
+      return applyMagicResistance(context.caster(), MagicResistanceRank.C, 0.20F, 0.35F);
    }
 
    private static ServantExecutionResult executeStoutExArash(ServantExecutionContext context) {

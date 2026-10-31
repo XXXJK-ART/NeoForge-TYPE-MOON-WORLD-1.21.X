@@ -184,7 +184,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                if (e instanceof LivingEntity && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
                   float totalDamage = this.getExplosionPower() * 10.0F;
                   e.invulnerableTime = 0;
-                  float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
+                  float finalDamage = totalDamage;
                   finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
                   e.hurt(explosionSource, finalDamage);
                   this.damagedEntities.add(e.getUUID());
@@ -216,7 +216,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                   if (dist <= damageRadius * damageRadius) {
                      float totalDamage = this.getExplosionPower() * 10.0F;
                      e.invulnerableTime = 0;
-                     float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance((LivingEntity)e, totalDamage);
+                     float finalDamage = totalDamage;
                      finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack((LivingEntity)e, finalDamage);
                      e.hurt(explosionSource, finalDamage);
                      this.damagedEntities.add(e.getUUID());

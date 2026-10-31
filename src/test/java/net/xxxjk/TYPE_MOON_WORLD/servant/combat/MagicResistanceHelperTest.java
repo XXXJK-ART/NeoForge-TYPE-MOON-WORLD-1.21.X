@@ -34,15 +34,13 @@ class MagicResistanceHelperTest {
 
    @Test
    void complexityCancellationMatrixMatchesDesign() {
-      assertTrue(!MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.E, MagicComplexity.SIMPLE_ACTION));
-      assertTrue(MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.D, MagicComplexity.SIMPLE_ACTION));
-      assertTrue(!MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.D, MagicComplexity.ONE_VERSE));
-      assertTrue(MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.C, MagicComplexity.ONE_VERSE));
-      assertTrue(!MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.C, MagicComplexity.TWO_VERSE));
-      assertTrue(MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.B, MagicComplexity.TWO_VERSE));
-      assertTrue(MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.A, MagicComplexity.THREE_VERSE));
-      assertTrue(!MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.A, MagicComplexity.HIGH_THAUMATURGY));
-      assertTrue(MagicResistanceHelper.cancelsOrdinaryMagic(MagicResistanceRank.EX, MagicComplexity.HIGH_THAUMATURGY));
+      for (MagicResistanceRank rank : MagicResistanceRank.values()) {
+         for (MagicComplexity complexity : MagicComplexity.values()) {
+            boolean immune = rank != MagicResistanceRank.NONE && complexity.level() < rank.level();
+            assertEquals(immune, MagicResistanceHelper.cancelsOrdinaryMagic(rank, complexity), rank + "/" + complexity);
+            if (immune) assertEquals(0, MagicResistanceHelper.harmfulMagicEffectDurationCap(rank, complexity));
+         }
+      }
    }
 
    @Test

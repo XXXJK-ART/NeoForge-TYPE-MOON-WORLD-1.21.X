@@ -367,6 +367,14 @@ public final class CombatModule implements ServantAiModule {
          && ArtoriaPendragonCombatHelper.tick(artoria, context)) {
          return;
       }
+      if (entity instanceof CursedArmHassanEntity
+         && (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(entity.getMainHandItem())
+         || net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(entity.getOffhandItem()))) return;
+      if (entity instanceof CursedArmHassanEntity cursedArm
+         && !ServantCombatSystem.skillsSuppressed(entity)) {
+         CursedArmHassanCombatHelper.tick(cursedArm, context);
+         return;
+      }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.ordinary(entity, sharedTarget)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.skillDecisionAllowed(entity)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.nativeNpActive(entity)) {
@@ -582,10 +590,6 @@ public final class CombatModule implements ServantAiModule {
       }
       if (entity instanceof MedusaEntity medusa) {
          MedusaCombatHelper.tick(medusa, context);
-         return;
-      }
-      if (entity instanceof CursedArmHassanEntity cursedArm) {
-         CursedArmHassanCombatHelper.tick(cursedArm, context);
          return;
       }
       if (entity instanceof GawainEntity gawain && GawainCombatHelper.tick(gawain, context)) {

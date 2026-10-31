@@ -254,7 +254,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
          }
          float damage = (float)Math.max(8.0, this.miniBrokenPhantasmDamage * (1.0 - distance / (radius * 1.45)));
          living.invulnerableTime = 0;
-         living.hurt(this.damageSources().explosion(this, owner), MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage));
+         living.hurt(this.damageSources().explosion(this, owner), damage);
          living.invulnerableTime = 0;
          net.minecraft.world.phys.Vec3 push = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {

@@ -1,5 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.skill;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -657,6 +661,7 @@ public final class ParacelsusServantSkills {
          level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y + 1.5, pos.z, 54, 0.38, 1.45, 0.38, 0.08);
          level.sendParticles(ParticleTypes.LAVA, pos.x, pos.y + 0.35, pos.z, 18, 0.25, 0.16, 0.25, 0.0);
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(2.2, 3.4, 2.2), e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
             applyElementalMagicHit(entity, living, 80.0F, 100, false, false, true, level);
             scheduleMagicBurn(entity, living, level, 15.0F, 5);
          }
@@ -671,14 +676,16 @@ public final class ParacelsusServantSkills {
       breakElementalTerrain(level, entity, center, 7.5, 4, 38, 0.58F, 0.42F);
       AABB prison = new AABB(center, center).inflate(3.2, 3.2, 3.2);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, prison, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 30.0F, 0, true, false, false, level);
-         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 2, false, true, true));
-         living.addEffect(new MobEffectInstance(MobEffects.JUMP, 120, 128, false, true, true));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 2, false, true, true), MagicComplexity.TWO_VERSE);
+         MagecraftEffects.addHarmful(living, new MobEffectInstance(MobEffects.JUMP, 120, 128, false, true, true), MagicComplexity.TWO_VERSE);
          Vec3 pull = center.subtract(living.position()).multiply(0.13, 0.04, 0.13);
          living.setDeltaMovement(living.getDeltaMovement().scale(0.35).add(pull.x, pull.y, pull.z));
          living.hurtMarked = true;
       }
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(7.0, 3.5, 7.0), e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          Vec3 away = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() > 1.0E-4) {
             away = away.normalize();
@@ -700,6 +707,7 @@ public final class ParacelsusServantSkills {
          Vec3 pos = center.add(Math.cos(angle) * distance, 0.1, Math.sin(angle) * distance);
          level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()), pos.x, pos.y + 0.9, pos.z, 34, 0.6, 0.9, 0.6, 0.06);
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(1.8, 3.0, 1.8), e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
             applyElementalMagicHit(entity, living, 60.0F, 0, false, true, false, level);
             living.push(0.0, 0.72, 0.0);
          }
@@ -708,12 +716,14 @@ public final class ParacelsusServantSkills {
          Vec3 impact = center.add((entity.getRandom().nextDouble() - 0.5) * 14.0, 0.4, (entity.getRandom().nextDouble() - 0.5) * 14.0);
          level.sendParticles(ParticleTypes.POOF, impact.x, impact.y, impact.z, 20, 0.55, 0.22, 0.55, 0.08);
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(impact, impact).inflate(2.5, 2.8, 2.5), e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
             applyElementalMagicHit(entity, living, 40.0F, 0, false, false, false, level);
          }
       }
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(8.0, 3.0, 8.0), e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 80.0F, 0, true, false, false, level);
-         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 9, false, true, true));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 9, false, true, true), MagicComplexity.TWO_VERSE);
       }
       level.playSound(null, target.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.25F, 0.62F);
    }
@@ -738,6 +748,7 @@ public final class ParacelsusServantSkills {
             level.sendParticles(ParticleTypes.SWEEP_ATTACK, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
             AABB hit = new AABB(p, p).inflate(1.7, 1.5, 1.7);
             for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, hit, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
                if (damaged.add(living.getId())) {
                   applyElementalMagicHit(entity, living, 70.0F, 0, true, false, false, level);
                   Vec3 pull = p.subtract(living.position()).multiply(0.08, 0.0, 0.08);
@@ -754,6 +765,7 @@ public final class ParacelsusServantSkills {
    private static void castFireBurst(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(6.5, 4.5, 6.5);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 10.0F, 1, true, false, false, level);
       }
       breakElementalTerrain(level, entity, center, 8.5, 5, 52, 0.82F, 0.70F);
@@ -766,6 +778,7 @@ public final class ParacelsusServantSkills {
    private static void castFireRing(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(8.0, 3.5, 8.0);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          double distance = living.position().multiply(1.0, 0.0, 1.0).distanceTo(center.multiply(1.0, 0.0, 1.0));
          if (distance >= 2.4 && distance <= 8.0) {
             applyElementalMagicHit(entity, living, 7.0F, 120, false, false, true, level);
@@ -782,8 +795,9 @@ public final class ParacelsusServantSkills {
    private static void castWaterBurst(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(6.5, 4.5, 6.5);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 8.0F, 1, false, true, false, level);
-         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true), MagicComplexity.TWO_VERSE);
       }
       breakElementalTerrain(level, entity, center, 7.0, 4, 42, 0.68F, 0.58F);
       level.sendParticles(ParticleTypes.SPLASH, center.x, center.y + 0.25, center.z, 72, 2.0, 0.55, 2.0, 0.08);
@@ -795,6 +809,7 @@ public final class ParacelsusServantSkills {
    private static void castWaterGeyser(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(5.5, 6.5, 5.5);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 6.5F, 0, true, true, false, level);
          living.clearFire();
          living.push(0.0, 0.65, 0.0);
@@ -808,6 +823,7 @@ public final class ParacelsusServantSkills {
    private static void castEarthBurst(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(6.5, 4.5, 6.5);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 9.0F, 1, false, false, true, level);
          living.push(0.0, 0.15, 0.0);
       }
@@ -821,8 +837,9 @@ public final class ParacelsusServantSkills {
    private static void castEarthPrison(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(7.0, 4.0, 7.0);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 7.5F, 0, true, true, false, level);
-         living.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 100, 1, false, true, true));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 100, 1, false, true, true), MagicComplexity.TWO_VERSE);
       }
       for (int i = 0; i < 10; i++) {
          double angle = Math.PI * 2.0 * i / 10.0;
@@ -836,6 +853,7 @@ public final class ParacelsusServantSkills {
    private static void castWindBurst(ServerLevel level, ParacelsusEntity entity, LivingEntity target, Vec3 center, long now) {
       AABB area = new AABB(center, center).inflate(7.0, 4.5, 7.0);
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          applyElementalMagicHit(entity, living, 7.0F, 1, false, false, false, level);
          Vec3 dir = living.position().subtract(center);
          Vec3 horizontal = new Vec3(dir.x, 0.0, dir.z);
@@ -863,6 +881,7 @@ public final class ParacelsusServantSkills {
       Vec3 side = new Vec3(-forward.z, 0.0, forward.x).normalize();
       AABB area = entity.getBoundingBox().inflate(18.0).expandTowards(forward.scale(18.0));
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> isHostileElementTarget(entity, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          Vec3 rel = living.position().subtract(entity.position());
          double along = rel.dot(forward);
          double across = Math.abs(rel.dot(side));
@@ -927,12 +946,13 @@ public final class ParacelsusServantSkills {
          return;
       }
       living.invulnerableTime = 0;
-      living.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
+      living.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, entity), paracelsusSkillDamage(damage));
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) return;
       if (fireTicks > 0) {
          ParacelsusBalanceRules.applyFire(living, fireTicks);
       }
       if (slow) {
-         living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true));
+         MagecraftEffects.add(living, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1, false, true, true), MagicComplexity.TWO_VERSE);
       }
       if (knockUp) {
          living.push(0.0, 0.3, 0.0);
@@ -958,7 +978,7 @@ public final class ParacelsusServantSkills {
             if (entity.isAlive() && ParacelsusBalanceRules.isBurnSequenceActive(target, level, burnToken)
                && target.getRemainingFireTicks() > 0) {
                target.invulnerableTime = 0;
-               target.hurt(entity.damageSources().magic(), paracelsusSkillDamage(damage));
+               target.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, entity), paracelsusSkillDamage(damage));
             }
          });
       }

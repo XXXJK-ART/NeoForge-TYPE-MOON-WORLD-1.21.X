@@ -19,6 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 public class MedeaBeamEffectEntity extends Entity {
@@ -132,7 +134,9 @@ public class MedeaBeamEffectEntity extends Entity {
       }
 
       LivingEntity owner = this.ownerUuid != null && serverLevel.getEntity(this.ownerUuid) instanceof LivingEntity living ? living : null;
-      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource source = MagecraftDamageSource.of(
+         owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic(),
+         "medea_magic", MagicComplexity.HIGH_THAUMATURGY, owner);
       Set<Integer> hitIds = new HashSet<>();
       Vec3 start = this.position();
       Vec3 end = this.getEndPos();

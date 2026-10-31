@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.zagan;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.ZaganMagic;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
 import java.util.ArrayDeque;
@@ -231,7 +232,7 @@ public final class ZaganService {
     private static void pulse(ServerPlayer caster, ServerLevel level, CastState state, long now) {
         List<LivingEntity> targets = findTargets(caster, level, state.anchor);
         Set<UUID> current = new HashSet<>();
-        DamageSource source = level.damageSources().source(DamageTypes.MAGIC, caster);
+        DamageSource source = MagecraftDamageSource.of(level.damageSources().source(DamageTypes.MAGIC, caster), "zagan", caster);
         for (LivingEntity target : targets) {
             current.add(target.getUUID());
             state.controls.computeIfAbsent(target.getUUID(), ignored ->

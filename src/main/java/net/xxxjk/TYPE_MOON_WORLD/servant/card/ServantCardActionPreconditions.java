@@ -11,7 +11,7 @@ public final class ServantCardActionPreconditions {
             "shadow_hassan_ambush", "shadow_hassan_bind", "shadow_hassan_flurry", "shadow_hassan_slash", "shadow_hassan_meditative_sensitivity",
             "fanatic_heartbeat", "fanatic_computer",
             "okita_ichimonji", "okita_kaifuu", "okita_stance_break", "okita_mumyoudan_zuki",
-            "shadow_step", "shadow_lunge", "knife_feint", "elbow_strike", "trip_sweep",
+            "shadow_step", "shadow_lunge", "knife_feint",
             "sasaki_tsubame_gaeshi" -> true;
          default -> false;
       };

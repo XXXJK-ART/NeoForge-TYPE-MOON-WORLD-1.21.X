@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class ManaBurstService {
    public static final String MAGIC_ID = "mana_burst";
@@ -124,7 +125,7 @@ public final class ManaBurstService {
             double side = rel.subtract(look.scale(along)).length();
             if (side <= 1.1) {
                target.invulnerableTime = 0;
-               target.hurt(player.damageSources().magic(), DIRECT_DAMAGE[level - 1]);
+               target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), MAGIC_ID, player), DIRECT_DAMAGE[level - 1]);
                target.invulnerableTime = 0;
                spawnDirectImpactFx(serverLevel, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), level);
             }

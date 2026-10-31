@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.rune;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -179,28 +182,28 @@ public final class RuneEffectDispatcher {
          switch (id) {
             case "fehu" -> player.heal(2.0F);
             case "uruz" -> player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 100, 0));
-            case "thurisaz" -> { target.hurt(player.damageSources().magic(), 20.0F); target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10)); }
-            case "ansuz" -> { target.hurt(player.damageSources().magic(), 15.0F); target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 20, 0)); }
+            case "thurisaz" -> { target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 20.0F); MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10), "rune_origin"); }
+            case "ansuz" -> { target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 15.0F); MagecraftEffects.add(target, new MobEffectInstance(MobEffects.CONFUSION, 20, 0), "rune_origin"); }
             case "raidho" -> player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 60, 1));
-            case "kenaz" -> { target.hurt(player.damageSources().magic(), 25.0F); target.igniteForSeconds(5.0F); }
+            case "kenaz" -> { target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 25.0F); target.igniteForSeconds(5.0F); }
             case "gebo" -> target.heal(10.0F);
             case "wunjo" -> player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 100, 0));
-            case "hagalaz" -> { target.hurt(player.damageSources().magic(), 20.0F); target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1)); }
-            case "nauthiz" -> { target.hurt(player.damageSources().magic(), 20.0F); target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 0)); }
-            case "isa" -> { if (player.getRandom().nextFloat() < .30F) target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 10)); }
-            case "jera" -> { target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0)); target.hurt(player.damageSources().magic(), 15.0F); }
+            case "hagalaz" -> { target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 20.0F); MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1), "rune_origin"); }
+            case "nauthiz" -> { target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 20.0F); MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 100, 0), "rune_origin"); }
+            case "isa" -> { if (player.getRandom().nextFloat() < .30F) MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 10), "rune_origin"); }
+            case "jera" -> { MagecraftEffects.add(target, new MobEffectInstance(MobEffects.POISON, 100, 0), "rune_origin"); target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 15.0F); }
             case "eihwaz" -> { }
-            case "perthro" -> target.hurt(player.damageSources().magic(), 30.0F + player.getRandom().nextInt(31));
+            case "perthro" -> target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 30.0F + player.getRandom().nextInt(31));
             case "algiz" -> player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 100, 1));
             case "sowilo" -> target.removeAllEffects();
             case "tiwaz" -> { }
             case "berkano" -> target.heal(15.0F);
             case "ehwaz" -> { Vec3 p = target.position().subtract(target.getLookAngle().scale(1.5D)); player.teleportTo(p.x, p.y, p.z); }
-            case "mannaz" -> target.hurt(player.damageSources().magic(), 0.5F * Math.max(1.0F, player.getAttackStrengthScale(0.0F) * 10.0F));
+            case "mannaz" -> target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 0.5F * Math.max(1.0F, player.getAttackStrengthScale(0.0F) * 10.0F));
             case "laguz" -> { Vec3 push = target.position().subtract(player.position()).normalize(); target.setDeltaMovement(target.getDeltaMovement().add(push.scale(.7D))); }
-            case "ingwaz" -> target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10));
+            case "ingwaz" -> MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10), "rune_origin");
             case "dagaz" -> target.removeAllEffects();
-            case "othala" -> target.hurt(player.damageSources().magic(), 20.0F);
+            case "othala" -> target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "rune_origin", player), 20.0F);
             default -> { }
          }
       }
@@ -352,16 +355,16 @@ public final class RuneEffectDispatcher {
              int bolts = 1 + 2 * c.modifierCount("volley");
              for (int i = 0; i < bolts; i++) { lightning(c, p); area(c, p, 5, effectiveDamage(c, 50.0D), ModParticles.ELEMENTAL_LIGHTNING.get()); }
           }
-         case "mind_blast" -> { area(c, c.endpoint(20), 20, effectiveDamage(c, 30.0D), ParticleTypes.WITCH); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.CONFUSION, 40, 0)); }
+         case "mind_blast" -> { area(c, c.endpoint(20), 20, effectiveDamage(c, 30.0D), ParticleTypes.WITCH); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.CONFUSION, 40, 0), "rune_origin"); }
          case "teleport" -> teleport(c, 20);
          case "teleport_15" -> teleport(c, 15);
          case "fireball" -> directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_FIRE, 50, 1.5F, 5, 40);
          case "life_link" -> link(c, 8);
          case "inspire" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 300, 0)); c.emit(ParticleTypes.END_ROD, c.caster().position().add(0, 1, 0), 20); }
          case "ice_spike" -> area(c, c.endpoint(20), 5, effectiveDamage(c, 35.0D), ParticleTypes.SNOWFLAKE);
-         case "shadow_chain" -> { link(c, 8); c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3)); }
+         case "shadow_chain" -> { link(c, 8); MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3), "rune_origin"); }
          case "freeze_aura" -> freezeArea(c, c.caster().position(), 10, 60);
-         case "vine_bind" -> { link(c, 5); c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2)); }
+         case "vine_bind" -> { link(c, 5); MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2), "rune_origin"); }
          case "defense_barrier" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 9)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
          case "fate_dice" -> directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_NONE, 50, 1.0F, 0, 20 + c.caster().getRandom().nextInt(41));
          case "guardian_shield" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 7)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
@@ -381,11 +384,11 @@ public final class RuneEffectDispatcher {
             c.emit(ParticleTypes.ENCHANT, c.caster().position().add(0, 1, 0), 16);
          }
          case "storm" -> { Vec3 p = c.endpoint(20.0D); area(c, p, 5.0D, effectiveDamage(c, 35.0D), ParticleTypes.SNOWFLAKE); }
-         case "command" -> { area(c, c.endpoint(20.0D), 20.0D, effectiveDamage(c, 30.0D), ParticleTypes.WITCH); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.CONFUSION, 40, 0)); }
+         case "command" -> { area(c, c.endpoint(20.0D), 20.0D, effectiveDamage(c, 30.0D), ParticleTypes.WITCH); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.CONFUSION, 40, 0), "rune_origin"); }
          case "move" -> teleport(c, 20.0D);
          case "travel" -> teleport(c, 15.0D);
          case "ignite" -> directionalBullet(c, MagicBulletProjectileEntity.ELEMENT_FIRE, 50.0D, 1.5F, 5.0D, 40.0D);
-         case "bind" -> { link(c, 8.0D); c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3)); }
+         case "bind" -> { link(c, 8.0D); MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 3), "rune_origin"); }
          case "joy" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 300, 0)); c.emit(ParticleTypes.END_ROD, c.caster().position().add(0, 1, 0), 20); }
          case "need" -> { link(c, 8.0D); area(c, c.endpoint(8.0D), 8.0D, 0.0D, ParticleTypes.SQUID_INK); }
          case "freeze" -> freezeArea(c, c.caster().position(), 10.0D, 60);
@@ -498,7 +501,7 @@ public final class RuneEffectDispatcher {
       for (int i = 1; i <= (int)distance; i++) {
          Vec3 point = start.add(c.direction().scale(i));
          for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(1.0D), x -> x.isAlive() && x != c.caster())) {
-            e.hurt(c.caster().damageSources().magic(), (float)Math.max(1.0D, resolvedDamage));
+            e.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)Math.max(1.0D, resolvedDamage));
             e.setDeltaMovement(e.getDeltaMovement().add(c.direction().scale(.35D).add(0, .2D, 0)));
          }
          if ((i & 3) == 0) c.emit(ParticleTypes.SWEEP_ATTACK, point, 1);
@@ -529,7 +532,7 @@ public final class RuneEffectDispatcher {
    private static void freezeArea(RuneExecutionContext c, Vec3 center, double radius, int ticks) {
       c.emit(ParticleTypes.SNOWFLAKE, center, 24);
       for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius), x -> x.isAlive() && x != c.caster())) {
-         e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 10));
+         MagecraftEffects.add(e, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 10), "rune_origin");
          e.setDeltaMovement(Vec3.ZERO);
       }
    }
@@ -547,8 +550,8 @@ public final class RuneEffectDispatcher {
 
    private static void shareEffects(RuneExecutionContext c) {
       for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(c.caster().position(), c.caster().position()).inflate(10), x -> x.isAlive() && x != c.caster())) {
-         if (c.caster().hasEffect(MobEffects.DAMAGE_BOOST)) e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 300, 0));
-         if (c.caster().hasEffect(MobEffects.DAMAGE_RESISTANCE)) e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 0));
+         if (c.caster().hasEffect(MobEffects.DAMAGE_BOOST)) MagecraftEffects.add(e, new MobEffectInstance(MobEffects.DAMAGE_BOOST, 300, 0), "rune_origin");
+         if (c.caster().hasEffect(MobEffects.DAMAGE_RESISTANCE)) MagecraftEffects.add(e, new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 0), "rune_origin");
       }
       c.emit(ModParticles.EHWAZ_RUNE.get(), c.caster().position().add(0, 1, 0), 16);
    }
@@ -612,7 +615,7 @@ public final class RuneEffectDispatcher {
       double resolvedDamage = scaledRuneDamage(c, damage);
       for (int i = 1; i <= (int)length; i++) {
          Vec3 point = origin.add(c.direction().scale(i));
-         for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(0.75D), e -> e.isAlive() && e != c.caster())) entity.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
+         for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(0.75D), e -> e.isAlive() && e != c.caster())) entity.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
          if (c.particlesRemaining() > 0) c.emit(ParticleTypes.END_ROD, point, 1);
       }
    }
@@ -622,9 +625,9 @@ public final class RuneEffectDispatcher {
       if (particle != null) c.emit(particle, center, Math.min(32, (int)Math.ceil(radius)));
       double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
       for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius), e -> e.isAlive() && e != c.caster())) {
-         if (resolvedDamage > 0.0D) entity.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
+         if (resolvedDamage > 0.0D) entity.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
          else if (damage < 0.0D) entity.heal((float)-damage);
-         if (c.program().sequence().contains("isa")) entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4));
+         if (c.program().sequence().contains("isa")) MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4), "rune_origin");
       }
    }
 
@@ -633,39 +636,39 @@ public final class RuneEffectDispatcher {
       switch (s) {
          case "life_drain" -> { if (c.hasExplicitTarget()) c.caster().heal((float)Math.max(1.0D, c.damage() * .30D)); }
          case "strength_amplify" -> c.damage(c.damage() * 1.50D);
-         case "lightning_addon" -> { c.addDamage(30); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10)); }
-         case "mind_addon" -> { c.addDamage(15); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.CONFUSION, 40, 0)); }
+         case "lightning_addon" -> { c.addDamage(30); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10), "rune_origin"); }
+         case "mind_addon" -> { c.addDamage(15); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.CONFUSION, 40, 0), "rune_origin"); }
          case "haste" -> { c.addDamage(0); c.caster().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 40, 1)); }
          case "fire_addon" -> { c.addDamage(10); if (c.hasExplicitTarget()) c.target().igniteForSeconds(5); }
          case "connection" -> link(c, 5);
          case "light_addon" -> c.emit(ParticleTypes.END_ROD, c.target().position().add(0, 1, 0), 16);
-         case "frost_addon" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1)); }
-         case "shadow_addon" -> { c.addDamage(20); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 0)); }
-         case "stasis" -> { c.damage(c.damage() * 1.50D); if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1)); }
-         case "nature_addon" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0)); c.addDamage(15); }
+         case "frost_addon" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1), "rune_origin"); }
+         case "shadow_addon" -> { c.addDamage(20); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.WEAKNESS, 100, 0), "rune_origin"); }
+         case "stasis" -> { c.damage(c.damage() * 1.50D); if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1), "rune_origin"); }
+         case "nature_addon" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.POISON, 100, 0), "rune_origin"); c.addDamage(15); }
          case "protection_addon" -> c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0));
-         case "random_addon" -> { if (c.caster().getRandom().nextBoolean()) c.addDamage(20); else c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 1)); }
+         case "random_addon" -> { if (c.caster().getRandom().nextBoolean()) c.addDamage(20); else MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 1), "rune_origin"); }
          case "sanctuary_addon" -> c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0));
          case "sharpness" -> c.pierce(true);
          case "healing_addon" -> { if (c.hasExplicitTarget()) c.target().heal(20); else healArea(c, c.endpoint(8), 15, 20); }
          case "transfer" -> shareEffects(c);
          case "self_addon" -> c.addDamage(0);
          case "water_addon" -> c.addDamage(c.damage() * .20D);
-         case "earth_addon" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10)); c.addDamage(0); }
+         case "earth_addon" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 10), "rune_origin"); c.addDamage(0); }
          case "cleanse_addon" -> cleanse(c, 8, false);
          case "soul_addon" -> c.pierce(true);
          case "fire" -> { c.target().setRemainingFireTicks(Math.max(100, c.target().getRemainingFireTicks())); c.addDamage(10.0D); }
-         case "ice" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1)); }
+         case "ice" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1), "rune_origin"); }
          case "heal", "nature" -> c.target().heal(20.0F);
          case "barrier", "shield" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 12); }
          case "drain" -> { if (c.hasExplicitTarget()) c.caster().heal((float)Math.max(1.0D, c.damage() * .30D)); }
          case "light" -> c.emit(ParticleTypes.END_ROD, c.target().position().add(0, 1, 0), 20);
-         case "shadow" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 0)); }
+         case "shadow" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.WEAKNESS, 100, 0), "rune_origin"); }
          case "pierce" -> c.pierce(true);
          case "water" -> c.addDamage(Math.max(1.0D, c.damage() * .20D));
-         case "earth" -> { if (c.hasExplicitTarget()) { c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 4)); c.target().setDeltaMovement(c.target().getDeltaMovement().multiply(.2, 1, .2)); } }
+         case "earth" -> { if (c.hasExplicitTarget()) { MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 4), "rune_origin"); c.target().setDeltaMovement(c.target().getDeltaMovement().multiply(.2, 1, .2)); } }
          case "speed" -> c.emit(ModParticles.ELEMENTAL_FOAM.get(), c.origin(), 10);
-         case "mind" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.CONFUSION, 40, 0)); }
+         case "mind" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.CONFUSION, 40, 0), "rune_origin"); }
          case "energy", "impact" -> c.addDamage(30.0D);
          default -> { }
       }
@@ -737,7 +740,7 @@ public final class RuneEffectDispatcher {
          }
          case "wild" -> { area(c, c.target().position(), 8, 0, ParticleTypes.SWEEP_ATTACK); knockback(c, 8); }
          case "thunderstorm" -> { Vec3 p = c.hasExplicitTarget() ? c.target().position() : c.endpoint(30); scheduleAreaPulse(c, p, 8, 100, 20, 50, 0, ModParticles.ELEMENTAL_LIGHTNING.get()); }
-         case "revelation" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0)); }
+         case "revelation" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.GLOWING, 200, 0), "rune_origin"); }
          case "portal" -> {
             Vec3 a = c.caster().position();
             Vec3 b = c.endpoint(20.0D);
@@ -759,7 +762,7 @@ public final class RuneEffectDispatcher {
          case "unknown" -> { int roll = c.caster().getRandom().nextInt(3); if (roll == 0) cleanse(c, 8, true); else if (roll == 1) healArea(c, c.caster().position(), 8, 10); else area(c, c.target().position(), 8, 20, ParticleTypes.END_ROD); }
          case "bulwark" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 1)); area(c, c.caster().position(), 8, 0, ParticleTypes.END_ROD); }
          case "cleanse" -> cleanse(c, 10, true);
-         case "judgment" -> { if (c.target().getHealth() / c.target().getMaxHealth() < .30F) c.target().hurt(c.caster().damageSources().magic(), Float.MAX_VALUE); }
+         case "judgment" -> { if (c.target().getHealth() / c.target().getMaxHealth() < .30F) c.target().hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), Float.MAX_VALUE); }
          case "flourishing_field" -> scheduleAreaPulse(c, c.caster().position(), 8, 300, 20, 0, 10, ParticleTypes.HAPPY_VILLAGER);
          case "harmony" -> harmony(c, 10);
          case "fusion" -> { c.damage(c.damage() * 1.5D); }
@@ -770,7 +773,7 @@ public final class RuneEffectDispatcher {
          case "release" -> { }
          case "strike" -> { hit(c, 50.0D); knockback(c, 5.0D); }
          case "detonate" -> { hit(c, 50.0D); area(c, c.hasExplicitTarget() ? c.target().position() : c.endpoint(30), 8.0D, 50.0D, ModParticles.ELEMENTAL_LIGHTNING.get()); }
-         case "seal" -> c.target().addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 4));
+         case "seal" -> MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 4), "rune_origin");
          case "return" -> teleport(c, 20.0D);
          case "burn" -> { c.target().setRemainingFireTicks(Math.max(200, c.target().getRemainingFireTicks())); area(c, c.target().position(), 5, 0, ParticleTypes.FLAME); }
          case "transfer" -> shareEffects(c);
@@ -779,9 +782,9 @@ public final class RuneEffectDispatcher {
          case "sacrifice" -> { c.caster().hurt(c.caster().damageSources().magic(), 2.0F); hit(c, 10.0D); }
          case "endure", "protect" -> { c.caster().addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300, 1)); c.emit(ModParticles.RUNE_BARRIER.get(), c.caster().position().add(0, 1, 0), 20); }
          case "complete" -> area(c, c.endpoint(8), 8, 0, ParticleTypes.HAPPY_VILLAGER);
-         case "reveal" -> { if (c.hasExplicitTarget()) c.target().addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0)); }
+         case "reveal" -> { if (c.hasExplicitTarget()) MagecraftEffects.add(c.target(), new MobEffectInstance(MobEffects.GLOWING, 200, 0), "rune_origin"); }
          case "purify" -> cleanse(c, 10.0D, true);
-         case "execute" -> { if (c.target().getHealth() / c.target().getMaxHealth() < .30F) c.target().hurt(c.caster().damageSources().magic(), Float.MAX_VALUE); else hit(c, 50.0D); }
+         case "execute" -> { if (c.target().getHealth() / c.target().getMaxHealth() < .30F) c.target().hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), Float.MAX_VALUE); else hit(c, 50.0D); }
          case "renew" -> healArea(c, c.caster().position(), 8, 10);
          case "escape" -> teleport(c, 10.0D);
          case "awaken" -> { spawnAncestor(c); }
@@ -910,7 +913,7 @@ public final class RuneEffectDispatcher {
              double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
              for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(radius),
                 entity -> entity.isAlive() && isFriendly(owner, entity))) {
-                if (resolvedDamage > 0) entity.hurt(owner.damageSources().magic(), (float)resolvedDamage);
+                if (resolvedDamage > 0) entity.hurt(MagecraftDamageSource.of(owner.damageSources().magic(), "rune_origin", owner), (float)resolvedDamage);
                 if (resolvedDamage > 0 && entity == owner) continue;
                if (healing > 0) entity.heal((float)healing);
             }
@@ -920,7 +923,7 @@ public final class RuneEffectDispatcher {
 
    private static void slowArea(RuneExecutionContext c, Vec3 center, double radius, int ticks) {
       for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
-         entity -> entity.isAlive() && entity != c.caster())) entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 1));
+         entity -> entity.isAlive() && entity != c.caster())) MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, ticks, 1), "rune_origin");
    }
 
    private static boolean isFriendly(LivingEntity owner, LivingEntity entity) {
@@ -943,15 +946,15 @@ public final class RuneEffectDispatcher {
       for (int i = 0; i < c.repeats(); i++) {
          if (c.radius() > 0.0D) {
             var center = c.hasExplicitTarget() ? c.target().position() : c.endpoint(Math.min(50.0D, c.program().releaseConfig().contains("range") ? c.program().releaseConfig().getDouble("range") : 12.0D));
-            for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(c.radius()), x -> x.isAlive() && x != c.caster())) e.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
+            for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(c.radius()), x -> x.isAlive() && x != c.caster())) e.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
          } else if (c.hasExplicitTarget()) {
-            c.target().hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
+            c.target().hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
          } else {
             // A standalone trigger still has a directional impact point when no entity is under the crosshair.
             Vec3 point = c.endpoint(12.0D);
             for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class,
                new AABB(point, point).inflate(1.0D), x -> x.isAlive() && x != c.caster())) {
-               e.hurt(c.caster().damageSources().magic(), (float)resolvedDamage);
+               e.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
             }
             c.emit(ParticleTypes.CRIT, point, 6);
          }

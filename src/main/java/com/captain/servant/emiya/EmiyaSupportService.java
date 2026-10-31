@@ -200,7 +200,7 @@ public final class EmiyaSupportService {
             }
 
             float rawDamage = (float) Mth.lerp(distance / totalRadius, EXCALIBUR_CENTER_DAMAGE, EXCALIBUR_EDGE_DAMAGE);
-            float damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, rawDamage);
+            float damage = rawDamage;
             damage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(target, damage);
             target.invulnerableTime = 0;
             disableVanillaShield(target, owner);

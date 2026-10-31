@@ -224,7 +224,11 @@ public final class RoyalCannonProjectileEntity extends Entity {
 
    private void hurtVictim(LivingEntity owner, LivingEntity victim, float amount) {
       if (!isValidVictim(owner, victim)) return;
-      DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      DamageSource base = owner.damageSources().mobProjectile(this, owner);
+      DamageSource source = explosive
+         ? net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(base, "royal_cannon")
+         : net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(base, "gilgamesh_slate_magic",
+            net.xxxjk.typemoonworld.api.MagicComplexity.TWO_VERSE, owner);
       victim.invulnerableTime = 0;
       float finalDamage = owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity caster
          ? CasterGilgameshCombatHelper.magicDamage(caster, amount)

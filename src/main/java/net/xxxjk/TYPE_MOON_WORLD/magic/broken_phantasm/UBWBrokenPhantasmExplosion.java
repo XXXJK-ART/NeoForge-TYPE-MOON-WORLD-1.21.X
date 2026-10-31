@@ -178,7 +178,7 @@ public class UBWBrokenPhantasmExplosion {
             continue;
          }
          living.invulnerableTime = 0;
-         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
+         float finalDamage = damage;
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
          if (emiyaDistanceFalloff) {
             finalDamage = Math.min(finalDamage, emiyaDamageAtDistance(damage, dist, maximumRadius));

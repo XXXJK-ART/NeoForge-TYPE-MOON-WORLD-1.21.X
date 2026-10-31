@@ -31,6 +31,8 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 
 public class ElementalMagicFieldEntity extends Entity {
    public static final int ELEMENT_FIRE = 0;
@@ -58,6 +60,19 @@ public class ElementalMagicFieldEntity extends Entity {
    private UUID ownerUUID;
    private final List<ElementalMagicFieldEntity.BlockSnapshot> snapshots = new ArrayList<>();
    private float manaPerTick = 0.0F;
+   private String sourceMagicId = "";
+
+   public void setSourceMagicId(String magicId) { this.sourceMagicId = magicId == null ? "" : magicId; }
+
+   private String sourceMagicId() {
+      if (!sourceMagicId.isBlank()) return sourceMagicId;
+      return switch (this.entityData.get(ELEMENT)) {
+         case ELEMENT_WATER -> "water_magic";
+         case ELEMENT_WIND -> "wind_magic";
+         case ELEMENT_EARTH -> "earth_magic";
+         default -> "fire_magic";
+      };
+   }
 
    public ElementalMagicFieldEntity(EntityType<?> type, Level level) {
       super(type, level);
@@ -113,12 +128,14 @@ public class ElementalMagicFieldEntity extends Entity {
       this.duration = tag.getInt("Duration");
       this.damagePerSecond = tag.getFloat("DamagePerSecond");
       this.manaPerTick = tag.getFloat("ManaPerTick");
+      this.sourceMagicId = tag.getString("SourceMagicId");
       if (tag.hasUUID("Owner")) {
          this.ownerUUID = tag.getUUID("Owner");
       }
    }
 
    protected void addAdditionalSaveData(CompoundTag tag) {
+      tag.putString("SourceMagicId", this.sourceMagicId);
       tag.putInt("Element", this.entityData.get(ELEMENT));
       tag.putInt("Form", this.entityData.get(FORM));
       tag.putFloat("Radius", this.entityData.get(RADIUS));
@@ -194,6 +211,7 @@ public class ElementalMagicFieldEntity extends Entity {
          if (!isInsideField(living, form, radius)) {
             continue;
          }
+         if (MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicResistanceHelper.complexityForMagic(sourceMagicId()))) continue;
          if (form == FORM_FIRE_WALL) {
             living.igniteForSeconds(2.0F);
             hurtEverySecond(ownerEntity, living, 4.0F);
@@ -253,7 +271,7 @@ public class ElementalMagicFieldEntity extends Entity {
          return;
       }
       float damage = ownerEntity == null ? amount : MercurySwordMagicAmplifier.amplifyElementalDamage(ownerEntity, this.entityData.get(ELEMENT), amount);
-      DamageSource source = this.damageSources().magic();
+      DamageSource source = MagecraftDamageSource.of(this.damageSources().magic(), sourceMagicId(), ownerEntity);
       target.invulnerableTime = 0;
       target.hurt(source, damage);
       target.invulnerableTime = 0;

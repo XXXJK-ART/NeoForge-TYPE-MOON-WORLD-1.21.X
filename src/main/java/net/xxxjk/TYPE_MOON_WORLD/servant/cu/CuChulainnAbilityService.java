@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.cu;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import java.util.*;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -267,7 +269,7 @@ public final class CuChulainnAbilityService {
    }
    public static boolean hit(LivingEntity owner,LivingEntity target,float damage,String skill,boolean magic) {
       if(!enemy(owner,target)) return false;
-      DamageSource base=magic ? owner.damageSources().indirectMagic(owner,owner)
+      DamageSource base=magic ? MagecraftDamageSource.of(owner.damageSources().indirectMagic(owner,owner), "rune_origin", MagicComplexity.TWO_VERSE, owner)
          : owner instanceof net.minecraft.world.entity.player.Player p ? owner.damageSources().playerAttack(p) : owner.damageSources().mobAttack(owner);
       var source=new CombatDamageSource(base,AttackOrigin.skill("cu_chulainn",skill));
       DamageSource resolved=skill.equals("cu_gae_bolg") || skill.equals("cu_death_thorn")

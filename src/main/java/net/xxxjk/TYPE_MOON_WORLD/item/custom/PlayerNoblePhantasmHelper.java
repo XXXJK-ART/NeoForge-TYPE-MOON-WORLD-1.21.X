@@ -311,15 +311,18 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useDirk(ServerPlayer player, InteractionHand hand) {
+      ItemStack held = player.getItemInHand(hand);
+      if (held.isEmpty() || !held.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.DIRK_SMALL_KNIFE.get())
+         || held.getDamageValue() >= held.getMaxDamage()) return false;
       DirkProjectileEntity projectile = new DirkProjectileEntity(player.level(), player);
-      projectile.setDamage(20.0F);
+      projectile.setDamage(10.0F);
       projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
       Vec3 look = player.getLookAngle();
       projectile.shoot(look.x, look.y, look.z, 1.9F, 0.0F);
       player.level().addFreshEntity(projectile);
       player.level().playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.75F, 1.45F);
       if (!player.isCreative()) {
-         player.getItemInHand(hand).hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+         held.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
       }
       return true;
    }

@@ -40,11 +40,14 @@ class ServantCardTraitServiceClassLoadingTest {
       };
       var resistance = loader.loadClass(name).getDeclaredMethod("debuffResistanceForRank", MagicResistanceRank.class);
       resistance.setAccessible(true);
-      assertEquals(0.25F, (float) resistance.invoke(null, MagicResistanceRank.A));
-      assertEquals(0.175F, (float) resistance.invoke(null, MagicResistanceRank.B));
-      assertEquals(0.10F, (float) resistance.invoke(null, MagicResistanceRank.C));
+      assertEquals(0.75F, (float) resistance.invoke(null, MagicResistanceRank.A));
+      assertEquals(0.55F, (float) resistance.invoke(null, MagicResistanceRank.B));
+      assertEquals(0.35F, (float) resistance.invoke(null, MagicResistanceRank.C));
+      assertEquals(0.15F, (float) resistance.invoke(null, MagicResistanceRank.D));
+      assertEquals(0.06F, (float) resistance.invoke(null, MagicResistanceRank.E));
+      assertEquals(0.90F, (float) resistance.invoke(null, MagicResistanceRank.EX));
       for (MagicResistanceRank rank : new MagicResistanceRank[] {
-         MagicResistanceRank.NONE, MagicResistanceRank.E, MagicResistanceRank.D, MagicResistanceRank.EX, null
+         MagicResistanceRank.NONE, null
       }) {
          assertEquals(0.0F, (float) resistance.invoke(null, rank));
       }

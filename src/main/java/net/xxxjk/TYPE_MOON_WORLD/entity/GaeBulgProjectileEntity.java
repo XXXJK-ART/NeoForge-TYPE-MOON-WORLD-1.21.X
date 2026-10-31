@@ -332,7 +332,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          if (living.distanceToSqr(burstCenter) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
             continue;
          }
-         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
+         float finalDamage = damage;
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
          finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
          if (finalDamage <= 0.0F) {
@@ -657,7 +657,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, armyDamage);
+         float finalDamage = armyDamage;
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
          finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
          if (finalDamage <= 0.0F) {

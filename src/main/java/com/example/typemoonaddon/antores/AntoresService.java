@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.antores;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.network.AntoresBeamVisualPayload;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
@@ -143,7 +144,7 @@ public final class AntoresService {
         );
 
         int damagedTargets = 0;
-        DamageSource directSource = caster.damageSources().source(DamageTypes.MAGIC, caster);
+        DamageSource directSource = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "antores", caster);
         for (AggregatedHit hit : targetHits.values()) {
             LivingEntity target = hit.target;
             if (!EntityUtils.isValidCombatTarget(caster, target)) {
@@ -382,19 +383,10 @@ public final class AntoresService {
             LivingEntity target,
             ServerPlayer caster
     ) {
-        DamageSource resistanceSource = caster != null
-                ? caster.damageSources().source(DamageTypes.MAGIC, caster)
-                : level.damageSources().magic();
-        float adjustedDamage = MagicResistanceHelper.applyMagicDamageReduction(
-                target, resistanceSource, CURSE_DAMAGE_PER_PULSE);
-        if (!Float.isFinite(adjustedDamage) || adjustedDamage <= 0.0F) {
-            return;
-        }
-
         DamageSource curseSource = caster != null
                 ? level.damageSources().source(CURSE_DAMAGE, caster)
                 : level.damageSources().source(CURSE_DAMAGE);
-        if (target.hurt(curseSource, adjustedDamage) && caster != null) {
+        if (target.hurt(MagecraftDamageSource.of(curseSource, "antores", caster), CURSE_DAMAGE_PER_PULSE) && caster != null) {
             EntityUtils.triggerSwarmAnger(level, caster, target);
         }
     }

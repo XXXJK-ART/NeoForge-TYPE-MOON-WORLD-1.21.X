@@ -180,7 +180,7 @@ public final class MagicAddonTemplateExample {
    }
 
    private static void castShared(LivingEntity caster, LivingEntity target, float damage) {
-      target.hurt(caster.damageSources().magic(), damage);
+      target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(caster.damageSources().magic(), MAGIC_ID, caster), damage);
    }
 
    private static double readManaCost(CompoundTag payload, boolean crestCast) {

@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.model;
 import java.util.List;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 
 public record ServantNoblePhantasmDefinition(
    String id,
@@ -18,7 +19,9 @@ public record ServantNoblePhantasmDefinition(
    List<SkillEffectEntry> effects,
    List<ServantTraitTag> specialAttackConditions,
    List<ServantClassType> classRestrictions,
-   String releasePolicy
+   String releasePolicy,
+   boolean magicDamage,
+   MagicComplexity magicComplexity
 ) {
    public static final Codec<ServantNoblePhantasmDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
       Codec.STRING.optionalFieldOf("id", "").forGetter(ServantNoblePhantasmDefinition::id),
@@ -34,18 +37,21 @@ public record ServantNoblePhantasmDefinition(
       SkillEffectEntry.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(ServantNoblePhantasmDefinition::effects),
       Codec.STRING.listOf().xmap(values -> values.stream().flatMap(key -> ServantTraitTag.findByKey(key).stream()).distinct().toList(), values -> values.stream().map(ServantTraitTag::key).toList()).optionalFieldOf("special_attack_conditions", List.of()).forGetter(ServantNoblePhantasmDefinition::specialAttackConditions),
       Codec.STRING.listOf().xmap(values -> values.stream().map(ServantClassType::fromKey).toList(), values -> values.stream().map(ServantClassType::key).toList()).optionalFieldOf("class_restrictions", List.of()).forGetter(ServantNoblePhantasmDefinition::classRestrictions),
-      Codec.STRING.optionalFieldOf("release_policy", "").forGetter(ServantNoblePhantasmDefinition::releasePolicy)
+      Codec.STRING.optionalFieldOf("release_policy", "").forGetter(ServantNoblePhantasmDefinition::releasePolicy),
+      Codec.BOOL.optionalFieldOf("magic_damage", false).forGetter(ServantNoblePhantasmDefinition::magicDamage),
+      MagicComplexity.CODEC.optionalFieldOf("magic_complexity", MagicComplexity.HIGH_THAUMATURGY).forGetter(ServantNoblePhantasmDefinition::magicComplexity)
    ).apply(instance, ServantNoblePhantasmDefinition::new));
 
    public ServantNoblePhantasmDefinition(String id, String displayName, String displayNameZh, NpType type, String rank,
       int mpCost, boolean overChargeSupported, int overChargeLevels, double baseDamageMultiplier, double range,
       List<SkillEffectEntry> effects, List<ServantTraitTag> specialAttackConditions, List<ServantClassType> classRestrictions) {
       this(id, displayName, displayNameZh, type, rank, mpCost, overChargeSupported, overChargeLevels,
-         baseDamageMultiplier, range, effects, specialAttackConditions, classRestrictions, "");
+         baseDamageMultiplier, range, effects, specialAttackConditions, classRestrictions, "", false, MagicComplexity.HIGH_THAUMATURGY);
    }
 
    public ServantNoblePhantasmDefinition {
       releasePolicy = releasePolicy == null ? "" : releasePolicy;
+      magicComplexity = magicComplexity == null ? MagicComplexity.HIGH_THAUMATURGY : magicComplexity;
       id = id == null ? "" : id;
       displayName = displayName == null ? "" : displayName;
       displayNameZh = displayNameZh == null ? "" : displayNameZh;
@@ -58,6 +64,14 @@ public record ServantNoblePhantasmDefinition(
       effects = effects == null ? List.of() : List.copyOf(effects);
       specialAttackConditions = specialAttackConditions == null ? List.of() : List.copyOf(specialAttackConditions);
       classRestrictions = classRestrictions == null ? List.of() : List.copyOf(classRestrictions);
+   }
+
+   public ServantNoblePhantasmDefinition(String id, String displayName, String displayNameZh, NpType type, String rank,
+      int mpCost, boolean overChargeSupported, int overChargeLevels, double baseDamageMultiplier, double range,
+      List<SkillEffectEntry> effects, List<ServantTraitTag> specialAttackConditions, List<ServantClassType> classRestrictions,
+      String releasePolicy) {
+      this(id, displayName, displayNameZh, type, rank, mpCost, overChargeSupported, overChargeLevels,
+         baseDamageMultiplier, range, effects, specialAttackConditions, classRestrictions, releasePolicy, false, MagicComplexity.HIGH_THAUMATURGY);
    }
    public enum NpType {
       ANTI_DIVINE("anti_divine"),

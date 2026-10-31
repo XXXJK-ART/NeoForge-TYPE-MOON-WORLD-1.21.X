@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:armor_stand", "minecraft:allay", "minecraft:vex", "minecraft:breeze", "minecraft:slime", "minecraft:magma_cube",
+    {"id":"typemoonworld:dragonfang_soldier","required":false},
+    {"id":"typemoonworld:wraith","required":false},
+    {"id":"typemoonworld:evil_spirit","required":false},
+    {"id":"typemoonworld:summoned_spirit","required":false}
+  ]
+}

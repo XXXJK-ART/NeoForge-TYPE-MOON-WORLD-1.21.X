@@ -16,15 +16,12 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanCombatHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -41,9 +38,10 @@ public final class ServantCardHassanSkills {
          return;
       }
       ServantCardConcealmentHelper.tick(player);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.tick(player);
       keepRightHandEmpty(player);
-       syncSelfModificationAttributes(player);
-      if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * (2.0F / 3.0F)) {
+      syncSelfModificationAttributes(player);
+      if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * 0.5F) {
          vars.servant_card_hassan_cloak_broken = true;
          vars.syncPlayerVariables(player);
          if (player.level() instanceof ServerLevel level) {
@@ -56,16 +54,18 @@ public final class ServantCardHassanSkills {
    public static void giveDirk(ServerPlayer player) {
       keepRightHandEmpty(player);
       ItemStack current = player.getOffhandItem();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(current)) return;
       if (!current.isEmpty() && !current.is(ModItems.DIRK_SMALL_KNIFE.get())) {
          storeOrDrop(player, current.copy());
          current = ItemStack.EMPTY;
       }
       if (current.isEmpty()) {
-         ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), 16);
+         ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
          ServantCardTransformManager.markGeneratedItem(dirk, true, false);
          player.setItemInHand(InteractionHand.OFF_HAND, dirk);
-      } else if (current.getCount() < 16) {
-         current.grow(16 - current.getCount());
+      } else if (current.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         current.setCount(1);
+         current.setDamageValue(0);
       }
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(), 16, 0.28, 0.35, 0.28, 0.04);
@@ -80,7 +80,10 @@ public final class ServantCardHassanSkills {
          return;
       }
       ItemStack off = player.getOffhandItem();
-      if (off.isEmpty()) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(main)) {
+         if (!off.isEmpty()) storeOrDrop(player, off.copy());
+         player.setItemInHand(InteractionHand.OFF_HAND, main.copy());
+      } else if (off.isEmpty()) {
          player.setItemInHand(InteractionHand.OFF_HAND, main.copy());
       } else {
          storeOrDrop(player, main.copy());
@@ -98,12 +101,13 @@ public final class ServantCardHassanSkills {
       return Math.max(0, Math.min(3, player.getPersistentData().getInt(SELF_MOD_LEVEL)));
    }
 
-   public static boolean performSelfModification(ServerPlayer player) {
+   public static boolean evolveAfterServantKill(ServerPlayer player) {
       int level = selfModificationLevel(player);
       if (level >= 3) return false;
       player.getPersistentData().putInt(SELF_MOD_LEVEL, level + 1);
       syncSelfModificationAttributes(player);
       player.heal(50.0F);
+      player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.typemoonworld.hassan.evolved", level + 1, 3), false);
       if (player.level() instanceof ServerLevel serverLevel) {
          serverLevel.sendParticles(ParticleTypes.SOUL, player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ(), 24, 0.35, 0.45, 0.35, 0.03);
          serverLevel.playSound(null, player.blockPosition(), SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.PLAYERS, 0.8F, 0.75F);
@@ -136,6 +140,7 @@ public final class ServantCardHassanSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(player, false);
       player.getPersistentData().remove(SELF_MOD_LEVEL);
       player.getPersistentData().remove(CursedArmHassanCombatHelper.ZABANIYA_WINDUP_UNTIL);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -151,8 +156,7 @@ public final class ServantCardHassanSkills {
 
    public static void performDirkThrow(ServerPlayer player) {
       ItemStack knives = player.getOffhandItem();
-      if (!knives.is(ModItems.DIRK_SMALL_KNIFE.get()) || knives.getCount() < 3) return;
-      knives.shrink(3);
+      if (!hasUsableDirks(player, 3)) return;
       for (int i = -1; i <= 1; i++) {
          net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity projectile = new net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity(player.level(), player);
          projectile.setDamage(14.0F);
@@ -161,7 +165,16 @@ public final class ServantCardHassanSkills {
          Vec3 look = player.getLookAngle().yRot((float)Math.toRadians(i * 5.0));
          projectile.shoot(look.x, look.y, look.z, 2.2F, 0.0F);
          player.level().addFreshEntity(projectile);
+          consumeDirk(player);
       }
+   }
+
+   public static boolean performQuickStab(ServerPlayer player) {
+      LivingEntity target = findNearbyTarget(player, 2.6);
+      if (!isValidHassanTarget(player, target)) return false;
+      if (!dealScaledDamage(player, target, 0.8F)) return false;
+      player.swing(InteractionHand.MAIN_HAND, true);
+      return true;
    }
 
    public static boolean performShadowStep(ServerPlayer player) {
@@ -213,23 +226,31 @@ public final class ServantCardHassanSkills {
 
    public static boolean performKnifeFeint(ServerPlayer player) {
       LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 9.0, 1.8);
-      if (!isValidHassanTarget(player, target) || player.distanceTo(target) < 2.5 || !player.hasLineOfSight(target)) return false;
-      if (!dealScaledDamage(player, target, 0.72F)) return false;
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 35, 1, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 35, 0, false, true, true));
+      ItemStack knives = player.getOffhandItem();
+      if (!isValidHassanTarget(player, target) || player.distanceTo(target) < 2.5 || !player.hasLineOfSight(target)
+         || !isUsableDirk(knives)) return false;
+      net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity projectile =
+         new net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity(player.level(), player);
+      projectile.setDamage(10.0F);
+      projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
+      projectile.setMaxDistance(18.0);
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(projectile.position()).normalize();
+      projectile.shoot(aim.x, aim.y, aim.z, 2.2F, 0.0F);
+      player.level().addFreshEntity(projectile);
+      consumeDirk(player);
       return true;
    }
 
    public static boolean performElbowStrike(ServerPlayer player) {
-      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 2.8, 1.6);
-      if (!isValidHassanTarget(player, target) || !player.hasLineOfSight(target)) return false;
+      LivingEntity target = findNearbyTarget(player, 2.8);
+      if (!isValidHassanTarget(player, target)) return false;
       if (dealScaledDamage(player, target, 0.90F)) applyShortInterrupt(target, player.level().getGameTime());
       return true;
    }
 
    public static boolean performTripSweep(ServerPlayer player) {
-      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 2.5, 1.6);
-      if (!isValidHassanTarget(player, target) || !player.hasLineOfSight(target)) return false;
+      LivingEntity target = findNearbyTarget(player, 2.5);
+      if (!isValidHassanTarget(player, target)) return false;
       if (!dealScaledDamage(player, target, 0.65F)) return false;
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
       return true;
@@ -243,7 +264,38 @@ public final class ServantCardHassanSkills {
 
    public static boolean hasDirks(ServerPlayer player) {
       ItemStack knives = player.getOffhandItem();
-      return knives.is(ModItems.DIRK_SMALL_KNIFE.get()) && knives.getCount() >= 3;
+      return hasUsableDirks(player, 3);
+   }
+
+   private static boolean hasUsableDirks(ServerPlayer player, int shots) {
+      ItemStack knives = player.getOffhandItem();
+      return isUsableDirk(knives) && knives.getMaxDamage() - knives.getDamageValue() >= shots;
+   }
+
+   private static boolean isUsableDirk(ItemStack stack) {
+      return stack.is(ModItems.DIRK_SMALL_KNIFE.get()) && !stack.isEmpty()
+         && stack.getMaxDamage() > 0 && stack.getDamageValue() < stack.getMaxDamage();
+   }
+
+   private static void consumeDirk(ServerPlayer player) {
+      ItemStack knives = player.getOffhandItem();
+      if (!isUsableDirk(knives)) return;
+      knives.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.OFF_HAND));
+   }
+
+   private static LivingEntity findNearbyTarget(ServerPlayer player, double range) {
+      AABB box = player.getBoundingBox().inflate(range, 1.5, range);
+      LivingEntity nearest = null;
+      double best = range * range;
+      for (LivingEntity candidate : player.level().getEntitiesOfClass(LivingEntity.class, box,
+         entity -> entity != player && entity.isAlive() && isValidHassanTarget(player, entity))) {
+         double distance = player.distanceToSqr(candidate);
+         if (distance <= best) {
+            best = distance;
+            nearest = candidate;
+         }
+      }
+      return nearest;
    }
 
    private static boolean isValidHassanTarget(ServerPlayer player, LivingEntity target) {
@@ -314,35 +366,8 @@ public final class ServantCardHassanSkills {
           || CursedArmHassanCombatHelper.isForbiddenTarget(target)) {
          return;
       }
-      boolean instantDeathTarget = CursedArmHassanCombatHelper.isHumanoidInstantDeathTarget(target);
-      boolean killed = instantDeathTarget && player.getRandom().nextFloat() < 0.6F;
-      if (target.getPersistentData().getBoolean("CausalSevered")) {
-         killed = false;
-      }
-      if (killed && ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(player))) {
-         spawnHassanZabaniyaImpact(player, target, false);
-         return;
-      }
-       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,player.damageSources().playerAttack(player),55,"cursed_arm_hassan:zabaniya",killed)) {
-         spawnHassanZabaniyaImpact(player, target, true);
-         return;
-      }
-
-      if (killed) {
-         target.hurt(player.damageSources().playerAttack(player), Math.max(target.getMaxHealth() * 2.0F, 500.0F));
-         if (target.isAlive()) {
-            target.setHealth(0.0F);
-            target.die(player.damageSources().genericKill());
-         }
-      } else {
-         boolean hit = target.hurt(player.damageSources().playerAttack(player), 55.0F);
-         if (hit) applyHassanZabaniyaCurse(target);
-      }
-      spawnHassanZabaniyaImpact(player, target, killed);
-   }
-
-   private static void applyHassanZabaniyaCurse(LivingEntity target) {
-      CursedArmHassanCombatHelper.applyZabaniyaCurse(target);
+      boolean extracted = net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.resolve(player, target, 55.0F, true);
+      spawnHassanZabaniyaImpact(player, target, extracted);
    }
 
    private static void spawnHassanZabaniyaImpact(ServerPlayer player, LivingEntity target, boolean killed) {

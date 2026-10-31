@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModParticles;
 import net.xxxjk.TYPE_MOON_WORLD.magic.PlayerMagicSelectionService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import org.joml.Vector3f;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
@@ -67,6 +68,15 @@ public final class ElementalArrayService {
             default -> null;
          };
       }
+   }
+
+   private static String magicId(Kind kind) {
+      return switch (kind) {
+         case FIRE -> "flame_array";
+         case WATER -> "azure_water_array";
+         case WIND -> "gale_wind_array";
+         case EARTH -> "rock_earth_array";
+      };
    }
 
    public static int chargeTicks() {
@@ -327,7 +337,7 @@ public final class ElementalArrayService {
          if (sideSqr > allowed * allowed || !damaged.add(target.getId())) {
             continue;
          }
-         target.hurt(player.damageSources().magic(), DAMAGE);
+         target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), magicId(kind), player), DAMAGE);
          applyFinalEffect(target, kind, dir);
       }
    }

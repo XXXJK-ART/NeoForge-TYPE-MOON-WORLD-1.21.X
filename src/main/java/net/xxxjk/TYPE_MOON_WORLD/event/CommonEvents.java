@@ -174,7 +174,6 @@ public class CommonEvents {
    private static final double EMIYA_BATTLE_CONTINUATION_TRIGGER_HEALTH_RATIO = 0.50;
    private static final float BATTLE_CONTINUATION_HEAL_AMOUNT = 10.0F;
    private static final int BATTLE_CONTINUATION_HEAL_INTERVAL_TICKS = 20;
-   private static final String EFFECT_RESISTANCE_REENTRY_TAG = "TypeMoonAdjustingHarmfulEffect";
    private static final Map<String, Set<UUID>> SUGGESTED_MOB_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
    private static final Map<String, Set<UUID>> SERVANT_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
    private static final Map<String, Set<UUID>> SHIKI_IDS_BY_DIMENSION = new ConcurrentHashMap<>();
@@ -1789,10 +1788,9 @@ public class CommonEvents {
       }
    }
 
+
    private static void clearBasicMagecraftEffectTags(LivingEntity entity, net.minecraft.world.effect.MobEffect effect) {
-      if (entity == null || effect == null) {
-         return;
-      }
+      if (entity == null || effect == null) return;
       if (effect == ModMobEffects.BINDING.get()) {
          entity.getPersistentData().remove(net.xxxjk.TYPE_MOON_WORLD.effect.BindingEffect.TAG_FULL_BIND);
       } else if (effect == ModMobEffects.SUGGESTION.get()) {
@@ -1950,34 +1948,6 @@ public class CommonEvents {
          }
          if (living != null && effectInstance != null && tryRedirectRhoAiasEffect(living, effectInstance)) {
             return;
-         }
-         if (living != null
-            && effectInstance != null
-            && effectInstance.getDuration() > 1
-            && effectInstance.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL
-            && !living.getPersistentData().getBoolean(EFFECT_RESISTANCE_REENTRY_TAG)) {
-            int adjustedDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(living, effectInstance.getDuration());
-            if (adjustedDuration <= 0) {
-               living.removeEffect(effectInstance.getEffect());
-               clearBasicMagecraftEffectTags(living, effectInstance.getEffect().value());
-               return;
-            } else if (adjustedDuration < effectInstance.getDuration()) {
-               living.getPersistentData().putBoolean(EFFECT_RESISTANCE_REENTRY_TAG, true);
-               try {
-                  living.removeEffect(effectInstance.getEffect());
-                  living.addEffect(new MobEffectInstance(
-                     effectInstance.getEffect(),
-                     adjustedDuration,
-                     effectInstance.getAmplifier(),
-                     effectInstance.isAmbient(),
-                     effectInstance.isVisible(),
-                     effectInstance.showIcon()
-                  ));
-               } finally {
-                  living.getPersistentData().remove(EFFECT_RESISTANCE_REENTRY_TAG);
-               }
-               return;
-            }
          }
          if (event.getEffectInstance().getEffect() == ModMobEffects.NINE_LIVES
             && !event.getEntity().level().isClientSide

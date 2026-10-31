@@ -572,7 +572,7 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamageOverTicks(GawainEntity entity, LivingEntity target, float totalDamage, int ticks) {
-      float adjusted = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, totalDamage);
+      float adjusted = totalDamage;
       if (adjusted <= 0.0F) {
          return;
       }
@@ -588,7 +588,6 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamage(GawainEntity entity, LivingEntity target, float damage) {
-      damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
       if (damage <= 0.0F) {
          return;
       }

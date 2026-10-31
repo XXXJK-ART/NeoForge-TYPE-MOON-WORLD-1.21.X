@@ -139,7 +139,7 @@ public final class ServantCardTraitService {
          MagicResistanceHelper.setMagicResistance(
             player,
             magicResistance,
-            MagicResistanceHelper.damageReductionForRank(magicResistance),
+            MagicResistanceHelper.damageReductionForDefinition(definition, magicResistance),
             debuffResistanceForRank(magicResistance)
          );
       }
@@ -304,6 +304,9 @@ public final class ServantCardTraitService {
       if (rank.startsWith("d")) {
          return MagicResistanceRank.D;
       }
+      if (rank.startsWith("ex")) {
+         return MagicResistanceRank.EX;
+      }
       if (rank.startsWith("e")) {
          return MagicResistanceRank.E;
       }
@@ -311,17 +314,7 @@ public final class ServantCardTraitService {
    }
 
    private static float debuffResistanceForRank(MagicResistanceRank rank) {
-      // Keep card transformation independent of a compiler-generated enum switch class.
-      if (rank == MagicResistanceRank.A) {
-         return 0.25F;
-      }
-      if (rank == MagicResistanceRank.B) {
-         return 0.175F;
-      }
-      if (rank == MagicResistanceRank.C) {
-         return 0.10F;
-      }
-      return 0.0F;
+      return MagicResistanceHelper.debuffResistanceForRank(rank);
    }
 
    private static float divinityFlatDamage(ServantDefinition definition) {

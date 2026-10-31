@@ -75,10 +75,10 @@ public final class MagicBinding {
          List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
             e -> e != caster && e.isAlive() && !EntityUtils.isImmunePlayerTarget(e) && targetFilter.test(e));
          for (LivingEntity living : targets) {
-            any |= applySingle(caster, living, duration, amplifier, MagicComplexity.TWO_VERSE, p);
+            any |= applySingle(caster, living, duration, amplifier, areaComplexity(), p);
          }
       } else {
-         any = applySingle(caster, target, duration, amplifier, MagicComplexity.ONE_VERSE, p);
+         any = applySingle(caster, target, duration, amplifier, MagicResistanceHelper.complexityForMagic("binding_magic"), p);
       }
       if (any) {
          caster.level().playSound(null, target.blockPosition(), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 0.85F, p >= 75.0 ? 0.75F : 1.0F);
@@ -100,7 +100,7 @@ public final class MagicBinding {
       );
       boolean any = false;
       for (LivingEntity target : targets) {
-         any |= applySingle(caster, target, duration, amplifier, MagicComplexity.TWO_VERSE, p);
+         any |= applySingle(caster, target, duration, amplifier, areaComplexity(), p);
       }
       if (any) {
          level.playSound(null, BlockPos.containing(center), SoundEvents.CHAIN_PLACE, SoundSource.HOSTILE, 0.85F, p >= 75.0 ? 0.75F : 1.0F);
@@ -141,6 +141,11 @@ public final class MagicBinding {
       return true;
    }
 
+   private static MagicComplexity areaComplexity() {
+      MagicComplexity configured = MagicResistanceHelper.complexityForMagic("binding_magic");
+      return configured.level() >= MagicComplexity.TWO_VERSE.level() ? configured : MagicComplexity.TWO_VERSE;
+   }
+
    private static void applyCounterBinding(LivingEntity counterCaster, LivingEntity originalCaster, double originalProficiency) {
       if (counterCaster == null || originalCaster == null || !originalCaster.isAlive() || EntityUtils.isImmunePlayerTarget(originalCaster)) {
          return;
@@ -150,7 +155,7 @@ public final class MagicBinding {
          ? Math.min(100.0, originalProficiency + MagicProficiencyContestHelper.COUNTER_GAP + 1.0)
          : targetProficiency;
       int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-         originalCaster, Math.min(120, Math.max(30, durationTicks(counterP) * 2)), MagicComplexity.ONE_VERSE);
+         originalCaster, Math.min(120, Math.max(30, durationTicks(counterP) * 2)), MagicResistanceHelper.complexityForMagic("binding_magic"));
       if (duration <= 0) {
          return;
       }

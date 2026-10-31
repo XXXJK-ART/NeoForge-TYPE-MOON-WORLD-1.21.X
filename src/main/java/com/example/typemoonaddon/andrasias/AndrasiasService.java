@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.andrasias;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.AndrasiasMagic;
 import com.example.typemoonaddon.network.AndrasiasCastInputPayload;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
@@ -268,7 +269,7 @@ public final class AndrasiasService {
 
     private static void applyImpact(ServerPlayer caster, ServerLevel level, CastState state) {
         AABB area = new AABB(state.origin, state.origin).inflate(IMPACT_RADIUS);
-        DamageSource source = caster.damageSources().source(DamageTypes.MAGIC, caster);
+        DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "andrasias", caster);
         for (LivingEntity target : level.getEntitiesOfClass(
                 LivingEntity.class,
                 area,
@@ -374,7 +375,7 @@ public final class AndrasiasService {
     ) {
         double halfWidth = RIFT_WIDTH * 0.5D + 1.0D;
         AABB area = new AABB(point, point).inflate(halfWidth, 2.5D, halfWidth);
-        DamageSource source = caster.damageSources().source(DamageTypes.MAGIC, caster);
+        DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "andrasias", caster);
         for (LivingEntity target : level.getEntitiesOfClass(
                 LivingEntity.class,
                 area,

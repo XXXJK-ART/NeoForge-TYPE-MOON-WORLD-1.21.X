@@ -370,11 +370,11 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    private void ensureDirkLoadout() {
       ItemStack held = this.getMainHandItem();
       if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         if (held.getCount() < 30) held.setCount(30);
+         held.setCount(1);
          return;
       }
       if (held.isEmpty()) {
-         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), 30));
+         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
       }
    }
 

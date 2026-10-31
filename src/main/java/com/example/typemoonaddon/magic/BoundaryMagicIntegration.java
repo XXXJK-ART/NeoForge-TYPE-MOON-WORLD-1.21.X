@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.magic;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.BoundaryMarkEntity;
@@ -351,7 +352,7 @@ public final class BoundaryMagicIntegration {
                 case "guard_boundary" -> {
                     if (entity != owner) {
                         float damage = (float) (0.75D + scaledPower(mark) * 0.45D * powerScale);
-                        entity.hurt(level.damageSources().magic(), damage);
+                        entity.hurt(MagecraftDamageSource.of(level.damageSources().magic(), mark.getBoundaryType(), owner), damage);
                         level.sendParticles(ParticleTypes.ENCHANTED_HIT, entity.getX(), entity.getY(0.55D),
                                 entity.getZ(), 8, 0.25D, 0.35D, 0.25D, 0.02D);
                     }

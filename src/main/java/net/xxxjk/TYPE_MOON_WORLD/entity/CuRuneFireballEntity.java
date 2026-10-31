@@ -25,8 +25,8 @@ public final class CuRuneFireballEntity extends ThrowableItemProjectile {
          var key=net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DAMAGE_TYPE,net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("typemoonworld","cu_rune_fire"));
          var source=new net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource(new net.minecraft.world.damagesource.DamageSource(registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE).getHolderOrThrow(key),this,owner),net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin.skill("cu_chulainn","cu_ansuz"));
          int previous=target.invulnerableTime;target.invulnerableTime=0;
-         try{target.hurt(source,10);}finally{target.invulnerableTime=previous;}
-         if(!target.fireImmune()&&!target.hasEffect(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE))target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(),100));
+         try{target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(source,"rune_origin",net.xxxjk.typemoonworld.api.MagicComplexity.TWO_VERSE,owner),10);}finally{target.invulnerableTime=previous;}
+         if(!net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(target,net.xxxjk.typemoonworld.api.MagicComplexity.TWO_VERSE)&&!target.fireImmune()&&!target.hasEffect(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE))target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(),100));
       }
       discard();
    }

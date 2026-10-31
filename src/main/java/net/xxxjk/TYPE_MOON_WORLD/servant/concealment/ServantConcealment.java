@@ -81,6 +81,9 @@ public final class ServantConcealment {
 
       startAttackBreakCooldown(entity);
 
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.isHassan(entity))
+         net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(entity, false);
+
       SasakiKojiroCombatService.setConcealed(entity, false);
       if (entity instanceof ShadowHassanEntity hassan) hassan.revealForAttack();
       if (entity instanceof FanaticAssassinEntity fanatic) fanatic.revealForCombat();

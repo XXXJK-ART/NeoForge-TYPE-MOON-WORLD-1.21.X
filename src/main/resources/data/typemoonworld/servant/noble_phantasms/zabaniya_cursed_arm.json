@@ -9,6 +9,6 @@
   "windup_ticks": 20,
   "range": 7.0,
   "base_damage_multiplier": 55.0,
-  "effects": [{"effect_type":"conceptual_instant_death","params":{"chance":0.6,"failure_damage":55.0,"curse_ticks":160}}],
-  "description_zh": "对人单体概念宝具；合法目标有60%即死，失败造成55点伤害并施加160 ticks咒腕诅咒。"
+  "effects": [{"effect_type":"extract_bound_core","params":{"chance":0.6,"lifetime_ticks":1200,"failure_damage":55.0,"curse_ticks":160}}],
+  "description_zh": "对具有心脏或驱动核心的目标以60%概率抽取对应物品，60秒内捏碎才触发死亡；赫拉克勒斯只消耗一条命且此后无法再抽取；恩奇都只会产出无效的神代泥土。无可抽取结构的目标不受影响。"
 }

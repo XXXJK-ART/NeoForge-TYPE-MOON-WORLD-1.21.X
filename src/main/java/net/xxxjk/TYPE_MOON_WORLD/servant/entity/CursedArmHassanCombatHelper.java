@@ -61,18 +61,17 @@ public final class CursedArmHassanCombatHelper {
    private static final String ZABANIYA_OVERDRAFT = "CursedArmZabaniyaOverdraft";
    public static final String ZABANIYA_WINDUP_UNTIL = "CursedArmZabaniyaWindupUntil";
    private static final String ZABANIYA_TARGET_ID = "CursedArmZabaniyaTargetId";
-   private static final String LAST_SELF_MOD_TICK = "CursedArmLastSelfModTick";
    private static final String LAST_STEALTH_TICK = "CursedArmLastStealthTick";
    private static final String CURSE_ATTACK_ID_TAG = "CursedArmCurseAttackApplied";
    private static final String CURSE_ARMOR_ID_TAG = "CursedArmCurseArmorApplied";
    private static final int DIRK_COOLDOWN = 40;
+   private static final int QUICK_STAB_COOLDOWN = 30;
    private static final int REPOSITION_COOLDOWN = 100;
    private static final int SHADOW_STEP_COOLDOWN = 120;
    private static final int KNIFE_FEINT_COOLDOWN = 70;
    private static final int SHADOW_LUNGE_COOLDOWN = 85;
    private static final int ZABANIYA_COOLDOWN = 1400;
    private static final int ZABANIYA_WINDUP = 20;
-   private static final int SELF_MOD_COOLDOWN = 360;
    private static final float ZABANIYA_USE_CHANCE = 0.45F;
    private static final String LAST_PERSISTENT_STATE_TICK = "CursedArmLastPersistentStateTick";
    private static final net.minecraft.resources.ResourceLocation CURSE_ATTACK_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
@@ -87,6 +86,8 @@ public final class CursedArmHassanCombatHelper {
    public static void tick(CursedArmHassanEntity entity, ServantAiContext context) {
       long now = context.gameTick();
       tickPersistentState(entity);
+      if (HassanZabaniyaService.isExtractedItem(entity.getMainHandItem())
+         || HassanZabaniyaService.isExtractedItem(entity.getOffhandItem())) return;
       if (entity.getPersistentData().getLong(ZABANIYA_WINDUP_UNTIL) > now) {
          entity.getNavigation().stop();
          return;
@@ -109,13 +110,15 @@ public final class CursedArmHassanCombatHelper {
       entity.getLookControl().setLookAt(target, 30.0F, 30.0F);
       double distance = entity.distanceTo(target);
 
-      if (trySelfModification(entity, now)) {
-         return;
-      }
       if (tryBeginZabaniya(entity, target, distance, now)) {
          return;
       }
+      if (distance >= 3.0 && (entity.getCurrentMp() < 8.0 || entity.getRandom().nextFloat() < 0.65F)
+         && tryOrdinaryDirk(entity, target, distance, now)) return;
       if (tryShadowStepBackstab(entity, target, distance, now)) {
+         return;
+      }
+      if (tryQuickStab(entity, target, distance, now)) {
          return;
       }
       if (tryShadowLunge(entity, target, distance, now)) {
@@ -133,6 +136,7 @@ public final class CursedArmHassanCombatHelper {
       if (tryThrowDirk(entity, target, distance, now)) {
          return;
       }
+      if (tryOrdinaryDirk(entity, target, distance, now)) return;
       if (distance > 2.2) {
          boolean moving = ServantNavigationHelper.moveToTargetThrottled(
             entity,
@@ -291,18 +295,13 @@ public final class CursedArmHassanCombatHelper {
 
    private static void tickStealth(CursedArmHassanEntity entity, long now) {
       LivingEntity target = entity.getTarget();
-      boolean inCombat = target != null && target.isAlive() && entity.distanceToSqr(target) < 18.0 * 18.0;
-      if (!inCombat) {
-         entity.removeEffect(MobEffects.INVISIBILITY);
-      } else if (!entity.hasEffect(MobEffects.INVISIBILITY)) {
-         CompoundTag data = entity.getPersistentData();
-         if (entity.getCurrentMp() >= 18.0 && (!data.contains(LAST_STEALTH_TICK)
-            || now - data.getLong(LAST_STEALTH_TICK) >= 180L)) {
-            entity.setCurrentMp(entity.getCurrentMp() - 18.0);
-            data.putLong(LAST_STEALTH_TICK, now);
-            entity.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 220, 0, false, false, true));
-         }
+      if (!HassanPresenceService.enabled(entity) && target != null && target.isAlive() && entity.distanceToSqr(target) >= 36.0
+         && entity.getCurrentMp() >= 18.0 && now >= entity.getPersistentData().getLong(LAST_STEALTH_TICK)
+         && HassanPresenceService.set(entity, true)) {
+         entity.setCurrentMp(entity.getCurrentMp() - 18.0);
+         entity.getPersistentData().putLong(LAST_STEALTH_TICK, now + 120);
       }
+      HassanPresenceService.tick(entity);
       clearNonServantTargeting(entity);
    }
 
@@ -339,27 +338,8 @@ public final class CursedArmHassanCombatHelper {
       entity.setZabaniyaTargetId(0);
    }
 
-   private static boolean trySelfModification(CursedArmHassanEntity entity, long now) {
-      if (entity.getSelfModificationLevel() >= 3 || entity.getHealth() > entity.getMaxHealth() * 0.75F
-         || entity.getCurrentMp() < 28.0) {
-         return false;
-      }
-      CompoundTag data = entity.getPersistentData();
-      if (data.contains(LAST_SELF_MOD_TICK) && now - data.getLong(LAST_SELF_MOD_TICK) < SELF_MOD_COOLDOWN) {
-         return false;
-      }
-      data.putLong(LAST_SELF_MOD_TICK, now);
-      entity.setCurrentMp(entity.getCurrentMp() - 28.0);
-      entity.setSelfModificationLevel(entity.getSelfModificationLevel() + 1);
-      entity.heal(50.0F);
-      if (entity.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.SOUL, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55, entity.getZ(), 24, 0.35, 0.45, 0.35, 0.03);
-         level.playSound(null, entity.blockPosition(), SoundEvents.SCULK_CATALYST_BLOOM, SoundSource.HOSTILE, 0.8F, 0.75F);
-      }
-      return true;
-   }
-
    private static boolean tryBeginZabaniya(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
+      if (!HassanZabaniyaService.canExtract(target)) return false;
       CompoundTag data = entity.getPersistentData();
       ServantNoblePhantasmResourceService.CastDecision resource =
          ServantNoblePhantasmResourceService.evaluateNpcCast(entity, 80.0);
@@ -405,16 +385,8 @@ public final class CursedArmHassanCombatHelper {
          || data.contains(LAST_DIRK_TICK) && now - data.getLong(LAST_DIRK_TICK) < DIRK_COOLDOWN) {
          return false;
       }
-      if (!entity.getSensing().hasLineOfSight(target)) {
-         return false;
-      }
       int ammo = data.getInt(CursedArmHassanEntity.TAG_DIRK_AMMO);
-      if (ammo < 3) {
-         long lastReplenish = data.getLong(CursedArmHassanEntity.TAG_DIRK_REPLENISH_TICK);
-         if (now - lastReplenish < 40L) return false;
-         ammo = 16;
-         data.putLong(CursedArmHassanEntity.TAG_DIRK_REPLENISH_TICK, now);
-      }
+      if (ammo < 3) return false;
       data.putLong(LAST_DIRK_TICK, now);
       data.putInt(CursedArmHassanEntity.TAG_DIRK_AMMO, ammo - 3);
       syncDirkStack(entity);
@@ -436,15 +408,45 @@ public final class CursedArmHassanCombatHelper {
       return true;
    }
 
+   private static boolean tryOrdinaryDirk(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
+      // Match the ordinary knife item's right-click behavior: the throw itself
+      // does not require an entity line of sight; the projectile handles blocks.
+      if (distance < 3 || distance > 18 || entity.isPerformingAction()
+         || now < entity.getPersistentData().getLong("CursedArmOrdinaryDirkReady")) return false;
+      CompoundTag data = entity.getPersistentData();
+      int ammo = Math.max(0, Math.min(16, data.getInt(CursedArmHassanEntity.TAG_DIRK_AMMO)));
+      if (ammo < 1) return false;
+      entity.getPersistentData().putLong("CursedArmOrdinaryDirkReady", now + 16);
+      data.putInt(CursedArmHassanEntity.TAG_DIRK_AMMO, ammo - 1);
+      syncDirkStack(entity);
+      entity.triggerDirkThrowAnimation();
+      DirkProjectileEntity projectile = new DirkProjectileEntity(entity.level(), entity);
+      projectile.setDamage(10.0F);
+      projectile.setPos(entity.getX(), entity.getEyeY() - 0.1, entity.getZ());
+      projectile.setMaxDistance(18.0);
+      Vec3 aim = target.position().add(0, target.getBbHeight() * 0.55, 0).subtract(projectile.position());
+      projectile.shoot(aim.x, aim.y, aim.z, 1.9F, 0.0F);
+      entity.level().addFreshEntity(projectile);
+      entity.level().playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.75F, 1.45F);
+      return true;
+   }
+
    private static void syncDirkStack(CursedArmHassanEntity entity) {
-      int ammo = Math.max(0, Math.min(16, entity.getPersistentData().getInt(CursedArmHassanEntity.TAG_DIRK_AMMO)));
+      CompoundTag data = entity.getPersistentData();
+      int ammo = Math.max(0, Math.min(16, data.getInt(CursedArmHassanEntity.TAG_DIRK_AMMO)));
       ItemStack held = entity.getOffhandItem();
+      if (HassanZabaniyaService.isExtractedItem(held) || HassanZabaniyaService.isExtractedItem(entity.getMainHandItem())) return;
       if (ammo == 0) {
-         if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) entity.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, ItemStack.EMPTY);
-      } else if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         held.setCount(ammo);
-      } else {
-         entity.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), ammo));
+         ammo = 16;
+         data.putInt(CursedArmHassanEntity.TAG_DIRK_AMMO, ammo);
+      }
+      if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         held.setCount(1);
+         held.setDamageValue(16 - ammo);
+      } else if (held.isEmpty()) {
+         ItemStack knife = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
+         knife.setDamageValue(16 - ammo);
+         entity.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, knife);
       }
    }
 
@@ -607,18 +609,35 @@ public final class CursedArmHassanCombatHelper {
       if (!entity.getSensing().hasLineOfSight(target) || entity.isPerformingAction()) {
          return false;
       }
-
+      int ammo = data.getInt(CursedArmHassanEntity.TAG_DIRK_AMMO);
+      if (ammo < 1) return false;
       data.putLong(LAST_KNIFE_FEINT_TICK, now);
+      data.putInt(CursedArmHassanEntity.TAG_DIRK_AMMO, ammo - 1);
+      syncDirkStack(entity);
       entity.setCurrentMp(entity.getCurrentMp() - 5.0);
       entity.faceToward(target.position());
       entity.triggerDirkThrowAnimation();
-      if (!dealScaledKnifeDamage(entity, target, 0.72F)) return true;
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 35, 1, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 35, 0, false, true, true));
+      DirkProjectileEntity projectile = new DirkProjectileEntity(entity.level(), entity);
+      projectile.setDamage(10.0F);
+      projectile.setPos(entity.getX(), entity.getEyeY() - 0.1, entity.getZ());
+      projectile.setMaxDistance(18.0);
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(projectile.position()).normalize();
+      projectile.shoot(aim.x, aim.y, aim.z, 2.2F, 0.0F);
+      entity.level().addFreshEntity(projectile);
       if (entity.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.62, target.getZ(), 10, 0.28, 0.22, 0.28, 0.08);
          level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.65F, 1.75F);
       }
+      return true;
+   }
+
+   private static boolean tryQuickStab(CursedArmHassanEntity entity, LivingEntity target, double distance, long now) {
+      CompoundTag data = entity.getPersistentData();
+      if (isForbiddenTarget(target) || distance > 2.6 || entity.isPerformingAction()
+         || now - data.getLong("CursedArmLastQuickStabTick") < QUICK_STAB_COOLDOWN) return false;
+      data.putLong("CursedArmLastQuickStabTick", now);
+      entity.triggerAssassinStabAnimation();
+      dealScaledKnifeDamage(entity, target, 0.8F);
       return true;
    }
 
@@ -667,31 +686,8 @@ public final class CursedArmHassanCombatHelper {
          entity.setTarget(null);
          return;
       }
-      boolean validInstantDeath = isHumanoidInstantDeathTarget(target);
-
-      boolean killed = validInstantDeath && entity.getRandom().nextFloat() < 0.6F;
-      DamageSource source = entity.damageSources().mobAttack(entity);
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,55,"cursed_arm_hassan:zabaniya",killed)) { spawnZabaniyaImpactFx(entity,target,killed);return; }
-      if (killed) {
-         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "zabaniya", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(entity))) {
-            spawnZabaniyaImpactFx(entity, target, false);
-            return;
-         }
-         if (HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
-            spawnZabaniyaImpactFx(entity, target, true);
-            return;
-         }
-         target.invulnerableTime = 0;
-         target.hurt(source, Math.max(target.getMaxHealth() * 2.0F, 500.0F));
-         target.invulnerableTime = 0;
-         if (target.isAlive()) {
-            target.setHealth(0.0F);
-            target.die(entity.damageSources().genericKill());
-         }
-      } else {
-         if (target.hurt(source, 55.0F)) applyZabaniyaCurse(target);
-      }
-      spawnZabaniyaImpactFx(entity, target, killed);
+      boolean extracted = HassanZabaniyaService.resolve(entity, target, 55.0F, true);
+      spawnZabaniyaImpactFx(entity, target, extracted);
    }
 
    public static void applyZabaniyaCurse(LivingEntity target) {

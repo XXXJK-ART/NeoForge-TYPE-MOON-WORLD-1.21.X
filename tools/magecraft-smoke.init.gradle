@@ -1,0 +1,12 @@
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('magecraftSmoke') {
+            java.srcDir 'tools/magecraft-smoke/java'
+            resources.srcDir 'tools/magecraft-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_magecraft_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/magecraft-client-run')
+    }
+}

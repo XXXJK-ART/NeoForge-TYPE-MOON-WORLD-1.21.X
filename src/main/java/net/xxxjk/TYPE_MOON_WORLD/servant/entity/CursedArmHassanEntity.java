@@ -63,6 +63,16 @@ public class CursedArmHassanEntity extends ServantEntity {
    }
 
    @Override
+   protected void customServerAiStep() {
+      if (HassanZabaniyaService.isExtractedItem(this.getMainHandItem())
+         || HassanZabaniyaService.isExtractedItem(this.getOffhandItem())) {
+         this.getNavigation().stop();
+         return;
+      }
+      super.customServerAiStep();
+   }
+
+   @Override
    public void tick() {
       super.tick();
       if (!this.level().isClientSide()) {
@@ -75,6 +85,7 @@ public class CursedArmHassanEntity extends ServantEntity {
             this.setNoBandages(false);
          }
          this.enforceEmptyRightHand();
+         HassanZabaniyaService.tickNpc(this);
       }
    }
 
@@ -83,10 +94,18 @@ public class CursedArmHassanEntity extends ServantEntity {
       if (hand == InteractionHand.MAIN_HAND && !stack.isEmpty()) {
          ItemStack rightHandStack = stack.copy();
          if (rightHandStack.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-            rightHandStack.setCount(Math.max(16, rightHandStack.getCount()));
+            rightHandStack.setCount(1);
          }
-         if (this.getOffhandItem().isEmpty()) {
+         ItemStack offhand = this.getOffhandItem();
+         if (HassanZabaniyaService.isExtractedItem(rightHandStack)) {
+            if (!offhand.isEmpty()) this.spawnAtLocation(offhand.copy());
             super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
+         } else if (HassanZabaniyaService.isExtractedItem(offhand)) {
+            this.spawnAtLocation(rightHandStack);
+         } else if (offhand.isEmpty()) {
+            super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
+         } else {
+            this.spawnAtLocation(rightHandStack);
          }
          super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          return;
@@ -100,11 +119,26 @@ public class CursedArmHassanEntity extends ServantEntity {
          return;
       }
       ItemStack moved = mainHand.copy();
-      if (moved.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         moved.setCount(Math.max(16, moved.getCount()));
+      if (HassanZabaniyaService.isExtractedItem(moved)) {
+         ItemStack offhand = this.getOffhandItem();
+         if (HassanZabaniyaService.isExtractedItem(offhand)) {
+            this.spawnAtLocation(moved);
+         } else {
+            if (!offhand.isEmpty()) this.spawnAtLocation(offhand.copy());
+            super.setItemInHand(InteractionHand.OFF_HAND, moved);
+         }
+         super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+         return;
       }
-      if (this.getOffhandItem().isEmpty()) {
+      if (moved.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         moved.setCount(1);
+      }
+      if (HassanZabaniyaService.isExtractedItem(this.getOffhandItem())) {
+         this.spawnAtLocation(moved);
+      } else if (this.getOffhandItem().isEmpty()) {
          super.setItemInHand(InteractionHand.OFF_HAND, moved);
+      } else {
+         this.spawnAtLocation(moved);
       }
       super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
    }
@@ -175,6 +209,18 @@ public class CursedArmHassanEntity extends ServantEntity {
       this.entityData.set(SELF_MODIFICATION_LEVEL, Math.max(0, Math.min(3, level)));
       this.applySelfModificationAttributes();
       this.refreshDimensions();
+   }
+
+   public void evolveAfterServantKill() {
+      if (this.getSelfModificationLevel() >= 3) return;
+      this.setSelfModificationLevel(this.getSelfModificationLevel() + 1);
+      this.heal(50.0F);
+      if (this.level() instanceof net.minecraft.server.level.ServerLevel level) {
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL, this.getX(), this.getY() + this.getBbHeight() * 0.55,
+            this.getZ(), 24, 0.35, 0.45, 0.35, 0.03);
+         level.playSound(null, this.blockPosition(), net.minecraft.sounds.SoundEvents.SCULK_CATALYST_BLOOM,
+            net.minecraft.sounds.SoundSource.HOSTILE, 0.8F, 0.75F);
+      }
    }
 
    public float getVisualScale() {

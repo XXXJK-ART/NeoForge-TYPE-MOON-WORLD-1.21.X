@@ -42,7 +42,7 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
-      builder.define(DAMAGE, 20.0F);
+      builder.define(DAMAGE, 10.0F);
    }
 
    public void setDamage(float damage) {

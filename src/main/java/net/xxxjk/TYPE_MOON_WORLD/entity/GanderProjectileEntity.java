@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.BaobhanSithServantSkills;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -179,12 +180,10 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                         livingTarget.invulnerableTime = 0;
                      } else {
                         livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
-                        curseDamage = MagicResistanceHelper.applyMagicDamageReduction(
-                           livingTarget, this.damageSources().magic(), curseDamage, MagicComplexity.SIMPLE_ACTION,
-                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
-                        livingTarget.hurt(this.damageSources().magic(), curseDamage);
+                        livingTarget.hurt(MagecraftDamageSource.of(this.damageSources().indirectMagic(this, this.getOwner()), this.sourceMagicId,
+                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.casterProficiency), curseDamage);
                         effectDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-                           livingTarget, duration, MagicComplexity.SIMPLE_ACTION,
+                           livingTarget, duration, MagicResistanceHelper.complexityForMagic(this.sourceMagicId),
                            this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
                      }
                      if (effectDuration > 0) {

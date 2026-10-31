@@ -20,7 +20,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicProficiencyContestHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
-import net.xxxjk.typemoonworld.api.MagicComplexity;
 
 public final class MagicSuggestion {
    public static final int COMMAND_CONFUSE = 0;
@@ -72,7 +71,7 @@ public final class MagicSuggestion {
       }
       double p = BasicMagecraftHelper.clampProficiency(proficiency);
       MagicProficiencyContestHelper.Result contest = MagicProficiencyContestHelper.contest(
-         caster, target, "suggestion_magic", p, MagicComplexity.ONE_VERSE);
+         caster, target, "suggestion_magic", p, MagicResistanceHelper.complexityForMagic("suggestion_magic"));
       if (contest == MagicProficiencyContestHelper.Result.COUNTERED) {
          applyCounterSuggestion(target, caster, p);
          return false;
@@ -85,14 +84,14 @@ public final class MagicSuggestion {
       }
       if (!canControlTarget(target)) {
          int blindTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-            target, p >= 50.0 ? 20 : 8, MagicComplexity.ONE_VERSE);
+            target, p >= 50.0 ? 20 : 8, MagicResistanceHelper.complexityForMagic("suggestion_magic"));
          if (blindTicks > 0) {
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, blindTicks, 0, false, true, true));
          }
          return false;
       }
       if (caster.getRandom().nextDouble() > successChance(p)) {
-         int confuseTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 50, MagicComplexity.ONE_VERSE);
+         int confuseTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 50, MagicResistanceHelper.complexityForMagic("suggestion_magic"));
          if (confuseTicks > 0) {
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, confuseTicks, 0, false, true, true));
          }
@@ -100,13 +99,13 @@ public final class MagicSuggestion {
       }
 
       int command = commandForProficiency(p);
-      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, durationTicks(p), MagicComplexity.ONE_VERSE);
+      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, durationTicks(p), MagicResistanceHelper.complexityForMagic("suggestion_magic"));
       if (duration <= 0) {
          return false;
       }
       int amplifier = p >= 75.0 ? 3 : p >= 50.0 ? 2 : p >= 25.0 ? 1 : 0;
       target.addEffect(new MobEffectInstance(ModMobEffects.SUGGESTION, duration, amplifier, false, true, true));
-      int confusionTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, Math.min(duration, 160), MagicComplexity.ONE_VERSE);
+      int confusionTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, Math.min(durationTicks(p), 160), MagicResistanceHelper.complexityForMagic("suggestion_magic"));
       if (confusionTicks > 0) {
          target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, confusionTicks, Math.min(1, amplifier), false, true, true));
       }
@@ -116,13 +115,13 @@ public final class MagicSuggestion {
             target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, duration, 9, false, true, true));
          } else if (p >= 50.0) {
             int reverseTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-               target, Math.min(duration, 120), MagicComplexity.ONE_VERSE);
+               target, Math.min(durationTicks(p), 120), MagicResistanceHelper.complexityForMagic("suggestion_magic"));
             if (reverseTicks > 0) {
                target.addEffect(new MobEffectInstance(ModMobEffects.REVERSE_MOVEMENT, reverseTicks, 0, false, true, true));
             }
          } else {
             int blindTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-               target, Math.min(duration, 80), MagicComplexity.ONE_VERSE);
+               target, Math.min(durationTicks(p), 80), MagicResistanceHelper.complexityForMagic("suggestion_magic"));
             if (blindTicks > 0) {
                target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, blindTicks, 0, false, true, true));
             }
@@ -148,7 +147,7 @@ public final class MagicSuggestion {
          ? Math.min(100.0, originalProficiency + MagicProficiencyContestHelper.COUNTER_GAP + 1.0)
          : MagicProficiencyContestHelper.getComparableMagicProficiency(counterCaster, "suggestion_magic");
       int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-         originalCaster, Math.min(200, Math.max(60, durationTicks(counterP) / 4)), MagicComplexity.ONE_VERSE);
+         originalCaster, Math.min(200, Math.max(60, durationTicks(counterP) / 4)), MagicResistanceHelper.complexityForMagic("suggestion_magic"));
       if (duration <= 0) {
          return;
       }
@@ -182,14 +181,14 @@ public final class MagicSuggestion {
       if (proficiency < 50.0) {
          return false;
       }
-      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 20, MagicComplexity.ONE_VERSE);
+      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 20, MagicResistanceHelper.complexityForMagic("suggestion_magic"));
       if (duration <= 0) {
          return false;
       }
       target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, duration, 0, false, true, true));
       if (proficiency >= 75.0 && caster.getRandom().nextFloat() < 0.08F) {
-         int reverseTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 40, MagicComplexity.ONE_VERSE);
+         int reverseTicks = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, 40, MagicResistanceHelper.complexityForMagic("suggestion_magic"));
          if (reverseTicks > 0) {
             target.addEffect(new MobEffectInstance(ModMobEffects.REVERSE_MOVEMENT, reverseTicks, 0, false, true, true));
          }

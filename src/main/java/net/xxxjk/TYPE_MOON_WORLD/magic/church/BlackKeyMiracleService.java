@@ -26,6 +26,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class BlackKeyMiracleService {
    public static final String THEOLOGY = "theology";
@@ -179,7 +180,7 @@ public final class BlackKeyMiracleService {
          float radius = (float)Math.min(6.0, 1.2 + layers * 0.35 + proficiency * 0.012);
          float damage = (float)(6.0 + layers * 2.5 + proficiency * 0.12);
          target.invulnerableTime = 0;
-         target.hurt(target.damageSources().magic(), damage);
+         target.hurt(MagecraftDamageSource.of(caster.damageSources().magic(), CREMATION_RITE, caster), damage);
          level.explode(caster, target.getX(), target.getY(0.45), target.getZ(), radius, false, Level.ExplosionInteraction.NONE);
          target.removeEffect(ModMobEffects.CREMATION_RITE);
          detonated++;

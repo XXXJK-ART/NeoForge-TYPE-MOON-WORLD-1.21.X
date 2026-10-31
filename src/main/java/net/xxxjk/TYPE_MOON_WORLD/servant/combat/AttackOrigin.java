@@ -12,6 +12,7 @@ public record AttackOrigin(String servant, String item, String skill) {
    public static AttackOrigin skill(String servant, String skill) { return new AttackOrigin(servant, "", skill); }
    public static AttackOrigin of(DamageSource source) {
       if (source instanceof CombatDamageSource named) return named.origin();
+      if (source instanceof net.xxxjk.typemoonworld.api.WrappedDamageSource wrapped) return of(wrapped.baseSource());
       if (source instanceof OdaDamageSource oda) return skill("oda_nobunaga", oda.ability().name().toLowerCase(java.util.Locale.ROOT));
       String type = source.typeHolder().unwrapKey().map(k -> k.location().toString()).orElse(source.getMsgId());
       if (source.getEntity() instanceof LivingEntity attacker) {

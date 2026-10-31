@@ -3,10 +3,10 @@
   "id": "presence_concealment_a_plus_cursed_arm",
   "display_name": "Presence Concealment A+",
   "display_name_zh": "气息遮断 A+",
-  "type": "passive",
-  "mp_cost": 0,
+  "type": "active",
+  "mp_cost": 18,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": [{"effect_type":"stealth_passive","params":{}}],
+  "effects": [{"effect_type":"ranked_concealment_toggle","params":{"rank":"A+","max_particles":1}}],
   "ai": {"facts":[{"type":"concealment","strength":1.0}]}
 }

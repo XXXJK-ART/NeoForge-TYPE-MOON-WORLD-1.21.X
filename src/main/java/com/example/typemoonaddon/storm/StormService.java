@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.storm;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.StormMagic;
 import com.example.typemoonaddon.network.StormCastInputPayload;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
@@ -301,7 +302,7 @@ public final class StormService {
                 query,
                 target -> EntityUtils.isValidCombatTarget(player, target)
         );
-        DamageSource damageSource = player.damageSources().source(DamageTypes.MAGIC, player);
+        DamageSource damageSource = MagecraftDamageSource.of(player.damageSources().source(DamageTypes.MAGIC, player), "storm", player);
 
         pruneCooldowns(state, now);
         for (LivingEntity target : targets) {
@@ -630,7 +631,7 @@ public final class StormService {
                 pullArea,
                 target -> isFullTornadoTarget(player, target)
         );
-        DamageSource damageSource = player.damageSources().source(DamageTypes.MAGIC, player);
+        DamageSource damageSource = MagecraftDamageSource.of(player.damageSources().source(DamageTypes.MAGIC, player), "storm", player);
         pruneCooldownMap(state.hitCooldowns, now);
 
         for (LivingEntity target : targets) {

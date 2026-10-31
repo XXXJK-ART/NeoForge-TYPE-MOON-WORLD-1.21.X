@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -343,7 +345,7 @@ public final class ServantCardParacelsusSkills {
                target.hurtMarked = true;
                if (delay % 20 == 0) {
                   target.invulnerableTime = 0;
-                  target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 30.0));
+                  target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 30.0));
                }
             }
          });
@@ -354,7 +356,7 @@ public final class ServantCardParacelsusSkills {
          level.playSound(null, centerPos, SoundEvents.GENERIC_SPLASH, SoundSource.PLAYERS, 1.3F, 0.7F);
          for (LivingEntity target : hostilesInRadius(level, player, center, 10.0, 4.0)) {
             target.invulnerableTime = 0;
-            target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 50.0));
+            target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 50.0));
             Vec3 push = target.position().subtract(center).multiply(1.0, 0.0, 1.0);
             if (push.lengthSqr() > 1.0E-4) {
                push = push.normalize().scale(1.85);
@@ -663,7 +665,7 @@ public final class ServantCardParacelsusSkills {
             continue;
          }
          living.invulnerableTime = 0;
-         living.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, damage));
+         living.hurt(net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(player.damageSources().magic(), "elemental_sword"), (float)applyWorkshopDamage(player, damage));
          living.invulnerableTime = 0;
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, advanced ? 300 : 180, 0, false, true, true));
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, advanced ? 300 : 180, 0, false, true, true));
@@ -748,6 +750,7 @@ public final class ServantCardParacelsusSkills {
       double radiusSqr = horizontalRadius * horizontalRadius;
       List<LivingEntity> result = new ArrayList<>();
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> e.isAlive() && e != player && isValidTarget(player, e))) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) continue;
          Vec3 flat = living.position().subtract(center).multiply(1.0, 0.0, 1.0);
          if (flat.lengthSqr() <= radiusSqr) {
             result.add(living);
@@ -805,7 +808,7 @@ public final class ServantCardParacelsusSkills {
          level.playSound(null, BlockPos.containing(pos), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.7F, 0.75F + level.getRandom().nextFloat() * 0.2F);
          for (LivingEntity target : hostilesInRadius(level, player, pos, 2.1, 3.4)) {
             target.invulnerableTime = 0;
-            target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 80.0));
+            target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 80.0));
             net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.applyFire(target, 100);
             long burnToken = net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.startBurnSequence(target, level);
             for (int burn = 20; burn <= net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.MAX_FIRE_TICKS && burnToken >= 0L; burn += 20) {
@@ -813,7 +816,7 @@ public final class ServantCardParacelsusSkills {
                   if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.ParacelsusBalanceRules.isBurnSequenceActive(target, level, burnToken)
                      && target.getRemainingFireTicks() > 0) {
                      target.invulnerableTime = 0;
-                     target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 15.0));
+                     target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 15.0));
                   }
                });
             }
@@ -868,7 +871,7 @@ public final class ServantCardParacelsusSkills {
                level.sendParticles(ParticleTypes.POOF, pos.getX() + 0.5, pos.getY() + 0.35, pos.getZ() + 0.5, 8, 0.35, 0.15, 0.35, 0.04);
                for (LivingEntity target : hostilesInRadius(level, player, Vec3.atCenterOf(pos), 1.7, 2.2)) {
                   target.invulnerableTime = 0;
-                  target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 60.0));
+                  target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 60.0));
                   target.setDeltaMovement(target.getDeltaMovement().add(0.0, 0.85, 0.0));
                   target.hurtMarked = true;
                }
@@ -885,7 +888,7 @@ public final class ServantCardParacelsusSkills {
       level.playSound(null, pos, SoundEvents.DEEPSLATE_BREAK, SoundSource.PLAYERS, 0.75F, 0.65F);
       for (LivingEntity target : hostilesInRadius(level, player, impact, 2.4, 4.2)) {
          target.invulnerableTime = 0;
-         target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 40.0));
+         target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 40.0));
       }
    }
 
@@ -909,7 +912,7 @@ public final class ServantCardParacelsusSkills {
          level.sendParticles(EARTH, crackPos.x, crackPos.y, crackPos.z, 9, 0.35, 0.1, 0.35, 0.02);
          for (LivingEntity target : hostilesInRadius(level, player, crackPos, 1.8, 2.0)) {
             target.invulnerableTime = 0;
-            target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 80.0));
+            target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 80.0));
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 9, false, true, true));
          }
       }
@@ -955,7 +958,7 @@ public final class ServantCardParacelsusSkills {
                continue;
             }
             target.invulnerableTime = 0;
-            target.hurt(player.damageSources().magic(), (float)applyWorkshopDamage(player, 70.0));
+            target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "paracelsus_elemental_magic", MagicComplexity.TWO_VERSE, player), (float)applyWorkshopDamage(player, 70.0));
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 12, 10, false, true, true));
             Vec3 pull = center.subtract(target.position()).multiply(0.08, 0.0, 0.08);
             target.setDeltaMovement(target.getDeltaMovement().scale(0.45).add(pull.x, 0.03, pull.z));

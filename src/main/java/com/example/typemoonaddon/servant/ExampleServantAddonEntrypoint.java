@@ -44,7 +44,8 @@ public final class ExampleServantAddonEntrypoint implements IServantAddonEntrypo
         data.putLong(LAST_CAST_TICK, context.gameTick());
         float damage = (float) Math.max(4.0, caster.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.8);
         target.invulnerableTime = 0;
-        target.hurt(caster.damageSources().magic(), damage);
+        target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(caster.damageSources().magic(), ACTION_ID,
+                net.xxxjk.typemoonworld.api.MagicComplexity.TWO_VERSE, caster), damage);
 
         if (caster.level() instanceof ServerLevel level) {
             level.sendParticles(

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -409,7 +410,7 @@ public final class GemGravityFieldMagic {
                         }
 
                         if (applyDamage && damagePerPulse > 0.0F) {
-                           target.hurt(level.damageSources().magic(), damagePerPulse);
+                           target.hurt(MagecraftDamageSource.of(level.damageSources().magic(), "gravity_magic", caster), damagePerPulse);
                         }
                      }
                   }

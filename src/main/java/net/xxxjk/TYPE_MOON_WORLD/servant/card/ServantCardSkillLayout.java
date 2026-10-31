@@ -98,13 +98,13 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment A+", "stealth", 18.0, 180);
-            case 1 -> new ServantCardSkillAction("Self Modification C", "self_mod", 28.0, 360);
+            case 0 -> new ServantCardSkillAction("Presence Concealment A+", "hassan_concealment", 18.0, 0);
+            case 1 -> new ServantCardSkillAction("Quick Stab", "hassan_quick_stab", 0.0, 30);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Throwing (Dagger) B", "dirk_throw", 8.0, 40);
             case 4 -> new ServantCardSkillAction("Shadow Ambush", "shadow_step", 10.0, 120);
             case 5 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 7.0, 85);
-            case 6 -> new ServantCardSkillAction("Dagger Feint", "knife_feint", 5.0, 70);
+            case 6 -> new ServantCardSkillAction("Single Dirk Throw", "knife_feint", 5.0, 70);
             case 7 -> new ServantCardSkillAction("Elbow Strike", "elbow_strike", 6.0, 80);
             case 8 -> new ServantCardSkillAction("Trip Sweep", "trip_sweep", 8.0, 160);
             case 9 -> new ServantCardSkillAction("Zabaniya", "zabaniya", 80.0, 1400);

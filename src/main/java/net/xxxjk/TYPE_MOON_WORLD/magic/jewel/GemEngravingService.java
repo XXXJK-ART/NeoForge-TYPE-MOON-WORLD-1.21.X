@@ -585,10 +585,8 @@ public final class GemEngravingService {
          LivingEntity.class, area, target -> target != caster && target.isAlive()
             && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
       )) {
-         float adjustedDamage = MagicResistanceHelper.applyMagicDamageReduction(
-            target, caster.damageSources().indirectMagic(projectile, caster), damage, MagicComplexity.TWO_VERSE,
-            caster, "fire_magic", proficiency);
-         target.hurt(caster.damageSources().indirectMagic(projectile, caster), adjustedDamage);
+         target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(
+            caster.damageSources().indirectMagic(projectile, caster), "fire_magic", caster, proficiency), damage);
          target.igniteForSeconds(igniteSeconds);
       }
       if (caster.level() instanceof ServerLevel level) {

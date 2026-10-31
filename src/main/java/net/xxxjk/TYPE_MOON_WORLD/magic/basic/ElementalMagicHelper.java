@@ -182,7 +182,7 @@ public final class ElementalMagicHelper {
 
    public static ElementalMagicFieldEntity spawnField(TypeMoonWorldModVariables.PlayerVariables vars, String magicId, LivingEntity caster, BlockPos pos, int element, int form, float radius, float width, int duration, float damagePerSecond) {
       float visualScale = matchingAttribute(vars, magicId) ? 1.15F : 1.0F;
-      return spawnField(
+      ElementalMagicFieldEntity field = spawnField(
          caster,
          pos,
          element,
@@ -192,6 +192,8 @@ public final class ElementalMagicHelper {
          duration,
          applyPowerAffinity(vars, magicId, damagePerSecond)
       );
+      if (field != null) field.setSourceMagicId(magicId);
+      return field;
    }
 
    public static void changeGroundToMudOrFarmland(LivingEntity caster, double range) {

@@ -1167,7 +1167,7 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> DIRK_SMALL_KNIFE = ITEMS.register("dirk_small_knife",
-            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).durability(100)
+            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1).durability(16)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
@@ -1180,6 +1180,12 @@ public class ModItems {
                                             1.8, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> ZABANIYA_HEART = ITEMS.register("zabaniya_heart",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), true));
+    public static final DeferredItem<Item> ZABANIYA_MECHANICAL_CORE = ITEMS.register("zabaniya_mechanical_core",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), true));
+    public static final DeferredItem<Item> ZABANIYA_DIVINE_CLAY = ITEMS.register("zabaniya_divine_clay",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), false));
     public static final DeferredItem<Item> GAN_JIANG = ITEMS.register("gan_jiang",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()

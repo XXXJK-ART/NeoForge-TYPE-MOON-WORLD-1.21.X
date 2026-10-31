@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
+
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -354,8 +357,8 @@ public final class ServantCardMedeaSkills {
       if (target == null) {
          return;
       }
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 1, false, true, true));
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 120, 1, false, true, true), MagicComplexity.TWO_VERSE);
       if (player.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_medea_bind", target, 96.0);
          level.sendParticles(ParticleTypes.SNOWFLAKE, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 24, 0.45, 0.55, 0.45, 0.035);
@@ -678,7 +681,7 @@ public final class ServantCardMedeaSkills {
       Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       if (modeIndex == 3) {
          fireMedeaMinorBeam(player, level, spawn, aim);
-         target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 35, 0, false, true, true));
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.GLOWING, 35, 0, false, true, true), MagicComplexity.TWO_VERSE);
          return;
       }
       MedeaMagicBoltEntity.Mode mode = switch (modeIndex) {

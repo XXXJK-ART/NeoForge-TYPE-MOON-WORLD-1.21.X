@@ -632,6 +632,12 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
       }
+      if ("hassan_concealment".equals(action.effectId())
+         && net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.enabled(player)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(player, false);
+         player.displayClientMessage(Component.translatable("message.typemoonworld.hassan.concealment_off"), true);
+         return true;
+      }
       if ("sasaki_presence_concealment".equals(action.effectId())
          && net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isConcealed(player)) {
          net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.setConcealed(player, false);
@@ -1676,7 +1682,11 @@ public final class ServantCardTransformManager {
          case "algiz" -> ServantCardGawainSkills.performGuard(player);
          case "barrier" -> ServantCardMedeaSkills.performMedeaBarrier(player);
          case "bulwark" -> ServantCardEnkiduSkills.performEnkiduBulwark(player);
-          case "self_mod" -> { if (!ServantCardHassanSkills.performSelfModification(player)) return false; }
+         case "hassan_concealment" -> {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(player, true)) return false;
+            player.displayClientMessage(Component.translatable("message.typemoonworld.hassan.concealment_on"), true);
+         }
+         case "hassan_quick_stab" -> { if (!ServantCardHassanSkills.performQuickStab(player)) return false; }
          case "dirk_throw" -> ServantCardHassanSkills.performDirkThrow(player);
           case "shadow_step" -> { if (!ServantCardHassanSkills.performShadowStep(player)) return false; }
           case "shadow_lunge" -> { if (!ServantCardHassanSkills.performShadowLunge(player)) return false; }
