@@ -1,5 +1,7 @@
 package com.example.typemoonaddon.andrasias;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.AndrasiasMagic;
 import com.example.typemoonaddon.network.AndrasiasCastInputPayload;
@@ -270,6 +272,7 @@ public final class AndrasiasService {
     private static void applyImpact(ServerPlayer caster, ServerLevel level, CastState state) {
         AABB area = new AABB(state.origin, state.origin).inflate(IMPACT_RADIUS);
         DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "andrasias", caster);
+        try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : level.getEntitiesOfClass(
                 LivingEntity.class,
                 area,
@@ -285,6 +288,7 @@ public final class AndrasiasService {
                         state.direction.z * 0.55D);
                 target.hurtMarked = true;
             }
+        }
         }
     }
 
@@ -376,6 +380,7 @@ public final class AndrasiasService {
         double halfWidth = RIFT_WIDTH * 0.5D + 1.0D;
         AABB area = new AABB(point, point).inflate(halfWidth, 2.5D, halfWidth);
         DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "andrasias", caster);
+        try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : level.getEntitiesOfClass(
                 LivingEntity.class,
                 area,
@@ -392,6 +397,7 @@ public final class AndrasiasService {
                 target.push(0.0D, 0.28D, 0.0D);
                 target.hurtMarked = true;
             }
+        }
         }
     }
 

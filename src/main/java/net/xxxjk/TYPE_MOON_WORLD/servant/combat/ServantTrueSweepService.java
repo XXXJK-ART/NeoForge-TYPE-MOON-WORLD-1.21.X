@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -50,6 +52,7 @@ public final class ServantTrueSweepService {
    }
 
    public static boolean triggerPlayerAttack(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player != null && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) return false;
       if (vars != null && "diarmuid_ua_duibhne".equals(vars.servant_card_id)) return false;
       if (player == null || vars == null || !vars.servant_card_transformed || !(player.level() instanceof ServerLevel level)) {
          return false;
@@ -166,6 +169,7 @@ public final class ServantTrueSweepService {
       AABB area = attacker.getBoundingBox().inflate(range, 1.6, range).move(forward.scale(Math.min(0.8, range * 0.16)));
       int hits = 0;
       boolean terrainTriggered = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> isSweepTarget(attacker, entity))) {
          Vec3 offset = target.position().subtract(attacker.position());
@@ -194,6 +198,7 @@ public final class ServantTrueSweepService {
                target.hurtMarked = true;
             }
          }
+      }
       }
       return hits;
    }

@@ -360,6 +360,7 @@ public final class ServantCardZhaoYunSkills {
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       AABB area = player.getBoundingBox().inflate(4.5, 1.8, 4.5);
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 10.0);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isEnemy(player, e))) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().playerAttack(player), damage);
@@ -368,6 +369,7 @@ public final class ServantCardZhaoYunSkills {
          if (away.lengthSqr() < 1.0E-4) away = PlayerNoblePhantasmHelper.horizontalLook(player);
          away = away.normalize();
          target.push(away.x * 1.0, 0.25, away.z * 1.0);
+      }
       }
       VFXServerEffects.spawn(level, "servant_zhao_yun_dragon_gall", player, 64.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, origin.x, origin.y, origin.z, 18, 2.8, 0.5, 2.8, 0.0);
@@ -428,10 +430,12 @@ public final class ServantCardZhaoYunSkills {
       ZhaoYunHakuryuEntity mount = getMount(player, TAG_SKILL_MOUNT_UUID);
       LivingEntity source = mount == null ? player : mount;
       AABB area = source.getBoundingBox().inflate(4.5, 1.6, 4.5);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isEnemy(player, e))) {
          target.hurt(player.damageSources().playerAttack(player), 28.0F);
          target.push(0.0, 0.6, 0.0);
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 50, 1, false, true, true));
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION, source.getX(), source.getY() + 0.2, source.getZ(), 16, 1.4, 0.25, 1.4, 0.0);
       spawnSkillBurst(level, source.position().add(0.0, 0.8, 0.0), 2.6, 28);
@@ -820,6 +824,7 @@ public final class ServantCardZhaoYunSkills {
    private static void hitMountTargets(ServerPlayer player, ZhaoYunHakuryuEntity mount, double inflate, float damage) {
       if (!(player.level() instanceof ServerLevel level)) return;
       AABB area = mount.getBoundingBox().inflate(inflate, 1.4, inflate);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          e -> e != player && e != mount && isEnemy(player, e))) {
          String key = "ZhaoYunNpHit_" + target.getUUID();
@@ -838,6 +843,7 @@ public final class ServantCardZhaoYunSkills {
             level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY() + 0.5, target.getZ(),
                3, 0.2, 0.25, 0.2, 0.0);
          }
+      }
       }
       for (String key : List.copyOf(player.getPersistentData().getAllKeys())) {
          if (key.startsWith("ZhaoYunNpHit_")) {

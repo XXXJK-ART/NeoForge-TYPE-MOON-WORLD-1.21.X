@@ -105,7 +105,7 @@ public record AiActionDescriptor(
       return new ThreatSpec(shape, radius, length, danger, blockable, dodgeable, interruptible, collateralRadius);
    }
 
-   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON,
+   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON, SUPPORT,
       LAUNCHER, PURSUIT, INTERCEPT, GAP_CLOSER, ANTI_AIR, COUNTER, FINISHER, TERRAIN_BREAK }
    public record Timing(int windupTicks, int activeTicks, int recoveryTicks) {
       public Timing { windupTicks=Math.max(0,windupTicks); activeTicks=Math.max(1,activeTicks); recoveryTicks=Math.max(0,recoveryTicks); }

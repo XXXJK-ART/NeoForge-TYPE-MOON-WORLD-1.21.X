@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -149,6 +151,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
       float damage = this.estimatedDetonationDamage();
       double radius = Mth.clamp(3.5 + damage / 450.0, 4.0, 11.5);
       Vec3 center = this.position();
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          this.getBoundingBox().inflate(radius),
@@ -168,6 +171,7 @@ public class RhoAiasEntity extends Entity implements GeoEntity {
             living.push(push.x * 1.3, 0.45, push.z * 1.3);
             living.hurtMarked = true;
          }
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 3, 0.35, 0.35, 0.35, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 4, 0.08, 0.08, 0.08, 0.0);

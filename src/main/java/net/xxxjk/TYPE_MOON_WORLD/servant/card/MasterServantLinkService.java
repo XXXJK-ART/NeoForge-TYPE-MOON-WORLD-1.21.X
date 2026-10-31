@@ -143,6 +143,7 @@ public final class MasterServantLinkService {
    }
 
    public static void clearPlayerContract(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      ServantMasterCarryService.dismount(player);
       clearContractTags(player);
       vars.master_servant_contract_id = "";
       vars.servant_card_contract_id = "";
@@ -352,6 +353,8 @@ public final class MasterServantLinkService {
    }
 
    public static void unlink(ServerPlayer master, ServerPlayer servant, UnlinkReason reason) {
+      if (master != null) ServantMasterCarryService.dismount(master);
+      if (servant != null) ServantMasterCarryService.dismount(servant);
       TypeMoonWorldModVariables.PlayerVariables masterVars = master == null ? null
          : master.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       TypeMoonWorldModVariables.PlayerVariables servantVars = servant == null ? null

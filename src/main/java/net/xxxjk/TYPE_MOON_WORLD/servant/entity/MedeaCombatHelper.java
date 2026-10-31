@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
 
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
@@ -681,6 +683,7 @@ public final class MedeaCombatHelper {
          targets.add(0, target);
       }
       int strikes = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : targets) {
          if (strikes >= 5) {
             break;
@@ -694,6 +697,7 @@ public final class MedeaCombatHelper {
          fractureTerrain(level, entity, center, 1.9, 5.0, 60.0F, 24);
          spawnLightningBolts(level, center, 1);
          strikes++;
+      }
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THUNDER.value(), SoundSource.HOSTILE, 1.1F, 0.9F);
       queueStaffClear(entity, 18);
@@ -1102,6 +1106,7 @@ public final class MedeaCombatHelper {
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45, entity.getZ(), 18, 0.65, 0.35, 0.65, 0.02);
       level.sendParticles(ParticleTypes.CLOUD, entity.getX(), entity.getY() + 0.25, entity.getZ(), 20, 1.1, 0.15, 1.1, 0.06);
       fractureTerrain(level, entity, entity.position().add(0.0, 0.25, 0.0), 3.1, 0.9, 42.0F, 48);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(4.0),
@@ -1121,6 +1126,7 @@ public final class MedeaCombatHelper {
          living.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "medea_magic", MagicComplexity.TWO_VERSE, entity), MedeaWorkshopHelper.applyWorkshopDamageBonus(entity, 13.0F));
          MagecraftEffects.add(living, new MobEffectInstance(MobEffects.WEAKNESS, 50, 0, false, true, true), MagicComplexity.TWO_VERSE);
          living.hurtMarked = true;
+      }
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.05F, 0.8F);
       queueStaffClear(entity, 10);

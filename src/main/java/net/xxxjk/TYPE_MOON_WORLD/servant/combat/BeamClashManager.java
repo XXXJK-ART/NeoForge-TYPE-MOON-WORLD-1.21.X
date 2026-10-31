@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -224,6 +226,7 @@ public final class BeamClashManager {
       double radius = clamp((draw ? 10.0 : 7.0) + combinedPower * (draw ? 3.0 : 2.0), 8.0, 18.0);
       float maximumDamage = (draw ? 100.0F : 70.0F) * Math.max(0.5F, combinedPower) * (draw ? 1.0F : 0.75F + residual * 0.25F);
       DamageSource source = level.damageSources().explosion(sourceBeam.clashEntity(), sourceOwner);
+      try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
          entity -> entity.isAlive() && entity != sourceOwner && !EntityUtils.isImmunePlayerTarget(entity))) {
          double distance = Math.sqrt(target.position().distanceToSqr(center));
@@ -236,6 +239,7 @@ public final class BeamClashManager {
             target.push(push.x, Math.max(0.25, push.y + 0.35), push.z);
             target.hurtMarked = true;
          }
+      }
       }
 
       long now = level.getGameTime();

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
@@ -353,6 +355,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          : damageSources().mobAttack(attacker);
       float damage = (float)Math.min(42.0, 26.0 + Math.max(0.0, drop - 5.0) * 3.0);
       AABB area = getBoundingBox().inflate(3.2, 1.2, 3.2);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> entity != this && !getPassengers().contains(entity) && entity.isAlive()
             && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
@@ -362,6 +365,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          away = away.normalize();
          target.push(away.x * 1.15, 0.42, away.z * 1.15);
          target.hurtMarked = true;
+      }
       }
       TerrainImpactService.impact(level, attacker, position().add(0.0, 0.2, 0.0),
          TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM),

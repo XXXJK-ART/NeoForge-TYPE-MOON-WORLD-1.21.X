@@ -14,6 +14,7 @@ public record PaleRiderCommandMessage(int command) implements CustomPacketPayloa
       (buf, msg) -> buf.writeVarInt(msg.command), buf -> new PaleRiderCommandMessage(buf.readVarInt()));
    @Override public Type<PaleRiderCommandMessage> type() { return TYPE; }
    public static void handleData(PaleRiderCommandMessage msg, IPayloadContext ctx) {
-      ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer player) ServantCardPaleRiderSkills.setCommand(player, msg.command); });
+      ctx.enqueueWork(() -> { if (ctx.player() instanceof ServerPlayer player
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) ServantCardPaleRiderSkills.setCommand(player, msg.command); });
    }
 }

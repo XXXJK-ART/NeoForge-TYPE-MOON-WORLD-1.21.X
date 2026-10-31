@@ -78,6 +78,13 @@ public class ServantCardHud {
       GuiGraphics gui = event.getGuiGraphics();
       int guiWidth = gui.guiWidth();
       int guiHeight = gui.guiHeight();
+      boolean carrying = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player);
+      boolean carried = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarriedMaster(player);
+      if (carrying || carried) {
+         Component status = Component.translatable(carrying ? "hud.typemoonworld.master_carry.carrying" : "hud.typemoonworld.master_carry.carried",
+            minecraft.options.keyShift.getTranslatedKeyMessage());
+         gui.drawCenteredString(minecraft.font, status, guiWidth / 2, guiHeight - 72, 0xFFFFDD88);
+      }
       if (isSurvivalLike(minecraft)) {
          int statusWidth = 81;
          int leftStatusX = guiWidth / 2 - 91;
@@ -480,6 +487,7 @@ public class ServantCardHud {
    }
 
    private static void drawCooldownGrid(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      boolean carryDisabled = minecraft.player != null && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(minecraft.player);
       int[] cooldowns = effectiveSkillCooldowns(minecraft, vars);
       int selectedSlot = ServantCardSkillInputController.selectedSlot(vars);
       boolean heracles = "heracles".equals(vars.servant_card_id);
@@ -495,11 +503,12 @@ public class ServantCardHud {
          boolean empty = skillKey.isBlank();
          Component label = empty
             ? Component.translatable("hud.typemoonworld.servant_card.none")
+            : carryDisabled ? Component.translatable("hud.typemoonworld.master_carry.disabled")
             : (ticks <= 0 ? Component.translatable(skillKey) : Component.literal(ticksToSeconds(ticks)));
          Component text = Component.literal(ServantCardKeybindConfig.keyName(ServantCardKeybindConfig.keyFor(vars.servant_card_id, i)))
             .append(":")
             .append(label);
-         int color = empty ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
+         int color = empty || carryDisabled ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
          float scale = 0.54F;
          int width = Math.min(142, Math.max(38, (int)(minecraft.font.width(text) * scale) + 5));
          gui.fill(drawX - 1, drawY - 1, drawX + width, drawY + 6, i == selectedSlot ? 0xAA2D7180 : 0x44000000);

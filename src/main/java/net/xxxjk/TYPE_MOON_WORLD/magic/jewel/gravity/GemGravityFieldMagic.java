@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel.gravity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.Arrays;
 import java.util.List;
@@ -402,6 +404,7 @@ public final class GemGravityFieldMagic {
                   List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAlive);
                   long until = level.getGameTime() + heavyDuration;
 
+                  try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
                   for (LivingEntity target : targets) {
                      if ((caster == null || target != caster) && !(target instanceof Player p && (p.isCreative() || p.isSpectator()))) {
                         MagicGravityEffectHandler.applyGravityState(target, 2, until, caster);
@@ -413,6 +416,7 @@ public final class GemGravityFieldMagic {
                            target.hurt(MagecraftDamageSource.of(level.damageSources().magic(), "gravity_magic", caster), damagePerPulse);
                         }
                      }
+                  }
                   }
                }
             }

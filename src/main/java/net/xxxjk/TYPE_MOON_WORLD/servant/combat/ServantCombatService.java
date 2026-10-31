@@ -33,6 +33,7 @@ public final class ServantCombatService {
       @Nullable java.util.List<ServantTraitTag> npSpecialConditions,
       double zoneABuffMultiplier
    ) {
+      defender = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.recipient(defender);
       ServantDefinition attackerDef = attacker.getDefinition();
       double attackerAttack = attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
       ServantFaction attackerFaction = attackerDef != null ? attackerDef.faction() : null;
@@ -65,6 +66,7 @@ public final class ServantCombatService {
       @Nullable java.util.List<ServantTraitTag> specialConditions,
       double zoneABuffMultiplier
    ) {
+      defender = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.recipient(defender);
       if (attacker instanceof ServantEntity servant) {
          return calculateDamage(servant, defender, normalAttackMultiplier, isCrit, specialConditions, zoneABuffMultiplier);
       }

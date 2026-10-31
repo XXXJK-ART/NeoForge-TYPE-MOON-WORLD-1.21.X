@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.jeanne;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -198,10 +200,12 @@ public final class JeanneAlterSkills {
       }
       JeanneAlterVoice.skill(caster);
       VFXServerEffects.spawn(level, "jeanne_alter_cursed_lance_hover", center, 128.0D);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
          target.getBoundingBox().inflate(radius), e -> validTarget(caster, e))) {
          victim.hurt(level.damageSources().source(LANCE_DAMAGE, caster), victim == target ? damage : damage * 0.45F);
          victim.setRemainingFireTicks(100);
+      }
       }
       VFXServerEffects.spawn(level, "jeanne_alter_cursed_lance_impact", center, 128.0D);
    }
@@ -378,10 +382,12 @@ public final class JeanneAlterSkills {
             data.putLong(INFERNO_PROC_READY, now + 12L);
             if (attacker.level() instanceof ServerLevel level) {
                VFXServerEffects.spawn(level, "jeanne_alter_inferno_pillar", victim, 96.0D);
+               try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
                for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
                      victim.getBoundingBox().inflate(2.8D), e -> validTarget(attacker, e))) {
                   target.hurt(level.damageSources().source(FLAME_DAMAGE, attacker), 52.0F);
                   target.setRemainingFireTicks(100);
+               }
                }
             }
          }
@@ -509,10 +515,12 @@ public final class JeanneAlterSkills {
 
    private static void damageNoblePhase(LivingEntity caster, LivingEntity target, float damage, boolean finalPhase) {
       if (target == null || !validTarget(caster, target) || !(caster.level() instanceof ServerLevel level)) return;
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(finalPhase ? 5.0D : 3.0D), e -> validTarget(caster, e))) {
          victim.hurt(level.damageSources().source(NP_DAMAGE, caster), victim == target ? damage : damage * 0.35F);
          victim.setRemainingFireTicks(160);
          if (finalPhase) applyNoblePhantasmDebuffs(victim);
+      }
       }
    }
 
@@ -565,10 +573,12 @@ public final class JeanneAlterSkills {
       float damage = 50.0F + stacks * 20.0F;
       Vec3 center = caster.getBoundingBox().getCenter();
       VFXServerEffects.spawn(level, "jeanne_alter_grudge_burst", center);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
             caster.getBoundingBox().inflate(7.0D), e -> validTarget(caster, e))) {
          target.hurt(level.damageSources().source(FLAME_DAMAGE, caster), damage);
          target.setRemainingFireTicks(100);
+      }
       }
       return true;
    }
@@ -587,10 +597,12 @@ public final class JeanneAlterSkills {
       if (player == null || !(player.level() instanceof ServerLevel level)) return false;
       LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0D, 2.0D);
       if (target == null) return false;
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
             target.getBoundingBox().inflate(7.0D), e -> validTarget(player, e))) {
          victim.hurt(level.damageSources().source(FLAME_DAMAGE, player), 50.0F);
          victim.setRemainingFireTicks(100);
+      }
       }
       VFXServerEffects.spawn(level, "jeanne_alter_flag_curse_finale", target, 96.0D);
       JeanneAlterVoice.skill(player);
@@ -604,10 +616,12 @@ public final class JeanneAlterSkills {
       LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, 36.0D, 2.0D);
       if (target == null) return ExecutionResult.FAILED;
       if (!(p.level() instanceof ServerLevel level)) return ExecutionResult.FAILED;
+      try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
          target.getBoundingBox().inflate(radius), e -> validTarget(p, e))) {
          victim.hurt(level.damageSources().source(FLAME_DAMAGE, p), victim == target ? damage : damage * 0.45F);
          victim.setRemainingFireTicks(100);
+      }
       }
       JeanneAlterVoice.skill(p);
       VFXServerEffects.spawn(level, effectId, target, 128.0D);
@@ -626,10 +640,12 @@ public final class JeanneAlterSkills {
       servant.triggerNamedActionAnimation("cast");
       JeanneAlterVoice.skill(servant);
       VFXServerEffects.spawn(level, effectId, primary, 128.0D);
+      try (var carrySegment6 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
          primary.getBoundingBox().inflate(radius), e -> validTarget(servant, e))) {
          target.hurt(level.damageSources().source(FLAME_DAMAGE, servant), target == primary ? damage : damage * 0.45F);
          target.setRemainingFireTicks(100);
+      }
       }
       return ExecutionResult.SUCCESS;
    }

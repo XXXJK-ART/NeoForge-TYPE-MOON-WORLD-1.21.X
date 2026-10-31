@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -399,6 +401,7 @@ public final class OkitaSoujiSaberCombatHelper {
       }
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
       boolean hitAny = false;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : nearbyEnemies(entity, level, 3.2)) {
          if (target == null || !target.isAlive()) {
             continue;
@@ -408,6 +411,7 @@ public final class OkitaSoujiSaberCombatHelper {
          target.push(away.x * 0.95, 0.18, away.z * 0.95);
          target.hasImpulse = true;
          hitAny = true;
+      }
       }
       if (!hitAny) {
          return false;
@@ -746,6 +750,7 @@ public final class OkitaSoujiSaberCombatHelper {
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
       AABB area = entity.getBoundingBox().expandTowards(direction.scale(range)).inflate(1.3, 1.1, 1.3);
       List<LivingEntity> hit = new ArrayList<>();
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : entity.level().getEntitiesOfClass(LivingEntity.class, area, candidate -> isValidTarget(entity, candidate))) {
          Vec3 relative = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin);
          Vec3 horizontal = new Vec3(relative.x, 0.0, relative.z);
@@ -760,6 +765,7 @@ public final class OkitaSoujiSaberCombatHelper {
             hurtPhysical(entity, target, damage);
          }
          hit.add(target);
+      }
       }
       return hit;
    }

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.ai.module;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -1433,6 +1435,7 @@ public final class CombatModule implements ServantAiModule {
       List<LivingEntity> near = sl.getEntitiesOfClass(
          LivingEntity.class, slashBox,
          e -> e != entity && e.isAlive());
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity le : near) {
          le.hurt(src, (float) slashDamage);
          double dx = le.getX() - entity.getX();
@@ -1442,6 +1445,7 @@ public final class CombatModule implements ServantAiModule {
             double kb = Math.max(0.35, 1.8 * (1.0 - dist / 4.5));
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.38, 1.8, 10);
          }
+      }
       }
 
       // 斩击轨迹粒子
@@ -1540,6 +1544,7 @@ public final class CombatModule implements ServantAiModule {
       double stompRadius = 4.0;
       AABB box = entity.getBoundingBox().inflate(stompRadius);
       List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != entity && e.isAlive());
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity le : nearby) {
          le.hurt(src, (float)stompDamage);
          double dx = le.getX() - entity.getX();
@@ -1549,6 +1554,7 @@ public final class CombatModule implements ServantAiModule {
             double kb = Math.max(0.45, 1.8 * (1.0 - dist / stompRadius));
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.72, 2.2, 16);
          }
+      }
       }
 
       double terrainScale = terrainBreakScale(entity);
@@ -1595,9 +1601,11 @@ public final class CombatModule implements ServantAiModule {
          Vec3 centerVec = origin.add(horizontal.scale(step));
          BlockPos center = BlockPos.containing(centerVec);
          AABB hitBox = new AABB(center).inflate(1.45 + step * 0.16, 1.4, 1.45 + step * 0.16);
+         try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
             victim.hurt(src, (float)(baseAtk * 0.75));
             pushWithImpactCrater(sl, entity, victim, horizontal, 1.95, 0.82, 2.4, 18);
+         }
          }
          int pathRadius = Math.max(1, (int)Math.ceil(2.0 * terrainScale));
          for (BlockPos pos : BlockPos.betweenClosed(center.offset(-pathRadius, -1, -pathRadius), center.offset(pathRadius, 1, pathRadius))) {
@@ -1632,9 +1640,11 @@ public final class CombatModule implements ServantAiModule {
       entity.hasImpulse = true;
       double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
       AABB hitBox = entity.getBoundingBox().expandTowards(horizontal.scale(5.5)).inflate(1.2, 0.8, 1.2);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, hitBox, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
          victim.hurt(entity.damageSources().mobAttack(entity), (float)(baseAtk * 0.95));
          pushWithImpactCrater(sl, entity, victim, horizontal, 2.45, 0.48, 2.0, 14);
+      }
       }
       sl.sendParticles(ParticleTypes.EXPLOSION, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.7, entity.getZ() + horizontal.z * 2.0, 6, 0.55, 0.25, 0.55, 0.0);
       sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, entity.getX() + horizontal.x * 2.0, entity.getY() + 0.35, entity.getZ() + horizontal.z * 2.0, 34, 0.9, 0.25, 0.9, 0.06);
@@ -1646,6 +1656,7 @@ public final class CombatModule implements ServantAiModule {
       Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
       double baseAtk = entity.getAttributeValue(Attributes.ATTACK_DAMAGE);
       AABB box = target.getBoundingBox().inflate(2.0);
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != entity && e.isAlive() && !e.isAlliedTo(entity))) {
          victim.hurt(entity.damageSources().magic(), (float)(baseAtk * 0.65 + 4.0));
          Vec3 push = victim.position().subtract(center);
@@ -1654,6 +1665,7 @@ public final class CombatModule implements ServantAiModule {
             horizontal = horizontal.normalize();
             pushWithImpactCrater(sl, entity, victim, horizontal, 1.15, 0.32, 1.6, 8);
          }
+      }
       }
       sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y, center.z, 56, 1.8, 0.8, 1.8, 0.05);
       sl.sendParticles(ParticleTypes.WITCH, center.x, center.y, center.z, 28, 1.2, 0.55, 1.2, 0.02);
@@ -1886,6 +1898,7 @@ public final class CombatModule implements ServantAiModule {
       List<LivingEntity> near = sl.getEntitiesOfClass(
          LivingEntity.class, swingBox,
          e -> e != entity && e.isAlive());
+      try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity le : near) {
          le.hurt(src, (float) dmg);
          double dx = le.getX() - entity.getX();
@@ -1895,6 +1908,7 @@ public final class CombatModule implements ServantAiModule {
             double kb = Math.max(0.3, 1.25 * (1.0 - dist / 3.6));
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.32, 1.5, 8);
          }
+      }
       }
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
          entity.getX() + look.x * 2.0,
@@ -2090,6 +2104,7 @@ public final class CombatModule implements ServantAiModule {
             ? target.position().add(0.0, target.getBbHeight() * 0.5, 0.0)
             : fallbackEnd;
          AABB fireBox = new AABB(impact, impact).inflate(2.5);
+         try (var carrySegment6 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : serverLevel.getEntitiesOfClass(
             LivingEntity.class,
             fireBox,
@@ -2097,6 +2112,7 @@ public final class CombatModule implements ServantAiModule {
          )) {
             living.hurt(entity.damageSources().magic(), 80.0F);
             living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 100));
+         }
          }
          serverLevel.sendParticles(ParticleTypes.FLAME, impact.x, impact.y, impact.z, 24, 0.8, 0.5, 0.8, 0.05);
          serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, impact.x, impact.y, impact.z, 16, 0.7, 0.35, 0.7, 0.03);
@@ -2124,6 +2140,7 @@ public final class CombatModule implements ServantAiModule {
             serverLevel.sendParticles(ParticleTypes.FLAME, pillar.x, pillar.y + 1.2, pillar.z, 20, 0.35, 1.2, 0.35, 0.02);
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pillar.x, pillar.y + 1.1, pillar.z, 10, 0.3, 1.0, 0.3, 0.02);
             AABB pillarBox = new AABB(pillar, pillar).inflate(1.4, 2.2, 1.4);
+            try (var carrySegment7 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : serverLevel.getEntitiesOfClass(
                LivingEntity.class,
                pillarBox,
@@ -2133,6 +2150,7 @@ public final class CombatModule implements ServantAiModule {
                   living.hurt(entity.damageSources().magic(), 70.0F);
                   living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 120));
                }
+            }
             }
          }
          serverLevel.playSound(null, impact.x, impact.y, impact.z, SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.15F, 0.85F);
@@ -2154,6 +2172,7 @@ public final class CombatModule implements ServantAiModule {
             serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, pos.x, pos.y, pos.z, 6, 0.2, 0.25, 0.2, 0.01);
             serverLevel.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 8, 0.25, 0.25, 0.25, 0.02);
             AABB segmentBox = new AABB(pos, pos).inflate(1.35);
+            try (var carrySegment8 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : serverLevel.getEntitiesOfClass(
                LivingEntity.class,
                segmentBox,
@@ -2163,6 +2182,7 @@ public final class CombatModule implements ServantAiModule {
                   living.hurt(entity.damageSources().magic(), 60.0F);
                   living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 80));
                }
+            }
             }
          }
          serverLevel.playSound(null, end.x, end.y, end.z, SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1.0F, 1.0F);
@@ -2345,6 +2365,7 @@ public final class CombatModule implements ServantAiModule {
       double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
       float damage = (float)(baseAtk * 1.45);
       AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(4.8)).inflate(0.9, 0.8, 0.9);
+      try (var carrySegment9 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : sl.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2353,6 +2374,7 @@ public final class CombatModule implements ServantAiModule {
          living.hurt(entity.damageSources().mobAttack(entity), damage);
          living.push(dir.x * 1.15, 0.35, dir.z * 1.15);
          living.hurtMarked = true;
+      }
       }
       spawnDashTrail(sl, entity, dir, 4.8, ParticleTypes.CRIT);
    }
@@ -2368,6 +2390,7 @@ public final class CombatModule implements ServantAiModule {
       double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
       float damage = (float)(baseAtk * 1.55);
       AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(4.4)).inflate(1.1, 0.9, 1.1);
+      try (var carrySegment10 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : sl.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2376,6 +2399,7 @@ public final class CombatModule implements ServantAiModule {
          living.hurt(entity.damageSources().mobAttack(entity), damage);
          living.push(dir.x * 0.95, 0.25, dir.z * 0.95);
          living.hurtMarked = true;
+      }
       }
       spawnDashTrail(sl, entity, dir, 4.4, ParticleTypes.SWEEP_ATTACK);
    }
@@ -2391,6 +2415,7 @@ public final class CombatModule implements ServantAiModule {
       double baseAtk = atkAttr != null ? atkAttr.getValue() : 5.0;
       float damage = (float)(baseAtk * 1.25);
       AABB hitBox = entity.getBoundingBox().expandTowards(dir.scale(3.8)).inflate(1.8, 1.0, 1.8);
+      try (var carrySegment11 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : sl.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2399,6 +2424,7 @@ public final class CombatModule implements ServantAiModule {
          living.hurt(entity.damageSources().mobAttack(entity), damage);
          living.push(dir.x * 0.8, 0.22, dir.z * 0.8);
          living.hurtMarked = true;
+      }
       }
       spawnDashTrail(sl, entity, dir, 3.8, ParticleTypes.CLOUD);
    }
@@ -2421,6 +2447,7 @@ public final class CombatModule implements ServantAiModule {
    }
 
    private void applyDeathThorn(ServantEntity attacker, LivingEntity target) {
+      if (ServantMasterDamageRouter.special(target, Float.MAX_VALUE, defender -> applyDeathThorn(attacker, defender))) return;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg")) return;
       if (EntityUtils.isImmunePlayerTarget(target)) return;
       if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(target)) return;
@@ -2503,6 +2530,7 @@ public final class CombatModule implements ServantAiModule {
       AABB box = entity.getBoundingBox().inflate(slamRadius);
       List<LivingEntity> nearby = entity.level().getEntitiesOfClass(
          LivingEntity.class, box, e -> e != entity && e.isAlive());
+      try (var carrySegment12 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity le : nearby) {
          le.hurt(src, (float) slamDamage);
          double dx = le.getX() - entity.getX();
@@ -2512,6 +2540,7 @@ public final class CombatModule implements ServantAiModule {
             double kb = Math.max(0.55, (heavySlam ? 3.2 : 2.1) * (1.0 - dist / slamRadius));
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, heavySlam ? 0.95 : 0.68, heavySlam ? 2.8 : 2.2, heavySlam ? 24 : 16);
          }
+      }
       }
       TerrainImpactProfile slamProfile = ServantCombatSpectacleService.routineGroundProfile(
          entity, entity.getTarget(), heavySlam ? 0.95 : 0.68, heavySlam);
@@ -2567,6 +2596,7 @@ public final class CombatModule implements ServantAiModule {
 
       AABB sweepBox = entity.getBoundingBox().inflate(4.5).move(look.scale(2.0));
       List<LivingEntity> nearby = sl.getEntitiesOfClass(LivingEntity.class, sweepBox, e -> e != entity && e.isAlive());
+      try (var carrySegment13 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity le : nearby) {
          le.hurt(src, (float)sweepDamage);
          double dx = le.getX() - entity.getX();
@@ -2576,6 +2606,7 @@ public final class CombatModule implements ServantAiModule {
             double kb = Math.max(0.35, 1.55 * (1.0 - dist / 4.5));
             pushWithImpactCrater(sl, entity, le, new Vec3(dx / dist, 0.0, dz / dist), kb, 0.45, 1.8, 12);
          }
+      }
       }
 
       sl.sendParticles(ParticleTypes.SWEEP_ATTACK, entity.getX() + look.x * 1.5, entity.getY() + entity.getBbHeight() * 0.5, entity.getZ() + look.z * 1.5, 6, 0.0, 0.0, 0.0, 0.0);

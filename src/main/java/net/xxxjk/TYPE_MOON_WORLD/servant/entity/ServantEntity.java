@@ -646,6 +646,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void tickManaHealthConversion() {
+      if (this instanceof HundredFacesHassanEntity || this instanceof HundredFacesHassanPersonaEntity) return;
       if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
          return;
       }
@@ -680,6 +681,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void tickPassiveManaRegeneration() {
+      if (this instanceof HundredFacesHassanEntity || this instanceof HundredFacesHassanPersonaEntity) return;
       if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
          return;
       }

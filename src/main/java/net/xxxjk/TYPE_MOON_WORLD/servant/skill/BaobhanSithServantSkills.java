@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.skill;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
@@ -347,6 +349,7 @@ public final class BaobhanSithServantSkills {
       if (servant.level() instanceof ServerLevel level) {
          Vec3 center = primary.position();
          AABB box = primary.getBoundingBox().inflate(3.4, 1.0, 3.4);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
             other -> other != servant && other.isAlive() && EntityUtils.isValidCombatTarget(servant, other))) {
             target.invulnerableTime = 0;
@@ -356,6 +359,7 @@ public final class BaobhanSithServantSkills {
             target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 1, false, true, true));
             addMedium(servant, target, MEDIUM_SKIN, 1);
             applyCurse(servant, target, CURSE_SKIN, 1, 300, isSunlit(servant) ? 0.5F : 1.0F);
+         }
          }
          spawnBloodThornsFx(level, center, 3.4);
       }

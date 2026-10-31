@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.particles.ParticleTypes;
@@ -175,6 +177,7 @@ public class CyanWindFieldEntity extends Entity {
          LivingEntity ownerEntity = this.getOwner();
          boolean tornado = this.isTornadoMode();
 
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity entity : list) {
             if (!EntityUtils.isImmunePlayerTarget(entity)) {
                double dx = entity.getX() - this.getX();
@@ -236,6 +239,7 @@ public class CyanWindFieldEntity extends Entity {
                   }
                }
             }
+         }
          }
 
          for (Projectile projectile : this.level()

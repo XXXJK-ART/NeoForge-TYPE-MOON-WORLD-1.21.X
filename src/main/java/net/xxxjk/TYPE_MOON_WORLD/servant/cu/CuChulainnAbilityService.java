@@ -264,7 +264,9 @@ public final class CuChulainnAbilityService {
          .stream().sorted(Comparator.comparingDouble(owner::distanceToSqr)).toList();
    }
    private static void hitArc(LivingEntity owner,Vec3 direction,double range,float damage,int maximum,boolean sweep) {
+      try (var segment = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.attackSegment()) {
       targets(owner,direction,range,!sweep).stream().limit(maximum).forEach(t -> hit(owner,t,damage,sweep?"cu_sweep":"cu_thrust",false));
+      }
       if(owner.level() instanceof ServerLevel level) level.sendParticles(ParticleTypes.SWEEP_ATTACK,owner.getX(),owner.getY()+1,owner.getZ(),1,0,0,0,0);
    }
    public static boolean hit(LivingEntity owner,LivingEntity target,float damage,String skill,boolean magic) {

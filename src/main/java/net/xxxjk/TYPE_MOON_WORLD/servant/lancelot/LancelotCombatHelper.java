@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.lancelot;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Comparator;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
@@ -370,6 +372,7 @@ public final class LancelotCombatHelper {
       double radius = phaseTwo ? 5.8 : 4.6;
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (phaseTwo ? 1.35 : 1.05));
       AABB area = entity.getBoundingBox().inflate(radius, 2.25, radius);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, candidate -> isSlamTarget(entity, candidate))) {
          living.invulnerableTime = 0;
          living.hurt(entity.damageSources().mobAttack(entity), damage);
@@ -381,6 +384,7 @@ public final class LancelotCombatHelper {
          } else {
             living.push(0.0, phaseTwo ? 0.65 : 0.45, 0.0);
          }
+      }
       }
       TerrainImpactProfile profile = TerrainImpactProfile.of(phaseTwo ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM);
       TerrainImpactService.impact(level, entity, entity.position().add(0.0, 0.18, 0.0), profile, TerrainImpactService.Shape.UPPER_SURFACE_CRATER);

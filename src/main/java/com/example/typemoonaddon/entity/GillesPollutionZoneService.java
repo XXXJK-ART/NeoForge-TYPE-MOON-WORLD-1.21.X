@@ -1,5 +1,7 @@
 package com.example.typemoonaddon.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -58,12 +60,14 @@ public final class GillesPollutionZoneService {
             Entity source = zone.resolveSource(level);
             Entity master = zone.resolveMaster(level);
             AABB box = zone.boundingBox();
+            try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class,
                     box,
                     living -> living.isAlive()
                             && living.distanceToSqr(zone.center) <= zone.radius * zone.radius
                             && !zone.isFriendly(source, master, living))) {
                 living.hurt(living.damageSources().magic(), zone.damagePerSecond);
+            }
             }
             if (now % PARTICLE_INTERVAL_TICKS == 0L) {
                 level.sendParticles(ParticleTypes.SQUID_INK, zone.center.x, zone.center.y + 0.2, zone.center.z,

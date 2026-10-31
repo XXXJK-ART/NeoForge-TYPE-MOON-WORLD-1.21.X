@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.palerider;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -188,11 +190,13 @@ public final class PaleRiderCombatHelper {
       actor.hasImpulse = true;
       actor.getNavigation().moveTo(actor.getX() + direction.x * length, actor.getY(), actor.getZ() + direction.z * length, 1.45);
       AABB hitBox = actor.getBoundingBox().expandTowards(direction.scale(length)).inflate(1.1, 0.8, 1.1);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, hitBox, entity -> canHit(rider, actor, entity))) {
          victim.invulnerableTime = 0;
          if (hurtWithMinorSkill(rider, victim, 12.0F) && victim.isAlive()) PaleRiderInfectionService.infect(victim, rider, 2);
          victim.push(direction.x * 0.75, 0.16, direction.z * 0.75);
          victim.hurtMarked = true;
+      }
       }
       for (double distance = 0.5; distance <= length; distance += 0.55) {
          Vec3 point = actor.position().add(direction.scale(distance)).add(0.0, actor.getBbHeight() * 0.45, 0.0);
@@ -213,6 +217,7 @@ public final class PaleRiderCombatHelper {
          entity -> canHit(rider, actor, entity) && actor.getSensing().hasLineOfSight(entity));
       if (victims.isEmpty()) return false;
       Vec3 center = actor.position().add(0.0, actor.getBbHeight() * 0.45, 0.0);
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : victims) {
          victim.invulnerableTime = 0;
          if (hurtWithMinorSkill(rider, victim, 10.0F) && victim.isAlive()) PaleRiderInfectionService.infect(victim, rider, 1);
@@ -222,6 +227,7 @@ public final class PaleRiderCombatHelper {
             victim.push(push.x * 0.55, 0.12, push.z * 0.55);
             victim.hurtMarked = true;
          }
+      }
       }
       level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y, center.z, 32, 2.2, 0.75, 2.2, 0.06);
       level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y, center.z, 24, 1.8, 0.65, 1.8, 0.045);
@@ -355,6 +361,7 @@ public final class PaleRiderCombatHelper {
       List<LivingEntity> enemies = enemies(rider, level, 25.0);
       boolean judgeDeath = now - rider.getPersistentData().getLong(TAG_LAST_DEATH_JUDGMENT) >= PaleRiderCombatRules.DEATH_JUDGMENT_INTERVAL_TICKS;
       if (judgeDeath) rider.getPersistentData().putLong(TAG_LAST_DEATH_JUDGMENT, now);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
          if (isEnabled(rider, ApocalypseHorsemanEntity.Calamity.FAMINE)) {
             enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.FAMINE, rider), 5.0F);
@@ -372,6 +379,7 @@ public final class PaleRiderCombatHelper {
                enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider), 100.0F);
             }
          }
+      }
       }
       if (isEnabled(rider, ApocalypseHorsemanEntity.Calamity.SWORD)) {
          for (int index = 0; index < 2 && !enemies.isEmpty(); index++) {
@@ -463,6 +471,7 @@ public final class PaleRiderCombatHelper {
    }
 
    private static void tickAuraAndInfections(PaleRiderEntity rider, ServerLevel level) {
+      try (var carrySegment302 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies(rider, level, 15.0)) {
          applyTimedAttackPenalty(enemy, FEAR_ATTACK_ID, -0.15, level.getGameTime() + 30L);
          String key = "PaleRiderFearChecked_" + rider.getUUID();
@@ -474,6 +483,7 @@ public final class PaleRiderCombatHelper {
                enemy.addEffect(new MobEffectInstance(ModMobEffects.PALE_RIDER_FEAR, 30, 0, false, true, true));
             }
          }
+      }
       }
    }
 

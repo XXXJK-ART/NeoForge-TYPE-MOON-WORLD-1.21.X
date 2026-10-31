@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.broken_phantasm;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -89,6 +91,7 @@ public class UBWBrokenPhantasmExplosion {
       serverLevel.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.2F, 1.0F);
       serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y, pos.z, 2, 0.35, 0.18, 0.35, 0.0);
 
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : serverLevel.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(pos, pos).inflate(radius),
@@ -108,6 +111,7 @@ public class UBWBrokenPhantasmExplosion {
             living.push(push.x * 0.35, 0.12, push.z * 0.35);
             living.hurtMarked = true;
          }
+      }
       }
    }
 
@@ -168,6 +172,7 @@ public class UBWBrokenPhantasmExplosion {
          level.playSound(null, center.x, center.y, center.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.35F, 0.68F);
       }
       AABB damageBox = new AABB(center, center).inflate(currentRadius);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
@@ -191,6 +196,7 @@ public class UBWBrokenPhantasmExplosion {
             living.push(push.x / horizontal * 0.85, 0.32, push.z / horizontal * 0.85);
             living.hurtMarked = true;
          }
+      }
       }
    }
 

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -581,6 +583,7 @@ public final class GemEngravingService {
    ) {
       float damage = (float)(4.0 + proficiency * 0.06) * qualityMultiplier;
       int igniteSeconds = 2 + (int)Math.floor(proficiency / 35.0);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : caster.level().getEntitiesOfClass(
          LivingEntity.class, area, target -> target != caster && target.isAlive()
             && target.position().distanceToSqr(center) <= radius * radius && !EntityUtils.isImmunePlayerTarget(target)
@@ -588,6 +591,7 @@ public final class GemEngravingService {
          target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(
             caster.damageSources().indirectMagic(projectile, caster), "fire_magic", caster, proficiency), damage);
          target.igniteForSeconds(igniteSeconds);
+      }
       }
       if (caster.level() instanceof ServerLevel level) {
          level.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 50, radius * 0.45, radius * 0.25, radius * 0.45, 0.08);

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -135,6 +137,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean consumeStrict(ServerPlayer player, double amount) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
          var before = ServantCardManaService.snapshot(player, vars);
@@ -684,6 +687,7 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 end = start.add(dir.scale(5.0));
       AABB box = new AABB(start, end).inflate(1.1, 1.0, 1.1);
       boolean hit = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          hit = true;
          target.invulnerableTime = 0;
@@ -691,6 +695,7 @@ public final class PlayerNoblePhantasmHelper {
          target.invulnerableTime = 0;
          triggerPseudoSpiralExplosion(level, player, target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
          break;
+      }
       }
       if (!hit) {
          triggerPseudoSpiralExplosion(level, player, end);
@@ -943,12 +948,14 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 end = start.add(dir.scale(5.5));
       AABB box = new AABB(start, end).inflate(1.25, 0.9, 1.25);
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          if (hit.add(target.getId())) {
             target.invulnerableTime = 0;
             target.hurt(player.damageSources().mobAttack(player), 144.0F);
             target.invulnerableTime = 0;
          }
+      }
       }
       for (double t = 0.0; t <= 1.0; t += 0.12) {
          Vec3 pos = start.lerp(end, t);
@@ -1017,6 +1024,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void resolveGaeBulgHit(ServerPlayer player, LivingEntity target) {
+      if (ServantMasterDamageRouter.special(target, 250, defender -> resolveGaeBulgHit(player, defender))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
@@ -1299,6 +1307,7 @@ public final class PlayerNoblePhantasmHelper {
    private static void triggerPseudoSpiralExplosion(ServerLevel level, LivingEntity owner, Vec3 center) {
       double radius = 4.5;
       Set<Integer> damaged = new HashSet<>();
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius),
@@ -1316,6 +1325,7 @@ public final class PlayerNoblePhantasmHelper {
             }
          }
       }
+      }
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 2, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       breakSmallExplosionTerrain(level, owner, center);
@@ -1326,6 +1336,7 @@ public final class PlayerNoblePhantasmHelper {
       double range = GALLATIN_RANGE * (0.28 + powerScale * 0.72);
       double halfAngleCos = Math.cos(Math.toRadians(12.0 + 23.0 * powerScale));
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          player.getBoundingBox().inflate(range + 3.0),
@@ -1346,6 +1357,7 @@ public final class PlayerNoblePhantasmHelper {
          living.push(look.x * 5.0, 0.32, look.z * 5.0);
          living.hurtMarked = true;
       }
+      }
       spawnGallatinReleaseParticles(level, origin, look, range, powerScale);
       breakGallatinPath(level, origin, look, range, powerScale);
    }
@@ -1363,6 +1375,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
+      if (ServantMasterDamageRouter.special(target, damage, defender -> applyFixedDamage(player, defender, damage))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

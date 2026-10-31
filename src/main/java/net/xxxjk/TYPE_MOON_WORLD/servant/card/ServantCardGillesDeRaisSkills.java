@@ -334,6 +334,7 @@ public final class ServantCardGillesDeRaisSkills {
          return false;
       }
       int affected = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0), entity -> isEnemy(player, entity))) {
          Vec3 away = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() < 1.0E-4) {
@@ -346,6 +347,7 @@ public final class ServantCardGillesDeRaisSkills {
          target.hurtMarked = true;
          target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "gilles_magecraft", MagicComplexity.TWO_VERSE, player), 10.0F);
          affected++;
+      }
       }
       if (affected <= 0) {
          return false;

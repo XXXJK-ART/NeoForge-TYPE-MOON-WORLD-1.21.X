@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.heracles;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -264,6 +266,7 @@ public final class HeraclesAbilityService {
       return result;
    }
    private static void area(LivingEntity caster,int slot,double radius,double arc,float damage,double horizontal,double vertical) {
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for(var t:caster.level().getEntitiesOfClass(LivingEntity.class,caster.getBoundingBox().inflate(radius,2.5,radius),t->enemy(caster,t))) {
          if(!inArc(caster,t,forward(caster),radius,arc))continue;
          boolean hit=hit(caster,t,slot,damage,horizontal,vertical,false);
@@ -272,6 +275,7 @@ public final class HeraclesAbilityService {
             if(busy(t))cancel(t);
             if(t instanceof ServerPlayer p && p.getPersistentData().getBoolean(ServantCardActionTimeline.INTERRUPTIBLE_TAG))ServantCardActionTimeline.clear(p);
          }
+      }
       }
    }
    private static void ground(LivingEntity caster,int slot,double radius,float damage,double horizontal,double vertical) {

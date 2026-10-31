@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.special;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -292,6 +294,16 @@ public final class ElementalArrayService {
       }
    }
 
+   public static void interruptForCarry(ServerPlayer player) {
+      var data = player.getPersistentData();
+      data.remove(TAG_ACTIVE);
+      data.remove(TAG_MAGIC_ID);
+      data.remove(TAG_MODE);
+      data.remove(TAG_TICKS);
+      data.remove(TAG_OWNER);
+      // A shield already released remains subject to its existing lifecycle.
+   }
+
    private static void clear(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       data.remove(TAG_ACTIVE);
@@ -324,6 +336,7 @@ public final class ElementalArrayService {
       playReleaseSound(level, player, kind);
       spawnReleaseBurst(level, player, kind, start, dir);
       AABB area = player.getBoundingBox().inflate(RANGE, 3.0, RANGE).move(dir.scale(RANGE * 0.45));
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
             e -> isValidTarget(player, e) && (explicitTarget == null || e == explicitTarget))) {
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
@@ -339,6 +352,7 @@ public final class ElementalArrayService {
          }
          target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), magicId(kind), player), DAMAGE);
          applyFinalEffect(target, kind, dir);
+      }
       }
    }
 

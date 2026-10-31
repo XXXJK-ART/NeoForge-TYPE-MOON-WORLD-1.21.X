@@ -1,6 +1,7 @@
 package com.example.typemoonaddon.antores;
 
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.network.AntoresBeamVisualPayload;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
@@ -145,6 +146,7 @@ public final class AntoresService {
 
         int damagedTargets = 0;
         DamageSource directSource = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "antores", caster);
+        try (var segment = ServantMasterDamageRouter.attackSegment()) {
         for (AggregatedHit hit : targetHits.values()) {
             LivingEntity target = hit.target;
             if (!EntityUtils.isValidCombatTarget(caster, target)) {
@@ -176,6 +178,7 @@ public final class AntoresService {
             }
         }
 
+        }
         LAST_SUCCESSFUL_CAST_TICK.put(caster.getUUID(), now);
         return new CastOutcome(true, damagedTargets);
     }

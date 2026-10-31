@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -207,6 +209,7 @@ public class ElementalMagicFieldEntity extends Entity {
       if (!affectsLivingEntities(form)) {
          return;
       }
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : this.level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != ownerEntity && !EntityUtils.isImmunePlayerTarget(e))) {
          if (!isInsideField(living, form, radius)) {
             continue;
@@ -252,6 +255,7 @@ public class ElementalMagicFieldEntity extends Entity {
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 2, false, true, true));
             hurtEverySecond(ownerEntity, living, this.damagePerSecond);
          }
+      }
       }
    }
 

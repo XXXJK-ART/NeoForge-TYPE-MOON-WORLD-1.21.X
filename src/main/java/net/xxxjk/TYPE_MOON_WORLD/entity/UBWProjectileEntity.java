@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -243,6 +245,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
       }
       double radius = 3.25;
       Entity owner = this.getOwner();
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          new net.minecraft.world.phys.AABB(center, center).inflate(radius),
@@ -262,6 +265,7 @@ public class UBWProjectileEntity extends ThrowableItemProjectile {
             living.push(push.x * 0.45, 0.18, push.z * 0.45);
             living.hurtMarked = true;
          }
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y, center.z, 2, 0.35, 0.18, 0.35, 0.0);
       level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.1, center.z, 18, 0.55, 0.25, 0.55, 0.06);

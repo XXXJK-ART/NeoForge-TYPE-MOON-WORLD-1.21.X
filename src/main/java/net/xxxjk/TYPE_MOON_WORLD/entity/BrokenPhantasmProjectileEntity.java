@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -180,6 +182,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             List<Entity> entities = this.level().getEntities(this, damageBox);
             DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
 
+            try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
             for (Entity e : entities) {
                if (e instanceof LivingEntity && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
                   float totalDamage = this.getExplosionPower() * 10.0F;
@@ -192,6 +195,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                      EntityUtils.triggerSwarmAnger(this.level(), owner, (LivingEntity)e);
                   }
                }
+            }
             }
          }
       }
@@ -210,6 +214,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
             List<Entity> entities = this.level().getEntities(this, damageBox);
             DamageSource explosionSource = this.damageSources().explosion(this, this.getOwner());
 
+            try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
             for (Entity e : entities) {
                if (e instanceof LivingEntity living && !this.damagedEntities.contains(e.getUUID()) && e != this.getOwner() && !EntityUtils.isImmunePlayerTarget(e)) {
                   double dist = e.distanceToSqr(this.getX(), this.getY(), this.getZ());
@@ -225,6 +230,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
                      }
                   }
                }
+            }
             }
          }
 

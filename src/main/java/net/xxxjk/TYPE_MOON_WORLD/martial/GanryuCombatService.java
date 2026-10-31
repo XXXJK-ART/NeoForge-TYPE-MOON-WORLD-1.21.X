@@ -140,6 +140,7 @@ public final class GanryuCombatService {
    }
 
    public static void handleInput(ServerPlayer player, int input, boolean down, boolean up) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) return;
       if (input == INPUT_B_END) {
          endStance(player);
          return;

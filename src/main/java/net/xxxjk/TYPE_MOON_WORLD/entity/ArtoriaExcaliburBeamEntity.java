@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
@@ -324,6 +326,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       search = search.inflate(beamHalfWidth() + 2, beamHalfHeight() + 2, beamHalfWidth() + 2);
       DamageSource source = NoblePhantasmDamageClassifier.withNoblePhantasm(owner.damageSources().mobProjectile(this, owner), "excalibur_beam");
        float amount = pulseDamage();
+      try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search, e -> ArtoriaAbilityService.enemy(owner, e))) {
          for (Vec3 direction : directions) {
             if (!BeamSweepGeometry.intersects(target.getBoundingBox(), start, direction, beamLength(), beamHalfWidth(), beamHalfHeight())) continue;
@@ -332,6 +335,7 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
             target.hurtMarked = true;
             break; // A target can receive this pulse only once across every sweep sample.
          }
+      }
       }
    }
 
@@ -382,11 +386,13 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       int height = Math.max(18, (int)Math.floor(112 * (.22 + power * .78)));
       AABB area = new AABB(center, center).inflate(radius, height, radius);
       DamageSource source = NoblePhantasmDamageClassifier.withNoblePhantasm(level.damageSources().explosion(this, owner), "excalibur_beam");
+      try (var carrySegment101 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> ArtoriaAbilityService.enemy(owner, e))) {
          Vec3 rel = target.getBoundingBox().getCenter().subtract(center);
          double normalized = (rel.x * rel.x + rel.z * rel.z) / (radius * radius) + rel.y * rel.y / (height * height);
          if (normalized > 1.18) continue;
          hurtWithoutIFrames(target, source, (float)(CRATER_DAMAGE * power * Math.max(.35, 1.15 - normalized)));
+      }
       }
       // Finish the endpoint in this cast transaction; no post-discard damage or terrain jobs.
       int removed = 0;

@@ -30,13 +30,14 @@ class HundredFacesHassanResourcesTest {
       assertEquals("E", params.get("luck").getAsString());
       assertEquals("assassin", definition.get("class_type").getAsString());
       assertEquals("zabaniya_hundred_faces", definition.get("noble_phantasm").getAsString());
+      assertEquals("B+", params.get("noble_phantasm_rank").getAsString());
       String actions = definition.getAsJsonObject("specialization").getAsJsonArray("combat_actions").toString();
       for (String action : List.of("dirk_throw", "assassin_stab", "shadow_step", "knife_feint", "shadow_lunge")) {
          assertTrue(actions.contains(action), action);
       }
       String traits = definition.getAsJsonArray("traits").toString();
-      for (String trait : List.of("servant", "humanoid", "assassin", "lawful", "evil", "human",
-         "hassan_order", "old_man_of_the_mountain", "hundred_faces")) {
+      for (String trait : List.of("female", "human", "lawful", "evil", "servant", "humanoid",
+         "human_kind", "seven_knights", "ea_special")) {
          assertTrue(traits.contains(trait), trait);
       }
    }
@@ -46,7 +47,7 @@ class HundredFacesHassanResourcesTest {
       for (String path : List.of(
          "data/typemoonworld/servant/ai/hundred_faces_hassan_ai.json",
          "data/typemoonworld/servant/actions/hundred_faces_hassan.json",
-         "data/typemoonworld/servant/skills/presence_concealment_a_plus_hundred_faces.json",
+         "data/typemoonworld/servant/skills/presence_concealment_a_hundred_faces.json",
          "data/typemoonworld/servant/skills/encyclopedia_a_plus.json",
          "data/typemoonworld/servant/skills/battle_retreat_b.json",
          "data/typemoonworld/servant/noble_phantasms/zabaniya_hundred_faces.json",
@@ -101,7 +102,8 @@ class HundredFacesHassanResourcesTest {
       assertTrue(rules.contains("PERSONA_ATTACK_DAMAGE = 5.0"));
       assertTrue(rules.contains("PERSONA_MOVEMENT_SPEED = 0.36"));
       assertTrue(rules.contains("PERSONA_MIN_HEALTH = 50.0"));
-      assertTrue(rules.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 1.0"));
+      assertTrue(rules.contains("PERSONA_BASE_ARMOR = 1.5"));
+      assertTrue(rules.contains("PERSONA_COMBAT_PARAMS = PERSONA_E_RANK_PARAMS"));
       assertTrue(rules.contains("TAG_TOTAL_SPLIT_COUNT"));
       assertTrue(rules.contains("mainHealthForSplitCount"));
       assertTrue(rules.contains("mainAttackDamageForSplitCount"));
@@ -118,7 +120,10 @@ class HundredFacesHassanResourcesTest {
       String combat = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/combat/ServantCombatSystem.java");
       assertTrue(combat.contains("HundredFacesHassanPersonaEntity"));
       assertTrue(combat.contains("HundredFacesHassanEntity"));
-      assertTrue(combat.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER"));
+      assertFalse(combat.contains("PERSONA_DEFENSE_RECOVERY_MULTIPLIER"));
+      String defense = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/combat/ServantCombatDefenseService.java");
+      assertTrue(defense.contains("clearPersonaDefenseState"));
+      assertTrue(defense.contains("isPersona(defender)"));
    }
 
    @Test
@@ -151,10 +156,32 @@ class HundredFacesHassanResourcesTest {
       assertTrue(helper.contains("DirkProjectileEntity"));
       assertTrue(helper.contains("tryPersonaCombatSkill"));
       assertTrue(helper.contains("applyAssassinFootwork"));
-      assertTrue(helper.contains("tryReactiveDodge"));
+      assertTrue(helper.contains("spawnDirkVolley"));
+      assertTrue(helper.contains("case THROWING -> tryPersonaThrowDirk"));
+      assertFalse(helper.contains("tryPersonaShadowStepBackstab"));
+      assertFalse(helper.contains("tryPersonaShadowLunge"));
       assertTrue(entity.contains("DIRK_SMALL_KNIFE"));
-      assertTrue(entity.contains("tryReactiveDodge(this, source)"));
+      assertFalse(entity.contains("tryReactiveDodge(this, source)"));
       assertTrue(persona.contains("DIRK_SMALL_KNIFE"));
+      assertTrue(persona.contains("PERSONA_BACKSTAB_DAMAGE_BONUS"));
+   }
+
+   @Test
+   void definitionAndCardSlotsUseFinalHundredFacesReset() throws IOException {
+      JsonObject definition = json("data/typemoonworld/servant/definitions/hundred_faces_hassan.json");
+      assertEquals("B+", definition.getAsJsonObject("parameters").get("noble_phantasm_rank").getAsString());
+      assertEquals(List.of("female", "human", "lawful", "evil", "servant", "humanoid", "human_kind", "seven_knights", "ea_special"),
+         definition.getAsJsonArray("traits").asList().stream().map(element -> element.getAsString()).toList());
+      JsonObject np = json("data/typemoonworld/servant/noble_phantasms/zabaniya_hundred_faces.json");
+      assertEquals(0, np.get("mp_cost").getAsInt());
+      assertEquals(30, np.get("cooldown_ticks").getAsInt());
+      assertEquals(80, np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params").get("max_personas").getAsInt());
+      assertEquals(10, np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params").get("mp_per_persona").getAsInt());
+      assertTrue(Files.isRegularFile(RESOURCES.resolve("data/typemoonworld/servant/skills/presence_concealment_a_hundred_faces.json")));
+      String layout = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardSkillLayout.java");
+      assertTrue(layout.contains("case 0 -> new ServantCardSkillAction(\"Knife Feint\", \"hundred_faces_knife_feint\""));
+      assertTrue(layout.contains("case 9 -> new ServantCardSkillAction(crouching ? \"Zabaniya: Quantity Select\""));
+      assertTrue(layout.contains("hundred_faces_battle_retreat"));
    }
 
    @Test
@@ -186,11 +213,11 @@ class HundredFacesHassanResourcesTest {
          assertTrue(layout.contains(action), action);
       assertTrue(transform.contains(action), action);
       }
-      assertTrue(layout.contains("\"hundred_faces_switch\", 0.0, 0"));
+      assertTrue(layout.contains("hundred_faces_switch"));
       assertTrue(layout.contains("\"hundred_faces_concealment\", 16.0, 110"));
       assertTrue(skills.contains("COMMAND_CLEAR_PERSONAL = 14"));
       assertTrue(skills.contains("GLOBAL_COMMAND_TAG"));
-      assertTrue(skills.contains("ServantCardConcealmentHelper.apply(player, 240)"));
+      assertTrue(skills.contains("HundredFacesPresenceService.toggle(player)"));
       assertTrue(transform.contains("\"hundred_faces_hassan\".equals(servantId)"));
       assertTrue(transform.contains("&& !\"hundred_faces_hassan\".equals(servantId)"));
       assertTrue(skills.contains("MAX_SUMMON_BATCH"));
@@ -240,7 +267,7 @@ class HundredFacesHassanResourcesTest {
       String npc = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/hundredfaces/HundredFacesHassanCombatHelper.java");
       assertTrue(voice.contains("servant instanceof HundredFacesHassanPersonaEntity) return"));
       assertTrue(persona.contains("ServantVoiceHelper.tryPlayAttack(this)"));
-      assertTrue(card.contains("if (count >= 20)"));
+      assertTrue(card.contains("if (payable >= 20)"));
       assertTrue(npc.contains("if (spawned >= 20)"));
    }
 

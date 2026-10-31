@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -170,9 +172,10 @@ public class MuramasaSlashHandler {
             .expandTowards(0.0, slash.height, 0.0)
             .expandTowards(0.0, -1.0, 0.0);
 
+         try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
          for (Entity e : level.getEntities(null, box)) {
             if (e instanceof LivingEntity living && !e.getUUID().equals(slash.playerUUID) && !EntityUtils.isImmunePlayerTarget(e)) {
-                  if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(living)) {
+                  if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(ServantMasterDamageRouter.recipient(living))) {
                      continue;
                   }
                   float damage = slash.tsumukari
@@ -206,6 +209,7 @@ public class MuramasaSlashHandler {
                living.igniteForSeconds(5.0F);
             }
          }
+         }
 
          double step = 10.0;
 
@@ -229,6 +233,7 @@ public class MuramasaSlashHandler {
    }
 
    private static void markCausalSeverance(LivingEntity target) {
+      target = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.recipient(target);
       CompoundTag data = target.getPersistentData();
       data.putBoolean("CausalSevered", true);
       data.putBoolean("GodHandActive", false);

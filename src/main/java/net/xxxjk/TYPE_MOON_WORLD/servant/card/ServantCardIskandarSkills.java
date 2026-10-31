@@ -194,11 +194,13 @@ public final class ServantCardIskandarSkills {
       spawnVisualLightning(level, center);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y + 0.5, center.z, chariot ? 80 : 46, radius * 0.32, 0.75, radius * 0.32, 0.22);
       level.playSound(null, BlockPos.containing(center), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 1.05F, 0.86F);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius, 2.5, radius),
          entity -> isEnemy(player, entity))) {
          enemy.invulnerableTime = 0;
          enemy.hurt(player.damageSources().magic(), damage);
          enemy.invulnerableTime = 0;
+      }
       }
       return true;
    }

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -379,10 +381,12 @@ public final class UshiwakamaruCombatHelper {
       entity.setDeltaMovement(thrustDirection.x * 1.05, Math.max(0.12, entity.getDeltaMovement().y), thrustDirection.z * 1.05);
       entity.hurtMarked = true;
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : victims) {
          dealMeleeDamage(entity, victim, damage);
          victim.push(thrustDirection.x * 0.7, 0.1, thrustDirection.z * 0.7);
          victim.hurtMarked = true;
+      }
       }
       VFXServerEffects.spawnOriented(level, "servant_ushiwakamaru_slash", origin, thrustDirection, 96.0);
       for (int step = 1; step <= 8; step++) {
@@ -502,6 +506,7 @@ public final class UshiwakamaruCombatHelper {
       data.putLong(TAG_LAST_SPIDER_SLAYER, now);
       entity.triggerSpiderSlayerAnimation();
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer", entity, 128.0);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : nearbyEnemies(entity, 15.0)) {
          float damage = isDemonic(enemy) ? 150.0F : 100.0F;
          enemy.invulnerableTime = 0;
@@ -509,6 +514,7 @@ public final class UshiwakamaruCombatHelper {
          enemy.invulnerableTime = 0;
          VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer_impact",
             enemy.position().add(0.0, enemy.getBbHeight() * 0.5, 0.0), 128.0);
+      }
       }
       level.sendParticles(ParticleTypes.SONIC_BOOM, entity.getX(), entity.getY() + 1.0, entity.getZ(), 20, 5.5, 1.0, 5.5, 0.0);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + 0.8, entity.getZ(), 90, 6.5, 1.0, 6.5, 0.08);

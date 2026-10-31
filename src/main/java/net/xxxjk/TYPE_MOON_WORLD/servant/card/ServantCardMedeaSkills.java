@@ -378,6 +378,7 @@ public final class ServantCardMedeaSkills {
          projectile.setDeltaMovement(dir.scale(1.8).add(0.0, 0.18, 0.0));
          projectile.hurtMarked = true;
       }
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.0, radius), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 away = living.position().subtract(player.position());
          if (away.horizontalDistanceSqr() > radius * radius || away.horizontalDistanceSqr() < 0.01) {
@@ -389,6 +390,7 @@ public final class ServantCardMedeaSkills {
          living.invulnerableTime = 0;
          living.push(dir.x * 1.15, 0.28, dir.z * 1.15);
          living.hurtMarked = true;
+      }
       }
       VFXServerEffects.spawn(level, "servant_medea_barrier", player, 128.0);
       for (double r = 1.0; r <= radius; r += 1.0) {
@@ -473,6 +475,7 @@ public final class ServantCardMedeaSkills {
 
       double radius = 5.75;
       float damage = (float)applyMedeaWorkshopDamage(player, 8.0);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius, 3.2, radius),
@@ -481,6 +484,7 @@ public final class ServantCardMedeaSkills {
          living.invulnerableTime = 0;
          living.hurt(player.damageSources().playerAttack(player), damage);
          living.invulnerableTime = 0;
+      }
       }
 
       for (int i = 0; i < 3; i++) {

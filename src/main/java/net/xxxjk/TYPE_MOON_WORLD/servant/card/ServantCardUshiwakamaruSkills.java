@@ -151,11 +151,13 @@ public final class ServantCardUshiwakamaruSkills {
       Vec3 end = origin.add(direction.scale(5.0));
       AABB area = new AABB(origin, end).inflate(1.35, 1.25, 1.35);
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> isEnemy(player, entity) && insideThrust(player, entity, direction))) {
          hurtPhysical(player, target, damage);
          target.push(direction.x * 0.7, 0.1, direction.z * 0.7);
          target.hurtMarked = true;
+      }
       }
       player.setDeltaMovement(direction.x * 1.05, Math.max(0.12, player.getDeltaMovement().y), direction.z * 1.05);
       player.hurtMarked = true;
@@ -175,6 +177,7 @@ public final class ServantCardUshiwakamaruSkills {
       player.setDeltaMovement(Vec3.ZERO);
       player.fallDistance = 0.0F;
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5 + 10.0);
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(3.0),
          entity -> isEnemy(player, entity))) {
          hurtPhysical(player, living, damage);
@@ -183,6 +186,7 @@ public final class ServantCardUshiwakamaruSkills {
          away = away.normalize();
          living.push(away.x * 1.1, 0.35, away.z * 1.1);
          living.hurtMarked = true;
+      }
       }
       ServantCardSkillUtils.spawnLineParticles(level, oldPosition.add(0.0, 1.0, 0.0), player.position().add(0.0, 0.4, 0.0), ParticleTypes.END_ROD);
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_usumidori_impact", player.position(), 96.0);
@@ -246,6 +250,7 @@ public final class ServantCardUshiwakamaruSkills {
       List<LivingEntity> targets = nearbyEnemies(player, 15.0);
       if (targets.isEmpty()) return false;
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer", player, 128.0);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : targets) {
          float damage = ServantCardUshiwakamaruRules.spiderSlayerDamage(
             ServantCardSkillUtils.hasTrait(target, ServantTraitTag.DEMONIC));
@@ -254,6 +259,7 @@ public final class ServantCardUshiwakamaruSkills {
          target.invulnerableTime = 0;
          VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer_impact",
             target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), 128.0);
+      }
       }
       level.sendParticles(ParticleTypes.SONIC_BOOM, player.getX(), player.getY() + 1.0, player.getZ(), 20, 5.5, 1.0, 5.5, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.4F, 1.35F);

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.church;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -171,6 +173,7 @@ public final class BlackKeyMiracleService {
       }
       double scanRadius = 16.0 + proficiency * 0.16;
       int detonated = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(scanRadius),
          living -> living != caster && living.isAlive() && !caster.isAlliedTo(living)
             && living.hasEffect(ModMobEffects.CREMATION_RITE))) {
@@ -184,6 +187,7 @@ public final class BlackKeyMiracleService {
          level.explode(caster, target.getX(), target.getY(0.45), target.getZ(), radius, false, Level.ExplosionInteraction.NONE);
          target.removeEffect(ModMobEffects.CREMATION_RITE);
          detonated++;
+      }
       }
       if (detonated > 0) {
          addProficiency(caster, CREMATION_RITE, Math.min(2.0, detonated * 0.25));

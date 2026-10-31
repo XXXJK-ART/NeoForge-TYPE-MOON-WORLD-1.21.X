@@ -140,6 +140,7 @@ public final class ServantCardGawainSkills {
    public static void performGawainSolarRebuke(ServerPlayer player) {
       if (player.level() instanceof ServerLevel level) {
          boolean solar = hasSunBlessing(player);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(6.0, 2.0, 6.0), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
             living.setRemainingFireTicks(solar ? 100 : 80);
             living.invulnerableTime = 0;
@@ -148,6 +149,7 @@ public final class ServantCardGawainSkills {
             Vec3 away = living.position().subtract(player.position()).normalize();
             living.push(away.x * 0.8, 0.22, away.z * 0.8);
             living.hurtMarked = true;
+         }
          }
          level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.8, player.getZ(), 46, 2.6, 0.55, 2.6, 0.06);
       }
@@ -168,6 +170,7 @@ public final class ServantCardGawainSkills {
             delayedLevel.sendParticles(ParticleTypes.FLAME, center.x, center.y, center.z, 18, 0.55, 0.75, 0.55, 0.08);
             delayedLevel.sendParticles(ParticleTypes.SMOKE, center.x, center.y + 0.15, center.z, 10, 0.45, 0.6, 0.45, 0.04);
             delayedLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+            try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : delayedLevel.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().move(dir.scale(index * 1.15)).inflate(1.8, 1.4, 1.8), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
                living.setRemainingFireTicks(100);
                living.invulnerableTime = 0;
@@ -175,6 +178,7 @@ public final class ServantCardGawainSkills {
                living.invulnerableTime = 0;
                living.push(dir.x * 0.75, 0.18, dir.z * 0.75);
                living.hurtMarked = true;
+            }
             }
             if (index == 1) {
                delayedLevel.playSound(null, player.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0F, 0.8F);

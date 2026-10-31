@@ -252,7 +252,18 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.isAttack() && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) {
+            event.setCanceled(true); event.setSwingHand(false); return;
+         }
          if (event.isUseItem()) {
+            if (net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumesUse()) {
+               event.setCanceled(true); event.setSwingHand(false); return;
+            }
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) {
+               net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumeUseUntilRelease();
+               if (minecraft.options.keyShift.isDown()) PacketDistributor.sendToServer(new net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryDismountMessage());
+               event.setCanceled(true); event.setSwingHand(false); return;
+            }
             if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount
                && !isHakuryuMountedUseReserved(player, vars)) {
                PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
@@ -395,6 +406,13 @@ public class TypeMoonWorldModKeyMappings {
       @SubscribeEvent
       public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
          if (!(event.getEntity() instanceof Player player) || !player.isPassenger()) return;
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarriedMaster(player)) {
+            event.getInput().forwardImpulse = 0.0F;
+            event.getInput().leftImpulse = 0.0F;
+            event.getInput().jumping = false;
+            event.getInput().shiftKeyDown = false;
+            return;
+         }
          if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
             event.getInput().shiftKeyDown = false;
             return;
@@ -658,7 +676,7 @@ public class TypeMoonWorldModKeyMappings {
                MysticEyesToggleMessage.pressAction(player, 0);
             }
 
-            if (TypeMoonWorldModKeyMappings.OPEN_PROJECTION_PRESET.isDown()) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumesTab() && TypeMoonWorldModKeyMappings.OPEN_PROJECTION_PRESET.isDown()) {
                if (!isTabDown) {
                   isTabDown = true;
                   if (!suppressScreens && vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {

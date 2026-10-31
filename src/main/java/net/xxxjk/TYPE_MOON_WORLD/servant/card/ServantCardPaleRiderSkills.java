@@ -330,10 +330,12 @@ public final class ServantCardPaleRiderSkills {
       attackActor.setDeltaMovement(dir.x * 1.35, 0.2, dir.z * 1.35);
       attackActor.hasImpulse = true;
       if (player.level() instanceof ServerLevel level) {
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, attackActor.getBoundingBox().inflate(2.0),
             entity -> entity != attackActor && !PaleRiderInfectionService.arePaleRiderAllies(player, entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
             target.hurt(player.damageSources().playerAttack(player), 12.0F);
             PaleRiderInfectionService.infect(target, player, 5);
+         }
          }
       }
       return true;
@@ -354,12 +356,14 @@ public final class ServantCardPaleRiderSkills {
       LivingEntity actor = getPossessedHost(player);
       if (actor == null) actor = player;
       final LivingEntity pulseActor = actor;
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, pulseActor.getBoundingBox().inflate(5.0),
          entity -> entity != pulseActor && !PaleRiderInfectionService.arePaleRiderAllies(player, entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
          target.hurt(player.damageSources().playerAttack(player), 10.0F);
          PaleRiderInfectionService.infect(target, player, 5);
          Vec3 push = target.position().subtract(pulseActor.position()).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 0.01) target.push(push.normalize().scale(0.5).add(0.0, 0.15, 0.0));
+      }
       }
       return true;
    }
@@ -551,9 +555,11 @@ public final class ServantCardPaleRiderSkills {
       List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, domainAnchor.getBoundingBox().inflate(25.0),
          target -> target != player && target != domainAnchor && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
          enemy.hurt(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player), 5.0F);
          PaleRiderInfectionService.infect(enemy, player, 1);
+      }
       }
       if (!enemies.isEmpty() && now % 40L == 0L) {
          LivingEntity target = enemies.get(player.getRandom().nextInt(enemies.size()));

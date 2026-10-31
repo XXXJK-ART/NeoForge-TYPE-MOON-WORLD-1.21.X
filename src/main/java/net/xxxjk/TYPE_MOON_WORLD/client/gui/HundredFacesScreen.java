@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client.gui;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -17,6 +18,7 @@ public final class HundredFacesScreen extends Screen {
    public static final int KIND_GLOBAL_COMMAND = 1;
    public static final int KIND_SINGLE_COMMAND = 2;
    public static final int KIND_SWITCH = 3;
+   public static final int KIND_PERSONA_MODE = 4;
    private static final int ACCENT = 0xFFB8B5AA;
    private static final int PANEL_WIDTH = 250;
    private static final int MAP_PANEL_WIDTH = 322;
@@ -31,6 +33,8 @@ public final class HundredFacesScreen extends Screen {
    private HundredFacesOpenScreenMessage.Target hoveredTarget;
    private int selectedTargetIndex;
    private int selectedGlobalLimit;
+   private final int modeScope;
+   private final int modeEntityId;
    private List<Marker> cachedMarkers = List.of();
    private int cachedMapX = Integer.MIN_VALUE;
    private int cachedMapY = Integer.MIN_VALUE;
@@ -38,7 +42,12 @@ public final class HundredFacesScreen extends Screen {
    private int cachedMapHeight = Integer.MIN_VALUE;
 
    public HundredFacesScreen(int kind, List<HundredFacesOpenScreenMessage.Target> targets) {
+      this(kind, targets, -1, -1);
+   }
+
+   public HundredFacesScreen(int kind, List<HundredFacesOpenScreenMessage.Target> targets, int modeScope, int modeEntityId) {
       super(Component.translatable(kind == KIND_SWITCH ? "screen.typemoonworld.hundred_faces.switch"
+         : kind == KIND_PERSONA_MODE ? "screen.typemoonworld.hundred_faces.persona_mode"
          : kind == KIND_SINGLE_COMMAND ? "screen.typemoonworld.hundred_faces.single_command"
          : kind == KIND_GLOBAL_COMMAND ? "screen.typemoonworld.hundred_faces.global_command"
          : "screen.typemoonworld.hundred_faces.summon"));
@@ -46,6 +55,8 @@ public final class HundredFacesScreen extends Screen {
       this.targets = targets == null ? List.of() : List.copyOf(targets);
       this.selectedTargetIndex = this.targets.isEmpty() ? -1 : 0;
       this.selectedGlobalLimit = 0;
+      this.modeScope = modeScope;
+      this.modeEntityId = modeEntityId;
    }
 
    @Override
@@ -56,7 +67,7 @@ public final class HundredFacesScreen extends Screen {
       int buttonHeight = 22;
       int gap = 8;
       int startX = (this.width - (buttonWidth * columns + gap)) / 2;
-      int startY = this.height / 2 - (this.choiceCount() > 6 ? 52 : this.choiceCount() > 4 ? 38 : 24);
+      int startY = this.height / 2 - (this.choiceCount() > 6 ? 72 : this.choiceCount() > 4 ? 38 : 24);
 
       if (this.kind == KIND_SUMMON) {
          int[] requests = {1, 5, 10, 20, 80};
@@ -68,6 +79,20 @@ public final class HundredFacesScreen extends Screen {
             this.addRenderableWidget(new NeonButton(x, y, buttonWidth, buttonHeight,
                Component.translatable("screen.typemoonworld.hundred_faces.summon." + keys[i]),
                button -> this.selectSummon(request), i % 2 == 0 ? GuiUtils.ARCANE_CREST : ACCENT).setArcaneStyle(true));
+         }
+         return;
+      }
+
+      if (this.kind == KIND_PERSONA_MODE) {
+         int[] commands = personaModeCommands();
+         String[] keys = {"scout", "assassination", "throwing", "poison", "induce", "support"};
+         for (int i = 0; i < commands.length; i++) {
+            int command = commands[i];
+            int x = startX + i % columns * (buttonWidth + gap);
+            int y = startY + i / columns * (buttonHeight + gap);
+            this.addRenderableWidget(new NeonButton(x, y, buttonWidth, buttonHeight,
+               Component.translatable("screen.typemoonworld.hundred_faces.persona_mode." + keys[i]),
+               button -> this.selectCommand(this.modeScope, this.modeEntityId, command), i % 2 == 0 ? GuiUtils.ARCANE_GOLD : ACCENT).setArcaneStyle(true));
          }
          return;
       }
@@ -91,9 +116,10 @@ public final class HundredFacesScreen extends Screen {
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FREE,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE,
             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE,
-            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CLEAR_PERSONAL
+            net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CLEAR_PERSONAL,
+            -1
          };
-         String[] keys = {"recall", "scatter", "free", "attack_toggle", "force_concealment", "clear_personal"};
+         String[] keys = {"recall", "scatter", "free", "attack_toggle", "force_concealment", "clear_personal", "persona_mode_select"};
          for (int i = 0; i < commands.length; i++) {
             int command = commands[i];
             int x = startX + i % columns * (buttonWidth + gap);
@@ -118,10 +144,11 @@ public final class HundredFacesScreen extends Screen {
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FREE,
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_FOLLOW,
          net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_ATTACK_TOGGLE,
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_CONCEALMENT_TOGGLE,
+         -1
       };
-      String[] keys = {"hold", "free", "follow", "attack_toggle", "force_concealment"};
-      int[] colors = {GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_VALID, ACCENT, 0xFFD0B05C, GuiUtils.ARCANE_GOLD};
+      String[] keys = {"hold", "free", "follow", "attack_toggle", "force_concealment", "persona_mode_select"};
+      int[] colors = {GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_VALID, ACCENT, 0xFFD0B05C, GuiUtils.ARCANE_GOLD, GuiUtils.ARCANE_CREST};
       for (int i = 0; i < commands.length; i++) {
          int command = commands[i];
          int x = startX + i % columns * (buttonWidth + gap);
@@ -158,7 +185,7 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private void renderChoicePanel(GuiGraphics gui) {
-      int panelHeight = this.choiceCount() > 6 ? 166 : this.choiceCount() > 4 ? 138 : 110;
+      int panelHeight = this.choiceCount() > 6 ? 200 : this.choiceCount() > 4 ? 138 : 110;
       int panelX = (this.width - PANEL_WIDTH) / 2;
       int panelY = (this.height - panelHeight) / 2 - 8;
       GuiUtils.renderArcaneWindow(gui, panelX, panelY, PANEL_WIDTH, panelHeight, ACCENT);
@@ -323,7 +350,8 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private int choiceCount() {
-      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_GLOBAL_COMMAND ? this.selectedGlobalLimit == 0 ? 5 : 7 : 5;
+      return this.kind == KIND_SUMMON ? 5 : this.kind == KIND_PERSONA_MODE ? 6
+         : this.kind == KIND_GLOBAL_COMMAND ? this.selectedGlobalLimit == 0 ? 5 : 8 : 6;
    }
 
    private void selectSummon(int requested) {
@@ -337,8 +365,23 @@ public final class HundredFacesScreen extends Screen {
    }
 
    private void selectCommand(int scope, int entityId, int command) {
+      if (command == -1) {
+         Minecraft.getInstance().setScreen(new HundredFacesScreen(KIND_PERSONA_MODE, List.of(), scope, entityId));
+         return;
+      }
       PacketDistributor.sendToServer(new HundredFacesCommandMessage(scope, entityId, command), new CustomPacketPayload[0]);
       this.onClose();
+   }
+
+   private static int[] personaModeCommands() {
+      return new int[]{
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_SCOUT,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_ASSASSINATION,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_THROWING,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_POISON,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_INDUCE,
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.COMMAND_MODE_SUPPORT
+      };
    }
 
    private Component globalLimitName(int limit) {

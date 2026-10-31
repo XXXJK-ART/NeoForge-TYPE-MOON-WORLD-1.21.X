@@ -189,6 +189,7 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean release(ServerPlayer player, boolean keepOneHp) {
+      ServantMasterCarryService.dismount(player);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!vars.servantCardState().transformed()) {
          return false;
@@ -518,6 +519,10 @@ public final class ServantCardTransformManager {
    }
 
    public static boolean triggerAction(ServerPlayer player, int slot) {
+      if (ServantMasterCarryService.isCarryingMaster(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.master_carry.skill_blocked"), true);
+         return false;
+      }
       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(player)) return false;
       if (EnumaChainService.isCasting(player)) {
          return false;
@@ -636,6 +641,11 @@ public final class ServantCardTransformManager {
          && net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.enabled(player)) {
          net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(player, false);
          player.displayClientMessage(Component.translatable("message.typemoonworld.hassan.concealment_off"), true);
+         return true;
+      }
+      if ("hundred_faces_concealment".equals(action.effectId())
+         && HundredFacesPresenceService.enabled(player)) {
+         HundredFacesPresenceService.set(player, false);
          return true;
       }
       if ("sasaki_presence_concealment".equals(action.effectId())
@@ -1737,6 +1747,12 @@ public final class ServantCardTransformManager {
          case "bloodfort_field" -> ServantCardMedusaSkills.performBloodfort(player, false);
          case "bellerophon" -> ServantCardMedusaSkills.performBellerophon(player);
          case "hassan_dagger" -> ServantCardHassanSkills.giveDirk(player);
+         case "hundred_faces_dagger" -> { if (!ServantCardHundredFacesHassanSkills.createDirk(player)) return false; }
+         case "hundred_faces_knife_feint" -> { if (!ServantCardHundredFacesHassanSkills.performKnifeFeint(player)) return false; }
+         case "hundred_faces_dirk_throw" -> { if (!ServantCardHundredFacesHassanSkills.performDirkVolley(player)) return false; }
+         case "hundred_faces_shadow_step" -> { if (!ServantCardHundredFacesHassanSkills.performShadowStep(player)) return false; }
+         case "hundred_faces_shadow_lunge" -> { if (!ServantCardHundredFacesHassanSkills.performShadowLunge(player)) return false; }
+         case "hundred_faces_battle_retreat" -> { if (!ServantCardHundredFacesHassanSkills.performBattleRetreat(player)) return false; }
          case "zabaniya" -> {
             if (!ServantCardHassanSkills.performZabaniya(player)) {
                return false;

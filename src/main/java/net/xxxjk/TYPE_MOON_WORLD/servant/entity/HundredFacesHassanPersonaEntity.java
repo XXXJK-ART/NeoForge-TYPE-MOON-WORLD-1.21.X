@@ -79,7 +79,6 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
          .add(Attributes.ARMOR_TOUGHNESS,
             ServantCombatFormulas.armorToughness(HundredFacesHassanRules.PERSONA_COMBAT_PARAMS))
          .add(Attributes.FOLLOW_RANGE, 48.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE)
          .add(Attributes.STEP_HEIGHT, 3.0);
    }
 
@@ -143,7 +142,6 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
          ServantCombatFormulas.armorToughness(HundredFacesHassanRules.PERSONA_COMBAT_PARAMS));
       setBase(Attributes.ATTACK_DAMAGE, HundredFacesHassanRules.personaAttackDamageForCount(liveCount));
       setBase(Attributes.MOVEMENT_SPEED, this.personaMovementSpeed());
-      setBase(Attributes.KNOCKBACK_RESISTANCE, HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE);
       if (this.getCurrentMp() > this.getMaxMp()) this.setCurrentMp(this.getMaxMp());
       if (resetHealth || this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
    }
@@ -163,7 +161,6 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       boolean hasTarget = this.getTarget() != null && this.getTarget().isAlive();
       this.setPresenceConcealed(!exposed
          && (this.forceConcealment() || (hasTarget && this.distanceToSqr(this.getTarget()) > 4.0)));
-      if (this.tickCount % 40 == 0) this.ensureDirkLoadout();
    }
 
    @Override
@@ -177,8 +174,14 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       }
       LivingEntity ownerLiving = owner != null && owner.isAlive() ? owner : playerOwner;
       int command = playerOwner == null ? ServantCardHundredFacesHassanSkills.COMMAND_FREE : ServantCardHundredFacesHassanSkills.personaCommand(this);
-      boolean activeAttack = playerOwner == null || ServantCardHundredFacesHassanSkills.hasActiveAttack(this);
-      LivingEntity target = this.resolveLocalTarget(level, ownerLiving, activeAttack);
+      boolean observesTargets = this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.SCOUT
+         || this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.SUPPORT;
+      boolean modeCanAttack = switch (this.getPersonaMode()) {
+         case ASSASSINATION, THROWING, POISON, INDUCE -> true;
+         case SCOUT, SUPPORT -> false;
+      };
+      boolean activeAttack = modeCanAttack && (playerOwner == null || ServantCardHundredFacesHassanSkills.hasActiveAttack(this));
+      LivingEntity target = this.resolveLocalTarget(level, ownerLiving, activeAttack || observesTargets);
       if (target == null) {
          this.setTarget(null);
          if (playerOwner != null) {
@@ -187,7 +190,8 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
             } else if (command == ServantCardHundredFacesHassanSkills.COMMAND_FOLLOW && this.distanceToSqr(playerOwner) > 36.0) {
                this.getNavigation().moveTo(playerOwner, 1.12);
             }
-         } else if (owner != null && command != ServantCardHundredFacesHassanSkills.COMMAND_FREE && this.distanceToSqr(owner) > 144.0) {
+         } else if (owner != null && (this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.SUPPORT
+            || command != ServantCardHundredFacesHassanSkills.COMMAND_FREE) && this.distanceToSqr(owner) > 36.0) {
             this.getNavigation().moveTo(owner, 1.08);
          }
          return;
@@ -195,6 +199,30 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       this.setTarget(target);
       this.getLookControl().setLookAt(target, 45.0F, 45.0F);
       double distance = this.distanceTo(target);
+      if (this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.SUPPORT) {
+         if (this.distanceToSqr(ownerLiving) > 36.0) this.getNavigation().moveTo(ownerLiving, 1.08);
+         else this.getNavigation().stop();
+         return;
+      }
+      if (this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.SCOUT) {
+         if (owner != null && owner.getTarget() == null) owner.setTarget(target);
+         if (distance > 6.0) this.getNavigation().moveTo(target, 1.0);
+         return;
+      }
+      if (this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.THROWING && distance < 4.0) {
+         Vec3 away = this.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
+         if (away.lengthSqr() > 1.0E-4) this.getNavigation().moveTo(
+            this.getX() + away.normalize().x * 6.0, this.getY(), this.getZ() + away.normalize().z * 6.0, 1.12);
+         return;
+      }
+      if (this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.ASSASSINATION && distance > 2.1) {
+         Vec3 facing = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+         if (facing.lengthSqr() > 1.0E-4) {
+            Vec3 behind = target.position().subtract(facing.normalize().scale(1.3));
+            this.getNavigation().moveTo(behind.x, behind.y, behind.z, 1.16);
+            return;
+         }
+      }
       if (HundredFacesHassanCombatHelper.tryPersonaCombatSkill(this, target, distance, level.getGameTime())) {
          return;
       }
@@ -282,6 +310,11 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : HundredFacesHassanEntity.PersonaMode.SCOUT;
    }
 
+   public void setPersonaMode(HundredFacesHassanEntity.PersonaMode mode) {
+      this.entityData.set(PERSONA_MODE, mode == null
+         ? HundredFacesHassanEntity.PersonaMode.SCOUT.ordinal() : mode.ordinal());
+   }
+
    public boolean isPresenceConcealed() {
       return this.entityData.get(PRESENCE_CONCEALED);
    }
@@ -346,15 +379,13 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    }
 
    public void syncOwnerCombatAttributes(LivingEntity owner) {
-      if (owner == null) return;
-      this.getPersistentData().putDouble(TAG_MOVEMENT_SPEED,
-         Math.max(0.0, owner.getAttributeValue(Attributes.MOVEMENT_SPEED)));
+      // Persona movement is a fixed 0.36 regardless of the owner form.
+      this.getPersistentData().remove(TAG_MOVEMENT_SPEED);
    }
 
    private double personaMovementSpeed() {
       CompoundTag data = this.getPersistentData();
-      return data.contains(TAG_MOVEMENT_SPEED)
-         ? data.getDouble(TAG_MOVEMENT_SPEED) : HundredFacesHassanRules.PERSONA_MOVEMENT_SPEED;
+      return HundredFacesHassanRules.PERSONA_MOVEMENT_SPEED;
    }
 
    @Override
@@ -368,17 +399,32 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
    }
 
    private void ensureDirkLoadout() {
-      ItemStack held = this.getMainHandItem();
-      if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         held.setCount(1);
+      ItemStack offhand = this.getOffhandItem();
+      if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         offhand.setCount(1);
+         if (offhand.getDamageValue() >= offhand.getMaxDamage()) offhand.setDamageValue(0);
          return;
       }
-      if (held.isEmpty()) {
-         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
+      ItemStack mainhand = this.getMainHandItem();
+      if (offhand.isEmpty() && mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         this.setItemInHand(InteractionHand.OFF_HAND, mainhand.copy());
+         this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+      } else if (offhand.isEmpty()) {
+         this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
+      } else {
+         this.spawnAtLocation(new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
       }
    }
 
    private void setPresenceConcealed(boolean concealed) {
+      if (concealed && !this.entityData.get(PRESENCE_CONCEALED)) {
+         if (this.getCurrentMp() < HundredFacesHassanRules.MP_PRESENCE_CONCEALMENT
+            || !net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(this)) {
+            concealed = false;
+         } else {
+            this.setCurrentMp(this.getCurrentMp() - HundredFacesHassanRules.MP_PRESENCE_CONCEALMENT);
+         }
+      }
       if (concealed && !net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(this)) {
          concealed = false;
       }
@@ -408,7 +454,14 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
-      boolean hit = super.doHurtTarget(target);
+      boolean backstab = target instanceof LivingEntity living
+         && this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.ASSASSINATION
+         && HundredFacesHassanCombatHelper.isBehindTarget(this, living);
+      boolean hit = backstab
+         ? target instanceof LivingEntity living && living.hurt(this.damageSources().mobAttack(this),
+            (float)(this.getAttributeValue(Attributes.ATTACK_DAMAGE)
+               * (1.0 + HundredFacesHassanRules.PERSONA_BACKSTAB_DAMAGE_BONUS)))
+         : super.doHurtTarget(target);
       if (hit && target instanceof LivingEntity living && this.getPersonaMode() == HundredFacesHassanEntity.PersonaMode.POISON) {
          HundredFacesHassanCombatHelper.applyWeakPoison(this, living);
       }
@@ -477,6 +530,7 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       if (this.targetUuid != null) tag.putUUID("HundredFacesTarget", this.targetUuid);
       tag.putLong("HundredFacesNextAttack", this.nextAttackTick);
       tag.putInt("HundredFacesMode", this.entityData.get(PERSONA_MODE));
+      tag.putInt("HundredFacesModeVersion", 2);
       tag.putBoolean("HundredFacesPersonaConcealed", this.isPresenceConcealed());
       tag.putFloat("HundredFacesPersonaVisualHeight", this.getPersonaVisualHeight());
       tag.putLong(TAG_EXPOSED_UNTIL, this.getPersistentData().getLong(TAG_EXPOSED_UNTIL));
@@ -488,13 +542,12 @@ public final class HundredFacesHassanPersonaEntity extends ServantEntity {
       this.ownerUuid = tag.hasUUID("HundredFacesOwner") ? tag.getUUID("HundredFacesOwner") : null;
       this.targetUuid = tag.hasUUID("HundredFacesTarget") ? tag.getUUID("HundredFacesTarget") : null;
       this.nextAttackTick = tag.getLong("HundredFacesNextAttack");
-      this.entityData.set(PERSONA_MODE, tag.getInt("HundredFacesMode"));
+      this.setPersonaMode(HundredFacesHassanEntity.readStoredPersonaMode(tag, "HundredFacesMode"));
       this.setPersonaVisualHeight(tag.contains("HundredFacesPersonaVisualHeight")
          ? tag.getFloat("HundredFacesPersonaVisualHeight") : 0.9F);
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, tag.getLong(TAG_EXPOSED_UNTIL));
       this.setPresenceConcealed(tag.contains("HundredFacesPersonaConcealed") && tag.getBoolean("HundredFacesPersonaConcealed"));
       this.applyPersonaAttributes(1, false);
       this.ensureDefaultNpcLoadout(false);
-      this.ensureDirkLoadout();
    }
 }

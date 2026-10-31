@@ -430,6 +430,7 @@ public final class ServantCardLancelotBerserkerSkills {
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.52, 0.0);
       Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
       int[] hits = {0};
+      try (var segment = ServantMasterDamageRouter.attackSegment()) {
       level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(range, 2.5, range), target -> validTarget(player, target)).stream()
          .sorted(Comparator.comparingDouble(player::distanceToSqr))
          .forEach(target -> {
@@ -448,10 +449,12 @@ public final class ServantCardLancelotBerserkerSkills {
                hits[0]++;
             }
          });
+      }
    }
 
    private static void damageRadius(ServerPlayer player, double radius, float damage, double knockback, double vertical) {
       if (!(player.level() instanceof ServerLevel level)) return;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.1, radius), target -> validTarget(player, target))) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().playerAttack(player), damage);
@@ -462,6 +465,7 @@ public final class ServantCardLancelotBerserkerSkills {
          away = away.normalize();
          target.push(away.x * knockback, vertical, away.z * knockback);
          target.hurtMarked = true;
+      }
       }
    }
 

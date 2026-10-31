@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -167,6 +169,7 @@ public class SpiritronCannonBeamEntity extends Entity {
       Vec3 up = right.cross(forward).normalize();
       AABB search = new AABB(start, start).minmax(new AABB(getEndPos(), getEndPos())).inflate(HALF_WIDTH + 2.0, HALF_HEIGHT + 2.0, HALF_WIDTH + 2.0);
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, search, e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().add(0.0, living.getBbHeight() * 0.5, 0.0).subtract(start);
          double along = rel.dot(forward);
@@ -183,6 +186,7 @@ public class SpiritronCannonBeamEntity extends Entity {
             living.push(forward.x * 0.18, 0.0, forward.z * 0.18);
             living.hurtMarked = true;
          }
+      }
       }
    }
 

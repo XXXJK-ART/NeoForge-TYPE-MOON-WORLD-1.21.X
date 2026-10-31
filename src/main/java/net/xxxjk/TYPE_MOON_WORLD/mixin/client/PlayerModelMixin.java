@@ -107,8 +107,15 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             carryModel.rightSleeve.copyFrom(carryModel.rightArm);
             carryModel.leftSleeve.copyFrom(carryModel.leftArm);
          } else if (ServantMasterCarryService.isCarriedMaster(player)) {
-            carryModel.rightArm.xRot = -0.72F;
-            carryModel.leftArm.xRot = -0.72F;
+            boolean casting = commandSpellPose || firearmPose || localPlayer && (
+               TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalTapCastPoseActive()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive());
+            if (!casting && !player.isUsingItem()) {
+               carryModel.rightArm.xRot = -0.72F;
+               carryModel.leftArm.xRot = -0.72F;
+            }
             carryModel.rightLeg.xRot = -1.05F;
             carryModel.leftLeg.xRot = -1.05F;
             carryModel.rightLeg.zRot = 0.18F;

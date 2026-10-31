@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.npc;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -2280,6 +2282,7 @@ public final class NpcMagicCastBridge {
             spawnNpcWhiteShockwaveParticles(serverLevel, caster, radius, powerNormalized);
          }
 
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity nearby : caster.level().getEntitiesOfClass(
             LivingEntity.class,
             caster.getBoundingBox().inflate(radius, 3.0 + powerNormalized, radius),
@@ -2308,6 +2311,7 @@ public final class NpcMagicCastBridge {
             if (nearby instanceof Mob mob) {
                mob.setTarget(caster);
             }
+         }
          }
 
          caster.level().playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.45F, 1.25F);
@@ -2971,6 +2975,7 @@ public final class NpcMagicCastBridge {
          float baseDamage = computeMartialDamage(npc, 1.1, 2.2, 4.0, 14.0);
          boolean hit = false;
 
+         try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity nearby : npc.level()
             .getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(radius, 1.5, radius), e -> e != npc && e.isAlive())) {
             if (hurtWithNpcMelee(npc, nearby, baseDamage)) {
@@ -2978,6 +2983,7 @@ public final class NpcMagicCastBridge {
                nearby.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 28, 0, false, true, true));
                hit = true;
             }
+         }
          }
 
          if (hit) {
@@ -4852,6 +4858,7 @@ public final class NpcMagicCastBridge {
       Vec3 end = eye.add(look.scale(range));
       if (caster.level() instanceof ServerLevel serverLevel) {
          Set<Integer> hit = new HashSet<>();
+         try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity victim : serverLevel.getEntitiesOfClass(
             LivingEntity.class,
             new AABB(eye, end).inflate(1.35),
@@ -4868,6 +4875,7 @@ public final class NpcMagicCastBridge {
                victim.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(caster.damageSources().magic(), "mana_burst", caster), MANA_BURST_DIRECT_DAMAGE[level - 1]);
                victim.invulnerableTime = 0;
             }
+         }
          }
          for (double d = 1.0; d <= range; d += 1.5) {
             Vec3 p = eye.add(look.scale(d));

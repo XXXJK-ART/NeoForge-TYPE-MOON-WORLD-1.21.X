@@ -219,6 +219,13 @@ public final class HassanZabaniyaService {
       LivingEntity caster = find(holder, binding.hasUUID(CASTER) ? binding.getUUID(CASTER) : null);
       if (caster == null) caster = holder;
       if (!EntityUtils.isValidCombatTarget(caster, target) || ServantMasterTargeting.isContractMaster(caster, target)) return false;
+      crushTarget(caster, target);
+      return true;
+   }
+
+   private static void crushTarget(LivingEntity caster, LivingEntity target) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, Float.MAX_VALUE,
+         defender -> crushTarget(caster, defender))) return;
       DamageSource source = source(caster);
       target.setLastHurtByMob(caster);
       if (caster instanceof Player player) target.setLastHurtByPlayer(player);
@@ -227,7 +234,6 @@ public final class HassanZabaniyaService {
          target.setHealth(0.0F);
          target.die(source);
       }
-      return true;
    }
 
    private static DamageSource source(LivingEntity caster) {

@@ -138,6 +138,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       }
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
       boolean hitAny = false;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : nearbyEnemies(player, 3.0)) {
          hurtPhysical(player, target, damage);
          Vec3 away = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
@@ -148,6 +149,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
          target.push(away.x * 0.9, 0.18, away.z * 0.9);
          target.hurtMarked = true;
          hitAny = true;
+      }
       }
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.8, player.getZ(), 10, 1.0, 0.2, 1.0, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.35F);
@@ -445,6 +447,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       AABB area = player.getBoundingBox().expandTowards(direction.scale(range)).inflate(1.3, 1.1, 1.3);
       List<LivingEntity> hit = new ArrayList<>();
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, area, entity -> isEnemy(player, entity))) {
          Vec3 relative = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin);
          if (relative.lengthSqr() > range * range || new Vec3(relative.x, 0.0, relative.z).normalize().dot(direction) < minDot) {
@@ -458,6 +461,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
             hurtPhysical(player, target, damage);
          }
          hit.add(target);
+      }
       }
       return hit;
    }

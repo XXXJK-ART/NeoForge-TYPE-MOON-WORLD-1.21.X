@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -137,6 +139,7 @@ public final class KendoCombatService {
    }
 
    public static void handleInput(ServerPlayer player, KendoSchool school, int input, boolean down, boolean up) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) return;
       if (input == INPUT_B_END) {
          if (player.getPersistentData().getBoolean(TAG_STANCE)) {
             player.getPersistentData().remove(TAG_STANCE);
@@ -219,6 +222,16 @@ public final class KendoCombatService {
       }
       if (isUnlocked(vars, school, move)) perform(player, school, vars, move);
       else player.displayClientMessage(Component.translatable("message.typemoonworld.kendo.move_locked"), true);
+   }
+
+   public static void interruptForCarry(ServerPlayer player) {
+      var data = player.getPersistentData();
+      if (data.getBoolean(TAG_STANCE)) player.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
+      data.remove(TAG_STANCE);
+      data.remove(TAG_STANCE_UNTIL);
+      data.remove(TAG_ATTACK_ACTIVE_UNTIL);
+      data.remove(TAG_THREE_THRUST_UNTIL);
+      data.remove(TAG_THREE_THRUST_TELEPORTS);
    }
 
    static boolean usesBasicAttack(KendoSchool school, double proficiency) {
@@ -366,6 +379,7 @@ public final class KendoCombatService {
       AABB box = player.getBoundingBox().inflate(radius, 1.6, radius);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
       Vec3 look = horizontalLook(player);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity entity : player.level().getEntitiesOfClass(LivingEntity.class, box,
          entity -> {
             if (entity == player || !entity.isAlive() || !player.hasLineOfSight(entity)) return false;
@@ -376,6 +390,7 @@ public final class KendoCombatService {
          })) {
          hurtTarget(player, entity, damage, move);
          entity.stopUsingItem();
+      }
       }
    }
 

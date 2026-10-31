@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -148,6 +150,7 @@ public class MedeaBeamEffectEntity extends Entity {
       for (double step = 0.0; step <= 1.0; step += 0.08) {
          Vec3 sample = start.lerp(end, step);
          AABB segmentBox = new AABB(sample, sample).inflate(0.85, 0.85, 0.85);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : serverLevel.getEntitiesOfClass(
             LivingEntity.class,
             segmentBox,
@@ -161,6 +164,7 @@ public class MedeaBeamEffectEntity extends Entity {
                living.hurt(source, this.damage);
                living.invulnerableTime = 0;
             }
+         }
          }
       }
    }

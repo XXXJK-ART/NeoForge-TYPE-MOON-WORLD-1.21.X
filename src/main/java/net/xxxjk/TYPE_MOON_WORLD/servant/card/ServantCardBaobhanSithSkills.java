@@ -222,6 +222,7 @@ public final class ServantCardBaobhanSithSkills {
       }
       AABB box = primary.getBoundingBox().inflate(3.5, 1.0, 3.5);
       int hits = 0;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, other -> validTarget(player, other))) {
          float damage = target == primary ? 18.0F : 14.0F;
          BaobhanSithCurseService.hurtWithCurse(player, target, damage);
@@ -230,6 +231,7 @@ public final class ServantCardBaobhanSithSkills {
          BaobhanSithCurseService.addMedium(player, target, BaobhanSithCurseService.MEDIUM_SKIN, 1);
          BaobhanSithCurseService.applyCurse(player, target, BaobhanSithCurseService.CURSE_SKIN, 1, 300, 1.0F);
          hits++;
+      }
       }
       if (hits <= 0) {
          return noTarget(player);

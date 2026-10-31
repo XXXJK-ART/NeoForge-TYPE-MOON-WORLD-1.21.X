@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.basic;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -118,6 +120,7 @@ public final class ManaBurstService {
          double range = DIRECT_RANGE[level - 1];
          Vec3 end = eye.add(look.scale(range));
          Set<Integer> hit = new HashSet<>();
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, new AABB(eye, end).inflate(1.4), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
             Vec3 rel = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(eye);
             double along = rel.dot(look);
@@ -129,6 +132,7 @@ public final class ManaBurstService {
                target.invulnerableTime = 0;
                spawnDirectImpactFx(serverLevel, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), level);
             }
+         }
          }
          spawnDirectBeamFx(serverLevel, eye, look, range, level);
          destroyDirectBeamBlocks(serverLevel, player, eye, look, range, level);

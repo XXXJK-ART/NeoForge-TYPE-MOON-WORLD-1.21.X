@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -253,12 +255,14 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private void applyWindDamage(ServerLevel level, LivingEntity owner) {
       AABB area = owner.getBoundingBox().inflate(WIND_RADIUS);
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e)
             && !EntityUtils.isImmunePlayerTarget(e) && e.distanceToSqr(owner) <= WIND_RADIUS * WIND_RADIUS)) {
          hurtWithoutIFrames(target, source, 50.0F);
          Vec3 push = target.position().subtract(owner.position());
          if (push.lengthSqr() > 1.0E-4) { push = push.normalize().scale(0.28); target.push(push.x, 0.12, push.z); }
+      }
       }
    }
 
@@ -274,6 +278,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       search = search.inflate(BEAM_HALF_WIDTH + 2, BEAM_HALF_HEIGHT + 2, BEAM_HALF_WIDTH + 2);
       float pulse = BEAM_DAMAGE_TOTAL * getPowerScale() * clashDamageScale / BEAM_DAMAGE_PULSES;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment101 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e))) {
          for (Vec3 forward : sweepDirections) {
@@ -282,6 +287,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
             target.push(forward.x * 0.15, forward.y * 0.08, forward.z * 0.15);
             break;
          }
+      }
       }
    }
 
@@ -335,9 +341,11 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          double radius = 60.0;
          float damage = 200.0F * getPowerScale() * clashDamageScale;
          DamageSource source = level.damageSources().explosion(this, owner);
+         try (var carrySegment102 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
             e -> e.isAlive() && e != owner && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e) && e.distanceToSqr(center) <= radius * radius)) {
             hurtWithoutIFrames(target, source, damage);
+         }
          }
          VFXServerEffects.spawn(level, "ea_impact", center, 256.0);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 16, 2.5, 2.5, 2.5, 0.0);

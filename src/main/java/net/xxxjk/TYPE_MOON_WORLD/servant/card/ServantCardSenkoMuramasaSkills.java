@@ -99,6 +99,7 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean forge(ServerPlayer player, int choice) {
+      if (ServantMasterCarryService.isCarryingMaster(player)) return false;
       if (!isMuramasa(player) || choice < 0 || choice > 3) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!ServantCardManaService.consume(player, vars, 10.0)) return false;

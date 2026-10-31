@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.oda;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -201,6 +203,7 @@ public final class OdaAbilityService {
          if (!struck || !firstOnly) {
             var targets = owner.level().getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(.3), e -> enemy(owner, e) && !hit.contains(e.getUUID()));
             targets.sort(Comparator.comparingDouble(e -> e.distanceToSqr(before)));
+            try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
             for (var target : targets) {
                hit.add(target.getUUID()); struck = true;
                hurt(owner, target, damage, firstOnly ? THRUST : DASH, false);
@@ -212,6 +215,7 @@ public final class OdaAbilityService {
                   }
                   break;
                }
+            }
             }
          }
          if (owner.position().distanceToSqr(before) < .001) break;
@@ -314,6 +318,7 @@ public final class OdaAbilityService {
    }
    public static void hajunPulse(LivingEntity caster, ServerLevel level, boolean initial) {
       State state = state(caster);
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(25), e -> enemy(caster, e))) {
          boolean divine = OdaCombatEvents.divinity(target) > 0;
          target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), initial ? 160 : 80));
@@ -322,6 +327,7 @@ public final class OdaAbilityService {
          target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 45, divine ? 2 : 0, false, true, true));
          if (divine) target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 45, 1, false, true, true));
          hurt(caster, target, initial ? 52 : 12, HAJUN, false);
+      }
       }
    }
    public static LivingEntity burnOwner(LivingEntity target) {

@@ -6,15 +6,16 @@
   "class_type": "assassin",
   "faction": "human",
   "traits": [
-    "servant", "humanoid", "assassin", "lawful", "evil", "human",
-    "hassan_order", "old_man_of_the_mountain", "hundred_faces"
+    "female", "human", "lawful", "evil", "servant", "humanoid",
+    "human_kind", "seven_knights", "ea_special"
   ],
   "parameters": {
     "endurance": "D", "endurance_plus": false,
     "strength": "C", "strength_plus": false,
     "agility": "A", "agility_plus": false,
     "magic": "C", "magic_plus": false,
-    "luck": "E", "luck_plus": false
+    "luck": "E", "luck_plus": false,
+    "noble_phantasm_rank": "B+"
   },
   "model": {
     "geometry": "",
@@ -49,7 +50,7 @@
       "poison_stab"
     ]
   },
-  "skills": ["presence_concealment_a_plus_hundred_faces", "encyclopedia_a_plus", "battle_retreat_b"],
+  "skills": ["presence_concealment_a_hundred_faces", "encyclopedia_a_plus", "battle_retreat_b"],
   "noble_phantasm": "zabaniya_hundred_faces",
   "personality": {
     "obedience": "compliant", "principle": "lawful", "morality": "evil",

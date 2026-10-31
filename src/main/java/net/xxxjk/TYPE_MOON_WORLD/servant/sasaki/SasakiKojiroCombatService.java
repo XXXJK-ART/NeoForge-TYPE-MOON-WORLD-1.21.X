@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.sasaki;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -457,8 +459,10 @@ public final class SasakiKojiroCombatService {
             SasakiKojiroActionAnimationService.play(caster, SasakiKojiroAction.SPINNING_SLASH);
             slashVfx(caster, 1.3);
             secondBladeSwing(caster);
+            try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity victim : nearbyTargets(caster, attackRange(caster, technique)).stream().limit(3).toList()) {
                hit(caster, victim, technique.damage(), technique.effectId());
+            }
             }
          }
          case TSUBAME_GAESHI -> {

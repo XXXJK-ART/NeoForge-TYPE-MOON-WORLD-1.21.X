@@ -66,12 +66,14 @@ public final class ServantCardSkillUtils {
    }
 
    public static void hitForwardArc(ServerPlayer player, Vec3 dir, double range, float damage) {
+      if (ServantMasterCarryService.attacksBlocked(player)) return;
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       Vec3 forward = dir.lengthSqr() < 1.0E-4 ? PlayerNoblePhantasmHelper.horizontalLook(player) : new Vec3(dir.x, 0.0, dir.z).normalize();
       AABB box = player.getBoundingBox().inflate(range, 3.0, range);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin);
          if (to.lengthSqr() > range * range || new Vec3(to.x, 0.0, to.z).normalize().dot(forward) < 0.45) {
@@ -82,6 +84,7 @@ public final class ServantCardSkillUtils {
          target.invulnerableTime = 0;
          target.push(forward.x * 0.75, 0.18, forward.z * 0.75);
          target.hurtMarked = true;
+      }
       }
    }
 

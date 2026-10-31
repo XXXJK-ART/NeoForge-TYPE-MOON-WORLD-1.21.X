@@ -291,6 +291,12 @@ public class TYPE_MOON_WORLD {
 
    private void registerNetworking(RegisterPayloadHandlersEvent event) {
       PayloadRegistrar registrar = event.registrar("typemoonworld_combat_v2");
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryStateMessage.TYPE,
+         net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryStateMessage.STREAM_CODEC,
+         net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryStateMessage::handle);
+      registrar.playToServer(net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryDismountMessage.TYPE,
+         net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryDismountMessage.STREAM_CODEC,
+         net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryDismountMessage::handle);
       // Addon payloads are registered through the stable API boundary.
       this.addonEntrypoints.forEach(entrypoint -> entrypoint.registerPayloads(registrar));
       registrar.playToServer(Basic_information_Button_Message.TYPE, Basic_information_Button_Message.STREAM_CODEC, Basic_information_Button_Message::handleData);
@@ -445,7 +451,9 @@ public class TYPE_MOON_WORLD {
       if (action != null) {
          int delay = Math.max(1, tick);
          long executeAt = serverTickCounter + delay;
-         scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.guardDelayedEffect(action));
+         Runnable guarded = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.guardDelayedEffect(action);
+         Runnable segmented = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.deferred(delay, guarded);
+         if (segmented != null) scheduledWork.computeIfAbsent(executeAt, k -> new ConcurrentLinkedQueue<>()).add(segmented);
       }
    }
 

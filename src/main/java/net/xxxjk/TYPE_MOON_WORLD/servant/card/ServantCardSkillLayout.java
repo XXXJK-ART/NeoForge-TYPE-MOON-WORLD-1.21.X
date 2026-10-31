@@ -259,16 +259,18 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "hundred_faces_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
-               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
+            case 0 -> new ServantCardSkillAction("Knife Feint", "hundred_faces_knife_feint", 5.0, 75);
             case 1 -> new ServantCardSkillAction(crouching ? "Persona Direct Command" : "Persona Command",
                crouching ? "hundred_faces_single_command" : "hundred_faces_command", 0.0, 20);
-            case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
+            case 2 -> new ServantCardSkillAction("Persona Dirk", "hundred_faces_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 0);
-            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 110);
-            case 5 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
-            case 6 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
-            case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            case 4 -> new ServantCardSkillAction("Presence Concealment A", "hundred_faces_concealment", 16.0, 110);
+            case 5 -> new ServantCardSkillAction("Three Dirk Throw", "hundred_faces_dirk_throw", 8.0, 40);
+            case 6 -> new ServantCardSkillAction("Shadow Step Backstab", "hundred_faces_shadow_step", 10.0, 120);
+            case 7 -> new ServantCardSkillAction("Shadow Lunge", "hundred_faces_shadow_lunge", 7.0, 90);
+            case 8 -> new ServantCardSkillAction("Battle Retreat B", "hundred_faces_battle_retreat", 10.0, 400);
+            case 9 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
+               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
             default -> null;
          };
          case "diarmuid_ua_duibhne" -> {

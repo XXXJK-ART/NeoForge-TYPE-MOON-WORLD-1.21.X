@@ -85,6 +85,7 @@ public final class ServantCardLiShuwenSkills {
    public static void performLiInterrupt(ServerPlayer player) {
       revealCircleRealm(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(4.5, 1.5, 4.5), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, true, true));
          target.invulnerableTime = 0;
@@ -92,6 +93,7 @@ public final class ServantCardLiShuwenSkills {
          target.invulnerableTime = 0;
          target.push(dir.x * 0.4, 0.12, dir.z * 0.4);
          target.hurtMarked = true;
+      }
       }
       spawnLiHitFx(player, null);
    }

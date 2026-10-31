@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -324,6 +326,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       float damage = this.getArmyDamage();
       Set<Integer> damaged = new HashSet<>();
       AABB damageBox = new AABB(burstCenter, burstCenter).inflate(SPLIT_BURST_RADIUS);
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
@@ -348,6 +351,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             living.push(push.x * 1.0, 0.36, push.z * 1.0);
             living.hurtMarked = true;
          }
+      }
       }
 
       VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
@@ -516,6 +520,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void resolveSingleTargetHit(LivingEntity target) {
+      if (ServantMasterDamageRouter.special(target, 250, this::resolveSingleTargetHit)) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          this.discard();
          return;
@@ -647,6 +652,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       this.breakLowHardnessTerrain(level, center, currentRadius, previousRadius);
 
       AABB damageBox = new AABB(center, center).inflate(currentRadius);
+      try (var carrySegment201 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
@@ -676,6 +682,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             living.push(push.x / horizontal * 1.15, 0.4, push.z / horizontal * 1.15);
             living.hurtMarked = true;
          }
+      }
       }
    }
 
@@ -743,6 +750,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void applyDeathThorn(LivingEntity target, DamageSource source) {
+      if (ServantMasterDamageRouter.special(target, Float.MAX_VALUE, defender -> applyDeathThorn(defender, source))) return;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg")) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;

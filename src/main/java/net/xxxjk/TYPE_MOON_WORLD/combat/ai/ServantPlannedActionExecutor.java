@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
@@ -276,6 +278,7 @@ public final class ServantPlannedActionExecutor {
       }
 
       boolean terrainTriggered = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : victims) {
          if (!runtime.hitTargets.add(victim.getUUID())) continue;
          if (requiresLineOfSight(action.threat().shape()) && !entity.getSensing().hasLineOfSight(victim)) continue;
@@ -309,6 +312,7 @@ public final class ServantPlannedActionExecutor {
                TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
             terrainTriggered = true;
          }
+      }
       }
    }
 

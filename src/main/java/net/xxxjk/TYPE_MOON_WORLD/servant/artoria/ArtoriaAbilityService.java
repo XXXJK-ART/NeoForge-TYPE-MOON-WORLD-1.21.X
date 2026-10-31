@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.artoria;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Comparator;
@@ -274,12 +276,14 @@ public final class ArtoriaAbilityService {
       TYPE_MOON_WORLD.queueServerWork(4, () -> {
          if (!validDelayed(owner, level)) return;
          Set<Integer> hitIds = new HashSet<>();
+         try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
             owner.getBoundingBox().inflate(4.8, 2, 4.8), t -> enemy(owner, t))) {
             Vec3 offset = target.position().subtract(owner.position());
             if (owner.distanceTo(target) <= 4.8 && offset.multiply(1, 0, 1).normalize().dot(forward) >= 0.5
                && owner.hasLineOfSight(target) && hitIds.add(target.getId()))
                hit(owner, target, ArtoriaRules.SPINNING_SLASH_DAMAGE, ArtoriaRules.SPINNING_SLASH, false, false);
+         }
          }
       });
       return true;
@@ -426,12 +430,14 @@ public final class ArtoriaAbilityService {
                Vec3 point = center.add(right.scale(side)).add(0.0, vertical, 0.0);
                double verticalRadius = npc ? 0.75 : 0.85 + distance * 0.04;
                AABB area = new AABB(point, point).inflate(0.9, verticalRadius, 0.9);
+               try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
                for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, t -> enemy(owner, t))) {
                   if (owner.hasLineOfSight(target) && hits.add(target.getId())) {
                      damageWindHammer(owner, target, damage);
                      target.push(forward.x * 1.05, 0.34, forward.z * 1.05);
                      target.hurtMarked = true;
                   }
+               }
                }
             }
          }
@@ -476,6 +482,7 @@ public final class ArtoriaAbilityService {
       boolean npc = owner instanceof ArtoriaPendragonEntity;
       double verticalRange = 3.5 + (burst ? 1.5 : 0.0);
       float baseDamage = burst ? (npc ? 34.0F : 32.0F) : 22.0F;
+      try (var carrySegment302 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
          owner.getBoundingBox().inflate(radius, verticalRange, radius), t -> enemy(owner, t))) {
          Vec3 away = target.position().subtract(owner.position()).multiply(1, 0, 1);
@@ -489,6 +496,7 @@ public final class ArtoriaAbilityService {
          double verticalImpulse = (burst ? 1.05 : 0.8) * (0.45 + 0.55 * falloff);
          target.push(dir.x * horizontalImpulse, verticalImpulse, dir.z * horizontalImpulse);
          target.hurtMarked = true;
+      }
       }
       for (double[] ring : new double[][]{{0.4, 8.0, 0.18, 14, 0xFFFFFF, 0.92F},
          {0.24, 6.56, 0.12, 18, 0xF7F7FF, 0.7F}, {0.15, 4.48, 0.09, 22, 0xFFFFFF, 0.48F}}) {
@@ -539,10 +547,12 @@ public final class ArtoriaAbilityService {
    }
    private static void arc(LivingEntity owner, double range, float amount) {
       Vec3 forward = horizontal(owner);
+      try (var carrySegment303 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : owner.level().getEntitiesOfClass(LivingEntity.class, owner.getBoundingBox().inflate(range), t -> enemy(owner, t))) {
          Vec3 offset = target.position().subtract(owner.position());
          if (offset.lengthSqr() <= range * range && offset.normalize().dot(forward) > 0.1 && owner.hasLineOfSight(target))
             hit(owner, target, amount, "artoria_small_combo", false, true);
+      }
       }
    }
    public static void lightCannon(LivingEntity owner) {
@@ -551,6 +561,7 @@ public final class ArtoriaAbilityService {
       Vec3 max = start.add(direction.scale(32));
       Vec3 end = traceLightCannon(level, owner, start, direction, max);
       double length = start.distanceTo(end);
+      try (var carrySegment304 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(start, end).inflate(2), t -> enemy(owner, t))) {
          Vec3 center = target.getBoundingBox().getCenter();
          double along = center.subtract(start).dot(direction);
@@ -558,6 +569,7 @@ public final class ArtoriaAbilityService {
          if (along >= 0 && along <= length && owner.hasLineOfSight(target)
             && center.distanceToSqr(start.add(direction.scale(along))) <= radius * radius)
             hit(owner, target, ArtoriaRules.MANA_BURST_BEAM_DAMAGE, "mana_burst_beam", true, false);
+      }
       }
       Vec3 right = new Vec3(-direction.z, 0, direction.x);
       if (right.lengthSqr() < 1.0E-5) right = new Vec3(1, 0, 0);

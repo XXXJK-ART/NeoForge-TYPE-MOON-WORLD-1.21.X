@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.martial;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -131,6 +133,7 @@ public final class BajiquanCombatService {
    }
 
    public static void handleInput(ServerPlayer player, int input, boolean down, boolean up) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) return;
       if (!isActive(player)) return;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (player.hasEffect(ModMobEffects.STAGGER) || player.hasEffect(ModMobEffects.OFF_BALANCE)) return;
@@ -192,6 +195,13 @@ public final class BajiquanCombatService {
          return;
       }
       perform(player, vars, move, comboCancel);
+   }
+
+   public static void interruptForCarry(ServerPlayer player) {
+      resetCounters(player.getPersistentData());
+      player.getPersistentData().remove(TAG_KNEE_PENDING);
+      player.getPersistentData().remove(TAG_KNEE_AIR_UNTIL);
+      player.getPersistentData().remove(TAG_KNEE_LANDING_UNTIL);
    }
 
    private static BajiquanMove selectMove(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int input, boolean down, boolean up, long now) {
@@ -400,6 +410,7 @@ public final class BajiquanCombatService {
    private static void tremor(ServerPlayer player, double radius, int imbalanceTicks, float damage) {
       AABB area = player.getBoundingBox().inflate(radius, 1.5, radius);
       boolean landed = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, area, e -> canHit(player, e))) {
          target.addEffect(new MobEffectInstance(ModMobEffects.OFF_BALANCE, imbalanceTicks, 0, false, true, true));
          if (damage > 0.0F) {
@@ -412,6 +423,7 @@ public final class BajiquanCombatService {
             }
             target.invulnerableTime = 0;
          }
+      }
       }
       if (landed) addProficiency(player, isSparring(player) ? 0.25 : 0.05);
    }

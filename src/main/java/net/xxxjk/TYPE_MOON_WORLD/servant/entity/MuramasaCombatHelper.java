@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -507,12 +509,14 @@ public final class MuramasaCombatHelper {
             return;
          }
          AABB area = entity.getBoundingBox().inflate(8.0);
+         try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : level.getEntitiesOfClass(
             LivingEntity.class, area,
             candidate -> candidate != entity && candidate.isAlive()
                && !entity.isAlliedTo(candidate) && !EntityUtils.isImmunePlayerTarget(candidate))) {
             applyNoDefenseDamage(entity, living, 28.0F);
             living.igniteForSeconds(4.0F);
+         }
          }
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.SNOWFLAKE,
             entity.getX(), entity.getY() + 1.0, entity.getZ(), 140, 8.0, 1.1, 8.0, 0.1);
@@ -1126,6 +1130,8 @@ public final class MuramasaCombatHelper {
    }
 
    public static void applyNoDefenseDamage(LivingEntity attacker, LivingEntity target, float amount) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, amount,
+         defender -> applyNoDefenseDamage(attacker, defender, amount))) return;
       if (attacker == null || target == null || amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

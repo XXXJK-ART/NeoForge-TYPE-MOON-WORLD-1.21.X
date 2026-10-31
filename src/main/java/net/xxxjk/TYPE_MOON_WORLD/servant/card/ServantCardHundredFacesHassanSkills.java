@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,6 +20,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -27,9 +29,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.HundredFacesStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
@@ -37,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
 public final class ServantCardHundredFacesHassanSkills {
    public static final String COMMAND_TAG = "HundredFacesCardCommand";
@@ -48,6 +55,9 @@ public final class ServantCardHundredFacesHassanSkills {
    private static final String GLOBAL_ATTACK_ENABLED_TAG = "HundredFacesCardGlobalAttackEnabled";
    private static final String GLOBAL_CONCEALMENT_TAG = "HundredFacesCardGlobalConcealment";
    public static final String GLOBAL_COMMAND_TAG = "HundredFacesCardGlobalCommand";
+   public static final String PERSONA_MODE_TAG = "HundredFacesPersonaMode";
+   private static final String RETREAT_UNTIL_TAG = "HundredFacesCardRetreatUntil";
+   private static final ResourceLocation RETREAT_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_retreat_speed");
    private static final String LAST_STATE_COUNT_TAG = "HundredFacesCardLastStateCount";
    private static final String BODY_TRANSFER_ACTIVE_TAG = "HundredFacesCardBodyTransferActive";
    private static final ResourceLocation SPLIT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "hundred_faces_split_health");
@@ -63,7 +73,31 @@ public final class ServantCardHundredFacesHassanSkills {
    public static final int COMMAND_ATTACK_TOGGLE = 12;
    public static final int COMMAND_CONCEALMENT_TOGGLE = 13;
    public static final int COMMAND_CLEAR_PERSONAL = 14;
+   public static final int COMMAND_MODE_SCOUT = 20;
+   public static final int COMMAND_MODE_ASSASSINATION = 21;
+   public static final int COMMAND_MODE_THROWING = 22;
+   public static final int COMMAND_MODE_POISON = 23;
+   public static final int COMMAND_MODE_INDUCE = 24;
+   public static final int COMMAND_MODE_SUPPORT = 25;
    private static final Map<ServerPlayer, HundredFacesStateMessage> LAST_SENT_STATES = new WeakHashMap<>();
+   private static final Map<UUID, PendingSummon> PENDING_SUMMONS = new HashMap<>();
+
+   private static final class PendingSummon {
+      final ServerLevel level;
+      final UUID target;
+      final List<Vec3> positions;
+      int nextIndex;
+      long nextBatchTick;
+
+      PendingSummon(ServerLevel level, LivingEntity target, List<Vec3> positions, long now) {
+         this.level = level;
+         this.target = target == null ? null : target.getUUID();
+         this.positions = List.copyOf(positions);
+         this.nextBatchTick = now;
+      }
+
+      int remaining() { return this.positions.size() - this.nextIndex; }
+   }
 
    private ServantCardHundredFacesHassanSkills() {
    }
@@ -73,6 +107,7 @@ public final class ServantCardHundredFacesHassanSkills {
       data.putBoolean(GLOBAL_ATTACK_ENABLED_TAG, true);
       data.putBoolean(GLOBAL_CONCEALMENT_TAG, false);
       data.putInt(GLOBAL_COMMAND_TAG, COMMAND_FOLLOW);
+      data.putInt(PERSONA_MODE_TAG, HundredFacesHassanEntity.PersonaMode.SCOUT.ordinal());
       data.putInt(LAST_STATE_COUNT_TAG, 0);
       data.putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, 0);
       LAST_SENT_STATES.remove(player);
@@ -82,27 +117,31 @@ public final class ServantCardHundredFacesHassanSkills {
 
    public static void clear(ServerPlayer player) {
       LAST_SENT_STATES.remove(player);
+      cancelPendingSummon(player, true);
+      HundredFacesPresenceService.set(player, false);
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed != null) speed.removeModifier(RETREAT_SPEED_ID);
       if (player.getServer() != null) {
-         for (ServerLevel level : player.getServer().getAllLevels()) {
-            for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), false)) {
-               persona.discard();
-            }
-         }
+         discardOwnedPersonas(player);
       }
       CompoundTag data = player.getPersistentData();
       data.remove(GLOBAL_ATTACK_ENABLED_TAG);
       data.remove(GLOBAL_CONCEALMENT_TAG);
       data.remove(GLOBAL_COMMAND_TAG);
+      data.remove(PERSONA_MODE_TAG);
+      data.remove(RETREAT_UNTIL_TAG);
       data.remove(LAST_STATE_COUNT_TAG);
       data.remove(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT);
       removeBodySplitAttributes(player);
-      player.removeEffect(MobEffects.INVISIBILITY);
       sendIfSupported(player, new HundredFacesStateMessage(0, true));
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!isActiveCard(player)) return;
       ServantCardConcealmentHelper.tick(player);
+      HundredFacesPresenceService.tick(player);
+      tickBattleRetreat(player);
+      tickPendingSummon(player, vars);
       ServantCardHassanSkills.tick(player, vars);
       applyBodySplitAttributes(player, vars);
       if (player.tickCount % 20 == 0) {
@@ -123,31 +162,29 @@ public final class ServantCardHundredFacesHassanSkills {
    public static boolean summon(ServerPlayer player, int requested) {
       if (!isActiveCard(player) || !(player.level() instanceof ServerLevel level)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      int live = countOwnedPersonas(level, player.getUUID());
       int alreadySplit = totalSplitCount(player);
-      int capacity = Math.max(0, HundredFacesHassanRules.MAX_PERSONAS - alreadySplit);
-      int mpLimited = (int)Math.floor(Math.max(0.0, vars.servant_card_mana) / HundredFacesHassanRules.MP_PER_PERSONA);
-      int count = Math.max(0, Math.min(Math.max(1, requested), Math.min(capacity, mpLimited)));
+      if (PENDING_SUMMONS.containsKey(player.getUUID())) return false;
+      int count = HundredFacesHassanRules.affordableTotalSummonCount(vars.servant_card_mana, alreadySplit, requested);
       if (count <= 0) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.no_capacity_or_mp"), true);
          return false;
       }
-      if (!ServantCardManaService.consume(player, vars, count * HundredFacesHassanRules.MP_PER_PERSONA)) {
+      LivingEntity inheritedTarget = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0, 2.0);
+      List<Vec3> positions = findSafeSpawnPositions(player, level, count);
+      if (positions.isEmpty()) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.no_safe_position"), true);
+         return false;
+      }
+      int payable = positions.size();
+      if (!ServantCardManaService.consume(player, vars, payable * HundredFacesHassanRules.MP_PER_PERSONA)) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.not_enough_mp"), true);
          return false;
       }
-      LivingEntity inheritedTarget = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0, 2.0);
-      if (count >= 20) {
+      if (payable >= 20) {
          level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.HUNDRED_FACES_HASSAN_VOICE_NP.get(),
             SoundSource.PLAYERS, 1.15F, 0.98F + (player.getRandom().nextFloat() - 0.5F) * 0.06F);
       }
-      for (int start = 0; start < count; start += HundredFacesHassanRules.MAX_SUMMON_BATCH) {
-         int batch = Math.min(HundredFacesHassanRules.MAX_SUMMON_BATCH, count - start);
-         int offset = start;
-         TYPE_MOON_WORLD.queueServerWork(offset / HundredFacesHassanRules.MAX_SUMMON_BATCH * 2, () -> spawnBatch(player, inheritedTarget, batch));
-      }
-      player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.summoned", count), true);
-      applyBodySplitAttributes(player, vars);
+      PENDING_SUMMONS.put(player.getUUID(), new PendingSummon(level, inheritedTarget, positions, level.getGameTime()));
       return true;
    }
 
@@ -189,10 +226,15 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    public static void setGlobalCommand(ServerPlayer player, int command, int limit) {
+      if (ServantMasterCarryService.isCarryingMaster(player)) return;
       if (!isActiveCard(player) || !(player.level() instanceof ServerLevel level)) return;
       boolean all = limit <= 0;
       List<HundredFacesHassanPersonaEntity> personas = scopedCommandPersonas(level, player, limit);
-      if (command == COMMAND_ATTACK_TOGGLE) {
+      if (isPersonaModeCommand(command)) {
+         HundredFacesHassanEntity.PersonaMode mode = modeForCommand(command);
+         if (all) player.getPersistentData().putInt(PERSONA_MODE_TAG, mode.ordinal());
+         for (HundredFacesHassanPersonaEntity persona : personas) persona.setPersonaMode(mode);
+      } else if (command == COMMAND_ATTACK_TOGGLE) {
          boolean enabled = all || personas.isEmpty() ? !globalAttackEnabled(player) : !personaAttackEnabled(personas.get(0));
          if (all) player.getPersistentData().putBoolean(GLOBAL_ATTACK_ENABLED_TAG, enabled);
          for (HundredFacesHassanPersonaEntity persona : personas) {
@@ -249,10 +291,13 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    public static void setPersonaCommand(ServerPlayer player, int entityId, int command) {
+      if (ServantMasterCarryService.isCarryingMaster(player)) return;
       if (!isActiveCard(player) || !(player.level() instanceof ServerLevel level)) return;
       Entity entity = level.getEntity(entityId);
       if (!(entity instanceof HundredFacesHassanPersonaEntity persona) || !player.getUUID().equals(persona.getOwnerUuid())) return;
-      if (command == COMMAND_ATTACK_TOGGLE) setPersonaAttackEnabled(persona, !personaAttackEnabled(persona), true);
+      if (isPersonaModeCommand(command)) {
+         persona.setPersonaMode(modeForCommand(command));
+      } else if (command == COMMAND_ATTACK_TOGGLE) setPersonaAttackEnabled(persona, !personaAttackEnabled(persona), true);
       else if (command == COMMAND_CONCEALMENT_TOGGLE) setPersonaForceConcealment(persona, !personaForceConcealment(persona), true);
       else setPersonaCommand(persona, sanitizeMovementCommand(command), true);
       sendState(player, true);
@@ -275,17 +320,18 @@ public final class ServantCardHundredFacesHassanSkills {
       Vec3 targetPos = target.position();
       float targetYaw = target.getYRot();
       float targetPitch = target.getXRot();
-      target.discard();
-
       HundredFacesHassanPersonaEntity replacement = ModEntities.HUNDRED_FACES_HASSAN_PERSONA.get().create(level);
-      if (replacement != null) {
-         replacement.moveTo(old.x, old.y, old.z, oldYaw, oldPitch);
-         replacement.initialize(player, null, mode, Math.max(1, totalSplitCount(player)));
-         setPersonaCommand(replacement, command, personalCommand);
-         setPersonaAttackEnabled(replacement, attack, personalAttack);
-         setPersonaForceConcealment(replacement, forceConcealment, personalConcealment);
-         level.addFreshEntity(replacement);
+      if (replacement == null) return false;
+      replacement.moveTo(old.x, old.y, old.z, oldYaw, oldPitch);
+      replacement.initialize(player, null, mode, Math.max(1, totalSplitCount(player)));
+      setPersonaCommand(replacement, command, personalCommand);
+      setPersonaAttackEnabled(replacement, attack, personalAttack);
+      setPersonaForceConcealment(replacement, forceConcealment, personalConcealment);
+      if (!level.addFreshEntity(replacement)) {
+         replacement.discard();
+         return false;
       }
+      target.discard();
       level.sendParticles(ParticleTypes.SQUID_INK, old.x, old.y + 0.9, old.z, 18, 0.35, 0.5, 0.35, 0.02);
       level.sendParticles(ParticleTypes.SMOKE, targetPos.x, targetPos.y + 0.9, targetPos.z, 18, 0.35, 0.5, 0.35, 0.03);
       level.playSound(null, player.blockPosition(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.75F, 1.4F);
@@ -326,7 +372,6 @@ public final class ServantCardHundredFacesHassanSkills {
          player.setHealth(Math.max(1.0F, Math.min(player.getMaxHealth(), player.getMaxHealth() * 0.35F)));
          player.clearFire();
          player.invulnerableTime = 40;
-         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 40, 3, false, false, true));
          ServantCardConcealmentHelper.apply(player, 50);
 
          targetLevel.sendParticles(ParticleTypes.SOUL, targetPos.x, targetPos.y + 0.6, targetPos.z,
@@ -347,10 +392,102 @@ public final class ServantCardHundredFacesHassanSkills {
    }
 
    public static boolean performPresenceConcealment(ServerPlayer player) {
+      return HundredFacesPresenceService.toggle(player);
+   }
+
+   public static boolean createDirk(ServerPlayer player) {
       if (!isActiveCard(player)) return false;
-      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(player)) return false;
-      ServantCardConcealmentHelper.apply(player, 240);
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 240, 0, false, true, true));
+      ItemStack offhand = player.getOffhandItem();
+      if (offhand.isEmpty()) {
+         ItemStack dirk = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
+         ServantCardTransformManager.markGeneratedItem(dirk, true, false);
+         player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, dirk);
+      } else if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         offhand.setDamageValue(0);
+      } else {
+         ItemStack replacement = new ItemStack(ModItems.DIRK_SMALL_KNIFE.get());
+         ServantCardTransformManager.markGeneratedItem(replacement, true, false);
+         if (!player.getInventory().add(replacement)) player.drop(replacement, false);
+      }
+      return true;
+   }
+
+   public static boolean performDirkVolley(ServerPlayer player) {
+      if (!isActiveCard(player) || !hasUsableDirks(player, 3)) return false;
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.breakConcealment(player);
+      ServantCardHassanSkills.performDirkThrow(player);
+      return true;
+   }
+
+   public static boolean performKnifeFeint(ServerPlayer player) {
+      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 9.0, 1.8);
+      if (!isValidTarget(player, target) || player.distanceTo(target) < 2.5 || !player.hasLineOfSight(target)
+         || !hasUsableDirks(player, 1)) return false;
+      DirkProjectileEntity projectile = new DirkProjectileEntity(player.level(), player);
+      projectile.setDamage(10.0F);
+      projectile.setMaxDistance(18.0);
+      projectile.setOnHitEffects(35, 35);
+      projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
+      Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0).subtract(projectile.position()).normalize();
+      projectile.shoot(aim.x, aim.y, aim.z, 2.2F, 0.0F);
+      player.level().addFreshEntity(projectile);
+      player.getOffhandItem().hurtAndBreak(1, player, EquipmentSlot.OFFHAND);
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.breakConcealment(player);
+      return true;
+   }
+
+   public static boolean performShadowStep(ServerPlayer player) {
+      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 8.0, 1.8);
+      if (!isValidTarget(player, target) || player.distanceTo(target) < 3.0 || !player.hasLineOfSight(target)) return false;
+      Vec3 destination = findSafeBackstabPosition(player, target);
+      if (destination == null) return false;
+      Vec3 old = player.position();
+      float oldYaw = player.getYRot();
+      float oldPitch = player.getXRot();
+      player.teleportTo(destination.x, destination.y, destination.z);
+      player.setDeltaMovement(Vec3.ZERO);
+      player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, target.position());
+      if (!dealPhysicalDamage(player, target, 1.45F, "shadow_step")) {
+         player.teleportTo(old.x, old.y, old.z);
+         player.setYRot(oldYaw);
+         player.setXRot(oldPitch);
+         return false;
+      }
+      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, true, true));
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.breakConcealment(player);
+      return true;
+   }
+
+   public static boolean performShadowLunge(ServerPlayer player) {
+      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 6.5, 1.8);
+      if (!isValidTarget(player, target) || player.distanceTo(target) < 2.0 || !player.hasLineOfSight(target)) return false;
+      Vec3 dir = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
+      if (dir.lengthSqr() < 1.0E-4) return false;
+      dir = dir.normalize();
+      Vec3 destination = findLungeDestination(player, target, dir, 2.4);
+      if (destination == null) return false;
+      if (!dealPhysicalDamage(player, target, 1.05F, "shadow_lunge")) return false;
+      player.teleportTo(destination.x, destination.y, destination.z);
+      player.setDeltaMovement(dir.scale(1.65).add(0.0, 0.18, 0.0));
+      player.hurtMarked = true;
+      target.push(dir.x * 0.55, 0.18, dir.z * 0.55);
+      target.hurtMarked = true;
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.breakConcealment(player);
+      return true;
+   }
+
+   public static boolean performBattleRetreat(ServerPlayer player) {
+      if (!isActiveCard(player)) return false;
+      cleanseHarmfulEffects(player);
+      player.getPersistentData().putLong(RETREAT_UNTIL_TAG,
+         player.level().getGameTime() + HundredFacesHassanRules.RETREAT_DURATION_TICKS);
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed != null) {
+         AttributeModifier existing = speed.getModifier(RETREAT_SPEED_ID);
+         if (existing != null) speed.removeModifier(RETREAT_SPEED_ID);
+         speed.addTransientModifier(new AttributeModifier(RETREAT_SPEED_ID, 0.4,
+            AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+      }
       return true;
    }
 
@@ -374,6 +511,21 @@ public final class ServantCardHundredFacesHassanSkills {
    public static boolean isActiveCard(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servant_card_transformed && "hundred_faces_hassan".equals(vars.servant_card_id);
+   }
+
+   private static boolean isPersonaModeCommand(int command) {
+      return command >= COMMAND_MODE_SCOUT && command <= COMMAND_MODE_SUPPORT;
+   }
+
+   private static HundredFacesHassanEntity.PersonaMode modeForCommand(int command) {
+      return switch (command) {
+         case COMMAND_MODE_ASSASSINATION -> HundredFacesHassanEntity.PersonaMode.ASSASSINATION;
+         case COMMAND_MODE_THROWING -> HundredFacesHassanEntity.PersonaMode.THROWING;
+         case COMMAND_MODE_POISON -> HundredFacesHassanEntity.PersonaMode.POISON;
+         case COMMAND_MODE_INDUCE -> HundredFacesHassanEntity.PersonaMode.INDUCE;
+         case COMMAND_MODE_SUPPORT -> HundredFacesHassanEntity.PersonaMode.SUPPORT;
+         default -> HundredFacesHassanEntity.PersonaMode.SCOUT;
+      };
    }
 
    public static boolean isOwnedBy(HundredFacesHassanPersonaEntity persona, ServerPlayer player) {
@@ -414,37 +566,109 @@ public final class ServantCardHundredFacesHassanSkills {
       ModNetwork.sendToPlayer(player, payload);
    }
 
-   private static void spawnBatch(ServerPlayer player, LivingEntity inheritedTarget, int count) {
-      if (!isActiveCard(player) || !(player.level() instanceof ServerLevel level)) return;
-      int live = countOwnedPersonas(level, player.getUUID());
-      int alreadySplit = totalSplitCount(player);
-      Vec3 forward = horizontal(player.getLookAngle());
-      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+   private static void tickPendingSummon(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      PendingSummon pending = PENDING_SUMMONS.get(player.getUUID());
+      if (pending == null) return;
+      if (!isActiveCard(player) || !player.isAlive() || player.level() != pending.level) {
+         cancelPendingSummon(player, true);
+         return;
+      }
+      long now = pending.level.getGameTime();
+      if (now < pending.nextBatchTick) return;
+      Entity trackedTarget = pending.target == null ? null : pending.level.getEntity(pending.target);
+      LivingEntity target = trackedTarget instanceof LivingEntity living && living.isAlive() ? living : null;
       int spawned = 0;
-      for (int i = 0; i < count && alreadySplit + spawned < HundredFacesHassanRules.MAX_PERSONAS; i++) {
-         HundredFacesHassanPersonaEntity persona = ModEntities.HUNDRED_FACES_HASSAN_PERSONA.get().create(level);
-         if (persona == null) continue;
-         int index = live + spawned;
-         double angle = Math.PI * 2.0 * index / Math.max(6.0, live + count);
-         Vec3 offset = forward.scale(Math.cos(angle) * 1.7).add(right.scale(Math.sin(angle) * 1.7));
-         Vec3 pos = safeSpawnPosition(player, offset);
-         float yaw = (float)Math.toDegrees(Math.atan2(-forward.x, forward.z));
+      int attempted = 0;
+      int splitCount = totalSplitCount(player);
+      float yaw = player.getYRot();
+      HundredFacesHassanEntity.PersonaMode mode = selectedPersonaMode(player);
+      while (attempted < HundredFacesHassanRules.MAX_SUMMON_BATCH && pending.nextIndex < pending.positions.size()) {
+         Vec3 pos = pending.positions.get(pending.nextIndex++);
+         attempted++;
+         HundredFacesHassanPersonaEntity persona = ModEntities.HUNDRED_FACES_HASSAN_PERSONA.get().create(pending.level);
+         if (persona == null) {
+            refundPersonaMp(player, vars, 1);
+            continue;
+         }
          persona.moveTo(pos.x, pos.y, pos.z, yaw, 0.0F);
-         persona.initialize(player, inheritedTarget, HundredFacesHassanEntity.PersonaMode.SCOUT, alreadySplit + spawned + 1);
+         persona.initialize(player, target, mode, splitCount + spawned + 1);
          setPersonaCommand(persona, globalMovementCommand(player), false);
          setPersonaAttackEnabled(persona, globalAttackEnabled(player), false);
          setPersonaForceConcealment(persona, globalConcealmentEnabled(player), false);
-         if (level.addFreshEntity(persona)) {
-            spawned++;
-            level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y + 0.9, pos.z, 10, 0.35, 0.55, 0.35, 0.02);
+         if (!pending.level.addFreshEntity(persona)) {
+            persona.discard();
+            refundPersonaMp(player, vars, 1);
+            continue;
          }
+         spawned++;
+         pending.level.sendParticles(ParticleTypes.SQUID_INK, pos.x, pos.y + 0.9, pos.z, 10, 0.35, 0.55, 0.35, 0.02);
       }
       if (spawned > 0) {
          addTotalSplitCount(player, spawned);
-         level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.8, 0.8, 0.8, 0.03);
-         rescaleOwnedPersonas(level, player.getUUID());
+         pending.level.sendParticles(ParticleTypes.SMOKE, player.getX(), player.getY() + 1.0, player.getZ(), 20, 0.8, 0.8, 0.8, 0.03);
+         rescaleOwnedPersonas(pending.level, player.getUUID());
          sendState(player, true);
       }
+      if (pending.remaining() <= 0) {
+         PENDING_SUMMONS.remove(player.getUUID());
+         player.displayClientMessage(Component.translatable("message.typemoonworld.hundred_faces.summoned", pending.positions.size()), true);
+      } else {
+         pending.nextBatchTick = now + 2;
+      }
+   }
+
+   private static List<Vec3> findSafeSpawnPositions(ServerPlayer player, ServerLevel level, int requested) {
+      List<Vec3> positions = new ArrayList<>(requested);
+      Vec3 forward = horizontal(player.getLookAngle());
+      Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
+      for (int index = 0; index < requested; index++) {
+         Vec3 found = null;
+         for (int attempt = 0; attempt < 32 && found == null; attempt++) {
+            int ring = attempt / 8;
+            double angle = index * 2.399963229728653 + attempt * 0.7853981633974483;
+            double radius = 1.8 + ring * 1.25;
+            Vec3 offset = forward.scale(Math.cos(angle) * radius).add(right.scale(Math.sin(angle) * radius));
+            BlockPos base = BlockPos.containing(player.getX() + offset.x, player.getY(), player.getZ() + offset.z);
+            for (int dy = -2; dy <= 2 && found == null; dy++) {
+               BlockPos feet = base.offset(0, dy, 0);
+               BlockPos below = feet.below();
+               if (!level.getWorldBorder().isWithinBounds(feet)
+                  || !level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP)
+                  || !level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+                  || !level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()) continue;
+               Vec3 candidate = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+               AABB box = player.getBoundingBox().move(candidate.subtract(player.position()));
+               if (!level.noCollision(player, box) || positions.stream().anyMatch(previous -> box.intersects(
+                  player.getBoundingBox().move(previous.subtract(player.position()))))) continue;
+               found = candidate;
+            }
+         }
+         if (found == null) break;
+         positions.add(found);
+      }
+      return positions;
+   }
+
+   public static void cancelPendingSummon(ServerPlayer player, boolean refund) {
+      PendingSummon pending = PENDING_SUMMONS.remove(player.getUUID());
+      if (refund && pending != null && pending.remaining() > 0) {
+         refundPersonaMp(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), pending.remaining());
+      }
+   }
+
+   public static void cleanupOwnedPersonas(ServerPlayer player) {
+      cancelPendingSummon(player, true);
+      HundredFacesPresenceService.set(player, false);
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed != null) speed.removeModifier(RETREAT_SPEED_ID);
+      discardOwnedPersonas(player);
+   }
+
+   private static void refundPersonaMp(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, int count) {
+      double refund = Math.max(0, count) * HundredFacesHassanRules.MP_PER_PERSONA;
+      if (refund <= 0 || vars.servant_card_max_mana <= 0) return;
+      vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + refund);
+      vars.syncMana(player);
    }
 
    private static List<HundredFacesHassanPersonaEntity> ownedPersonas(ServerLevel level, UUID ownerUuid, boolean aliveOnly) {
@@ -473,6 +697,108 @@ public final class ServantCardHundredFacesHassanSkills {
       for (HundredFacesHassanPersonaEntity persona : personas) {
          if (owner != null) persona.syncOwnerCombatAttributes(owner);
          persona.applyPersonaAttributes(splitCount, false);
+      }
+   }
+
+   private static boolean hasUsableDirks(ServerPlayer player, int count) {
+      ItemStack stack = player.getOffhandItem();
+      return stack.is(ModItems.DIRK_SMALL_KNIFE.get()) && stack.getMaxDamage() - stack.getDamageValue() >= count;
+   }
+
+   private static boolean isValidTarget(ServerPlayer player, LivingEntity target) {
+      return target != null && target.isAlive() && target != player
+         && !EntityUtils.isImmunePlayerTarget(target)
+         && !ServantMasterTargeting.isContractMaster(player, target)
+         && !player.isAlliedTo(target) && !target.isAlliedTo(player);
+   }
+
+   private static boolean dealPhysicalDamage(ServerPlayer player, LivingEntity target, float scale, String action) {
+      double attack = player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+      return target.hurt(new net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource(
+         player.damageSources().playerAttack(player),
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin.skill("hundred_faces_hassan", action)),
+         (float)(attack * scale));
+   }
+
+   private static Vec3 findSafeBackstabPosition(ServerPlayer player, LivingEntity target) {
+      if (!(player.level() instanceof ServerLevel level)) return null;
+      Vec3 facing = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (facing.lengthSqr() < 1.0E-4) return null;
+      Vec3 behind = target.position().subtract(facing.normalize().scale(1.35));
+      BlockPos anchor = BlockPos.containing(behind.x, target.getY(), behind.z);
+      for (int dy = -2; dy <= 3; dy++) {
+         BlockPos feet = anchor.offset(0, dy, 0);
+         BlockPos below = feet.below();
+         if (!level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP)
+            || !level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+            || !level.getBlockState(feet.above()).getCollisionShape(level, feet.above()).isEmpty()
+            || !level.getWorldBorder().isWithinBounds(feet)) continue;
+         Vec3 candidate = new Vec3(feet.getX() + 0.5, feet.getY(), feet.getZ() + 0.5);
+         if (!level.noCollision(player, player.getBoundingBox().move(candidate.subtract(player.position())))) continue;
+         Vec3 eye = candidate.add(0.0, player.getBbHeight() * 0.55, 0.0);
+         if (level.clip(new ClipContext(player.getEyePosition(), eye, ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE, player)).getType() != HitResult.Type.MISS) continue;
+         return candidate;
+      }
+      return null;
+   }
+
+   private static Vec3 findLungeDestination(ServerPlayer player, LivingEntity target, Vec3 direction, double distance) {
+      if (!(player.level() instanceof ServerLevel level)) return null;
+      Vec3 last = player.position();
+      for (double travel = 0.2; travel <= distance + 1.0E-6; travel += 0.2) {
+         Vec3 candidate = player.position().add(direction.scale(Math.min(travel, distance)));
+         AABB box = player.getBoundingBox().move(candidate.subtract(player.position()));
+         if (box.intersects(target.getBoundingBox())) return last;
+         if (!level.noCollision(player, box)) return travel <= 0.2 ? null : last;
+         last = candidate;
+      }
+      return last;
+   }
+
+   private static void cleanseHarmfulEffects(LivingEntity entity) {
+      for (MobEffectInstance effect : List.copyOf(entity.getActiveEffects())) {
+         if (effect.getEffect().value().getCategory() == net.minecraft.world.effect.MobEffectCategory.HARMFUL) {
+            entity.removeEffect(effect.getEffect());
+         }
+      }
+   }
+
+   private static void tickBattleRetreat(ServerPlayer player) {
+      long until = player.getPersistentData().getLong(RETREAT_UNTIL_TAG);
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (until > player.level().getGameTime()) {
+         if (speed != null && speed.getModifier(RETREAT_SPEED_ID) == null) {
+            speed.addTransientModifier(new AttributeModifier(RETREAT_SPEED_ID, 0.4,
+               AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
+         }
+      } else if (speed != null && speed.getModifier(RETREAT_SPEED_ID) != null) {
+         speed.removeModifier(RETREAT_SPEED_ID);
+      }
+   }
+
+   private static HundredFacesHassanEntity.PersonaMode selectedPersonaMode(ServerPlayer player) {
+      int ordinal = player.getPersistentData().getInt(PERSONA_MODE_TAG);
+      HundredFacesHassanEntity.PersonaMode[] modes = HundredFacesHassanEntity.PersonaMode.values();
+      return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : HundredFacesHassanEntity.PersonaMode.SCOUT;
+   }
+
+   public static void setPersonaMode(ServerPlayer player, int ordinal) {
+      if (!isActiveCard(player)) return;
+      HundredFacesHassanEntity.PersonaMode[] modes = HundredFacesHassanEntity.PersonaMode.values();
+      if (ordinal < 0 || ordinal >= modes.length) return;
+      player.getPersistentData().putInt(PERSONA_MODE_TAG, ordinal);
+      if (player.level() instanceof ServerLevel level) {
+         for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), true)) {
+            persona.setPersonaMode(modes[ordinal]);
+         }
+      }
+   }
+
+   private static void discardOwnedPersonas(ServerPlayer player) {
+      if (player.getServer() == null) return;
+      for (ServerLevel level : player.getServer().getAllLevels()) {
+         for (HundredFacesHassanPersonaEntity persona : ownedPersonas(level, player.getUUID(), false)) persona.discard();
       }
    }
 

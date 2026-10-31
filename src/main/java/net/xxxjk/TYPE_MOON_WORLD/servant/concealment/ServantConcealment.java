@@ -83,10 +83,13 @@ public final class ServantConcealment {
 
       if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.isHassan(entity))
          net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(entity, false);
+      if (entity instanceof ServerPlayer player)
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.HundredFacesPresenceService.set(player, false);
 
       SasakiKojiroCombatService.setConcealed(entity, false);
       if (entity instanceof ShadowHassanEntity hassan) hassan.revealForAttack();
       if (entity instanceof FanaticAssassinEntity fanatic) fanatic.revealForCombat();
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity hundredFaces) hundredFaces.revealForCombat();
       if (entity instanceof HundredFacesHassanPersonaEntity persona) persona.revealForCombat();
       if (entity instanceof ServerPlayer player) {
          ServantCardFanaticAssassinSkills.revealForAttack(player);

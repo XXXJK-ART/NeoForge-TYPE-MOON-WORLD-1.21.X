@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -485,6 +487,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    private void hurtTechniqueTargets(ServerLevel level, AABB box, double damage, @Nullable Vec3 direction,
                                      double knockback, double verticalKnockback) {
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box,
          entity -> entity != this && entity != getHakuryu() && entity.isAlive()
             && !isAlliedTo(entity) && entity != getEntityMaster()
@@ -495,6 +498,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             victim.push(push.x * knockback, verticalKnockback, push.z * knockback);
             victim.hurtMarked = true;
          }
+      }
       }
    }
 
@@ -775,6 +779,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          && hitBox.intersects(master.getBoundingBox())) {
          master.startRiding(mount, true);
       }
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && entity != mount && entity.isAlive() && entity != getEntityMaster()
             && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
@@ -790,6 +795,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             victim.hurt(damageSources().mobAttack(this), collisionDamage);
             victim.invulnerableTime = 0;
          }
+      }
       }
    }
 

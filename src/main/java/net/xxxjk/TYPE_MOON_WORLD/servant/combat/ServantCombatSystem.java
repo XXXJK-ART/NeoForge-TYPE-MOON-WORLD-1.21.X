@@ -363,7 +363,7 @@ public final class ServantCombatSystem {
    }
 
    public static double currentStamina(ServantEntity entity) {
-      if (entity == null) return 0.0;
+      if (entity == null || entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       CompoundTag data = entity.getPersistentData();
       if (!data.contains(TAG_STAMINA)) {
          initializeResources(entity, data, effectiveParams(entity, entity.getDefinition()));
@@ -372,6 +372,7 @@ public final class ServantCombatSystem {
    }
 
    public static boolean tryConsumeStamina(ServantEntity entity, double amount) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return false;
       double cost = Math.max(0.0, amount);
       double available = currentStamina(entity);
       if (available + 1.0E-6 < cost) return false;
@@ -384,6 +385,7 @@ public final class ServantCombatSystem {
    }
 
    private static void initializeResources(ServantEntity entity, CompoundTag data, ServantParams params) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return;
       double staminaMax = ServantCombatFormulas.staminaMax(params);
       if (!data.contains(TAG_STAMINA)) {
          data.putDouble(TAG_STAMINA, staminaMax);
@@ -394,6 +396,7 @@ public final class ServantCombatSystem {
    }
 
    private static void tickResourceRegen(ServantEntity entity, CompoundTag data, ServantParams params, long now) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return;
       if (entity.tickCount % 5 != 0) {
          return;
       }
@@ -1010,9 +1013,7 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
-      if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return poiseRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
-      }
+      if (entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedPoiseRecovery(poiseRegen);
       }
@@ -1027,9 +1028,7 @@ public final class ServantCombatSystem {
 
    private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
       double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
-      if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return staminaRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
-      }
+      if (entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
       }

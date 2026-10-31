@@ -174,6 +174,8 @@ public final class ShadowHassanPursuitData extends SavedData {
    }
 
    private static void killTarget(ServerLevel level, LivingEntity target) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, Float.MAX_VALUE,
+         defender -> killTarget(level, defender))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

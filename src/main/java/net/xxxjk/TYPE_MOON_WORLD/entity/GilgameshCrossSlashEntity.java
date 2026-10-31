@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -208,6 +210,7 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
       Vec3 c1 = current.center().add(current.bladeAxis().scale(MODEL_LENGTH * 0.5));
       AABB search = new AABB(p0, p1).minmax(new AABB(c0, c1)).inflate(SWEEP_RADIUS + 3.0);
       DamageSource source = this.slashType == SlashType.SULSAGANA ? owner.damageSources().inFire() : owner.damageSources().mobAttack(owner);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && !e.getUUID().equals(this.ownerUuid) && !this.immuneEntities.contains(e.getUUID()) && !EntityUtils.isImmunePlayerTarget(e))) {
          if (hitTargets.contains(target.getId())) continue;
@@ -220,6 +223,7 @@ public class GilgameshCrossSlashEntity extends Entity implements GeoEntity {
          target.invulnerableTime = 0;
          target.hurt(source, 1500.0F);
          target.invulnerableTime = 0;
+      }
       }
    }
 

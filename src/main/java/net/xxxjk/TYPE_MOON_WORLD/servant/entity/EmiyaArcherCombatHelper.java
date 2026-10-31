@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -1725,6 +1727,7 @@ public final class EmiyaArcherCombatHelper {
       LivingEntity best = null;
       double bestScore = Double.MAX_VALUE;
       AABB area = entity.getBoundingBox().inflate(range);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          area,
@@ -1745,6 +1748,7 @@ public final class EmiyaArcherCombatHelper {
             best = living;
             bestScore = score;
          }
+      }
       }
       return best;
    }
@@ -2010,6 +2014,7 @@ public final class EmiyaArcherCombatHelper {
    private static void performBorrowedGallatinCone(EmiyaArcherEntity entity, ServerLevel level, Vec3 look, float damage) {
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          entity.getBoundingBox().inflate(BORROWED_GALLATIN_RANGE + 3.0),
@@ -2029,6 +2034,7 @@ public final class EmiyaArcherCombatHelper {
          living.igniteForSeconds(5.0F);
          living.push(look.x * 5.0, 0.32, look.z * 5.0);
          living.hurtMarked = true;
+      }
       }
       spawnBorrowedGallatinReleaseParticles(level, origin, look);
       breakBorrowedGallatinPath(level, origin, look);
@@ -2597,6 +2603,7 @@ public final class EmiyaArcherCombatHelper {
       entity.triggerUppercutAnimation();
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
       AABB hitBox = entity.getBoundingBox().inflate(2.2).expandTowards(entity.getLookAngle().scale(1.3));
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2608,6 +2615,7 @@ public final class EmiyaArcherCombatHelper {
          Vec3 push = horizontalDirection(entity, living).scale(0.28);
          living.setDeltaMovement(living.getDeltaMovement().x + push.x, 0.92, living.getDeltaMovement().z + push.z);
          living.hurtMarked = true;
+      }
       }
       Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.1)).add(0.0, entity.getBbHeight() * 0.55, 0.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 2, 0.0, 0.0, 0.0, 0.0);
@@ -2622,6 +2630,7 @@ public final class EmiyaArcherCombatHelper {
       entity.triggerHorizontalSwingAnimation();
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
       AABB hitBox = entity.getBoundingBox().inflate(3.2).expandTowards(entity.getLookAngle().scale(1.2));
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2633,6 +2642,7 @@ public final class EmiyaArcherCombatHelper {
          Vec3 push = horizontalDirection(entity, living);
          living.push(push.x * 1.45, 0.24, push.z * 1.45);
          living.hurtMarked = true;
+      }
       }
       Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.35)).add(0.0, entity.getBbHeight() * 0.5, 0.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 3, 0.0, 0.0, 0.0, 0.0);
@@ -2679,6 +2689,7 @@ public final class EmiyaArcherCombatHelper {
          target.push(push.x * 0.95, -0.12, push.z * 0.95);
          target.hurtMarked = true;
          AABB shock = entity.getBoundingBox().inflate(2.8, 1.4, 2.8);
+         try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : sl.getEntitiesOfClass(
             LivingEntity.class,
             shock,
@@ -2690,6 +2701,7 @@ public final class EmiyaArcherCombatHelper {
             living.invulnerableTime = 0;
             living.push(sidePush.x * 0.8, 0.25, sidePush.z * 0.8);
             living.hurtMarked = true;
+         }
          }
          Vec3 fx = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
          sl.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 3, 0.0, 0.0, 0.0, 0.0);
@@ -2766,6 +2778,7 @@ public final class EmiyaArcherCombatHelper {
       Vec3 center = entity.position().add(forward.scale(1.75));
       double radius = 5.2;
       AABB box = new AABB(center, center).inflate(radius, 2.0, radius);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          box,
@@ -2788,6 +2801,7 @@ public final class EmiyaArcherCombatHelper {
          living.push(push.x * power, 0.55, push.z * power);
          living.hurtMarked = true;
       }
+      }
       breakReinforcedSlamBlocks(level, center);
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.12, center.z, 5, 1.0, 0.18, 1.0, 0.0);
       level.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.12, center.z, 44, 1.75, 0.35, 1.75, 0.08);
@@ -2804,6 +2818,7 @@ public final class EmiyaArcherCombatHelper {
       entity.triggerSweepAnimation();
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.48, 0.0));
       AABB hitBox = entity.getBoundingBox().inflate(3.1, 1.4, 3.1).expandTowards(entity.getLookAngle().scale(2.0));
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -2815,6 +2830,7 @@ public final class EmiyaArcherCombatHelper {
          Vec3 push = horizontalDirection(entity, living);
          living.push(push.x * 1.25, 0.28, push.z * 1.25);
          living.hurtMarked = true;
+      }
       }
       breakOveredgeCleaveBlocks(entity, level);
       Vec3 fx = entity.position().add(entity.getLookAngle().scale(1.8)).add(0.0, entity.getBbHeight() * 0.55, 0.0);
@@ -2833,6 +2849,7 @@ public final class EmiyaArcherCombatHelper {
       entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
       Vec3 center = entity.position().add(entity.getLookAngle().multiply(1.7, 0.0, 1.7));
       AABB box = new AABB(center, center).inflate(3.6, 1.5, 3.6);
+      try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          box,
@@ -2853,6 +2870,7 @@ public final class EmiyaArcherCombatHelper {
          living.push(push.x * 1.05, 0.42, push.z * 1.05);
          living.hurtMarked = true;
       }
+      }
       breakBladeRuptureBlocks(level, center);
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.1, center.z, 3, 0.65, 0.12, 0.65, 0.0);
       level.sendParticles(ParticleTypes.CRIT, center.x, center.y + 0.45, center.z, 28, 1.3, 0.5, 1.3, 0.12);
@@ -2863,6 +2881,7 @@ public final class EmiyaArcherCombatHelper {
 
    private static void resolveProjectionImpact(EmiyaArcherEntity entity, ServerLevel level, Vec3 center) {
       AABB box = new AABB(center, center).inflate(3.0, 1.6, 3.0);
+      try (var carrySegment6 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          box,
@@ -2882,6 +2901,7 @@ public final class EmiyaArcherCombatHelper {
          push = push.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : push.normalize();
          living.push(push.x * 0.9, 0.35, push.z * 0.9);
          living.hurtMarked = true;
+      }
       }
       breakProjectionImpactBlocks(level, center);
       level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.15, center.z, 4, 0.75, 0.18, 0.75, 0.0);
@@ -3028,11 +3048,13 @@ public final class EmiyaArcherCombatHelper {
             entity.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
             float damage = 12.0F + step * 2.0F;
             AABB hitBox = entity.getBoundingBox().inflate(2.2).expandTowards(entity.getLookAngle().scale(1.5));
+            try (var carrySegment7 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : sl.getEntitiesOfClass(LivingEntity.class, hitBox,
                e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
                living.invulnerableTime = 0;
                living.hurt(entity.damageSources().mobAttack(entity), damage);
                living.invulnerableTime = 0;
+            }
             }
             sl.sendParticles(ParticleTypes.SWEEP_ATTACK, entity.getX() + entity.getLookAngle().x * 1.2, entity.getY() + entity.getBbHeight() * 0.55, entity.getZ() + entity.getLookAngle().z * 1.2, 2, 0.0, 0.0, 0.0, 0.0);
             sl.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 0.75F, 1.1F + step * 0.06F);

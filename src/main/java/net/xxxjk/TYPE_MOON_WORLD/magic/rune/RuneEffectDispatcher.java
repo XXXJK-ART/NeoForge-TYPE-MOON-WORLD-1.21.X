@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.rune;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
 
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
@@ -500,9 +502,11 @@ public final class RuneEffectDispatcher {
       double resolvedDamage = scaledRuneDamage(c, effectiveDamage(c, c.damage()));
       for (int i = 1; i <= (int)distance; i++) {
          Vec3 point = start.add(c.direction().scale(i));
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(1.0D), x -> x.isAlive() && x != c.caster())) {
             e.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)Math.max(1.0D, resolvedDamage));
             e.setDeltaMovement(e.getDeltaMovement().add(c.direction().scale(.35D).add(0, .2D, 0)));
+         }
          }
          if ((i & 3) == 0) c.emit(ParticleTypes.SWEEP_ATTACK, point, 1);
       }
@@ -624,10 +628,12 @@ public final class RuneEffectDispatcher {
       c.setEffectRadius("area", radius);
       if (particle != null) c.emit(particle, center, Math.min(32, (int)Math.ceil(radius)));
       double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity entity : c.level().getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius), e -> e.isAlive() && e != c.caster())) {
          if (resolvedDamage > 0.0D) entity.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
          else if (damage < 0.0D) entity.heal((float)-damage);
          if (c.program().sequence().contains("isa")) MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 4), "rune_origin");
+      }
       }
    }
 
@@ -911,12 +917,14 @@ public final class RuneEffectDispatcher {
             if (owner == null || !owner.isAlive()) return;
              if (particle != null) level.sendParticles(particle, point.x, point.y, point.z, 24, .3, .15, .3, .01);
              double resolvedDamage = damage > 0.0D ? scaledRuneDamage(c, damage) : damage;
+             try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
              for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, new AABB(point, point).inflate(radius),
                 entity -> entity.isAlive() && isFriendly(owner, entity))) {
                 if (resolvedDamage > 0) entity.hurt(MagecraftDamageSource.of(owner.damageSources().magic(), "rune_origin", owner), (float)resolvedDamage);
                 if (resolvedDamage > 0 && entity == owner) continue;
                if (healing > 0) entity.heal((float)healing);
             }
+             }
          });
       }
    }
@@ -952,9 +960,11 @@ public final class RuneEffectDispatcher {
          } else {
             // A standalone trigger still has a directional impact point when no entity is under the crosshair.
             Vec3 point = c.endpoint(12.0D);
+            try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity e : c.level().getEntitiesOfClass(LivingEntity.class,
                new AABB(point, point).inflate(1.0D), x -> x.isAlive() && x != c.caster())) {
                e.hurt(MagecraftDamageSource.of(c.caster().damageSources().magic(), "rune_origin", c.caster()), (float)resolvedDamage);
+            }
             }
             c.emit(ParticleTypes.CRIT, point, 6);
          }

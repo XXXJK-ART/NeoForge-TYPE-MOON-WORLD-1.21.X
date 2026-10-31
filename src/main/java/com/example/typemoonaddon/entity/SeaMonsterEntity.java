@@ -1,5 +1,7 @@
 package com.example.typemoonaddon.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.minecraft.core.particles.ParticleTypes;
@@ -475,8 +477,10 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         }
         double radius = this.isLarge() ? 6.0 : 3.5;
         float damage = this.isLarge() ? 10.0F : 2.0F;
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(radius), this::isValidTarget)) {
             living.hurt(this.damageSources().magic(), damage);
+        }
         }
         level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + this.getBbHeight() * 0.5, this.getZ(),
                 this.isLarge() ? 18 : 7, radius * 0.25, 0.4, radius * 0.25, 0.03);
@@ -488,11 +492,13 @@ public class SeaMonsterEntity extends PathfinderMob implements GeoEntity {
         }
         this.triggerAnim("action_controller", "sweep");
         level.playSound(null, this.blockPosition(), SoundEvents.GUARDIAN_ATTACK, SoundSource.HOSTILE, 1.1F, 0.55F);
+        try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(5.5), this::isValidTarget)) {
             living.invulnerableTime = 0;
             living.hurt(this.damageSources().mobAttack(this), 18.0F);
             living.push((living.getX() - this.getX()) * 0.18, 0.25, (living.getZ() - this.getZ()) * 0.18);
             living.hurtMarked = true;
+        }
         }
     }
 

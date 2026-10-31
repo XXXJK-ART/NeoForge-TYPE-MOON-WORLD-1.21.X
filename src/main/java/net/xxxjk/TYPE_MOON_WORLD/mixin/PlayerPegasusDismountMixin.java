@@ -20,6 +20,11 @@ public abstract class PlayerPegasusDismountMixin {
    )
    private void typemoonworld$keepRidingMedusaPegasus(CallbackInfoReturnable<Boolean> cir) {
       Player player = (Player)(Object)this;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarriedMaster(player)) {
+         // The carry service handles the Shift edge, including Shift held during a pickup request.
+         cir.setReturnValue(false);
+         return;
+      }
       if (player.getVehicle() instanceof GordiusWheelEntity wheel && wheel.isCardOwner(player)) {
          cir.setReturnValue(false);
       } else if (player.getVehicle() instanceof ZhaoYunHakuryuEntity && player.isShiftKeyDown()) {

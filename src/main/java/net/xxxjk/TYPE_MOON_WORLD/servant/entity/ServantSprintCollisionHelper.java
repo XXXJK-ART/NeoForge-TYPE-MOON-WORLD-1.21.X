@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -218,6 +220,7 @@ public final class ServantSprintCollisionHelper {
       AABB box = owner.getBoundingBox().move(dir.scale(distance * 0.55)).inflate(inflate, 0.35, inflate);
       Set<Integer> hit = new HashSet<>();
       int count = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, target -> canHit(owner, target))) {
          if (!hit.add(target.getId())) {
             continue;
@@ -236,6 +239,7 @@ public final class ServantSprintCollisionHelper {
          target.hurtMarked = true;
          target.hasImpulse = true;
          count++;
+      }
       }
       return count;
    }

@@ -1,5 +1,7 @@
 package com.example.typemoonaddon.orias;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.OriasMagic;
 import com.example.typemoonaddon.network.OriasCastInputPayload;
@@ -318,6 +320,7 @@ public final class OriasService {
         );
         Set<UUID> damaged = new HashSet<>();
         DamageSource source = MagecraftDamageSource.of(player.damageSources().source(DamageTypes.MAGIC, player), "orias", player);
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area)) {
             double dx = target.getX() - center.x;
             double dz = target.getZ() - center.z;
@@ -328,6 +331,7 @@ public final class OriasService {
                 continue;
             }
             target.hurt(source, parameters.damageAt(horizontalDistance));
+        }
         }
     }
 

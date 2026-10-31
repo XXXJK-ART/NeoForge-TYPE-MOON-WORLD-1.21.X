@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,11 +188,13 @@ public final class RoyalCannonProjectileEntity extends Entity {
    private void explode(ServerLevel level, LivingEntity owner, Vec3 pos) {
       float radius = Math.max(0.1F, explosionRadius);
       double radiusSqr = radius * radius;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(radius),
          e -> isValidVictim(owner, e) && e.position().add(0.0, e.getBbHeight() * 0.5, 0.0).distanceToSqr(pos) <= radiusSqr)) {
          if (hit.add(victim.getId())) {
             hurtVictim(owner, victim, damage);
          }
+      }
       }
 
       level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.85F, 1.32F);

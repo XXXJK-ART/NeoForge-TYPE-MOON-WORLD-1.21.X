@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
@@ -114,6 +116,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.GilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.magic.jewel.MagicJewelMachineGun;
@@ -513,7 +516,8 @@ public class CommonEvents {
          Entity sharedAttacker = event.getSource().getEntity();
          if (sharedAttacker instanceof LivingEntity living
             && !HeraclesGodHandHelper.hasGodHand(event.getEntity())
-            && living.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)) {
+            && (living.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)
+               || net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.isSharedDelivery(event.getEntity()))) {
             for (DamageContainer.Reduction reduction : DamageContainer.Reduction.values()) {
                if (reduction.name().contains("ARMOR")) {
                   event.addReductionModifier(reduction, (container, amount) -> 0.0F);
@@ -1068,6 +1072,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
+         ServantCardHundredFacesHassanSkills.cleanupOwnedPersonas(player);
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.clear(player);
          net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
          net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
@@ -1372,6 +1377,7 @@ public class CommonEvents {
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (!event.isCanceled()) ServantCardHundredFacesHassanSkills.cleanupOwnedPersonas(player);
             if (!event.isCanceled()) TalentService.clearActiveState(player);
             if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
             if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.basic.ManaBurstService.clear(player);
@@ -1478,6 +1484,7 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onPlayerChangedDimension(PlayerChangedDimensionEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
+         ServantCardHundredFacesHassanSkills.cleanupOwnedPersonas(player);
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.clear(player);
       }
    }
@@ -1485,6 +1492,13 @@ public class CommonEvents {
    @SubscribeEvent
    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
       Entity e = event.getEntity();
+      if (e instanceof HundredFacesHassanPersonaEntity persona
+         && (e.getRemovalReason() == RemovalReason.UNLOADED_TO_CHUNK
+            || e.getRemovalReason() == RemovalReason.UNLOADED_WITH_PLAYER
+            || e.getRemovalReason() == RemovalReason.CHANGED_DIMENSION)) {
+         persona.discard();
+         return;
+      }
       if (e instanceof ServantEntity && event.getLevel() instanceof ServerLevel serverLevel) {
          untrackServant(e, serverLevel);
       }
@@ -2088,12 +2102,14 @@ public class CommonEvents {
                   double radius = ts * 0.75 + 2.0;
                   AABB box = new AABB(center.x - radius, center.y - radius, center.z - radius, center.x + radius, center.y + radius, center.z + radius);
 
+                  try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
                   for (LivingEntity e : serverLevel.getEntitiesOfClass(
                      LivingEntity.class, box, ex -> ex.isAlive() && ex != player && !EntityUtils.isImmunePlayerTarget(ex)
                   )) {
                      e.invulnerableTime = 0;
                      e.hurt(player.damageSources().mobAttack(player), damageBase * 4.0F);
                      e.invulnerableTime = 0;
+                  }
                   }
                }
             }
@@ -2130,12 +2146,14 @@ public class CommonEvents {
                double radius = ts * 0.75 + 2.0;
                AABB box = new AABB(center.x - radius, center.y - radius, center.z - radius, center.x + radius, center.y + radius, center.z + radius);
 
+               try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
                for (LivingEntity e : serverLevel.getEntitiesOfClass(
                   LivingEntity.class, box, ex -> ex.isAlive() && ex != player && !EntityUtils.isImmunePlayerTarget(ex)
                )) {
                   e.invulnerableTime = 0;
                   e.hurt(player.damageSources().mobAttack(player), damageBase * 5.0F);
                   e.invulnerableTime = 0;
+               }
                }
             }
          }

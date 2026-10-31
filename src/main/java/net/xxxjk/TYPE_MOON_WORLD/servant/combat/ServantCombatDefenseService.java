@@ -24,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardManaService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardActionTimeline;
 import net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantDataRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
@@ -66,6 +67,10 @@ public final class ServantCombatDefenseService {
    private static final java.util.Map<LivingEntity, java.util.Deque<PendingDamage>> PENDING = new java.util.WeakHashMap<>();
 
    public static void initialize(LivingEntity entity) {
+      if (isPersona(entity)) {
+         clearPersonaDefenseState(entity);
+         return;
+      }
       ServantParams p = params(entity);
       if (p == null) return;
       CompoundTag d = entity.getPersistentData();
@@ -116,6 +121,7 @@ public final class ServantCombatDefenseService {
 
    /** Shared undodgeable conditions for counted servant skill evasion. */
    public static boolean trySkillAutoDodge(LivingEntity entity, DamageSource source, float amount) {
+      if (isPersona(entity)) return false;
       if(source.is(DamageTypeTags.BYPASSES_INVULNERABILITY) || source.is(FanaticDamageTypes.GUARANTEED_HITS)
          || source.is(FanaticDamageTypes.BYPASSES_DEFENSES)
          || net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.poison(source)
@@ -127,6 +133,7 @@ public final class ServantCombatDefenseService {
    }
 
    public static boolean trySkillAutoDodge(LivingEntity entity) {
+      if (isPersona(entity)) return false;
       net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.syncInstinct(entity);
       initialize(entity);
       CompoundTag d = entity.getPersistentData();
@@ -168,6 +175,7 @@ public final class ServantCombatDefenseService {
    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
    public static void beforeDamage(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
       LivingEntity e = event.getEntity();
+      if (isPersona(e)) return;
       if (!(e instanceof ServantEntity) && !(e instanceof ServerPlayer p && isCardActive(p))) return;
       initialize(e);
       boolean guarded = GUARDED.remove(event.getContainer()) != null;
@@ -258,7 +266,7 @@ public final class ServantCombatDefenseService {
       if (entity instanceof ServantEntity servant) ServantDefenseTraits.tickNpcActiveSkills(servant);
       initialize(entity);
       ServantParams p = params(entity);
-      if (p != null) {
+      if (p != null && !isPersona(entity)) {
          var traits = ServantDefenseTraits.resolve(entity);
          int max = traits.autoDodges();
          if (data.getInt(AUTO_CHARGES) <= 0 && data.getLong(AUTO_RESTORE) > 0 && now >= data.getLong(AUTO_RESTORE)) {
@@ -347,6 +355,7 @@ public final class ServantCombatDefenseService {
    }
 
    public static boolean setGuarding(LivingEntity entity, boolean active) {
+      if (isPersona(entity)) return false;
       if (active && entity != null && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) return false;
       if (entity == null || entity.level().isClientSide()) return false;
       CompoundTag data = entity.getPersistentData();
@@ -408,6 +417,7 @@ public final class ServantCombatDefenseService {
                                                    boolean allowGuard, boolean allowDodge, boolean guardOnly) {
       if (defender == null || source == null || defender.level().isClientSide() || !canAct(defender)
          || !Float.isFinite(amount) || amount <= 0) return NpcReaction.NONE;
+      if (isPersona(defender)) allowGuard = false;
       if (allowGuard && isGuarding(defender) && canGuardHit(defender, source, amount)) return NpcReaction.GUARD;
       boolean melee = source.getEntity() instanceof LivingEntity attacker
          && source.getDirectEntity() == attacker && defender.distanceTo(attacker) <= 6.0;
@@ -444,7 +454,7 @@ public final class ServantCombatDefenseService {
       if (!canAct(defender) || isGuarding(defender)) return NpcReaction.NONE;
       boolean noblePhantasm = threat.actionId().getPath().startsWith("noble_phantasm/");
       NpcDecision decision = npcDecision(defender, threatKey(threat), threat.endTick() + 2,
-         0, threat.danger(), threat.blockable() && !noblePhantasm, threat.dodgeable());
+         0, threat.danger(), !isPersona(defender) && threat.blockable() && !noblePhantasm, threat.dodgeable());
       // Choose once, but time the movement so its existing invulnerability
       // window actually covers impact rather than expiring during the windup.
       long lead = decision.reaction == NpcReaction.DODGE
@@ -460,7 +470,7 @@ public final class ServantCombatDefenseService {
       boolean special = ProjectileThreatClassifier.bypassesProjectileNegation(bypasses);
       boolean sureHit = bypasses.contains(net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantSkillDefinition.FactBypass.SURE_HIT);
       return executeNpcDecision(defender, npcDecision(defender, projectile.getUUID(), defender.level().getGameTime() + 40,
-         damage, special ? 5 : 1, !special && damage <= DefenseRules.NPC_LIGHT_RANGED_DAMAGE_LIMIT, !sureHit)) != NpcReaction.NONE;
+         damage, special ? 5 : 1, !isPersona(defender) && !special && damage <= DefenseRules.NPC_LIGHT_RANGED_DAMAGE_LIMIT, !sureHit)) != NpcReaction.NONE;
    }
 
    public static double estimatedProjectileDamage(Entity projectile) {
@@ -538,6 +548,7 @@ public final class ServantCombatDefenseService {
 
    /** Active, automatic and perfect guards share the same resource transaction. */
    public static Float applyGuardHit(LivingEntity defender, DamageSource source, float amount) {
+      if (isPersona(defender)) return null;
       if (!canGuardHit(defender, source, amount)) return null;
       initialize(defender);
       CompoundTag data = defender.getPersistentData();
@@ -613,6 +624,10 @@ public final class ServantCombatDefenseService {
       return entity != null && entity.getPersistentData().getBoolean(TAG_GUARDING);
    }
 
+   public static boolean isActiveGuard(LivingEntity entity) {
+      return isGuarding(entity) && canAct(entity) && !broken(entity) && hasGuardResource(entity);
+   }
+
    public static boolean isDodgeActive(LivingEntity entity, long now) {
       return entity != null && now < entity.getPersistentData().getLong(TAG_DODGE_UNTIL);
    }
@@ -658,8 +673,10 @@ public final class ServantCombatDefenseService {
       if (entity instanceof ServerPlayer player) sync(player, true);
    }
 
-   private static boolean canAct(LivingEntity entity) {
+   public static boolean canAct(LivingEntity entity) {
       if (!entity.isAlive() || net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) return false;
+      if (entity.level().getGameTime() < entity.getPersistentData().getLong(ServantCombatSystem.TAG_STUN_UNTIL)
+         || entity.hasEffect(net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects.PETRIFIED)) return false;
       if (entity instanceof ServerPlayer player) {
          return isCardActive(player) && !player.isDeadOrDying() && !player.isPassenger()
             && !BindingService.isBound(player.getUUID());
@@ -676,10 +693,24 @@ public final class ServantCombatDefenseService {
       if (entity instanceof ServerPlayer player) {
          String id = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_id;
          ServantDefinition definition = ServantDataRegistry.get(id);
+         if ("hundred_faces_hassan".equals(id)) {
+            return net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.mainCombatParamsForSplitCount(
+               net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardHundredFacesHassanSkills.totalSplitCount(player),
+               net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.MAIN_FULL_PARAMS);
+         }
          return definition == null ? null : definition.parameters();
       }
       if (entity instanceof ServantEntity servant) {
+         if (servant instanceof HundredFacesHassanPersonaEntity) {
+            return net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.PERSONA_COMBAT_PARAMS;
+         }
          ServantDefinition definition = servant.getDefinition();
+         if (servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity hassan) {
+            return net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.mainCombatParamsForSplitCount(
+               hassan.getTotalSplitCount(), definition == null
+                  ? net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces.HundredFacesHassanRules.MAIN_FULL_PARAMS
+                  : definition.parameters());
+         }
          return definition == null ? null : definition.parameters();
       }
       return null;
@@ -701,8 +732,22 @@ public final class ServantCombatDefenseService {
    }
 
    private static boolean hasGuardResource(LivingEntity entity) {
+      if (isPersona(entity)) return false;
       ServantParams p = params(entity);
       return p != null && stamina(entity) > 0 && !broken(entity);
+   }
+
+   private static boolean isPersona(LivingEntity entity) {
+      return entity instanceof HundredFacesHassanPersonaEntity;
+   }
+
+   private static void clearPersonaDefenseState(LivingEntity entity) {
+      CompoundTag data = entity.getPersistentData();
+      for (String key : new String[]{TAG_STAMINA, TAG_STAMINA + "Max", TAG_POISE, TAG_POISE + "Max",
+         TAG_GUARDING, TAG_GUARD_BROKEN, TAG_GUARD_COOLDOWN, TAG_GUARD_START, NPC_GUARD_UNTIL,
+         NPC_PARRY_USED, "TypeMoonCombatGuardBroken"}) {
+         data.remove(key);
+      }
    }
 
    private static Vec3 dodgeDirection(LivingEntity entity, float forward, float strafe) {

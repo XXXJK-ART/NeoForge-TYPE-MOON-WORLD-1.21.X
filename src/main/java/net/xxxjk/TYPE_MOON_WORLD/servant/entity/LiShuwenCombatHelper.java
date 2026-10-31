@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Collection;
 import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -375,6 +377,8 @@ public final class LiShuwenCombatHelper {
    }
 
    public static void resolveWuErDa(LivingEntity attacker, LivingEntity target, ServerLevel level, float roll) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, 200,
+         defender -> resolveWuErDa(attacker, defender, level, roll))) return;
       if (attacker == null || target == null || level == null || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
@@ -456,10 +460,12 @@ public final class LiShuwenCombatHelper {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - TREMOR_PALM_MP_COST));
       entity.faceToward(target.position());
       entity.triggerPunchAnimation();
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(3.2), e -> canHit(entity, e))) {
          dealMartialDamage(entity, living, 0.82F);
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 1, false, true));
          push(living, living.position().subtract(entity.position()), 0.65, 0.12);
+      }
       }
       level.sendParticles(INK, entity.getX(), entity.getY() + 0.08, entity.getZ(), 26, 1.1, 0.06, 1.1, 0.025);
       level.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.45F, 1.65F);

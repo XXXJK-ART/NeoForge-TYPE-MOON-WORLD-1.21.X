@@ -35,7 +35,8 @@ public record ManaBurstInputMessage(float forward, float strafe, boolean jump, b
          return;
       }
       context.enqueueWork(() -> {
-         if (context.player() instanceof ServerPlayer player && ServerPacketRateLimiter.allow(player, "mana_burst_input", 1)) {
+         if (context.player() instanceof ServerPlayer player && ServerPacketRateLimiter.allow(player, "mana_burst_input", 1)
+            && !net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) {
             ManaBurstService.setInput(player, message.forward, message.strafe, message.jump, message.sneak);
          }
       });
