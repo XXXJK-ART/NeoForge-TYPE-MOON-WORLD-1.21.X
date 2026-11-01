@@ -69,6 +69,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      OkitaSoujiSaberTechniqueService.cancel(player);
       cleanupPlayerSoldiers(player);
       CompoundTag data = player.getPersistentData();
       data.remove(TAG_WEAK_UNTIL);
@@ -137,7 +138,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       }
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.8, player.getZ(), 10, 1.0, 0.2, 1.0, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.35F);
-      return hitAny;
+      return true;
    }
 
    /** A short thrust using the shared Sasaki sword motion as Okita's slot-3 technique. */
@@ -193,20 +194,20 @@ public final class ServantCardOkitaSoujiSaberSkills {
 
    public static boolean performStanceBreak(ServerPlayer player) {
       LivingEntity target = findNearestEnemy(player, 4.0);
-      if (target == null) {
-         return false;
-      }
-      face(player, target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+      if (target != null) face(player, target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
       SwordActionAnimationService.play(player, SasakiKojiroAction.OKITA_THRUST);
       if (player.level() instanceof ServerLevel level) {
-         spawnSlashLine(level, player.position().add(0.0, 0.9, 0.0), target.position().subtract(player.position()), 4.0);
-         level.playSound(null, target.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.9F, 1.25F);
+         spawnSlashLine(level, player.position().add(0.0, 0.9, 0.0), horizontalLook(player), 4.0);
+         level.playSound(null, player.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.9F, 1.25F);
       }
       var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
       net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(5, () -> {
          if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())
-            || !target.isAlive() || target.level() != player.level() || !isEnemy(player, target)
+            || target == null || !target.isAlive() || target.level() != player.level() || !isEnemy(player, target)
             || player.distanceTo(target) > 4.0 || !player.hasLineOfSight(target)) return;
+         target.stopUsingItem();
+         target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
+         target.removeEffect(MobEffects.ABSORPTION);
          hurtPhysical(player, target, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 8.0));
       });
       return true;
@@ -239,7 +240,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
    }
 
    public static boolean performMumyoudanZuki(ServerPlayer player) {
-      if (isWeak(player) || !(player.level() instanceof ServerLevel level)) {
+      if (isWeak(player) || OkitaSoujiSaberTechniqueService.isExecuting(player) || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
       LivingEntity primary = findEnemyLookTarget(player, OkitaSoujiSaberTechniqueService.MUMYOUDAN_RANGE, 1.8);
@@ -247,26 +248,9 @@ public final class ServantCardOkitaSoujiSaberSkills {
          return false;
       }
       face(player, primary.position().add(0.0, primary.getBbHeight() * 0.5, 0.0));
-      ServantCardVoiceHelper.tryPlaySkill(player, "okita_mumyoudan_zuki");
-      LivingEntity npTarget = primary;
-      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      SwordActionAnimationService.play(player, SasakiKojiroAction.TSUBAME_WINDUP);
-      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(OkitaSoujiSaberTechniqueService.MUMYOUDAN_WINDUP_TICKS, () -> {
-         if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())
-            || !OkitaSoujiSaberTechniqueService.canLandMumyoudanStrike(player, npTarget, level)) return;
-         SwordActionAnimationService.play(player, SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI);
-         level.playSound(null, npTarget.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.25F, 1.55F);
-         int strikeIndex = 0;
-         for (int hitDelay : OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks()) {
-            int currentStrike = strikeIndex++;
-            net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(hitDelay, () -> {
-               if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())) return;
-               OkitaSoujiSaberTechniqueService.strikeMumyoudanPoint(player, npTarget, level, currentStrike);
-            });
-         }
+      return OkitaSoujiSaberTechniqueService.beginMumyoudan(player, primary, () -> {
          if (player.getRandom().nextFloat() < 0.30F) triggerWeak(player);
       });
-      return true;
    }
 
    public static boolean performFlagOfSincerity(ServerPlayer player) {
@@ -389,7 +373,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       Vec3 look = player.getLookAngle().normalize();
       HitResult hit = level.clip(new ClipContext(eye, eye.add(look.scale(range)), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
       if (hit.getType() != HitResult.Type.BLOCK) {
-         return null;
+         return safePositionNear(player, player.position().add(horizontalLook(player).scale(range)));
       }
       BlockHitResult blockHit = (BlockHitResult)hit;
       Vec3 base = blockHit.getLocation().subtract(look.scale(0.35));
@@ -444,6 +428,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       List<LivingEntity> hit = new ArrayList<>();
       try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, area, entity -> isEnemy(player, entity))) {
+         if (!player.hasLineOfSight(target)) continue;
          Vec3 relative = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin);
          if (relative.lengthSqr() > range * range || new Vec3(relative.x, 0.0, relative.z).normalize().dot(direction) < minDot) {
             continue;

@@ -35,6 +35,7 @@ public final class ServantCardVoiceHelper {
          case "emiya_archer" -> ModSounds.EMIYA_ARCHER_VOICE_ATTACK.get();
          case "artoria_pendragon" -> ModSounds.ARTORIA_VOICE_ATTACK.get();
          case "oda_nobunaga" -> ModSounds.ODA_NOBUNAGA_VOICE_ATTACK.get();
+         case "okita_souji_saber" -> ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get();
          case "enkidu" -> ModSounds.ENKIDU_VOICE_ATTACK.get();
          case "gilgamesh" -> ModSounds.GILGAMESH_VOICE_ATTACK.get();
          case "gawain" -> ModSounds.GAWAIN_VOICE_ATTACK.get();
@@ -99,6 +100,8 @@ public final class ServantCardVoiceHelper {
             "oda_scorched_earth", "oda_hasebe_breakthrough", "maou" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
          case "okita_mumyoudan_zuki" -> ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
          case "okita_flag_of_sincerity" -> ModSounds.OKITA_SOUJI_SABER_VOICE_FLAG.get();
+         case "okita_ichimonji", "okita_kaifuu", "okita_thrust", "okita_downward_slash", "okita_stance_break"
+            -> ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
          case "muramasa_no_gen_kensai" -> ModSounds.SENKO_MURAMASA_VOICE_NP.get();

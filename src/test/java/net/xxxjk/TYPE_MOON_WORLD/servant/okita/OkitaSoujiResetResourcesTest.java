@@ -60,6 +60,7 @@ class OkitaSoujiResetResourcesTest {
       JsonObject np = json("data/typemoonworld/servant/noble_phantasms/mumyoudan_zuki.json");
       assertEquals("", np.get("rank").getAsString());
       assertEquals(3600, np.get("cooldown_ticks").getAsInt());
+      assertEquals(10, np.get("windup_ticks").getAsInt());
       JsonObject effect = np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params");
       assertEquals(3, effect.get("hits").getAsInt());
       assertEquals(150.0, effect.get("fixed_damage_per_hit").getAsDouble());
@@ -88,7 +89,7 @@ class OkitaSoujiResetResourcesTest {
    }
 
    @Test
-   void onlyMumyoudanRequiresAimAndItsAnimationAndHitFramesStayAligned() {
+   void onlyMumyoudanRequiresAimAndItsAnimationAndHitFramesStayAligned() throws Exception {
       for (String action : new String[]{"okita_shukuchi", "okita_ichimonji", "okita_kaifuu", "okita_thrust",
          "okita_downward_slash", "okita_feigned_retreat", "okita_stance_break", "okita_shinsengumi_command",
          "okita_flag_of_sincerity"}) {
@@ -97,7 +98,15 @@ class OkitaSoujiResetResourcesTest {
       assertTrue(ServantCardActionPreconditions.requiresLookTarget("okita_mumyoudan_zuki"));
       assertEquals(3.0, ServantCardActionPreconditions.targetRangeFor("okita_mumyoudan_zuki"));
       assertEquals(10, OkitaSoujiSaberTechniqueService.MUMYOUDAN_WINDUP_TICKS);
-      assertArrayEquals(new int[]{4, 7, 10}, OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks());
+      JsonObject baked = json("assets/typemoonworld/player_animations/okita_mumyoudan_zuki.json");
+      JsonObject source = json("assets/typemoonworld/animations/okita_souji_saber_source.animation.json")
+         .getAsJsonObject("animations").getAsJsonObject("mumyoudan_zuki");
+      int[] extensions = source.getAsJsonObject("bones").getAsJsonObject("Right Arm").getAsJsonObject("position")
+         .entrySet().stream().filter(key -> key.getValue().getAsJsonArray().get(2).getAsDouble() == -9.0)
+         .mapToInt(key -> (int)Math.ceil(Double.parseDouble(key.getKey()) * baked.get("motion_ticks").getAsInt()
+            / baked.get("source_length").getAsDouble())).sorted().toArray();
+      assertEquals(3, extensions.length);
+      assertArrayEquals(extensions, OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks());
       assertEquals("okita_mumyoudan_zuki", SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI.playerAnimationPath());
    }
 

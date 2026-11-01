@@ -88,6 +88,7 @@ public final class OkitaSoujiSaberCombatHelper {
          return;
       }
       tickPersistentState(entity);
+      if (entity.isPerformingAction()) return;
       LivingEntity target = context.target();
       if (!isValidTarget(entity, target)) {
          target = entity.getTarget();
@@ -193,7 +194,7 @@ public final class OkitaSoujiSaberCombatHelper {
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), WEAK_SPEED_ID,
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      if (weak && entity.getTarget() != null && now % 5L == 0L) {
+      if (weak && !entity.isPerformingAction() && entity.getTarget() != null && now % 5L == 0L) {
          if (now % 10L == 0L && tryRetreatShukuchi(entity, entity.getTarget(), level, now)) {
             return;
          }
@@ -257,7 +258,7 @@ public final class OkitaSoujiSaberCombatHelper {
       if (!entity.canUseMumyoudanZuki() || entity.isPerformingAction() || !resource.allowed()
          || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
          || now < data.getLong(TAG_MUMYOUDAN_COOLDOWN) || !entity.hasMasterNoblePhantasmPermission()
-         || !entity.getSensing().hasLineOfSight(target)) {
+         || !OkitaSoujiSaberTechniqueService.canLandMumyoudanStrike(entity, target, level)) {
          return false;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
@@ -265,21 +266,8 @@ public final class OkitaSoujiSaberCombatHelper {
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
          data.putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + MUMYOUDAN_COOLDOWN);
          entity.faceToward(target.position());
-         SwordActionAnimationService.play(entity, SasakiKojiroAction.TSUBAME_WINDUP);
          ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
-         net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(OkitaSoujiSaberTechniqueService.MUMYOUDAN_WINDUP_TICKS, () -> {
-            if (!entity.isAlive() || entity.isRemoved() || entity.level() != level
-               || !OkitaSoujiSaberTechniqueService.canLandMumyoudanStrike(entity, target, level)) return;
-            entity.faceToward(target.position());
-            SwordActionAnimationService.play(entity, SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI);
-            level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.25F, 1.55F);
-            int strikeIndex = 0;
-            for (int hitDelay : OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks()) {
-               int currentStrike = strikeIndex++;
-               net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(hitDelay, () -> {
-                  OkitaSoujiSaberTechniqueService.strikeMumyoudanPoint(entity, target, level, currentStrike);
-               });
-            }
+         OkitaSoujiSaberTechniqueService.beginMumyoudan(entity, target, () -> {
             if (entity.getRandom().nextFloat() < 0.30F)
                triggerWeakConstitution(entity, entity.level().getGameTime());
          });

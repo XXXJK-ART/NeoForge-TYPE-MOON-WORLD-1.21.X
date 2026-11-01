@@ -677,6 +677,12 @@ public final class ServantCardTransformManager {
       if ("muramasa_forge".equals(action.effectId())) {
          return ServantCardSenkoMuramasaSkills.openForgeSelection(player);
       }
+      if ("okita_souji_saber".equals(vars.servantCardState().id())
+         && net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService.isExecuting(player)) return false;
+      if ("okita_mumyoudan_zuki".equals(action.effectId()) && ServantCardOkitaSoujiSaberSkills.isWeak(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.okita_weak_np_blocked"), true);
+         return false;
+      }
       boolean npSlot = usesSharedNoblePhantasmCooldown(vars.servantCardState().id(), slot) && !emiyaOneShotTsubame;
       boolean np = noblePhantasmAction;
       boolean unlimited = ServantCardUnlimitedMode.isCooldownDisabled(player);

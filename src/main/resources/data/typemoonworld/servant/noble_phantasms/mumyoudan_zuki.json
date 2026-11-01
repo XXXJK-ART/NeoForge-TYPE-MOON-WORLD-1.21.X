@@ -7,7 +7,7 @@
   "rank": "",
   "mp_cost": 20,
   "cooldown_ticks": 3600,
-  "windup_ticks": 6,
+  "windup_ticks": 10,
   "effects": [
     {
       "effect_type": "triple_piercing_thrust",

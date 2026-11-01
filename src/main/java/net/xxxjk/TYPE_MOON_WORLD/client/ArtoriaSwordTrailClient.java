@@ -42,6 +42,11 @@ public final class ArtoriaSwordTrailClient {
          || owner != null && owner.getMainHandItem().is(ModItems.EXCALIBUR.get());
    }
 
+   public static boolean isOkita(LivingEntity owner) {
+      return owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity
+         || owner != null && owner.getMainHandItem().is(ModItems.KIKU_ICHIMONJI_NORIMUNE.get());
+   }
+
    public static void begin(LivingEntity owner, SasakiKojiroAction action) {
       if (owner == null || action == null) return;
       ensureLevel();
@@ -65,7 +70,8 @@ public final class ArtoriaSwordTrailClient {
          case VERTICAL_SLASH -> new int[]{5};
          case DOWNWARD_SLASH, UPWARD_SLASH -> new int[]{2};
          case HORIZONTAL_SLASH -> new int[]{3};
-         case THRUST -> new int[]{5};
+         case THRUST, OKITA_THRUST -> new int[]{5};
+         case OKITA_MUMYOUDAN_ZUKI -> net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks();
          case SPINNING_SLASH -> new int[]{4, 11};
          case CROUCH_CUTBACK -> new int[]{3, 11};
          default -> new int[0];
@@ -75,7 +81,9 @@ public final class ArtoriaSwordTrailClient {
    private static int activeStroke(SasakiKojiroAction action, float age) {
       int[] ticks = strikeTicks(action);
       for (int i = 0; i < ticks.length; i++) {
-         if (age >= ticks[i] && age <= ticks[i] + 3.5F) return i;
+         float lead = action == SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI ? 1.5F : 0.0F;
+         float tail = action == SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI ? 0.5F : 3.5F;
+         if (age >= ticks[i] - lead && age <= ticks[i] + tail) return i;
       }
       return -1;
    }
@@ -100,7 +108,7 @@ public final class ArtoriaSwordTrailClient {
             swing.points.clear();
             swing.activeStroke = stroke;
          }
-         if (stroke < 0 || !swing.owner.getMainHandItem().is(ModItems.EXCALIBUR.get())) continue;
+         if (stroke < 0 || !(swing.owner.getMainHandItem().is(ModItems.EXCALIBUR.get()) || isOkita(swing.owner))) continue;
          float sampleFrom = Math.max(swing.lastSampleAge + 0.05F, age - 1.0F);
          for (float sample = sampleFrom; sample < age; sample += 0.10F) sample(swing, sample, partial);
          sample(swing, age, partial);
@@ -169,6 +177,7 @@ public final class ArtoriaSwordTrailClient {
    }
 
    private static Mode mode(LivingEntity owner) {
+      if (isOkita(owner)) return Mode.ASAGI;
       ItemStack stack = owner.getMainHandItem();
       CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
       if (data.getBoolean("ArtoriaManaBurstActive")) return Mode.GOLD;
@@ -179,6 +188,7 @@ public final class ArtoriaSwordTrailClient {
    private enum Mode {
       WHITE(0.72F, 0.84F, 0.96F, 1.0F, 1.0F, 1.0F),
       CYAN(0.03F, 0.38F, 0.72F, 0.68F, 1.0F, 1.0F),
+      ASAGI(0.22F, 0.73F, 0.76F, 0.79F, 0.97F, 0.93F),
       GOLD(1.0F, 0.52F, 0.03F, 1.0F, 1.0F, 0.62F);
 
       private final float edgeR, edgeG, edgeB, coreR, coreG, coreB;

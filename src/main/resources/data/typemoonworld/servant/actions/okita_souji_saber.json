@@ -66,7 +66,7 @@
       "maximum_range": 3.0,
       "mana_cost": 20,
       "stamina_cost": 20,
-      "timing": {"windup": 6, "active": 6, "recovery": 12},
+      "timing": {"windup": 10, "active": 10, "recovery": 5},
       "threat": {
         "shape": "line",
         "radius": 1.2,

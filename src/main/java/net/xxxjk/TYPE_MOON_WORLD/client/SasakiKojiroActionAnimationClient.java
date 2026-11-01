@@ -63,7 +63,7 @@ public final class SasakiKojiroActionAnimationClient {
       }
       for (var entity : minecraft.level.entitiesForRendering()) {
          if (entity instanceof net.minecraft.world.entity.LivingEntity owner && playerId.equals(owner.getUUID())) {
-            if (ArtoriaSwordTrailClient.isArtoria(owner)) {
+            if (ArtoriaSwordTrailClient.isArtoria(owner) || ArtoriaSwordTrailClient.isOkita(owner)) {
                ArtoriaSwordTrailClient.begin(owner, action);
             } else {
                SasakiSwordTrailClient.begin(owner, action);
@@ -167,7 +167,8 @@ public final class SasakiKojiroActionAnimationClient {
       Vec3f rotation = sample.get3DTransform(left ? "leftItem" : "rightItem", TransformType.ROTATION, 0.0F, Vec3f.ZERO);
       PoseStack poses = new PoseStack();
       float scale = owner instanceof SasakiKojiroEntity ? 0.926F
-         : owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity ? 0.811F : 1.0F;
+         : owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity
+            || owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity ? 0.811F : 1.0F;
       poses.scale(-scale, -scale, scale);
       poses.translate(0.0F, -1.501F, 0.0F);
       model.translateToHand(arm, poses);
