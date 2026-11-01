@@ -352,6 +352,10 @@ public final class CombatModule implements ServantAiModule {
 
    @Override
    public void tick(ServantEntity entity, ServantAiContext context) {
+      if (entity instanceof OkitaSoujiSaberEntity okita) {
+         OkitaSoujiSaberCombatHelper.tick(okita, context);
+         return;
+      }
       if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnEntity cu) {
          net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnCombatAi.tick(cu,context.target());
          return;
@@ -439,10 +443,6 @@ public final class CombatModule implements ServantAiModule {
          } else {
             entity.setTarget(null);
          }
-         return;
-      }
-      if (entity instanceof OkitaSoujiSaberEntity okita) {
-         OkitaSoujiSaberCombatHelper.tick(okita, context);
          return;
       }
       if (entity instanceof FanaticAssassinEntity fanatic) {

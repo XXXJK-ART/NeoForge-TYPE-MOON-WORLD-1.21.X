@@ -54,6 +54,9 @@ public final class ServantTacticalController {
    private ServantTacticalController() { }
 
    public static boolean tick(ServantEntity entity) {
+      // Okita's combat loop owns Shukuchi and the sword-chain timing. Let the
+      // character helper receive the tick instead of the generic exchange.
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity) return false;
       if (!(entity.level() instanceof ServerLevel level) || !entity.isAlive() || !AiMigrationPolicy.isArbitrated(entity)) return false;
       if (ServantCombatExchangeService.scripted(entity, entity.getTarget())) return false;
       EvasionMovementService.tickAirState(entity);

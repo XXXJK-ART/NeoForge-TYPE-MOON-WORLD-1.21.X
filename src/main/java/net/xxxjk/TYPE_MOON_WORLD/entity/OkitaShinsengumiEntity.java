@@ -21,6 +21,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,15 +33,18 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    private static final double FOLLOW_STOP_DISTANCE_SQR = 3.0 * 3.0;
    private static final double FOLLOW_START_DISTANCE_SQR = 5.0 * 5.0;
    private static final double FOLLOW_URGENT_DISTANCE_SQR = 14.0 * 14.0;
-   public static final double C_PANEL_HEALTH = 300.0;
-   public static final double C_PANEL_ATTACK = 15.0;
-   public static final double C_PANEL_MOVEMENT_SPEED = 0.28;
-   public static final double C_PANEL_ARMOR = 2.25;
-   public static final double C_PANEL_ARMOR_TOUGHNESS = 0.525;
-   public static final double C_PANEL_DODGE_CHANCE = 0.10;
-   public static final int C_PANEL_DODGE_INVULNERABILITY_TICKS = 4;
-   public static final int C_PANEL_PERFECT_DODGE_WINDOW_TICKS = 5;
-   public static final int C_PANEL_DODGE_COOLDOWN_TICKS = 9;
+   // Flag of Sincerity soldiers use an all-E servant panel. Their two retained
+   // defensive values are deliberately halved, while toughness is discarded.
+   public static final double E_PANEL_HEALTH = StatRank.E.toMaxHealth();
+   public static final double E_PANEL_ATTACK = StatRank.E.toAttackDamage();
+   public static final double E_PANEL_MOVEMENT_SPEED = StatRank.E.toMovementSpeed();
+   // ServantParams armor is strength coefficient * 0.15; halve that retained defense.
+   public static final double E_PANEL_ARMOR = StatRank.E.coefficient() * 0.15 * 0.5;
+   public static final double E_PANEL_ARMOR_TOUGHNESS = 0.0;
+   public static final double E_PANEL_DODGE_CHANCE = 0.05;
+   public static final int E_PANEL_DODGE_INVULNERABILITY_TICKS = 4;
+   public static final int E_PANEL_PERFECT_DODGE_WINDOW_TICKS = 5;
+   public static final int E_PANEL_DODGE_COOLDOWN_TICKS = 9;
    private static final String TAG_DODGE_COOLDOWN = "OkitaShinsengumiDodgeCooldown";
    private static final String TAG_PERFECT_DODGE_UNTIL = "OkitaShinsengumiPerfectDodgeUntil";
    @Nullable private UUID ownerUuid;
@@ -54,11 +58,11 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
 
    public static AttributeSupplier.Builder createAttributes() {
       return createMobAttributes()
-         .add(Attributes.MAX_HEALTH, C_PANEL_HEALTH)
-         .add(Attributes.MOVEMENT_SPEED, C_PANEL_MOVEMENT_SPEED)
-         .add(Attributes.ATTACK_DAMAGE, C_PANEL_ATTACK)
-         .add(Attributes.ARMOR, C_PANEL_ARMOR)
-         .add(Attributes.ARMOR_TOUGHNESS, C_PANEL_ARMOR_TOUGHNESS)
+         .add(Attributes.MAX_HEALTH, E_PANEL_HEALTH)
+         .add(Attributes.MOVEMENT_SPEED, E_PANEL_MOVEMENT_SPEED)
+         .add(Attributes.ATTACK_DAMAGE, E_PANEL_ATTACK)
+         .add(Attributes.ARMOR, E_PANEL_ARMOR)
+         .add(Attributes.ARMOR_TOUGHNESS, E_PANEL_ARMOR_TOUGHNESS)
          .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.ATTACK_SPEED, 4.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 0.0);
@@ -70,10 +74,10 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          long now = this.level().getGameTime();
          CompoundTag data = this.getPersistentData();
          if (now < data.getLong(TAG_PERFECT_DODGE_UNTIL)) return false;
-         if (now >= data.getLong(TAG_DODGE_COOLDOWN) && this.random.nextDouble() < C_PANEL_DODGE_CHANCE) {
-            data.putLong(TAG_DODGE_COOLDOWN, now + C_PANEL_DODGE_COOLDOWN_TICKS);
-            data.putLong(TAG_PERFECT_DODGE_UNTIL, now + C_PANEL_PERFECT_DODGE_WINDOW_TICKS);
-            this.invulnerableTime = C_PANEL_DODGE_INVULNERABILITY_TICKS;
+         if (now >= data.getLong(TAG_DODGE_COOLDOWN) && this.random.nextDouble() < E_PANEL_DODGE_CHANCE) {
+            data.putLong(TAG_DODGE_COOLDOWN, now + E_PANEL_DODGE_COOLDOWN_TICKS);
+            data.putLong(TAG_PERFECT_DODGE_UNTIL, now + E_PANEL_PERFECT_DODGE_WINDOW_TICKS);
+            this.invulnerableTime = E_PANEL_DODGE_INVULNERABILITY_TICKS;
             this.setDeltaMovement(this.getDeltaMovement().add(this.getLookAngle().multiply(-0.35, 0.0, -0.35)));
             this.hurtMarked = true;
             return false;

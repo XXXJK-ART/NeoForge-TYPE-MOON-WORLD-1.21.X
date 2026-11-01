@@ -25,7 +25,9 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService;
 
@@ -97,6 +99,61 @@ public final class OkitaSoujiGameTests {
       h.runAfterDelay(16, () -> health(h, target, 850));
       h.runAfterDelay(18, () -> health(h, target, 700));
       h.runAfterDelay(26, () -> { health(h, target, 550); h.assertTrue(!npc.isPerformingAction(), "NPC lock persisted"); h.succeed(); });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 50)
+   public static void distantMumyoudanUsesShukuchiBeforeThreeHits(GameTestHelper h) {
+      arena(h);
+      var npc = ModEntities.OKITA_SOUJI_SABER.get().create(h.getLevel());
+      npc.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(4, 2, 4))));
+      npc.setNoAi(true); npc.setNoGravity(true); h.getLevel().addFreshEntity(npc);
+      npc.ensureDefaultNpcLoadout(false);
+      var target = target(h, npc.position().add(0, 0, 4.5));
+      Vec3 start = npc.position();
+      h.assertTrue(OkitaSoujiSaberTechniqueService.beginMumyoudan(npc, target, () -> { }), "Distant NP was rejected");
+      h.runAfterDelay(9, () -> {
+         health(h, target, 1000);
+         h.assertTrue(npc.position().distanceToSqr(start) < 0.01, "Shukuchi started before its 0.5 second approach");
+      });
+      h.runAfterDelay(11, () -> {
+         health(h, target, 1000);
+         h.assertTrue(npc.distanceTo(target) <= OkitaSoujiSaberTechniqueService.MUMYOUDAN_RANGE,
+            "Shukuchi did not close to thrust range");
+      });
+      h.runAfterDelay(26, () -> health(h, target, 850));
+      h.runAfterDelay(28, () -> health(h, target, 700));
+      h.runAfterDelay(31, () -> { health(h, target, 550); h.succeed(); });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void npcCombatLoopUsesShukuchiAsItsGapCloser(GameTestHelper h) {
+      arena(h);
+      var npc = ModEntities.OKITA_SOUJI_SABER.get().create(h.getLevel());
+      npc.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(4, 2, 4))));
+      npc.setNoAi(true); npc.setNoGravity(true); h.getLevel().addFreshEntity(npc);
+      npc.ensureDefaultNpcLoadout(false);
+      var target = target(h, npc.position().add(0, 0, 4.5));
+      npc.setTarget(target);
+      Vec3 start = npc.position();
+      OkitaSoujiSaberCombatHelper.tick(npc, ServantAiContext.forEntity(npc, target, h.getLevel().getGameTime()));
+      h.assertTrue(npc.position().distanceToSqr(start) > 0.25, "NPC combat helper did not use Shukuchi at range");
+      h.assertTrue(npc.distanceTo(target) <= 2.5, "NPC Shukuchi did not establish close sword range");
+      h.assertTrue(!npc.isPerformingAction(), "NPC Shukuchi should not start a sword action");
+      h.succeed();
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 10)
+   public static void flagSoldiersUseReducedEPanel(GameTestHelper h) {
+      arena(h);
+      var soldier = ModEntities.OKITA_SHINSENGUMI.get().create(h.getLevel());
+      soldier.setPos(Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(4, 2, 4))));
+      h.getLevel().addFreshEntity(soldier);
+      h.assertTrue(Math.abs(soldier.getMaxHealth() - 100.0F) < 0.01F, "Flag soldier health is not E rank");
+      h.assertTrue(Math.abs(soldier.getAttributeValue(Attributes.ATTACK_DAMAGE) - 5.0) < 0.01, "Flag soldier attack is not E rank");
+      h.assertTrue(Math.abs(soldier.getAttributeValue(Attributes.MOVEMENT_SPEED) - 0.20) < 0.001, "Flag soldier speed is not E rank");
+      h.assertTrue(Math.abs(soldier.getAttributeValue(Attributes.ARMOR) - 0.75) < 0.01, "Flag soldier armor was not halved");
+      h.assertTrue(Math.abs(soldier.getAttributeValue(Attributes.ARMOR_TOUGHNESS)) < 0.01, "Flag soldier retained toughness");
+      h.succeed();
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 40)

@@ -998,7 +998,7 @@ public final class ServantCardTransformManager {
       PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
          player, "nightingale", ModSounds.NIGHTINGALE_VOICE_NP.get(), null);
       PlayerNoblePhantasmHelper.finishServantCardVoiceSession(
-         player, "okita_souji_saber", ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get(), null);
+         player, "okita_souji_saber", ModSounds.OKITA_VOICE_NP_SHORT.get(), null);
    }
 
    public static void handleHoldAction(ServerPlayer player, int slot, boolean pressed) {

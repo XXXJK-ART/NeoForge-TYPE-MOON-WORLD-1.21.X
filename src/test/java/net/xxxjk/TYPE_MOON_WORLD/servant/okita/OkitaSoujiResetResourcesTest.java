@@ -96,7 +96,8 @@ class OkitaSoujiResetResourcesTest {
          assertFalse(ServantCardActionPreconditions.requiresLookTarget(action), action);
       }
       assertTrue(ServantCardActionPreconditions.requiresLookTarget("okita_mumyoudan_zuki"));
-      assertEquals(3.0, ServantCardActionPreconditions.targetRangeFor("okita_mumyoudan_zuki"));
+      assertEquals(OkitaSoujiSaberTechniqueService.MUMYOUDAN_CAST_RANGE,
+         ServantCardActionPreconditions.targetRangeFor("okita_mumyoudan_zuki"));
       assertEquals(10, OkitaSoujiSaberTechniqueService.MUMYOUDAN_WINDUP_TICKS);
       JsonObject baked = json("assets/typemoonworld/player_animations/okita_mumyoudan_zuki.json");
       JsonObject source = json("assets/typemoonworld/animations/okita_souji_saber_source.animation.json")

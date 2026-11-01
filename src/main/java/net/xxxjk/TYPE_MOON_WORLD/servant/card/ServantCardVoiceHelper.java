@@ -98,7 +98,7 @@ public final class ServantCardVoiceHelper {
          case "oda_hasebe_short_thrust", "oda_floating_refill", "oda_three_line",
             "oda_encircle_matchlocks", "oda_charged_matchlock", "oda_crossfire_net",
             "oda_scorched_earth", "oda_hasebe_breakthrough", "maou" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
-         case "okita_mumyoudan_zuki" -> ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+         case "okita_mumyoudan_zuki" -> ModSounds.OKITA_VOICE_NP_SHORT.get();
          case "okita_flag_of_sincerity" -> ModSounds.OKITA_SOUJI_SABER_VOICE_FLAG.get();
          case "okita_ichimonji", "okita_kaifuu", "okita_thrust", "okita_downward_slash", "okita_stance_break"
             -> ModSounds.OKITA_SOUJI_SABER_VOICE_ATTACK.get();

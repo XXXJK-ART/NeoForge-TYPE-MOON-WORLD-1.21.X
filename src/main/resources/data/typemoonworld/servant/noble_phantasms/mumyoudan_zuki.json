@@ -14,7 +14,7 @@
       "params": {
         "hits": 3,
         "fixed_damage_per_hit": 150.0,
-        "range": 3.0,
+        "range": 3.2,
         "damage_type": "typemoonworld:okita_mumyoudan_zuki",
         "sure_hit": true,
         "bypass_guard": true,
@@ -22,5 +22,6 @@
       }
     }
   ],
-  "description": "Three thrusts exist at the same point and collapse the target's defense. Weak Constitution only disables this noble phantasm while active."
+  "range": 5.0,
+  "description": "Shukuchi closes to the target before three thrusts collapse its defense. Weak Constitution only disables this noble phantasm while active."
 }

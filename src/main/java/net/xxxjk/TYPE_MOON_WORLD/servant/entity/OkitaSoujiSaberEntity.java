@@ -41,11 +41,26 @@ public final class OkitaSoujiSaberEntity extends ServantEntity {
       super.tick();
       if (!this.level().isClientSide) {
          OkitaSoujiSaberCombatHelper.tickPersistentState(this);
+         LivingEntity target = this.getTarget();
+         if (target != null && target.isAlive() && !this.isRemoved()) {
+            // Navigation can rotate a melee mob toward its retreat/chase path.
+            // Okita's sword combat always presents her front to the target.
+            this.faceToward(target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+         }
       }
    }
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      SasakiKojiroAction action = switch (basicSwordAction++ & 3) {
+         case 1 -> SasakiKojiroAction.UPWARD_SLASH;
+         case 2 -> SasakiKojiroAction.HORIZONTAL_SLASH;
+         case 3 -> SasakiKojiroAction.DOWNWARD_SLASH;
+         default -> SasakiKojiroAction.VERTICAL_SLASH;
+      };
+      // Start the sword motion on the attack attempt, matching Sasaki's NPC
+      // technique presentation even when the target's hurt call is rejected.
+      SwordActionAnimationService.play(this, action);
       boolean hit;
       if (target instanceof LivingEntity living) {
          hit = living.hurt(this.damageSources().indirectMagic(this, this), (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE));
@@ -55,13 +70,6 @@ public final class OkitaSoujiSaberEntity extends ServantEntity {
       if (hit) {
          this.swing(InteractionHand.MAIN_HAND);
          this.triggerSlashAnimation();
-         SasakiKojiroAction action = switch (basicSwordAction) {
-            case 1 -> SasakiKojiroAction.UPWARD_SLASH;
-            case 2 -> SasakiKojiroAction.HORIZONTAL_SLASH;
-            default -> SasakiKojiroAction.DOWNWARD_SLASH;
-         };
-         basicSwordAction = (basicSwordAction + 1) % 3;
-         SwordActionAnimationService.play(this, action);
       }
       return hit;
    }

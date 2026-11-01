@@ -243,7 +243,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (isWeak(player) || OkitaSoujiSaberTechniqueService.isExecuting(player) || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity primary = findEnemyLookTarget(player, OkitaSoujiSaberTechniqueService.MUMYOUDAN_RANGE, 1.8);
+      LivingEntity primary = findEnemyLookTarget(player, OkitaSoujiSaberTechniqueService.MUMYOUDAN_CAST_RANGE, 1.8);
       if (primary == null) {
          return false;
       }

@@ -55,7 +55,7 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_LAST_PRESSURE_REPOSITION = "OkitaLastPressureReposition";
    private static final String SHINSENGUMI_OWNER_TAG = "OkitaShinsengumiOwner";
    private static final int FLAG_POOL_MAX = 13;
-   private static final int SHUKUCHI_COOLDOWN = 10;
+   private static final int SHUKUCHI_COOLDOWN = 60;
    private static final int SHUKUCHI_DURATION = 200;
    private static final double SHUKUCHI_MP_COST = 0.0;
    private static final int MUMYOUDAN_COOLDOWN = 3600;
@@ -64,7 +64,7 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final int FLAG_COOLDOWN = 2400;
    private static final double FLAG_MP_COST = 100.0;
    private static final int FLAG_DURATION = 2400;
-   private static final int ICHIMONJI_COOLDOWN = 60;
+   private static final int ICHIMONJI_COOLDOWN = 45;
    private static final int KAIFUU_COOLDOWN = 90;
    private static final int FEIGNED_RETREAT_COOLDOWN = 140;
    private static final int STANCE_BREAK_COOLDOWN = 180;
@@ -138,17 +138,14 @@ public final class OkitaSoujiSaberCombatHelper {
          return;
       }
       boolean shouldUseMumyoudan = shouldUseMumyoudanZuki(entity, target, distance, targetAge, nearbyEnemies, now);
-      if (shouldUseMumyoudan && distance > 2.8 && distance <= 5.5 && tryShukuchi(entity, target, level, now)) {
-         return;
-      }
+      // Mumyoudan-zuki owns its own Shukuchi approach so the NP reads as one
+      // continuous technique instead of two unrelated skills.
+      if (shouldUseMumyoudan && tryMumyoudanZuki(entity, target, level, now)) return;
       if (distance > 2.6 && distance <= 5.5 && shouldUseShukuchi(entity, target, targetAge, nearbyEnemies)
          && tryShukuchi(entity, target, level, now)) {
          return;
       }
       if (tryMindEye(entity, target, now, false)) {
-         return;
-      }
-      if (distance <= 3.8 && shouldUseMumyoudan && tryMumyoudanZuki(entity, target, level, now)) {
          return;
       }
       if (tryStanceBreak(entity, target, level, now)) {
@@ -237,12 +234,10 @@ public final class OkitaSoujiSaberCombatHelper {
       if (destination == null) {
          return false;
       }
-      SwordActionAnimationService.play(entity, SasakiKojiroAction.PRESENCE_CONCEALMENT);
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - SHUKUCHI_MP_COST));
       data.putLong(TAG_SHUKUCHI_COOLDOWN, now + SHUKUCHI_COOLDOWN);
       data.putLong(TAG_SHUKUCHI_UNTIL, now + SHUKUCHI_DURATION);
       Vec3 start = entity.position();
-      entity.triggerTeleportAnimation();
       entity.teleportTo(destination.x, destination.y, destination.z);
       entity.faceToward(target.position());
       level.sendParticles(ASAGI, start.x, start.y + 0.45, start.z, 16, 0.25, 0.35, 0.25, 0.03);
@@ -258,7 +253,7 @@ public final class OkitaSoujiSaberCombatHelper {
       if (!entity.canUseMumyoudanZuki() || entity.isPerformingAction() || !resource.allowed()
          || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
          || now < data.getLong(TAG_MUMYOUDAN_COOLDOWN) || !entity.hasMasterNoblePhantasmPermission()
-         || !OkitaSoujiSaberTechniqueService.canLandMumyoudanStrike(entity, target, level)) {
+         || !OkitaSoujiSaberTechniqueService.canStartMumyoudan(entity, target, level)) {
          return false;
       }
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
@@ -329,7 +324,13 @@ public final class OkitaSoujiSaberCombatHelper {
       entity.faceToward(target.position());
       entity.setDeltaMovement(direction.x * 1.15, Math.max(0.08, entity.getDeltaMovement().y), direction.z * 1.15);
       entity.hasImpulse = true;
-      SwordActionAnimationService.play(entity, SasakiKojiroAction.VERTICAL_SLASH);
+      SasakiKojiroAction action = switch (entity.getRandom().nextInt(4)) {
+         case 1 -> SasakiKojiroAction.DOWNWARD_SLASH;
+         case 2 -> SasakiKojiroAction.UPWARD_SLASH;
+         case 3 -> SasakiKojiroAction.HORIZONTAL_SLASH;
+         default -> SasakiKojiroAction.VERTICAL_SLASH;
+      };
+      SwordActionAnimationService.play(entity, action);
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.35 + 6.0);
       List<LivingEntity> hit = hitForward(entity, 4.8, 0.68, damage, false);
       spawnSlashLine(level, entity.position().add(0.0, 0.9, 0.0), direction, 4.8);
@@ -390,7 +391,6 @@ public final class OkitaSoujiSaberCombatHelper {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - FEIGNED_RETREAT_MP_COST));
       data.putLong(TAG_FEIGNED_RETREAT_COOLDOWN, now + FEIGNED_RETREAT_COOLDOWN);
       double power = isWeakConstitutionActive(entity) ? 1.65 : 1.25;
-      SwordActionAnimationService.play(entity, SasakiKojiroAction.TRANSPARENCY);
       entity.setDeltaMovement(away.normalize().scale(power).add(0.0, 0.18, 0.0));
       entity.hasImpulse = true;
       entity.fallDistance = 0.0F;
@@ -597,7 +597,6 @@ public final class OkitaSoujiSaberCombatHelper {
       data.putLong(TAG_SHUKUCHI_COOLDOWN, now + SHUKUCHI_COOLDOWN);
       data.putLong(TAG_SHUKUCHI_UNTIL, now + SHUKUCHI_DURATION);
       Vec3 start = entity.position();
-      entity.triggerTeleportAnimation();
       entity.teleportTo(destination.x, destination.y, destination.z);
       entity.faceToward(target.position());
       level.sendParticles(ASAGI, start.x, start.y + 0.45, start.z, 12, 0.25, 0.35, 0.25, 0.03);

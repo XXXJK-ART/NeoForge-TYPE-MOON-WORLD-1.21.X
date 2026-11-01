@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
@@ -8,6 +9,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
@@ -21,7 +23,11 @@ import org.joml.Vector3f;
 
 public final class OkitaSoujiSaberTechniqueService {
    public static final int MUMYOUDAN_WINDUP_TICKS = 10;
-   public static final double MUMYOUDAN_RANGE = 3.0;
+   /** Effective distance for each thrust after Okita has closed the gap. */
+   public static final double MUMYOUDAN_RANGE = 3.2;
+   /** The noble phantasm can select a target before its Shukuchi approach. */
+   public static final double MUMYOUDAN_CAST_RANGE = 5.0;
+   public static final int MUMYOUDAN_SHUKUCHI_TICKS = 10;
    // Source peaks: 0.2083, 0.3333, 0.4583 seconds, baked into 14 motion ticks.
    // Round up so server damage never precedes the corresponding sword extension.
    private static final int[] MUMYOUDAN_STRIKE_TICKS = {5, 7, 10};
@@ -47,29 +53,62 @@ public final class OkitaSoujiSaberTechniqueService {
 
    public static boolean beginMumyoudan(LivingEntity attacker, LivingEntity target, Runnable afterTechnique) {
       if (attacker == null || !(attacker.level() instanceof ServerLevel level) || isExecuting(attacker)
-         || !canLandMumyoudanStrike(attacker, target, level)) return false;
+         || !canStartMumyoudan(attacker, target, level)) return false;
+      boolean needsShukuchi = attacker.distanceTo(target) > MUMYOUDAN_RANGE;
+      int approachTicks = needsShukuchi ? MUMYOUDAN_SHUKUCHI_TICKS : 0;
       String token = java.util.UUID.randomUUID().toString();
       attacker.getPersistentData().putString(EXECUTION_TOKEN, token);
       attacker.getPersistentData().putLong(EXECUTION_UNTIL,
-         level.getGameTime() + MUMYOUDAN_WINDUP_TICKS + SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI.durationTicks());
-      SwordActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_WINDUP);
-      TYPE_MOON_WORLD.queueServerWork(MUMYOUDAN_WINDUP_TICKS, () -> {
+         level.getGameTime() + approachTicks + MUMYOUDAN_WINDUP_TICKS
+            + SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI.durationTicks());
+      if (needsShukuchi) {
+         TYPE_MOON_WORLD.queueServerWork(approachTicks, () -> {
+            if (!canContinue(attacker, level, token) || !canStartMumyoudan(attacker, target, level)) {
+               cancel(attacker);
+               return;
+            }
+            Vec3 destination = findMumyoudanPosition(attacker, target);
+            if (destination == null) {
+               cancel(attacker);
+               return;
+            }
+            Vec3 start = attacker.position();
+            attacker.teleportTo(destination.x, destination.y, destination.z);
+            faceToward(attacker, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+            playShukuchiEffects(level, attacker, start, destination);
+            startMumyoudanAnimation(attacker, level);
+         });
+      } else {
+         SwordActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_WINDUP);
+      }
+      TYPE_MOON_WORLD.queueServerWork(approachTicks + MUMYOUDAN_WINDUP_TICKS, () -> {
          if (!canContinue(attacker, level, token)) return;
          SwordActionAnimationService.play(attacker, SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI);
-         level.playSound(null, attacker.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.25F, 1.55F);
+         SoundSource category = attacker instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+         level.playSound(null, attacker.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, category, 1.25F, 1.55F);
       });
       for (int i = 0; i < MUMYOUDAN_STRIKE_TICKS.length; i++) {
          int strike = i;
-         TYPE_MOON_WORLD.queueServerWork(MUMYOUDAN_WINDUP_TICKS + MUMYOUDAN_STRIKE_TICKS[i], () -> {
+         TYPE_MOON_WORLD.queueServerWork(approachTicks + MUMYOUDAN_WINDUP_TICKS + MUMYOUDAN_STRIKE_TICKS[i], () -> {
             if (canContinue(attacker, level, token)) strikeMumyoudanPoint(attacker, target, level, strike);
          });
       }
-      TYPE_MOON_WORLD.queueServerWork(MUMYOUDAN_WINDUP_TICKS + SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI.durationTicks(), () -> {
+      TYPE_MOON_WORLD.queueServerWork(approachTicks + MUMYOUDAN_WINDUP_TICKS
+         + SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI.durationTicks(), () -> {
          if (!canContinue(attacker, level, token)) return;
          cancel(attacker);
          afterTechnique.run();
       });
       return true;
+   }
+
+   /** Start range includes the Shukuchi gap closer; each hit still uses the shorter strike range. */
+   public static boolean canStartMumyoudan(LivingEntity attacker, LivingEntity target, ServerLevel level) {
+      return attacker != null && target != null && attacker.isAlive() && !attacker.isRemoved()
+         && target.isAlive() && !target.isRemoved() && attacker.level() == level && target.level() == level
+         && target != attacker && !attacker.isAlliedTo(target) && !target.isAlliedTo(attacker)
+         && (!(attacker instanceof ServerPlayer player) || !ServantMasterTargeting.isContractMaster(player, target))
+         && attacker.distanceTo(target) <= MUMYOUDAN_CAST_RANGE && attacker.hasLineOfSight(target);
    }
 
    private static boolean canContinue(LivingEntity attacker, ServerLevel level, String token) {
@@ -88,6 +127,61 @@ public final class OkitaSoujiSaberTechniqueService {
          && target != attacker && !attacker.isAlliedTo(target) && !target.isAlliedTo(attacker)
          && (!(attacker instanceof ServerPlayer player) || !ServantMasterTargeting.isContractMaster(player, target))
          && attacker.distanceTo(target) <= MUMYOUDAN_RANGE && attacker.hasLineOfSight(target);
+   }
+
+   private static void startMumyoudanAnimation(LivingEntity attacker, ServerLevel level) {
+      SwordActionAnimationService.play(attacker, SasakiKojiroAction.TSUBAME_WINDUP);
+      SoundSource category = attacker instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+      level.playSound(null, attacker.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, category, 1.25F, 1.55F);
+   }
+
+   private static void playShukuchiEffects(ServerLevel level, LivingEntity attacker, Vec3 start, Vec3 destination) {
+      SoundSource category = attacker instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+      level.sendParticles(ParticleTypes.END_ROD, start.x, start.y + 0.45, start.z, 16, 0.25, 0.35, 0.25, 0.03);
+      level.sendParticles(ParticleTypes.END_ROD, destination.x, destination.y + 0.45, destination.z, 20, 0.25, 0.35, 0.25, 0.03);
+      level.playSound(null, BlockPos.containing(destination), SoundEvents.ENDERMAN_TELEPORT, category, 0.85F, 1.75F);
+   }
+
+   private static Vec3 findMumyoudanPosition(LivingEntity attacker, LivingEntity target) {
+      Vec3 towardTarget = target.position().subtract(attacker.position()).multiply(1.0, 0.0, 1.0);
+      if (towardTarget.lengthSqr() < 1.0E-4) towardTarget = attacker.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (towardTarget.lengthSqr() < 1.0E-4) towardTarget = new Vec3(0.0, 0.0, 1.0);
+      towardTarget = towardTarget.normalize();
+      Vec3 targetForward = target.getLookAngle().multiply(1.0, 0.0, 1.0);
+      if (targetForward.lengthSqr() < 1.0E-4) targetForward = towardTarget;
+      targetForward = targetForward.normalize();
+      Vec3 side = new Vec3(-towardTarget.z, 0.0, towardTarget.x);
+      Vec3[] candidates = {
+         target.position().subtract(towardTarget.scale(1.25)),
+         target.position().add(targetForward.scale(1.25)),
+         target.position().subtract(targetForward.scale(1.25)),
+         target.position().subtract(towardTarget.scale(2.0)),
+         target.position().subtract(towardTarget.scale(1.25)).add(side.scale(0.7)),
+         target.position().subtract(towardTarget.scale(1.25)).subtract(side.scale(0.7))
+      };
+      for (Vec3 candidate : candidates) {
+         for (int y = 1; y >= -2; y--) {
+            Vec3 safe = new Vec3(candidate.x, candidate.y + y, candidate.z);
+            AABB moved = attacker.getBoundingBox().move(safe.subtract(attacker.position()));
+            if (!attacker.level().noCollision(attacker, moved)) continue;
+            BlockPos below = BlockPos.containing(safe.x, safe.y - 0.08, safe.z);
+            if (attacker.level().getBlockState(below).isFaceSturdy(attacker.level(), below, net.minecraft.core.Direction.UP)) {
+               return safe;
+            }
+         }
+      }
+      return null;
+   }
+
+   private static void faceToward(LivingEntity attacker, Vec3 point) {
+      Vec3 diff = point.subtract(attacker.getEyePosition());
+      double horizontal = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
+      float yaw = (float)(Math.toDegrees(Math.atan2(diff.z, diff.x)) - 90.0);
+      float pitch = (float)(-Math.toDegrees(Math.atan2(diff.y, horizontal)));
+      attacker.setYRot(yaw);
+      attacker.setXRot(pitch);
+      attacker.setYHeadRot(yaw);
+      attacker.yBodyRot = yaw;
    }
 
    public static boolean strikeMumyoudanPoint(LivingEntity attacker, LivingEntity target, ServerLevel level, int strikeIndex) {

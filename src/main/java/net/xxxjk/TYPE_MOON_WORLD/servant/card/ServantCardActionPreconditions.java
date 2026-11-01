@@ -29,7 +29,7 @@ public final class ServantCardActionPreconditions {
          case "fanatic_heartbeat" -> 5.0;
          case "fanatic_computer" -> 2.0;
          case "rule_breaker" -> 5.0;
-         case "okita_mumyoudan_zuki" -> 3.0;
+         case "okita_mumyoudan_zuki" -> 5.0;
          case "shadow_step" -> 8.0;
          case "shadow_lunge" -> 6.5;
          case "knife_feint" -> 9.0;
