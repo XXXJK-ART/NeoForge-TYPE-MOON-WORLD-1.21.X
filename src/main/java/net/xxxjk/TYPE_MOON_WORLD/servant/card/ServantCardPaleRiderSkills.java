@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderEntityIndex;
@@ -346,6 +347,8 @@ public final class ServantCardPaleRiderSkills {
       HitResult hit = player.pick(16.0, 0.0F, false);
       if (!(hit instanceof BlockHitResult block)) return false;
       BlockPos pos = block.getBlockPos().relative(block.getDirection());
+      if (!player.level().noCollision(player, player.getBoundingBox().move(
+         pos.getX() + 0.5 - player.getX(), pos.getY() - player.getY(), pos.getZ() + 0.5 - player.getZ()))) return false;
       player.teleportTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
       return true;
    }
@@ -547,17 +550,16 @@ public final class ServantCardPaleRiderSkills {
       long now = level.getGameTime();
       if (now - player.getPersistentData().getLong(LAST_CALAMITY_TICK_TAG) < 20L) return;
       player.getPersistentData().putLong(LAST_CALAMITY_TICK_TAG, now);
-      if (!vars.servantCardState().hasMana(10.0)) {
+      if (!ServantCardManaService.consumeSilently(player, vars, PaleRiderCombatRules.CALAMITY_UPKEEP_MP_PER_SECOND)) {
          toggleCalamity(player);
          return;
       }
-      vars.servantCardState().setMana(vars.servantCardState().mana() - 10.0);
       List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, domainAnchor.getBoundingBox().inflate(25.0),
          target -> target != player && target != domainAnchor && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));
       try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
-         enemy.hurt(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player), 5.0F);
+         enemy.hurt(PaleRiderDamageTypes.noblePhantasm(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player)), 5.0F);
          PaleRiderInfectionService.infect(enemy, player, 1);
       }
       }

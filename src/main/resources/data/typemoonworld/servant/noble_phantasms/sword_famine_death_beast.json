@@ -4,11 +4,12 @@
   "display_name_zh": "剑、饥馑、死、兽",
   "rank": "A",
   "type": "anti_army",
-  "mp_cost": 150,
-  "cooldown_ticks": 2400,
+  "range": 25,
+  "mp_cost": 300,
+  "cooldown_ticks": 3600,
   "windup_ticks": 60,
   "duration_ticks": 0,
   "effects": [],
-  "description": "A moving plague domain sustained for 20 MP per second while an infected enemy remains inside.",
-  "description_zh": "以每秒20点魔力维持、随苍白骑士移动，并要求范围内持续存在感染敌人的瘟疫结界。"
+  "description": "A moving twenty-five-block calamity domain sustained for 10 MP per second until dismissed or its mana supply fails.",
+  "description_zh": "随领域锚点移动的二十五格四灾领域，每秒消耗10 MP，主动关闭或魔力供应不足时结束。"
 }

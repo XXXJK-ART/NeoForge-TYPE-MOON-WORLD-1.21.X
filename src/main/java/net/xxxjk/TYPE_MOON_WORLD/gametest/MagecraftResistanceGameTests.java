@@ -277,7 +277,7 @@ public final class MagecraftResistanceGameTests {
    }
 
    @GameTest(template = "ancient_temple", timeoutTicks = 30)
-   public static void characterOverridesMatchCardsAndNpc(GameTestHelper h) {
+   public static void characterResistanceMatchesCardsAndNpc(GameTestHelper h) {
       var player = h.makeMockServerPlayerInLevel();
       for (String id : new String[]{"arash", "pale_rider"}) {
          var npc = net.xxxjk.TYPE_MOON_WORLD.servant.entity.BuiltinServantEntityFactory.create(h.getLevel(),
@@ -286,8 +286,9 @@ public final class MagecraftResistanceGameTests {
          npc.setPos(h.absolutePos(new BlockPos(4, 3, 4)).getCenter());
          h.getLevel().addFreshEntity(npc);
          h.assertTrue(net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.transform(player, id), "card transform failed: " + id);
-         close(h, MagicResistanceHelper.getDamageReduction(player), 0.20F, id + " card override lost");
-         close(h, MagicResistanceHelper.getDamageReduction(npc), 0.20F, id + " NPC override lost");
+         float expected = "arash".equals(id) ? 0.20F : MagicResistanceHelper.damageReductionForRank(MagicResistanceRank.C);
+         close(h, MagicResistanceHelper.getDamageReduction(player), expected, id + " card resistance differs");
+         close(h, MagicResistanceHelper.getDamageReduction(npc), expected, id + " NPC resistance differs");
          close(h, MagicResistanceHelper.getDebuffResistance(player), MagicResistanceHelper.getDebuffResistance(npc), id + " effect resistance differs");
          npc.discard();
       }

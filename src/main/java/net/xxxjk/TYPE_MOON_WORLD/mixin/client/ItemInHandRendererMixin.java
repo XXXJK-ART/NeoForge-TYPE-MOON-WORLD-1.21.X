@@ -54,7 +54,8 @@ public abstract class ItemInHandRendererMixin {
       int combinedLight,
       CallbackInfo ci
    ) {
-      if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+      if (ServantCardConcealmentClient.isShadowHassanMaskOnly(player)
+         || ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
          ci.cancel();
          return;
       }

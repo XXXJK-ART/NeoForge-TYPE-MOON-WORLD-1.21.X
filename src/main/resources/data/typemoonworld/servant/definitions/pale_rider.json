@@ -4,11 +4,12 @@
   "display_name": "Pale Rider",
   "display_name_zh": "苍白骑士",
   "class_type": "rider",
-  "faction": "earth",
+  "faction": "heaven",
   "traits": [
     "servant",
     "rider",
-    "mounted",
+    "riding",
+    "heaven_or_earth_servant",
     "genderless",
     "conceptual_existence",
     "apocalypse_horseman",
@@ -19,16 +20,17 @@
     "balanced"
   ],
   "parameters": {
-    "endurance": "B",
+    "endurance": "A",
     "endurance_plus": false,
     "strength": "E",
     "strength_plus": false,
-    "agility": "A",
+    "agility": "B",
     "agility_plus": false,
     "magic": "A",
     "magic_plus": false,
     "luck": "C",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "EX"
   },
   "model": {
     "geometry": "typemoonworld:geo/empty.geo.json",
@@ -53,7 +55,7 @@
     ]
   },
   "skills": [
-    "magic_resistance_c_pale_rider",
+    "magic_resistance_c",
     "riding_ex_pale_rider",
     "infection_a_pale_rider",
     "innocent_world_ex_pale_rider",

@@ -6,7 +6,7 @@
   "type": "passive",
   "mp_cost": 0,
   "cooldown_ticks": 0,
-  "duration_ticks": 600,
+  "duration_ticks": 100,
   "effects": [],
   "description": "Spreads a five-level plague through rat swarms and infected victims.",
   "description_zh": "通过鼠群与感染者传播最多五层的瘟疫。"

@@ -45,6 +45,10 @@ final class ServantCardConcealmentHelper {
       clearEnemyAggro(player);
    }
 
+   static void clearEnemyAggroForMaskOnly(ServerPlayer player) {
+      if (player.tickCount % AGGRO_CLEAR_INTERVAL == 0) clearEnemyAggro(player);
+   }
+
    @SubscribeEvent
    public static void hideEffectParticles(EffectParticleModificationEvent event) {
       if (!(event.getEntity() instanceof Player player) || !player.hasEffect(MobEffects.INVISIBILITY)) return;

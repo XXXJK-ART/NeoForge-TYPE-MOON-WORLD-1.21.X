@@ -53,7 +53,19 @@ public final class ServantConcealment {
          || player.isInvisible() && !player.getPersistentData().getBoolean(TAG_MANAGED_INVISIBLE);
    }
 
+   public static boolean isPerfectlyConcealedForObservers(LivingEntity entity) {
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+            return ServantCardShadowHassanSkills.isPassiveConcealed(player);
+         }
+      }
+      return isFullyConcealed(entity);
+   }
+
    public static boolean suppressesAggroFrom(LivingEntity entity, LivingEntity observer) {
+      if (entity instanceof ServerPlayer player && ServantCardShadowHassanSkills.isActiveConcealment(player)
+         && !ServantCardShadowHassanSkills.isPassiveConcealed(player)) return false;
       return isFullyConcealed(entity) && (!(observer instanceof ServantEntity) || rankOf(entity).isPerfect());
    }
 
@@ -140,6 +152,14 @@ public final class ServantConcealment {
    }
 
    public static ConcealmentRank rankOf(LivingEntity entity) {
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+            if (ServantCardShadowHassanSkills.isPassiveConcealed(player)) return ConcealmentRank.EX;
+            return ServantCardShadowHassanSkills.isActiveConcealment(player)
+               ? ConcealmentRank.A_PLUS : ConcealmentRank.EX;
+         }
+      }
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
       ConcealmentRank best = ConcealmentRank.NONE;
       if (definition != null) {
@@ -199,11 +219,19 @@ public final class ServantConcealment {
       if (entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player)) return true;
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
       if (definition != null && ("shadow_hassan".equals(definition.id()) || "li_shuwen".equals(definition.id()))) {
+         if ("shadow_hassan".equals(definition.id()) && entity instanceof ServerPlayer player) {
+            return !ServantCardShadowHassanSkills.isActiveConcealment(player)
+               || ServantCardShadowHassanSkills.isPassiveConcealed(player);
+         }
          return true;
       }
       if (entity instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return "shadow_hassan".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id);
+         if ("shadow_hassan".equals(vars.servant_card_id)) {
+            return player instanceof ServerPlayer serverPlayer
+               && !ServantCardShadowHassanSkills.isActiveConcealment(serverPlayer);
+         }
+         return "li_shuwen".equals(vars.servant_card_id);
       }
       return false;
    }
@@ -227,6 +255,10 @@ public final class ServantConcealment {
    private static void manageVanillaInvisibility(LivingEntity entity, boolean concealed) {
       var data = entity.getPersistentData();
       if (concealed) {
+         if (entity instanceof ServerPlayer player) {
+            var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) return;
+         }
          if (!entity.isInvisible()) {
             data.putBoolean(TAG_MANAGED_INVISIBLE, true);
             entity.setInvisible(true);

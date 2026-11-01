@@ -8,7 +8,10 @@ public final class PaleRiderCombatRules {
    public static final int DEATH_PULSE_COOLDOWN_TICKS = 10 * 20;
    public static final int MINOR_SKILL_LOCK_TICKS = 30;
    public static final double UNDERWORLD_CAST_MP_COST = 150.0;
+   public static final int UNDERWORLD_COOLDOWN_TICKS = 2400;
    public static final double CALAMITY_CAST_MP_COST = 300.0;
+   public static final int CALAMITY_COOLDOWN_TICKS = 3600;
+   public static final String NOBLE_PHANTASM_ID = "sword_famine_death_beast";
    public static final double CALAMITY_UPKEEP_MP_PER_SECOND = 10.0;
    public static final double ASH_STEP_MP_COST = 8.0;
    public static final double PLAGUE_RUSH_MP_COST = 12.0;

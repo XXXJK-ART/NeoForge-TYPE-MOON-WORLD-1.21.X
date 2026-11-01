@@ -42,7 +42,9 @@ class PaleRiderCombatRulesTest {
    @Test
    void domainsUseConfiguredManaCosts() {
       assertEquals(150.0, PaleRiderCombatRules.UNDERWORLD_CAST_MP_COST);
+      assertEquals(2400, PaleRiderCombatRules.UNDERWORLD_COOLDOWN_TICKS);
       assertEquals(300.0, PaleRiderCombatRules.CALAMITY_CAST_MP_COST);
+      assertEquals(3600, PaleRiderCombatRules.CALAMITY_COOLDOWN_TICKS);
       assertEquals(10.0, PaleRiderCombatRules.CALAMITY_UPKEEP_MP_PER_SECOND);
    }
 }

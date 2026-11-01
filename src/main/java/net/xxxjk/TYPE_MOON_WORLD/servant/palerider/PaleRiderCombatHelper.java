@@ -283,7 +283,7 @@ public final class PaleRiderCombatHelper {
       rider.setCurrentMp(rider.getCurrentMp() - PaleRiderCombatRules.UNDERWORLD_CAST_MP_COST);
       rider.getPersistentData().putBoolean(TAG_UNDERWORLD_ACTIVE, true);
       rider.getPersistentData().remove(TAG_UNDERWORLD_UNTIL);
-      rider.getPersistentData().putLong(TAG_UNDERWORLD_COOLDOWN, now + 2400L);
+      rider.getPersistentData().putLong(TAG_UNDERWORLD_COOLDOWN, now + PaleRiderCombatRules.UNDERWORLD_COOLDOWN_TICKS);
       VFXServerEffects.spawn(level, "pale_rider_underworld_open", rider, 64.0);
       int slots = Math.max(0, SoulLibrary.MAX_MANIFESTED_SOULS - countOwned(level, rider, SoulEchoEntity.class));
       List<SoulSnapshot> souls = rider.getSoulLibrary().takeStrongest(slots);
@@ -336,7 +336,7 @@ public final class PaleRiderCombatHelper {
       CompoundTag data = rider.getPersistentData();
       data.putBoolean(TAG_CALAMITY_ACTIVE, true);
       PaleRiderCorruptionService.begin(rider);
-      data.putLong(TAG_CALAMITY_COOLDOWN, now + 2400L);
+      data.putLong(TAG_CALAMITY_COOLDOWN, now + PaleRiderCombatRules.CALAMITY_COOLDOWN_TICKS);
       data.putBoolean(calamityEnabledTag(ApocalypseHorsemanEntity.Calamity.SWORD), true);
       data.putBoolean(calamityEnabledTag(ApocalypseHorsemanEntity.Calamity.FAMINE), true);
       data.putBoolean(calamityEnabledTag(ApocalypseHorsemanEntity.Calamity.BEAST), true);
@@ -364,7 +364,7 @@ public final class PaleRiderCombatHelper {
       try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
          if (isEnabled(rider, ApocalypseHorsemanEntity.Calamity.FAMINE)) {
-            enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.FAMINE, rider), 5.0F);
+            enemy.hurt(PaleRiderDamageTypes.noblePhantasm(rider.damageSources().source(PaleRiderDamageTypes.FAMINE, rider)), 5.0F);
             applyTimedAttackPenalty(enemy, FAMINE_ATTACK_ID, -0.25, now + 30L);
          }
          if (judgeDeath && PaleRiderInfectionService.isInfected(enemy)) {
@@ -373,10 +373,10 @@ public final class PaleRiderCombatHelper {
                if (ArtoriaPendragonCombatHelper.tryProtectWithAvalon(enemy)) {
                   continue;
                }
-               enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider), Math.max(1000.0F, enemy.getMaxHealth() * 4.0F));
+               enemy.hurt(PaleRiderDamageTypes.noblePhantasm(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider)), Math.max(1000.0F, enemy.getMaxHealth() * 4.0F));
                if (enemy.isAlive()) enemy.setHealth(0.0F);
             } else {
-               enemy.hurt(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider), 100.0F);
+               enemy.hurt(PaleRiderDamageTypes.noblePhantasm(rider.damageSources().source(PaleRiderDamageTypes.CONCEPT_DEATH, rider)), 100.0F);
             }
          }
       }

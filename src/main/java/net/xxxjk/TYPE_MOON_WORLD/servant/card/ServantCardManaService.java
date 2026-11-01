@@ -50,6 +50,10 @@ public final class ServantCardManaService {
       if (!card.transformed()) {
          return;
       }
+      if ("shadow_hassan".equals(card.id())) {
+         if (card.manaRegen() != 0.0) card.setManaRegen(0.0);
+         return;
+      }
       if (card.maxMana() <= 0.0) {
          card.setMaxMana(maxManaFor(card.id()));
       }

@@ -22,6 +22,11 @@ public final class PaleRiderDamageTypes {
    private PaleRiderDamageTypes() {
    }
 
+   public static DamageSource noblePhantasm(DamageSource source) {
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(
+         source, PaleRiderCombatRules.NOBLE_PHANTASM_ID);
+   }
+
    public static boolean isInfection(DamageSource source) {
       return source != null && source.is(INFECTION);
    }

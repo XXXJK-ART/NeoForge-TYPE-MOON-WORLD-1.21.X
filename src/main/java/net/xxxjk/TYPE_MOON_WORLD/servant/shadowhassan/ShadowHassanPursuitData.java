@@ -196,8 +196,9 @@ public final class ShadowHassanPursuitData extends SavedData {
          vars.servant_card_death_release = false;
          vars.syncPlayerVariables(player);
       }
-      DamageSource source = new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
-         .getHolderOrThrow(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY));
+      DamageSource source = ShadowHassanDamageSource.withoutAttribution(new DamageSource(
+         level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+            .getHolderOrThrow(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY)));
       target.invulnerableTime = 0;
       target.hurt(source, Float.MAX_VALUE);
       if (target.isAlive()) {

@@ -531,6 +531,20 @@ public final class ServantCardTransformManager {
       if (!vars.servantCardState().transformed() || slot < -1 || slot > 9) {
          return false;
       }
+      if ("shadow_hassan".equals(vars.servantCardState().id()) && !ServantCardShadowHassanSkills.isPossessing(player)) {
+         if (slot == 0 && ServantCardShadowHassanSkills.isActiveConcealment(player)) {
+            return ServantCardShadowHassanSkills.toggleConcealment(player);
+         }
+         if (slot == 1) return ServantCardShadowHassanSkills.performShadowLantern(player, vars);
+      }
+      if ("shadow_hassan".equals(vars.servantCardState().id())
+         && ServantCardShadowHassanSkills.blocksPlayerInput(player) && slot != 2 && slot != 8) {
+         return false;
+      }
+      if ("shadow_hassan".equals(vars.servantCardState().id())
+         && slot == 8 && ServantCardShadowHassanSkills.isPossessing(player)) {
+         return ServantCardShadowHassanSkills.performShadowPossession(player);
+      }
       if ("sasaki_kojiro".equals(vars.servantCardState().id())
          && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.hasSwordInMainHand(player)) {
          ServantCardSkillAction sasakiAction = actionFor(vars.servantCardState().id(), slot, player.isCrouching());
@@ -636,6 +650,11 @@ public final class ServantCardTransformManager {
       if (action == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.empty_slot"), true);
          return false;
+      }
+      if (slot == 2 && "shadow_hassan".equals(vars.servantCardState().id())
+         && (ServantCardShadowHassanSkills.isPossessing(player)
+            || ServantCardShadowHassanSkills.hasPossessionTarget(player))) {
+         return ServantCardShadowHassanSkills.performShadowWandering(player);
       }
       if ("hassan_concealment".equals(action.effectId())
          && net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.enabled(player)) {
@@ -1920,9 +1939,10 @@ public final class ServantCardTransformManager {
          case "iskandar_charge" -> { if (!ServantCardIskandarSkills.performCharge(player)) return false; }
          case "iskandar_gordius_wheel" -> { if (!ServantCardIskandarSkills.performGordiusWheel(player)) return false; }
          case "iskandar_ionioi_hetairoi" -> { if (!ServantCardIskandarSkills.performIonioiHetairoi(player, vars)) return false; }
-         case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.toggleConcealment(player)) return false; }
+         case "shadow_hassan_concealment" -> { if (!ServantCardShadowHassanSkills.performActiveConcealment(player)) return false; }
          case "shadow_hassan_lantern" -> { if (!ServantCardShadowHassanSkills.performShadowLantern(player, vars)) return false; }
          case "shadow_hassan_wandering" -> { if (!ServantCardShadowHassanSkills.performShadowWandering(player)) return false; }
+         case "shadow_hassan_possession" -> { if (!ServantCardShadowHassanSkills.performShadowPossession(player)) return false; }
          case "shadow_hassan_ambush" -> { if (!ServantCardShadowHassanSkills.performShadowAmbush(player)) return false; }
          case "shadow_hassan_bind" -> { if (!ServantCardShadowHassanSkills.performShadowBind(player)) return false; }
          case "shadow_hassan_flurry" -> { if (!ServantCardShadowHassanSkills.performShadowFlurry(player)) return false; }

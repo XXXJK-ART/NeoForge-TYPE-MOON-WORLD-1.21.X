@@ -1,11 +1,11 @@
 {
   "rank": "A",
   "id": "shadow_wandering_a",
-  "display_name": "Shadow Wandering A",
+  "display_name": "Shadow Wading A",
   "display_name_zh": "\u5e7d\u5f0b A",
-  "type": "passive",
+  "type": "active",
   "mp_cost": 0,
-  "cooldown_ticks": 40,
+  "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": [{"effect_type": "shadow_movement", "params": {"instant_death_immunity": true}}]
+  "effects": [{"effect_type": "shadow_point_or_possession", "params": {"possession_range": 18, "shadow_step_max_distance": 12, "search_radius": 5, "mana_cost": 15, "shadow_step_cooldown_ticks": 100}}]
 }

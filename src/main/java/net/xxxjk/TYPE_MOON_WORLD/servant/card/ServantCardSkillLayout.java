@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
+
 public final class ServantCardSkillLayout {
    private ServantCardSkillLayout() {
    }
@@ -123,14 +125,17 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "shadow_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment EX", "shadow_hassan_concealment", 0.0, 0);
-            case 1 -> new ServantCardSkillAction("Shadow Lantern A", "shadow_hassan_lantern", 0.0, 200);
-            case 2 -> new ServantCardSkillAction("Shadow Wandering A", "shadow_hassan_wandering", 15.0, 100);
+            case 0 -> new ServantCardSkillAction("气息遮断 EX", "shadow_hassan_concealment",
+               ServantCardShadowHassanSkills.ACTIVE_CONCEALMENT_MANA_COST,
+               ServantCardShadowHassanSkills.ACTIVE_CONCEALMENT_COOLDOWN_TICKS);
+            case 1 -> new ServantCardSkillAction("影灯笼 A", "shadow_hassan_lantern", 0.0, 0);
+            case 2 -> new ServantCardSkillAction("幽弋 A", "shadow_hassan_wandering", 15.0, 100);
             case 3 -> new ServantCardSkillAction("Shadow Ambush", "shadow_hassan_ambush", 20.0, 120);
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
             case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 300);
+            case 8 -> new ServantCardSkillAction("影中附身", "shadow_hassan_possession", 0.0, 0);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };
@@ -251,11 +256,11 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction("Command", "pale_rider_command", 0.0, 20);
             case 3 -> new ServantCardSkillAction("Perfect Concealment", "pale_rider_stealth", 12.0, 100);
             case 4 -> new ServantCardSkillAction("Ash Transfer", "pale_rider_transfer", 20.0, 100);
-            case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", 12.0, 140);
-            case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", 8.0, 100);
-            case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", 18.0, 200);
-            case 8 -> new ServantCardSkillAction("Guidance of the Underworld", "pale_rider_underworld", 150.0, 2400);
-            case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
+            case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", PaleRiderCombatRules.PLAGUE_RUSH_MP_COST, PaleRiderCombatRules.PLAGUE_RUSH_COOLDOWN_TICKS);
+            case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", PaleRiderCombatRules.ASH_STEP_MP_COST, PaleRiderCombatRules.ASH_STEP_COOLDOWN_TICKS);
+            case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", PaleRiderCombatRules.DEATH_PULSE_MP_COST, PaleRiderCombatRules.DEATH_PULSE_COOLDOWN_TICKS);
+            case 8 -> new ServantCardSkillAction("Guidance of the Underworld", "pale_rider_underworld", PaleRiderCombatRules.UNDERWORLD_CAST_MP_COST, PaleRiderCombatRules.UNDERWORLD_COOLDOWN_TICKS);
+            case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", PaleRiderCombatRules.CALAMITY_CAST_MP_COST, PaleRiderCombatRules.CALAMITY_COOLDOWN_TICKS);
             default -> null;
          };
          case "hundred_faces_hassan" -> switch (slot) {
