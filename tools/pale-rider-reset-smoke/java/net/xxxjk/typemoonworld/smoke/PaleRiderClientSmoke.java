@@ -1,7 +1,10 @@
 package net.xxxjk.typemoonworld.smoke;
 
 import java.io.File;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.ParticleStatus;
+import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -52,6 +55,8 @@ public final class PaleRiderClientSmoke {
             mc.options.pauseOnLostFocus = false;
             mc.options.renderDistance().set(3);
             mc.options.simulationDistance().set(4);
+            mc.options.particles().set(ParticleStatus.ALL);
+            mc.getWindow().setWindowed(1280, 720);
             if (new File(mc.gameDirectory, "saves/" + WORLD + "/level.dat").isFile())
                mc.createWorldOpenFlows().openWorld(WORLD, () -> { throw new IllegalStateException("QA save failed"); });
             else mc.createWorldOpenFlows().createFreshLevel(WORLD,
@@ -75,8 +80,14 @@ public final class PaleRiderClientSmoke {
                   player.teleportTo(0.5, 101, 0.5);
                   if (player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed)
                      ServantCardTransformManager.release(player, false);
+                  for (var old : level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                     player.getBoundingBox().inflate(40.0), entity -> entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderEntity
+                        || entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob
+                        || entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.PaleRiderCrowEntity)) old.discard();
+                  player.setYRot(0.0F);
+                  player.setXRot(0.0F);
                   require(ServantCardTransformManager.transform(player, "pale_rider"), "card transform failed");
-                  var rider = ModEntities.PALE_RIDER.get().spawn(level, new BlockPos(5, 101, 0), MobSpawnType.COMMAND);
+                  var rider = ModEntities.PALE_RIDER.get().spawn(level, new BlockPos(-3, 101, 0), MobSpawnType.COMMAND);
                   require(rider != null, "NPC spawn failed");
                   rider.setNoAi(true);
                   close(player.getMaxHealth(), 500.0, "card health");
@@ -87,17 +98,35 @@ public final class PaleRiderClientSmoke {
                      MagicResistanceHelper.getDamageReduction(player), "NPC shared C resistance");
                   var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
                   vars.servantCardState().setMana(500.0);
-                  require(ServantCardPaleRiderSkills.spawn(player, 0), "rat spawn failed");
-                  require(ServantCardPaleRiderSkills.spawn(player, 1), "crow spawn failed");
-                  require(ServantCardPaleRiderSkills.toggleUnderworld(player), "underworld failed");
-                  require(ServantCardPaleRiderSkills.toggleCalamity(player), "calamity failed");
                   passed = true;
                } catch (Throwable error) { failure = error; }
             });
          }
-         if (passed && ticks >= 80) {
+         if (passed && ticks == 40) {
+            mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+            mc.options.hideGui = true;
+         }
+         if (passed && ticks >= 55 && ticks <= 79 && (ticks - 55) % 8 == 0) {
+            File directory = new File(mc.gameDirectory, "../pale-rider-particle-captures");
+            directory.mkdirs();
+            Screenshot.grab(directory, "pale-rider-body-" + ticks + ".png", mc.getMainRenderTarget(), ignored -> {});
+         }
+         if (passed && ticks == 85) {
+            mc.getSingleplayerServer().execute(() -> {
+               try {
+                  var player = mc.getSingleplayerServer().getPlayerList().getPlayer(mc.player.getUUID());
+                  require(!player.getPersistentData().contains("TypeMoonConcealmentNextParticleTick"),
+                     "Pale Rider still schedules intermittent concealment leaks");
+                  require(ServantCardPaleRiderSkills.spawn(player, 0), "rat spawn failed");
+                  require(ServantCardPaleRiderSkills.spawn(player, 1), "crow spawn failed");
+                  require(ServantCardPaleRiderSkills.toggleUnderworld(player), "underworld failed");
+                  require(ServantCardPaleRiderSkills.toggleCalamity(player), "calamity failed");
+               } catch (Throwable error) { failure = error; }
+            });
+         }
+         if (passed && ticks >= 120) {
             require(mc.player.getMaxHealth() == 500.0F, "card health did not synchronize");
-            TYPE_MOON_WORLD.LOGGER.info("PALE_RIDER_CLIENT_SMOKE_PASS health=500 shared_resistance=C rats=true crows=true domains=true");
+            TYPE_MOON_WORLD.LOGGER.info("PALE_RIDER_CLIENT_SMOKE_PASS health=500 shared_resistance=C rats=true crows=true domains=true continuous_body=true random_leaks=false");
             done = true;
             mc.stop();
          }

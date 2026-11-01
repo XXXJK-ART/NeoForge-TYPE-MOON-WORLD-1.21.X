@@ -35,6 +35,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
@@ -131,6 +132,9 @@ public final class ServantCardPaleRiderSkills {
       }
 
       if (player.level() instanceof ServerLevel level) {
+         if (host == null && !player.getPersistentData().getBoolean(STEALTH_TAG)) {
+            PaleRiderCombatHelper.tickBodyParticles(player);
+         }
          if (player.tickCount % 10 == Math.floorMod(player.getId(), 10)) tickDomainMounts(player, level);
          LivingEntity domainAnchor = getDomainAnchor(player);
          if (domainAnchor != null) {

@@ -37,6 +37,11 @@ class ShadowHassanRulesTest {
       assertFalse(ShadowHassanRules.isDirectSunlight(true, false, false, 15));
       assertFalse(ShadowHassanRules.isDirectSunlight(true, true, true, 15));
       assertFalse(ShadowHassanRules.isDirectSunlight(true, true, false, 0));
+      assertTrue(ShadowHassanRules.isDirectMoonlight(true, true, false, 4));
+      assertFalse(ShadowHassanRules.isDirectMoonlight(false, true, false, 15));
+      assertFalse(ShadowHassanRules.isDirectMoonlight(true, false, false, 4));
+      assertFalse(ShadowHassanRules.isDirectMoonlight(true, true, true, 4));
+      assertFalse(ShadowHassanRules.isDirectMoonlight(true, true, false, 0));
    }
 
    @Test

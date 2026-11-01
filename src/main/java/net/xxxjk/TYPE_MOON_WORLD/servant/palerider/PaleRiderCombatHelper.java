@@ -66,6 +66,16 @@ public final class PaleRiderCombatHelper {
    private PaleRiderCombatHelper() {
    }
 
+   /** Shared visible body for the NPC and servant-card transformation. */
+   public static void tickBodyParticles(LivingEntity rider) {
+      if (!(rider.level() instanceof ServerLevel level) || !rider.isAlive() || rider.isSpectator()
+         || rider.tickCount % 8 != Math.floorMod(rider.getId(), 8)) return;
+      level.sendParticles(ParticleTypes.SQUID_INK, rider.getX(), rider.getY() + 0.9, rider.getZ(), 4, 0.28, 0.85, 0.28, 0.015);
+      level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
+         rider.getX(), rider.getY() + 0.9, rider.getZ(), 5, 0.3, 0.9, 0.3, 0.01);
+      level.sendParticles(ParticleTypes.ASH, rider.getX(), rider.getY() + 1.1, rider.getZ(), 2, 0.3, 0.8, 0.3, 0.015);
+   }
+
    public static void tick(PaleRiderEntity rider) {
       if (!(rider.level() instanceof ServerLevel level)) return;
       long now = level.getGameTime();

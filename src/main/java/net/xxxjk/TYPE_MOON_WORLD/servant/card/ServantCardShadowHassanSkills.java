@@ -112,7 +112,7 @@ public final class ServantCardShadowHassanSkills {
 
    public static boolean performActiveConcealment(ServerPlayer player) {
       if (!isShadowHassan(player) || isPossessing(player)
-         || !ShadowHassanRules.isDirectSunlight(player.level(), player.blockPosition())) return false;
+         || !ShadowHassanRules.isDirectSunOrMoonlight(player.level(), player.blockPosition())) return false;
       player.getPersistentData().putLong(TAG_ACTIVE_CONCEALMENT_UNTIL,
          player.level().getGameTime() + ACTIVE_CONCEALMENT_DURATION_TICKS);
       refreshConcealment(player);

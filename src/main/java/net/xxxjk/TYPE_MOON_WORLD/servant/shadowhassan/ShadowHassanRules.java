@@ -170,6 +170,18 @@ public final class ShadowHassanRules {
          level.getBrightness(LightLayer.SKY, pos));
    }
 
+   public static boolean isDirectMoonlight(boolean night, boolean skyVisible, boolean raining, int skyLight) {
+      return night && skyVisible && !raining && skyLight > 0;
+   }
+
+   public static boolean isDirectSunOrMoonlight(Level level, BlockPos pos) {
+      boolean skyVisible = level.canSeeSky(pos);
+      boolean raining = level.isRainingAt(pos);
+      int skyLight = level.getBrightness(LightLayer.SKY, pos);
+      return isDirectSunlight(level.isDay(), skyVisible, raining, skyLight)
+         || isDirectMoonlight(level.isNight(), skyVisible, raining, skyLight);
+   }
+
    public static boolean castsSunlightShadow(Level level, LivingEntity entity) {
       if (level == null || entity == null || !entity.isAlive()) return false;
       BlockPos exposedPos = BlockPos.containing(entity.getX(), entity.getEyeY(), entity.getZ());

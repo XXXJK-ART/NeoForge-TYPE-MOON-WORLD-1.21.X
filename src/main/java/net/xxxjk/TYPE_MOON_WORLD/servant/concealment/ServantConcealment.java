@@ -218,6 +218,8 @@ public final class ServantConcealment {
       if (entity instanceof ShadowHassanEntity || entity instanceof LiShuwenEntity) return true;
       if (entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player)) return true;
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
+      // Pale Rider's black mist is its persistent body, not ranked concealment leakage.
+      if (definition != null && "pale_rider".equals(definition.id())) return true;
       if (definition != null && ("shadow_hassan".equals(definition.id()) || "li_shuwen".equals(definition.id()))) {
          if ("shadow_hassan".equals(definition.id()) && entity instanceof ServerPlayer player) {
             return !ServantCardShadowHassanSkills.isActiveConcealment(player)
