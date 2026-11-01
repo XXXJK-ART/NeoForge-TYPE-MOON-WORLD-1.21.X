@@ -98,8 +98,8 @@ final class SasakiTsubameSlashRenderer {
          float width1 = width * tailEnvelope(t1);
          float a0 = alpha * tailEnvelope(t0);
          float a1 = alpha * tailEnvelope(t1);
-         float r = core ? 1.0F : 0.84F;
-         float g = core ? 1.0F : 0.68F;
+          float r = core ? 0.52F : 0.08F;
+          float g = core ? 0.82F : 0.48F;
          vertex(poses, consumer, center0.add(side0.scale(-width0)), 1.0F - t0, 0.0F, r, g, 1.0F, a0);
          vertex(poses, consumer, center1.add(side.scale(-width1)), 1.0F - t1, 0.0F, r, g, 1.0F, a1);
          vertex(poses, consumer, center1.add(side.scale(width1)), 1.0F - t1, 1.0F, r, g, 1.0F, a1);

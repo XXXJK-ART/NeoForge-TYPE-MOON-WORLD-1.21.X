@@ -155,6 +155,10 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
          if (entity instanceof SasakiKojiroEntity sasaki) {
             applySasakiActionPose(sasaki, ageInTicks - sasaki.tickCount);
          }
+         if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity okita) {
+            net.xxxjk.TYPE_MOON_WORLD.client.SasakiKojiroActionAnimationClient.applyImportedPose(
+               okita, this, ageInTicks - okita.tickCount);
+         }
          if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity diarmuid) {
             var action = diarmuid.getDiarmuidAction();
             float age = diarmuid.getDiarmuidActionAge(ageInTicks - diarmuid.tickCount);

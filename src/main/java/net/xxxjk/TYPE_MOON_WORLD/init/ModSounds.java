@@ -169,6 +169,8 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_FAIL = register("okita_souji_saber_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_VICTORY = register("okita_souji_saber_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_NP = register("okita_souji_saber_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_BATTLE_START = register("okita_souji_saber_voice_battle_start");
+   public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_FLAG = register("okita_souji_saber_voice_flag");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_SUMMON = register("jeanne_alter_voice_summon");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_ATTACK = register("jeanne_alter_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_SKILL = register("jeanne_alter_voice_skill");

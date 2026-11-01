@@ -83,6 +83,7 @@ public enum ServantTraitTag {
    FALSE_RIDER("false_rider"),
    SYSTEM_SERVANT("system_servant"),
    HASSAN_ORDER("hassan_order"),
+   SHINSENGUMI("shinsengumi"),
    FANATIC("fanatic"),
    DIVINE_TECHNIQUE_MIMIC("divine_technique_mimic");
 

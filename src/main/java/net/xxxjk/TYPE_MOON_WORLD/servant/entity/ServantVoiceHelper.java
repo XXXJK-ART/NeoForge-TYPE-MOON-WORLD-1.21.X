@@ -325,6 +325,19 @@ public final class ServantVoiceHelper {
       }
    }
 
+   public static void tryPlayOkitaSoujiSaberFlag(ServantEntity servant) {
+      if (isOkitaSoujiSaber(servant)) {
+         playVoiceForced(servant, "okita_souji_saber_flag", 1.12F, 1.0F, ModSounds.OKITA_SOUJI_SABER_VOICE_FLAG.get());
+      }
+   }
+
+   public static void tryPlayOkitaSoujiSaberBattleStart(ServantEntity servant) {
+      if (isOkitaSoujiSaber(servant)) {
+         playVoice(servant, "okita_souji_saber_battle_start", 240, 1.08F, 1.0F,
+            ModSounds.OKITA_SOUJI_SABER_VOICE_BATTLE_START.get());
+      }
+   }
+
    public static void tryPlayIskandarIonioi(IskandarEntity servant) {
       if (isIskandar(servant)) {
          playVoiceForced(servant, "iskandar_ionioi", 1.35F, 0.92F, ModSounds.ISKANDAR_VOICE_IONIOI.get());

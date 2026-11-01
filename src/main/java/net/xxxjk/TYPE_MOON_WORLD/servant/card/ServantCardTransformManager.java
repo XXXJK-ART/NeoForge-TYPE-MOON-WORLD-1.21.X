@@ -1594,11 +1594,11 @@ public final class ServantCardTransformManager {
          case "okita_kaifuu" -> {
             if (!ServantCardOkitaSoujiSaberSkills.performKaifuu(player)) return false;
          }
-         case "okita_mind_eye" -> {
-            if (!ServantCardOkitaSoujiSaberSkills.performMindEye(player)) return false;
+         case "okita_thrust" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performThrust(player)) return false;
          }
-         case "okita_oath_haori" -> {
-            if (!ServantCardOkitaSoujiSaberSkills.performHaoriRush(player)) return false;
+         case "okita_downward_slash" -> {
+            if (!ServantCardOkitaSoujiSaberSkills.performDownwardSlash(player)) return false;
          }
          case "okita_feigned_retreat" -> {
             if (!ServantCardOkitaSoujiSaberSkills.performFeignedRetreat(player)) return false;

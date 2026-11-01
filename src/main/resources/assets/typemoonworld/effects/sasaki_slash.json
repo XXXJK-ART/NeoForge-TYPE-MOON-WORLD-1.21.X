@@ -1,6 +1,6 @@
 {
   "duration": 0.5,
-  "notes": "Short silver blade arc with a cool blue edge for Sasaki's sword techniques.",
+  "notes": "Short blue blade arc for Sasaki's sword techniques.",
   "emitters": [
     {
       "start_time": 0.0,
@@ -24,7 +24,7 @@
       },
       "color_over_life": [
         {"t": 0.0, "color": "#FFFFFFFF"},
-        {"t": 0.45, "color": "#FFD8F2FF"},
+        {"t": 0.45, "color": "#9EDBFFFF"},
         {"t": 1.0, "color": "#00000000"}
       ],
       "size_over_life": [

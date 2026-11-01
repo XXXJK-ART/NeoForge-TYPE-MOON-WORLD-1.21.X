@@ -53,6 +53,8 @@ public final class SasakiSwordTrailClient {
          case HORIZONTAL_SLASH -> new int[]{3};
          case CROUCH_CUTBACK -> new int[]{3, 11};
          case THRUST -> new int[]{5};
+         case OKITA_THRUST -> new int[]{5};
+         case OKITA_MUMYOUDAN_ZUKI -> net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks();
          case SPINNING_SLASH -> new int[]{4, 11};
          default -> new int[0];
       };

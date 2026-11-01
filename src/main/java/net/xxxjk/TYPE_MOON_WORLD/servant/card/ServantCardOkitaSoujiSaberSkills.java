@@ -31,19 +31,17 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.OkitaShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SwordActionAnimationService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
 public final class ServantCardOkitaSoujiSaberSkills {
    public static final String SERVANT_ID = "okita_souji_saber";
    private static final String TAG_WEAK_UNTIL = "ServantCardOkitaWeakUntil";
-   private static final String TAG_HAORI_RUSH_UNTIL = "ServantCardOkitaHaoriRushUntil";
-   private static final String TAG_MIND_EYE_UNTIL = "ServantCardOkitaMindEyeUntil";
    private static final String TAG_COMMAND_TARGET = "ServantCardOkitaCommandTarget";
    private static final String SHINSENGUMI_OWNER_TAG = "OkitaShinsengumiOwner";
-   private static final ResourceLocation HAORI_RUSH_SPEED_ID = id("servant_card_okita_haori_rush_speed");
-   private static final ResourceLocation HAORI_RUSH_ATTACK_SPEED_ID = id("servant_card_okita_haori_rush_attack_speed");
-   private static final ResourceLocation HAORI_RUSH_ATTACK_ID = id("servant_card_okita_haori_rush_attack");
    private static final ResourceLocation WEAK_ATTACK_ID = id("servant_card_okita_weak_attack");
    private static final ResourceLocation WEAK_SPEED_ID = id("servant_card_okita_weak_speed");
    private static final DustParticleOptions ASAGI = new DustParticleOptions(new Vector3f(0.25F, 0.82F, 0.95F), 1.1F);
@@ -60,13 +58,6 @@ public final class ServantCardOkitaSoujiSaberSkills {
    public static void tick(ServerPlayer player, net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PlayerVariables vars) {
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
-      boolean haoriRush = data.getLong(TAG_HAORI_RUSH_UNTIL) > now;
-      updateModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_RUSH_SPEED_ID,
-         haoriRush ? 0.35 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(player.getAttribute(Attributes.ATTACK_SPEED), HAORI_RUSH_ATTACK_SPEED_ID,
-         haoriRush ? 0.35 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_RUSH_ATTACK_ID,
-         haoriRush ? 0.15 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       boolean weak = isWeak(player);
       updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), WEAK_ATTACK_ID,
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
@@ -75,23 +66,13 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (!weak) {
          data.remove(TAG_WEAK_UNTIL);
       }
-      if (data.getLong(TAG_MIND_EYE_UNTIL) <= now) {
-         data.remove(TAG_MIND_EYE_UNTIL);
-      } else if (player.level() instanceof ServerLevel level && (player.tickCount & 3) == 0) {
-         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 0.85, player.getZ(), 2, 0.18, 0.25, 0.18, 0.01);
-      }
    }
 
    public static void clear(ServerPlayer player) {
       cleanupPlayerSoldiers(player);
       CompoundTag data = player.getPersistentData();
       data.remove(TAG_WEAK_UNTIL);
-      data.remove(TAG_HAORI_RUSH_UNTIL);
-      data.remove(TAG_MIND_EYE_UNTIL);
       data.remove(TAG_COMMAND_TARGET);
-      updateModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_RUSH_SPEED_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(player.getAttribute(Attributes.ATTACK_SPEED), HAORI_RUSH_ATTACK_SPEED_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_RUSH_ATTACK_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), WEAK_ATTACK_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(player.getAttribute(Attributes.MOVEMENT_SPEED), WEAK_SPEED_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
    }
@@ -110,6 +91,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (destination == null || !trySafeTeleport(player, destination)) {
          return false;
       }
+      SwordActionAnimationService.play(player, SasakiKojiroAction.PRESENCE_CONCEALMENT);
       if (target != null) {
          face(player, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
       }
@@ -122,6 +104,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
          return false;
       }
       Vec3 direction = horizontalLook(player);
+      SwordActionAnimationService.play(player, SasakiKojiroAction.VERTICAL_SLASH);
       player.setDeltaMovement(direction.x * 1.15, Math.max(0.08, player.getDeltaMovement().y), direction.z * 1.15);
       player.hurtMarked = true;
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.35 + 6.0);
@@ -138,6 +121,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       }
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
       boolean hitAny = false;
+      SwordActionAnimationService.play(player, SasakiKojiroAction.SPINNING_SLASH);
       try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : nearbyEnemies(player, 3.0)) {
          hurtPhysical(player, target, damage);
@@ -156,35 +140,32 @@ public final class ServantCardOkitaSoujiSaberSkills {
       return hitAny;
    }
 
-   public static boolean performMindEye(ServerPlayer player) {
-      CompoundTag data = player.getPersistentData();
-      data.putLong(TAG_MIND_EYE_UNTIL, player.level().getGameTime() + 80L);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 1, false, true, true));
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 80, 1, false, true, true));
-      LivingEntity target = findNearestEnemy(player, 5.0);
-      if (target != null) {
-         Vec3 away = player.position().subtract(target.position()).multiply(1.0, 0.0, 1.0);
-         if (away.lengthSqr() < 1.0E-4) {
-            away = horizontalLook(player).scale(-1.0);
-         }
-         player.setDeltaMovement(away.normalize().scale(0.85).add(0.0, 0.12, 0.0));
-         player.hurtMarked = true;
-         hurtPhysical(player, target, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.75 + 4.0));
-      }
-      if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 0.9, player.getZ(), 18, 0.35, 0.35, 0.35, 0.025);
-         level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.8F);
-      }
+   /** A short thrust using the shared Sasaki sword motion as Okita's slot-3 technique. */
+   public static boolean performThrust(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      Vec3 direction = horizontalLook(player);
+      player.setDeltaMovement(direction.x * 0.85, Math.max(0.08, player.getDeltaMovement().y), direction.z * 0.85);
+      player.hurtMarked = true;
+      SwordActionAnimationService.play(player, SasakiKojiroAction.OKITA_THRUST);
+      spawnSlashLine(level, player.position().add(0.0, 0.9, 0.0), direction, 3.8);
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(5, () -> {
+         if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())) return;
+         hitForward(player, direction, 3.8, 0.74, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.30));
+      });
       return true;
    }
 
-   public static boolean performHaoriRush(ServerPlayer player) {
-      player.getPersistentData().putLong(TAG_HAORI_RUSH_UNTIL, player.level().getGameTime() + 200L);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 0, false, true, true));
-      if (player.level() instanceof ServerLevel level) {
-         level.sendParticles(ASAGI, player.getX(), player.getY() + 0.9, player.getZ(), 42, 0.55, 0.55, 0.55, 0.04);
-         level.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.9F, 1.45F);
-      }
+   public static boolean performDownwardSlash(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      Vec3 direction = horizontalLook(player);
+      SwordActionAnimationService.play(player, SasakiKojiroAction.DOWNWARD_SLASH);
+      spawnSlashLine(level, player.position().add(0.0, 1.1, 0.0), direction, 3.8);
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(2, () -> {
+         if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())) return;
+         hitForward(player, direction, 3.8, 0.76, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 4.0));
+      });
       return true;
    }
 
@@ -195,6 +176,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
          away = horizontalLook(player).scale(-1.0);
       }
       double power = isWeak(player) ? 1.65 : 1.25;
+      SwordActionAnimationService.play(player, SasakiKojiroAction.TRANSPARENCY);
       player.setDeltaMovement(away.normalize().scale(power).add(0.0, 0.18, 0.0));
       player.hurtMarked = true;
       player.fallDistance = 0.0F;
@@ -210,19 +192,23 @@ public final class ServantCardOkitaSoujiSaberSkills {
    }
 
    public static boolean performStanceBreak(ServerPlayer player) {
-      LivingEntity target = findEnemyLookTarget(player, 4.0, 1.6);
+      LivingEntity target = findNearestEnemy(player, 4.0);
       if (target == null) {
          return false;
       }
-      target.stopUsingItem();
-      target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
-      target.removeEffect(MobEffects.ABSORPTION);
-      target.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", player.level().getGameTime() + 100L);
-      hurtPhysical(player, target, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 8.0));
+      face(player, target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
+      SwordActionAnimationService.play(player, SasakiKojiroAction.OKITA_THRUST);
       if (player.level() instanceof ServerLevel level) {
          spawnSlashLine(level, player.position().add(0.0, 0.9, 0.0), target.position().subtract(player.position()), 4.0);
          level.playSound(null, target.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 0.9F, 1.25F);
       }
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(5, () -> {
+         if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())
+            || !target.isAlive() || target.level() != player.level() || !isEnemy(player, target)
+            || player.distanceTo(target) > 4.0 || !player.hasLineOfSight(target)) return;
+         hurtPhysical(player, target, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 8.0));
+      });
       return true;
    }
 
@@ -230,7 +216,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity target = findEnemyLookTarget(player, 24.0, 2.4);
+      LivingEntity target = findNearestEnemy(player, 24.0);
       int commanded = 0;
       for (OkitaShinsengumiEntity soldier : playerSoldiers(level, player, 96.0)) {
          if (target != null) {
@@ -246,6 +232,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       } else {
          player.getPersistentData().remove(TAG_COMMAND_TARGET);
       }
+      SwordActionAnimationService.play(player, SasakiKojiroAction.COUNTER_STANCE);
       level.sendParticles(ASAGI, player.getX(), player.getY() + 1.0, player.getZ(), 36, 1.2, 0.5, 1.2, 0.035);
       level.playSound(null, player.blockPosition(), SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 0.9F, 1.4F);
       return true;
@@ -255,32 +242,30 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (isWeak(player) || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity primary = findEnemyLookTarget(player, 4.0, 2.0);
-      if (primary == null) {
-         primary = findNearestEnemy(player, 4.0);
-      }
+      LivingEntity primary = findEnemyLookTarget(player, OkitaSoujiSaberTechniqueService.MUMYOUDAN_RANGE, 1.8);
       if (primary == null) {
          return false;
       }
       face(player, primary.position().add(0.0, primary.getBbHeight() * 0.5, 0.0));
       ServantCardVoiceHelper.tryPlaySkill(player, "okita_mumyoudan_zuki");
-      float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0);
-      DamageSource source = player.damageSources().source(OkitaSoujiSaberDamageTypes.MUMYOUDAN_ZUKI, player);
-      for (int i = 0; i < 3 && primary.isAlive(); i++) {
-         primary.stopUsingItem();
-         primary.removeEffect(MobEffects.DAMAGE_RESISTANCE);
-         primary.removeEffect(MobEffects.ABSORPTION);
-         primary.invulnerableTime = 0;
-         primary.hurt(source, damage);
-         primary.invulnerableTime = 0;
-      }
-      primary.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", level.getGameTime() + 100L);
-      level.sendParticles(ParticleTypes.SWEEP_ATTACK, primary.getX(), primary.getY() + primary.getBbHeight() * 0.55, primary.getZ(), 3, 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(ParticleTypes.CRIT, primary.getX(), primary.getY() + primary.getBbHeight() * 0.55, primary.getZ(), 36, 0.25, 0.35, 0.25, 0.08);
-      level.playSound(null, primary.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.25F, 1.55F);
-      if (player.getRandom().nextFloat() < 0.30F) {
-         triggerWeak(player);
-      }
+      LivingEntity npTarget = primary;
+      var vars = player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      SwordActionAnimationService.play(player, SasakiKojiroAction.TSUBAME_WINDUP);
+      net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(OkitaSoujiSaberTechniqueService.MUMYOUDAN_WINDUP_TICKS, () -> {
+         if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())
+            || !OkitaSoujiSaberTechniqueService.canLandMumyoudanStrike(player, npTarget, level)) return;
+         SwordActionAnimationService.play(player, SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI);
+         level.playSound(null, npTarget.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.25F, 1.55F);
+         int strikeIndex = 0;
+         for (int hitDelay : OkitaSoujiSaberTechniqueService.mumyoudanStrikeTicks()) {
+            int currentStrike = strikeIndex++;
+            net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD.queueServerWork(hitDelay, () -> {
+               if (!vars.servantCardState().transformed() || !SERVANT_ID.equals(vars.servantCardState().id())) return;
+               OkitaSoujiSaberTechniqueService.strikeMumyoudanPoint(player, npTarget, level, currentStrike);
+            });
+         }
+         if (player.getRandom().nextFloat() < 0.30F) triggerWeak(player);
+      });
       return true;
    }
 
@@ -288,7 +273,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (!(player.level() instanceof ServerLevel level)) {
          return false;
       }
-      LivingEntity target = findEnemyLookTarget(player, 24.0, 2.4);
+      LivingEntity target = findNearestEnemy(player, 24.0);
       long expiresAt = level.getGameTime() + FLAG_DURATION;
       int summoned = 0;
       for (int i = 0; i < FLAG_COUNT; i++) {
@@ -306,7 +291,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
       if (summoned <= 0) {
          return false;
       }
-      level.playSound(null, player.blockPosition(), ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get(), SoundSource.PLAYERS, 1.18F, 1.05F);
+      SwordActionAnimationService.play(player, SasakiKojiroAction.COUNTER_STANCE);
       level.sendParticles(ASAGI, player.getX(), player.getY() + 1.1, player.getZ(), 100, 2.0, 1.0, 2.0, 0.05);
       level.playSound(null, player.blockPosition(), SoundEvents.RAID_HORN.value(), SoundSource.PLAYERS, 1.1F, 1.35F);
       return true;
@@ -443,7 +428,17 @@ public final class ServantCardOkitaSoujiSaberSkills {
    }
 
    private static List<LivingEntity> hitForward(ServerPlayer player, double range, double minDot, float damage, boolean bypassPhysical) {
-      Vec3 direction = horizontalLook(player);
+      return hitForward(player, horizontalLook(player), range, minDot, damage, bypassPhysical);
+   }
+
+   private static List<LivingEntity> hitForward(ServerPlayer player, Vec3 direction, double range, double minDot, float damage) {
+      return hitForward(player, direction, range, minDot, damage, false);
+   }
+
+   private static List<LivingEntity> hitForward(ServerPlayer player, Vec3 direction, double range, double minDot,
+                                                float damage, boolean bypassPhysical) {
+      direction = new Vec3(direction.x, 0.0, direction.z);
+      direction = direction.lengthSqr() < 1.0E-4 ? horizontalLook(player) : direction.normalize();
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       AABB area = player.getBoundingBox().expandTowards(direction.scale(range)).inflate(1.3, 1.1, 1.3);
       List<LivingEntity> hit = new ArrayList<>();

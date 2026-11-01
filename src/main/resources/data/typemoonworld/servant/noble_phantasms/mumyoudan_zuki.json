@@ -4,16 +4,16 @@
   "display_name": "Mumyoudan-zuki",
   "display_name_zh": "\u65e0\u660e\u4e09\u6bb5\u7a81",
   "type": "anti_personnel",
-  "rank": "C",
+  "rank": "",
   "mp_cost": 20,
-  "cooldown_ticks": 300,
+  "cooldown_ticks": 3600,
   "windup_ticks": 6,
   "effects": [
     {
       "effect_type": "triple_piercing_thrust",
       "params": {
         "hits": 3,
-        "damage_scale_per_hit": 3.0,
+        "fixed_damage_per_hit": 150.0,
         "range": 3.0,
         "damage_type": "typemoonworld:okita_mumyoudan_zuki",
         "sure_hit": true,

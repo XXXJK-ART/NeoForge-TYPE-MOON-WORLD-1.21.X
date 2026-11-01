@@ -9,6 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 
 public final class ServantCardVoiceHelper {
    private static final String LAST_VOICE_TICK = "ServantCardPlayerVoiceLastTick";
+   private static final String OKITA_COMBAT_ACTIVITY = "ServantCardOkitaLastCombatVoiceActivity";
 
    private ServantCardVoiceHelper() {
    }
@@ -18,6 +19,7 @@ public final class ServantCardVoiceHelper {
          net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.attack(player);return;
       }
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (isOkita(vars) && tryPlayOkitaBattleStart(player, vars)) return;
       if (!vars.servant_card_transformed || player.getRandom().nextFloat() > 0.42F) {
          return;
       }
@@ -55,6 +57,8 @@ public final class ServantCardVoiceHelper {
       if (!vars.servant_card_transformed || effectId == null) {
          return;
       }
+      if (isOkita(vars) && !"okita_mumyoudan_zuki".equals(effectId)
+         && !"okita_flag_of_sincerity".equals(effectId)) tryPlayOkitaBattleStart(player, vars);
       SoundEvent sound = usesUshiwakamaruNoblePhantasmVoice(effectId)
          ? ModSounds.USHIWAKAMARU_RIDER_VOICE_NP.get()
          : switch (effectId) {
@@ -94,6 +98,7 @@ public final class ServantCardVoiceHelper {
             "oda_encircle_matchlocks", "oda_charged_matchlock", "oda_crossfire_net",
             "oda_scorched_earth", "oda_hasebe_breakthrough", "maou" -> ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get();
          case "okita_mumyoudan_zuki" -> ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+         case "okita_flag_of_sincerity" -> ModSounds.OKITA_SOUJI_SABER_VOICE_FLAG.get();
          case "arash_arrow_rain", "arash_energy_small", "arash_energy_large" -> ModSounds.ARASH_VOICE_ATTACK.get();
          case "paracelsus_craft_stone", "paracelsus_spirit_toggle", "paracelsus_workshop_teleport" -> ModSounds.PARACELSUS_VOICE_SPELL.get();
          case "muramasa_no_gen_kensai" -> ModSounds.SENKO_MURAMASA_VOICE_NP.get();
@@ -126,24 +131,48 @@ public final class ServantCardVoiceHelper {
       }
    }
 
+   public static void tryPlayVictory(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (isOkita(vars)) play(player, ModSounds.OKITA_SOUJI_SABER_VOICE_VICTORY.get(), 160);
+   }
+
+   public static void tryPlayFail(ServerPlayer player) {
+      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (isOkita(vars)) play(player, ModSounds.OKITA_SOUJI_SABER_VOICE_FAIL.get(), 80);
+   }
+
+   private static boolean tryPlayOkitaBattleStart(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      long now = player.level().getGameTime();
+      var data = player.getPersistentData();
+      long last = data.getLong(OKITA_COMBAT_ACTIVITY);
+      boolean newCombat = !data.contains(OKITA_COMBAT_ACTIVITY) || now - last >= 200L;
+      data.putLong(OKITA_COMBAT_ACTIVITY, now);
+      return newCombat && play(player, ModSounds.OKITA_SOUJI_SABER_VOICE_BATTLE_START.get(), 40);
+   }
+
+   private static boolean isOkita(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars.servant_card_transformed && "okita_souji_saber".equals(vars.servant_card_id);
+   }
+
    static boolean usesUshiwakamaruNoblePhantasmVoice(String effectId) {
       return "ushiwakamaru_eight_boat".equals(effectId);
    }
 
-   private static void play(ServerPlayer player, SoundEvent sound, int cooldownTicks) {
+   private static boolean play(ServerPlayer player, SoundEvent sound, int cooldownTicks) {
       if (sound == null || !(player.level() instanceof ServerLevel level)) {
-         return;
+         return false;
       }
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return false;
       boolean diarmuid = ServantCardDiarmuidSkills.isActiveCard(player);
-      if (diarmuid && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(player)) return;
+      if (diarmuid && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(player)) return false;
       long now = level.getGameTime();
       long last = player.getPersistentData().getLong(LAST_VOICE_TICK);
       if (player.getPersistentData().contains(LAST_VOICE_TICK) && now - last < cooldownTicks) {
-         return;
+         return false;
       }
       player.getPersistentData().putLong(LAST_VOICE_TICK, now);
       if (diarmuid) net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.lock(player, 22);
       level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.VOICE, 1.0F, 1.0F);
+      return true;
    }
 }

@@ -111,6 +111,7 @@ class SasakiKojiroResourcesTest {
          .getAsJsonObject("animations");
       for (SasakiKojiroAction action : SasakiKojiroAction.values()) {
          if (action == SasakiKojiroAction.TSUBAME_GAESHI) continue;
+         if (action == SasakiKojiroAction.OKITA_MUMYOUDAN_ZUKI || action == SasakiKojiroAction.OKITA_THRUST) continue;
          JsonObject animation = json("assets/typemoonworld/player_animations/" + action.playerAnimationPath() + ".json");
          assertTrue(animation.has("source_file") && animation.has("source_animation"), action.name());
          assertTrue(source.has(action.animationName()), action.name());
@@ -125,6 +126,13 @@ class SasakiKojiroResourcesTest {
             }
          }
       }
+      JsonObject okitaAnimation = json("assets/typemoonworld/player_animations/okita_mumyoudan_zuki.json");
+      assertEquals("okita_mumyoudan_zuki", okitaAnimation.get("name").getAsString());
+      assertEquals(15, okitaAnimation.getAsJsonObject("emote").get("stopTick").getAsInt());
+      assertEquals(16, okitaAnimation.getAsJsonObject("emote").getAsJsonArray("moves").size());
+      JsonObject okitaSource = json("assets/typemoonworld/animations/okita_souji_saber_source.animation.json")
+         .getAsJsonObject("animations");
+      assertTrue(okitaSource.has("mumyoudan_zuki"));
       JsonObject windup = json("assets/typemoonworld/player_animations/sasaki_kojiro_tsubame_windup.json");
       assertTrue(windup.get("source_file").getAsString().contains("xiaocilangyanliujiashi.animation.json"));
       assertEquals(10, windup.getAsJsonObject("emote").get("endTick").getAsInt());

@@ -51,6 +51,7 @@ class ServantActionResourcesTest {
       assertTrue(servants.contains("lancelot_berserker"));
       assertTrue(servants.contains("zhao_yun_rider"));
       assertTrue(servants.contains("iskandar"));
+      assertTrue(servants.contains("okita_souji_saber"));
       try (var paths = Files.list(ACTIONS)) {
          long maneuverProfiles = paths.filter(file -> file.toString().endsWith(".json")).filter(file -> {
             try {

@@ -46,6 +46,9 @@ public record ServantParams(
    }
 
    public double movementSpeed() {
+      if (this.agility == StatRank.A_PLUS_PLUS) {
+         return StatRank.A.toMovementSpeed() * 3.0;
+      }
       return 0.16 + effectiveCoefficient(this.agility, this.agilityPlus) * 0.004;
    }
 

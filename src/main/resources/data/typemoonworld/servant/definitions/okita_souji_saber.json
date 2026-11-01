@@ -8,14 +8,13 @@
   "traits": [
     "servant",
     "humanoid",
-    "living_human",
     "human",
+    "human_kind",
     "female",
     "saber",
     "riding",
     "shinsengumi",
-    "weak_constitution",
-    "neutral",
+    "neutral_alignment",
     "balanced"
   ],
   "parameters": {
@@ -28,7 +27,8 @@
     "magic": "E",
     "magic_plus": false,
     "luck": "D",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "C"
   },
   "model": {
     "geometry": "typemoonworld:geo/okita_souji_saber.geo.json",
@@ -81,7 +81,7 @@
     "riding_e",
     "shukuchi_b",
     "weak_constitution_a_okita",
-    "mind_eye_false_a_okita",
+    "mindseye_a",
     "oath_haori_c"
   ],
   "noble_phantasm": "mumyoudan_zuki",

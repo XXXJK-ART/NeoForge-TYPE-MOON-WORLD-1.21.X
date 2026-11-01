@@ -212,7 +212,8 @@ public final class SasakiKojiroActionAnimationClient {
          if (!npc.isSasakiActionActive()) return false;
          action = npc.getSasakiAction();
          age = npc.getSasakiActionAge(partial);
-      } else if (owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity) {
+      } else if (owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity
+         || owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity) {
          var level = Minecraft.getInstance().level;
          if (level == null) return false;
          if (activePlaybackLevel != level) {
@@ -227,7 +228,8 @@ public final class SasakiKojiroActionAnimationClient {
             NPC_PLAYBACKS.remove(owner.getUUID());
             return false;
          }
-         if (!stack.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.EXCALIBUR.get())) return false;
+         if (owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonEntity
+            && !stack.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.EXCALIBUR.get())) return false;
       } else {
          return false;
       }

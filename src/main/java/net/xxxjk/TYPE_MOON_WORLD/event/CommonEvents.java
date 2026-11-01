@@ -1377,6 +1377,7 @@ public class CommonEvents {
 
          if (event.getEntity() instanceof ServerPlayer player) {
             TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+             if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayFail(player);
             if (!event.isCanceled()) ServantCardHundredFacesHassanSkills.cleanupOwnedPersonas(player);
             if (!event.isCanceled()) TalentService.clearActiveState(player);
             if (!event.isCanceled()) net.xxxjk.TYPE_MOON_WORLD.magic.MagicAnalysisService.cancel(player);
@@ -1407,6 +1408,10 @@ public class CommonEvents {
          if (servantKiller != null && event.getEntity() instanceof LivingEntity defeatedLiving) {
             ServantVoiceHelper.tryPlayVictory(servantKiller, defeatedLiving);
          }
+          if (event.getSource().getEntity() instanceof ServerPlayer cardKiller
+             && event.getEntity() instanceof LivingEntity defeatedByCard) {
+             net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardVoiceHelper.tryPlayVictory(cardKiller);
+          }
 
          if (event.getSource().getEntity() instanceof Player player
             && event.getEntity() instanceof Monster mob

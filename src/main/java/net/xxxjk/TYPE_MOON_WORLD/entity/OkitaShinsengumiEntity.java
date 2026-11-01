@@ -9,6 +9,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -30,6 +32,17 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    private static final double FOLLOW_STOP_DISTANCE_SQR = 3.0 * 3.0;
    private static final double FOLLOW_START_DISTANCE_SQR = 5.0 * 5.0;
    private static final double FOLLOW_URGENT_DISTANCE_SQR = 14.0 * 14.0;
+   public static final double C_PANEL_HEALTH = 300.0;
+   public static final double C_PANEL_ATTACK = 15.0;
+   public static final double C_PANEL_MOVEMENT_SPEED = 0.28;
+   public static final double C_PANEL_ARMOR = 2.25;
+   public static final double C_PANEL_ARMOR_TOUGHNESS = 0.525;
+   public static final double C_PANEL_DODGE_CHANCE = 0.10;
+   public static final int C_PANEL_DODGE_INVULNERABILITY_TICKS = 4;
+   public static final int C_PANEL_PERFECT_DODGE_WINDOW_TICKS = 5;
+   public static final int C_PANEL_DODGE_COOLDOWN_TICKS = 9;
+   private static final String TAG_DODGE_COOLDOWN = "OkitaShinsengumiDodgeCooldown";
+   private static final String TAG_PERFECT_DODGE_UNTIL = "OkitaShinsengumiPerfectDodgeUntil";
    @Nullable private UUID ownerUuid;
    @Nullable private UUID targetUuid;
 
@@ -41,13 +54,37 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
 
    public static AttributeSupplier.Builder createAttributes() {
       return createMobAttributes()
-         .add(Attributes.MAX_HEALTH, 200.0)
-         .add(Attributes.MOVEMENT_SPEED, 0.30)
-         .add(Attributes.ATTACK_DAMAGE, 15.0)
-         .add(Attributes.ARMOR, 8.0)
+         .add(Attributes.MAX_HEALTH, C_PANEL_HEALTH)
+         .add(Attributes.MOVEMENT_SPEED, C_PANEL_MOVEMENT_SPEED)
+         .add(Attributes.ATTACK_DAMAGE, C_PANEL_ATTACK)
+         .add(Attributes.ARMOR, C_PANEL_ARMOR)
+         .add(Attributes.ARMOR_TOUGHNESS, C_PANEL_ARMOR_TOUGHNESS)
          .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.ATTACK_SPEED, 4.0)
-         .add(Attributes.KNOCKBACK_RESISTANCE, 0.35);
+         .add(Attributes.KNOCKBACK_RESISTANCE, 0.0);
+   }
+
+   @Override
+   public boolean hurt(DamageSource source, float amount) {
+      if (!this.level().isClientSide() && this.isAlive() && canDodge(source)) {
+         long now = this.level().getGameTime();
+         CompoundTag data = this.getPersistentData();
+         if (now < data.getLong(TAG_PERFECT_DODGE_UNTIL)) return false;
+         if (now >= data.getLong(TAG_DODGE_COOLDOWN) && this.random.nextDouble() < C_PANEL_DODGE_CHANCE) {
+            data.putLong(TAG_DODGE_COOLDOWN, now + C_PANEL_DODGE_COOLDOWN_TICKS);
+            data.putLong(TAG_PERFECT_DODGE_UNTIL, now + C_PANEL_PERFECT_DODGE_WINDOW_TICKS);
+            this.invulnerableTime = C_PANEL_DODGE_INVULNERABILITY_TICKS;
+            this.setDeltaMovement(this.getDeltaMovement().add(this.getLookAngle().multiply(-0.35, 0.0, -0.35)));
+            this.hurtMarked = true;
+            return false;
+         }
+      }
+      return super.hurt(source, amount);
+   }
+
+   private boolean canDodge(DamageSource source) {
+      return source != null && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+         && source.getEntity() != null && source.getEntity() != this;
    }
 
    public void initializeForOkita(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target, long expiresAt) {

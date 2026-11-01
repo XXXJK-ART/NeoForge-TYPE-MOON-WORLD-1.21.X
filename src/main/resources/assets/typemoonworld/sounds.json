@@ -1607,7 +1607,14 @@
     "sounds": [
       {"name": "typemoonworld:voice/okita_souji_saber/attack1", "stream": true},
       {"name": "typemoonworld:voice/okita_souji_saber/attack2", "stream": true},
-      {"name": "typemoonworld:voice/okita_souji_saber/attack3", "stream": true}
+      {"name": "typemoonworld:voice/okita_souji_saber/attack3", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack4", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack5", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack6", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack7", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack8", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack9", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack10", "stream": true}
     ]
   },
   "okita_souji_saber_voice_fail": {
@@ -1627,6 +1634,16 @@
   "okita_souji_saber_voice_np": {
     "sounds": [
       {"name": "typemoonworld:voice/okita_souji_saber/np", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_battle_start": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/battle_start1", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_flag": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/flag_of_sincerity", "stream": true}
     ]
   },
   "jeanne_alter_voice_summon": {

@@ -55,6 +55,9 @@ public final class ServantCombatFormulas {
    }
 
    public static double combatMovementSpeed(ServantParams params) {
+      if (params != null && params.agility() == StatRank.A_PLUS_PLUS) {
+         return params.movementSpeed();
+      }
       return switch (agilityStep(params)) {
          case 0 -> 0.200;
          case 1 -> 0.260;

@@ -36,6 +36,10 @@ class ImportSasakiAnimations {
 
    public static void main(String[] args) throws Exception {
       Path root = Path.of(args[0]);
+      if (args.length > 1 && "--okita".equals(args[1])) {
+         importOkitaMumyoudan(root);
+         return;
+      }
       Path clips = root.resolve("小次郎攻击动画");
       JsonObject rig = read(clips.resolve("xiaocilanggongjimoxing.geo.bbmodel"));
       for (JsonElement entry : rig.getAsJsonArray("groups")) {
@@ -76,6 +80,35 @@ class ImportSasakiAnimations {
       ImageIO.write(stretched, "png", ASSETS.resolve("textures/particle/sasaki_tsubame_blade_stretched.png").toFile());
    }
 
+   private static void importOkitaMumyoudan(Path root) throws Exception {
+      Path clips = root.resolve("小次郎攻击动画");
+      JsonObject rig = read(clips.resolve("小次郎攻击3a动画/xiaocilanggongjimoxing.geo.bbmodel"));
+      for (JsonElement entry : rig.getAsJsonArray("groups")) {
+         JsonObject group = entry.getAsJsonObject();
+         String name = group.get("name").getAsString();
+         GROUPS.put(name, group);
+         NAMES.put(group.get("uuid").getAsString(), name);
+      }
+      parents(rig.getAsJsonArray("outliner"), null);
+
+      Path sourceFile = root.resolve("三段突.animation.json");
+      JsonObject source = read(sourceFile);
+      JsonObject clipsByName = source.getAsJsonObject("animations");
+      if (clipsByName.size() != 1) throw new IllegalArgumentException("Expected one Mumyoudan-zuki source clip");
+      String clipName = clipsByName.keySet().iterator().next();
+      JsonObject sourceAnimation = clipsByName.getAsJsonObject(clipName);
+      JsonObject wrapped = new JsonObject();
+      wrapped.addProperty("format_version", source.get("format_version").getAsString());
+      JsonObject sourceArchive = new JsonObject();
+      sourceArchive.add("mumyoudan_zuki", sourceAnimation.deepCopy());
+      wrapped.add("animations", sourceArchive);
+      write(ASSETS.resolve("animations/okita_souji_saber_source.animation.json"), wrapped);
+
+      JsonObject baked = new JsonObject();
+      importClip(baked, root, "mumyoudan_zuki", sourceFile, clipName, 15, 14, "okita_");
+      System.out.println("Imported Okita Mumyoudan-zuki from " + sourceFile);
+   }
+
    private static void parents(JsonArray children, String parent) {
       for (JsonElement entry : children) {
          if (!entry.isJsonObject()) continue;
@@ -89,6 +122,11 @@ class ImportSasakiAnimations {
 
    private static void importClip(JsonObject archive, Path root, String action, Path file,
                                   String clipName, int duration, int motionTicks) throws Exception {
+      importClip(archive, root, action, file, clipName, duration, motionTicks, "sasaki_kojiro_");
+   }
+
+   private static void importClip(JsonObject archive, Path root, String action, Path file,
+                                  String clipName, int duration, int motionTicks, String prefix) throws Exception {
       JsonObject animations = read(file).getAsJsonObject("animations");
       if (clipName == null) {
          if (animations.size() != 1) throw new IllegalArgumentException("Choose a source clip: " + file);
@@ -142,7 +180,7 @@ class ImportSasakiAnimations {
       emote.addProperty("degrees", true);
       emote.add("moves", moves);
       JsonObject output = new JsonObject();
-      output.addProperty("name", "sasaki_kojiro_" + action);
+      output.addProperty("name", prefix + action);
       output.addProperty("version", 3);
       output.addProperty("description", "Full source tracks; parent rotations and pivots baked for PlayerAnimator.");
       output.addProperty("source_file", root.relativize(file).toString().replace('\\', '/'));
@@ -150,7 +188,7 @@ class ImportSasakiAnimations {
       output.addProperty("source_length", seconds);
       output.addProperty("motion_ticks", motionTicks);
       output.add("emote", emote);
-      write(ASSETS.resolve("player_animations/sasaki_kojiro_" + action + ".json"), output);
+      write(ASSETS.resolve("player_animations/" + prefix + action + ".json"), output);
       System.out.println(action + ": " + clipName + " -> " + moves.size() + " frames, " + duration + " ticks");
    }
 
