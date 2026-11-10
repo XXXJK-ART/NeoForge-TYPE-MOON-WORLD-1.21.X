@@ -56,6 +56,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.special.ArcaneMobilityService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.ElementalArrayService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.MagicTimeAlter;
 import net.xxxjk.TYPE_MOON_WORLD.magic.special.SpiritronCannonService;
+import net.xxxjk.TYPE_MOON_WORLD.magic.special.SharedSensesService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicSwordBarrelFullOpen;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.MagicUnlimitedBladeWorks;
 import net.xxxjk.TYPE_MOON_WORLD.magic.unlimited_blade_works.UbwSwordControlService;
@@ -133,6 +134,10 @@ public final class BuiltinMagicExecutors {
       registry.register("baptism_rite", ctx -> toResult(MagicBaptismRite.execute(ctx.entity())), "typemoonworld_core");
       registry.register("mana_burst", ManaBurstService::execute, "typemoonworld_core");
       registry.register("stigma", ctx -> MagicExecutionResult.SUCCESS, "typemoonworld_core");
+      registry.register(SharedSensesService.MAGIC_ID, ctx -> {
+         ServerPlayer player = ctx.asServerPlayer();
+         return player != null && SharedSensesService.toggle(player) ? MagicExecutionResult.SUCCESS : MagicExecutionResult.FAILED;
+      }, "typemoonworld_core");
       registry.register(MagicSanctification.MAGIC_ID, MagicSanctification::execute, "typemoonworld_core");
    }
 

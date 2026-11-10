@@ -39,6 +39,7 @@ import org.joml.Vector3f;
 public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_FLAG_POOL = "OkitaFlagPool";
    private static final String TAG_FLAG_POOL_INIT = "OkitaFlagPoolInitialized";
+   private static final String TAG_FLAG_DEAD_MASK = "OkitaFlagDeadMask";
    private static final String TAG_SHUKUCHI_COOLDOWN = "OkitaShukuchiCooldown";
    private static final String TAG_SHUKUCHI_UNTIL = "OkitaShukuchiUntil";
    private static final String TAG_MUMYOUDAN_COOLDOWN = "OkitaMumyoudanCooldown";
@@ -54,7 +55,7 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_TARGET_ACQUIRED = "OkitaTargetAcquiredTick";
    private static final String TAG_LAST_PRESSURE_REPOSITION = "OkitaLastPressureReposition";
    private static final String SHINSENGUMI_OWNER_TAG = "OkitaShinsengumiOwner";
-   private static final int FLAG_POOL_MAX = 13;
+   private static final int FLAG_POOL_MAX = OkitaShinsengumiEntity.FLAG_MEMBER_COUNT;
    private static final int SHUKUCHI_COOLDOWN = 60;
    private static final int SHUKUCHI_DURATION = 200;
    private static final double SHUKUCHI_MP_COST = 0.0;
@@ -211,9 +212,11 @@ public final class OkitaSoujiSaberCombatHelper {
       if (!data.getBoolean(TAG_FLAG_POOL_INIT)) {
          data.putBoolean(TAG_FLAG_POOL_INIT, true);
          data.putInt(TAG_FLAG_POOL, FLAG_POOL_MAX);
+         data.putInt(TAG_FLAG_DEAD_MASK, 0);
       } else if (!data.contains(TAG_FLAG_POOL)) {
          data.putInt(TAG_FLAG_POOL, FLAG_POOL_MAX);
       }
+      if (!data.contains(TAG_FLAG_DEAD_MASK)) data.putInt(TAG_FLAG_DEAD_MASK, 0);
    }
 
    public static boolean isWeakConstitutionActive(OkitaSoujiSaberEntity entity) {
@@ -221,7 +224,18 @@ public final class OkitaSoujiSaberCombatHelper {
    }
 
    public static void decrementFlagPool(OkitaSoujiSaberEntity entity) {
+      decrementFlagPool(entity, -1);
+   }
+
+   public static void decrementFlagPool(OkitaSoujiSaberEntity entity, int formationIndex) {
       initializeFlagPool(entity);
+      CompoundTag data = entity.getPersistentData();
+      if (formationIndex >= 0 && formationIndex < FLAG_POOL_MAX) {
+         int bit = 1 << formationIndex;
+         if ((data.getInt(TAG_FLAG_DEAD_MASK) & bit) != 0) return;
+         data.putInt(TAG_FLAG_DEAD_MASK, data.getInt(TAG_FLAG_DEAD_MASK) | bit);
+      }
+      data.putInt(TAG_FLAG_POOL, Math.max(0, data.getInt(TAG_FLAG_POOL) - 1));
    }
 
    private static boolean tryShukuchi(OkitaSoujiSaberEntity entity, LivingEntity target, ServerLevel level, long now) {
@@ -282,19 +296,29 @@ public final class OkitaSoujiSaberCombatHelper {
       if (enemies < 3 && !emergency) {
          return false;
       }
-      int count = FLAG_POOL_MAX;
-      if (count <= 0) {
+       int available = Math.max(0, Math.min(FLAG_POOL_MAX, data.getInt(TAG_FLAG_POOL)));
+       if (available <= 0) {
          return false;
       }
+       java.util.Set<Integer> activeIndices = new java.util.HashSet<>();
+       for (OkitaShinsengumiEntity soldier : ownedShinsengumi(level, entity, 128.0)) {
+          activeIndices.add(soldier.getFormationIndex());
+       }
+       int deadMask = data.getInt(TAG_FLAG_DEAD_MASK);
+       java.util.List<Integer> spawnIndices = new java.util.ArrayList<>(available);
+       for (int i = 0; i < FLAG_POOL_MAX && spawnIndices.size() < available; i++) {
+          if ((deadMask & (1 << i)) == 0 && !activeIndices.contains(i)) spawnIndices.add(i);
+       }
+       if (spawnIndices.isEmpty()) return false;
       int summoned = 0;
-      for (int i = 0; i < count; i++) {
+       for (int index : spawnIndices) {
          OkitaShinsengumiEntity soldier = ModEntities.OKITA_SHINSENGUMI.get().create(level);
          if (soldier == null) {
             continue;
          }
-         Vec3 pos = findSummonPosition(level, entity, i, count);
+          Vec3 pos = findSummonPosition(level, entity, index, FLAG_POOL_MAX);
          soldier.moveTo(pos.x, pos.y, pos.z, entity.getYRot(), 0.0F);
-         soldier.initializeForOkita(entity, target, now + FLAG_DURATION);
+          soldier.initializeForOkita(entity, target, now + FLAG_DURATION, index);
          if (level.addFreshEntity(soldier)) {
             summoned++;
          }

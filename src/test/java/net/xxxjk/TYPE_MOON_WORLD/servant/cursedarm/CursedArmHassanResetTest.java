@@ -20,6 +20,11 @@ class CursedArmHassanResetTest {
    private static final Path RESOURCES = Path.of("src/main/resources");
 
    @Test
+   void missingHeldCoreDoesNotCountAsExtractedCore() {
+      assertFalse(net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(null));
+   }
+
+   @Test
    void definitionUsesConfirmedIdentityAndRanks() throws Exception {
       var definition = JsonParser.parseString(Files.readString(
          RESOURCES.resolve("data/typemoonworld/servant/definitions/cursed_arm_hassan.json"), StandardCharsets.UTF_8)).getAsJsonObject();

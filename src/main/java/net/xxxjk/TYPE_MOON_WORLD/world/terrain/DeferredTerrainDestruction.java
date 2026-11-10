@@ -42,7 +42,8 @@ public final class DeferredTerrainDestruction {
       if (radius > 0) add(level, new SphereJob(level, center, radius, radius, maxHardness, false, null, null).schedule(targetTicks));
    }
    public static void queueSphere(ServerLevel level, Vec3 center, double radius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
-      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback).schedule(targetTicks));
+      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback)
+         .maximumDownwardDepth(0).schedule(targetTicks));
    }
    /** Clears the complete sphere in distance order, including its center voxel. */
    public static void queueRadialSphere(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
@@ -50,6 +51,13 @@ public final class DeferredTerrainDestruction {
    }
    public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
       if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius).schedule(targetTicks));
+   }
+   public static void queueRestrictedShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius,
+                                           int maximumDownwardDepth, int targetTicks, BlockPredicate predicate,
+                                           RemovalCallback callback) {
+      if (level != null && currentRadius > 0.0 && predicate != null) add(level,
+         new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback)
+            .inner(previousRadius).maximumDownwardDepth(maximumDownwardDepth).schedule(targetTicks));
    }
    public static void queueEllipsoid(ServerLevel level, Vec3 center, int radius, int halfHeight, float maxHardness, int targetTicks) {
       if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness).schedule(targetTicks));
@@ -118,6 +126,12 @@ public final class DeferredTerrainDestruction {
    /** Queues a sphere whose available work expands only when the caller advances its radius. */
    public static ExpandingSphere queueExpandingSphere(ServerLevel level, Vec3 center, int radius, Runnable completion) {
       ExpandingSphereJob job = new ExpandingSphereJob(level, center, radius, completion);
+      add(level, job);
+      return new ExpandingSphere(job);
+   }
+
+   public static ExpandingSphere queueExpandingUpperSphere(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+      ExpandingSphereJob job = new ExpandingSphereJob(level, center, radius, completion, true);
       add(level, job);
       return new ExpandingSphere(job);
    }
@@ -240,11 +254,12 @@ public final class DeferredTerrainDestruction {
    }
    private static final class SphereJob extends Job {
       final Vec3 center; final int scan; final double radius, radiusSqr; final float hardness; final boolean shellOnly; final BlockPredicate predicate; final RemovalCallback callback;
-      double innerSqr; int x, y, z, removed;
+      double innerSqr; int x, y, z, removed; int maximumDownwardDepth = -1;
       SphereJob(ServerLevel level, Vec3 center, int scan, double radius, float hardness, boolean shellOnly, BlockPredicate predicate, RemovalCallback callback) { super(level); this.center=center; this.scan=scan; this.radius=radius; this.radiusSqr=radius*radius; this.hardness=hardness; this.shellOnly=shellOnly; this.predicate=predicate; this.callback=callback; x=y=z=-scan; }
       SphereJob inner(double value) { innerSqr=Math.max(0,value*value); return this; }
+      SphereJob maximumDownwardDepth(int value) { maximumDownwardDepth = Math.max(0, value); return this; }
       SphereJob schedule(int targetTicks) { super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * (scan * 2 + 1)); return this; }
-      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
+      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(maximumDownwardDepth >= 0 && p.getY() < Mth.floor(center.y) - maximumDownwardDepth)return; if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
       void cursor(){if(++z>scan){z=-scan;if(++y>scan){y=-scan;if(++x>scan)done=true;}}}
    }
    private static final class RadialSphereJob extends Job {
@@ -630,15 +645,20 @@ public final class DeferredTerrainDestruction {
    private static final class ExpandingSphereJob extends Job {
       final Vec3 center;
       final int maxRadius;
+      final boolean upperOnly;
       int shell, x, y, z;
       double targetRadius;
       boolean sealed;
 
       ExpandingSphereJob(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+         this(level, center, radius, completion, false);
+      }
+      ExpandingSphereJob(ServerLevel level, Vec3 center, int radius, Runnable completion, boolean upperOnly) {
          super(level);
          this.center = center;
          this.maxRadius = Math.max(1, radius);
          this.completion = completion;
+         this.upperOnly = upperOnly;
       }
       void advanceTo(double radius) { targetRadius = Math.max(targetRadius, Math.min(maxRadius, radius)); }
       void seal() { sealed = true; targetRadius = maxRadius; }
@@ -647,7 +667,7 @@ public final class DeferredTerrainDestruction {
          int cx = x, cy = y, cz = z, currentShell = shell;
          cursor();
          if (Math.max(Math.max(Math.abs(cx), Math.abs(cy)), Math.abs(cz)) != currentShell) return;
-         if (cx * cx + cy * cy + cz * cz > maxRadius * maxRadius) return;
+         if (upperOnly && cy < 0 || cx * cx + cy * cy + cz * cz > maxRadius * maxRadius) return;
          BlockPos pos = BlockPos.containing(center.x + cx, center.y + cy, center.z + cz);
          if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
       }

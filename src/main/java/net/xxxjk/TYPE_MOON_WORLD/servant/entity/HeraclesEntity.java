@@ -21,6 +21,9 @@ public class HeraclesEntity extends ServantEntity {
    private static final EntityDataAccessor<Boolean> FRENZY_ANIMATION = SynchedEntityData.defineId(
       HeraclesEntity.class, EntityDataSerializers.BOOLEAN
    );
+   private static final EntityDataAccessor<Long> GOD_HAND_REACTION = SynchedEntityData.defineId(
+      HeraclesEntity.class, EntityDataSerializers.LONG
+   );
    private int frenzySlashVariant;
 
    public HeraclesEntity(EntityType<HeraclesEntity> entityType, Level level) {
@@ -31,6 +34,7 @@ public class HeraclesEntity extends ServantEntity {
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(FRENZY_ANIMATION, false);
+      builder.define(GOD_HAND_REACTION, 0L);
    }
 
    @Override
@@ -38,9 +42,9 @@ public class HeraclesEntity extends ServantEntity {
       super.tick();
       if (!this.level().isClientSide()) {
          LivingEntity target = this.getTarget();
-         boolean attacking = HeraclesAbilityService.busy(this)
-            || HeraclesAbilityService.enemy(this, target) && this.distanceToSqr(target) <= 49.0 && this.hasLineOfSight(target);
-         this.entityData.set(FRENZY_ANIMATION, attacking && this.isAlive() && !this.isSpiritualTransitionLocked()
+         boolean advancing = HeraclesAbilityService.enemy(this, target) && this.distanceToSqr(target) > 6.25
+            && this.distanceToSqr(target) <= 400.0 && this.hasLineOfSight(target);
+         this.entityData.set(FRENZY_ANIMATION, advancing && this.isAlive() && !this.isSpiritualTransitionLocked()
             && !HeraclesAbilityService.controlled(this) && !ServantCombatSystem.cannotAct(this));
       }
    }
@@ -49,12 +53,29 @@ public class HeraclesEntity extends ServantEntity {
       return this.entityData.get(FRENZY_ANIMATION);
    }
 
+   public void triggerGodHandReaction(boolean adaptation) {
+      if (this.level().isClientSide()) return;
+      int duration = adaptation ? 5 : 7;
+      this.entityData.set(GOD_HAND_REACTION, (this.level().getGameTime()+duration)*2+(adaptation ? 1 : 0));
+      if (!HeraclesAbilityService.busy(this)) this.triggerNamedActionAnimation(adaptation ? "adapt" : "revive");
+   }
+
+   /** Small additive motion also survives a revival during a long airborne attack. */
+   public float godHandReactionStrength(float partialTick) {
+      long reaction = this.entityData.get(GOD_HAND_REACTION);
+      if (reaction == 0 || this.isSpiritualTransitionLocked()) return 0;
+      int duration = (reaction & 1) == 1 ? 5 : 7;
+      float remaining = (float)(reaction/2-this.level().getGameTime())-partialTick;
+      if (remaining <= 0 || remaining > duration) return 0;
+      float elapsed = duration-remaining;
+      return Math.min(1, elapsed/2F)*Math.min(1,remaining/3F);
+   }
+
    @Override
    protected String getLoopAnimationOverride(ServantAnimations animations, boolean moving) {
-      // Synced display state keeps remote clients attacking between individual
-      // strikes. This loop never deals damage or changes the combat cadence.
-      return this.isFrenzyAnimationActive()
-         ? animations.actionAnimation(moving ? "frenzy_walk" : "frenzy").orElse(null) : null;
+      // Locomotion communicates pursuit; action animations own the actual strikes.
+      return this.isFrenzyAnimationActive() && moving && this.onGround()
+         ? animations.actionAnimation("frenzy_walk").orElse(null) : null;
    }
 
    @Override

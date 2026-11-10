@@ -6,10 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForgeMod;
@@ -44,13 +40,20 @@ public final class GodHandService {
       entity.getPersistentData().put(STATE, tag); entity.getPersistentData().putInt("GodHandLives", state.lives());
    }
    public static void clear(LivingEntity entity) {
+      HeraclesPresentationService.clear(entity);
       for (String key : new java.util.ArrayList<>(entity.getPersistentData().getAllKeys())) if (key.startsWith("GodHand")) entity.getPersistentData().remove(key);
    }
    public static void tick(LivingEntity entity) {
       if (!HeraclesGodHandHelper.hasGodHand(entity) || !entity.isAlive()) return;
       initialize(entity);
       var state = read(entity);
-      if (state.remainingTicks() > 0) write(entity, state.tick());
+      if (state.remainingTicks() > 0) {
+         var next = state.tick();
+         write(entity, next);
+         if (state.remainingTicks() == 1 && !state.pending().isBlank()
+            && !state.adapted().contains(state.pending()) && next.adapted().contains(state.pending()))
+            HeraclesPresentationService.adapted(entity);
+      }
    }
    public static boolean beforeDefense(LivingIncomingDamageEvent event) {
       var entity = event.getEntity();
@@ -101,10 +104,7 @@ public final class GodHandService {
    private static void restore(LivingEntity entity) {
       entity.setHealth(entity.getMaxHealth());
       entity.invulnerableTime = 0; entity.hurtTime = 0; entity.hurtDuration = 0;
-      if (entity.level() instanceof ServerLevel level) {
-         level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, entity.getX(), entity.getY()+1, entity.getZ(), 30,.6,.6,.6,.15);
-         level.playSound(null, entity.blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1,.8F);
-      }
+      HeraclesPresentationService.revive(entity);
    }
    /** Explicit poison is health damage, never armor/absorption/dodge damage. */
    public static void poisonHit(LivingIncomingDamageEvent event) {

@@ -17,6 +17,13 @@ public class HeraclesModel extends BaseServantModel<HeraclesEntity> {
    @Override
    public void setCustomAnimations(HeraclesEntity entity, long instanceId, AnimationState<HeraclesEntity> state) {
       super.setCustomAnimations(entity, instanceId, state);
+      float reaction = entity.godHandReactionStrength(state.getPartialTick());
+      if (reaction > 0) {
+         GeoBone head = this.getAnimationProcessor().getBone("head");
+         GeoBone body = this.getAnimationProcessor().getBone("upper_body");
+         if (head != null) head.setRotX(head.getRotX() - reaction * .16F);
+         if (body != null) body.setRotX(body.getRotX() - reaction * .08F);
+      }
       if (entity.getCombatPose() != 2) return;
       float phase = Math.clamp(entity.getCombatPoseTicks() / 6.0F, 0.0F, 1.0F);
       GeoBone rightArm = this.getAnimationProcessor().getBone("right arm");

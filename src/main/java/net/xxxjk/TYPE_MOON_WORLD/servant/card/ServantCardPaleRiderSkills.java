@@ -24,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderGrayscaleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
@@ -66,6 +67,7 @@ public final class ServantCardPaleRiderSkills {
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
    private static final Map<ServerPlayer, Long> LAST_POSSESSION_INPUT_TICKS = new WeakHashMap<>();
    private static final Map<ServerPlayer, PaleRiderStateMessage> LAST_SENT_STATES = new WeakHashMap<>();
+   private static final Map<UUID, GrayscaleState> LAST_SENT_GRAYSCALE = new java.util.HashMap<>();
 
    private ServantCardPaleRiderSkills() {}
 
@@ -107,6 +109,7 @@ public final class ServantCardPaleRiderSkills {
       player.getPersistentData().remove(LAST_CALAMITY_TICK_TAG);
       player.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
       player.noPhysics = false;
+      if (player.level() instanceof ServerLevel level) updateGrayscaleForLevel(level);
       sendIfSupported(player, new PaleRiderOpenScreenMessage(5, List.of()));
    }
 
@@ -158,8 +161,42 @@ public final class ServantCardPaleRiderSkills {
                 LAST_SENT_STATES.put(player, state);
              }
           }
+         if (player.tickCount % 10 == 0) updateGrayscaleForLevel(level);
       }
    }
+
+   public static void updateGrayscaleForLevel(ServerLevel level) {
+      long now = level.getGameTime();
+      java.util.Set<UUID> connectedPlayers = new java.util.HashSet<>();
+      for (ServerPlayer viewer : level.players()) {
+         connectedPlayers.add(viewer.getUUID());
+         boolean affected = false;
+         for (ServerPlayer caster : level.players()) {
+            if (!isActiveCard(caster)) continue;
+            LivingEntity anchor = getDomainAnchor(caster);
+            if (anchor == null) continue;
+            double distance = viewer.distanceToSqr(anchor);
+            if ((isUnderworldActive(caster) && distance <= 64.0 * 64.0)
+               || (isCalamityActive(caster) && distance <= 40.0 * 40.0)) {
+               affected = true;
+               break;
+            }
+         }
+         if (!affected) {
+            affected = level.getEntitiesOfClass(PaleRiderEntity.class, viewer.getBoundingBox().inflate(64.0), PaleRiderEntity::hasAnyDomain)
+               .stream().anyMatch(rider -> (rider.isUnderworldActive() && viewer.distanceToSqr(rider) <= 64.0 * 64.0)
+                  || (rider.isCalamityActive() && viewer.distanceToSqr(rider) <= 40.0 * 40.0));
+         }
+         GrayscaleState previous = LAST_SENT_GRAYSCALE.get(viewer.getUUID());
+         if (previous == null || previous.active != affected || now - previous.sentTick >= 100L) {
+            ModNetwork.sendToPlayer(viewer, new PaleRiderGrayscaleMessage(affected));
+            LAST_SENT_GRAYSCALE.put(viewer.getUUID(), new GrayscaleState(affected, now));
+         }
+      }
+      LAST_SENT_GRAYSCALE.keySet().removeIf(uuid -> !connectedPlayers.contains(uuid));
+   }
+
+   private record GrayscaleState(boolean active, long sentTick) {}
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
       if (!isActiveCard(player)) return false;
@@ -390,6 +427,7 @@ public final class ServantCardPaleRiderSkills {
             VFXServerEffects.spawn(level, "pale_rider_underworld_open", anchor, 64.0);
          }
          else VFXServerEffects.spawn(level, "pale_rider_underworld_end", previousOrigin, 64.0);
+         updateGrayscaleForLevel(level);
       }
       return true;
    }
@@ -411,6 +449,7 @@ public final class ServantCardPaleRiderSkills {
          LivingEntity anchor = getDomainAnchor(player);
          if (active && anchor != null) VFXServerEffects.spawn(level, "pale_rider_calamity_open", anchor, 40.0);
          else VFXServerEffects.spawn(level, "pale_rider_calamity_end", previousOrigin, 40.0);
+         updateGrayscaleForLevel(level);
       }
       return true;
    }

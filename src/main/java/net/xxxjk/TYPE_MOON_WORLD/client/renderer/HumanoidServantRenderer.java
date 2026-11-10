@@ -195,6 +195,13 @@ public class HumanoidServantRenderer<T extends ServantEntity> extends HumanoidMo
             this.leftArm.zRot = 0.0F;
             this.leftSleeve.copyFrom(this.leftArm);
          }
+         boolean specialTechniqueActive = entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity sasaki
+            && sasaki.isSasakiActionActive();
+         if (!specialTechniqueActive && !entity.isPerformingAction() && entity.getCombatPose() == 0
+            && !entity.isRoaring() && !entity.isSlamming()) {
+            net.xxxjk.TYPE_MOON_WORLD.client.ServantBaseAnimationClient.applyNpcPose(
+               entity, this, ageInTicks - entity.tickCount);
+         }
          net.xxxjk.TYPE_MOON_WORLD.client.ServantDefenseAnimationClient.applyImportedPose(
             entity, this, ageInTicks - entity.tickCount);
       }

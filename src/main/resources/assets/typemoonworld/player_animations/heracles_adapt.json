@@ -1,0 +1,81 @@
+{
+  "name": "heracles_adapt",
+  "version": 3,
+  "description": "Short physical recovery; locomotion and combat remain authoritative.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 5,
+    "stopTick": 5,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 1,
+        "body": {
+          "pitch": -6,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": -5,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -12,
+          "yaw": -8,
+          "roll": -8
+        },
+        "leftArm": {
+          "pitch": -10,
+          "yaw": 8,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 5,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

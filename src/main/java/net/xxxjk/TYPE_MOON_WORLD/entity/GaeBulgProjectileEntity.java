@@ -708,10 +708,11 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
-      DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, 36, (serverLevel, pos, distanceSqr, radius, origin) -> {
+      DeferredTerrainDestruction.queueRestrictedShell(level, center, currentRadius, previousRadius, 0, 36, (serverLevel, pos, distanceSqr, radius, origin) -> {
          BlockState state = serverLevel.getBlockState(pos);
          float hardness = state.getDestroySpeed(serverLevel, pos);
-         return !state.isAir()
+         return net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos)
+            && !state.isAir()
             && hardness >= 0.0F
             && hardness <= 35.0F
             && !state.is(Blocks.BEDROCK)
@@ -725,11 +726,13 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
    private void breakSphereTerrain(ServerLevel level, Vec3 center, double radius) {
       // One radial job: a parallel low-hardness sweep would clear the rim ahead of the blast.
-      DeferredTerrainDestruction.queueRadialSphere(level, center, (int)Math.ceil(radius), (serverLevel, pos, removed) -> {
-         if ((removed & 127) == 0) {
-            serverLevel.sendParticles(DEATH_FLIGHT_BURST, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
-         }
-      });
+      DeferredTerrainDestruction.queueHemisphere(level, center, radius, false, Float.MAX_VALUE, 36,
+         (serverLevel, pos, distanceSqr, currentRadius, origin) ->
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos),
+         (serverLevel, pos, previous, removed) -> {
+            if ((removed & 127) == 0) serverLevel.sendParticles(DEATH_FLIGHT_BURST,
+               pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
+         }, null);
    }
 
    private boolean applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {

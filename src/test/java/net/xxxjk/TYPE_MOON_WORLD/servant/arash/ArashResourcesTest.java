@@ -247,7 +247,7 @@ class ArashResourcesTest {
       assertTrue(arrow.contains("LARGE_ENERGY ? HEAVY_RED : GREEN"));
       assertTrue(entitiesForTest().contains("clientTrackingRange(8)"));
       assertTrue(arrow.contains("terrainDestructionRadius(this.getVariant())"));
-      assertTrue(arrow.contains("queueExpandingSphere(level, impactPosition, terrainRadius, null)"));
+      assertTrue(arrow.contains("queueExpandingUpperSphere(level, impactPosition, terrainRadius, null)"));
       assertTrue(arrow.contains("terrain.advanceTo(terrainRadius)"));
       assertTrue(arrow.contains("terrain.seal()"));
       assertTrue(bow.contains("ArashAimHelper.autoAimDirection"));

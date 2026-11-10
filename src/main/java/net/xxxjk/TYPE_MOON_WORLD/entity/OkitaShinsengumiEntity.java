@@ -22,6 +22,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.martial.KendoSchool;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,8 +34,8 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    private static final double FOLLOW_STOP_DISTANCE_SQR = 3.0 * 3.0;
    private static final double FOLLOW_START_DISTANCE_SQR = 5.0 * 5.0;
    private static final double FOLLOW_URGENT_DISTANCE_SQR = 14.0 * 14.0;
-   // Flag of Sincerity soldiers use an all-E servant panel. Their two retained
-   // defensive values are deliberately halved, while toughness is discarded.
+   public static final int FLAG_MEMBER_COUNT = 12;
+   // Defense and evasion remain at half of the previous E-level values.
    public static final double E_PANEL_HEALTH = StatRank.E.toMaxHealth();
    public static final double E_PANEL_ATTACK = StatRank.E.toAttackDamage();
    public static final double E_PANEL_MOVEMENT_SPEED = StatRank.E.toMovementSpeed();
@@ -47,8 +48,19 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    public static final int E_PANEL_DODGE_COOLDOWN_TICKS = 9;
    private static final String TAG_DODGE_COOLDOWN = "OkitaShinsengumiDodgeCooldown";
    private static final String TAG_PERFECT_DODGE_UNTIL = "OkitaShinsengumiPerfectDodgeUntil";
+   private static final String TAG_PANEL_RANK = "OkitaShinsengumiPanelRank";
+   private static final String TAG_FORMATION_INDEX = "OkitaShinsengumiFormationIndex";
+   private static final String TRAIT_LIST_TAG = "ServantCardTraitKeys";
+   private static final ServantTraitTag[] SERVANT_TRAITS = {
+      ServantTraitTag.SERVANT, ServantTraitTag.HUMANOID, ServantTraitTag.HUMAN,
+      ServantTraitTag.HUMAN_KIND, ServantTraitTag.MALE, ServantTraitTag.SABER,
+      ServantTraitTag.RIDING, ServantTraitTag.SHINSENGUMI, ServantTraitTag.NEUTRAL,
+      ServantTraitTag.BALANCED
+   };
    @Nullable private UUID ownerUuid;
    @Nullable private UUID targetUuid;
+   private StatRank panelRank = StatRank.D;
+   private int formationIndex = 1;
 
    public OkitaShinsengumiEntity(EntityType<? extends OkitaShinsengumiEntity> type, Level level) {
       super(type, level);
@@ -66,6 +78,32 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          .add(Attributes.FOLLOW_RANGE, 48.0)
          .add(Attributes.ATTACK_SPEED, 4.0)
          .add(Attributes.KNOCKBACK_RESISTANCE, 0.0);
+   }
+
+   public void setPanelRank(StatRank rank) {
+      this.panelRank = rank == StatRank.C ? StatRank.C : StatRank.D;
+      this.applyPanelAttributes();
+   }
+
+   public StatRank getPanelRank() {
+      return this.panelRank;
+   }
+
+   public int getFormationIndex() {
+      return this.formationIndex;
+   }
+
+   private void applyPanelAttributes() {
+      this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.panelRank.toMaxHealth());
+      this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(this.panelRank.toAttackDamage());
+      this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(this.panelRank.toMovementSpeed());
+   }
+
+   private void ensureServantTraits() {
+      String traits = java.util.Arrays.stream(SERVANT_TRAITS).map(ServantTraitTag::key)
+         .collect(java.util.stream.Collectors.joining(","));
+      this.getPersistentData().putString(TRAIT_LIST_TAG, traits);
+      this.setFemale(false);
    }
 
    @Override
@@ -92,17 +130,27 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
    }
 
    public void initializeForOkita(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target, long expiresAt) {
-      this.initialize(owner, target, expiresAt);
+      this.initialize(owner, target, expiresAt, 1);
+   }
+
+   public void initializeForOkita(OkitaSoujiSaberEntity owner, @Nullable LivingEntity target, long expiresAt, int index) {
+      this.initialize(owner, target, expiresAt, index);
    }
 
    public void initializeForOkitaCard(ServerPlayer owner, @Nullable LivingEntity target, long expiresAt) {
-      this.initialize(owner, target, expiresAt);
+      this.initialize(owner, target, expiresAt, 1);
+   }
+
+   public void initializeForOkitaCard(ServerPlayer owner, @Nullable LivingEntity target, long expiresAt, int index) {
+      this.initialize(owner, target, expiresAt, index);
    }
 
    @Override
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType type,
                                        @Nullable SpawnGroupData data) {
       SpawnGroupData result = super.finalizeSpawn(level, difficulty, type, data);
+      this.setPanelRank(StatRank.D);
+      this.ensureServantTraits();
       this.setSchool(KendoSchool.TENNEN);
       this.setProficiency(90);
       this.equipOkitaLoadout();
@@ -196,7 +244,7 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          LivingEntity owner = this.getOwner(level);
          if (owner != null) {
             if (owner instanceof OkitaSoujiSaberEntity okita) {
-               okita.onShinsengumiKilled();
+                okita.onShinsengumiKilled(this.formationIndex);
             }
          }
       }
@@ -214,6 +262,8 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       }
       tag.putLong(TAG_EXPIRES, this.getPersistentData().getLong(TAG_EXPIRES));
       tag.putBoolean(TAG_NATURAL_TIMEOUT, this.getPersistentData().getBoolean(TAG_NATURAL_TIMEOUT));
+      tag.putString(TAG_PANEL_RANK, this.panelRank.name());
+      tag.putInt(TAG_FORMATION_INDEX, this.formationIndex);
    }
 
    @Override
@@ -223,6 +273,9 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       this.targetUuid = tag.hasUUID(TAG_TARGET) ? tag.getUUID(TAG_TARGET) : null;
       this.getPersistentData().putLong(TAG_EXPIRES, tag.getLong(TAG_EXPIRES));
       this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, tag.getBoolean(TAG_NATURAL_TIMEOUT));
+      this.panelRank = StatRank.fromKey(tag.getString(TAG_PANEL_RANK));
+      if (this.panelRank != StatRank.C) this.panelRank = StatRank.D;
+      this.formationIndex = Math.max(0, tag.getInt(TAG_FORMATION_INDEX));
       if (this.ownerUuid != null) {
          this.getPersistentData().putUUID(TAG_OWNER, this.ownerUuid);
       }
@@ -230,6 +283,8 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.getPersistentData().putUUID(TAG_TARGET, this.targetUuid);
       }
       this.equipOkitaLoadout();
+      this.applyPanelAttributes();
+      this.ensureServantTraits();
       this.clearPersonalName();
    }
 
@@ -302,7 +357,10 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
       }
    }
 
-   private void initialize(LivingEntity owner, @Nullable LivingEntity target, long expiresAt) {
+   private void initialize(LivingEntity owner, @Nullable LivingEntity target, long expiresAt, int index) {
+      this.formationIndex = Math.max(0, index);
+      this.setPanelRank(this.formationIndex == 0 ? StatRank.C : StatRank.D);
+      this.ensureServantTraits();
       this.ownerUuid = owner.getUUID();
       this.targetUuid = target == null ? null : target.getUUID();
       this.getPersistentData().putUUID(TAG_OWNER, owner.getUUID());
@@ -311,6 +369,8 @@ public final class OkitaShinsengumiEntity extends ShinsengumiEntity {
          this.setTarget(target);
       }
       this.getPersistentData().putLong(TAG_EXPIRES, expiresAt);
+      this.getPersistentData().putLong("TypeMoonKendoNpcNextSkill", this.level().getGameTime() + this.formationIndex * 2L);
+      this.getPersistentData().putInt(TAG_FORMATION_INDEX, this.formationIndex);
       this.getPersistentData().putBoolean(TAG_NATURAL_TIMEOUT, false);
       this.setSchool(KendoSchool.TENNEN);
       this.setProficiency(90);

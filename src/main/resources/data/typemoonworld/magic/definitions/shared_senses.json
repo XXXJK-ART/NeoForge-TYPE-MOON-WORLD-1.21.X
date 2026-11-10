@@ -1,0 +1,19 @@
+{
+  "name_key": "magic.typemoonworld.shared_senses.name",
+  "category": "typemoonworld:special",
+  "school": "typemoonworld:none",
+  "mana_cost": 0.0,
+  "cooldown_ticks": 0,
+  "learnable": true,
+  "wheel_selectable": true,
+  "crest_allowed": false,
+  "npc_allowed": false,
+  "knowledge_only": false,
+  "canon_status": "mod_original",
+  "source_key": "typemoonworld:shared_senses",
+  "magic_type": "utility",
+  "cast_mode": "instant",
+  "resource_model": "none",
+  "copy_policy": "knowledge_only",
+  "player_allowed": true
+}

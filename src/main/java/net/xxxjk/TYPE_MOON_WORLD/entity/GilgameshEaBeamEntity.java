@@ -39,6 +39,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceServi
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -423,6 +425,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private static void queueImpactTerrainInWaves(ServerLevel level, Vec3 center, double radius) {
+      radius = NoblePhantasmTerrainLimits.radius(radius);
       int waves = Math.max(1, (int)Math.ceil(radius / 2.0));
       double step = radius / waves;
       for (int wave = 1; wave <= waves; wave++) {
@@ -432,7 +435,8 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
             double current = index * step;
             DeferredTerrainDestruction.queueShell(level, center, current, previous, 48,
                (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
-                  if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null) return false;
+                  if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null
+                     || !NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos)) return false;
                   BlockState state = serverLevel.getBlockState(pos);
                   float hardness = state.getDestroySpeed(serverLevel, pos);
                   return !state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0 && hardness <= 80

@@ -267,12 +267,15 @@ public final class HeraclesGameTests {
    @GameTest(template="ancient_temple",timeoutTicks=420,batch="heracles_dodge_group")
    public static void exactlyTwoDodgesRestoreAsAGroupAfter400Ticks(GameTestHelper h) {
       var e=owner(h);e.getPersistentData().putInt(ServantCombatDefenseService.AUTO_CHARGES,2);var attacker=target(h,e.position().add(0,0,2));
-      var source=e.damageSources().mobAttack(attacker);e.hurt(source,20);e.hurt(source,20);
+      var source=e.damageSources().mobAttack(attacker);e.hurt(source,20);
+      // Independent attempts: vanilla's same-tick hurt timer otherwise filters the
+      // second equal hit before counted evasion can see it.
+      e.invulnerableTime=0;e.hurt(source,20);
       h.assertTrue(e.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES)==0,"did not use exactly two charges");
       // Isolate the counted skill from ordinary paid NPC dodge/guard decisions.
       e.getPersistentData().putDouble(ServantCombatDefenseService.TAG_STAMINA,0);
       e.getPersistentData().putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN,Long.MAX_VALUE);
-      float before=e.getHealth();e.hurt(source,20);h.assertTrue(e.getHealth()<before,"extra random dodge remained");
+      float before=e.getHealth();e.invulnerableTime=0;e.hurt(source,20);h.assertTrue(e.getHealth()<before,"extra random dodge remained");
       long restore=e.getPersistentData().getLong(ServantCombatDefenseService.AUTO_RESTORE);
       close(h,restore-e.level().getGameTime(),400,"dodge group duration");
       h.runAfterDelay(399,()->{ServantCombatDefenseService.tick(e);h.assertTrue(e.getPersistentData().getInt(ServantCombatDefenseService.AUTO_CHARGES)==0,"restored at 399 ticks");});

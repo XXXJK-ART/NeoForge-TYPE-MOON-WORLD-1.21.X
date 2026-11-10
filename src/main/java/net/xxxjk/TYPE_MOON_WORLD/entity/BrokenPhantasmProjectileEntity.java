@@ -39,6 +39,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits;
 
 public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> EXPLOSION_POWER = SynchedEntityData.defineId(
@@ -163,7 +164,7 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
          if (this.level() instanceof ServerLevel serverLevel) {
             VFXServerEffects.spawnScaled(serverLevel, "broken_phantasm_explosion", this.position(), 128.0,
                (float)Mth.clamp(this.maxRadius * 1.2F / 25.0F, 0.35F, 2.4F));
-            queueBrokenPhantasmTerrain(serverLevel, Vec3.atCenterOf(this.explosionCenter), this.maxRadius, 42.0F, this.maxRadius >= 28.0F ? 80 : 45);
+            queueBrokenPhantasmTerrain(serverLevel, this, Vec3.atCenterOf(this.explosionCenter), this.maxRadius, 42.0F, this.maxRadius >= 28.0F ? 80 : 45);
          }
          this.level()
             .playSound(
@@ -266,20 +267,21 @@ public class BrokenPhantasmProjectileEntity extends ThrowableItemProjectile {
       }
    }
 
-   private static void queueBrokenPhantasmTerrain(ServerLevel level, Vec3 center, double radius, float maxHardness, int targetTicks) {
-      int waveCount = Math.max(6, Math.min(28, (int)Math.ceil(radius)));
-      double waveStep = radius / waveCount;
+   private static void queueBrokenPhantasmTerrain(ServerLevel level, Entity source, Vec3 center, double radius, float maxHardness, int targetTicks) {
+      double terrainRadius = NoblePhantasmTerrainLimits.radius(radius);
+      int waveCount = Math.max(6, Math.min(28, (int)Math.ceil(terrainRadius)));
+      double waveStep = terrainRadius / waveCount;
       for (int wave = 1; wave <= waveCount; wave++) {
          final int waveIndex = wave;
          TYPE_MOON_WORLD.queueServerWork(waveIndex, () -> {
             double previousRadius = Math.max(0.0, (waveIndex - 1) * waveStep);
             double currentRadius = waveIndex * waveStep;
-            DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, Math.max(8, targetTicks / waveCount), (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
+            DeferredTerrainDestruction.queueRestrictedShell(level, center, currentRadius, previousRadius, 0, Math.max(8, targetTicks / waveCount), (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
                BlockState state = serverLevel.getBlockState(pos);
-               float hardness = state.getDestroySpeed(serverLevel, pos);
-               return !state.isAir()
-                  && hardness >= 0.0F
-                  && hardness <= maxHardness
+               return NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos)
+                  && !state.isAir()
+                  && state.getDestroySpeed(serverLevel, pos) >= 0.0F
+                  && state.getDestroySpeed(serverLevel, pos) <= maxHardness
                   && !state.is(net.minecraft.world.level.block.Blocks.BEDROCK)
                   && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
             }, null);

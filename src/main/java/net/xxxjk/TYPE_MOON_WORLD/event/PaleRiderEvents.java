@@ -43,6 +43,10 @@ public final class PaleRiderEvents {
 
    @SubscribeEvent
    public static void onEntityTick(EntityTickEvent.Post event) {
+      if (event.getEntity() instanceof PaleRiderEntity rider && !rider.level().isClientSide()
+         && rider.level() instanceof ServerLevel level && rider.tickCount % 10 == 0) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardPaleRiderSkills.updateGrayscaleForLevel(level);
+      }
       if (event.getEntity() instanceof LivingEntity living && !living.level().isClientSide()
          && living.getPersistentData().contains(PaleRiderInfectionService.TAG_LEVEL)) {
          PaleRiderInfectionService.tick(living);
@@ -56,6 +60,16 @@ public final class PaleRiderEvents {
             net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService.tickFootsteps(living);
          }
       }
+   }
+
+   @SubscribeEvent(priority = EventPriority.HIGHEST)
+   public static void protectCardRiderOnInvulnerableHorse(LivingIncomingDamageEvent event) {
+      if (!(event.getEntity() instanceof ServerPlayer player)
+         || !PaleRiderInfectionService.isPaleRiderCardPlayer(player)
+         || !(player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity horse)
+         || !player.getUUID().equals(horse.getPaleRiderOwnerUuid())) return;
+      event.setAmount(0.0F);
+      event.setCanceled(true);
    }
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)

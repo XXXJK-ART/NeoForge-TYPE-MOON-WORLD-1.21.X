@@ -405,7 +405,9 @@ public final class ArashStellaControllerEntity extends Entity {
          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 2.0, 2.0, 2.0, 0.0);
       }
       if (sphere == null) {
-         sphere = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.round(profile.endRadius()),
+         DeferredTerrainDestruction.protectNextCombatJob();
+         sphere = DeferredTerrainDestruction.queueExpandingUpperSphere(level, center,
+            (int)Math.round(profile.endRadius()),
             () -> { if (!this.isRemoved() && this.level() instanceof ServerLevel current) finish(current); });
       }
       stageTicks++;

@@ -41,6 +41,7 @@ public final class VoiceCommunicationService {
 
     private static final Set<UUID> MESSAGE_MAGIC_MASTERS = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> TELEPATHY_MASTERS = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, UUID> SHARED_SENSES_ROUTES = new ConcurrentHashMap<>();
     private static final AtomicReference<RoutingSnapshot> ROUTING =
             new AtomicReference<>(RoutingSnapshot.EMPTY);
     private static volatile float voiceDistance = 48.0F;
@@ -107,6 +108,13 @@ public final class VoiceCommunicationService {
         return ROUTING.get().stoneRoutes().getOrDefault(speakerId, List.of());
     }
 
+    /** One-way route used by the optional shared-senses magic; no voicechat dependency is required. */
+    public static void setSharedSensesRoute(UUID masterId, UUID servantId) {
+        if (masterId == null) return;
+        if (servantId == null) SHARED_SENSES_ROUTES.remove(masterId);
+        else SHARED_SENSES_ROUTES.put(masterId, servantId);
+    }
+
     public static void setVoiceDistance(double distance) {
         if (Double.isFinite(distance)) {
             voiceDistance = (float) Math.max(1.0, Math.min(256.0, distance));
@@ -165,6 +173,7 @@ public final class VoiceCommunicationService {
         pendingStoneRemovals.clear();
         MESSAGE_MAGIC_MASTERS.clear();
         TELEPATHY_MASTERS.clear();
+        SHARED_SENSES_ROUTES.clear();
         ROUTING.set(RoutingSnapshot.EMPTY);
     }
 
@@ -441,6 +450,14 @@ public final class VoiceCommunicationService {
                 addPrivateVoiceRoute(privateRoutes, servant, masterId, onlinePlayers);
             }
         }
+        for (Map.Entry<UUID, UUID> route : SHARED_SENSES_ROUTES.entrySet()) {
+            ServerPlayer master = server.getPlayerList().getPlayer(route.getKey());
+            ServerPlayer servant = server.getPlayerList().getPlayer(route.getValue());
+            if (master != null && servant != null && master.isAlive() && servant.isAlive()
+                    && master.level().dimension().equals(servant.level().dimension())) {
+                addPrivateVoiceRoute(privateRoutes, master, servant.getUUID(), onlinePlayers, false);
+            }
+        }
         return privateRoutes;
     }
 
@@ -464,11 +481,21 @@ public final class VoiceCommunicationService {
             UUID targetId,
             Iterable<ServerPlayer> onlinePlayers
     ) {
+        addPrivateVoiceRoute(routes, speaker, targetId, onlinePlayers, true);
+    }
+
+    private static void addPrivateVoiceRoute(
+            Map<UUID, PrivateVoiceRoute> routes,
+            ServerPlayer speaker,
+            UUID targetId,
+            Iterable<ServerPlayer> onlinePlayers,
+            boolean includeSpectators
+    ) {
         float range = voiceDistance;
         double rangeSqr = (double) range * range;
         Set<UUID> spectatorListeners = new HashSet<>();
         for (ServerPlayer player : onlinePlayers) {
-            if (player.isSpectator()
+            if (includeSpectators && player.isSpectator()
                     && !player.getUUID().equals(speaker.getUUID())
                     && !player.getUUID().equals(targetId)
                     && player.level().dimension().equals(speaker.level().dimension())

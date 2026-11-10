@@ -104,6 +104,9 @@ public final class MasterCardProfile {
       profile.applyMagic(vars);
       if (shouldGrantMasterMagecraft(profile.id())) {
          grantCommonMasterMagecraft(vars, profile.id());
+         if (!"emiya_shirou".equals(profile.id()) && !"uryu_ryunosuke".equals(profile.id())) {
+            setKnownMagic(vars, "shared_senses", 100.0);
+         }
          grantProfileMagicAnalysis(vars);
          grantMasterDetection(vars);
       }

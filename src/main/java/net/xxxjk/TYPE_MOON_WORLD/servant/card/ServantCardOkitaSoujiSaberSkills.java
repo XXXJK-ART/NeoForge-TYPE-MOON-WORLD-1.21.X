@@ -45,7 +45,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
    private static final ResourceLocation WEAK_ATTACK_ID = id("servant_card_okita_weak_attack");
    private static final ResourceLocation WEAK_SPEED_ID = id("servant_card_okita_weak_speed");
    private static final DustParticleOptions ASAGI = new DustParticleOptions(new Vector3f(0.25F, 0.82F, 0.95F), 1.1F);
-   private static final int FLAG_COUNT = 13;
+   private static final int FLAG_COUNT = OkitaShinsengumiEntity.FLAG_MEMBER_COUNT;
    private static final int FLAG_DURATION = 120 * 20;
 
    private ServantCardOkitaSoujiSaberSkills() {
@@ -267,7 +267,7 @@ public final class ServantCardOkitaSoujiSaberSkills {
          }
          Vec3 pos = findSummonPosition(level, player, i, FLAG_COUNT);
          soldier.moveTo(pos.x, pos.y, pos.z, player.getYRot(), 0.0F);
-         soldier.initializeForOkitaCard(player, target, expiresAt);
+         soldier.initializeForOkitaCard(player, target, expiresAt, i);
          if (level.addFreshEntity(soldier)) {
             summoned++;
          }

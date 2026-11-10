@@ -56,9 +56,14 @@ public final class CombatTerrainProtection {
       String name = source.getClass().getSimpleName();
       // NP controllers retain their established terrain permissions.
       boolean np = name.contains("Excalibur") || name.contains("EaBeam") || name.contains("GaeBulgArmy")
+         || name.contains("SpiritronCannon")
          || name.contains("Stella") || name.contains("BrokenPhantasm") || name.contains("RoyalCannon")
          || source.getPersistentData().getBoolean("TypeMoonNoblePhantasmTerrain");
-      if (np) return;
+      if (np) {
+         var center = event.getExplosion().center();
+         event.getAffectedBlocks().removeIf(pos -> !NoblePhantasmTerrainLimits.isAtOrAboveCenter(center, pos));
+         return;
+      }
       var id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(source.getType());
       if (id != null && id.getNamespace().equals("typemoonworld")) event.getAffectedBlocks().removeIf(p -> !canRemove(event.getLevel(), p));
    }

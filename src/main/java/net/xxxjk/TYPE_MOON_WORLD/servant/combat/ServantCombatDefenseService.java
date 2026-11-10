@@ -346,6 +346,7 @@ public final class ServantCombatDefenseService {
       data.putBoolean(TAG_GUARDING, false);
       if (entity instanceof ServantEntity servant) servant.setCombatPose(1, 6);
       Vec3 direction = dodgeDirection(entity, forward, strafe);
+      broadcastBaseDodge(entity, forward, strafe);
       double distance = 1.35 + ServantCombatFormulas.agilityStep(params) * 0.12;
       beginDodgeMotion(entity, data, direction, distance, now);
       setResult(entity, RESULT_DODGE, now + 12L);
@@ -399,6 +400,29 @@ public final class ServantCombatDefenseService {
       ServantDefenseAnimationMessage payload = new ServantDefenseAnimationMessage(entity.getUUID(), animation);
       for (ServerPlayer viewer : level.players()) {
          if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) ModNetwork.sendToPlayer(viewer, payload);
+      }
+   }
+
+   private static void broadcastBaseDodge(LivingEntity entity, float forward, float strafe) {
+      if (!(entity.level() instanceof ServerLevel level)) return;
+      int action;
+      if (entity instanceof ServerPlayer && Math.abs(forward) < 0.01F && Math.abs(strafe) >= 0.01F) {
+         action = strafe > 0 ? 2 : 3;
+      } else if (Math.abs(forward) >= Math.abs(strafe)) {
+         action = forward <= 0 ? 5 : strafe < 0 ? 8 : 4;
+      } else action = strafe > 0 ? 6 : 7;
+      if (entity instanceof ServantEntity servant && servant.hasActionAnimation("dodge")) return;
+      var payload = new net.xxxjk.TYPE_MOON_WORLD.network.ServantBaseAnimationMessage(entity.getUUID(), action);
+      for (ServerPlayer viewer : level.players()) if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) {
+         ModNetwork.sendToPlayer(viewer, payload);
+      }
+   }
+
+   public static void broadcastBaseAttack(LivingEntity entity, int action) {
+      if (!(entity.level() instanceof ServerLevel level)) return;
+      var payload = new net.xxxjk.TYPE_MOON_WORLD.network.ServantBaseAnimationMessage(entity.getUUID(), action);
+      for (ServerPlayer viewer : level.players()) if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) {
+         ModNetwork.sendToPlayer(viewer, payload);
       }
    }
 

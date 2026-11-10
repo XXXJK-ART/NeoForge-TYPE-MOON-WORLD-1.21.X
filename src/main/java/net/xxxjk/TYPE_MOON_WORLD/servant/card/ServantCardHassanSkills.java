@@ -39,6 +39,7 @@ public final class ServantCardHassanSkills {
       }
       ServantCardConcealmentHelper.tick(player);
       net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.tick(player);
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.tickPlayerArm(player);
       keepRightHandEmpty(player);
       syncSelfModificationAttributes(player);
       if (!vars.servant_card_hassan_cloak_broken && player.getHealth() <= player.getMaxHealth() * 0.5F) {
@@ -54,6 +55,7 @@ public final class ServantCardHassanSkills {
    public static void giveDirk(ServerPlayer player) {
       keepRightHandEmpty(player);
       ItemStack current = player.getOffhandItem();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(player.getMainHandItem())) return;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(current)) return;
       if (!current.isEmpty() && !current.is(ModItems.DIRK_SMALL_KNIFE.get())) {
          storeOrDrop(player, current.copy());
@@ -81,8 +83,7 @@ public final class ServantCardHassanSkills {
       }
       ItemStack off = player.getOffhandItem();
       if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanZabaniyaService.isExtractedItem(main)) {
-         if (!off.isEmpty()) storeOrDrop(player, off.copy());
-         player.setItemInHand(InteractionHand.OFF_HAND, main.copy());
+         return;
       } else if (off.isEmpty()) {
          player.setItemInHand(InteractionHand.OFF_HAND, main.copy());
       } else {

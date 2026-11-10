@@ -150,6 +150,14 @@ public class ClientPacketHandler {
       EnkiduDetectionHighlightClient.apply(entityIds, ticks);
    }
 
+   public static void handleServantPerception(List<net.xxxjk.TYPE_MOON_WORLD.network.ServantPerceptionMessage.Target> targets) {
+      ServantPerceptionHighlightClient.apply(targets);
+   }
+
+   public static void handleSharedSenses(boolean active, int entityId) {
+      SharedSensesClient.apply(active, entityId);
+   }
+
    public static void handleDuelScreenFlash(int ticks, float strength) {
       DuelScreenFlashClient.apply(ticks, strength);
    }

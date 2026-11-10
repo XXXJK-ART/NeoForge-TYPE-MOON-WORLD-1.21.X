@@ -101,6 +101,10 @@ public final class OkitaSoujiSaberEntity extends ServantEntity {
       OkitaSoujiSaberCombatHelper.decrementFlagPool(this);
    }
 
+   public void onShinsengumiKilled(int formationIndex) {
+      OkitaSoujiSaberCombatHelper.decrementFlagPool(this, formationIndex);
+   }
+
    public boolean canUseMumyoudanZuki() {
       return !OkitaSoujiSaberCombatHelper.isWeakConstitutionActive(this);
    }

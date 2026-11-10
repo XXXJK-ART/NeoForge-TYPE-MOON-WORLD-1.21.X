@@ -230,7 +230,7 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
          int terrainRadius = ArashCombatRules.terrainDestructionRadius(this.getVariant());
          if (terrainRadius > 0) {
             DeferredTerrainDestruction.protectNextCombatJob();
-            var terrain = DeferredTerrainDestruction.queueExpandingSphere(level, impactPosition, terrainRadius, null);
+            var terrain = DeferredTerrainDestruction.queueExpandingUpperSphere(level, impactPosition, terrainRadius, null);
             terrain.advanceTo(terrainRadius);
             terrain.seal();
          }

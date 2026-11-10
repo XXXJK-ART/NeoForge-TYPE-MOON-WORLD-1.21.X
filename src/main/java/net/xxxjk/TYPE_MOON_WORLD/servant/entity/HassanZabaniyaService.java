@@ -22,6 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.Vec3;
@@ -35,8 +36,13 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 
 /** Shared extraction, binding and delayed death for the NPC and servant card. */
+@EventBusSubscriber(modid = "typemoonworld")
 public final class HassanZabaniyaService {
    public static final int LIFETIME = 1200;
    public static final String TOKEN = "HassanZabaniyaToken";
@@ -46,6 +52,7 @@ public final class HassanZabaniyaService {
    private static final String IDENTITY = "Identity";
    private static final String CRUSH_AT = "HassanZabaniyaCrushAt";
    private static final String HERACLES_USED = "HassanZabaniyaHeartCrushed";
+   private static final String ARM_WRAP_AT = "HassanArmWrapAt";
    private static final TagKey<EntityType<?>> HEARTLESS = tag("zabaniya_heartless");
    private static final TagKey<EntityType<?>> MECHANICAL = tag("zabaniya_mechanical_core");
    private static final TagKey<EntityType<?>> ORGANIC = tag("zabaniya_organic_heart");
@@ -147,13 +154,14 @@ public final class HassanZabaniyaService {
          player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          ItemStack offhand = player.getOffhandItem();
          if (!offhand.isEmpty()) storeOrDrop(player, offhand.copy());
-         player.setItemInHand(InteractionHand.OFF_HAND, stack);
+         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
+         exposeArm(player);
          message(player, core == Core.CLAY ? "clay_extracted" : "extracted", target.getDisplayName(), 60);
       } else if (caster instanceof CursedArmHassanEntity npc) {
          if (!npc.getMainHandItem().isEmpty()) npc.spawnAtLocation(npc.getMainHandItem().copy());
          if (!npc.getOffhandItem().isEmpty()) npc.spawnAtLocation(npc.getOffhandItem().copy());
          npc.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-         npc.setItemInHand(InteractionHand.OFF_HAND, stack);
+         npc.setItemInHand(InteractionHand.MAIN_HAND, stack);
          npc.getPersistentData().putLong(CRUSH_AT, time(npc) + npc.getRandom().nextIntBetweenInclusive(20, 60));
       }
       if (core != Core.CLAY && target instanceof ServerPlayer player) message(player, "heart_taken", 60);
@@ -162,7 +170,7 @@ public final class HassanZabaniyaService {
 
    public static boolean tickNpc(CursedArmHassanEntity npc) {
       if (!npc.isAlive() || npc.isRemoved()) return false;
-      ItemStack stack = npc.getOffhandItem();
+      ItemStack stack = holdingCore(npc);
       if (!isExtractedItem(stack)) return false;
       if (expire(stack, npc)) return false;
       CompoundTag binding = data(stack);
@@ -180,10 +188,75 @@ public final class HassanZabaniyaService {
             npc.spawnAtLocation(stack.copy());
             stack.setCount(0);
          }
-         else crush(npc, stack, InteractionHand.OFF_HAND);
+         else crush(npc, stack, InteractionHand.MAIN_HAND);
          npc.getPersistentData().remove(CRUSH_AT);
       }
       return true;
+   }
+
+   public static void tickPlayerArm(ServerPlayer player) {
+      long wrapAt = player.getPersistentData().getLong(ARM_WRAP_AT);
+      if (wrapAt > 0 && player.level().getGameTime() >= wrapAt) {
+         player.getPersistentData().remove(ARM_WRAP_AT);
+         player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES)
+            .servantCardState().setHassanCloakBroken(false);
+      }
+      if (holdingCore(player) != null) exposeArm(player);
+   }
+
+   public static void onHolderDamaged(LivingEntity holder, float amount) {
+      if (holder == null || amount <= 0.0F || holder.level().isClientSide()) return;
+      ItemStack core = holdingCore(holder);
+      if (core == null || core.is(ModItems.ZABANIYA_DIVINE_CLAY.get())) return;
+      invalidate(core, holder, true);
+   }
+
+   public static void onCoreDropped(ItemEntity entity) {
+      ItemStack stack = entity.getItem();
+      if (entity.level().isClientSide() || !isExtractedItem(stack) || stack.is(ModItems.ZABANIYA_DIVINE_CLAY.get())) return;
+      invalidate(stack, null, false);
+      entity.discard();
+   }
+
+   @SubscribeEvent
+   public static void onDamageApplied(LivingDamageEvent.Post event) {
+      onHolderDamaged(event.getEntity(), event.getNewDamage());
+   }
+
+   @SubscribeEvent
+   public static void onItemToss(ItemTossEvent event) {
+      onCoreDropped(event.getEntity());
+   }
+
+   private static void invalidate(ItemStack stack, @javax.annotation.Nullable LivingEntity holder, boolean delayWrap) {
+      CompoundTag binding = data(stack);
+      LivingEntity target = holder == null ? null : find(holder, binding.hasUUID(TARGET) ? binding.getUUID(TARGET) : null);
+      if (target != null && binding.hasUUID(TOKEN) && target.getPersistentData().hasUUID(TOKEN)
+         && binding.getUUID(TOKEN).equals(target.getPersistentData().getUUID(TOKEN))) {
+         target.getPersistentData().remove(TOKEN);
+         target.getPersistentData().remove(EXPIRES);
+      }
+      stack.setCount(0);
+      if (holder != null) {
+         message(holder, "link_lost");
+         if (delayWrap && holder instanceof ServerPlayer player) {
+            player.getPersistentData().putLong(ARM_WRAP_AT, player.level().getGameTime() + 40);
+         }
+      }
+   }
+
+   private static ItemStack holdingCore(LivingEntity entity) {
+      for (InteractionHand hand : InteractionHand.values()) {
+         ItemStack stack = entity.getItemInHand(hand);
+         if (isExtractedItem(stack)) return stack;
+      }
+      return null;
+   }
+
+   private static void exposeArm(ServerPlayer player) {
+      player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES)
+         .servantCardState().setHassanCloakBroken(true);
+      player.getPersistentData().remove(ARM_WRAP_AT);
    }
 
    public static boolean expire(ItemStack stack, LivingEntity holder) {

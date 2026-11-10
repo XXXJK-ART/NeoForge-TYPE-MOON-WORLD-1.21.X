@@ -1,0 +1,7 @@
+{
+  "targets": ["swap"],
+  "passes": [
+    { "name": "typemoonworld:pale_rider_grayscale", "intarget": "minecraft:main", "outtarget": "swap" },
+    { "name": "minecraft:post/blit", "intarget": "swap", "outtarget": "minecraft:main" }
+  ]
+}

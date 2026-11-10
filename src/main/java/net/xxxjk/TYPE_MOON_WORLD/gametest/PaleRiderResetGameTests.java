@@ -119,6 +119,23 @@ public final class PaleRiderResetGameTests {
       helper.succeed();
    }
 
+   @GameTest(template = "ancient_temple", timeoutTicks = 20)
+   public static void paleRiderCardPlayerDoesNotTakeDamageWhileMountedOnInvulnerableHorse(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      helper.assertTrue(ServantCardTransformManager.transform(player, "pale_rider"), "card transform failed");
+      var horse = ModEntities.APOCALYPSE_HORSE.get().create(helper.getLevel());
+      helper.assertTrue(horse != null, "horse missing");
+      horse.setPaleRiderOwner(player);
+      horse.moveTo(3, 8, 3, 0, 0);
+      helper.getLevel().addFreshEntity(horse);
+      helper.assertTrue(player.startRiding(horse, true), "player could not mount horse");
+      var event = new net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent(player,
+         new net.neoforged.neoforge.common.damagesource.DamageContainer(player.damageSources().generic(), 10.0F));
+      net.xxxjk.TYPE_MOON_WORLD.event.PaleRiderEvents.protectCardRiderOnInvulnerableHorse(event);
+      helper.assertTrue(event.isCanceled() && event.getAmount() == 0.0F, "mounted rider still received horse damage");
+      helper.succeed();
+   }
+
    private static PaleRiderEntity spawnRider(GameTestHelper helper) {
       PaleRiderEntity rider = helper.spawn(ModEntities.PALE_RIDER.get(), new BlockPos(3, 8, 3));
       rider.finalizeSpawn(helper.getLevel(), helper.getLevel().getCurrentDifficultyAt(rider.blockPosition()),

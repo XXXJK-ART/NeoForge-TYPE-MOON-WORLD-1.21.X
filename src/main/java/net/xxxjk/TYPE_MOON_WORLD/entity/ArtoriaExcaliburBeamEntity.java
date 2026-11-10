@@ -36,6 +36,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamClashParticipant;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamType;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArtoriaPendragonCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits;
 
 public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParticipant {
    private static final EntityDataAccessor<Float> END_X = SynchedEntityData.defineId(ArtoriaExcaliburBeamEntity.class, EntityDataSerializers.FLOAT);
@@ -396,11 +397,13 @@ public class ArtoriaExcaliburBeamEntity extends Entity implements BeamClashParti
       }
       // Finish the endpoint in this cast transaction; no post-discard damage or terrain jobs.
       int removed = 0;
-      for (int y = -height; y <= height && removed < 512; y += 3)
+      for (int y = 0; y <= height && removed < 512; y += 3)
          for (int x = -radius; x <= radius && removed < 512; x += 2)
             for (int z = -radius; z <= radius && removed < 512; z += 2) {
                if ((x * x + z * z) / (double)(radius * radius) + y * y / (double)(height * height) > 1) continue;
-               if (destroyBlock(level, owner, BlockPos.containing(center.add(x, y, z)))) removed++;
+               BlockPos block = BlockPos.containing(center.add(x, y, z));
+               if (NoblePhantasmTerrainLimits.canDestroy(level, owner, block, center, radius, isShortVariant() ? 0.6F : 100.0F)
+                  && level.removeBlock(block, false)) removed++;
             }
    }
 

@@ -1302,6 +1302,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       boolean hasHorizontal = this.hasActionAnimation("horizontal_swing");
       if (!hasDiagonal && !hasHorizontal) {
          this.attackSwingTicks = 6;
+         if (!this.level().isClientSide()) {
+            int action = this.getMainHandItem().isEmpty() ? 1 : 0;
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(this, action);
+         }
          return;
       }
 

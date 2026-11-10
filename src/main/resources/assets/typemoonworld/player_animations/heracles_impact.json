@@ -1,0 +1,124 @@
+{
+  "name": "heracles_impact",
+  "version": 3,
+  "description": "Short physical recovery; locomotion and combat remain authoritative.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 6,
+    "stopTick": 6,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 50,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -30,
+          "yaw": 12,
+          "roll": 8
+        },
+        "leftArm": {
+          "pitch": -35,
+          "yaw": -12,
+          "roll": -8
+        },
+        "rightLeg": {
+          "pitch": -18,
+          "yaw": 0,
+          "roll": 4
+        },
+        "leftLeg": {
+          "pitch": -18,
+          "yaw": 0,
+          "roll": -4
+        }
+      },
+      {
+        "tick": 1,
+        "body": {
+          "pitch": 60,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -22,
+          "yaw": 14,
+          "roll": 10
+        },
+        "leftArm": {
+          "pitch": -27,
+          "yaw": -14,
+          "roll": -10
+        },
+        "rightLeg": {
+          "pitch": -22,
+          "yaw": 0,
+          "roll": 4
+        },
+        "leftLeg": {
+          "pitch": -22,
+          "yaw": 0,
+          "roll": -4
+        }
+      },
+      {
+        "tick": 3,
+        "body": {
+          "pitch": 54,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -30,
+          "yaw": 12,
+          "roll": 8
+        },
+        "leftArm": {
+          "pitch": -35,
+          "yaw": -12,
+          "roll": -8
+        },
+        "rightLeg": {
+          "pitch": -18,
+          "yaw": 0,
+          "roll": 4
+        },
+        "leftLeg": {
+          "pitch": -18,
+          "yaw": 0,
+          "roll": -4
+        }
+      },
+      {
+        "tick": 6,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftLeg": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

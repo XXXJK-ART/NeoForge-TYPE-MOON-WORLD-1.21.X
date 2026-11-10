@@ -13,6 +13,7 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.OkitaSoujiSaberTechniqueService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -45,6 +46,50 @@ class OkitaSoujiResetResourcesTest {
 
       ServantParams params = ServantParams.of("D", false, "B", false, "A++", false, "E", false, "D", false);
       assertEquals(1.08, params.movementSpeed(), 1.0E-9);
+   }
+
+   @Test
+   void flagOfSincerityUsesTwelveMaleServantMembersWithFixedRankDistribution() throws Exception {
+      JsonObject np = json("data/typemoonworld/servant/noble_phantasms/flag_of_sincerity.json");
+      assertEquals(12, np.getAsJsonArray("effects").get(0).getAsJsonObject()
+         .getAsJsonObject("params").get("count").getAsInt());
+      assertTrue(np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params")
+         .get("pool_decrements_on_death").getAsBoolean());
+      assertFalse(np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params")
+         .get("pool_decrements_on_timeout").getAsBoolean());
+      assertTrue(np.get("description").getAsString().contains("timeout does not"));
+      assertTrue(source("servant/entity/OkitaSoujiSaberCombatHelper.java")
+         .contains("FLAG_POOL_MAX = OkitaShinsengumiEntity.FLAG_MEMBER_COUNT"));
+      assertTrue(source("servant/card/ServantCardOkitaSoujiSaberSkills.java")
+         .contains("FLAG_COUNT = OkitaShinsengumiEntity.FLAG_MEMBER_COUNT"));
+
+      String traits = source("entity/OkitaShinsengumiEntity.java");
+      assertFalse(traits.substring(traits.indexOf("SERVANT_TRAITS"), traits.indexOf("@Nullable private UUID"))
+         .contains("ServantTraitTag.FEMALE"));
+      for (String trait : new String[]{"servant", "humanoid", "human", "human_kind", "male", "saber",
+         "riding", "shinsengumi", "neutral_alignment", "balanced"}) {
+         assertTrue(traits.contains("ServantTraitTag." + switch (trait) {
+            case "neutral_alignment" -> "NEUTRAL";
+            default -> trait.toUpperCase(java.util.Locale.ROOT);
+         }), trait);
+      }
+   }
+
+   @Test
+   void shinsengumiPanelsAndCombatUseTheAgreedRanksAndVanillaInvulnerability() throws Exception {
+      assertEquals(200.0, StatRank.D.toMaxHealth());
+      assertEquals(10.0, StatRank.D.toAttackDamage());
+      assertEquals(0.24, StatRank.D.toMovementSpeed(), 1.0E-9);
+      assertEquals(300.0, StatRank.C.toMaxHealth());
+      assertEquals(15.0, StatRank.C.toAttackDamage());
+      assertEquals(0.28, StatRank.C.toMovementSpeed(), 1.0E-8);
+
+      String entity = source("entity/OkitaShinsengumiEntity.java");
+      assertTrue(entity.contains("this.formationIndex == 0 ? StatRank.C : StatRank.D"));
+      assertTrue(entity.contains("ServantCardTraitKeys"));
+      assertTrue(entity.contains("setFemale(false)"));
+      String combat = source("martial/KendoNpcCombatController.java");
+      assertFalse(combat.contains("target.invulnerableTime = 0"));
    }
 
    @Test
@@ -133,4 +178,9 @@ class OkitaSoujiResetResourcesTest {
          return JsonParser.parseReader(reader).getAsJsonObject();
       }
    }
+
+   private static String source(String path) throws Exception {
+      return Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD").resolve(path), StandardCharsets.UTF_8);
+   }
+
 }

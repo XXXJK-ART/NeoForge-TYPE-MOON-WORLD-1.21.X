@@ -63,7 +63,10 @@
       "frenzy_slash_0": "animation.heracles.frenzy_slash_0",
       "frenzy_slash_1": "animation.heracles.frenzy_slash_1",
       "frenzy_slash_2": "animation.heracles.frenzy_slash_2",
-      "frenzy_impact": "animation.heracles.frenzy_impact"
+      "frenzy_impact": "animation.heracles.frenzy_impact",
+      "revive": "animation.heracles.revive",
+      "slam_windup": "animation.heracles.slam_windup",
+      "adapt": "animation.heracles.adapt"
     }
   },
   "specialization": {

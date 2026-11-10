@@ -132,6 +132,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardDefenseStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardGuardPoseMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantDefenseAnimationMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.ServantBaseAnimationMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.CombatThreatStateMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSelectMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderCommandMessage;
@@ -139,6 +140,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderSpawnModeMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderGrayscaleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseRequestMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.BaobhanSithCurseTriggerMessage;
@@ -352,6 +354,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(ServantCardDefenseStateMessage.TYPE, ServantCardDefenseStateMessage.STREAM_CODEC, ServantCardDefenseStateMessage::handleData);
       registrar.playToClient(ServantCardGuardPoseMessage.TYPE, ServantCardGuardPoseMessage.STREAM_CODEC, ServantCardGuardPoseMessage::handleData);
       registrar.playToClient(ServantDefenseAnimationMessage.TYPE, ServantDefenseAnimationMessage.STREAM_CODEC, ServantDefenseAnimationMessage::handleData);
+      registrar.playToClient(ServantBaseAnimationMessage.TYPE, ServantBaseAnimationMessage.STREAM_CODEC, ServantBaseAnimationMessage::handleData);
       registrar.playToClient(CombatThreatStateMessage.TYPE, CombatThreatStateMessage.STREAM_CODEC, CombatThreatStateMessage::handleData);
       registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
       registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);
@@ -359,6 +362,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(PaleRiderOpenScreenMessage.TYPE, PaleRiderOpenScreenMessage.STREAM_CODEC, PaleRiderOpenScreenMessage::handleData);
       registrar.playToServer(PaleRiderPossessionInputMessage.TYPE, PaleRiderPossessionInputMessage.STREAM_CODEC, PaleRiderPossessionInputMessage::handleData);
       registrar.playToClient(PaleRiderStateMessage.TYPE, PaleRiderStateMessage.STREAM_CODEC, PaleRiderStateMessage::handleData);
+      registrar.playToClient(PaleRiderGrayscaleMessage.TYPE, PaleRiderGrayscaleMessage.STREAM_CODEC, PaleRiderGrayscaleMessage::handleData);
       registrar.playToClient(HundredFacesOpenScreenMessage.TYPE, HundredFacesOpenScreenMessage.STREAM_CODEC, HundredFacesOpenScreenMessage::handleData);
       registrar.playToServer(HundredFacesSummonMessage.TYPE, HundredFacesSummonMessage.STREAM_CODEC, HundredFacesSummonMessage::handleData);
       registrar.playToServer(HundredFacesCommandMessage.TYPE, HundredFacesCommandMessage.STREAM_CODEC, HundredFacesCommandMessage::handleData);
@@ -400,6 +404,12 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(GanryuPoseMessage.TYPE, GanryuPoseMessage.STREAM_CODEC, GanryuPoseMessage::handleData);
       registrar.playToClient(CircleRealmStateMessage.TYPE, CircleRealmStateMessage.STREAM_CODEC, CircleRealmStateMessage::handleData);
       registrar.playToClient(EnkiduDetectionHighlightMessage.TYPE, EnkiduDetectionHighlightMessage.STREAM_CODEC, EnkiduDetectionHighlightMessage::handleData);
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.ServantPerceptionMessage.TYPE,
+         net.xxxjk.TYPE_MOON_WORLD.network.ServantPerceptionMessage.STREAM_CODEC,
+         net.xxxjk.TYPE_MOON_WORLD.network.ServantPerceptionMessage::handleData);
+      registrar.playToClient(net.xxxjk.TYPE_MOON_WORLD.network.SharedSensesMessage.TYPE,
+         net.xxxjk.TYPE_MOON_WORLD.network.SharedSensesMessage.STREAM_CODEC,
+         net.xxxjk.TYPE_MOON_WORLD.network.SharedSensesMessage::handleData);
       registrar.playToClient(DuelScreenFlashMessage.TYPE, DuelScreenFlashMessage.STREAM_CODEC, DuelScreenFlashMessage::handleData);
       registrar.playToClient(
          TypeMoonWorldModVariables.PlayerVariablesSyncMessage.TYPE,

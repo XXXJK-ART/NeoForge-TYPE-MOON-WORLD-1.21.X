@@ -168,7 +168,7 @@ public final class HeraclesAbilityService {
       if(caster instanceof ServantEntity npc) {
          npc.getNavigation().stop();
          ServantVoiceHelper.tryPlayAttack(npc);
-         npc.triggerNamedActionAnimation("martial_"+slot);
+         npc.triggerNamedActionAnimation(slot == 1 ? "slam_windup" : "martial_"+slot);
       }
       return true;
    }
@@ -242,11 +242,7 @@ public final class HeraclesAbilityService {
       }
    }
    private static void animation(ServerPlayer player,int slot) {
-      var message=new net.xxxjk.TYPE_MOON_WORLD.network.HeraclesActionAnimationMessage(player.getUUID(),slot);
-      for(var observer:player.serverLevel().players()) {
-         if(observer==player||observer.distanceToSqr(player)<=128*128)
-            net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork.sendToPlayer(observer,message);
-      }
+      HeraclesPresentationService.playerAnimation(player,slot);
    }
    private static void release(LivingEntity target) { target.getPersistentData().remove(GRAB); }
    private static void teleport(LivingEntity entity,Vec3 pos) { entity.teleportTo(pos.x,pos.y,pos.z);entity.setDeltaMovement(Vec3.ZERO);entity.hurtMarked=true; }
@@ -279,7 +275,7 @@ public final class HeraclesAbilityService {
       }
    }
    private static void ground(LivingEntity caster,int slot,double radius,float damage,double horizontal,double vertical) {
-      if ((slot == 0 || slot == 8) && caster instanceof HeraclesEntity npc) npc.triggerNamedActionAnimation("frenzy_impact");
+      if (slot == 0 || slot == 1 || slot == 8) HeraclesPresentationService.impact(caster);
       area(caster,slot,radius,360,damage,horizontal,vertical);
       if(caster.level() instanceof ServerLevel level) {
          var tier=slot==1?TerrainImpactProfile.Tier.HEAVY:TerrainImpactProfile.Tier.MEDIUM;
@@ -301,7 +297,14 @@ public final class HeraclesAbilityService {
          if(queued>=0&&e instanceof ServerPlayer)start(e,queued);
          return;
       }
-      if(a.finishAt!=Integer.MAX_VALUE)return;
+      if(a.finishAt!=Integer.MAX_VALUE) {
+         if ((a.slot == 0 || a.slot == 1 || a.slot == 8)
+            && a.age == a.finishAt-spec(a.slot).recovery()+2 && e.level() instanceof ServerLevel level)
+            level.playSound(null,e.blockPosition(),SoundEvents.ANVIL_LAND,SoundSource.HOSTILE,a.slot==1?.45F:.25F,.5F);
+         return;
+      }
+      if (a.slot == 1 && a.age == windup - 1 && e.level() instanceof ServerLevel level)
+         level.playSound(null,e.blockPosition(),SoundEvents.PLAYER_ATTACK_SWEEP,SoundSource.HOSTILE,1.2F,.6F);
       if(a.age<windup)return;
       if(e instanceof ServerPlayer p)ServantCardActionTimeline.active(p);
       switch(a.slot) {
@@ -385,6 +388,7 @@ public final class HeraclesAbilityService {
    }
    private static void resetAir(LivingEntity e) { var d=e.getPersistentData();d.remove("HeraclesAirTicks");d.remove("HeraclesAirTop");d.putBoolean("HeraclesLandingConsumed",true); }
    private static void detach(LivingEntity e) {
+      HeraclesPresentationService.clear(e);
       cancel(e);release(e);THROWN.remove(e);
       for(var entry:new ArrayList<>(RUNNING.entrySet()))if(entry.getValue().target==e&&entry.getValue().grabbed)cancel(entry.getKey());
       THROWN.entrySet().removeIf(entry->entry.getValue().owner==e);
@@ -408,7 +412,7 @@ public final class HeraclesAbilityService {
    public static void tick(EntityTickEvent.Post event) {
       if(!(event.getEntity() instanceof LivingEntity e)||e.level().isClientSide())return;
       Action action=RUNNING.get(e);if(action!=null)advance(e,action);
-      if(isHeracles(e))passiveLanding(e);
+      if(isHeracles(e)) { passiveLanding(e);HeraclesPresentationService.tick(e); }
       if(held(e)) {
          boolean exists=RUNNING.values().stream().anyMatch(a->a.grabbed&&a.target==e);
          if(!exists||!e.isAlive())release(e);
