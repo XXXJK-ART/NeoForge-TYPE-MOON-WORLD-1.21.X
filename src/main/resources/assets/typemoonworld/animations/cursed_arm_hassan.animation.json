@@ -56,63 +56,23 @@
       "loop": true,
       "animation_length": 0.8,
       "bones": {
-        "bone": {
-          "position": {
-            "0.0": [0, 0, 0],
-            "0.2": [0, -0.25, 0],
-            "0.4": [0, 0, 0],
-            "0.6": [0, -0.25, 0],
-            "0.8": [0, 0, 0]
-          }
-        },
         "body": {
-          "rotation": {
-            "0.0": [8, 0, -3],
-            "0.4": [8, 0, 3],
-            "0.8": [8, 0, -3]
-          }
-        },
-        "head": {
-          "rotation": {
-            "0.0": [-4, 0, 0],
-            "0.4": [-2, 0, 0],
-            "0.8": [-4, 0, 0]
-          }
+          "rotation": ["8 * query.cursed_arm_walk_amount", 0, "-3 * math.cos(query.cursed_arm_walk_phase) * query.cursed_arm_walk_amount"]
         },
         "right arm": {
-          "rotation": {
-            "0.0": [28, 0, 10],
-            "0.4": [-18, 0, 6],
-            "0.8": [28, 0, 10]
-          }
+          "rotation": ["(5 + 23 * math.cos(query.cursed_arm_walk_phase)) * query.cursed_arm_walk_amount", 0, "(8 + 2 * math.cos(query.cursed_arm_walk_phase)) * query.cursed_arm_walk_amount"]
         },
         "left arm": {
-          "rotation": {
-            "0.0": [-25, 0, -10],
-            "0.4": [35, 0, -12],
-            "0.8": [-25, 0, -10]
-          }
+          "rotation": ["(5 - 30 * math.cos(query.cursed_arm_walk_phase)) * query.cursed_arm_walk_amount", 0, "(-11 + math.cos(query.cursed_arm_walk_phase)) * query.cursed_arm_walk_amount"]
         },
         "left_leg": {
-          "rotation": {
-            "0.0": [-24, 0, 0],
-            "0.4": [24, 0, 0],
-            "0.8": [-24, 0, 0]
-          }
+          "rotation": ["-24 * math.cos(query.cursed_arm_walk_phase) * query.cursed_arm_walk_amount", 0, 0]
         },
         "right_leg": {
-          "rotation": {
-            "0.0": [24, 0, 0],
-            "0.4": [-24, 0, 0],
-            "0.8": [24, 0, 0]
-          }
+          "rotation": ["24 * math.cos(query.cursed_arm_walk_phase) * query.cursed_arm_walk_amount", 0, 0]
         },
         "cloak": {
-          "rotation": {
-            "0.0": [7, 0, 0],
-            "0.4": [3, 0, 0],
-            "0.8": [7, 0, 0]
-          }
+          "rotation": ["(5 + 2 * math.cos(query.cursed_arm_walk_phase)) * query.cursed_arm_walk_amount", 0, 0]
         }
       }
     },

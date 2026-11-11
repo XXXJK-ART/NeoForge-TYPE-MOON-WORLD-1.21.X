@@ -1,1 +1,30 @@
-{"format_version":"1.8.0","animations":{"animation.arash_bow.idle":{"loop":true,"bones":{}}}}
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.arash_bow.idle": {"loop": true, "bones": {}},
+    "animation.arash_bow.draw": {
+      "loop": true,
+      "bones": {
+        "bone2": {
+          "position": {
+            "0.0": {"vector": [0, 0, 3]},
+            "0.15": {"vector": [0, 0, 3]}
+          }
+        }
+      }
+    },
+    "animation.arash_bow.release": {
+      "loop": false,
+      "bones": {
+        "bone2": {
+          "position": {
+            "0.0": {"vector": [0, 0, 3]},
+            "0.12": {"vector": [0, 0, 0]}
+          }
+        }
+      }
+    },
+    "animation.arash_bow.retreat": {"loop": false, "bones": {}},
+    "animation.arash_bow.melee_knockback": {"loop": false, "bones": {}}
+  }
+}

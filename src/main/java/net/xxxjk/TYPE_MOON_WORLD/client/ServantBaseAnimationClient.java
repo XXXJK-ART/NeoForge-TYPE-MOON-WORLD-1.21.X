@@ -24,6 +24,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction;
 
 /** Shared fallback motions for transformed players and humanoid servant NPCs. */
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
@@ -38,11 +39,6 @@ public final class ServantBaseAnimationClient {
    public static final int LARGE_RIGHT = 7;
    public static final int LARGE_FORWARD_RIGHT = 8;
    private static final ResourceLocation LAYER = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "servant_base_action");
-   private static final String[] SWORD_IDS = {"servant_base_sword_huijian", "servant_base_sword_huijian1"};
-   private static final String[] FIST_IDS = {"servant_base_fist_qingji1", "servant_base_fist_qingji2", "servant_base_fist_lianji"};
-   private static final String[] DODGE_IDS = {"", "", "servant_base_dodge_small_shanbi1", "servant_base_dodge_small_shanbi2",
-      "servant_base_dodge_large_forward", "servant_base_dodge_large_back", "servant_base_dodge_large_left", "servant_base_dodge_large_right",
-      "servant_base_dodge_large_forward_right"};
    private static final Map<UUID, Playback> PLAYBACK = new HashMap<>();
    private static final Map<String, KeyframeAnimationPlayer> SAMPLES = new HashMap<>();
    private static ClientLevel activeLevel;
@@ -56,22 +52,52 @@ public final class ServantBaseAnimationClient {
 
    public static void play(UUID id, int action) {
       ClientLevel level = level();
-      if (id == null || level == null || action < 0 || action >= DODGE_IDS.length) return;
+      if (id == null || level == null) return;
+      if (action == ServantBaseAction.STOP) { stopAttack(id); return; }
+      if (ServantBaseAction.isContinuous(action) && Minecraft.getInstance().player != null
+         && id.equals(Minecraft.getInstance().player.getUUID())
+         && !ServantBaseAttackInputClient.acceptsContinuousPlayback()) return;
       Playback previous = PLAYBACK.get(id);
       int variant = previous == null ? 0 : previous.variant + 1;
       String animation = animationId(action, variant);
       if (animation == null || !(PlayerAnimationRegistry.getAnimation(resource(animation)) instanceof KeyframeAnimation clip)) return;
-      PLAYBACK.put(id, new Playback(action, level.getGameTime(), variant));
+      long now = level.getGameTime();
+      long expires = now + (ServantBaseAction.isContinuous(action) ? 15 : clip.endTick);
+      if (previous != null && previous.action == action && ServantBaseAction.isContinuous(action)
+         && now < previous.expires) {
+         PLAYBACK.put(id, new Playback(action, previous.start, previous.variant, expires));
+         return;
+      }
+      PLAYBACK.put(id, new Playback(action, now, variant, expires));
+      setPlayerAnimation(id, new KeyframeAnimationPlayer(clip));
+   }
+
+   private static void setPlayerAnimation(UUID id, KeyframeAnimationPlayer animation) {
+      ClientLevel level = level();
+      if (level == null) return;
       for (AbstractClientPlayer player : level.players()) if (id.equals(player.getUUID())) {
          if (PlayerAnimationAccess.getPlayerAssociatedData(player).get(LAYER) instanceof ModifierLayer<?> raw) {
             @SuppressWarnings("unchecked") ModifierLayer<KeyframeAnimationPlayer> layer = (ModifierLayer<KeyframeAnimationPlayer>)raw;
-            layer.setAnimation(new KeyframeAnimationPlayer(clip));
+            layer.setAnimation(animation);
          }
          break;
       }
    }
 
-   public static void clear(UUID id) { PLAYBACK.remove(id); }
+   public static void clear(UUID id) { PLAYBACK.remove(id); setPlayerAnimation(id, null); }
+
+   public static void stopAttack(UUID id) {
+      Playback playback = PLAYBACK.get(id);
+      if (playback != null && ServantBaseAction.isAttack(playback.action)) clear(id);
+   }
+
+   public static void tick() {
+      ClientLevel level = level();
+      if (level == null) return;
+      for (UUID id : java.util.List.copyOf(PLAYBACK.keySet())) {
+         if (level.getGameTime() >= PLAYBACK.get(id).expires) clear(id);
+      }
+   }
 
    public static boolean applyNpcPose(LivingEntity owner, HumanoidModel<?> model, float partialTick) {
       if (owner == null || model == null) return false;
@@ -80,7 +106,8 @@ public final class ServantBaseAnimationClient {
       float age = level.getGameTime() - playback.start + partialTick;
       String name = animationId(playback.action, playback.variant);
       if (age < 0 || !(PlayerAnimationRegistry.getAnimation(resource(name)) instanceof KeyframeAnimation clip)
-         || age >= clip.endTick) { PLAYBACK.remove(owner.getUUID()); return false; }
+         || level.getGameTime() >= playback.expires) { PLAYBACK.remove(owner.getUUID()); return false; }
+      if (ServantBaseAction.isContinuous(playback.action)) age %= clip.endTick;
       int tick = (int)age;
       KeyframeAnimationPlayer sample = sample(name, tick, age - tick);
       if (sample == null) return false;
@@ -99,9 +126,8 @@ public final class ServantBaseAnimationClient {
    }
 
    private static void apply(HumanoidModel<?> model, KeyframeAnimationPlayer sample) {
-      apply(sample,"head",model.head); apply(sample,"torso",model.body); apply(sample,"rightArm",model.rightArm);
-      apply(sample,"leftArm",model.leftArm); apply(sample,"rightLeg",model.rightLeg); apply(sample,"leftLeg",model.leftLeg);
-      model.hat.copyFrom(model.head);
+      // Basic actions only drive the upper body; retain vanilla head look and locomotion.
+      apply(sample,"torso",model.body); apply(sample,"rightArm",model.rightArm); apply(sample,"leftArm",model.leftArm);
       if (model instanceof PlayerModel<?> p) { p.jacket.copyFrom(p.body); p.rightSleeve.copyFrom(p.rightArm); p.leftSleeve.copyFrom(p.leftArm); p.rightPants.copyFrom(p.rightLeg); p.leftPants.copyFrom(p.leftLeg); }
    }
 
@@ -113,9 +139,7 @@ public final class ServantBaseAnimationClient {
    }
 
    private static String animationId(int action, int variant) {
-      if (action == SWORD) return SWORD_IDS[variant & 1];
-      if (action == FIST) return FIST_IDS[Math.floorMod(variant, FIST_IDS.length)];
-      return DODGE_IDS[action];
+      return ServantBaseAction.animationId(action, variant);
    }
    private static ResourceLocation resource(String path) { return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID,path); }
    private static ClientLevel level() {
@@ -123,5 +147,5 @@ public final class ServantBaseAnimationClient {
       if(current!=activeLevel){PLAYBACK.clear();SAMPLES.clear();activeLevel=current;}
       return current;
    }
-   private record Playback(int action,long start,int variant) { }
+   private record Playback(int action,long start,int variant,long expires) { }
 }

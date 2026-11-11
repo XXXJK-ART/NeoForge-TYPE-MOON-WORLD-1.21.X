@@ -94,8 +94,13 @@ class HumanoidServantSkinResourcesTest {
          assertEquals("", model.get("geometry").getAsString(), servant.servantId());
          assertEquals("typemoonworld:textures/entity/" + servant.textureName() + ".png",
             model.get("texture").getAsString(), servant.servantId());
-         assertEquals("", model.get("animation").getAsString(), servant.servantId());
-         assertTrue(!model.has("animations"), servant.servantId());
+          if ("arash".equals(servant.servantId())) {
+             assertEquals("animations/arash_bow.animation.json", model.get("animation").getAsString());
+             assertTrue(model.getAsJsonObject("animations").has("bow_draw_loop"));
+          } else {
+             assertEquals("", model.get("animation").getAsString(), servant.servantId());
+             assertTrue(!model.has("animations"), servant.servantId());
+          }
 
          String resourceName = "gilgamesh_caster".equals(servant.servantId()) ? "caster_gilgamesh" : servant.servantId();
          assertTrue(Files.notExists(RESOURCES.resolve(

@@ -67,7 +67,8 @@ public final class HassanZabaniyaService {
    }
 
    public static boolean isExtractedItem(ItemStack stack) {
-      return stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem;
+      return stack != null && !stack.isEmpty()
+         && stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem;
    }
 
    public static CompoundTag data(ItemStack stack) {

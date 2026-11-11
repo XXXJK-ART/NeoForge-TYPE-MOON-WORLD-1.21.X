@@ -28,9 +28,11 @@ class ArashResourcesTest {
       assertEquals("E", params.get("magic").getAsString());
       assertEquals("D", params.get("luck").getAsString());
       assertEquals("stella_arash", definition.get("noble_phantasm").getAsString());
-      for (String trait : List.of("servant", "male", "archer", "human", "humanoid", "chaotic", "balanced", "earth", "seven_knights", "ea_special")) {
-         assertTrue(definition.getAsJsonArray("traits").toString().contains(trait), trait);
-      }
+      assertEquals(List.of("male", "earth", "heaven_or_earth_servant", "chaotic", "balanced", "servant",
+         "humanoid", "beloved", "human_kind", "seven_knights"),
+         jsonArrayStrings(definition.getAsJsonArray("traits")));
+      assertEquals(185, definition.getAsJsonObject("profile").get("height_cm").getAsInt());
+      assertEquals(75, definition.getAsJsonObject("profile").get("weight_kg").getAsInt());
       JsonObject ai = json("data/typemoonworld/servant/ai/arash_ai.json");
       assertEquals(12.0, ai.getAsJsonObject("movement").get("wander_radius").getAsDouble());
       assertTrue(ai.getAsJsonObject("movement").get("likes_high_places").getAsBoolean());
@@ -72,7 +74,8 @@ class ArashResourcesTest {
       assertTrue(renderer.contains("HumanoidArmorLayer"));
       assertTrue(client.contains("ModEntities.ARASH.get(), context -> new HumanoidServantRenderer<>(context, \"arash\")"));
       assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("geometry").getAsString());
-      assertEquals("", JsonParser.parseString(definition).getAsJsonObject().getAsJsonObject("model").get("animation").getAsString());
+      assertEquals("animations/arash_bow.animation.json", JsonParser.parseString(definition)
+         .getAsJsonObject().getAsJsonObject("model").get("animation").getAsString());
       assertTrue(Files.notExists(JAVA.resolve("client/renderer/ArashRenderer.java")));
       assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/geo/arash.geo.json")));
       assertTrue(Files.notExists(RESOURCES.resolve("assets/typemoonworld/animations/arash.animation.json")));
@@ -225,41 +228,61 @@ class ArashResourcesTest {
    }
 
    @Test
-   void playerBowUsesInstantAndTwoStageLoadedChunkArrows() throws Exception {
+   void playerBowUsesUnassistedShotsVisibleChargeAndShallowImpactRules() throws Exception {
       String bow = Files.readString(JAVA.resolve("item/custom/ArashBowItem.java"));
       String arrow = Files.readString(JAVA.resolve("entity/ArashParticleArrowEntity.java"));
       String aim = Files.readString(JAVA.resolve("servant/entity/ArashAimHelper.java"));
       String combat = Files.readString(JAVA.resolve("servant/entity/ArashCombatHelper.java"));
       String skills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
       String client = Files.readString(JAVA.resolve("client/ServantCardClientEvents.java"));
-      assertTrue(bow.contains("fireBasicArrow(serverLevel, player)"));
-      assertTrue(bow.contains("CHARGED_ARROW_TICKS = 40"));
-      assertTrue(bow.contains("HEAVY_CHARGED_ARROW_TICKS = 60"));
-      assertTrue(bow.contains("performBowChargedArrowNoCooldown"));
+      assertTrue(bow.contains("player.startUsingItem(hand)"));
+      assertTrue(bow.contains("fireBasicArrow(serverLevel, player, chargeTicks, arash)"));
+      assertTrue(bow.contains("CHARGED_ARROW_TICKS = ArashCombatRules.ARROW_MAX_CHARGE_TICKS"));
+      assertTrue(bow.contains("INTERRUPTED_TAG"));
+      assertTrue(bow.contains("triggerAnim(living, GeoItem.getId(stack), \"bow_controller\", \"draw\")"));
       assertTrue(!bow.contains("triggerAction(serverPlayer, slot)"));
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
-      assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 128.0"));
+      assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 1024.0"));
+      assertTrue(arrow.contains("ARROW_MAX_FLIGHT_TICKS"));
+      assertTrue(arrow.contains("arrowDamage(this.getChargeTicks(), this.getFlightTicks())"));
       assertTrue(arrow.contains("distanceTraveled + this.getDeltaMovement().length()"));
-      assertTrue(arrow.contains("addFlightParticle(variant == NORMAL ? ARROW_RED : GREEN, this.position())"));
-      assertTrue(arrow.contains("addFlightParticle(heavy ? HEAVY_RED : CHARGED_GREEN, center)"));
-      assertTrue(arrow.contains("addParticle(particle, false"),
-         "Arash arrow trails must stop outside the client's normal visible particle distance");
-      assertTrue(arrow.contains("LARGE_ENERGY ? HEAVY_RED : GREEN"));
-      assertTrue(entitiesForTest().contains("clientTrackingRange(8)"));
-      assertTrue(arrow.contains("terrainDestructionRadius(this.getVariant())"));
-      assertTrue(arrow.contains("queueExpandingUpperSphere(level, impactPosition, terrainRadius, null)"));
-      assertTrue(arrow.contains("terrain.advanceTo(terrainRadius)"));
-      assertTrue(arrow.contains("terrain.seal()"));
-      assertTrue(bow.contains("ArashAimHelper.autoAimDirection"));
+      assertTrue(arrow.contains("arrowTrailParticle(progress, heavy)"));
+      assertTrue(arrow.contains("addParticle(particle, true"),
+         "charged arrow trails must remain visible at long range");
+      assertTrue(entitiesForTest().contains(".clientTrackingRange(64).updateInterval(1).build(\"arash_particle_arrow\")"));
+      assertTrue(arrow.contains("distance < MAX_VISIBLE_FLIGHT_DISTANCE * MAX_VISIBLE_FLIGHT_DISTANCE"));
+      assertTrue(Files.readString(JAVA.resolve("client/TypeMoonWorldClientEvents.java"))
+         .contains("ArashParticleArrowRenderer::new"));
+      assertTrue(arrow.contains("destroyShallowImpactTerrain"));
+      assertTrue(arrow.contains("SoundEvents.GENERIC_EXPLODE.value()"));
+      String retreat = Files.readString(JAVA.resolve("servant/entity/ArashTacticalSkillService.java"));
+      assertTrue(retreat.contains("caster.hurtMarked = true"));
+      assertTrue(retreat.contains("caster.hasImpulse = true"));
+      assertTrue(retreat.contains("mob.getNavigation().stop()"));
+      assertTrue(bow.contains("ServantCardArashSkills.isArash(chargePlayer)"));
+      assertTrue(arrow.contains("arrowBlastRadius(damage)"));
+      assertTrue(arrow.contains("if (this.getVariant() == RAIN)"));
+      assertTrue(!arrow.contains("RAIN || this.getVariant() == NORMAL"),
+         "Basic arrows must not apply the broad homing assist");
+      assertTrue(arrow.contains("DeferredTerrainDestruction.queueSphereDetailed"));
+      String emiyaCombat = Files.readString(JAVA.resolve("servant/entity/EmiyaArcherCombatHelper.java"));
+      assertTrue(emiyaCombat.contains("ArashCombatRules.NORMAL_ARROW_DAMAGE, 0, false"),
+         "Emiya arrows must not receive Arash-only scaling or blast effects");
+      assertTrue(bow.contains("Vec3 direction = look"));
+      assertTrue(!bow.contains("ArashAimHelper.autoAimDirection"));
       assertTrue(skills.contains("EntityUtils.getRayTraceTarget(player, ArashAimHelper.AUTO_AIM_RANGE)"));
       assertTrue(skills.contains("ArashAimHelper.findTargetNearPoint"));
       assertTrue(skills.contains("lookedAt.getLocation()"));
       assertTrue(skills.contains("ArashAimHelper.autoAimDirection"));
       assertTrue(skills.contains("CROUCH_RAIN_ARROW_COUNT"));
       assertTrue(skills.contains("CROUCH_RAIN_SPREAD_RADIUS"));
+      assertTrue(skills.contains("ARROW_RAIN_CHARGE_RELEASE"));
+      assertTrue(skills.contains("performArrowRain(player, chargeTicks)"));
+      assertTrue(combat.contains("distanceChargeTicks"));
+      assertTrue(combat.contains("ArashTacticalSkillService.performMeleeKnockback(arash)"));
       assertTrue(combat.contains("ArashAimHelper.leadDirection"));
       assertTrue(combat.contains("ArashAimHelper.predictionOffset"));
-      assertTrue(aim.contains("AUTO_AIM_ANGLE_DEGREES = 8.0"));
+      assertTrue(aim.contains("AUTO_AIM_ANGLE_DEGREES = 8.0"), "Arrow Rain keeps its own aim assist");
       assertTrue(aim.contains("ARROW_RAIN_ASSIST_RADIUS = 12.0"));
       assertTrue(aim.contains("target.getDeltaMovement()"));
       assertTrue(client.contains("ModItems.ARASH_BOW"));
@@ -272,8 +295,25 @@ class ArashResourcesTest {
       assertTrue(variables.contains("arashArrowStock"));
    }
 
+   @Test
+   void arrowRainUsesHoldReleaseAndDamageInterruptsItsCharge() throws Exception {
+      String input = Files.readString(JAVA.resolve("client/ServantCardSkillInputController.java"));
+      String manager = Files.readString(JAVA.resolve("servant/card/ServantCardTransformManager.java"));
+      String skills = Files.readString(JAVA.resolve("servant/card/ServantCardArashSkills.java"));
+      assertTrue(input.contains("\"arash\".equals(servantId) && slot == 0"));
+      assertTrue(manager.contains("\"arash\".equals(vars.servantCardState().id()) && slot == 0"));
+      assertTrue(skills.contains("ARROW_RAIN_CHARGE_START"));
+      assertTrue(skills.contains("ARROW_RAIN_CHARGE_RELEASE"));
+      assertTrue(skills.contains("performArrowRain(player, chargeTicks)"));
+      assertTrue(skills.contains("onDamageApplied"));
+   }
+
    private static JsonObject json(String relative) throws Exception {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(relative))).getAsJsonObject();
+   }
+
+   private static List<String> jsonArrayStrings(com.google.gson.JsonArray array) {
+      return array.asList().stream().map(com.google.gson.JsonElement::getAsString).toList();
    }
 
    private static String entitiesForTest() throws Exception {

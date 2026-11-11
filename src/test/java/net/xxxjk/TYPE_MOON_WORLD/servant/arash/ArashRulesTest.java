@@ -55,17 +55,34 @@ class ArashRulesTest {
       assertEquals(6.0, ArashCombatRules.RAIN_SPREAD_RADIUS);
       assertEquals(30.0, ArashCombatRules.CROUCH_RAIN_SPREAD_RADIUS);
       assertEquals(36.0, ArashCombatRules.CROUCH_RAIN_ASSIST_RADIUS);
-      assertEquals(15.0F, ArashCombatRules.RAIN_ARROW_DAMAGE);
-      assertEquals(60.0F, ArashCombatRules.SMALL_ENERGY_DAMAGE);
-      assertEquals(100.0F, ArashCombatRules.LARGE_ENERGY_DAMAGE);
-      assertEquals(2, ArashCombatRules.SMALL_ENERGY_TERRAIN_RADIUS);
-      assertEquals(4, ArashCombatRules.LARGE_ENERGY_TERRAIN_RADIUS);
-      assertEquals(0, ArashCombatRules.terrainDestructionRadius(0));
-      assertEquals(0, ArashCombatRules.terrainDestructionRadius(1));
-      assertEquals(2, ArashCombatRules.terrainDestructionRadius(2));
-      assertEquals(4, ArashCombatRules.terrainDestructionRadius(3));
-      assertEquals(40, ArashBowItem.CHARGED_ARROW_TICKS);
-      assertEquals(60, ArashBowItem.HEAVY_CHARGED_ARROW_TICKS);
+      assertEquals(100, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
+      assertEquals(240, ArashCombatRules.ARROW_MAX_FLIGHT_TICKS);
+      assertEquals(10.0F, ArashCombatRules.ARROW_MIN_DAMAGE);
+      assertEquals(10.0, ArashCombatRules.ARROW_MAX_BLAST_RADIUS);
+      assertEquals(100, ArashBowItem.CHARGED_ARROW_TICKS);
+   }
+
+   @Test
+   void chargeAndFlightTimeSetArashArrowDamageAndBlastRadius() {
+      assertEquals(10.0F, ArashCombatRules.arrowDamage(0, 0));
+      assertEquals(15.0F, ArashCombatRules.arrowDamage(0, 120));
+      assertEquals(20.0F, ArashCombatRules.arrowDamage(0, 240));
+      assertEquals(25.0F, ArashCombatRules.arrowDamage(50, 0));
+      assertEquals(42.5F, ArashCombatRules.arrowDamage(50, 120));
+      assertEquals(60.0F, ArashCombatRules.arrowDamage(50, 240));
+      assertEquals(40.0F, ArashCombatRules.arrowDamage(100, 0));
+      assertEquals(70.0F, ArashCombatRules.arrowDamage(100, 120));
+      assertEquals(100.0F, ArashCombatRules.arrowDamage(100, 240));
+      assertEquals(100.0F, ArashCombatRules.arrowDamage(200, 400));
+      assertEquals(0.0, ArashCombatRules.arrowBlastRadius(10.0F));
+      assertEquals(5.0, ArashCombatRules.arrowBlastRadius(55.0F));
+      assertEquals(10.0, ArashCombatRules.arrowBlastRadius(100.0F));
+      assertEquals(10.0, ArashCombatRules.arrowBlastRadius(200.0F));
+      assertEquals(0, ArashCombatRules.arrowTerrainDepth(10.0F));
+      assertEquals(1, ArashCombatRules.arrowTerrainDepth(55.0F));
+      assertEquals(2, ArashCombatRules.arrowTerrainDepth(100.0F));
+      assertTrue(ArashCombatRules.arrowTrailScale(240, false) > ArashCombatRules.arrowTrailScale(0, false));
+      assertTrue(ArashCombatRules.arrowTrailScale(240, true) > ArashCombatRules.arrowTrailScale(240, false));
    }
 
    @Test
@@ -169,7 +186,9 @@ class ArashRulesTest {
       assertAction(1, "arash_energy_small", 8.0, 80);
       assertAction(2, "arash_energy_large", 20.0, 240);
       assertAction(3, "arash_arrow_creation", 1.0, 0);
-      for (int slot = 4; slot <= 8; slot++) assertNull(ServantCardSkillLayout.actionFor("arash", slot, false));
+      assertAction(4, "arash_retreat", 18.0, 140);
+      assertAction(5, "arash_melee_knockback", 12.0, 90);
+      for (int slot = 6; slot <= 8; slot++) assertNull(ServantCardSkillLayout.actionFor("arash", slot, false));
       assertAction(9, "arash_stella", 100.0, 3600);
    }
 

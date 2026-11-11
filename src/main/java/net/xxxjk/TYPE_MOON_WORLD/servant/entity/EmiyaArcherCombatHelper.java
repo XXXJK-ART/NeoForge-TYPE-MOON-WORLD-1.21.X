@@ -461,7 +461,7 @@ public final class EmiyaArcherCombatHelper {
       if (direction.lengthSqr() < 1.0E-4) return;
       direction = direction.normalize();
       ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, entity,
-         ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE);
+         ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE, 0, false);
       arrow.setPos(start.x, start.y, start.z);
       arrow.setDeltaMovement(direction.scale(3.0));
       level.addFreshEntity(arrow);

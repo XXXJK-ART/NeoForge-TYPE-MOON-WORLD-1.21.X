@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
@@ -19,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -43,6 +45,11 @@ public final class ArashCombatHelper {
    private static final String TAG_MOTION_X = "ArashLastMotionX";
    private static final String TAG_MOTION_Z = "ArashLastMotionZ";
    private static final String TAG_STATIONARY_TICKS = "ArashStationaryTicks";
+   private static final String TAG_CHARGE_UNTIL = "ArashArrowChargeUntil";
+   private static final String TAG_CHARGE_START = "ArashArrowChargeStart";
+   private static final String TAG_CHARGE_KIND = "ArashArrowChargeKind";
+   private static final String TAG_NEXT_RETREAT = "ArashNextRetreatSkill";
+   private static final String TAG_NEXT_MELEE = "ArashNextMeleeSkill";
 
    private ArashCombatHelper() {
    }
@@ -71,6 +78,7 @@ public final class ArashCombatHelper {
       }
       LivingEntity target = arash.getTarget();
       if (!isTarget(arash, target)) {
+         clearCharge(arash);
          arash.setTarget(null);
          arash.getNavigation().stop();
          return;
@@ -83,9 +91,55 @@ public final class ArashCombatHelper {
 
       long now = context.gameTick();
       boolean lineOfSight = arash.getSensing().hasLineOfSight(target);
-      if (ArashStellaControllerEntity.tryBegin(arash, target)) return;
+      if (ArashStellaControllerEntity.tryBegin(arash, target)) {
+         interruptCharge(arash);
+         return;
+      }
       tacticalMovement(arash, target, now, lineOfSight);
       int cluster = countCluster(arash, target, 7.0);
+      double targetDistance = arash.distanceTo(target);
+      if (targetDistance <= 3.5 && now >= arash.getPersistentData().getLong(TAG_NEXT_MELEE)
+         && arash.getCurrentMp() >= 12.0) {
+         arash.setCurrentMp(arash.getCurrentMp() - 12.0);
+         arash.getPersistentData().putLong(TAG_NEXT_MELEE, now + 90L);
+         ArashTacticalSkillService.performMeleeKnockback(arash);
+         return;
+      }
+      if (targetDistance <= 7.0 && now >= arash.getPersistentData().getLong(TAG_NEXT_RETREAT)
+         && arash.getCurrentMp() >= 18.0) {
+         arash.setCurrentMp(arash.getCurrentMp() - 18.0);
+         arash.getPersistentData().putLong(TAG_NEXT_RETREAT, now + 140L);
+         ArashTacticalSkillService.performRetreat(arash);
+         return;
+      }
+
+      if (arash.getPersistentData().contains(TAG_CHARGE_UNTIL)) {
+         if (now < arash.getPersistentData().getLong(TAG_CHARGE_UNTIL)) {
+            if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) <= now
+               && arash.getMainHandItem().is(ModItems.ARASH_BOW.get()) && !arash.isUsingItem()) {
+               arash.startUsingItem(InteractionHand.MAIN_HAND);
+            }
+            return;
+         }
+         int chargeTicks = Math.min(ArashCombatRules.ARROW_MAX_CHARGE_TICKS,
+            (int)(now - arash.getPersistentData().getLong(TAG_CHARGE_START)));
+         boolean rain = arash.getPersistentData().getInt(TAG_CHARGE_KIND) == 1;
+         clearCharge(arash);
+         if (rain && arash.getCurrentMp() >= ArashCombatRules.RAIN_MANA
+            && arash.consumeCraftedArrows(ArashCombatRules.ARROW_RAIN_COST)) {
+            arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.RAIN_MANA);
+            arash.getPersistentData().putLong(TAG_NEXT_RAIN, now + ArashCombatRules.RAIN_COOLDOWN);
+            fireRain(level, arash, target, chargeTicks);
+            arash.triggerNamedActionAnimation("arrow_rain");
+         } else if (!rain && arash.consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)) {
+            arash.getPersistentData().putLong(TAG_NEXT_NORMAL, now + ArashCombatRules.NORMAL_ARROW_INTERVAL);
+            fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL,
+               ArashCombatRules.ARROW_MIN_DAMAGE, 3.2, chargeTicks);
+            arash.triggerNamedActionAnimation("bow_release");
+         }
+         ServantVoiceHelper.tryPlayAttack(arash);
+         return;
+      }
 
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_LARGE)
          && arash.getCraftedArrowCount() >= ArashCombatRules.ENERGY_ARROW_COST
@@ -95,7 +149,8 @@ public final class ArashCombatHelper {
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.LARGE_ENERGY_MANA);
          arash.consumeCraftedArrows(ArashCombatRules.ENERGY_ARROW_COST);
          arash.getPersistentData().putLong(TAG_NEXT_LARGE, now + ArashCombatRules.LARGE_ENERGY_COOLDOWN);
-         fireDirect(level, arash, target, ArashParticleArrowEntity.LARGE_ENERGY, ArashCombatRules.LARGE_ENERGY_DAMAGE, 2.1);
+         fireDirect(level, arash, target, ArashParticleArrowEntity.LARGE_ENERGY,
+            ArashCombatRules.ARROW_MIN_DAMAGE, 2.1, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
          arash.triggerNamedActionAnimation("energy_large");
          ServantVoiceHelper.tryPlayAttack(arash);
          return;
@@ -105,12 +160,7 @@ public final class ArashCombatHelper {
          && arash.getCurrentMp() >= ArashCombatRules.RAIN_MANA
          && (!lineOfSight || arash.distanceTo(target) >= 48.0F || cluster >= 3)) {
          lockAttackFacing(arash, target, now, 16);
-         arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.RAIN_MANA);
-         arash.consumeCraftedArrows(ArashCombatRules.ARROW_RAIN_COST);
-         arash.getPersistentData().putLong(TAG_NEXT_RAIN, now + ArashCombatRules.RAIN_COOLDOWN);
-         fireRain(level, arash, target);
-         arash.triggerNamedActionAnimation("arrow_rain");
-         ServantVoiceHelper.tryPlayAttack(arash);
+         beginCharge(arash, now, distanceChargeTicks(arash.distanceTo(target)), true);
          return;
       }
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_SMALL)
@@ -120,19 +170,44 @@ public final class ArashCombatHelper {
          arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.SMALL_ENERGY_MANA);
          arash.consumeCraftedArrows(ArashCombatRules.ENERGY_ARROW_COST);
          arash.getPersistentData().putLong(TAG_NEXT_SMALL, now + ArashCombatRules.SMALL_ENERGY_COOLDOWN);
-         fireDirect(level, arash, target, ArashParticleArrowEntity.SMALL_ENERGY, ArashCombatRules.SMALL_ENERGY_DAMAGE, 2.7);
+         fireDirect(level, arash, target, ArashParticleArrowEntity.SMALL_ENERGY,
+            ArashCombatRules.ARROW_MIN_DAMAGE, 2.7, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
          arash.triggerNamedActionAnimation("energy_small");
          ServantVoiceHelper.tryPlayAttack(arash);
          return;
       }
       if (now >= arash.getPersistentData().getLong(TAG_NEXT_NORMAL)
-         && arash.consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)) {
+         && arash.getCraftedArrowCount() >= ArashCombatRules.NORMAL_ARROW_COST) {
          lockAttackFacing(arash, target, now, ArashCombatRules.NORMAL_ARROW_INTERVAL);
-         arash.getPersistentData().putLong(TAG_NEXT_NORMAL, now + ArashCombatRules.NORMAL_ARROW_INTERVAL);
-         fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL, ArashCombatRules.NORMAL_ARROW_DAMAGE, 3.2);
-         arash.triggerNamedActionAnimation("bow_shot");
-         ServantVoiceHelper.tryPlayAttack(arash);
+         beginCharge(arash, now, distanceChargeTicks(arash.distanceTo(target)), false);
       }
+   }
+
+   public static void interruptCharge(ArashEntity arash) {
+      if (!arash.getPersistentData().contains(TAG_CHARGE_UNTIL)) return;
+      clearCharge(arash);
+      arash.triggerNamedActionAnimation("bow_draw_cancel");
+   }
+
+   private static int distanceChargeTicks(double distance) {
+      return distance < 18.0 ? 10 : distance < 48.0 ? 30 : 60;
+   }
+
+   private static void beginCharge(ArashEntity arash, long now, int chargeTicks, boolean rain) {
+      arash.getPersistentData().putLong(TAG_CHARGE_START, now);
+      arash.getPersistentData().putLong(TAG_CHARGE_UNTIL, now + chargeTicks);
+      arash.getPersistentData().putInt(TAG_CHARGE_KIND, rain ? 1 : 0);
+      if (arash.getMainHandItem().is(ModItems.ARASH_BOW.get()) && !arash.isUsingItem()) {
+         arash.startUsingItem(InteractionHand.MAIN_HAND);
+      }
+      arash.triggerNamedActionAnimation("bow_draw_loop");
+   }
+
+   private static void clearCharge(ArashEntity arash) {
+      if (arash.isUsingItem() && arash.getUseItem().is(ModItems.ARASH_BOW.get())) arash.stopUsingItem();
+      arash.getPersistentData().remove(TAG_CHARGE_START);
+      arash.getPersistentData().remove(TAG_CHARGE_UNTIL);
+      arash.getPersistentData().remove(TAG_CHARGE_KIND);
    }
 
    public static void tickAttackFacing(ArashEntity arash) {
@@ -160,15 +235,31 @@ public final class ArashCombatHelper {
 
    private static void fireDirect(ServerLevel level, ArashEntity arash, LivingEntity target, int variant,
                                   float damage, double speed) {
+      fireDirect(level, arash, target, variant, damage, speed, 0);
+   }
+
+   private static void fireDirect(ServerLevel level, ArashEntity arash, LivingEntity target, int variant,
+                                  float damage, double speed, int chargeTicks) {
       Vec3 start = arash.getEyePosition().add(arash.getLookAngle().scale(0.65));
       Vec3 direction = ArashAimHelper.leadDirection(start, target, speed);
-      ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, arash, variant, damage);
+      ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, arash, variant, damage, chargeTicks);
       arrow.setPos(start.x, start.y, start.z);
-      arrow.setDeltaMovement(direction.scale(speed));
+      if (variant == ArashParticleArrowEntity.NORMAL && start.distanceTo(target.position()) >= 48.0) {
+         double flightTicks = Math.min(ArashCombatRules.ARROW_MAX_FLIGHT_TICKS,
+            ArashAimHelper.estimateFlightTicks(start.distanceTo(target.position()), speed));
+         Vec3 predicted = target.position().add(ArashAimHelper.predictionOffset(target.getDeltaMovement(), flightTicks))
+            .add(0.0, target.getBbHeight() * 0.5, 0.0);
+         Vec3 delta = predicted.subtract(start);
+         arrow.setDeltaMovement(delta.x / flightTicks, delta.y / flightTicks + 0.015 * flightTicks,
+            delta.z / flightTicks);
+         arrow.setBallistic(true);
+      } else {
+         arrow.setDeltaMovement(direction.scale(speed));
+      }
       level.addFreshEntity(arrow);
    }
 
-   private static void fireRain(ServerLevel level, ArashEntity arash, LivingEntity target) {
+   private static void fireRain(ServerLevel level, ArashEntity arash, LivingEntity target, int chargeTicks) {
       Vec3 start = arash.getEyePosition().add(0.0, 0.35, 0.0);
       for (int i = 0; i < ArashCombatRules.RAIN_ARROW_COUNT; i++) {
          double initialHorizontal = target.position().subtract(start).horizontalDistance();
@@ -181,7 +272,7 @@ public final class ArashCombatHelper {
          double ticks = Math.max(12.0, horizontal / 2.65);
          double vy = delta.y / ticks + 0.015 * ticks;
          ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, arash,
-            ArashParticleArrowEntity.RAIN, ArashCombatRules.RAIN_ARROW_DAMAGE);
+            ArashParticleArrowEntity.RAIN, ArashCombatRules.ARROW_MIN_DAMAGE, chargeTicks);
          arrow.setPos(start.x, start.y, start.z);
          arrow.setDeltaMovement(delta.x / ticks, vy, delta.z / ticks);
          level.addFreshEntity(arrow);
@@ -190,6 +281,11 @@ public final class ArashCombatHelper {
 
    private static void tacticalMovement(ArashEntity arash, LivingEntity target, long now, boolean lineOfSight) {
       var data = arash.getPersistentData();
+      if (now < data.getLong(ArashTacticalSkillService.RETREAT_UNTIL)) {
+         arash.getNavigation().stop();
+         arash.getMoveControl().strafe(0.0F, 0.0F);
+         return;
+      }
       int orbitDirection = data.getInt(TAG_ORBIT_DIRECTION);
       if (orbitDirection == 0) {
          orbitDirection = arash.getRandom().nextBoolean() ? 1 : -1;
@@ -211,7 +307,10 @@ public final class ArashCombatHelper {
          ArashCombatRules.PREFERRED_COMBAT_RANGE,
          ArashCombatRules.APPROACH_THRESHOLD
       );
-      if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) > now) return;
+      if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) > now) {
+         continueCrossover(arash, target, now);
+         return;
+      }
       if (meleePressureWindow) {
          arash.getNavigation().stop();
          arash.getMoveControl().strafe(distance > 8.0 ? 0.24F : 0.0F, orbitDirection * 0.32F);

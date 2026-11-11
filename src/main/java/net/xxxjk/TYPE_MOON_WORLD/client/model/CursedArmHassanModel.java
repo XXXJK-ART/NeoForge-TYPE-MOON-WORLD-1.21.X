@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CursedArmHassanEntity;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.loading.math.MathParser;
 
 public class CursedArmHassanModel extends BaseServantModel<CursedArmHassanEntity> {
    public CursedArmHassanModel() {
@@ -15,6 +16,18 @@ public class CursedArmHassanModel extends BaseServantModel<CursedArmHassanEntity
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/cursed_arm_hassan.png"),
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/cursed_arm_hassan.animation.json")
       );
+   }
+
+   @Override
+   public void applyMolangQueries(AnimationState<CursedArmHassanEntity> state, double animTime) {
+      super.applyMolangQueries(state, animTime);
+      // Use Minecraft's accumulated movement phase, so changes in speed do not
+      // restart the stride or multiply the elapsed animation time.
+      float amount = state.getAnimatable().isSpiritualTransitionLocked() ? 0.0F
+         : Mth.clamp(state.getLimbSwingAmount(), 0.0F, 1.0F);
+      MathParser.getVariableFor("query.cursed_arm_walk_phase")
+         .set(state.getLimbSwing() * 0.6662F * Mth.RAD_TO_DEG);
+      MathParser.getVariableFor("query.cursed_arm_walk_amount").set(amount);
    }
 
    @Override

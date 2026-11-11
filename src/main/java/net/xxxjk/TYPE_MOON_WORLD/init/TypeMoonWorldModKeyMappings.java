@@ -358,6 +358,8 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          if (vars.servant_card_transformed && !blockTarget) {
+            if (!isClientDiarmuidDualWieldActive(player, vars))
+               net.xxxjk.TYPE_MOON_WORLD.client.ServantBaseAttackInputClient.attack();
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
              if (isClientDiarmuidDualWieldActive(player, vars)) {
                player.swing(InteractionHand.OFF_HAND);

@@ -354,7 +354,7 @@ public class TYPE_MOON_WORLD {
       registrar.playToClient(ServantCardDefenseStateMessage.TYPE, ServantCardDefenseStateMessage.STREAM_CODEC, ServantCardDefenseStateMessage::handleData);
       registrar.playToClient(ServantCardGuardPoseMessage.TYPE, ServantCardGuardPoseMessage.STREAM_CODEC, ServantCardGuardPoseMessage::handleData);
       registrar.playToClient(ServantDefenseAnimationMessage.TYPE, ServantDefenseAnimationMessage.STREAM_CODEC, ServantDefenseAnimationMessage::handleData);
-      registrar.playToClient(ServantBaseAnimationMessage.TYPE, ServantBaseAnimationMessage.STREAM_CODEC, ServantBaseAnimationMessage::handleData);
+      registrar.playBidirectional(ServantBaseAnimationMessage.TYPE, ServantBaseAnimationMessage.STREAM_CODEC, ServantBaseAnimationMessage::handleData);
       registrar.playToClient(CombatThreatStateMessage.TYPE, CombatThreatStateMessage.STREAM_CODEC, CombatThreatStateMessage::handleData);
       registrar.playToServer(PaleRiderSelectMessage.TYPE, PaleRiderSelectMessage.STREAM_CODEC, PaleRiderSelectMessage::handleData);
       registrar.playToServer(PaleRiderCommandMessage.TYPE, PaleRiderCommandMessage.STREAM_CODEC, PaleRiderCommandMessage::handleData);

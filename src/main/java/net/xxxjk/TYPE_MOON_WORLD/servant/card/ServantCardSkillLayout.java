@@ -339,6 +339,8 @@ public final class ServantCardSkillLayout {
             case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
             case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
             case 3 -> new ServantCardSkillAction("Arrow Construction", "arash_arrow_creation", 1.0, 0);
+            case 4 -> new ServantCardSkillAction("Emergency Retreat", "arash_retreat", 18.0, 140);
+            case 5 -> new ServantCardSkillAction("Close-Range Knockback", "arash_melee_knockback", 12.0, 90);
             case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
             default -> null;
          };

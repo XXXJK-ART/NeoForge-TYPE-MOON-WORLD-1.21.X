@@ -861,6 +861,8 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_bow_required"), true);
          return false;
       }
+      if ("arash_arrow_rain".equals(action.effectId())
+         && !player.getPersistentData().contains(ServantCardArashSkills.ARROW_RAIN_CHARGE_RELEASE)) return false;
       if ("arash_stella".equals(action.effectId())) {
          return ServantCardArashSkills.performStellaAction(player, vars, action);
       }
@@ -1027,6 +1029,9 @@ public final class ServantCardTransformManager {
          } else {
             ServantCardArashSkills.requestPlayerStellaRelease(player);
          }
+      } else if ("arash".equals(vars.servantCardState().id()) && slot == 0) {
+         if (pressed) ServantCardArashSkills.beginArrowRainCharge(player);
+         else ServantCardArashSkills.releaseArrowRainCharge(player);
       } else if ("oda_nobunaga".equals(vars.servantCardState().id())) {
          if (slot == 3) {
             if (pressed) {
@@ -1669,6 +1674,12 @@ public final class ServantCardTransformManager {
          }
          case "arash_energy_large" -> {
             if (!ServantCardArashSkills.performLargeEnergyArrow(player)) return false;
+         }
+         case "arash_retreat" -> {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashTacticalSkillService.performRetreat(player)) return false;
+         }
+         case "arash_melee_knockback" -> {
+            if (!net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashTacticalSkillService.performMeleeKnockback(player)) return false;
          }
          case "arash_arrow_creation" -> {
             if (!ServantCardArashSkills.performArrowCreation(player)) return false;

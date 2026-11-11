@@ -296,7 +296,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), context -> new HumanoidServantRenderer<>(context, "emiya_archer"));
       event.registerEntityRenderer(ModEntities.SENKO_MURAMASA.get(), context -> new HumanoidServantRenderer<>(context, "senko_muramasa"));
       event.registerEntityRenderer(ModEntities.ARASH.get(), context -> new HumanoidServantRenderer<>(context, "arash"));
-      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashParticleArrowRenderer::new);
       event.registerEntityRenderer(ModEntities.ARASH_STELLA_CONTROLLER.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), context -> new HumanoidServantRenderer<>(context, "artoria_pendragon"));
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), context -> new HumanoidServantRenderer<>(context, "oda_nobunaga"));

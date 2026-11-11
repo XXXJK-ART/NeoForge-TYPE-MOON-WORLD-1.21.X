@@ -3,22 +3,12 @@
                   "beginTick":  0,
                   "moves":  [
                                 {
-                                    "rightLeg":  {
-                                                     "pitch":  0,
-                                                     "yaw":  0,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "y":  0,
                                                     "x":  0,
                                                     "yaw":  0,
                                                     "pitch":  0,
                                                     "z":  0,
-                                                    "roll":  0
-                                                },
-                                    "leftLeg":  {
-                                                    "pitch":  0,
-                                                    "yaw":  0,
                                                     "roll":  0
                                                 },
                                     "rightArm":  {
@@ -34,19 +24,9 @@
                                                   "pitch":  0,
                                                   "yaw":  0,
                                                   "roll":  0
-                                              },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  0,
-                                                 "roll":  0
-                                             }
+                                              }
                                 },
                                 {
-                                    "rightLeg":  {
-                                                     "pitch":  -10,
-                                                     "yaw":  0,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "y":  0,
                                                     "x":  0,
@@ -54,11 +34,6 @@
                                                     "pitch":  -92.5463,
                                                     "z":  1,
                                                     "roll":  -0.5287
-                                                },
-                                    "leftLeg":  {
-                                                    "pitch":  12.5,
-                                                    "yaw":  0,
-                                                    "roll":  0
                                                 },
                                     "rightArm":  {
                                                      "y":  -3,
@@ -68,17 +43,12 @@
                                                      "z":  0,
                                                      "roll":  1.9515
                                                  },
-                                    "tick":  2,
+                                    "tick":  1,
                                     "torso":  {
                                                   "pitch":  0,
                                                   "yaw":  -15,
                                                   "roll":  0
-                                              },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  13.75,
-                                                 "roll":  0
-                                             }
+                                              }
                                 },
                                 {
                                     "rightArm":  {
@@ -89,12 +59,7 @@
                                                      "z":  1,
                                                      "roll":  0
                                                  },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  -17.5,
-                                                 "roll":  0
-                                             },
-                                    "tick":  3,
+                                    "tick":  2,
                                     "leftArm":  {
                                                     "y":  0,
                                                     "x":  0,
@@ -118,12 +83,7 @@
                                                      "z":  2,
                                                      "roll":  0
                                                  },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  -20,
-                                                 "roll":  0
-                                             },
-                                    "tick":  5,
+                                    "tick":  3,
                                     "leftArm":  {
                                                     "y":  0,
                                                     "x":  1,
@@ -139,14 +99,14 @@
                                               }
                                 },
                                 {
-                                    "tick":  16
+                                    "tick":  8
                                 }
                             ],
-                  "stopTick":  16,
-                  "endTick":  16,
+                  "stopTick":  8,
+                  "endTick":  8,
                   "degrees":  true
               },
-    "description":  "Imported base servant animation from Blockbench.",
+    "description":  "Imported base servant upper-body animation; vanilla head look and leg movement are preserved.",
     "name":  "servant_base_fist_qingji2",
     "version":  3
 }

@@ -66,11 +66,6 @@ public final class CommonEvents {
         if (event.getEntity() instanceof ServerPlayer player && EnumaChainService.isCasting(player)) {
             event.setCanceled(true);
         }
-        if (!event.isCanceled() && event.getEntity() instanceof ServerPlayer player
-            && player.getData(net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed) {
-            int action = player.getMainHandItem().isEmpty() ? 1 : 0;
-            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(player, action);
-        }
     }
 
     @SubscribeEvent

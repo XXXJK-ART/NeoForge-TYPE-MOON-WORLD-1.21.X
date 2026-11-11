@@ -3,25 +3,9 @@
                   "beginTick":  0,
                   "moves":  [
                                 {
-                                    "rightLeg":  {
-                                                     "y":  0,
-                                                     "x":  0,
-                                                     "yaw":  0,
-                                                     "pitch":  0,
-                                                     "z":  0,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "pitch":  0,
                                                     "yaw":  0,
-                                                    "roll":  0
-                                                },
-                                    "leftLeg":  {
-                                                    "y":  0,
-                                                    "x":  0,
-                                                    "yaw":  0,
-                                                    "pitch":  0,
-                                                    "z":  0,
                                                     "roll":  0
                                                 },
                                     "rightArm":  {
@@ -34,33 +18,12 @@
                                                   "pitch":  0,
                                                   "yaw":  0,
                                                   "roll":  0
-                                              },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  0,
-                                                 "roll":  0
-                                             }
+                                              }
                                 },
                                 {
-                                    "rightLeg":  {
-                                                     "y":  0,
-                                                     "x":  0,
-                                                     "yaw":  0,
-                                                     "pitch":  -30,
-                                                     "z":  -1,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "pitch":  -50,
                                                     "yaw":  0,
-                                                    "roll":  0
-                                                },
-                                    "leftLeg":  {
-                                                    "y":  0,
-                                                    "x":  0,
-                                                    "yaw":  0,
-                                                    "pitch":  20,
-                                                    "z":  1,
                                                     "roll":  0
                                                 },
                                     "rightArm":  {
@@ -73,33 +36,12 @@
                                                   "pitch":  43.4101,
                                                   "yaw":  -20.715,
                                                   "roll":  -18.501
-                                              },
-                                    "head":  {
-                                                 "pitch":  -37.5127,
-                                                 "yaw":  18.1816,
-                                                 "roll":  -4.8529
-                                             }
+                                              }
                                 },
                                 {
-                                    "rightLeg":  {
-                                                     "y":  0,
-                                                     "x":  0,
-                                                     "yaw":  0,
-                                                     "pitch":  -30,
-                                                     "z":  -1,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "pitch":  -50,
                                                     "yaw":  0,
-                                                    "roll":  0
-                                                },
-                                    "leftLeg":  {
-                                                    "y":  0,
-                                                    "x":  0,
-                                                    "yaw":  0,
-                                                    "pitch":  20,
-                                                    "z":  1,
                                                     "roll":  0
                                                 },
                                     "rightArm":  {
@@ -112,36 +54,15 @@
                                                   "pitch":  43.4101,
                                                   "yaw":  -20.715,
                                                   "roll":  -18.501
-                                              },
-                                    "head":  {
-                                                 "pitch":  -37.5127,
-                                                 "yaw":  18.1816,
-                                                 "roll":  -4.8529
-                                             }
+                                              }
                                 },
                                 {
                                     "tick":  20
                                 },
                                 {
-                                    "rightLeg":  {
-                                                     "y":  0,
-                                                     "x":  0,
-                                                     "yaw":  0,
-                                                     "pitch":  0,
-                                                     "z":  0,
-                                                     "roll":  0
-                                                 },
                                     "leftArm":  {
                                                     "pitch":  0,
                                                     "yaw":  0,
-                                                    "roll":  0
-                                                },
-                                    "leftLeg":  {
-                                                    "y":  0,
-                                                    "x":  0,
-                                                    "yaw":  0,
-                                                    "pitch":  0,
-                                                    "z":  0,
                                                     "roll":  0
                                                 },
                                     "rightArm":  {
@@ -154,12 +75,7 @@
                                                   "pitch":  0,
                                                   "yaw":  0,
                                                   "roll":  0
-                                              },
-                                    "head":  {
-                                                 "pitch":  0,
-                                                 "yaw":  0,
-                                                 "roll":  0
-                                             }
+                                              }
                                 },
                                 {
                                     "tick":  40
@@ -169,7 +85,7 @@
                   "endTick":  40,
                   "degrees":  true
               },
-    "description":  "Imported base servant animation from Blockbench.",
+    "description":  "Imported base servant upper-body animation; vanilla head look and leg movement are preserved.",
     "name":  "servant_base_dodge_large_forward_right",
     "version":  3
 }

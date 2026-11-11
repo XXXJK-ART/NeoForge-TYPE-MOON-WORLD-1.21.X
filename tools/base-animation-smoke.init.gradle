@@ -1,0 +1,15 @@
+// Opt-in client and dedicated-server verification; excluded from release artifacts.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('baseAnimationSmoke') {
+            java.srcDir 'tools/base-animation-smoke/java'
+            resources.srcDir 'tools/base-animation-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_base_animation_smoke', smoke)
+        project.runs.server.modSources.add('typemoonworld_base_animation_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/base-animation-client-run')
+        project.runs.server.workingDirectory project.file('build/base-animation-server-run')
+    }
+}

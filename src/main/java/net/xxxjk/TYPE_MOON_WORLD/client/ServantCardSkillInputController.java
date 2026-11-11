@@ -124,6 +124,7 @@ public final class ServantCardSkillInputController {
    public static boolean isForcedHoldSkill(String servantId, int slot) {
       return ("emiya_archer".equals(servantId) && slot == 1)
          || ("li_shuwen".equals(servantId) && slot == 2)
+         || ("arash".equals(servantId) && slot == 0)
          || ("arash".equals(servantId) && slot == 9)
          || ("diarmuid_ua_duibhne".equals(servantId) && slot == 8)
          || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8))
