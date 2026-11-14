@@ -21,6 +21,28 @@ class ServantEngagementServiceTest {
    }
 
    @Test
+   void genericMagicBoltsAreLimitedToMagicServants() {
+      assertTrue(ServantDuelPacing.usesGenericMagicBoltBasic("medea"));
+      assertTrue(ServantDuelPacing.usesGenericMagicBoltBasic("paracelsus"));
+      assertFalse(ServantDuelPacing.usesGenericMagicBoltBasic("jeanne_alter"));
+      assertFalse(ServantDuelPacing.usesGenericMagicBoltBasic("baobhan_sith"));
+   }
+
+   @Test
+   void baobhanSithUsesAFasterBasicArrowCadence() {
+      assertEquals(8, ServantDuelPacing.rangedBasicRecoveryTicks("baobhan_sith"));
+      assertEquals(16, ServantDuelPacing.rangedBasicRecoveryTicks("arash"));
+   }
+
+   @Test
+   void jeanneAlterUsesMeleeRoleDespiteHerProjectileSkill() {
+      assertEquals(ServantEngagementService.CombatRole.MELEE,
+         ServantEngagementService.role("jeanne_alter", ServantClassType.AVENGER, 1, 0));
+      assertEquals(ServantEngagementService.CombatRole.RANGED,
+         ServantEngagementService.role("baobhan_sith", ServantClassType.ARCHER, 4, 2));
+   }
+
+   @Test
    void rangedFightersUseDifferentBandsAgainstMeleeAndRangedTargets() {
       var rangedDuel = ServantEngagementService.rangedBand(true, 10.0, 14.0, 18.0);
       var meleePressure = ServantEngagementService.rangedBand(false, 10.0, 14.0, 18.0);

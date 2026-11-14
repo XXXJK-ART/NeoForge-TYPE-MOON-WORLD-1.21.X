@@ -80,6 +80,27 @@ class ServantBaseAnimationResourcesTest {
       }
    }
 
+   @Test
+   void fistAnimationsKeepBothHandsFourPixelsLower() throws Exception {
+      for (String name : new String[]{
+         "servant_base_fist_qingji1", "servant_base_fist_qingji2", "servant_base_fist_lianji"}) {
+         JsonArray moves = json("player_animations/" + name + ".json")
+            .getAsJsonObject("emote").getAsJsonArray("moves");
+         for (var moveElement : moves) {
+            JsonObject move = moveElement.getAsJsonObject();
+            int tick = move.get("tick").getAsInt();
+            if (tick >= json("player_animations/" + name + ".json")
+               .getAsJsonObject("emote").get("endTick").getAsInt()) continue;
+            for (String arm : new String[]{"leftArm", "rightArm"}) {
+               if (!move.has(arm)) continue;
+               JsonObject armPose = move.getAsJsonObject(arm);
+               assertTrue(armPose.has("y"), name + " " + arm + " must define its lowered position");
+               assertTrue(armPose.get("y").getAsDouble() >= 1.0, name + " " + arm + " should be lowered by about a quarter block");
+            }
+         }
+      }
+   }
+
    private static void assertUnchanged(KeyframeAnimationPlayer sample, String part, TransformType type,
                                        Vec3f vanilla, Path path, int tick) {
       Vec3f actual = sample.get3DTransform(part, type, 0.5F, vanilla);

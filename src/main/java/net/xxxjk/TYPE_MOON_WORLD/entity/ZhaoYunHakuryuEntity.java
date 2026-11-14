@@ -90,6 +90,10 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private int combatMovementStartTick;
    private int combatOrbitSign = 1;
    private int blockedCombatMoveTicks;
+   private Vec3 combatPassDirection = Vec3.ZERO;
+   private double combatPassRemaining;
+   private double combatPassSpeed;
+   private int combatRepositionUntil;
    /** Smoothed horizontal input velocity for the player-controlled mount. */
    private Vec3 controlledVelocity = Vec3.ZERO;
 
@@ -284,7 +288,7 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          setNpActive(false);
          followRiderIntent(level, rider, master);
       }
-      setMovingState(isNpActive() || getDeltaMovement().horizontalDistanceSqr() > 1.0E-4);
+      setMovingState(isNpActive() || Math.abs(getX() - xo) + Math.abs(getZ() - zo) > 0.01);
       fallDistance = 0.0F;
    }
 
@@ -461,13 +465,27 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
       }
 
       double distance = distanceTo(target);
-      boolean forceMelee = rider.getPersistentData().getLong(
-         ZhaoYunRiderEntity.TAG_FORCE_MELEE_UNTIL) > level().getGameTime();
+      if (isCombatPassing()) {
+         // Commit to the line through the enemy. Re-aiming every tick makes
+         // the horse turn back as soon as it reaches the target's centre.
+         rider.tryMountedNormalThrust(this, target);
+         Vec3 before = position();
+         double step = Math.min(combatPassSpeed, combatPassRemaining);
+         moveToward(combatPassDirection, step);
+         double travelled = horizontal(position().subtract(before)).length();
+         combatPassRemaining -= Math.max(travelled, step * 0.25);
+         if (combatPassRemaining <= 0.05) {
+            combatPassRemaining = 0;
+            combatRepositionUntil = tickCount + COMBAT_ORBIT_TICKS;
+            combatMovementStartTick = tickCount - COMBAT_DIRECT_TICKS;
+            combatOrbitSign = -combatOrbitSign;
+         }
+         return;
+      }
       int cycleTicks = COMBAT_DIRECT_TICKS + COMBAT_ORBIT_TICKS;
       int phase = Math.floorMod(tickCount - combatMovementStartTick, cycleTicks);
-      boolean orbitPhase = !forceMelee && phase >= COMBAT_DIRECT_TICKS;
-      if (orbitPhase && distance >= COMBAT_STOP_DISTANCE * 0.85
-         && distance <= COMBAT_ORBIT_MAX_DISTANCE) {
+      boolean orbitPhase = tickCount < combatRepositionUntil || phase >= COMBAT_DIRECT_TICKS;
+      if (orbitPhase && distance <= COMBAT_ORBIT_MAX_DISTANCE) {
          moveAroundCombatTarget(target);
          return;
       }
@@ -478,16 +496,32 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
          return;
       }
 
-      resetBlockedCombatMove();
-      faceHorizontal(toTarget);
+      // Even at point-blank range ride through and leave room to turn.
+      if (toTarget.lengthSqr() < 1.0E-4) toTarget = getLookAngle();
+      beginCombatPass(toTarget, distance + 8.0, getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.8);
+      moveTowardCombatTarget(target, rider);
+   }
+
+   public boolean isCombatPassing() { return combatPassRemaining > 0.05; }
+
+   public boolean canStartCombatPass() {
+      return !isCombatPassing() && tickCount >= combatRepositionUntil;
+   }
+
+   public void beginCombatPass(Vec3 direction, double distance, double speed) {
+      Vec3 flat = horizontal(direction);
+      if (flat.lengthSqr() < 1.0E-4 || isCombatPassing()) return;
+      combatPassDirection = flat.normalize();
+      combatPassRemaining = Mth.clamp(distance, 8.0, 24.0);
+      combatPassSpeed = Mth.clamp(speed, 0.9, 1.85);
+      getNavigation().stop();
       preserveGravityWhileStopping();
    }
 
    private void moveAroundCombatTarget(LivingEntity target) {
       Vec3 toTarget = horizontal(target.position().subtract(position()));
       if (toTarget.lengthSqr() < 1.0E-4) {
-         preserveGravityWhileStopping();
-         return;
+         toTarget = horizontal(getLookAngle());
       }
       Vec3 radial = toTarget.normalize();
       Vec3 tangent = new Vec3(-radial.z, 0.0, radial.x).scale(combatOrbitSign);
@@ -550,6 +584,8 @@ public final class ZhaoYunHakuryuEntity extends PathfinderMob implements GeoEnti
    private void resetCombatMovement() {
       combatMovementTargetId = -1;
       combatMovementStartTick = tickCount;
+      combatPassRemaining = 0;
+      combatRepositionUntil = 0;
       resetBlockedCombatMove();
    }
 

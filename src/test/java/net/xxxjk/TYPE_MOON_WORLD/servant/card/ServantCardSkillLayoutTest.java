@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -116,6 +117,10 @@ class ServantCardSkillLayoutTest {
          assertEquals(costs[slot], action.mpCost(), "slot " + slot + " MP");
          assertEquals(cooldowns[slot], action.cooldownTicks(), "slot " + slot + " cooldown");
       }
+      assertEquals("ushiwakamaru_draw_cut", ServantCardSkillLayout.actionFor("ushiwakamaru_rider", 1, false).effectId());
+      assertEquals("ushiwakamaru_eagle_drop", ServantCardSkillLayout.actionFor("ushiwakamaru_rider", 4, false).effectId());
+      assertTrue(ServantCardActionPreconditions.requiresLookTarget("ushiwakamaru_draw_cut"));
+      assertEquals(5.0, ServantCardActionPreconditions.targetRangeFor("ushiwakamaru_draw_cut"));
    }
 
    @Test

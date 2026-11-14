@@ -189,6 +189,7 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_VICTORY = register("nightingale_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_NP = register("nightingale_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_FAIL = register("zhao_yun_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_ATTACK = register("zhao_yun_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_VICTORY = register("zhao_yun_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_NP = register("zhao_yun_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> SENKO_MURAMASA_VOICE_ATTACK = register("senko_muramasa_voice_attack");

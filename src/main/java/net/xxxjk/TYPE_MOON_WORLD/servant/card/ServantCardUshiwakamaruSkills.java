@@ -117,6 +117,25 @@ public final class ServantCardUshiwakamaruSkills {
       level.playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.0F, 1.35F);
    }
 
+   public static boolean performDrawCut(ServerPlayer player) {
+      LivingEntity target = findEnemyLookTarget(player, 5.0);
+      if (target == null) return false;
+      player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+         target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
+      playSwordAction(player, SasakiKojiroAction.CROUCH_CUTBACK);
+      float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.35 + 8.0);
+      hurtPhysical(player, target, damage);
+      if (player.level() instanceof ServerLevel level) {
+         Vec3 direction = target.position().subtract(player.position());
+         VFXServerEffects.spawnOriented(level, "servant_ushiwakamaru_slash",
+            player.position().add(0.0, player.getBbHeight() * 0.48, 0.0), direction, 96.0);
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.5,
+            target.getZ(), 5, 0.25, 0.25, 0.25, 0.0);
+         level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.35F);
+      }
+      return true;
+   }
+
    public static void performMoonlitStep(ServerPlayer player) {
       LivingEntity target = findEnemyLookTarget(player, 12.0);
       if (target == null) return;
@@ -173,6 +192,7 @@ public final class ServantCardUshiwakamaruSkills {
 
    public static void performEagleDrop(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
+      playSwordAction(player, SasakiKojiroAction.DOWNWARD_SLASH);
       LivingEntity target = findEnemyLookTarget(player, 16.0);
       Vec3 start = player.getEyePosition();
       Vec3 end = start.add(player.getLookAngle().normalize().scale(16.0));
@@ -195,6 +215,9 @@ public final class ServantCardUshiwakamaruSkills {
       }
       }
       ServantCardSkillUtils.spawnLineParticles(level, oldPosition.add(0.0, 1.0, 0.0), player.position().add(0.0, 0.4, 0.0), ParticleTypes.END_ROD);
+      TYPE_MOON_WORLD.queueServerWork(10, () -> {
+         if (player.isAlive()) playSwordAction(player, SasakiKojiroAction.HORIZONTAL_SLASH);
+      });
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_usumidori_impact", player.position(), 96.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, player.getX(), player.getY() + 0.3, player.getZ(), 12, 1.3, 0.2, 1.3, 0.0);
       level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.2F, 0.8F);

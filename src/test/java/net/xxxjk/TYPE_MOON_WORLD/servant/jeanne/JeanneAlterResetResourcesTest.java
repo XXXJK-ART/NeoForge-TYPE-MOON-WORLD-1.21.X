@@ -43,6 +43,30 @@ class JeanneAlterResetResourcesTest {
       assertFalse(actions.contains("jeanne_alter_dragon_witch_ex"));
    }
 
+   @Test
+   void playerCardFillsTwoOpenSlotsWithTranslatedFlameActions() throws IOException {
+      JsonObject card = json("data/typemoonworld/servant/cards/jeanne_alter.json");
+      String actions = card.getAsJsonArray("actions").toString();
+      assertTrue(actions.contains("\"slot\":2"));
+      assertTrue(actions.contains("jeanne_alter_black_flame_sweep"));
+      assertTrue(actions.contains("\"slot\":3"));
+      assertTrue(actions.contains("jeanne_alter_chain_execution"));
+
+      JsonObject zh = json("assets/typemoonworld/lang/zh_cn.json");
+      JsonObject en = json("assets/typemoonworld/lang/en_us.json");
+      for (String suffix : new String[]{"avenger_b", "oblivion_correction_a", "self_replenishment_a_plus",
+            "black_flame_sweep", "chain_execution"}) {
+         String key = "skill.typemoonworld.jeanne_alter." + suffix;
+         assertTrue(zh.has(key), "missing zh_cn: " + key);
+         assertTrue(en.has(key), "missing en_us: " + key);
+      }
+
+      assertEquals("jeanne_alter_black_flame_sweep",
+         json("data/typemoonworld/servant/skills/jeanne_alter_black_flame_sweep.json").get("id").getAsString());
+      assertEquals("jeanne_alter_chain_execution",
+         json("data/typemoonworld/servant/skills/jeanne_alter_chain_execution.json").get("id").getAsString());
+   }
+
    private static JsonObject json(String relativePath) throws IOException {
       return JsonParser.parseString(Files.readString(RESOURCES.resolve(relativePath), StandardCharsets.UTF_8)).getAsJsonObject();
    }

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction;
+
 public enum MuramasaSwordTechnique {
    DOWNWARD_SLASH("muramasa_downward_slash", 8.0, 60, 3.0, 1.15, false),
    THRUST("muramasa_thrust", 14.0, 100, 4.5, 1.35, false),
@@ -27,4 +29,11 @@ public enum MuramasaSwordTechnique {
    public double range() { return range; }
    public double damageMultiplier() { return damageMultiplier; }
    public boolean isArea() { return area; }
+   public int animationAction() {
+      return switch (this) {
+         case DOWNWARD_SLASH -> ServantBaseAction.MURAMASA_DOWNWARD_SLASH;
+         case THRUST -> ServantBaseAction.MURAMASA_THRUST;
+         case SPINNING_SLASH -> ServantBaseAction.MURAMASA_SPINNING_SLASH;
+      };
+   }
 }

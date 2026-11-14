@@ -531,6 +531,10 @@ public final class ServantCardTransformManager {
       if (!vars.servantCardState().transformed() || slot < -1 || slot > 9) {
          return false;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.active(player)) {
+         if (slot == 6) return false;
+         net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.stop(player, true);
+      }
       if ("shadow_hassan".equals(vars.servantCardState().id()) && !ServantCardShadowHassanSkills.isPossessing(player)) {
          if (slot == 0 && ServantCardShadowHassanSkills.isActiveConcealment(player)) {
             return ServantCardShadowHassanSkills.toggleConcealment(player);
@@ -674,6 +678,9 @@ public final class ServantCardTransformManager {
          player.displayClientMessage(Component.translatable("message.typemoonworld.magic.presence_concealment.off"), true);
          return true;
       }
+      if ("muramasa_no_gen_kensai".equals(action.effectId())
+         && (ServantCardSenkoMuramasaSkills.isNpUsed(player)
+            || player.getPersistentData().getBoolean(ServantCardSenkoMuramasaSkills.NP_PENDING))) return false;
       if ("muramasa_forge".equals(action.effectId())) {
          return ServantCardSenkoMuramasaSkills.openForgeSelection(player);
       }
@@ -924,9 +931,15 @@ public final class ServantCardTransformManager {
          String policy = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.policyForAction(action.effectId());
          if (!policy.isEmpty()) {
             net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, policy, action.cooldownTicks(),
-               ticks -> setNoblePhantasmCooldown(player, vars, ticks), () -> { });
-            net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> performAction(player, vars, action));
-            performed = true;
+               ticks -> setNoblePhantasmCooldown(player, vars, ticks), () -> {
+                  if ("muramasa_no_gen_kensai".equals(action.effectId())) ServantCardSenkoMuramasaSkills.cancelNoblePhantasm(player);
+               });
+            if ("muramasa_no_gen_kensai".equals(action.effectId())) {
+               performed = ServantCardSenkoMuramasaSkills.performNoblePhantasm(player);
+            } else {
+               net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> performAction(player, vars, action));
+               performed = true;
+            }
          } else performed = performAction(player, vars, action);
       } finally {
          ServantCardActionTimeline.recovery(player);
@@ -937,7 +950,8 @@ public final class ServantCardTransformManager {
          return false;
       }
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDefenseTraits.activated(player, action.effectId());
-      if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId())) {
+      if (!"three_thousand".equals(action.effectId()) && !"hajun".equals(action.effectId())
+         && !"muramasa_no_gen_kensai".equals(action.effectId())) {
          ServantCardVoiceHelper.tryPlaySkill(player, action.effectId());
       }
       int cooldownTicks = effectiveCooldownTicks(action, npSlot);
@@ -1011,6 +1025,9 @@ public final class ServantCardTransformManager {
       if ("diarmuid_ua_duibhne".equals(vars.servantCardState().id()) && slot == 8) {
          if (pressed) triggerAction(player, slot);
          else net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.releaseDance(player);
+      } else if ("zhao_yun_rider".equals(vars.servantCardState().id()) && slot == 6) {
+         if (pressed) triggerAction(player, slot);
+         else net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.stop(player, true);
       } else if ("emiya_archer".equals(vars.servantCardState().id()) && slot == 1) {
          if (pressed) {
             triggerAction(player, slot);
@@ -1977,6 +1994,7 @@ public final class ServantCardTransformManager {
          case "fanatic_jinn" -> { if (!ServantCardFanaticAssassinSkills.performJinn(player)) return false; }
          case "ushiwakamaru_tengu_strategy" -> ServantCardUshiwakamaruSkills.performTenguStrategy(player);
          case "ushiwakamaru_charisma" -> ServantCardUshiwakamaruSkills.performCharisma(player);
+         case "ushiwakamaru_draw_cut" -> { if (!ServantCardUshiwakamaruSkills.performDrawCut(player)) return false; }
          case "ushiwakamaru_moonlit_step" -> ServantCardUshiwakamaruSkills.performMoonlitStep(player);
          case "ushiwakamaru_sweeping_thrust" -> ServantCardUshiwakamaruSkills.performSweepingThrust(player);
          case "ushiwakamaru_eagle_drop" -> ServantCardUshiwakamaruSkills.performEagleDrop(player);

@@ -1,0 +1,11 @@
+// Focused verification while other servant work may be in progress in the shared workspace.
+allprojects {
+    afterEvaluate { project ->
+        project.sourceSets.test.java.setIncludes([
+            '**/ZhaoYunActionResourcesTest.java', '**/ZhaoYunResetDataTest.java',
+            '**/ServantBaseAnimationResourcesTest.java', '**/ServantBaseAttackInputTest.java',
+            '**/ZhaoYunHakuryuMountRulesTest.java'
+        ])
+        project.tasks.named('test').configure { inputs.dir project.file('src/main/resources') }
+    }
+}

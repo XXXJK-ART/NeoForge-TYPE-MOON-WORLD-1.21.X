@@ -48,6 +48,7 @@ public final class ServantCardVoiceHelper {
          case "diarmuid_ua_duibhne" -> ModSounds.DIARMUID_UA_DUIBHNE_VOICE_ATTACK.get();
          case "lancelot_berserker" -> ModSounds.LANCELOT_BERSERKER_VOICE_ATTACK.get();
          case "baobhan_sith" -> ModSounds.BAOBHAN_SITH_VOICE_ATTACK.get();
+         case "zhao_yun_rider" -> ModSounds.ZHAO_YUN_VOICE_ATTACK.get();
          case "jeanne_alter" -> ModSounds.JEANNE_ALTER_VOICE_ATTACK.get();
          default -> null;
       }, 70);
@@ -94,6 +95,9 @@ public final class ServantCardVoiceHelper {
          case "wu_er_da" -> ModSounds.LI_SHUWEN_VOICE_WU_ER_DA_SHORT.get();
          case "rule_breaker" -> ModSounds.MEDEA_VOICE_RULE_BREAKER_SHORT.get();
          case "paracelsus_sword_np" -> ModSounds.PARACELSUS_VOICE_NP.get();
+         case "zhao_yun_spear_combo", "zhao_yun_spear_breakthrough", "zhao_yun_dragon_sweep",
+            "zhao_yun_mounted_rush", "zhao_yun_dragon_flash", "zhao_yun_seven_probe",
+            "zhao_yun_hakuryu_trample" -> ModSounds.ZHAO_YUN_VOICE_ATTACK.get();
          case "zhao_yun_changbanpo" -> ModSounds.ZHAO_YUN_VOICE_NP.get();
          case "oda_hasebe_short_thrust", "oda_floating_refill", "oda_three_line",
             "oda_encircle_matchlocks", "oda_charged_matchlock", "oda_crossfire_net",
@@ -137,11 +141,13 @@ public final class ServantCardVoiceHelper {
    public static void tryPlayVictory(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (isOkita(vars)) play(player, ModSounds.OKITA_SOUJI_SABER_VOICE_VICTORY.get(), 160);
+      else if (isZhaoYun(vars)) play(player, ModSounds.ZHAO_YUN_VOICE_VICTORY.get(), 160);
    }
 
    public static void tryPlayFail(ServerPlayer player) {
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (isOkita(vars)) play(player, ModSounds.OKITA_SOUJI_SABER_VOICE_FAIL.get(), 80);
+      else if (isZhaoYun(vars)) play(player, ModSounds.ZHAO_YUN_VOICE_FAIL.get(), 0);
    }
 
    private static boolean tryPlayOkitaBattleStart(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
@@ -157,6 +163,10 @@ public final class ServantCardVoiceHelper {
       return vars.servant_card_transformed && "okita_souji_saber".equals(vars.servant_card_id);
    }
 
+   private static boolean isZhaoYun(TypeMoonWorldModVariables.PlayerVariables vars) {
+      return vars.servant_card_transformed && "zhao_yun_rider".equals(vars.servant_card_id);
+   }
+
    static boolean usesUshiwakamaruNoblePhantasmVoice(String effectId) {
       return "ushiwakamaru_eight_boat".equals(effectId);
    }
@@ -165,6 +175,9 @@ public final class ServantCardVoiceHelper {
       if (sound == null || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
+      if (isZhaoYun(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES))
+         && sound != ModSounds.ZHAO_YUN_VOICE_FAIL.get()
+         && level.getGameTime() < player.getPersistentData().getLong("TypeMoonNpVoiceEnd")) return false;
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(player, sound)) return false;
       boolean diarmuid = ServantCardDiarmuidSkills.isActiveCard(player);
       if (diarmuid && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(player)) return false;

@@ -146,10 +146,12 @@ public final class ServantDuelPacing {
          } else if (id.equals("nightingale")) {
             var bullet = new net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity(servant.level(), servant);
             bullet.setPos(origin); bullet.shoot(direction.x, direction.y, direction.z, 3, 0); servant.level().addFreshEntity(bullet);
-         } else {
+         } else if (usesGenericMagicBoltBasic(id)) {
             MedeaMagicBoltEntity bolt = new MedeaMagicBoltEntity(servant.level(), servant);
             bolt.setMagicDamage(12); bolt.setPos(origin); bolt.shoot(direction.x, direction.y, direction.z, 1.8F, 0);
             servant.level().addFreshEntity(bolt);
+         } else {
+            return false;
          }
          servant.triggerBasicAttackAnimation(); attacked = true;
       } else if (!ranged && distance <= ServantCombatTempoService.basicAttackReach(servant, target)) {
@@ -161,5 +163,9 @@ public final class ServantDuelPacing {
          ServantCombatExchangeService.activity(servant, now);
       }
       return attacked;
+   }
+
+   static boolean usesGenericMagicBoltBasic(String servantId) {
+      return "medea".equals(servantId) || "paracelsus".equals(servantId);
    }
 }

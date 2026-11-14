@@ -129,6 +129,7 @@ public final class ServantCardSkillInputController {
          || ("arash".equals(servantId) && slot == 0)
          || ("arash".equals(servantId) && slot == 9)
          || ("diarmuid_ua_duibhne".equals(servantId) && slot == 8)
+         || ("zhao_yun_rider".equals(servantId) && slot == 6)
          || ("oda_nobunaga".equals(servantId) && (slot == 3 || slot == 8))
          || ("artoria_pendragon".equals(servantId) && slot == 6);
    }

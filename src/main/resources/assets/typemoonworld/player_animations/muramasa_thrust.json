@@ -1,0 +1,265 @@
+{
+  "name": "muramasa_thrust",
+  "version": 3,
+  "description": "Muramasa sword technique; stationary root and free head/legs.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 13,
+    "stopTick": 13,
+    "degrees": true,
+    "moves": [
+      {
+        "tick": 0,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -50,
+          "yaw": -20,
+          "roll": -10
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -40,
+          "yaw": 20,
+          "roll": 10
+        }
+      },
+      {
+        "tick": 2,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 2,
+          "yaw": -22,
+          "roll": -3
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -62,
+          "yaw": -50,
+          "roll": -18
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -50,
+          "yaw": 22,
+          "roll": 18
+        }
+      },
+      {
+        "tick": 4,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 4,
+          "yaw": -26,
+          "roll": -3
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -66,
+          "yaw": -58,
+          "roll": -16
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -52,
+          "yaw": 28,
+          "roll": 18
+        }
+      },
+      {
+        "tick": 6,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": -12,
+          "yaw": 12,
+          "roll": 2
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -94,
+          "yaw": 0,
+          "roll": -2
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -78,
+          "yaw": -7,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 8,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": -9,
+          "yaw": 16,
+          "roll": 3
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -99,
+          "yaw": 3,
+          "roll": 0
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -83,
+          "yaw": -9,
+          "roll": 6
+        }
+      },
+      {
+        "tick": 10,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": -3,
+          "yaw": 6,
+          "roll": 1
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -68,
+          "yaw": -5,
+          "roll": -5
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -55,
+          "yaw": 10,
+          "roll": 10
+        }
+      },
+      {
+        "tick": 13,
+        "easing": "easeInOutSine",
+        "body": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "torso": {
+          "x": 0,
+          "y": 0,
+          "z": 0,
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "x": -5,
+          "y": 2,
+          "z": 0,
+          "pitch": -50,
+          "yaw": -20,
+          "roll": -10
+        },
+        "leftArm": {
+          "x": 5,
+          "y": 2,
+          "z": 0,
+          "pitch": -40,
+          "yaw": 20,
+          "roll": 10
+        }
+      }
+    ]
+  }
+}

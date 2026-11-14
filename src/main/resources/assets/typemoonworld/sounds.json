@@ -1438,6 +1438,13 @@
       }
     ]
   },
+  "zhao_yun_voice_attack": {
+    "sounds": [
+      { "name": "typemoonworld:voice/zhao_yun/attack1", "stream": true },
+      { "name": "typemoonworld:voice/zhao_yun/attack2", "stream": true },
+      { "name": "typemoonworld:voice/zhao_yun/attack3", "stream": true }
+    ]
+  },
   "zhao_yun_voice_fail": {
     "sounds": [
       {
@@ -1800,7 +1807,7 @@
       {
         "name": "typemoonworld:voice/zhao_yun/np",
         "stream": true,
-        "pitch": 0.6808843537414966
+        "pitch": 1.0
       }
     ]
   },

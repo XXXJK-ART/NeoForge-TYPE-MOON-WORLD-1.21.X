@@ -16,6 +16,8 @@ public final class JeanneAlterContent {
       addon.skills().register(id("jeanne_alter_self_replenishment_a_plus"), JeanneAlterSkills::selfReplenishmentAPlus);
       addon.cards().registerAction(id("jeanne_alter_fire_pillar"), JeanneAlterSkills::firePillar);
       addon.cards().registerAction(id("jeanne_alter_cursed_lance"), JeanneAlterSkills::cursedLance);
+      addon.cards().registerAction(id("jeanne_alter_black_flame_sweep"), JeanneAlterSkills::blackFlameSweep);
+      addon.cards().registerAction(id("jeanne_alter_chain_execution"), JeanneAlterSkills::chainExecution);
       addon.cards().registerAction(id("jeanne_alter_self_modification_ex"), JeanneAlterSkills::selfModification);
       addon.cards().registerAction(id("jeanne_alter_dragon_witch_ex"), JeanneAlterSkills::dragonWitch);
       addon.cards().registerAction(id("jeanne_alter_inferno_body"), JeanneAlterSkills::infernoBody);
@@ -24,6 +26,8 @@ public final class JeanneAlterContent {
       addon.noblePhantasms().register(id("jeanne_alter_le_grondement_du_haine"), JeanneAlterSkills::combatNoblePhantasm);
       addon.servants().registerAction(id("jeanne_alter_fire_pillar"), JeanneAlterSkills::combatFirePillar);
       addon.servants().registerAction(id("jeanne_alter_cursed_lance"), JeanneAlterSkills::combatCursedLance);
+      addon.servants().registerAction(id("jeanne_alter_black_flame_sweep"), JeanneAlterSkills::combatBlackFlameSweep);
+      addon.servants().registerAction(id("jeanne_alter_chain_execution"), JeanneAlterSkills::combatChainExecution);
       addon.servants().registerAction(id("jeanne_alter_self_modification_ex"), JeanneAlterSkills::combatSelfModification);
       addon.servants().registerAction(id("jeanne_alter_dragon_witch_ex"), JeanneAlterSkills::combatDragonWitch);
       addon.servants().registerAction(id("jeanne_alter_inferno_body"), JeanneAlterSkills::combatInfernoBody);

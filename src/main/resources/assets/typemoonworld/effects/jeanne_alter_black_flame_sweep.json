@@ -1,0 +1,22 @@
+{
+  "duration": 0.7,
+  "emitters": [
+    {
+      "start_time": 0,
+      "end_time": 0.45,
+      "rate": 900,
+      "particle_lifetime": 0.5,
+      "component": {"type": "circle", "radius": 3.8, "segments": 160},
+      "position_variance": 0.25,
+      "velocity": [0, 0.45, 0],
+      "color_over_life": [
+        {"t": 0, "color": "#FFFFE6A0"},
+        {"t": 0.3, "color": "#FFFF3A08"},
+        {"t": 1, "color": "#00000000"}
+      ],
+      "size_over_life": [{"t": 0, "size": 0.2}, {"t": 0.55, "size": 0.8}, {"t": 1, "size": 0.05}],
+      "blend": "ADDITIVE",
+      "enable_trail": true
+    }
+  ]
+}

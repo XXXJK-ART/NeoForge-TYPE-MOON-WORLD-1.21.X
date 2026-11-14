@@ -57,6 +57,8 @@ public final class JeanneAlterSkills {
    private static final int MAX_GRUDGE = JeanneAlterRules.MAX_GRUDGE;
    private static final int DEATH_LOCK_TICKS = JeanneAlterRules.DEATH_LOCK_TICKS;
    private static final String FIRE_PILLAR_COOLDOWN = "JeanneAlterFirePillarUntil";
+   private static final String BLACK_FLAME_SWEEP_COOLDOWN = "JeanneAlterBlackFlameSweepUntil";
+   private static final String CHAIN_EXECUTION_COOLDOWN = "JeanneAlterChainExecutionUntil";
    private static final String CURSED_LANCE_COOLDOWN = "JeanneAlterCursedLanceUntil";
    private static final String SELF_MODIFICATION_COOLDOWN = "JeanneAlterSelfModificationUntil";
    private static final String DRAGON_WITCH_COOLDOWN = "JeanneAlterDragonWitchUntil";
@@ -113,6 +115,14 @@ public final class JeanneAlterSkills {
    }
    public static ExecutionResult firePillar(CardActionContext c) {
       return targetAction(c, 72.0F, 22, 140, "jeanne_alter_fire_pillar", 3.5D);
+   }
+
+   public static ExecutionResult blackFlameSweep(CardActionContext c) {
+      return targetAction(c, 48.0F, 28, 180, "jeanne_alter_black_flame_sweep", 3.8D, 7.0D);
+   }
+
+   public static ExecutionResult chainExecution(CardActionContext c) {
+      return targetAction(c, 64.0F, 38, 280, "jeanne_alter_fire_pillar", 5.0D, 30.0D, 7.0D);
    }
 
    public static ExecutionResult cursedLance(CardActionContext c) {
@@ -174,6 +184,20 @@ public final class JeanneAlterSkills {
          return ExecutionResult.NOT_HANDLED;
       }
       return castNpcArea(c, FIRE_PILLAR_COOLDOWN, 22.0D, 140, 72.0F, 3.2D, "jeanne_alter_fire_pillar");
+   }
+
+   public static ExecutionResult combatBlackFlameSweep(ServantContext c) {
+      if (shouldUseNoblePhantasm(c)
+         || !canNpcCast(c, BLACK_FLAME_SWEEP_COOLDOWN, 28.0D, 180, 0.0D, 7.0D)) return ExecutionResult.NOT_HANDLED;
+      return castNpcArea(c, BLACK_FLAME_SWEEP_COOLDOWN, 28.0D, 180, 48.0F, 3.8D,
+         "jeanne_alter_black_flame_sweep");
+   }
+
+   public static ExecutionResult combatChainExecution(ServantContext c) {
+      if (shouldUseNoblePhantasm(c)
+         || !canNpcCast(c, CHAIN_EXECUTION_COOLDOWN, 38.0D, 280, 7.0D, 30.0D)) return ExecutionResult.NOT_HANDLED;
+      return castNpcArea(c, CHAIN_EXECUTION_COOLDOWN, 38.0D, 280, 64.0F, 5.0D,
+         "jeanne_alter_fire_pillar");
    }
 
    public static ExecutionResult combatCursedLance(ServantContext c) {
@@ -663,10 +687,20 @@ public final class JeanneAlterSkills {
 
    private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
                                                 String effectId, double radius) {
+      return targetAction(c, damage, cost, cooldown, effectId, radius, 36.0D, 0.0D);
+   }
+
+   private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
+                                                String effectId, double radius, double range) {
+      return targetAction(c, damage, cost, cooldown, effectId, radius, range, 0.0D);
+   }
+
+   private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
+                                                String effectId, double radius, double range, double minimumRange) {
       ServerPlayer p = c.player();
       if (!canAffordCardAction(p, cost, false)) return ExecutionResult.FAILED;
-      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, 36.0D, 2.0D);
-      if (target == null) return ExecutionResult.FAILED;
+      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, range, 2.0D);
+      if (target == null || p.distanceTo(target) < minimumRange) return ExecutionResult.FAILED;
       if (!(p.level() instanceof ServerLevel level)) return ExecutionResult.FAILED;
       try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,

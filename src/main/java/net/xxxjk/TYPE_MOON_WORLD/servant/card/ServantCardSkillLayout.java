@@ -323,7 +323,7 @@ public final class ServantCardSkillLayout {
          };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
-            case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);
+            case 1 -> new ServantCardSkillAction("Kurama Style: Draw Cut", "ushiwakamaru_draw_cut", 15.0, 600);
             case 2 -> new ServantCardSkillAction("Moonlit Step", "ushiwakamaru_moonlit_step", 6.0, 140);
             case 3 -> new ServantCardSkillAction("Sweeping Thrust", "ushiwakamaru_sweeping_thrust", 8.0, 120);
             case 4 -> new ServantCardSkillAction("Kurama Style: Eagle Drop", "ushiwakamaru_eagle_drop", 15.0, 200);
@@ -358,7 +358,9 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("龙回首·横扫", "zhao_yun_dragon_sweep", 20.0, 160);
             case 4 -> new ServantCardSkillAction("白龙突进", "zhao_yun_mounted_rush", 18.0, 160);
             case 5 -> new ServantCardSkillAction("龙胆闪", "zhao_yun_dragon_flash", 22.0, 200);
-            case 6 -> new ServantCardSkillAction("七探蛇盘", "zhao_yun_seven_probe", 28.0, 280);
+            case 6 -> new ServantCardSkillAction("七探蛇盘（持续舞枪）", "zhao_yun_seven_probe",
+               net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.MANA,
+               net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.COOLDOWN);
             case 7 -> new ServantCardSkillAction("白龙踏阵", "zhao_yun_hakuryu_trample", 26.0, 320);
             case 8 -> new ServantCardSkillAction("青釭剑 C", "zhao_yun_qinggang", 50.0, 400);
             case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 150.0, 1200);

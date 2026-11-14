@@ -1,0 +1,11 @@
+{
+  "rank": "E",
+  "id": "jeanne_alter_chain_execution",
+  "display_name": "Chain Execution",
+  "display_name_zh": "连环火刑",
+  "type": "active",
+  "mp_cost": 38,
+  "cooldown_ticks": 280,
+  "duration_ticks": 21,
+  "description_zh": "锁定7至30格内目标，在其周围引爆半径5格的火刑火柱，主目标造成64点火焰伤害，波及目标造成28.8点并点燃5秒。"
+}

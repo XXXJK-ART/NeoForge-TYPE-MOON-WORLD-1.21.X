@@ -48,7 +48,7 @@ public final class ServantEngagementService {
          ServantActionProfile profile = ServantActionRegistry.get(servant.getDefinition().id());
          int projectileActions = countActions(profile, AiActionDescriptor.Tag.PROJECTILE);
          int meleeActions = countActions(profile, AiActionDescriptor.Tag.MELEE);
-         return role(servant.getDefinition().classType(), projectileActions, meleeActions);
+         return role(servant.getServantId(), servant.getDefinition().classType(), projectileActions, meleeActions);
       }
       if (entity instanceof RangedAttackMob
          || entity instanceof MysticMagicianEntity magician && magician.isRangedWeaponMode()
@@ -61,6 +61,11 @@ public final class ServantEngagementService {
    }
 
    public static CombatRole role(ServantClassType classType, int projectileActions, int meleeActions) {
+      return role("", classType, projectileActions, meleeActions);
+   }
+
+   static CombatRole role(String servantId, ServantClassType classType, int projectileActions, int meleeActions) {
+      if ("jeanne_alter".equals(servantId)) return CombatRole.MELEE;
       if (classType == ServantClassType.ARCHER || classType == ServantClassType.CASTER) {
          return CombatRole.RANGED;
       }

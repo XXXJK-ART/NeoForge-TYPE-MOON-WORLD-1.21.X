@@ -420,6 +420,33 @@ public final class ServantCombatDefenseService {
 
    public static void broadcastBaseAttack(LivingEntity entity, int action) {
       if (!(entity.level() instanceof ServerLevel level)) return;
+      if (entity.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.YAJIAO_QIANG.get())
+         && (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity
+            || entity instanceof ServerPlayer player
+               && player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed
+               && "zhao_yun_rider".equals(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_id))) {
+         // The skill owns its animation until release; ordinary visuals cannot restart its loop.
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.active(entity)
+            && action != net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_HELD_DANCE) return;
+         // Ordinary hits continue during the flourish; only their replacement animation waits.
+         if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity
+            && action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD
+            && level.getGameTime() < entity.getPersistentData().getLong("ZhaoYunSpearDanceUntil")) return;
+         int sequence = entity.getPersistentData().getInt("ZhaoYunBasicMotion");
+         if (action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD) {
+            entity.getPersistentData().putInt("ZhaoYunBasicMotion", (sequence + 1) % 6);
+         }
+         action = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.zhaoYunAttack(action, sequence);
+         if (action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.STOP
+            && entity.getPersistentData().getInt("ZhaoYunLastSpearAction") == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_COMBO) {
+            action = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_RECOVERY;
+         }
+         entity.getPersistentData().putInt("ZhaoYunLastSpearAction", action);
+         if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity
+            && action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_DANCE) {
+            entity.getPersistentData().putLong("ZhaoYunSpearDanceUntil", level.getGameTime() + 24L);
+         }
+      }
       var payload = new net.xxxjk.TYPE_MOON_WORLD.network.ServantBaseAnimationMessage(entity.getUUID(), action);
       for (ServerPlayer viewer : level.players()) if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) {
          ModNetwork.sendToPlayer(viewer, payload);

@@ -53,11 +53,21 @@ public final class ServantBaseAnimationClient {
    public static void play(UUID id, int action) {
       ClientLevel level = level();
       if (id == null || level == null) return;
-      if (action == ServantBaseAction.STOP) { stopAttack(id); return; }
-      if (ServantBaseAction.isContinuous(action) && Minecraft.getInstance().player != null
+      if (action == ServantBaseAction.STOP) {
+         Playback current = PLAYBACK.get(id);
+         if (current != null && ServantBaseAction.isAttack(current.action)) clear(id);
+         return;
+      }
+      if (ServantBaseAction.isContinuous(action) && action != ServantBaseAction.ZHAO_YUN_HELD_DANCE && Minecraft.getInstance().player != null
          && id.equals(Minecraft.getInstance().player.getUUID())
          && !ServantBaseAttackInputClient.acceptsContinuousPlayback()) return;
       Playback previous = PLAYBACK.get(id);
+      // The server echoes a locally predicted combo release; keep its existing recovery phase.
+      if (previous != null && previous.action == ServantBaseAction.ZHAO_YUN_RECOVERY
+         && action == ServantBaseAction.ZHAO_YUN_RECOVERY && level.getGameTime() < previous.expires) return;
+      if (previous != null && previous.action == ServantBaseAction.ZHAO_YUN_HELD_DANCE
+         && action != ServantBaseAction.ZHAO_YUN_HELD_DANCE && action != ServantBaseAction.ZHAO_YUN_RECOVERY
+         && level.getGameTime() < previous.expires && ServantBaseAction.isAttack(action)) return;
       int variant = previous == null ? 0 : previous.variant + 1;
       String animation = animationId(action, variant);
       if (animation == null || !(PlayerAnimationRegistry.getAnimation(resource(animation)) instanceof KeyframeAnimation clip)) return;
@@ -65,11 +75,20 @@ public final class ServantBaseAnimationClient {
       long expires = now + (ServantBaseAction.isContinuous(action) ? 15 : clip.endTick);
       if (previous != null && previous.action == action && ServantBaseAction.isContinuous(action)
          && now < previous.expires) {
-         PLAYBACK.put(id, new Playback(action, previous.start, previous.variant, expires));
+         PLAYBACK.put(id, new Playback(action, previous.start, previous.variant, expires, null));
          return;
       }
-      PLAYBACK.put(id, new Playback(action, now, variant, expires));
-      setPlayerAnimation(id, new KeyframeAnimationPlayer(clip));
+      KeyframeAnimationPlayer recoveryFrom = null;
+      if (action == ServantBaseAction.ZHAO_YUN_RECOVERY && previous != null) {
+         var oldClip = PlayerAnimationRegistry.getAnimation(resource(animationId(previous.action, previous.variant)));
+         if (oldClip instanceof KeyframeAnimation old) {
+            float oldAge = clipAge(old, now - previous.start);
+            recoveryFrom = new KeyframeAnimationPlayer(old, (int)oldAge);
+            recoveryFrom.setupAnim(oldAge - (int)oldAge);
+         }
+      }
+      PLAYBACK.put(id, new Playback(action, now, variant, expires, recoveryFrom));
+      setPlayerAnimation(id, recoveryFrom == null ? new KeyframeAnimationPlayer(clip) : new RecoveryPlayer(clip, 0, recoveryFrom));
    }
 
    private static void setPlayerAnimation(UUID id, KeyframeAnimationPlayer animation) {
@@ -88,6 +107,10 @@ public final class ServantBaseAnimationClient {
 
    public static void stopAttack(UUID id) {
       Playback playback = PLAYBACK.get(id);
+      if (playback != null && playback.action == ServantBaseAction.ZHAO_YUN_HELD_DANCE) return;
+      if (playback != null && playback.action == ServantBaseAction.ZHAO_YUN_COMBO) {
+         play(id, ServantBaseAction.ZHAO_YUN_RECOVERY); return;
+      }
       if (playback != null && ServantBaseAction.isAttack(playback.action)) clear(id);
    }
 
@@ -107,11 +130,37 @@ public final class ServantBaseAnimationClient {
       String name = animationId(playback.action, playback.variant);
       if (age < 0 || !(PlayerAnimationRegistry.getAnimation(resource(name)) instanceof KeyframeAnimation clip)
          || level.getGameTime() >= playback.expires) { PLAYBACK.remove(owner.getUUID()); return false; }
-      if (ServantBaseAction.isContinuous(playback.action)) age %= clip.endTick;
+      age = clipAge(clip, age);
       int tick = (int)age;
       KeyframeAnimationPlayer sample = sample(name, tick, age - tick);
+      if (playback.recoveryFrom != null && age < 3) {
+         sample = new RecoveryPlayer(clip, tick, playback.recoveryFrom); sample.setupAnim(age - tick);
+      }
       if (sample == null) return false;
       apply(model, sample); return true;
+   }
+
+   public static ActiveAction activeAction(LivingEntity owner, float partialTick) {
+      ClientLevel level = level();
+      Playback playback = PLAYBACK.get(owner.getUUID());
+      if (level == null || playback == null || level.getGameTime() >= playback.expires) return null;
+      return new ActiveAction(playback.action, level.getGameTime() - playback.start + partialTick, playback.start);
+   }
+
+   public static Vec3f itemTransform(LivingEntity owner, String part, TransformType type, float partialTick) {
+      ActiveAction active = activeAction(owner, partialTick);
+      if (active == null || !ServantBaseAction.isZhaoYunSpear(active.action)) return Vec3f.ZERO;
+      String name = animationId(active.action, 0);
+      var clip = PlayerAnimationRegistry.getAnimation(resource(name));
+      if (!(clip instanceof KeyframeAnimation animation)) return Vec3f.ZERO;
+      float age = clipAge(animation, active.age);
+      int tick = (int)age;
+      KeyframeAnimationPlayer sample = sample(name, tick, age - tick);
+      Playback playback = PLAYBACK.get(owner.getUUID());
+      if (playback != null && playback.recoveryFrom != null && age < 3) {
+         sample = new RecoveryPlayer(animation, tick, playback.recoveryFrom); sample.setupAnim(age - tick);
+      }
+      return sample == null ? Vec3f.ZERO : sample.get3DTransform(part, type, 0, Vec3f.ZERO);
    }
 
    private static KeyframeAnimationPlayer sample(String name, int tick, float partialTick) {
@@ -147,5 +196,28 @@ public final class ServantBaseAnimationClient {
       if(current!=activeLevel){PLAYBACK.clear();SAMPLES.clear();activeLevel=current;}
       return current;
    }
-   private record Playback(int action,long start,int variant,long expires) { }
+   private static float clipAge(KeyframeAnimation clip, float age) {
+      return clip.isInfinite && age >= clip.endTick + 1
+         ? clip.returnToTick + (age - clip.returnToTick) % (clip.endTick + 1 - clip.returnToTick) : age;
+   }
+   /** Blend the actual release pose into the outside recovery turn for players, NPCs and the weapon. */
+   private static final class RecoveryPlayer extends KeyframeAnimationPlayer {
+      private final KeyframeAnimationPlayer from;
+      private RecoveryPlayer(KeyframeAnimation clip, int tick, KeyframeAnimationPlayer from) { super(clip, tick); this.from = from; }
+      @Override public Vec3f get3DTransform(String part, TransformType type, float partial, Vec3f vanilla) {
+         Vec3f to = super.get3DTransform(part, type, partial, vanilla);
+         float weight = Math.clamp((getTick() + tickDelta) / 3F, 0F, 1F);
+         if (weight >= 1) return to;
+         weight = weight * weight * (3 - 2 * weight);
+         Vec3f start = from.get3DTransform(part, type, 0, vanilla);
+         return new Vec3f(mix(start.getX(), to.getX(), weight, type), mix(start.getY(), to.getY(), weight, type), mix(start.getZ(), to.getZ(), weight, type));
+      }
+      private static float mix(float from, float to, float weight, TransformType type) {
+         float delta = to - from;
+         if (type == TransformType.ROTATION) delta = (float)Math.atan2(Math.sin(delta), Math.cos(delta));
+         return from + delta * weight;
+      }
+   }
+   private record Playback(int action,long start,int variant,long expires,KeyframeAnimationPlayer recoveryFrom) { }
+   public record ActiveAction(int action, float age, long start) { }
 }

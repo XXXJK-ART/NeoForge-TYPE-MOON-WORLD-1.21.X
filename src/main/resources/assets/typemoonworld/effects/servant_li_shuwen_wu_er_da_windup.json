@@ -1,0 +1,40 @@
+{
+  "duration": 0.42,
+  "notes": "Li Shuwen's Bajiquan entry: a compact pressure ring gathers at the striking fist.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.28,
+      "rate": 1800,
+      "particle_lifetime": 0.22,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 0.0],
+      "velocity_variance": 0.025,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.92, 0.48], "rotate_with_entity": true },
+      "component": { "type": "circle", "radius": 0.22, "segments": 48 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#AAFFF4CF" },
+        { "t": 0.4, "color": "#FFFFE9AA" },
+        { "t": 1.0, "color": "#00FFFFFF" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.45, "size": 0.07 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.45, 0.45, 0.45] },
+        { "t": 0.5, "scale": [1.0, 1.0, 1.0], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [0.72, 0.72, 0.72] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "LI_SHUWEN_BAJI_FIST_PRESSURE",
+      "max_vanilla_particles_per_tick": 2,
+      "vanilla_particles": [
+        { "type": "cloud", "count": 1, "spread": [0.06, 0.06, 0.06], "offset": [0.0, 0.0, 0.0], "speed": 0.015, "chance": 0.45 }
+      ]
+    }
+  ]
+}

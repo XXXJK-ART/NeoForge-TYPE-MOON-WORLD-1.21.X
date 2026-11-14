@@ -141,7 +141,7 @@ public final class ServantCardLiShuwenSkills {
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 5, false, true, true));
       spawnLiHitFx(player, target);
       if (player.level() instanceof ServerLevel level) {
-         VFXServerEffects.spawn(level, "servant_li_wu_er_da", target, 96.0);
+         VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_windup", player, 96.0);
       }
       TYPE_MOON_WORLD.queueServerWork(10, () -> {
          if (!player.isAlive() || !target.isAlive()) {

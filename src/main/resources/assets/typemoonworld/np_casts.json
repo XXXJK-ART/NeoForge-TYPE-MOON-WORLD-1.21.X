@@ -70,9 +70,9 @@
     "pitch": 1.0
   },
   "zhao_yun_changbanpo": {
-    "voice_ticks": 20,
+    "voice_ticks": 320,
     "sound": "typemoonworld:voice/zhao_yun/np",
-    "pitch": 0.6808843537414966
+    "pitch": 1.0
   },
   "oda_three_thousand": {
     "voice_ticks": 200,

@@ -42,6 +42,11 @@ public final class ServantVoiceHelper {
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_ATTACK.get());
       } else if (isCuChulainn(servant)) {
          net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.attack(servant);
+      } else if (servant instanceof ZhaoYunRiderEntity) {
+         if (servant.level().getGameTime() < servant.getPersistentData().getLong("TypeMoonNpVoiceEnd")) return;
+         if (servant.getRandom().nextFloat() <= 0.45F) {
+            playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_ATTACK.get());
+         }
       } else if (isMedea(servant)) {
          if (servant.getRandom().nextFloat() > 0.4F) {
             return;

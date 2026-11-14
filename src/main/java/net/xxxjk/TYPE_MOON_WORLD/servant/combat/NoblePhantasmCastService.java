@@ -53,7 +53,7 @@ public final class NoblePhantasmCastService {
          form = caster instanceof ServerPlayer p ? p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().id() : "";
          voiceStart = caster.level().getGameTime();
          voiceEnd = voiceStart + POLICIES.get(action).voiceTicks();
-         releaseAt = NoblePhantasmCastRules.instant(action) ? voiceStart : NoblePhantasmCastRules.releaseAt(voiceStart, voiceEnd);
+         releaseAt = NoblePhantasmCastRules.instant(action) ? voiceStart : NoblePhantasmCastRules.releaseAt(action, voiceStart, voiceEnd);
       }
    }
 
@@ -120,7 +120,7 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       long now = caster.level().getGameTime();
       if (cast == null || cast.cancelled || cast.released || !NoblePhantasmCastRules.interruptible(cast.action)) return false;
-      return NoblePhantasmCastRules.interruptibleAt(now, cast.voiceStart, cast.voiceEnd);
+      return NoblePhantasmCastRules.interruptibleAt(cast.action, now, cast.voiceStart, cast.voiceEnd);
    }
 
    public static long begin(LivingEntity caster, String action, int cooldown, IntConsumer setCooldown, Runnable cleanup) {
@@ -140,7 +140,13 @@ public final class NoblePhantasmCastService {
          net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.chant(caster);
       } else if (!action.endsWith("_short") && !NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
          SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + action));
-         level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
+         if ("zhao_yun_changbanpo".equals(action)) {
+            // A riding invocation travels with its caster, rather than fading
+            // in and out as Hakuryu leaves the original sound position.
+            level.playSound(null, caster, sound, SoundSource.VOICE, 1.2F, 1.0F);
+         } else {
+            level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
+         }
       }
       return cast.voiceEnd;
    }

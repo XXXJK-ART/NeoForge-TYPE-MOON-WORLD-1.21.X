@@ -4,6 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 class NoblePhantasmCastRulesTest {
+   @Test void muramasaFinishesForgingOnlyWhenTheVoiceEnds() {
+      assertEquals(402, NoblePhantasmCastRules.releaseAt("muramasa_summon", 100, 402));
+      assertEquals(342, NoblePhantasmCastRules.releaseAt("artoria_excalibur", 100, 402));
+      assertFalse(NoblePhantasmCastRules.interruptibleAt("muramasa_summon", 321, 100, 402));
+      assertTrue(NoblePhantasmCastRules.interruptibleAt("muramasa_summon", 322, 100, 402));
+      assertTrue(NoblePhantasmCastRules.interruptibleAt("muramasa_summon", 361, 100, 402));
+      assertFalse(NoblePhantasmCastRules.interruptibleAt("muramasa_summon", 362, 100, 402));
+      assertFalse(NoblePhantasmCastRules.interruptibleAt("muramasa_summon", 402, 100, 402));
+   }
    @Test void onlyConfiguredNpsCanBeInterrupted() {
       assertTrue(NoblePhantasmCastRules.interruptible("artoria_excalibur"));
       assertFalse(NoblePhantasmCastRules.interruptible("okita_mumyoudan_zuki"));
@@ -17,7 +26,8 @@ class NoblePhantasmCastRulesTest {
       }
       assertFalse(NoblePhantasmCastRules.instant("artoria_excalibur"));
       assertFalse(NoblePhantasmCastRules.instant("gilgamesh_ea"));
-      assertFalse(NoblePhantasmCastRules.instant("muramasa_tsumukari"));
+      assertTrue(NoblePhantasmCastRules.instant("muramasa_tsumukari"));
+      assertFalse(NoblePhantasmCastRules.interruptible("muramasa_tsumukari"));
    }
    @Test void interruptedCastUsesHalfSettlement() {
       assertEquals(50.0, NoblePhantasmCastRules.interruptedCost(100.0));
