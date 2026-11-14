@@ -12,6 +12,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ServantCardHoldActionMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
+import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 
 /** Runtime-only selection and direct-input handling for transformed servant-card players. */
 public final class ServantCardSkillInputController {
@@ -19,6 +20,7 @@ public final class ServantCardSkillInputController {
    private static String selectedServantId = "";
    private static int selectedSlot = -1;
    private static boolean selectedHoldDown;
+   private static boolean arrowRainHold;
 
    private ServantCardSkillInputController() {
    }
@@ -33,7 +35,7 @@ public final class ServantCardSkillInputController {
          return false;
       }
       if (next != selectedSlot && selectedHoldDown) {
-         PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
+         sendSkillReleased(vars.servant_card_id, selectedSlot);
          selectedHoldDown = false;
       }
       selectedSlot = next;
@@ -41,7 +43,7 @@ public final class ServantCardSkillInputController {
    }
 
    public static void tick(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (player == null || vars == null || !vars.servant_card_transformed) {
+      if (player == null || !player.isAlive() || vars == null || !vars.servant_card_transformed) {
          clear();
          return;
       }
@@ -59,7 +61,7 @@ public final class ServantCardSkillInputController {
                if (down) {
                   sendSkillPressed(vars.servant_card_id, slot);
                } else if (isForcedHoldSkill(vars.servant_card_id, slot)) {
-                  PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, false), new CustomPacketPayload[0]);
+                  sendSkillReleased(vars.servant_card_id, slot);
                }
             }
          } else {
@@ -72,14 +74,14 @@ public final class ServantCardSkillInputController {
 
       if (selectedSlot >= 0 && TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST.consumeClick() && !anyDirectSkillDown) {
          if (isForcedHoldSkill(vars.servant_card_id, selectedSlot)) {
-            PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, true), new CustomPacketPayload[0]);
+            sendSkillPressed(vars.servant_card_id, selectedSlot);
             selectedHoldDown = true;
          } else {
             PacketDistributor.sendToServer(new ServantCardActionMessage(selectedSlot), new CustomPacketPayload[0]);
          }
       }
       if (selectedHoldDown && !TypeMoonWorldModKeyMappings.SERVANT_CARD_CAST.isDown()) {
-         PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
+         sendSkillReleased(vars.servant_card_id, selectedSlot);
          selectedHoldDown = false;
       }
    }
@@ -106,7 +108,7 @@ public final class ServantCardSkillInputController {
          } else if (released) {
             SLOT_DOWN[slot] = false;
             if (isForcedHoldSkill(vars.servant_card_id, slot)) {
-               PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, false), new CustomPacketPayload[0]);
+               sendSkillReleased(vars.servant_card_id, slot);
             }
          }
       }
@@ -151,11 +153,37 @@ public final class ServantCardSkillInputController {
       selectedServantId = "";
       selectedSlot = -1;
       selectedHoldDown = false;
+      stopLocalArrowRainUse();
+   }
+
+   /** The skill owns bow use until its explicit release packet; vanilla's RMB key does not. */
+   public static boolean ownsArrowRainUse(Player player) {
+      return arrowRainHold && player != null && player.isAlive()
+         && player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_transformed
+         && "arash".equals(player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servant_card_id)
+         && player.getMainHandItem().is(ModItems.ARASH_BOW.get())
+         && player.isUsingItem() && player.getUsedItemHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+         // Inventory synchronization replaces the held stack before vanilla reconciles useItem next tick.
+         && player.getUseItem().is(ModItems.ARASH_BOW.get());
+   }
+
+   public static void onLocalItemUseStopped() {
+      arrowRainHold = false;
+   }
+
+   private static void stopLocalArrowRainUse() {
+      if (!arrowRainHold) return;
+      Player player = Minecraft.getInstance().player;
+      if (player != null && player.isUsingItem() && player.getUseItem().is(ModItems.ARASH_BOW.get())) {
+         player.stopUsingItem();
+      }
+      arrowRainHold = false;
    }
 
    private static void ensureSelection(TypeMoonWorldModVariables.PlayerVariables vars) {
       String servantId = vars.servant_card_id == null ? "" : vars.servant_card_id;
       if (!servantId.equals(selectedServantId)) {
+         stopLocalArrowRainUse();
          if (selectedHoldDown && selectedSlot >= 0) {
             PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
          }
@@ -167,7 +195,7 @@ public final class ServantCardSkillInputController {
          }
       } else if (!isOccupied(vars, selectedSlot)) {
          if (selectedHoldDown && selectedSlot >= 0) {
-            PacketDistributor.sendToServer(new ServantCardHoldActionMessage(selectedSlot, false), new CustomPacketPayload[0]);
+            sendSkillReleased(vars.servant_card_id, selectedSlot);
             selectedHoldDown = false;
          }
          selectedSlot = firstOccupiedSlot(vars);
@@ -200,9 +228,15 @@ public final class ServantCardSkillInputController {
 
    private static void sendSkillPressed(String servantId, int slot) {
       if (isForcedHoldSkill(servantId, slot)) {
+         if ("arash".equals(servantId) && slot == 0) arrowRainHold = true;
          PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, true), new CustomPacketPayload[0]);
       } else {
          PacketDistributor.sendToServer(new ServantCardActionMessage(slot), new CustomPacketPayload[0]);
       }
+   }
+
+   private static void sendSkillReleased(String servantId, int slot) {
+      PacketDistributor.sendToServer(new ServantCardHoldActionMessage(slot, false), new CustomPacketPayload[0]);
+      if ("arash".equals(servantId) && slot == 0) stopLocalArrowRainUse();
    }
 }

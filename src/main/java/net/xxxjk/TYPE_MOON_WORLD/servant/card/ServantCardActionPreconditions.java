@@ -13,7 +13,7 @@ public final class ServantCardActionPreconditions {
             "okita_mumyoudan_zuki",
             "shadow_step", "shadow_lunge", "knife_feint", "hundred_faces_knife_feint",
             "hundred_faces_shadow_step", "hundred_faces_shadow_lunge",
-            "sasaki_tsubame_gaeshi" -> true;
+            "sasaki_tsubame_gaeshi", "muramasa_downward_slash", "muramasa_thrust" -> true;
          default -> false;
       };
    }
@@ -40,6 +40,9 @@ public final class ServantCardActionPreconditions {
          case "sasaki_crouch_cutback", "sasaki_vertical_slash", "sasaki_downward_slash", "sasaki_upward_slash",
             "sasaki_horizontal_slash", "sasaki_thrust", "sasaki_spinning_slash", "sasaki_counter_stance" -> 4.0;
          case "sasaki_tsubame_gaeshi" -> 8.0;
+         case "muramasa_downward_slash" -> 3.0;
+         case "muramasa_thrust" -> 4.5;
+         case "muramasa_spinning_slash" -> 4.0;
          case "oda_encircle_matchlocks" -> 30.0;
          case "anti_mystery", "chains", "gilgamesh_chains", "gilgamesh_ring_vault" -> 30.0;
          case "cybele", "charm", "bellerophon" -> 18.0;

@@ -27,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lishuwen.LiShuwenSeasonedService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -149,7 +150,7 @@ public final class LiShuwenCombatHelper {
       }
       data.putLong(TAG_LAST_SELF_STATE_TICK, now);
       tickYinYangCleanup(entity, now);
-      clearMentalEffects(entity);
+      LiShuwenSeasonedService.tick(entity);
       if (entity.hasEffect(MobEffects.INVISIBILITY)) {
          if (now - data.getLong(TAG_LAST_STEALTH_TARGET_CLEAR) >= 10L) {
             data.putLong(TAG_LAST_STEALTH_TARGET_CLEAR, now);
@@ -188,7 +189,7 @@ public final class LiShuwenCombatHelper {
       if (entity.hasEffect(MobEffects.INVISIBILITY)) {
          reduced *= 0.05F;
       }
-      return reduced;
+      return LiShuwenSeasonedService.incomingDamage(entity, source, reduced);
    }
 
    public static boolean hasChineseMartialArts(LivingEntity entity) {
@@ -531,25 +532,6 @@ public final class LiShuwenCombatHelper {
       target.getPersistentData().putLong(TAG_STUN_UNTIL, until);
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 4, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 20, 1, false, true, true));
-   }
-
-   private static void clearMentalEffects(LiShuwenEntity entity) {
-      List<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>> effects = List.of(MobEffects.CONFUSION, MobEffects.BLINDNESS, MobEffects.DARKNESS);
-      for (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect : effects) {
-         if (entity.hasEffect(effect)) {
-            entity.removeEffect(effect);
-         }
-      }
-      if (!(entity.level() instanceof ServerLevel level) || entity.tickCount % 20 != 0) {
-         return;
-      }
-      for (ServantEntity ally : level.getEntitiesOfClass(ServantEntity.class, entity.getBoundingBox().inflate(20.0), e -> e.isAlive() && e.isAlliedTo(entity))) {
-         for (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect : effects) {
-            if (ally.hasEffect(effect)) {
-               ally.removeEffect(effect);
-            }
-         }
-      }
    }
 
    private static boolean removeOneHarmfulEffect(LivingEntity entity) {

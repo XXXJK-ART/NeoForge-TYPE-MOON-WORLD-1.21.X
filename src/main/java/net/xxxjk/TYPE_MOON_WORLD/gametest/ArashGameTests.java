@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
@@ -20,9 +21,11 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardArashSkills;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardDefenseHandler;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashTacticalSkillService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import net.xxxjk.typemoonworld.api.TypeMoonWorldApi;
 
@@ -47,7 +50,7 @@ public final class ArashGameTests {
          new Vec3(1.0, 0.0, 0.0), 2.0, 2, 2, null);
       cylinder.advanceTo(2.0);
       cylinder.seal();
-      helper.runAfterDelay(5, () -> {
+      helper.succeedWhen(() -> {
          helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(relativeOrigin.offset(1, 0, 0))).isAir(),
             "Advancing cylinder did not clear its center");
          helper.assertTrue(helper.getLevel().getBlockState(helper.absolutePos(relativeOrigin.offset(1, 0, 2))).isAir(),
@@ -96,7 +99,7 @@ public final class ArashGameTests {
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 40)
+   @GameTest(template = "ancient_temple", timeoutTicks = 60)
    public static void arashArrowImpactsBreakShallowTerrainAndProtectBedrock(GameTestHelper helper) {
       var level = helper.getLevel();
       var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 8, 8));
@@ -110,6 +113,10 @@ public final class ArashGameTests {
       helper.setBlock(smallImpact, Blocks.STONE);
       helper.setBlock(smallImpact.above(2), Blocks.STONE);
       helper.setBlock(smallImpact.above(3), Blocks.STONE);
+      helper.setBlock(smallImpact.above(8), Blocks.STONE);
+      helper.setBlock(smallImpact.above(14), Blocks.STONE);
+      helper.setBlock(smallImpact.above(16), Blocks.STONE);
+      helper.setBlock(smallImpact.offset(11, 11, 0), Blocks.STONE);
       helper.setBlock(smallImpact.offset(0, 0, 1), Blocks.BEDROCK);
       helper.setBlock(heavyImpact, Blocks.STONE);
       helper.setBlock(heavyImpact.above(2), Blocks.STONE);
@@ -117,11 +124,24 @@ public final class ArashGameTests {
       helper.setBlock(heavyImpact.above(5), Blocks.STONE);
       helper.setBlock(heavyImpact.offset(0, 0, 1), Blocks.BEDROCK);
 
-      spawnTerrainTestArrow(helper, owner, smallImpact, ArashParticleArrowEntity.SMALL_ENERGY);
+      // Rain's quarter damage cap must not shrink the terrain radius.
+      spawnTerrainTestArrow(helper, owner, smallImpact, ArashParticleArrowEntity.RAIN);
       spawnTerrainTestArrow(helper, owner, heavyImpact, ArashParticleArrowEntity.LARGE_ENERGY);
-      helper.runAfterDelay(15, () -> {
+      helper.runAfterDelay(5, () -> {
+         helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.above(14))).is(Blocks.STONE),
+            "The outer edge broke before the expanding wave reached it");
+      });
+      helper.runAfterDelay(30, () -> {
          helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.above(2))).isAir(),
             "Arash blast did not break terrain inside its upper hemisphere");
+         helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.above(8))).isAir(),
+            "Arash terrain wave did not reach its outer hemisphere");
+         helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.above(14))).isAir(),
+            "Fully powered rain did not reach the fifteen-block radius");
+         helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.above(16))).is(Blocks.STONE),
+            "Arash terrain destruction exceeded the fifteen-block maximum radius");
+         helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.offset(11, 11, 0))).is(Blocks.STONE),
+            "Arash terrain destruction cut a cube corner outside its hemisphere");
          helper.assertTrue(level.getBlockState(helper.absolutePos(smallImpact.offset(0, 0, 1))).is(Blocks.BEDROCK),
             "Arash terrain blast changed protected bedrock");
          helper.assertTrue(level.getBlockState(helper.absolutePos(heavyImpact.above(2))).isAir(),
@@ -132,11 +152,62 @@ public final class ArashGameTests {
       });
    }
 
+   @GameTest(template = "ancient_temple", timeoutTicks = 45)
+   public static void basicArrowsFallWhileEnergyArrowsRemainStraight(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 8, 2));
+      owner.setNoAi(true);
+      double height = level.getSeaLevel() + 80.0;
+      var basic = new ArashParticleArrowEntity(level, owner, ArashParticleArrowEntity.NORMAL, 10.0F);
+      basic.setPos(owner.getX(), height, owner.getZ());
+      basic.setDeltaMovement(3.4, 0.0, 0.0);
+      var energy = new ArashParticleArrowEntity(level, owner, ArashParticleArrowEntity.LARGE_ENERGY, 10.0F);
+      energy.setPos(owner.getX(), height + 5.0, owner.getZ());
+      energy.setDeltaMovement(3.4, 0.0, 0.0);
+      level.addFreshEntity(basic);
+      level.addFreshEntity(energy);
+      helper.runAfterDelay(20, () -> {
+         helper.assertTrue(basic.isAlive() && basic.getY() < height - 1.0 && basic.getY() > height - 5.0,
+            "Basic arrows did not follow a gentle falling trajectory");
+         helper.assertTrue(basic.getX() > owner.getX() + 40.0, "Gravity prevented normal forward flight");
+         helper.assertTrue(energy.isAlive() && Math.abs(energy.getY() - height - 5.0) < 0.001,
+            "Basic-arrow gravity changed the straight energy projectile");
+         basic.discard();
+         energy.discard();
+         helper.succeed();
+      });
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 50)
+   public static void rainSurvivesPastNormalLifetimeWithQuarterDamageCap(GameTestHelper helper) {
+      var owner = helper.spawn(EntityType.ZOMBIE, new BlockPos(2, 8, 2));
+      owner.setNoAi(true);
+      var rain = new ArashParticleArrowEntity(helper.getLevel(), owner, ArashParticleArrowEntity.RAIN, 100.0F, 100);
+      var data = new net.minecraft.nbt.CompoundTag();
+      rain.addAdditionalSaveData(data);
+      data.putInt("FlightTicks", 239);
+      rain.readAdditionalSaveData(data);
+      rain.setPos(owner.getX(), helper.getLevel().getSeaLevel() + 40.0, owner.getZ());
+      rain.setDeltaMovement(Vec3.ZERO);
+      helper.getLevel().addFreshEntity(rain);
+      helper.runAfterDelay(20, () -> {
+         helper.assertTrue(rain.isAlive(), "Rain expired at the ordinary arrow lifetime");
+         helper.assertTrue(Math.abs(rain.getDamageForGameTest() - 25.0F) < 0.001F,
+            "Fully charged rain did not cap its damage at one quarter of the normal arrow cap");
+         rain.discard();
+         helper.succeed();
+      });
+   }
+
    private static void spawnTerrainTestArrow(GameTestHelper helper, net.minecraft.world.entity.LivingEntity owner,
                                              BlockPos impact, int variant) {
       BlockPos absoluteImpact = helper.absolutePos(impact);
       var arrow = new ArashParticleArrowEntity(helper.getLevel(), owner, variant, 100.0F,
          ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
+      var data = new net.minecraft.nbt.CompoundTag();
+      arrow.addAdditionalSaveData(data);
+      data.putInt("FlightTicks", 237);
+      arrow.readAdditionalSaveData(data);
       arrow.setPos(absoluteImpact.getX() - 3.5, absoluteImpact.getY() + 0.5, absoluteImpact.getZ() + 0.5);
       arrow.setDeltaMovement(2.0, 0.0, 0.0);
       helper.getLevel().addFreshEntity(arrow);
@@ -177,7 +248,7 @@ public final class ArashGameTests {
    @GameTest(template = "ancient_temple", timeoutTicks = 30)
    public static void playerBasicBowFiresAlongLookDirectionWithoutAimAssist(GameTestHelper helper) {
       var level = helper.getLevel();
-      var player = helper.makeMockServerPlayerInLevel();
+      var player = mockPlayer(helper);
       BlockPos playerPosition = helper.absolutePos(new BlockPos(2, 8, 2));
       player.moveTo(playerPosition.getX() + 0.5, playerPosition.getY(), playerPosition.getZ() + 0.5,
          -90.0F, 0.0F);
@@ -201,7 +272,7 @@ public final class ArashGameTests {
 
    @GameTest(template = "ancient_temple", timeoutTicks = 30)
    public static void emergencyRetreatSynchronizesThePlayerImpulse(GameTestHelper helper) {
-      var player = helper.makeMockServerPlayerInLevel();
+      var player = mockPlayer(helper);
       player.moveTo(helper.absolutePos(new BlockPos(8, 8, 8)).getX() + 0.5,
          helper.absolutePos(new BlockPos(8, 8, 8)).getY(), helper.absolutePos(new BlockPos(8, 8, 8)).getZ() + 0.5,
          -90.0F, 0.0F);
@@ -225,6 +296,7 @@ public final class ArashGameTests {
          cookie.gameProfile(), cookie.clientInformation());
       var connection = new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
       new io.netty.channel.embedded.EmbeddedChannel(connection);
+      NetworkRegistry.configureMockConnection(connection);
       level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
       player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);
       var start = Vec3.atBottomCenterOf(helper.absolutePos(new BlockPos(3, 8, 3)));
@@ -259,7 +331,7 @@ public final class ArashGameTests {
    @GameTest(template = "ancient_temple", timeoutTicks = 30)
    public static void playerArrowRainUsesLookedAtAreaAndNearbyEnemyPrediction(GameTestHelper helper) {
       var level = helper.getLevel();
-      var player = helper.makeMockServerPlayerInLevel();
+      var player = mockPlayer(helper);
       BlockPos playerPosition = helper.absolutePos(new BlockPos(2, 8, 2));
       player.moveTo(playerPosition.getX() + 0.5, playerPosition.getY(), playerPosition.getZ() + 0.5,
          -90.0F, 0.0F);
@@ -334,6 +406,48 @@ public final class ArashGameTests {
       });
    }
 
+   @GameTest(template = "ancient_temple", timeoutTicks = 90)
+   public static void arashFiresCloseRangeThreeShotVolley(GameTestHelper helper) {
+      var level = helper.getLevel();
+      var id = ResourceLocation.fromNamespaceAndPath("typemoonworld", "arash");
+      var summoned = TypeMoonWorldApi.addon("typemoonworld").servants().summon(level, id,
+         helper.absolutePos(new BlockPos(2, 3, 2)));
+      helper.assertTrue(summoned instanceof ArashEntity, "Could not summon Arash for close-range volley");
+      var arash = (ArashEntity)summoned;
+      arash.setNoAi(true);
+      var target = helper.spawn(EntityType.ZOMBIE, new BlockPos(10, 3, 2));
+      target.setNoAi(true);
+      arash.getPersistentData().putBoolean(ArashEntity.TAG_STELLA_USED, true);
+      arash.setCurrentMp(0.0);
+      arash.setTarget(target);
+      double distance = arash.distanceTo(target);
+      helper.assertTrue(distance > ArashCombatRules.CROSSOVER_TRIGGER_RANGE
+            && distance <= ArashCombatRules.CLOSE_VOLLEY_MAX_RANGE,
+         "Volley test target was outside trigger range: " + distance);
+      helper.assertTrue(ArashCombatHelper.isTarget(arash, target), "Volley test target was not a valid enemy");
+      helper.assertTrue(arash.getSensing().hasLineOfSight(target), "Volley test target was not visible");
+      int initialArrows = arash.getCraftedArrowCount();
+      long startTick = level.getGameTime();
+      helper.assertTrue(ArashCombatRules.canStartCloseRangeVolley(distance, startTick, 0L, initialArrows),
+         "Volley rules rejected a valid test setup");
+      helper.assertTrue(arash.isAlive(), "Volley test Arash was not alive");
+      arash.getPersistentData().putLong("ArashLastReposition", startTick);
+      arash.getPersistentData().remove("ArashCrossoverUntil");
+      helper.runAfterDelay(52, () -> {
+         arash.setTarget(target);
+         helper.assertTrue(ArashCombatHelper.isTarget(arash, arash.getTarget()),
+            "Arash could not acquire the volley target after manifestation");
+         int arrowsBeforeVolley = arash.getCraftedArrowCount();
+         long combatTick = level.getGameTime();
+         for (int tick = 0; tick <= 4; tick++) {
+            ArashCombatHelper.tick(arash, ServantAiContext.forEntity(arash, target, combatTick + tick));
+         }
+         helper.assertTrue(arash.getCraftedArrowCount() == arrowsBeforeVolley - 3,
+            "Close-range volley did not consume exactly three arrows; remaining=" + arash.getCraftedArrowCount());
+         helper.succeed();
+      });
+   }
+
    @GameTest(template = "ancient_temple", timeoutTicks = 240)
    public static void particleArrowHitsAndControllerSurvivesSacrifice(GameTestHelper helper) {
       var level = helper.getLevel();
@@ -389,7 +503,7 @@ public final class ArashGameTests {
    @GameTest(template = "ancient_temple", timeoutTicks = 260)
    public static void playerCardLocksRefundsAndReleasesIndependentStella(GameTestHelper helper) {
       var level = helper.getLevel();
-      var player = helper.makeMockServerPlayerInLevel();
+      var player = mockPlayer(helper);
       var start = helper.absolutePos(new BlockPos(2, 3, 2));
       player.moveTo(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, -90.0F, 0.0F);
       helper.assertTrue(ServantCardTransformManager.transform(player, "arash"), "Arash card transformation failed");
@@ -472,7 +586,7 @@ public final class ArashGameTests {
    @GameTest(template = "ancient_temple", timeoutTicks = 230)
    public static void playerBowChargesOnHoldAndFiresOnRelease(GameTestHelper helper) {
       var level = helper.getLevel();
-      var player = helper.makeMockServerPlayerInLevel();
+      var player = mockPlayer(helper);
       var start = helper.absolutePos(new BlockPos(2, 3, 2));
       player.moveTo(start.getX() + 0.5, start.getY(), start.getZ() + 0.5, -90.0F, 0.0F);
       helper.assertTrue(ServantCardTransformManager.transform(player, "arash"), "Arash card transformation failed");
@@ -525,5 +639,10 @@ public final class ArashGameTests {
          helper.assertTrue(!unloaded.isAlive(), "Arash arrow continued beyond the loaded chunk range");
          helper.succeed();
       });
+   }
+   private static net.minecraft.server.level.ServerPlayer mockPlayer(GameTestHelper helper) {
+      var player = helper.makeMockServerPlayerInLevel();
+      NetworkRegistry.configureMockConnection(player.connection.getConnection());
+      return player;
    }
 }

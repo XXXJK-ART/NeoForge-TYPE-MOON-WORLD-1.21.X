@@ -49,6 +49,12 @@ public final class DeferredTerrainDestruction {
    public static void queueRadialSphere(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
       if (level != null && radius > 0) add(level, new RadialSphereJob(level, center, radius, callback));
    }
+   /** Expands by one block per tick, clearing an upper hemisphere and a shallow ground depression. */
+   public static void queueRadialShallowImpact(ServerLevel level, Vec3 center, double radius, int depth, float maxHardness) {
+      if (level != null && radius > 0.0 && depth > 0) {
+         add(level, new RadialImpactJob(level, center, radius, depth, maxHardness));
+      }
+   }
    public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
       if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius).schedule(targetTicks));
    }
@@ -285,6 +291,54 @@ public final class DeferredTerrainDestruction {
          }
       }
    }
+   private static final class RadialImpactJob extends Job {
+      final Vec3 center;
+      final double radius;
+      final int depth;
+      final float hardness;
+      final RadialSphereCursor cursor;
+      RadialSphereCursor.Offset next;
+
+      RadialImpactJob(ServerLevel level, Vec3 center, double radius, int depth, float hardness) {
+         super(level);
+         this.center = center;
+         this.radius = radius;
+         this.depth = Math.min(2, depth);
+         this.hardness = hardness;
+         this.cursor = new RadialSphereCursor(Mth.ceil(radius));
+         this.next = cursor.next();
+         this.sliceLimit = 512;
+      }
+
+      @Override boolean ready() {
+         double reached = Math.min(radius, Math.max(0L, level.getGameTime() - queuedAt));
+         return !done && next.distanceSqr() <= reached * reached;
+      }
+
+      @Override boolean supersedes(Job other) {
+         return other instanceof RadialImpactJob candidate && depth >= candidate.depth
+            && center.distanceTo(candidate.center) + candidate.radius <= radius + 1.0E-6
+            && overlappingImpactSupersedes(center, radius, hardness, queuedAt,
+               candidate.center, candidate.radius, candidate.hardness, candidate.queuedAt);
+      }
+
+      @Override void advance() {
+         var offset = next;
+         if (cursor.hasNext()) {
+            next = cursor.next();
+            done = next.distanceSqr() > radius * radius;
+         } else done = true;
+         BlockPos pos = BlockPos.containing(center.x + offset.x(), center.y + offset.y(), center.z + offset.z());
+         if (offset.y() < 0) {
+            double horizontalSqr = (double)offset.x() * offset.x() + (double)offset.z() * offset.z();
+            int columnDepth = Math.max(1, (int)Math.round(depth * Math.sqrt(Math.max(0.0,
+               1.0 - horizontalSqr / (radius * radius)))));
+            if (-offset.y() > columnDepth || !CombatTerrainProtection.canRemoveWithinSurfaceDepth(level, pos, depth)) return;
+         }
+         if (valid(pos, hardness)) level.removeBlock(pos, false);
+      }
+   }
+
    private static final class EllipsoidJob extends Job {
       final Vec3 center; final int radius,height; final float hardness; int x,y,z;
       EllipsoidJob(ServerLevel level,Vec3 center,int radius,int height,float hardness){super(level);this.center=center;this.radius=radius;this.height=height;this.hardness=hardness;x=z=-radius;y=-height;}

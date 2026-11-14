@@ -26,9 +26,18 @@ public final class ArashCombatRules {
    public static final double APPROACH_THRESHOLD = 56.0;
    public static final double CROSSOVER_TRIGGER_RANGE = 7.0;
    public static final int CROSSOVER_COOLDOWN = 60;
+   public static final double CLOSE_VOLLEY_MAX_RANGE = 10.0;
+   public static final int CLOSE_VOLLEY_ARROW_COUNT = 3;
+   public static final int CLOSE_VOLLEY_SHOT_INTERVAL = 2;
+   public static final int CLOSE_VOLLEY_COOLDOWN = 100;
    public static final float NORMAL_ARROW_DAMAGE = 20.0F;
+   public static final double NORMAL_ARROW_GRAVITY = 0.012;
    public static final int ARROW_MAX_CHARGE_TICKS = 100;
    public static final int ARROW_MAX_FLIGHT_TICKS = 240;
+   public static final int ARROW_MAX_LIFETIME_TICKS = 2400;
+   public static final int RAIN_MAX_LIFETIME_TICKS = 1200;
+   public static final float RAIN_DAMAGE_CAP_SCALE = 0.25F;
+   public static final double ARROW_MAX_TERRAIN_RADIUS = 15.0;
    public static final float ARROW_MIN_DAMAGE = 10.0F;
    public static final float ARROW_MIN_DAMAGE_CAP = 20.0F;
    public static final float ARROW_CHARGED_START_BONUS = 30.0F;
@@ -39,8 +48,8 @@ public final class ArashCombatRules {
    public static final int NORMAL_ARROW_INTERVAL = 5;
    public static final int RAIN_ARROW_COUNT = 100;
    public static final int CROUCH_RAIN_ARROW_COUNT = 300;
-   public static final double RAIN_SPREAD_RADIUS = 6.0;
-   public static final double CROUCH_RAIN_SPREAD_RADIUS = 30.0;
+   public static final double RAIN_SPREAD_RADIUS = 9.0;
+   public static final double CROUCH_RAIN_SPREAD_RADIUS = 40.0;
    public static final double CROUCH_RAIN_ASSIST_RADIUS = 36.0;
    public static final double RAIN_MANA = 8.0;
    public static final int RAIN_COOLDOWN = 160;
@@ -96,6 +105,11 @@ public final class ArashCombatRules {
       return Math.max(0.0, baseRecovery) * POISE_RECOVERY_MULTIPLIER;
    }
 
+   public static boolean canStartCloseRangeVolley(double distance, long now, long nextVolleyAt, int arrowCount) {
+      return distance > CROSSOVER_TRIGGER_RANGE && distance <= CLOSE_VOLLEY_MAX_RANGE
+         && now >= nextVolleyAt && arrowCount >= CLOSE_VOLLEY_ARROW_COUNT;
+   }
+
    public static float arrowDamage(int chargeTicks, int flightTicks) {
       double charge = Math.max(0.0, Math.min(1.0, chargeTicks / (double)ARROW_MAX_CHARGE_TICKS));
       double flight = Math.max(0.0, Math.min(1.0, flightTicks / (double)ARROW_MAX_FLIGHT_TICKS));
@@ -108,6 +122,20 @@ public final class ArashCombatRules {
       double progress = Math.max(0.0, Math.min(1.0,
          (damage - ARROW_MIN_DAMAGE) / (100.0 - ARROW_MIN_DAMAGE)));
       return ARROW_MAX_BLAST_RADIUS * progress;
+   }
+
+   public static float rainArrowDamage(int chargeTicks, int flightTicks) {
+      float cap = arrowDamage(chargeTicks, ARROW_MAX_FLIGHT_TICKS) * RAIN_DAMAGE_CAP_SCALE;
+      return Math.min(arrowDamage(chargeTicks, flightTicks), cap);
+   }
+
+   public static double arrowTerrainRadius(float damage) {
+      return arrowBlastRadius(damage) / ARROW_MAX_BLAST_RADIUS * ARROW_MAX_TERRAIN_RADIUS;
+   }
+
+   public static int arrowColor(int flightTicks) {
+      double progress = Math.max(0.0, Math.min(1.0, flightTicks / (double)ARROW_MAX_FLIGHT_TICKS));
+      return progress < 0.34 ? 0xFFFFFF : progress < 0.67 ? 0x33FF6B : 0xFF1505;
    }
 
    public static int arrowTerrainDepth(float damage) {

@@ -1,0 +1,7 @@
+// Keep this character's validation outputs separate from other active reset work.
+allprojects {
+    layout.buildDirectory = file('build/li-shuwen-validation')
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/li-shuwen-gametest-run')
+    }
+}

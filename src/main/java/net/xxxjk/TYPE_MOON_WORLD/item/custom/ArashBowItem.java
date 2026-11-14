@@ -37,7 +37,16 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
    public static final String INTERRUPTED_TAG = "ArashBowChargeInterrupted";
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-   public ArashBowItem(Properties properties) { super(properties); }
+   public ArashBowItem(Properties properties) {
+      super(properties);
+      GeoItem.registerSyncedAnimatable(this);
+   }
+
+   public static void animateBow(LivingEntity living, ItemStack stack, String animation) {
+      if (!(stack.getItem() instanceof ArashBowItem bow)) return;
+      long id = living.level() instanceof ServerLevel level ? GeoItem.getOrAssignId(stack, level) : GeoItem.getId(stack);
+      bow.triggerAnim(living, id, "bow_controller", animation);
+   }
 
    @Override
    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
@@ -59,8 +68,7 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
    @Override
    public void onUseTick(Level level, LivingEntity living, ItemStack stack, int remainingUseDuration) {
       if (living.getTicksUsingItem() == 1) {
-         if (level instanceof ServerLevel serverLevel) GeoItem.getOrAssignId(stack, serverLevel);
-         if (level.isClientSide) this.triggerAnim(living, GeoItem.getId(stack), "bow_controller", "draw");
+         animateBow(living, stack, "draw");
       }
       if (level.isClientSide && (living instanceof ArashEntity || living instanceof Player chargePlayer
          && ServantCardArashSkills.isArash(chargePlayer)) && living.tickCount % 2 == 0) {
@@ -95,8 +103,11 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
 
    @Override
    public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
+      // Skill-held use belongs to the rain lifecycle, never to the basic-shot callback.
+      if (living.getPersistentData().contains(ServantCardArashSkills.ARROW_RAIN_CHARGE_START)
+         || living.getPersistentData().contains(ServantCardArashSkills.ARROW_RAIN_CHARGE_RELEASE)) return;
       if (level.isClientSide) {
-         this.triggerAnim(living, GeoItem.getId(stack), "bow_controller", "release");
+         animateBow(living, stack, "release");
          return;
       }
       if (!(living instanceof Player player) || !(level instanceof ServerLevel serverLevel)) return;
@@ -110,6 +121,7 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
       if (fireBasicArrow(serverLevel, player, chargeTicks, arash) && arash) {
          ServantCardArashSkills.consumeBasicArrow((ServerPlayer)player);
       }
+      animateBow(living, stack, "release");
    }
 
    private static boolean fireBasicArrow(ServerLevel serverLevel, Player player, int chargeTicks, boolean arash) {
@@ -145,6 +157,7 @@ public final class ArashBowItem extends net.minecraft.world.item.Item implements
          state -> PlayState.STOP);
       bow.triggerableAnim("draw", RawAnimation.begin().thenLoop("animation.arash_bow.draw"));
       bow.triggerableAnim("release", RawAnimation.begin().thenPlay("animation.arash_bow.release"));
+      bow.triggerableAnim("cancel", RawAnimation.begin().thenPlay("animation.arash_bow.idle"));
       controllers.add(bow);
    }
    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }

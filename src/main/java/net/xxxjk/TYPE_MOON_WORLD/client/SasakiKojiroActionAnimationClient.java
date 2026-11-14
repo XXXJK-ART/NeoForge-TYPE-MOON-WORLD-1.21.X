@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroEntity;
+import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -57,6 +58,16 @@ public final class SasakiKojiroActionAnimationClient {
       Minecraft minecraft = Minecraft.getInstance();
       SasakiKojiroAction action = SasakiKojiroAction.byNetworkId(actionId);
       if (minecraft.level == null || playerId == null || action == null) return;
+      for (AbstractClientPlayer player : minecraft.level.players()) {
+         if (!playerId.equals(player.getUUID())) continue;
+         var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "ushiwakamaru_rider".equals(vars.servant_card_id)) {
+            action = action == SasakiKojiroAction.THRUST ? SasakiKojiroAction.THRUST
+               : action == SasakiKojiroAction.DOWNWARD_SLASH ? SasakiKojiroAction.DOWNWARD_SLASH
+               : SasakiKojiroAction.VERTICAL_SLASH;
+         }
+         break;
+      }
       if (activePlaybackLevel != minecraft.level) {
          NPC_PLAYBACKS.clear();
          activePlaybackLevel = minecraft.level;

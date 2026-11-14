@@ -36,6 +36,9 @@ public final class ServantCardBaobhanSithSkills {
    private static final String TAG_BLESSED_UNTIL = "ServantCardBaobhanSithBlessedUntil";
    private static final String TAG_LAST_HOOF_FX = "ServantCardBaobhanSithLastHoofFx";
    private static final String TAG_LAST_HAIR_COLLECT = "ServantCardBaobhanSithLastHairCollect";
+   private static final String TAG_MANA_STACKS = "TypeMoonBaobhanSithManaStacks";
+   private static final String TAG_LAST_SUN_TICK = "TypeMoonBaobhanSithLastTickSun";
+   private static final String TAG_LAST_MANA_TICK = "TypeMoonBaobhanSithLastTickMana";
    private static final long HAIR_COLLECT_COOLDOWN_TICKS = 20L;
    private static final float HAIR_COLLECT_HEALTH_COST = 0.5F;
    private static final float NORMAL_ATTACK_MEDIUM_CHANCE = 0.55F;
@@ -46,6 +49,7 @@ public final class ServantCardBaobhanSithSkills {
    private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.04F, 0.08F), 1.12F);
    private static final DustParticleOptions CURSE_DUST = new DustParticleOptions(new Vector3f(0.08F, 0.02F, 0.10F), 1.0F);
    private static final DustParticleOptions PURPLE_DUST = new DustParticleOptions(new Vector3f(0.44F, 0.06F, 0.62F), 1.0F);
+   private static final DustParticleOptions BLACK_DUST = new DustParticleOptions(new Vector3f(0.025F, 0.018F, 0.025F), 1.0F);
    private static final DustParticleOptions GOLD_DUST = new DustParticleOptions(new Vector3f(1.0F, 0.72F, 0.18F), 1.0F);
 
    private ServantCardBaobhanSithSkills() {
@@ -57,6 +61,20 @@ public final class ServantCardBaobhanSithSkills {
       }
       BaobhanSithCurseService.tickOwnerCurses(player);
       long now = player.level().getGameTime();
+      if (now - player.getPersistentData().getLong(TAG_LAST_SUN_TICK) >= 20L) {
+         player.getPersistentData().putLong(TAG_LAST_SUN_TICK, now);
+         if (isSunlit(player)) {
+            player.hurt(player.damageSources().magic(), 5.0F);
+         }
+      }
+      if (now - player.getPersistentData().getLong(TAG_LAST_MANA_TICK) >= 20L) {
+         player.getPersistentData().putLong(TAG_LAST_MANA_TICK, now);
+         int stacks = Math.min(10, player.getPersistentData().getInt(TAG_MANA_STACKS));
+         if (stacks > 0) {
+            vars.servantCardState().addMana(Math.min(5.0, stacks * 0.5));
+            vars.syncMana(player);
+         }
+      }
       if (player.getPersistentData().getLong(TAG_GRIMALKIN_UNTIL) > now) {
          tickHoofTrail(player, now);
       } else {
@@ -528,6 +546,11 @@ public final class ServantCardBaobhanSithSkills {
       return vars.servantCardState().transformed() && SERVANT_ID.equals(vars.servantCardState().id());
    }
 
+   private static boolean isSunlit(ServerPlayer player) {
+      return player.level() instanceof ServerLevel level
+         && level.isDay() && level.canSeeSky(player.blockPosition()) && !level.isRaining();
+   }
+
    private static boolean isVeryCloseTo(ServerPlayer player, LivingEntity target) {
       return player.distanceToSqr(target) <= 2.25D
          || player.getBoundingBox().inflate(0.7D).intersects(target.getBoundingBox());
@@ -668,7 +691,7 @@ public final class ServantCardBaobhanSithSkills {
          projectile.setVisualScale(0.82F);
          level.addFreshEntity(projectile);
          level.sendParticles(BLOOD_DUST, start.x, start.y, start.z, 7, 0.08, 0.08, 0.08, 0.0);
-         level.sendParticles(CURSE_DUST, start.x, start.y, start.z, 5, 0.06, 0.06, 0.06, 0.0);
+         level.sendParticles(BLACK_DUST, start.x, start.y, start.z, 5, 0.06, 0.06, 0.06, 0.0);
       }
       level.playSound(null, player.blockPosition(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1.0F, 1.42F);
    }

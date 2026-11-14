@@ -79,6 +79,7 @@ public final class BaobhanSithServantSkills {
    private static final String MEDIUM_REMAINS = "Remains";
    private static final String CURSE_BLOOD = "BloodCurse";
    private static final String CURSE_SKIN = "SkinCurse";
+   private static final String CURSE_HAIR = "HairCurse";
    private static final String CURSE_REMAINS = "RemainsCurse";
    private static final int MAX_MEDIUMS_PER_TYPE = 10;
    private static final DustParticleOptions BLOOD_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.06F, 0.10F), 1.15F);
@@ -86,6 +87,7 @@ public final class BaobhanSithServantSkills {
    private static final DustParticleOptions PURPLE_DUST = new DustParticleOptions(new Vector3f(0.45F, 0.08F, 0.62F), 1.0F);
    private static final DustParticleOptions GOLD_DUST = new DustParticleOptions(new Vector3f(1.0F, 0.74F, 0.18F), 1.05F);
    private static final DustParticleOptions PALE_DUST = new DustParticleOptions(new Vector3f(1.0F, 0.92F, 0.86F), 0.9F);
+   private static final DustParticleOptions BLACK_DUST = new DustParticleOptions(new Vector3f(0.025F, 0.018F, 0.025F), 1.0F);
 
    private BaobhanSithServantSkills() {
    }
@@ -512,21 +514,27 @@ public final class BaobhanSithServantSkills {
          || context.currentMp() <= 0.0) {
          return ServantExecutionResult.NOT_HANDLED;
       }
-      int mediumCount = Math.min(10, totalMediumCount(servant, target));
-      if (mediumCount <= 0) {
+      int mediumCount = totalMediumCount(servant, target);
+      int layers = totalCurseLayers(servant, target);
+      if (mediumCount <= 0 && layers <= 0) {
          return ServantExecutionResult.FAILED;
       }
       servant.faceToward(target.position());
       servant.triggerRuneCastAnimation(60);
       ServantVoiceHelper.tryPlayBaobhanSithNp(servant);
       boolean canBurst = totalCurseLayers(servant, target) >= 5;
-      float damage = mediumCount * 50.0F * (float)context.powerScale();
-      if (canBurst) {
-         damage *= 2.0F;
-      }
+      float damage = Math.min(180.0F, 30.0F + layers * 12.0F + mediumCount * 8.0F);
+      int blood = curseCount(servant, target, CURSE_BLOOD);
+      int skin = curseCount(servant, target, CURSE_SKIN);
+      int hair = curseCount(servant, target, CURSE_HAIR);
+      int remains = curseCount(servant, target, CURSE_REMAINS);
+      float typedPower = blood * 5.0F + skin * 4.0F + hair * 3.0F + remains * 15.0F;
+      float burstDamage = canBurst
+         ? Math.min(120.0F, Math.max(18.0F, typedPower * 2.5F + layers * 4.0F + mediumCount * 2.5F))
+         : 0.0F;
       boolean wasAlive = target.isAlive();
       target.invulnerableTime = 0;
-      target.hurt(curseDamageSource(servant), damage);
+      target.hurt(curseDamageSource(servant), (damage + burstDamage) * (float)context.powerScale());
       target.invulnerableTime = 0;
       consumeAllMediums(servant, target);
       if (canBurst) {
@@ -665,6 +673,10 @@ public final class BaobhanSithServantSkills {
 
    private static int totalCurseLayers(LivingEntity owner, LivingEntity target) {
       return targetCurses(owner, target).getInt(TAG_CURSE_LAYERS);
+   }
+
+   private static int curseCount(LivingEntity owner, LivingEntity target, String curse) {
+      return targetCurses(owner, target).getInt(curse);
    }
 
    private static int totalMediumCount(LivingEntity owner, LivingEntity target) {
@@ -824,7 +836,7 @@ public final class BaobhanSithServantSkills {
       projectile.setVisualScale(visualScale);
       level.addFreshEntity(projectile);
       level.sendParticles(BLOOD_DUST, start.x, start.y, start.z, 7, 0.08, 0.08, 0.08, 0.0);
-      level.sendParticles(CURSE_DUST, start.x, start.y, start.z, 5, 0.06, 0.06, 0.06, 0.0);
+      level.sendParticles(BLACK_DUST, start.x, start.y, start.z, 5, 0.06, 0.06, 0.06, 0.0);
    }
 
    private static void spawnSlashParticles(ServantEntity servant, LivingEntity target) {

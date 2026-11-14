@@ -32,6 +32,8 @@ import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroActionAnimationService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
@@ -129,7 +131,10 @@ public final class ServantCardUshiwakamaruSkills {
          target.position().subtract(side.scale(1.45))
       };
       for (Vec3 candidate : candidates) {
-         if (ServantCardSkillUtils.trySafeHorizontalTeleport(player, new Vec3(candidate.x, target.getY(), candidate.z))) break;
+         if (ServantCardSkillUtils.trySafeHorizontalTeleport(player, new Vec3(candidate.x, target.getY(), candidate.z))) {
+            playSwordAction(player, SasakiKojiroAction.VERTICAL_SLASH);
+            break;
+         }
       }
       player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
          target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
@@ -146,6 +151,7 @@ public final class ServantCardUshiwakamaruSkills {
 
    public static void performSweepingThrust(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return;
+      playSwordAction(player, SasakiKojiroAction.THRUST);
       Vec3 direction = horizontalLook(player);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       Vec3 end = origin.add(direction.scale(5.0));
@@ -214,14 +220,17 @@ public final class ServantCardUshiwakamaruSkills {
    public static void performUsumidori(ServerPlayer player) {
       LivingEntity target = findEnemyLookTarget(player, 14.0);
       if (target == null || player.distanceTo(target) < 2.8) return;
-      Vec3 direction = target.position().subtract(player.position());
-      player.setDeltaMovement(direction.normalize().scale(1.8));
-      player.hurtMarked = true;
+      Vec3 direction = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0).normalize();
+      Vec3 destination = target.position().subtract(direction.scale(1.15));
+      if (!ServantCardSkillUtils.trySafeHorizontalTeleport(player, destination)) return;
+      playSwordAction(player, SasakiKojiroAction.DOWNWARD_SLASH);
+      player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES,
+         target.position().add(0.0, target.getBbHeight() * 0.5, 0.0));
       CompoundTag data = player.getPersistentData();
       long now = player.level().getGameTime();
       data.putLong(UshiwakamaruCombatHelper.TAG_GUARANTEED_HIT_UNTIL, now + 1L);
       try {
-         hurtPhysical(player, target, 150.0F);
+         hurtPhysical(player, target, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.8 + 12.0));
       } finally {
          data.remove(UshiwakamaruCombatHelper.TAG_GUARANTEED_HIT_UNTIL);
       }
@@ -247,13 +256,13 @@ public final class ServantCardUshiwakamaruSkills {
 
    public static boolean performSpiderSlayer(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return false;
-      List<LivingEntity> targets = nearbyEnemies(player, 15.0);
+      List<LivingEntity> targets = nearbyEnemies(player, UshiwakamaruCombatRules.SPIDER_SLAYER_RANGE);
       if (targets.isEmpty()) return false;
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer", player, 128.0);
       try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : targets) {
          float damage = ServantCardUshiwakamaruRules.spiderSlayerDamage(
-            ServantCardSkillUtils.hasTrait(target, ServantTraitTag.DEMONIC));
+            ServantCardSkillUtils.hasTrait(target, ServantTraitTag.DEMONIC), player.distanceTo(target));
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().magic(), damage);
          target.invulnerableTime = 0;
@@ -270,6 +279,10 @@ public final class ServantCardUshiwakamaruSkills {
       if (!(player.level() instanceof ServerLevel level)) return false;
       LivingEntity target = findEnemyLookTarget(player, 32.0);
       if (target == null) return false;
+      Vec3 leap = ServantCardUshiwakamaruRules.eightBoatLeapVector(player.position(), target.position(), target.getBbWidth() * 0.5 + 1.0);
+      if (leap == null || !ServantCardSkillUtils.trySafeHorizontalTeleport(player, leap)) return false;
+      player.setDeltaMovement(player.getDeltaMovement().add(0.0, 0.82, 0.0));
+      player.hurtMarked = true;
       cleanupClones(player);
       long expiresAt = level.getGameTime() + 15L * 20L;
       CompoundTag data = player.getPersistentData();
@@ -514,5 +527,9 @@ public final class ServantCardUshiwakamaruSkills {
 
    private static ResourceLocation id(String path) {
       return ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, path);
+   }
+
+   private static void playSwordAction(ServerPlayer player, SasakiKojiroAction action) {
+      SasakiKojiroActionAnimationService.play(player, action);
    }
 }

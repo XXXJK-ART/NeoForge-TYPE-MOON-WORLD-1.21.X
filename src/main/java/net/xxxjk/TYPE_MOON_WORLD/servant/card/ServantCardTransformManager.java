@@ -2004,6 +2004,9 @@ public final class ServantCardTransformManager {
          case "muramasa_temper" -> { if (!ServantCardSenkoMuramasaSkills.performTemper(player)) return false; }
          case "muramasa_karma_slash" -> { if (!ServantCardSenkoMuramasaSkills.performKarmaSlash(player)) return false; }
          case "muramasa_sword_field" -> { if (!ServantCardSenkoMuramasaSkills.performSwordField(player)) return false; }
+         case "muramasa_downward_slash" -> { if (!ServantCardSenkoMuramasaSkills.performSwordTechnique(player, net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaSwordTechnique.DOWNWARD_SLASH)) return false; }
+         case "muramasa_thrust" -> { if (!ServantCardSenkoMuramasaSkills.performSwordTechnique(player, net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaSwordTechnique.THRUST)) return false; }
+         case "muramasa_spinning_slash" -> { if (!ServantCardSenkoMuramasaSkills.performSwordTechnique(player, net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaSwordTechnique.SPINNING_SLASH)) return false; }
          case "muramasa_no_gen_kensai" -> { if (!ServantCardSenkoMuramasaSkills.performNoblePhantasm(player)) return false; }
          case "baobhan_sith_curse_panel" -> { if (!ServantCardBaobhanSithSkills.openCursePanel(player)) return false; }
          case "baobhan_sith_blood_spike" -> { if (!ServantCardBaobhanSithSkills.performBloodSpike(player)) return false; }

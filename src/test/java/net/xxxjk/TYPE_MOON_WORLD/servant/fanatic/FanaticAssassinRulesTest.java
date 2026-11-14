@@ -93,6 +93,14 @@ class FanaticAssassinRulesTest {
    }
 
    @Test
+   void fanaticismCleansesMentalEffectsAfterTheSameElapsedPeriod() {
+      assertFalse(FanaticAssassinRules.shouldCleanseMentalEffects(1199L, 0L));
+      assertTrue(FanaticAssassinRules.shouldCleanseMentalEffects(1200L, 0L));
+      assertFalse(FanaticAssassinRules.shouldCleanseMentalEffects(1000L, 1000L));
+      assertFalse(FanaticAssassinRules.shouldCleanseMentalEffects(900L, 1000L));
+   }
+
+   @Test
    void cooldownAtWorldTickZeroAndSelectionPriorityAreStable() {
       assertTrue(FanaticAssassinRules.cooldownReady(0L, false, 0L, 400));
       assertFalse(FanaticAssassinRules.cooldownReady(1L, true, 0L, 400));
@@ -107,5 +115,16 @@ class FanaticAssassinRulesTest {
          FanaticAssassinRules.chooseTechnique(false, false, false, false, false, false, false, true));
       assertEquals(FanaticAssassinRules.TechniqueDecision.BASIC,
          FanaticAssassinRules.chooseTechnique(false, false, false, false, false, false, false, false));
+   }
+
+   @Test
+   void concealmentStartsOnlyForAValidDistantTargetAndHonorsCooldowns() {
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(false, 8.0, 100.0, 120L, 0L, true, true));
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(true, 5.99, 100.0, 120L, 0L, true, true));
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(true, 8.0, 17.99, 120L, 0L, true, true));
+      assertTrue(FanaticAssassinRules.shouldActivateConcealment(true, 6.0, 18.0, 120L, 0L, false, true));
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(true, 8.0, 100.0, 119L, 120L, true, true));
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(true, 8.0, 100.0, 120L, 0L, true, true));
+      assertFalse(FanaticAssassinRules.shouldActivateConcealment(true, 8.0, 100.0, 120L, 0L, true, false));
    }
 }

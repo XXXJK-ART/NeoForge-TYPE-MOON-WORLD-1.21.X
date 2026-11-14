@@ -191,6 +191,10 @@ public final class ServantCardDefenseHandler {
          }
       }
 
+      if (!defensePiercing && "li_shuwen".equals(vars.servant_card_id)) {
+         event.setAmount(net.xxxjk.TYPE_MOON_WORLD.servant.lishuwen.LiShuwenSeasonedService.incomingDamage(
+            player, event.getSource(), event.getAmount()));
+      }
       ServantCombatDefenseService.afterArmor(event, hit -> handleAfterBaseDefense(player, vars, hit,
          guaranteedHit, infectionDamage, specialNoblePhantasmDamage, divineDefenseBroken, defensePiercing, elementalSwordDamage));
       return false;

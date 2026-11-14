@@ -2,6 +2,7 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
 public final class UshiwakamaruCombatRules {
    public static final float SHIELD_MAX_HP = 1000.0F;
+   public static final double SPIDER_SLAYER_RANGE = 15.0;
 
    private UshiwakamaruCombatRules() {
    }
@@ -23,6 +24,11 @@ public final class UshiwakamaruCombatRules {
    public static ShieldHit absorbShieldHit(float shieldHp, float incomingDamage) {
       float remaining = Math.max(0.0F, shieldHp - Math.max(0.0F, incomingDamage));
       return new ShieldHit(remaining, remaining <= 0.0F);
+   }
+
+   public static float spiderSlayerDamage(boolean demonic, double distance) {
+      double falloff = 1.0 - 0.5 * Math.max(0.0, Math.min(SPIDER_SLAYER_RANGE, distance)) / SPIDER_SLAYER_RANGE;
+      return (float)(100.0 * falloff * (demonic ? 2.0 : 1.0));
    }
 
    public record ShieldHit(float remainingShieldHp, boolean broken) {

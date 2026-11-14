@@ -902,7 +902,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
             "hundred_faces_hassan", "diarmuid_ua_duibhne", "okita_souji_saber",
-            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "jeanne_alter" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "jeanne_alter", "nightingale" -> true;
          default -> false;
       };
    }

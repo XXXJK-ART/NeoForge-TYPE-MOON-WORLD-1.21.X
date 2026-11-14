@@ -52,11 +52,13 @@ class ArashRulesTest {
       assertEquals(5, ArashCombatRules.NORMAL_ARROW_INTERVAL);
       assertEquals(100, ArashCombatRules.RAIN_ARROW_COUNT);
       assertEquals(300, ArashCombatRules.CROUCH_RAIN_ARROW_COUNT);
-      assertEquals(6.0, ArashCombatRules.RAIN_SPREAD_RADIUS);
-      assertEquals(30.0, ArashCombatRules.CROUCH_RAIN_SPREAD_RADIUS);
+      assertEquals(9.0, ArashCombatRules.RAIN_SPREAD_RADIUS);
+      assertEquals(40.0, ArashCombatRules.CROUCH_RAIN_SPREAD_RADIUS);
       assertEquals(36.0, ArashCombatRules.CROUCH_RAIN_ASSIST_RADIUS);
       assertEquals(100, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
       assertEquals(240, ArashCombatRules.ARROW_MAX_FLIGHT_TICKS);
+      assertEquals(2400, ArashCombatRules.ARROW_MAX_LIFETIME_TICKS);
+      assertEquals(1200, ArashCombatRules.RAIN_MAX_LIFETIME_TICKS);
       assertEquals(10.0F, ArashCombatRules.ARROW_MIN_DAMAGE);
       assertEquals(10.0, ArashCombatRules.ARROW_MAX_BLAST_RADIUS);
       assertEquals(100, ArashBowItem.CHARGED_ARROW_TICKS);
@@ -86,12 +88,38 @@ class ArashRulesTest {
    }
 
    @Test
+   void compensatedArrowReachesItsTargetWithDragAndGravity() {
+      Vec3 velocity = ArashAimHelper.ballisticVelocity(new Vec3(50.0, 10.0, 15.0), 20.0, 0.012);
+      Vec3 position = Vec3.ZERO;
+      for (int tick = 0; tick < 20; tick++) {
+         position = position.add(velocity);
+         velocity = velocity.scale(0.99).add(0.0, -0.012, 0.0);
+      }
+      assertEquals(50.0, position.x, 0.0001);
+      assertEquals(10.0, position.y, 0.0001);
+      assertEquals(15.0, position.z, 0.0001);
+   }
+
+   @Test
    void arashUsesContinuousMobileRangedTactics() {
       assertEquals(12, ArashCombatRules.TACTICAL_REPATH_INTERVAL);
       assertEquals(32.0, ArashCombatRules.PREFERRED_COMBAT_RANGE);
       assertEquals(56.0, ArashCombatRules.APPROACH_THRESHOLD);
       assertEquals(7.0, ArashCombatRules.CROSSOVER_TRIGGER_RANGE);
       assertEquals(60, ArashCombatRules.CROSSOVER_COOLDOWN);
+   }
+
+   @Test
+   void closeRangeVolleyFitsBetweenRetreatAndPreferredRangedDistance() {
+      assertEquals(3, ArashCombatRules.CLOSE_VOLLEY_ARROW_COUNT);
+      assertEquals(2, ArashCombatRules.CLOSE_VOLLEY_SHOT_INTERVAL);
+      assertEquals(100, ArashCombatRules.CLOSE_VOLLEY_COOLDOWN);
+      assertFalse(ArashCombatRules.canStartCloseRangeVolley(7.0, 50, 50, 3));
+      assertTrue(ArashCombatRules.canStartCloseRangeVolley(7.01, 50, 50, 3));
+      assertTrue(ArashCombatRules.canStartCloseRangeVolley(10.0, 50, 50, 3));
+      assertFalse(ArashCombatRules.canStartCloseRangeVolley(10.01, 50, 50, 3));
+      assertFalse(ArashCombatRules.canStartCloseRangeVolley(8.0, 49, 50, 3));
+      assertFalse(ArashCombatRules.canStartCloseRangeVolley(8.0, 50, 50, 2));
    }
 
    @Test

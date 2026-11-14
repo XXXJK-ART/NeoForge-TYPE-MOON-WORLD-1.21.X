@@ -118,6 +118,10 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
          return;
       }
       String servantId = armor.servantId();
+      if ("nightingale".equals(servantId)
+         && this.currentEntity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity) {
+         hideBone("hair");
+      }
       switch (servantId) {
          case "enkidu", "medusa", "oda_nobunaga" -> {
             hideBone("hair1");
@@ -160,7 +164,7 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
       return switch (armor.servantId()) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "nightingale" -> true;
          default -> false;
       };
    }

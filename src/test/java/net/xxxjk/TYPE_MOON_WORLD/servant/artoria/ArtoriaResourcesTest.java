@@ -116,4 +116,23 @@ class ArtoriaResourcesTest {
       assertTrue(defenseEffect.getAsJsonArray("emitters").asList().stream()
          .noneMatch(v -> v.getAsJsonObject().get("particle_role").getAsString().contains("SWORD")));
    }
+
+   @Test void windDefenseRibbonsExpandHorizontallyAroundArtoria() throws Exception {
+      var emitters = json("assets/typemoonworld/effects/artoria_wind_defense.json").getAsJsonArray("emitters");
+      var byRole = emitters.asList().stream().map(v -> v.getAsJsonObject())
+         .collect(Collectors.toMap(v -> v.get("particle_role").getAsString(), v -> v));
+
+      for (var role : java.util.List.of("WIND_DEFENSE_BODY_RIBBON", "WIND_DEFENSE_CROSSCURRENT_FLECKS",
+         "WIND_DEFENSE_OUTER_AIR_STRANDS")) {
+         var component = byRole.get(role).getAsJsonObject("component");
+         assertEquals("parametric", component.get("type").getAsString(), role + " should use a horizontal path");
+         assertTrue(component.get("expr_y").getAsString().matches("0(?:\\.0+)?"), role + " should not rise vertically");
+      }
+
+      var wardTransform = byRole.get("WIND_DEFENSE_WARD_RING").getAsJsonArray("transform_over_life")
+         .get(0).getAsJsonObject();
+      assertTrue(wardTransform.has("rot"), "ward ring should be rotated flat onto the ground plane");
+      assertEquals(0.7071068F, wardTransform.getAsJsonArray("rot").get(0).getAsFloat(), 0.0001F);
+      assertEquals(0.7071068F, wardTransform.getAsJsonArray("rot").get(3).getAsFloat(), 0.0001F);
+   }
 }

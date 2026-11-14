@@ -274,8 +274,6 @@ public final class FanaticAssassinCombatHelper {
    }
 
    private static void castJinn(FanaticAssassinEntity entity, long now) {
-      commit(entity, "Jinn", FanaticAssassinRules.JINN_MP, now,
-         FanaticAssassinEntity.TECHNIQUE_JINN, "jinn", 16);
       if (!(entity.level() instanceof ServerLevel level)) return;
       FanaticAssassinJinnEntity jinn = ModEntities.FANATIC_ASSASSIN_JINN.get().create(level);
       if (jinn == null) return;
@@ -284,7 +282,9 @@ public final class FanaticAssassinCombatHelper {
       float yaw = (float)Math.toDegrees(Math.atan2(-forward.x, forward.z));
       jinn.moveTo(entity.getX() + side.x * 1.5, entity.getY(), entity.getZ() + side.z * 1.5, yaw, 0.0F);
       jinn.initialize(entity, now + FanaticAssassinRules.JINN_LIFETIME);
-      level.addFreshEntity(jinn);
+      if (!level.addFreshEntity(jinn)) return;
+      commit(entity, "Jinn", FanaticAssassinRules.JINN_MP, now,
+         FanaticAssassinEntity.TECHNIQUE_JINN, "jinn", 16);
       spawnJinnSummonFx(level, entity, jinn);
    }
 

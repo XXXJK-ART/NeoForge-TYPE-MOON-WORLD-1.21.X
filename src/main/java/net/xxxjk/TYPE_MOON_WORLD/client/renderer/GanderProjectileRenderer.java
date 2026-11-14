@@ -62,7 +62,13 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
          }
       }
 
-      if (GanderOrbShaderRegistry.isReady()) {
+      if (entity.isBaobhanSithCurse()) {
+         if (GanderOrbShaderRegistry.isReady()) {
+            this.renderBaobhanOrb(entity, partialTicks, poseStack, buffer, finalScale);
+         } else {
+            this.renderBaobhanFallback(poseStack, buffer, finalScale);
+         }
+      } else if (GanderOrbShaderRegistry.isReady()) {
          this.renderOrb(entity, partialTicks, poseStack, buffer, finalScale);
       } else {
          poseStack.scale(finalScale, finalScale, finalScale);
@@ -93,6 +99,35 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
       this.drawOrbQuad(pose, consumer, 0.25F * finalScale * (1.01F + 0.02F * (float)Math.cos(time * 0.8F)), 0.0F, 0.0F, 0.0F, 1.0F * previewAlphaScale);
       this.drawOrbQuad(pose, consumer, 0.34F * finalScale, 0.01F, 0.01F, 0.01F, 1.0F * previewAlphaScale);
       this.drawOrbQuad(pose, consumer, 0.44F * finalScale * pulse, 0.96F, 0.04F, 0.07F, 0.94F * previewAlphaScale);
+   }
+
+   private void renderBaobhanOrb(GanderProjectileEntity entity, float partialTicks, PoseStack poseStack,
+                                  MultiBufferSource buffer, float finalScale) {
+      float time = entity.level().getGameTime() + partialTicks;
+      float pulse = 1.0F + 0.035F * (float)Math.sin(time * 0.6F);
+      poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+      poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+      Pose pose = poseStack.last();
+      VertexConsumer consumer = buffer.getBuffer(GanderOrbRenderType.orb());
+      this.drawOrbQuad(pose, consumer, 0.28F * finalScale, 0.0F, 0.0F, 0.0F, 1.0F);
+      this.drawOrbQuad(pose, consumer, 0.36F * finalScale * pulse, 0.88F, 0.025F, 0.055F, 0.92F);
+   }
+
+   private void renderBaobhanFallback(PoseStack poseStack, MultiBufferSource buffer, float finalScale) {
+      poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+      poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+      Pose pose = poseStack.last();
+      VertexConsumer consumer = buffer.getBuffer(RenderType.lightning());
+      this.drawDiamond(pose, consumer, 0.34F * finalScale, 0.025F, 0.015F, 0.02F);
+      this.drawDiamond(pose, consumer, 0.25F * finalScale, 0.92F, 0.025F, 0.055F);
+      this.drawDiamond(pose, consumer, 0.12F * finalScale, 0.012F, 0.008F, 0.012F);
+   }
+
+   private void drawDiamond(Pose pose, VertexConsumer consumer, float radius, float r, float g, float b) {
+      consumer.addVertex(pose, 0.0F, radius, 0.0F).setColor(r, g, b, 1.0F);
+      consumer.addVertex(pose, radius * 0.62F, 0.0F, 0.0F).setColor(r, g, b, 1.0F);
+      consumer.addVertex(pose, 0.0F, -radius, 0.0F).setColor(r, g, b, 1.0F);
+      consumer.addVertex(pose, -radius * 0.62F, 0.0F, 0.0F).setColor(r, g, b, 1.0F);
    }
 
    private void drawOrbQuad(Pose pose, VertexConsumer consumer, float halfSize, float r, float g, float b, float a) {
@@ -146,11 +181,14 @@ public class GanderProjectileRenderer extends EntityRenderer<GanderProjectileEnt
                      float innerWidth2 = this.getWidth(0.12F, progress2);
                      float innerAlpha1 = this.getInnerAlpha(progress1);
                      float innerAlpha2 = this.getInnerAlpha(progress2);
+                     float trailScale = entity.isBaobhanSithCurse() ? 0.52F : 1.0F;
                      this.drawBillboardSegment(
-                        pose, consumer, startLocal, endLocal, viewOffset, outerWidth1, outerWidth2, outerAlpha1, outerAlpha2, u1, u2, 0.98F, 0.08F, 0.12F
+                        pose, consumer, startLocal, endLocal, viewOffset,
+                        outerWidth1 * trailScale, outerWidth2 * trailScale, outerAlpha1, outerAlpha2, u1, u2, 0.98F, 0.08F, 0.12F
                      );
                      this.drawBillboardSegment(
-                        pose, consumer, startLocal, endLocal, viewOffset, innerWidth1, innerWidth2, innerAlpha1, innerAlpha2, u1, u2, 0.05F, 0.05F, 0.05F
+                        pose, consumer, startLocal, endLocal, viewOffset,
+                        innerWidth1 * trailScale, innerWidth2 * trailScale, innerAlpha1, innerAlpha2, u1, u2, 0.025F, 0.018F, 0.022F
                      );
                   }
                }

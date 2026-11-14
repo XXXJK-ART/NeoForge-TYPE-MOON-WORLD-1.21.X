@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.event;
 
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,7 +24,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleHumanoidHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.nightingale.NightingaleSupportService;
-import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaDamageTypes;
 
 @EventBusSubscriber(modid = TYPE_MOON_WORLD.MOD_ID)
 public final class NightingaleEvents {
@@ -33,7 +31,7 @@ public final class NightingaleEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
    public static void protectSafetyCircleStart(LivingIncomingDamageEvent event) {
-      if (shouldCancelSafetyCircleDamage(event.getEntity(), event.getSource())) cancel(event);
+      if (shouldCancelSafetyCircleDamage(event.getEntity())) cancel(event);
    }
 
    @SubscribeEvent(priority = EventPriority.HIGH)
@@ -50,8 +48,8 @@ public final class NightingaleEvents {
          amount *= NightingaleRules.ANGEL_DAMAGE_MULTIPLIER;
       }
       if (NightingaleSupportService.isNightingaleSource(target)
-         && attacker != null && NightingaleHumanoidHelper.isHumanoid(attacker)) {
-         amount *= NightingaleRules.HUMANOID_DEFENSE_MULTIPLIER;
+         && attacker != null) {
+         amount *= NightingaleRules.incomingMultiplier(NightingaleHumanoidHelper.isHumanoid(attacker));
       }
       if (attacker != null
          && attacker.getPersistentData().getLong(NightingaleSupportService.NP_POWER_DOWN_UNTIL) > target.level().getGameTime()
@@ -64,7 +62,7 @@ public final class NightingaleEvents {
 
    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
    public static void protectSafetyCircleEnd(LivingIncomingDamageEvent event) {
-      if (shouldCancelSafetyCircleDamage(event.getEntity(), event.getSource())) {
+      if (shouldCancelSafetyCircleDamage(event.getEntity())) {
          cancel(event);
       } else if (event.getSource().is(NightingaleDamageTypes.HEALING_REVERSAL)) {
          event.setCanceled(false);
@@ -131,11 +129,8 @@ public final class NightingaleEvents {
       return direct instanceof LivingEntity living ? living : null;
    }
 
-   private static boolean shouldCancelSafetyCircleDamage(LivingEntity target, DamageSource source) {
-      return NightingaleSupportService.isProtected(target)
-         && !source.is(DamageTypes.FELL_OUT_OF_WORLD)
-         && !source.is(DamageTypes.GENERIC_KILL)
-         && !source.is(MuramasaDamageTypes.TSUMUKARI_MURAMASA);
+   private static boolean shouldCancelSafetyCircleDamage(LivingEntity target) {
+      return NightingaleSupportService.isProtected(target);
    }
 
    private static void cancel(LivingIncomingDamageEvent event) {

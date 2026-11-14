@@ -139,6 +139,7 @@ public class ModCreativeModeTabs {
                         output.accept(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ARASH_CHEST);
                         output.accept(ModItems.SERVANT_CARD_ARASH_LEGS);
+                        output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_HEAD);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_CHEST);
                         output.accept(ModItems.SERVANT_CARD_NIGHTINGALE_LEGS);
                         output.accept(ModItems.SERVANT_CARD_ZHAO_YUN_RIDER_HEAD);

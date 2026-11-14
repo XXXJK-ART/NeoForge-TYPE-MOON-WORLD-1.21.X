@@ -239,7 +239,7 @@ class ArashResourcesTest {
       assertTrue(bow.contains("fireBasicArrow(serverLevel, player, chargeTicks, arash)"));
       assertTrue(bow.contains("CHARGED_ARROW_TICKS = ArashCombatRules.ARROW_MAX_CHARGE_TICKS"));
       assertTrue(bow.contains("INTERRUPTED_TAG"));
-      assertTrue(bow.contains("triggerAnim(living, GeoItem.getId(stack), \"bow_controller\", \"draw\")"));
+      assertTrue(bow.contains("animateBow(living, stack, \"draw\")"));
       assertTrue(!bow.contains("triggerAction(serverPlayer, slot)"));
       assertTrue(arrow.contains("level.hasChunkAt(BlockPos.containing"));
       assertTrue(arrow.contains("MAX_VISIBLE_FLIGHT_DISTANCE = 1024.0"));
@@ -260,11 +260,11 @@ class ArashResourcesTest {
       assertTrue(retreat.contains("caster.hasImpulse = true"));
       assertTrue(retreat.contains("mob.getNavigation().stop()"));
       assertTrue(bow.contains("ServantCardArashSkills.isArash(chargePlayer)"));
-      assertTrue(arrow.contains("arrowBlastRadius(damage)"));
+      assertTrue(arrow.contains("arrowTerrainRadius(damage)"));
       assertTrue(arrow.contains("if (this.getVariant() == RAIN)"));
       assertTrue(!arrow.contains("RAIN || this.getVariant() == NORMAL"),
          "Basic arrows must not apply the broad homing assist");
-      assertTrue(arrow.contains("DeferredTerrainDestruction.queueSphereDetailed"));
+      assertTrue(arrow.contains("DeferredTerrainDestruction.queueRadialShallowImpact"));
       String emiyaCombat = Files.readString(JAVA.resolve("servant/entity/EmiyaArcherCombatHelper.java"));
       assertTrue(emiyaCombat.contains("ArashCombatRules.NORMAL_ARROW_DAMAGE, 0, false"),
          "Emiya arrows must not receive Arash-only scaling or blast effects");

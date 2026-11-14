@@ -45,6 +45,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -79,6 +81,7 @@ public final class MuramasaCombatHelper {
    private static final String FIELD_CENTER_X = "MuramasaFieldCenterX";
    private static final String FIELD_CENTER_Z = "MuramasaFieldCenterZ";
    private static final String FIELD_COLLAPSING = "MuramasaFieldCollapsing";
+   private static final String SWORD_TECHNIQUE_COOLDOWN = "MuramasaSwordTechniqueCooldown:";
    private static final ResourceLocationLike DAMAGE_ID = new ResourceLocationLike("muramasa_damage");
    private static final ResourceLocationLike SPEED_ID = new ResourceLocationLike("muramasa_speed");
    private static final ResourceLocationLike KNOCKBACK_ID = new ResourceLocationLike("muramasa_knockback");
@@ -367,6 +370,19 @@ public final class MuramasaCombatHelper {
          entity.triggerNamedActionAnimation("attack");
          performKarmaSlash(entity, target, level);
          return true;
+      }
+      if (phase != ServantCombatPhase.PROBING && distance <= 4.5 && lineOfSight
+         && now >= data.getLong("MuramasaSwordTechniqueNextTick")) {
+         MuramasaSwordTechnique technique = switch (entity.getRandom().nextInt(3)) {
+            case 0 -> MuramasaSwordTechnique.DOWNWARD_SLASH;
+            case 1 -> MuramasaSwordTechnique.THRUST;
+            default -> MuramasaSwordTechnique.SPINNING_SLASH;
+         };
+         if (performSwordTechnique(entity, technique)) {
+            data.putLong("MuramasaSwordTechniqueNextTick", now + technique.cooldownTicks());
+            lockAction(entity, data, now, 8L);
+            return true;
+         }
       }
       if (phase != ServantCombatPhase.PROBING
          && now >= data.getLong("MuramasaSwordFieldCooldown")
@@ -1174,6 +1190,82 @@ public final class MuramasaCombatHelper {
          damage *= 1.30;
       }
       return damage * 1.50; // Karma Eye / precision strike guarantees a critical, maximum-damage hit.
+   }
+
+   public static boolean performSwordTechnique(LivingEntity attacker, MuramasaSwordTechnique technique) {
+      if (attacker == null || technique == null || !attacker.isAlive() || ServantCombatSystem.cannotAct(attacker)
+         || !hasSword(attacker)) return false;
+      if (attacker instanceof ServerPlayer player) {
+         LivingEntity target = findTechniqueTarget(player, technique);
+         return performSwordTechnique(player, target, technique);
+      }
+      if (attacker == null || technique == null || !(attacker.level() instanceof ServerLevel level)
+         || ServantCombatSystem.cannotAct(attacker) || !hasSword(attacker)
+         || currentMana(attacker) + 1.0E-6 < technique.manaCost()) return false;
+      long now = level.getGameTime();
+      if (now < attacker.getPersistentData().getLong(SWORD_TECHNIQUE_COOLDOWN + technique.id())) return false;
+      LivingEntity target = findTechniqueTarget(attacker, technique);
+      if (target == null) return false;
+      if (!(attacker instanceof SenkoMuramasaEntity entity)) return false;
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - technique.manaCost()));
+      attacker.getPersistentData().putLong(SWORD_TECHNIQUE_COOLDOWN + technique.id(), now + technique.cooldownTicks());
+      boolean landed = performSwordTechnique(attacker, target, technique);
+      if (!landed) {
+         attacker.getPersistentData().remove(SWORD_TECHNIQUE_COOLDOWN + technique.id());
+         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + technique.manaCost()));
+      }
+      return landed;
+   }
+
+   private static boolean performSwordTechnique(LivingEntity attacker, LivingEntity target, MuramasaSwordTechnique technique) {
+      if (target == null || !target.isAlive() || attacker.level() != target.level()
+         || attacker.distanceTo(target) > technique.range() || !attacker.hasLineOfSight(target)
+         || !EntityUtils.isValidCombatTarget(attacker, target)) return false;
+      if (technique == MuramasaSwordTechnique.SPINNING_SLASH) {
+         var victims = attacker.level().getEntitiesOfClass(LivingEntity.class,
+            attacker.getBoundingBox().inflate(technique.range()), candidate -> candidate != attacker && candidate.isAlive()
+               && attacker.distanceTo(candidate) <= technique.range() && attacker.hasLineOfSight(candidate)
+               && EntityUtils.isValidCombatTarget(attacker, candidate));
+         if (victims.isEmpty()) return false;
+         for (LivingEntity victim : victims.stream().limit(3).toList()) applySwordTechniqueDamage(attacker, victim, technique);
+      } else applySwordTechniqueDamage(attacker, target, technique);
+      if (attacker instanceof ServantEntity servant) servant.triggerNamedActionAnimation("horizontal_swing");
+      else if (attacker.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK, attacker.getX(), attacker.getY() + attacker.getBbHeight() * 0.55,
+            attacker.getZ(), technique == MuramasaSwordTechnique.SPINNING_SLASH ? 8 : 3, 0.25, 0.3, 0.25, 0.0);
+      }
+      return true;
+   }
+
+   private static void applySwordTechniqueDamage(LivingEntity attacker, LivingEntity target, MuramasaSwordTechnique technique) {
+      var base = attacker instanceof ServerPlayer player ? player.damageSources().playerAttack(player) : attacker.damageSources().mobAttack(attacker);
+      float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * technique.damageMultiplier());
+      target.hurt(new CombatDamageSource(base, AttackOrigin.skill("senko_muramasa", technique.id())), damage);
+   }
+
+   private static LivingEntity findTechniqueTarget(LivingEntity attacker, MuramasaSwordTechnique technique) {
+      if (attacker instanceof ServerPlayer player) {
+         LivingEntity lookedAt = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.findLookTarget(player, technique.range(), 2.0);
+         if (lookedAt != null) return lookedAt;
+         if (technique != MuramasaSwordTechnique.SPINNING_SLASH) return null;
+      }
+      if (attacker instanceof SenkoMuramasaEntity entity && entity.getTarget() != null
+         && entity.distanceTo(entity.getTarget()) <= technique.range() && entity.hasLineOfSight(entity.getTarget())
+         && EntityUtils.isValidCombatTarget(entity, entity.getTarget())) return entity.getTarget();
+      if (technique != MuramasaSwordTechnique.SPINNING_SLASH) return null;
+      return attacker.level().getEntitiesOfClass(LivingEntity.class, attacker.getBoundingBox().inflate(technique.range()),
+         candidate -> candidate != attacker && candidate.isAlive() && EntityUtils.isValidCombatTarget(attacker, candidate))
+         .stream().findFirst().orElse(null);
+   }
+
+   private static boolean hasSword(LivingEntity entity) {
+      return entity.getMainHandItem().getItem() instanceof SwordItem;
+   }
+
+   private static double currentMana(LivingEntity entity) {
+      if (entity instanceof SenkoMuramasaEntity servant) return servant.getCurrentMp();
+      if (entity instanceof ServerPlayer player) return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().mana();
+      return 0.0;
    }
 
    private static boolean hasDivinity(SenkoMuramasaEntity entity) {

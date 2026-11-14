@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.nightingale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,22 +23,37 @@ class NightingaleResourcesTest {
       JsonObject definition = json("data/typemoonworld/servant/definitions/nightingale.json");
       JsonObject params = definition.getAsJsonObject("parameters");
       assertEquals("A", params.get("endurance").getAsString()); assertTrue(params.get("endurance_plus").getAsBoolean());
+      assertEquals("B", params.get("strength").getAsString()); assertTrue(params.get("strength_plus").getAsBoolean());
+      assertEquals("B", params.get("agility").getAsString()); assertTrue(params.get("agility_plus").getAsBoolean());
       assertEquals("D", params.get("magic").getAsString()); assertTrue(params.get("magic_plus").getAsBoolean());
+      assertEquals("A", params.get("luck").getAsString()); assertTrue(params.get("luck_plus").getAsBoolean());
+      assertEquals("D", params.get("noble_phantasm_rank").getAsString());
+      assertEquals("human", definition.get("faction").getAsString());
       assertEquals("nightingale_pledge", definition.get("noble_phantasm").getAsString());
-      for (String trait : List.of("servant", "female", "berserker", "human", "humanoid", "living_human", "human_kind", "lawful", "good", "nurse", "lamp_angel", "crimean_angel")) {
+      for (String trait : List.of("servant", "female", "human", "humanoid", "human_kind", "lawful", "good", "seven_knights", "ea_special")) {
          assertTrue(definition.getAsJsonArray("traits").toString().contains(trait), trait);
       }
+      assertEquals(9, definition.getAsJsonArray("traits").size());
       JsonObject ai = json("data/typemoonworld/servant/ai/nightingale_ai.json");
       assertEquals(5.0, ai.getAsJsonObject("movement").get("follow_distance").getAsDouble());
       assertEquals(10.0, ai.getAsJsonObject("movement").get("wander_radius").getAsDouble());
       assertEquals(13.0, ai.getAsJsonObject("combat").get("preferred_attack_distance").getAsDouble());
       assertEquals(0.85, ai.getAsJsonObject("command").get("base_obedience_rate").getAsDouble());
-      for (String file : List.of("mad_enhancement_ex_nightingale", "steel_nursing_a", "human_understanding_a", "angel_cry_ex")) {
+      for (String file : List.of("mad_enhancement_ex_nightingale", "steel_nursing_a", "angel_cry_ex")) {
          assertEquals(file, json("data/typemoonworld/servant/skills/" + file + ".json").get("id").getAsString());
       }
+      assertFalse(definition.getAsJsonArray("skills").toString().contains("human_understanding_a"));
       JsonObject np = json("data/typemoonworld/servant/noble_phantasms/nightingale_pledge.json");
+      assertEquals("C", np.get("rank").getAsString()); assertEquals("anti_army", np.get("type").getAsString());
       assertEquals(50, np.get("mp_cost").getAsInt()); assertEquals(20, np.get("windup_ticks").getAsInt());
       assertEquals(100, np.get("duration_ticks").getAsInt());
+      JsonObject effect = np.getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params");
+      assertEquals(40.0, effect.get("radius").getAsDouble());
+      assertEquals(100, effect.get("max_entities").getAsInt());
+      JsonObject understanding = json("data/typemoonworld/servant/skills/human_understanding_a.json")
+         .getAsJsonArray("effects").get(0).getAsJsonObject().getAsJsonObject("params");
+      assertEquals(2.0, understanding.get("damage_multiplier").getAsDouble());
+      assertEquals(0.5, understanding.get("defense_multiplier").getAsDouble());
       json("data/typemoonworld/servant/actions/nightingale.json");
       json("data/typemoonworld/tags/entity_type/nightingale_humanoids.json");
       json("data/typemoonworld/damage_type/nightingale_healing_reversal.json");
@@ -123,11 +139,27 @@ class NightingaleResourcesTest {
       JsonObject armorGeo = json("assets/typemoonworld/geo/servant_card_nightingale.geo.json");
       assertEquals("geometry.servant_card_nightingale", armorGeo.getAsJsonArray("minecraft:geometry").get(0)
          .getAsJsonObject().getAsJsonObject("description").get("identifier").getAsString());
+      JsonObject geometry = armorGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject();
+      assertTrue(geometry.getAsJsonArray("bones").toString().contains("\"name\":\"hair\""));
+      assertTrue(geometry.getAsJsonArray("bones").toString().contains("\"name\":\"jie\""));
+      JsonObject hairGeo = json("assets/typemoonworld/geo/servant_hair_nightingale.geo.json");
+      assertTrue(hairGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
+         .getAsJsonArray("bones").toString().contains("\"name\":\"hair\""));
+      assertTrue(hairGeo.getAsJsonArray("minecraft:geometry").get(0).getAsJsonObject()
+         .getAsJsonArray("bones").toString().contains("\"name\":\"jie\""));
+      assertTrue(Files.exists(RESOURCES.resolve("assets/typemoonworld/textures/entity/servant_hair_nightingale.png")));
+      json("assets/typemoonworld/models/item/servant_card_nightingale_head.json");
       var armorTexture = ImageIO.read(RESOURCES.resolve(
          "assets/typemoonworld/textures/models/armor/servant_card_nightingale.png").toFile());
       assertEquals(128, armorTexture.getWidth()); assertEquals(128, armorTexture.getHeight());
       assertTrue(json("assets/typemoonworld/animations/servant_card_nightingale.animation.json")
          .getAsJsonObject("animations").has("1"));
+      String items = Files.readString(JAVA.resolve("item/ModItems.java"));
+      String armorRenderer = Files.readString(JAVA.resolve("client/renderer/ServantCardArmorRenderer.java"));
+      String servantEntity = Files.readString(JAVA.resolve("servant/entity/ServantEntity.java"));
+      assertTrue(items.contains("SERVANT_CARD_NIGHTINGALE_HEAD"));
+      assertTrue(armorRenderer.contains("\"nightingale\""));
+      assertTrue(servantEntity.contains("\"baobhan_sith\", \"jeanne_alter\", \"nightingale\" -> true"));
    }
 
    private static JsonObject json(String relative) throws Exception {

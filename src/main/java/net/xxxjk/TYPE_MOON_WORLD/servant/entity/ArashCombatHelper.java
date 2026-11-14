@@ -21,6 +21,7 @@ import net.minecraft.util.Mth;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantEngagementService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -48,6 +49,9 @@ public final class ArashCombatHelper {
    private static final String TAG_CHARGE_UNTIL = "ArashArrowChargeUntil";
    private static final String TAG_CHARGE_START = "ArashArrowChargeStart";
    private static final String TAG_CHARGE_KIND = "ArashArrowChargeKind";
+   private static final String TAG_NEXT_CLOSE_VOLLEY = "ArashNextCloseVolley";
+   private static final String TAG_CLOSE_VOLLEY_REMAINING = "ArashCloseVolleyRemaining";
+   private static final String TAG_CLOSE_VOLLEY_NEXT_SHOT = "ArashCloseVolleyNextShot";
    private static final String TAG_NEXT_RETREAT = "ArashNextRetreatSkill";
    private static final String TAG_NEXT_MELEE = "ArashNextMeleeSkill";
 
@@ -113,6 +117,8 @@ public final class ArashCombatHelper {
          return;
       }
 
+      if (tickCloseRangeVolley(level, arash, target, targetDistance, now, lineOfSight)) return;
+
       if (arash.getPersistentData().contains(TAG_CHARGE_UNTIL)) {
          if (now < arash.getPersistentData().getLong(TAG_CHARGE_UNTIL)) {
             if (arash.getPersistentData().getLong(TAG_CROSSOVER_UNTIL) <= now
@@ -130,11 +136,16 @@ public final class ArashCombatHelper {
             arash.setCurrentMp(arash.getCurrentMp() - ArashCombatRules.RAIN_MANA);
             arash.getPersistentData().putLong(TAG_NEXT_RAIN, now + ArashCombatRules.RAIN_COOLDOWN);
             fireRain(level, arash, target, chargeTicks);
+            ArashBowItem.animateBow(arash, arash.getMainHandItem(), "release");
+            Vec3 release = arash.getEyePosition().add(arash.getLookAngle().scale(0.65));
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, release.x, release.y, release.z,
+               32, 0.2, 0.2, 0.2, 0.15);
             arash.triggerNamedActionAnimation("arrow_rain");
          } else if (!rain && arash.consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)) {
             arash.getPersistentData().putLong(TAG_NEXT_NORMAL, now + ArashCombatRules.NORMAL_ARROW_INTERVAL);
             fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL,
                ArashCombatRules.ARROW_MIN_DAMAGE, 3.2, chargeTicks);
+            ArashBowItem.animateBow(arash, arash.getMainHandItem(), "release");
             arash.triggerNamedActionAnimation("bow_release");
          }
          ServantVoiceHelper.tryPlayAttack(arash);
@@ -183,6 +194,56 @@ public final class ArashCombatHelper {
       }
    }
 
+   private static boolean tickCloseRangeVolley(ServerLevel level, ArashEntity arash, LivingEntity target,
+                                                double distance, long now, boolean lineOfSight) {
+      var data = arash.getPersistentData();
+      int remaining = data.getInt(TAG_CLOSE_VOLLEY_REMAINING);
+      if (remaining > 0) {
+         if (distance <= ArashCombatRules.CROSSOVER_TRIGGER_RANGE
+            || distance > ArashCombatRules.CLOSE_VOLLEY_MAX_RANGE || !lineOfSight) {
+            data.remove(TAG_CLOSE_VOLLEY_REMAINING);
+            data.remove(TAG_CLOSE_VOLLEY_NEXT_SHOT);
+            return false;
+         }
+         if (now >= data.getLong(TAG_CLOSE_VOLLEY_NEXT_SHOT)) {
+            if (!fireCloseRangeVolleyArrow(level, arash, target)) {
+               data.remove(TAG_CLOSE_VOLLEY_REMAINING);
+               data.remove(TAG_CLOSE_VOLLEY_NEXT_SHOT);
+               return false;
+            }
+            remaining--;
+            if (remaining <= 0) {
+               data.remove(TAG_CLOSE_VOLLEY_REMAINING);
+               data.remove(TAG_CLOSE_VOLLEY_NEXT_SHOT);
+            } else {
+               data.putInt(TAG_CLOSE_VOLLEY_REMAINING, remaining);
+               data.putLong(TAG_CLOSE_VOLLEY_NEXT_SHOT, now + ArashCombatRules.CLOSE_VOLLEY_SHOT_INTERVAL);
+            }
+         }
+         return true;
+      }
+
+      if (!lineOfSight || !ArashCombatRules.canStartCloseRangeVolley(distance, now,
+         data.getLong(TAG_NEXT_CLOSE_VOLLEY), arash.getCraftedArrowCount())) return false;
+
+      interruptCharge(arash);
+      data.putLong(TAG_NEXT_CLOSE_VOLLEY, now + ArashCombatRules.CLOSE_VOLLEY_COOLDOWN);
+      data.putInt(TAG_CLOSE_VOLLEY_REMAINING, ArashCombatRules.CLOSE_VOLLEY_ARROW_COUNT - 1);
+      data.putLong(TAG_CLOSE_VOLLEY_NEXT_SHOT, now + ArashCombatRules.CLOSE_VOLLEY_SHOT_INTERVAL);
+      fireCloseRangeVolleyArrow(level, arash, target);
+      return true;
+   }
+
+   private static boolean fireCloseRangeVolleyArrow(ServerLevel level, ArashEntity arash, LivingEntity target) {
+      if (!arash.consumeCraftedArrows(ArashCombatRules.NORMAL_ARROW_COST)) return false;
+      fireDirect(level, arash, target, ArashParticleArrowEntity.NORMAL,
+         ArashCombatRules.ARROW_MIN_DAMAGE, 3.2, 0);
+      ArashBowItem.animateBow(arash, arash.getMainHandItem(), "release");
+      arash.triggerNamedActionAnimation("bow_release");
+      ServantVoiceHelper.tryPlayAttack(arash);
+      return true;
+   }
+
    public static void interruptCharge(ArashEntity arash) {
       if (!arash.getPersistentData().contains(TAG_CHARGE_UNTIL)) return;
       clearCharge(arash);
@@ -199,12 +260,16 @@ public final class ArashCombatHelper {
       arash.getPersistentData().putInt(TAG_CHARGE_KIND, rain ? 1 : 0);
       if (arash.getMainHandItem().is(ModItems.ARASH_BOW.get()) && !arash.isUsingItem()) {
          arash.startUsingItem(InteractionHand.MAIN_HAND);
+         ArashBowItem.animateBow(arash, arash.getMainHandItem(), "draw");
       }
       arash.triggerNamedActionAnimation("bow_draw_loop");
    }
 
    private static void clearCharge(ArashEntity arash) {
-      if (arash.isUsingItem() && arash.getUseItem().is(ModItems.ARASH_BOW.get())) arash.stopUsingItem();
+      if (arash.isUsingItem() && arash.getUseItem().is(ModItems.ARASH_BOW.get())) {
+         ArashBowItem.animateBow(arash, arash.getUseItem(), "cancel");
+         arash.stopUsingItem();
+      }
       arash.getPersistentData().remove(TAG_CHARGE_START);
       arash.getPersistentData().remove(TAG_CHARGE_UNTIL);
       arash.getPersistentData().remove(TAG_CHARGE_KIND);
@@ -244,14 +309,13 @@ public final class ArashCombatHelper {
       Vec3 direction = ArashAimHelper.leadDirection(start, target, speed);
       ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, arash, variant, damage, chargeTicks);
       arrow.setPos(start.x, start.y, start.z);
-      if (variant == ArashParticleArrowEntity.NORMAL && start.distanceTo(target.position()) >= 48.0) {
+      if (variant == ArashParticleArrowEntity.NORMAL) {
          double flightTicks = Math.min(ArashCombatRules.ARROW_MAX_FLIGHT_TICKS,
             ArashAimHelper.estimateFlightTicks(start.distanceTo(target.position()), speed));
          Vec3 predicted = target.position().add(ArashAimHelper.predictionOffset(target.getDeltaMovement(), flightTicks))
             .add(0.0, target.getBbHeight() * 0.5, 0.0);
          Vec3 delta = predicted.subtract(start);
-         arrow.setDeltaMovement(delta.x / flightTicks, delta.y / flightTicks + 0.015 * flightTicks,
-            delta.z / flightTicks);
+         arrow.setDeltaMovement(ArashAimHelper.ballisticVelocity(delta, flightTicks, ArashCombatRules.NORMAL_ARROW_GRAVITY));
          arrow.setBallistic(true);
       } else {
          arrow.setDeltaMovement(direction.scale(speed));
@@ -264,9 +328,10 @@ public final class ArashCombatHelper {
       for (int i = 0; i < ArashCombatRules.RAIN_ARROW_COUNT; i++) {
          double initialHorizontal = target.position().subtract(start).horizontalDistance();
          double flightTicks = Math.max(12.0, initialHorizontal / 2.65);
+         double angle = arash.getRandom().nextDouble() * Math.PI * 2.0;
+         double spread = Math.sqrt(arash.getRandom().nextDouble()) * ArashCombatRules.RAIN_SPREAD_RADIUS;
          Vec3 predicted = target.position().add(ArashAimHelper.predictionOffset(target.getDeltaMovement(), flightTicks))
-            .add((arash.getRandom().nextDouble() - 0.5) * 5.0, target.getBbHeight() * 0.5,
-               (arash.getRandom().nextDouble() - 0.5) * 5.0);
+            .add(Math.cos(angle) * spread, target.getBbHeight() * 0.5, Math.sin(angle) * spread);
          Vec3 delta = predicted.subtract(start);
          double horizontal = Math.max(1.0, Math.sqrt(delta.x * delta.x + delta.z * delta.z));
          double ticks = Math.max(12.0, horizontal / 2.65);

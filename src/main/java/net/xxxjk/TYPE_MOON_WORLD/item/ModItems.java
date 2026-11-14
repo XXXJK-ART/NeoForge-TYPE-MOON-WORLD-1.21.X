@@ -540,6 +540,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_LEGS = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_HEAD = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_HEAD = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
@@ -1589,7 +1590,8 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()
                 : legs ? SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
-            case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
+            case "nightingale" -> head ? SERVANT_CARD_NIGHTINGALE_HEAD.get()
+                : legs ? SERVANT_CARD_NIGHTINGALE_LEGS.get() : SERVANT_CARD_NIGHTINGALE_CHEST.get();
             case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
             case "iskandar" -> slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_ISKANDAR_CHEST.get()
                 : legs ? SERVANT_CARD_ISKANDAR_LEGS.get()

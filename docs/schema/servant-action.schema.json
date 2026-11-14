@@ -17,6 +17,7 @@
           "maximum_range": {"type": "number", "minimum": 0},
           "mana_cost": {"type": "number", "minimum": 0},
           "stamina_cost": {"type": "number", "minimum": 0},
+          "cooldown_ticks": {"type": "integer", "minimum": 0},
           "terrain_impact": {"enum": ["none", "chip", "small", "medium", "heavy", "np"]},
           "maneuver": {
             "type": "object",

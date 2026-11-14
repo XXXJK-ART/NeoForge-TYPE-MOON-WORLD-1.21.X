@@ -25,6 +25,7 @@
     "client.NeatHealthBarRendererMixin",
     "client.MixinMinecraft",
     "client.LocalPlayerHakuryuDismountMixin",
+    "client.LocalPlayerArashBowUseMixin",
     "client.PlayerModelMixin",
     "client.SasakiTsubameFacingMixin",
     "client.SasakiTsubameHeldItemMixin",

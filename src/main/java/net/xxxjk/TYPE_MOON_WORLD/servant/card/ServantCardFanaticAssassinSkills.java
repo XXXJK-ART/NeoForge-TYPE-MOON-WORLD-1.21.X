@@ -75,8 +75,10 @@ public final class ServantCardFanaticAssassinSkills {
       if (!toxin) player.getPersistentData().remove(TOXIN_UNTIL);
       FanaticAssassinCombatHelper.spawnCardSustainedTechniqueEffects(player, level, temperature, nerves, toxin);
 
-      long lastCleanse = player.getPersistentData().getLong(LAST_MENTAL_CLEANSE);
-      if (now - lastCleanse >= FanaticAssassinRules.MENTAL_CLEANSE_INTERVAL) {
+      if (!player.getPersistentData().contains(LAST_MENTAL_CLEANSE)) {
+         player.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
+      } else if (FanaticAssassinRules.shouldCleanseMentalEffects(
+         now, player.getPersistentData().getLong(LAST_MENTAL_CLEANSE))) {
          cleanseMentalEffects(player);
          player.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
       }

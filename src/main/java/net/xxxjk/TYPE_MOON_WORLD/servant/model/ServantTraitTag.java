@@ -9,6 +9,7 @@ public enum ServantTraitTag {
    GIANT("giant"),
    MECHANICAL("mechanical"),
    FAIRY_TALE("fairy_tale"),
+   FAIRY("fairy"),
    MOUNTED("mounted"),
    CHALDEAN("chaldean"),
    EARTH("earth"),

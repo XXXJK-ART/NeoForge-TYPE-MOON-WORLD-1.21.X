@@ -34,6 +34,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.OpenMuramasaForgeScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaSwordTechnique;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -232,6 +233,10 @@ public final class ServantCardSenkoMuramasaSkills {
          level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 120, 8.0, 1.2, 8.0, 0.08);
       });
       return true;
+   }
+
+   public static boolean performSwordTechnique(ServerPlayer player, MuramasaSwordTechnique technique) {
+      return MuramasaCombatHelper.performSwordTechnique(player, technique);
    }
 
    public static boolean performNoblePhantasm(ServerPlayer player) {

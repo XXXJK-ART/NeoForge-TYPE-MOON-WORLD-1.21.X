@@ -95,4 +95,14 @@ class ServantActionResourcesTest {
          JsonParser.parseString(json)).result().orElseThrow();
       assertEquals(20, ServantPlannedActionExecutor.cooldownTicks(action));
    }
+
+   @Test
+   void configuredActionCooldownOverridesThePhaseDerivedDefault() {
+      String json = "{\"id\":\"typemoonworld:test/configured\",\"tags\":[\"noble_phantasm\"],"
+         + "\"cooldown_ticks\":1800,\"timing\":{\"windup\":5,\"active\":4,\"recovery\":7}}";
+      AiActionDescriptor action = AiActionDescriptor.CODEC.parse(JsonOps.INSTANCE,
+         JsonParser.parseString(json)).result().orElseThrow();
+      assertEquals(1800, action.cooldownTicks());
+      assertEquals(1800, ServantPlannedActionExecutor.cooldownTicks(action));
+   }
 }

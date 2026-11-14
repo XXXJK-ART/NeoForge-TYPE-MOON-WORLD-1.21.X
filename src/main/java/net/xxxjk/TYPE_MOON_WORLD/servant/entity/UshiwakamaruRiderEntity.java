@@ -318,4 +318,12 @@ public class UshiwakamaruRiderEntity extends ServantEntity {
    public void triggerSpiderSlayerAnimation() {
       this.triggerNamedActionAnimation("spider_slayer");
    }
+
+   public void triggerSwordAction(int networkId) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction action =
+         net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction.byNetworkId(networkId);
+      if (action != null) {
+         this.triggerNamedActionAnimation("sasaki_kojiro_" + action.animationName());
+      }
+   }
 }

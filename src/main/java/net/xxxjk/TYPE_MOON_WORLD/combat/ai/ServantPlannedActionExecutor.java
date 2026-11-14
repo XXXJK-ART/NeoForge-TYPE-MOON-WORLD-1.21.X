@@ -183,6 +183,7 @@ public final class ServantPlannedActionExecutor {
    }
 
    static int cooldownTicks(AiActionDescriptor action) {
+      if (action.cooldownTicks() > 0) return action.cooldownTicks();
       return Math.max(8, action.timing().windupTicks() + action.timing().activeTicks()
          + action.timing().recoveryTicks() + action.maneuver().comboCost() * 2);
    }

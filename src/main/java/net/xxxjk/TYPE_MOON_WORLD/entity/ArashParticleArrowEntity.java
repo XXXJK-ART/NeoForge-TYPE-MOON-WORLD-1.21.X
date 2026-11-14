@@ -26,7 +26,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.Config;
-import net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
 import org.joml.Vector3f;
 import java.util.HashSet;
@@ -74,8 +73,8 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
       this.entityData.set(CHARGE_TICKS, Math.max(0, Math.min(ArashCombatRules.ARROW_MAX_CHARGE_TICKS, chargeTicks)));
       this.entityData.set(ARASH_SPECIAL, arashSpecial);
       this.entityData.set(DAMAGE, arashSpecial
-         ? ArashCombatRules.arrowDamage(this.getChargeTicks(), 0) : damage);
-      this.setNoGravity(variant != RAIN);
+         ? scaledArrowDamage() : damage);
+      this.setNoGravity(variant != RAIN && !(arashSpecial && variant == NORMAL));
    }
 
    @Override
@@ -100,12 +99,24 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    public void setChargeTicks(int ticks) {
       this.entityData.set(CHARGE_TICKS, Math.max(0, Math.min(ArashCombatRules.ARROW_MAX_CHARGE_TICKS, ticks)));
       if (this.entityData.get(ARASH_SPECIAL)) {
-         this.entityData.set(DAMAGE, ArashCombatRules.arrowDamage(this.getChargeTicks(), this.getFlightTicks()));
+         this.entityData.set(DAMAGE, scaledArrowDamage());
       }
+   }
+
+   private float scaledArrowDamage() {
+      return this.getVariant() == RAIN
+         ? ArashCombatRules.rainArrowDamage(this.getChargeTicks(), this.getFlightTicks())
+         : ArashCombatRules.arrowDamage(this.getChargeTicks(), this.getFlightTicks());
    }
 
    @Override
    protected Item getDefaultItem() { return Items.ARROW; }
+
+   @Override
+   protected double getDefaultGravity() {
+      return this.isArashSpecial() && this.getVariant() == NORMAL
+         ? ArashCombatRules.NORMAL_ARROW_GRAVITY : super.getDefaultGravity();
+   }
 
    @Override
    protected boolean canHitEntity(Entity entity) {
@@ -117,16 +128,19 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
 
    @Override
    public void tick() {
-      this.setNoGravity(this.getVariant() != RAIN && !this.entityData.get(BALLISTIC));
+      this.setNoGravity(this.getVariant() != RAIN && !(this.isArashSpecial() && this.getVariant() == NORMAL)
+         && !this.entityData.get(BALLISTIC));
       Vec3 previousPosition = this.position();
       if (this.level() instanceof ServerLevel level) {
-         if (this.getFlightTicks() >= ArashCombatRules.ARROW_MAX_FLIGHT_TICKS) {
+         int lifetime = this.getVariant() == RAIN ? ArashCombatRules.RAIN_MAX_LIFETIME_TICKS
+            : ArashCombatRules.ARROW_MAX_LIFETIME_TICKS;
+         if (this.getFlightTicks() >= lifetime) {
             this.discard();
             return;
          }
          this.entityData.set(FLIGHT_TICKS, this.getFlightTicks() + 1);
          if (this.entityData.get(ARASH_SPECIAL)) {
-            this.entityData.set(DAMAGE, ArashCombatRules.arrowDamage(this.getChargeTicks(), this.getFlightTicks()));
+            this.entityData.set(DAMAGE, scaledArrowDamage());
          }
          if (this.getVariant() == RAIN) {
             applyHoming(level);
@@ -215,6 +229,8 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    }
 
    private void spawnFlightTrail() {
+      // A stopped projectile has no trail; accumulated particles would hide its 3D core.
+      if (this.getDeltaMovement().lengthSqr() < 1.0E-8) return;
       int variant = this.getVariant();
       if (variant != SMALL_ENERGY && variant != LARGE_ENERGY) {
          double progress = Math.min(1.0, this.getFlightTicks() / (double)ArashCombatRules.ARROW_MAX_FLIGHT_TICKS);
@@ -242,15 +258,14 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
          Vec3 center = position.subtract(forward.scale(layer * (heavy ? 0.26 : 0.2)));
          double layerRadius = radius * (1.0 - layer / (double)(trailLayers + 2));
          addFlightParticle(arrowTrailParticle(progress, heavy), center);
-         addFlightParticle(heavy ? DARK_RED : layer % 2 == 0 ? WHITE : GOLD, center);
+         addFlightParticle(layer % 2 == 0 ? WHITE : arrowTrailParticle(progress, heavy), center);
          for (int i = 0; i < ringPoints; i++) {
             double angle = Math.PI * 2.0 * i / ringPoints + this.tickCount * 0.22 + layer * 0.35;
             Vec3 point = center.add(side.scale(Math.cos(angle) * layerRadius)).add(up.scale(Math.sin(angle) * layerRadius));
-            addFlightParticle(heavy && progress > 0.66 ? (i % 3 == 0 ? DARK_RED : HEAVY_RED)
-               : i % 3 == 0 ? GOLD : arrowTrailParticle(progress, false), point);
+            addFlightParticle(arrowTrailParticle(progress, heavy), point);
          }
       }
-      addFlightParticle(heavy ? ParticleTypes.FLAME : ParticleTypes.END_ROD, position);
+      addFlightParticle(ParticleTypes.END_ROD, position);
       if (heavy) addFlightParticle(ParticleTypes.ELECTRIC_SPARK, position);
    }
 
@@ -260,9 +275,13 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
 
    private net.minecraft.core.particles.ParticleOptions arrowTrailParticle(double progress, boolean heavy) {
       float scale = ArashCombatRules.arrowTrailScale(this.getFlightTicks(), heavy);
-      if (progress < 0.34) return new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), scale);
-      if (progress < 0.67) return new DustParticleOptions(new Vector3f(0.2F, 1.0F, 0.42F), scale);
-      return new DustParticleOptions(new Vector3f(1.0F, 0.04F, 0.015F), scale);
+      return stageParticle(scale);
+   }
+
+   private DustParticleOptions stageParticle(float scale) {
+      int color = ArashCombatRules.arrowColor(this.getFlightTicks());
+      return new DustParticleOptions(new Vector3f(((color >> 16) & 255) / 255.0F,
+         ((color >> 8) & 255) / 255.0F, (color & 255) / 255.0F), scale);
    }
 
    private void spawnNormalTrail(double progress) {
@@ -306,7 +325,9 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
    private void impact(Vec3 impactPosition, LivingEntity directTarget) {
       if (this.level() instanceof ServerLevel level) {
          float damage = this.entityData.get(DAMAGE);
-         double radius = this.entityData.get(ARASH_SPECIAL) ? ArashCombatRules.arrowBlastRadius(damage) : 0.0;
+         // Rain's lower damage cap must not shrink its blast or terrain footprint.
+         float blastPower = ArashCombatRules.arrowDamage(this.getChargeTicks(), this.getFlightTicks());
+         double radius = this.entityData.get(ARASH_SPECIAL) ? ArashCombatRules.arrowBlastRadius(blastPower) : 0.0;
          if (directTarget != null && canHitEntity(directTarget)) applyArrowDamage(directTarget, damage);
          if (radius > 0.0) {
             AABB blast = new AABB(impactPosition, impactPosition).inflate(radius);
@@ -317,17 +338,18 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
                if (offset.y >= 0.0 && offset.lengthSqr() <= radius * radius) applyArrowDamage(target, damage);
             }
          }
-         if (this.entityData.get(ARASH_SPECIAL) && damage > ArashCombatRules.ARROW_MIN_DAMAGE) {
-            destroyShallowImpactTerrain(level, impactPosition, damage);
+         if (this.entityData.get(ARASH_SPECIAL) && blastPower > ArashCombatRules.ARROW_MIN_DAMAGE) {
+            destroyShallowImpactTerrain(level, impactPosition, blastPower);
          }
          int count = this.getVariant() == LARGE_ENERGY ? 120 : this.getVariant() == SMALL_ENERGY ? 70 : 14;
          double spread = this.getVariant() == LARGE_ENERGY ? 1.1 : this.getVariant() == SMALL_ENERGY ? 0.65 : 0.35;
-         level.sendParticles(this.getVariant() == LARGE_ENERGY ? HEAVY_RED : GREEN,
+         level.sendParticles(this.isArashSpecial() ? stageParticle(2.2F) : this.getVariant() == LARGE_ENERGY ? HEAVY_RED : GREEN,
             this.getX(), this.getY(), this.getZ(), count, spread, spread, spread, 0.12);
          if (this.getVariant() == SMALL_ENERGY || this.getVariant() == LARGE_ENERGY) {
-            level.sendParticles(this.getVariant() == LARGE_ENERGY ? DARK_RED : GOLD,
+            level.sendParticles(this.isArashSpecial() ? stageParticle(2.6F) : this.getVariant() == LARGE_ENERGY ? DARK_RED : GOLD,
                this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.1);
-            level.sendParticles(this.getVariant() == LARGE_ENERGY ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
+            level.sendParticles(this.isArashSpecial() ? ParticleTypes.END_ROD
+                  : this.getVariant() == LARGE_ENERGY ? ParticleTypes.FLAME : ParticleTypes.END_ROD,
                this.getX(), this.getY(), this.getZ(), count / 2, spread, spread, spread, 0.15);
          }
          level.sendParticles(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(),
@@ -347,19 +369,10 @@ public final class ArashParticleArrowEntity extends ThrowableItemProjectile {
 
    private void destroyShallowImpactTerrain(ServerLevel level, Vec3 center, float damage) {
       int depth = ArashCombatRules.arrowTerrainDepth(damage);
-      double radius = ArashCombatRules.arrowBlastRadius(damage);
+      double radius = ArashCombatRules.arrowTerrainRadius(damage);
       if (!Config.terrainDestructionEnabled || depth <= 0 || radius <= 0.0) return;
       // Use the shared budget and protected-block rules, especially for 100/300-arrow rain.
-      DeferredTerrainDestruction.queueSphereDetailed(level, center, radius, 80.0F, 6,
-         (world, pos, distanceSqr, blastRadius, origin) -> {
-            int belowCenter = net.minecraft.util.Mth.floor(origin.y) - pos.getY();
-            if (belowCenter <= 0) return true;
-            double horizontalSqr = Math.pow(pos.getX() - Math.floor(origin.x), 2)
-               + Math.pow(pos.getZ() - Math.floor(origin.z), 2);
-            int columnDepth = Math.max(1, (int)Math.round(depth * Math.sqrt(Math.max(0.0,
-               1.0 - horizontalSqr / (blastRadius * blastRadius)))));
-            return belowCenter <= columnDepth && CombatTerrainProtection.canRemoveWithinSurfaceDepth(world, pos, depth);
-         }, null, null);
+      DeferredTerrainDestruction.queueRadialShallowImpact(level, center, radius, depth, 80.0F);
    }
 
    private void applyArrowDamage(LivingEntity target, float damage) {

@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lishuwen.LiShuwenSeasonedService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -37,6 +38,7 @@ public final class ServantCardLiShuwenSkills {
          clear(player);
          return;
       }
+      LiShuwenSeasonedService.tick(player);
       if (player.tickCount % 60 == 0 && player.getHealth() < player.getMaxHealth()) {
          player.heal(1.0F);
       }
@@ -52,6 +54,7 @@ public final class ServantCardLiShuwenSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      LiShuwenSeasonedService.clear(player);
       player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
    }
 

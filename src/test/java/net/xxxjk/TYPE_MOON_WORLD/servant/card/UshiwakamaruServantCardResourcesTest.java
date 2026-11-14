@@ -22,6 +22,18 @@ class UshiwakamaruServantCardResourcesTest {
    }
 
    @Test
+   void definitionHasRequestedTraitsAndNoblePhantasmRank() throws Exception {
+      try (var stream = resource("/data/typemoonworld/servant/definitions/ushiwakamaru_rider.json")) {
+         var json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
+         var traits = json.getAsJsonArray("traits").toString();
+         for (String trait : new String[]{"servant", "ea_special", "human_kind", "human", "chaotic", "balanced", "female", "humanoid", "riding", "beloved", "genji", "fairy_tale"})
+            assertTrue(traits.contains("\"" + trait + "\""), trait);
+         assertTrue(!traits.contains("living_human"));
+         assertEquals("A+", json.get("noble_phantasm_rank").getAsString());
+      }
+   }
+
+   @Test
    void cardFacesHaveTheExpectedCompressedDimensions() throws Exception {
       assertDimensions("/assets/typemoonworld/textures/item/servant_cards/ushiwakamaru_rider_card.png", 181, 256);
       assertDimensions("/assets/typemoonworld/textures/item/card_faces_3d/servant/ushiwakamaru_rider_card.png", 292, 500);

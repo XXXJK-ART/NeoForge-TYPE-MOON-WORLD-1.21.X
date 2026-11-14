@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import net.minecraft.world.phys.Vec3;
 
 class ServantCardUshiwakamaruRulesTest {
    @Test
@@ -26,6 +27,24 @@ class ServantCardUshiwakamaruRulesTest {
    @Test
    void spiderSlayerUsesTheDemonicBonus() {
       assertEquals(100.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(false));
-      assertEquals(150.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(true));
+      assertEquals(200.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(true));
    }
+
+   @Test
+   void spiderSlayerDamageFallsOffWithDistanceBeforeApplyingTraitMultiplier() {
+      assertEquals(100.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(false, 0.0));
+      assertEquals(75.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(false, 7.5));
+      assertEquals(50.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(false, 15.0));
+      assertEquals(100.0F, ServantCardUshiwakamaruRules.spiderSlayerDamage(true, 15.0));
+   }
+
+   @Test
+   void eightBoatLeapIsBoundedAndRequiresAValidLanding() {
+      assertEquals(32.0, ServantCardUshiwakamaruRules.eightBoatLeapDistance(40.0, true, true));
+      assertEquals(0.0, ServantCardUshiwakamaruRules.eightBoatLeapDistance(32.0, false, true));
+      assertEquals(0.0, ServantCardUshiwakamaruRules.eightBoatLeapDistance(32.0, true, false));
+      assertEquals(new Vec3(32.0, 0.0, 0.0), ServantCardUshiwakamaruRules.eightBoatLeapVector(
+         Vec3.ZERO, new Vec3(40.0, 0.0, 0.0), 1.0));
+   }
+
 }
