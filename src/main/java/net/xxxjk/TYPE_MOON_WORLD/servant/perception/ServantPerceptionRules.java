@@ -30,6 +30,11 @@ public final class ServantPerceptionRules {
       return entity != null && entity.isAlive() && !(entity instanceof Animal) && !(entity instanceof Villager);
    }
 
+   public static boolean shouldIncludeTarget(String servantCardId, boolean currentVehicle) {
+      return !currentVehicle || !"zhao_yun_rider".equals(servantCardId)
+         && !"ushiwakamaru_rider".equals(servantCardId);
+   }
+
    public static RelationColor color(Entity observer, Entity target) {
       if (target instanceof Player) return RelationColor.PLAYER;
       if (observer != null && (observer.isAlliedTo(target) || target.isAlliedTo(observer))) return RelationColor.FRIENDLY;

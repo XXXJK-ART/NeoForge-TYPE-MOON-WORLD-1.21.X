@@ -144,6 +144,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (!(level() instanceof ServerLevel server)) return;
       int nextPhase = Math.max(getCombatPhase(), computeCombatPhase());
       if (nextPhase != getCombatPhase()) setCombatPhase(nextPhase);
+      if (getCombatPhase() >= 2) getPersistentData().putBoolean(TAG_MOUNT_UNLOCKED, true);
       ensureHakuryu(server);
       updateRidingArmor();
       tickAokoSecondStrikes(server);
@@ -179,6 +180,14 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          // loop. Prevent ordinary melee/navigation AI from competing with it.
          getNavigation().stop();
          setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      if (isChangbanpoCharging()) {
+         getNavigation().stop();
+         if (getTarget() != null && getTarget().isAlive() && level() instanceof ServerLevel level) {
+            tickDedicatedCombat(getTarget(), level.getGameTime());
+         }
+         if (isPassenger()) setDeltaMovement(Vec3.ZERO);
          return;
       }
       super.customServerAiStep();
@@ -367,6 +376,18 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (isChangbanpoActive() || isPerformingAction()) return;
 
       double distance = distanceTo(target);
+      if (isChangbanpoCharging()) {
+         if (getVehicle() instanceof ZhaoYunHakuryuEntity mount) {
+            Vec3 direction = horizontalDirection(target);
+            if (direction != null) {
+               mount.beginCombatPass(direction, distance + 8.0,
+                  mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.6);
+            }
+         } else if (distance > 4.0) {
+            getNavigation().moveTo(target, 1.15);
+         }
+         return;
+      }
       if (getVehicle() instanceof ZhaoYunHakuryuEntity mount) {
          // Hakuryu owns all mounted steering, including the committed pass.
          // Orbit recovery must never inject a second velocity or pin it in melee.
@@ -376,10 +397,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       }
       updateOrbitRecovery(target, distance, now);
       boolean forceMelee = getPersistentData().getLong(TAG_FORCE_MELEE_UNTIL) > now;
-      if (isChangbanpoCharging()) {
-         if (!isPassenger() && distance > 4.0) getNavigation().moveTo(target, 1.15);
-         return;
-      }
       if (distance <= 5.5 && now - getPersistentData().getLong("ZhaoYunLastBasicAttack") >= 10L) {
          getPersistentData().putLong("ZhaoYunLastBasicAttack", now);
          resetOrbitRecovery();
@@ -914,7 +931,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0.0F && hardness < 75.0F) {
-               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
+               level.destroyBlock(pos, false, mount);
                if (++broken >= maxBroken) break;
             }
          }

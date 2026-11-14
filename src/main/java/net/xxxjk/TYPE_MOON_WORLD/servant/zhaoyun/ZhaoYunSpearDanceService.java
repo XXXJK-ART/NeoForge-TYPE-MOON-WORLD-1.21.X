@@ -43,7 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 public final class ZhaoYunSpearDanceService {
    public static final double MANA = 28;
    public static final int COOLDOWN = 280;
-   public static final int DURATION = 300;
+   public static final int DURATION = 15 * 20;
    public static final int FIRST_HIT = 6;
    public static final int HIT_INTERVAL = 4;
    public static final float DAMAGE = 10;

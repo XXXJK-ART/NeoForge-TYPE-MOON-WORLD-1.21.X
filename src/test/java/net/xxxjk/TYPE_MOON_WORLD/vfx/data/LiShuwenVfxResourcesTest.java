@@ -13,6 +13,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LiShuwenVfxResourcesTest {
    @Test
+   void npcWuErDaUsesThePlayerWindupEffect() throws Exception {
+      String source = Files.readString(Path.of("src/main/java/net/xxxjk/TYPE_MOON_WORLD/servant/entity/LiShuwenCombatHelper.java"));
+      int begin = source.indexOf("private static boolean tryBeginWuErDa(");
+      int end = source.indexOf("private static boolean tickWuErDaRelease(", begin);
+      String npcCast = source.substring(begin, end);
+
+      int windupEffect = npcCast.indexOf("VFXServerEffects.spawn(level, \"servant_li_shuwen_wu_er_da_windup\", entity, 96.0)");
+      int deferredEffect = npcCast.indexOf("NoblePhantasmCastService.deferEffect(entity");
+      assertTrue(windupEffect >= 0, "NPC must use the player's Wu Er Da windup effect");
+      assertTrue(windupEffect < deferredEffect, "NPC windup effect must start during the chant, before deferred release effects");
+   }
+
+   @Test
    void wuErDaUsesDedicatedValidEffectsInsteadOfTsubameAlias() throws Exception {
       Path effects = Path.of("src/main/resources/assets/typemoonworld/effects");
       for (String id : new String[]{"servant_li_shuwen_wu_er_da_windup", "servant_li_shuwen_wu_er_da_impact"}) {

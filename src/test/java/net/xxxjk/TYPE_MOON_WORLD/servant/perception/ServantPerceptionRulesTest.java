@@ -22,4 +22,11 @@ class ServantPerceptionRulesTest {
       assertEquals(20, ServantPerceptionRules.BRIGHT_TICKS);
       assertEquals(20, ServantPerceptionRules.DARK_TICKS);
    }
+
+   @Test void currentMountIsExcludedOnlyForRiderCards() {
+      assertEquals(false, ServantPerceptionRules.shouldIncludeTarget("zhao_yun_rider", true));
+      assertEquals(false, ServantPerceptionRules.shouldIncludeTarget("ushiwakamaru_rider", true));
+      assertEquals(true, ServantPerceptionRules.shouldIncludeTarget("zhao_yun_rider", false));
+      assertEquals(true, ServantPerceptionRules.shouldIncludeTarget("artoria_pendragon", true));
+   }
 }

@@ -35,6 +35,8 @@ public final class ServantPerceptionService {
             for (LivingEntity target : observer.serverLevel().getEntitiesOfClass(LivingEntity.class,
                new AABB(observer.blockPosition()).inflate(radius), entity -> entity != observer
                   && ServantPerceptionRules.isPerceivableTarget(entity)
+                  && ServantPerceptionRules.shouldIncludeTarget(vars.servant_card_id,
+                     entity == observer.getVehicle())
                   && entity.distanceToSqr(observer) <= radiusSqr)) {
                int color = ServantPerceptionRules.color(observer, target).ordinal();
                targets.add(new ServantPerceptionMessage.Target(target.getId(), color));

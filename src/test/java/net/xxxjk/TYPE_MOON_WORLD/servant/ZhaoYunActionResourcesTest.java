@@ -124,6 +124,18 @@ class ZhaoYunActionResourcesTest {
       }
    }
 
+   @Test
+   void hakuryuGallopHasPronouncedBodyLegAndTailMotion() throws Exception {
+      JsonObject gallop = read("assets/typemoonworld/animations/zhao_yun_hakuryu.animation.json")
+         .getAsJsonObject("animations").getAsJsonObject("gallop").getAsJsonObject("bones");
+      assertTrue(Math.abs(gallop.getAsJsonObject("body").getAsJsonObject("rotation")
+         .getAsJsonObject("0.125").getAsJsonArray("vector").get(0).getAsDouble()) >= 5.0);
+      assertTrue(Math.abs(gallop.getAsJsonObject("Left front leg").getAsJsonObject("rotation")
+         .getAsJsonObject("0.125").getAsJsonArray("vector").get(0).getAsDouble()) >= 50.0);
+      assertTrue(Math.abs(gallop.getAsJsonObject("Tail").getAsJsonObject("rotation")
+         .getAsJsonObject("0.25").getAsJsonArray("vector").get(1).getAsDouble()) >= 20.0);
+   }
+
    private static JsonObject read(String path) throws Exception {
       return JsonParser.parseString(Files.readString(RES.resolve(path))).getAsJsonObject();
    }

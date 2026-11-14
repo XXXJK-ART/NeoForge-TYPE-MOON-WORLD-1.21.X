@@ -121,6 +121,19 @@ public final class ZhaoYunSpearDanceGameTests {
       h.runAfterDelay(302,()->{ h.assertTrue(!ZhaoYunSpearDanceService.active(owner),"dance exceeded 15 seconds"); h.succeed(); });
    }
 
+   @GameTest(template="ancient_temple",timeoutTicks=325)
+   public static void cardCanHoldSkillSixForFifteenSeconds(GameTestHelper h) {
+      var player=card(h);
+      ServantCardTransformManager.handleHoldAction(player,6,true);
+      h.assertTrue(ZhaoYunSpearDanceService.active(player),"skill 6 did not start");
+      h.runAfterDelay(299,()->h.assertTrue(ZhaoYunSpearDanceService.active(player),"card dance ended before 15 seconds"));
+      h.runAfterDelay(302,()->{
+         h.assertTrue(!ZhaoYunSpearDanceService.active(player),"card dance exceeded 15 seconds");
+         ServantCardTransformManager.release(player,false);
+         h.succeed();
+      });
+   }
+
    @GameTest(template="ancient_temple",timeoutTicks=35)
    public static void suppressionAndTransformationReleaseCancelDamage(GameTestHelper h) {
       var player=card(h); var target=target(h,player,0,2);

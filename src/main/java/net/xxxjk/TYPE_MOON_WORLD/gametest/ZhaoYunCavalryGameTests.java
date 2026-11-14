@@ -95,6 +95,79 @@ public final class ZhaoYunCavalryGameTests {
       });
    }
 
+   @GameTest(template = "empty", timeoutTicks = 35, batch = "zhaoyun_cavalry")
+   public static void phaseTwoUnlocksAndMountsHakuryu(GameTestHelper h) {
+      var rider = ModEntities.ZHAO_YUN_RIDER.get().create(h.getLevel());
+      rider.setPos(arena(h).getBottomCenter());
+      rider.setHealth(rider.getMaxHealth() * 0.65F);
+      h.getLevel().addFreshEntity(rider);
+      h.runAfterDelay(2, () -> {
+         h.assertTrue(rider.getCombatPhase() >= 2, "health threshold did not enter phase two");
+         h.assertTrue(rider.getVehicle() == rider.getHakuryu() && rider.getHakuryu() != null,
+            "phase two did not summon and mount Hakuryu");
+         var mount = rider.getHakuryu();
+         rider.discard();
+         mount.discard();
+         h.succeed();
+      });
+   }
+
+   @GameTest(template = "empty", timeoutTicks = 35, batch = "zhaoyun_cavalry")
+   public static void hakuryuMovesTowardTargetDuringNpChant(GameTestHelper h) {
+      var rider = ModEntities.ZHAO_YUN_RIDER.get().create(h.getLevel());
+      rider.setPos(arena(h).getBottomCenter());
+      rider.setHealth(rider.getMaxHealth() * 0.65F);
+      h.getLevel().addFreshEntity(rider);
+      var target = EntityType.IRON_GOLEM.create(h.getLevel());
+      target.setNoAi(true);
+      target.setPos(rider.position().add(0, 0, 40));
+      h.getLevel().addFreshEntity(target);
+      rider.setTarget(target);
+      h.runAfterDelay(2, () -> {
+         var mount = rider.getHakuryu();
+         h.assertTrue(mount != null && rider.getVehicle() == mount, "phase two mount missing");
+         rider.setCurrentMp(rider.getMaxMp());
+         h.assertTrue(rider.startChangbanpo(), "NP chant rejected");
+         h.assertTrue(rider.isChangbanpoCharging(), "NP did not enter chant");
+         var start = mount.position();
+         h.runAfterDelay(12, () -> {
+            h.assertTrue(mount.position().distanceTo(start) > 1.0,
+               "Hakuryu stayed in place during Zhao Yun's NP chant");
+            rider.discard();
+            mount.discard();
+            target.discard();
+            h.succeed();
+         });
+      });
+   }
+
+   @GameTest(template = "empty", timeoutTicks = 25, batch = "zhaoyun_cavalry")
+   public static void playerChangbanpoBreaksBlocksAhead(GameTestHelper h) {
+      var player = player(h);
+      h.assertTrue(ServantCardZhaoYunSkills.summonSkillHakuryu(player), "Skill horse summon failed");
+      var mount = (net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity)player.getVehicle();
+      var base = mount.blockPosition();
+      var wall = base.offset(0, 1, 2);
+      h.getLevel().setBlock(wall, Blocks.STONE.defaultBlockState(), 3);
+      h.getLevel().setBlock(wall.above(), Blocks.STONE.defaultBlockState(), 3);
+      var data = player.getPersistentData();
+      long now = h.getLevel().getGameTime();
+      data.putUUID(ServantCardZhaoYunSkills.TAG_NP_MOUNT_UUID, mount.getUUID());
+      data.putLong(ServantCardZhaoYunSkills.TAG_NP_UNTIL, now + 20);
+      data.putDouble(ServantCardZhaoYunSkills.TAG_NP_INITIAL_DISTANCE, 0.0);
+      data.putDouble(ServantCardZhaoYunSkills.TAG_NP_INITIAL_DIR_X, 0.0);
+      data.putDouble(ServantCardZhaoYunSkills.TAG_NP_INITIAL_DIR_Z, 1.0);
+      mount.setNpActive(true);
+      ServantCardZhaoYunSkills.tick(player,
+         player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES));
+      h.assertTrue(h.getLevel().getBlockState(wall).isAir() && h.getLevel().getBlockState(wall.above()).isAir(),
+         "Changbanpo did not clear ordinary blocks in its path");
+      ServantCardZhaoYunSkills.clear(player);
+      player.discard();
+      mount.discard();
+      h.succeed();
+   }
+
    @GameTest(template = "empty", timeoutTicks = 190, batch = "zhaoyun_cavalry")
    public static void mountedNpcRunsThroughInsteadOfStoppingBesideEnemy(GameTestHelper h) {
       var pos = arena(h).getBottomCenter();
