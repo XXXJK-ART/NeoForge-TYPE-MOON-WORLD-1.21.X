@@ -112,6 +112,10 @@ public final class ServantCardTraitService {
       // Target-specific bonuses belong to the skill or NP that defines them.
 
       CompoundTag data = attacker.getPersistentData();
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.isJeanneAlter(attacker)) {
+         if (attacker.getRandom().nextFloat() < 0.17F) multiplier *= 2.77D;
+         return (float)Math.max(0.0, amount * multiplier);
+      }
       if (data.getBoolean("MadEnhancementActive") && net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(attackerDefinition.skillIds(),"mad_enhancement_")==0) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("MadEnhancementDamageBonus"));
       }
@@ -193,7 +197,7 @@ public final class ServantCardTraitService {
          data.putBoolean("IndependentActionActive", true);
          data.putFloat("IndependentActionCritDamageBonus", 0.05F);
       }
-      if (hasSkill(definition, "riding_a_plus")) {
+      if (hasSkill(definition, "riding_a") || hasSkill(definition, "riding_a_plus")) {
          data.putBoolean("RidingAPlusActive", true);
          data.putFloat("RidingAPlusSpeedBonus", 0.5F);
          data.putFloat("RidingAPlusArmorBonus", 0.2F);

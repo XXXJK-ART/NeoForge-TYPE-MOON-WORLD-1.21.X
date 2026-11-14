@@ -38,7 +38,11 @@ public final class LiShuwenGameTests {
          close(h, npc.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE), 0.3, "NPC knockback bonus missing below cap");
          close(h, LiShuwenCombatHelper.applyIncomingDamageModifiers(npc, npc.damageSources().generic(), 100), 95, "NPC Seasoned damage reduction");
          close(h, LiShuwenCombatHelper.applyIncomingDamageModifiers(npc, npc.damageSources().fellOutOfWorld(), 100), 100, "Seasoned reduced bypass damage");
-         close(h, LiShuwenCombatHelper.applyIncomingDamageModifiers(npc, npc.damageSources().starve(), 100), 100, "Seasoned reduced resistance-bypass damage");
+         var resistanceBypass = new net.minecraft.world.damagesource.DamageSource(h.getLevel().registryAccess()
+            .registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE).getHolderOrThrow(LiShuwenCombatHelper.WU_ER_DA));
+         h.assertTrue(resistanceBypass.is(net.minecraft.tags.DamageTypeTags.BYPASSES_RESISTANCE)
+            && !resistanceBypass.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY), "Resistance-bypass fixture tags changed");
+         close(h, LiShuwenCombatHelper.applyIncomingDamageModifiers(npc, resistanceBypass, 100), 100, "Seasoned reduced resistance-bypass damage");
          h.assertTrue(!npc.hasEffect(MobEffects.BLINDNESS), "Mental stability was lost");
          h.succeed();
       });

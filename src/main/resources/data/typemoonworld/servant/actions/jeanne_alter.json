@@ -35,28 +35,6 @@
       "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 4, "approach_range": 32, "damage_scale": 1.0}
     },
     {
-      "id": "typemoonworld:jeanne_alter_self_modification_ex",
-      "tags": ["guard", "melee"],
-      "minimum_range": 0.0,
-      "maximum_range": 20.0,
-      "mana_cost": 30,
-      "stamina_cost": 0,
-      "terrain_impact": "none",
-      "timing": {"windup": 6, "active": 1, "recovery": 8},
-      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 20, "damage_scale": 1.0}
-    },
-    {
-      "id": "typemoonworld:jeanne_alter_dragon_witch_ex",
-      "tags": ["area", "control"],
-      "minimum_range": 0.0,
-      "maximum_range": 24.0,
-      "mana_cost": 42,
-      "stamina_cost": 0,
-      "terrain_impact": "none",
-      "timing": {"windup": 6, "active": 1, "recovery": 8},
-      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 24, "damage_scale": 1.0}
-    },
-    {
       "id": "typemoonworld:jeanne_alter_inferno_body",
       "tags": ["guard", "evade"],
       "minimum_range": 0.0,

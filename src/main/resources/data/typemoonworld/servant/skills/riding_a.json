@@ -1,0 +1,23 @@
+{
+  "rank": "A",
+  "id": "riding_a",
+  "display_name": "Riding A",
+  "display_name_zh": "\u9a91\u4e58 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "mounted_bonus",
+      "params": {
+        "speed_bonus": 0.5,
+        "armor_bonus": 0.2
+      }
+    }
+  ],
+  "ai": {"facts": [
+    {"type": "gap_close", "strength": 0.8},
+    {"type": "pursuit", "strength": 0.75}
+  ]}
+}

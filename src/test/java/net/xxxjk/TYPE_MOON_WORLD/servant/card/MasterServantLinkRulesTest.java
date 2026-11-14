@@ -16,6 +16,8 @@ class MasterServantLinkRulesTest {
          MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_b")));
       assertEquals(24000,
          MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_c")));
+      assertEquals(24000,
+         MasterServantLinkService.independentDurationTicksForSkills(List.of("independent_action_c_plus")));
       assertEquals(0, MasterServantLinkService.independentDurationTicksForSkills(List.of("battle_continuation_a")));
    }
 

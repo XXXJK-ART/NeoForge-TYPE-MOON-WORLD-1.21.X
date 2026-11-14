@@ -680,7 +680,7 @@ public final class MasterServantLinkService {
       // Independent Action is measured in Minecraft days, not wall-clock seconds.
       if (skillIds.contains("independent_action_a")) return 7 * 24000;
       if (skillIds.contains("independent_action_b")) return 2 * 24000;
-      if (skillIds.contains("independent_action_c")) return 24000;
+      if (skillIds.contains("independent_action_c") || skillIds.contains("independent_action_c_plus")) return 24000;
       return 0;
    }
 

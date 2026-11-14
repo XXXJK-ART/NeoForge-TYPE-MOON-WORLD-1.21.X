@@ -33,3 +33,15 @@
 ## 验证范围
 
 资源测试覆盖身份、有效特性键、参数、技能等级及无等级宝具；独立 `typemoonworld_li_shuwen` GameTest 覆盖 NPC／玩家卡被动、重复应用与退出清理。实际运行结果以本轮交付说明和构建日志为准。
+
+2026-11-14 实测：李书文资源测试 2 项、独立服务端 GameTest 2 项通过；`build` 成功，JAR 中的卡面与最终源文件 SHA-256 一致，正反面、边缘和头部贴图齐全。适配时发现旧 `BuiltinServantSkills` 门面未被当前初始化流程使用，已在实际 `ServantSkillRegistry.ensureInitialized` 中恢复李书文技能登记，验证旧存档加载后会重新激活老练。
+
+复现命令：
+
+```powershell
+.\gradlew.bat test --tests '*LiShuwenResourcesTest' build runGameTestServer -I tools/li-shuwen-validation.init.gradle --project-cache-dir build/li-shuwen-gradle-cache -PgameTestNamespaces=typemoonworld_li_shuwen
+```
+
+本轮还执行了全量测试：674 项中 673 项通过，1 项失败来自并行重置中的 `JeanneAlterResetResourcesTest` 宝具等级断言（预期 A+、读取到 A），未据此修改其他角色。验证输出使用独立目录，构建产物位于 `build/li-shuwen-validation/libs/`。
+
+客户端卡片检查也已通过，实际以正常物品渲染器显示新版卡面，截图位于 `build/li-shuwen-card-smoke-run/qa/screenshots/li-shuwen-card.png`。由于随后并行中的黑贞德源码改动暂时无法编译，这次客户端使用上述已成功构建 JAR 的解包快照；校验了烘焙模型、正面 292×500 贴图、背面、卡边与头部叠层，测试模组未进入发布 JAR。可选检查入口为 `tools/li-shuwen-card-smoke.init.gradle`。

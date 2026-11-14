@@ -7,6 +7,7 @@ import java.util.Locale;
 public final class CommonSkillRules {
    private CommonSkillRules() {}
    public record Bonus(double health, double attack, double speed) {}
+   public record AvengerBonus(double health, double attack, double speed) {}
    public record Continuation(double healthRatio, int protectionTicks, float heal, int cooldownTicks) {}
    public static int rank(String value) {
       if (value == null) return 0;
@@ -25,6 +26,10 @@ public final class CommonSkillRules {
    public static Bonus bonus(int madness, int divinity) {
       madness = Math.clamp(madness, 0, 5); divinity = Math.clamp(divinity, 0, 5);
       return new Bonus(20.0 * (madness + divinity), 3.0 * madness + 2.0 * divinity, .02 * madness + .01 * divinity);
+   }
+   public static AvengerBonus avenger(int rank) {
+      int r = Math.clamp(rank, 0, 5);
+      return new AvengerBonus(10.0 * r, 4.0 * r, .01 * r);
    }
    public static Continuation continuation(int rank) {
       int r = Math.clamp(rank, 1, 5);

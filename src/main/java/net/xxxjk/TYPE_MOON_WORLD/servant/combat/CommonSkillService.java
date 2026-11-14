@@ -26,6 +26,11 @@ public final class CommonSkillService {
       modifier(entity.getAttribute(Attributes.MAX_HEALTH), "common_skill_health", bonus.health(), AttributeModifier.Operation.ADD_VALUE);
       modifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), "common_skill_attack", bonus.attack(), AttributeModifier.Operation.ADD_VALUE);
       modifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), "common_skill_speed", bonus.speed(), AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+      int avengerRank = Math.max(CommonSkillRules.highest(skills, "avenger_"), CommonSkillRules.highest(skills, "jeanne_alter_avenger_"));
+      var avenger = CommonSkillRules.avenger(avengerRank);
+      modifier(entity.getAttribute(Attributes.MAX_HEALTH), "common_skill_avenger_health", avenger.health(), AttributeModifier.Operation.ADD_VALUE);
+      modifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), "common_skill_avenger_attack", avenger.attack(), AttributeModifier.Operation.ADD_VALUE);
+      modifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), "common_skill_avenger_speed", avenger.speed(), AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
       // Old E-A executors may run during reload. Their damage must never be applied again.
       if (CommonSkillRules.highest(skills, "divinity_") > 0) entity.getPersistentData().remove("DivinityFlatDamage");
       if (CommonSkillRules.highest(skills, "mad_enhancement_") > 0) entity.getPersistentData().remove("MadEnhancementDamageBonus");

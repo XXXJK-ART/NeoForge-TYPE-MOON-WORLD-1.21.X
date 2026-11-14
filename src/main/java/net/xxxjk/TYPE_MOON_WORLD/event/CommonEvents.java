@@ -624,7 +624,8 @@ public class CommonEvents {
                   net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunDamageTypes.QINGGANG_SECOND_HIT);
                if (!qinggangSecondHit) {
                   event.setAmount(ArtoriaPendragonCombatHelper.applyManaBurstOutgoing(attacker, event));
-                  if (!attacker.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)) {
+                  if (!attacker.getPersistentData().getBoolean(net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.SHARED_HIT_TAG)
+                     && !net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.isJeanneAuthoredDamageSource(event.getSource())) {
                      event.setAmount(ServantCardTraitService.applyOutgoingDamage(attacker, event.getEntity(), event.getAmount()));
                   }
                   event.setAmount(ArtoriaPendragonCombatHelper.applyRevealedSwordBonus(attacker, event.getSource(), event.getAmount()));

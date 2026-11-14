@@ -220,6 +220,7 @@ public final class MedeaSpecialContractService {
       }
       return definition.skillIds().contains("independent_action_a")
          || definition.skillIds().contains("independent_action_b")
-         || definition.skillIds().contains("independent_action_c");
+         || definition.skillIds().contains("independent_action_c")
+         || definition.skillIds().contains("independent_action_c_plus");
    }
 }

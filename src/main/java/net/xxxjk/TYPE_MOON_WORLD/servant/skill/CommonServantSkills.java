@@ -18,6 +18,7 @@ public final class CommonServantSkills {
       registry.register("magic_resistance_b", CommonServantSkills::executeMagicResistanceB, "typemoonworld_core");
       registry.register("magic_resistance_c", CommonServantSkills::executeMagicResistanceC, "typemoonworld_core");
       registry.register("riding_b", CommonServantSkills::executeRidingB, "typemoonworld_core");
+      registry.register("riding_a", CommonServantSkills::executeRidingA, "typemoonworld_core");
       registry.register("artoria_instinct_a", CommonServantSkills::executeArtoriaInstinctA, "typemoonworld_core");
       registry.register("mana_burst_a", CommonServantSkills::executeManaBurstA, "typemoonworld_core");
       registry.register("dragon_core", CommonServantSkills::executeDragonCore, "typemoonworld_core");
@@ -26,6 +27,7 @@ public final class CommonServantSkills {
       registry.register("independent_action_b", CommonServantSkills::executeIndependentActionB, "typemoonworld_core");
       registry.register("riding_a_plus", CommonServantSkills::executeRidingAPlus, "typemoonworld_core");
       registry.register("independent_action_c", CommonServantSkills::executeIndependentActionC, "typemoonworld_core");
+      registry.register("independent_action_c_plus", CommonServantSkills::executeIndependentActionCPlus, "typemoonworld_core");
       registry.register("divinity_e_minus", CommonServantSkills::executeDivinityEMinus, "typemoonworld_core");
       registry.register("battle_continuation_a", CommonServantSkills::executeBattleContinuationA, "typemoonworld_core");
       registry.register("emiya_style_battle_continuation", CommonServantSkills::executeEmiyaStyleBattleContinuation, "typemoonworld_core");
@@ -143,6 +145,16 @@ public final class CommonServantSkills {
       return ServantExecutionResult.SUCCESS;
    }
 
+   private static ServantExecutionResult executeRidingA(ServantExecutionContext context) {
+      LivingEntity entity = context.caster();
+      if (entity == null) return ServantExecutionResult.FAILED;
+
+      entity.getPersistentData().putBoolean("RidingAPlusActive", true);
+      entity.getPersistentData().putFloat("RidingAPlusSpeedBonus", 0.5F);
+      entity.getPersistentData().putFloat("RidingAPlusArmorBonus", 0.2F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
    private static ServantExecutionResult executeRidingB(ServantExecutionContext context) {
       LivingEntity entity = context.caster();
       if (entity == null) {
@@ -256,6 +268,13 @@ public final class CommonServantSkills {
 
       entity.getPersistentData().putBoolean("IndependentActionActive", true);
       entity.getPersistentData().putFloat("IndependentActionCritDamageBonus", 0.05F);
+      return ServantExecutionResult.SUCCESS;
+   }
+
+   private static ServantExecutionResult executeIndependentActionCPlus(ServantExecutionContext context) {
+      if (context.caster() == null) return ServantExecutionResult.FAILED;
+      context.caster().getPersistentData().remove("IndependentActionActive");
+      context.caster().getPersistentData().remove("IndependentActionCritDamageBonus");
       return ServantExecutionResult.SUCCESS;
    }
 
