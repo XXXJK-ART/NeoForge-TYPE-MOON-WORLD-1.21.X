@@ -66,6 +66,28 @@
       "timing": {"windup": 1, "active": 8, "recovery": 10},
       "threat": {"shape": "line", "radius": 2, "length": 8, "danger": 5, "blockable": true, "dodgeable": true, "interruptible": false, "friendly_fire_radius": 1},
       "terrain_impact": "heavy"
+    },
+    {
+      "id": "typemoonworld:lancelot/frenzy_flurry",
+      "tags": ["melee", "finisher", "pursuit"],
+      "minimum_range": 0,
+      "maximum_range": 4.5,
+      "mana_cost": 6,
+      "stamina_cost": 8,
+      "timing": {"windup": 1, "active": 12, "recovery": 5},
+      "threat": {"shape": "cone", "radius": 2.2, "length": 4.5, "danger": 5, "blockable": true, "dodgeable": true, "interruptible": false, "friendly_fire_radius": 1},
+      "terrain_impact": "small"
+    },
+    {
+      "id": "typemoonworld:lancelot/wild_sword_sweep",
+      "tags": ["melee", "finisher", "pursuit"],
+      "minimum_range": 0,
+      "maximum_range": 5.5,
+      "mana_cost": 4,
+      "stamina_cost": 6,
+      "timing": {"windup": 2, "active": 8, "recovery": 5},
+      "threat": {"shape": "cone", "radius": 2.4, "length": 5.5, "danger": 5, "blockable": true, "dodgeable": true, "interruptible": false, "friendly_fire_radius": 1},
+      "terrain_impact": "small"
     }
   ]
 }

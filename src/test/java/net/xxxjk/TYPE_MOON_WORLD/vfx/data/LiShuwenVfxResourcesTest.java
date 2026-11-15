@@ -42,5 +42,7 @@ class LiShuwenVfxResourcesTest {
       assertFalse(aliases.containsKey("servant_li_shuwen_wu_er_da_windup"));
       assertFalse(aliases.containsKey("servant_li_shuwen_wu_er_da_impact"));
       assertFalse(aliases.containsKey("servant_li_wu_er_da"));
+      assertFalse(aliases.containsKey("servant_li_shuwen_quanjing"));
+      assertFalse(aliases.containsKey("servant_li_shuwen_yinyang"));
    }
 }

@@ -516,7 +516,12 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         // Firearms and aircraft have their own optional combat controller.
+         // Gate before the shared tactical AI, while retaining passive ticks below.
+         boolean lancelotArmoryControlled = this instanceof LancelotBerserkerEntity
+            && (this.isPassenger() || com.captain.servant.compat.superbwarfare.SuperbWarfareLoader.isGun(this.getMainHandItem()));
+         if (this.isPassenger()) this.getNavigation().stop();
+         boolean combatHandled = lancelotArmoryControlled || ServantCombatSystem.tickBeforeAi(this);
          if (!combatHandled && this instanceof HeraclesEntity) {
             combatHandled = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
          }
@@ -535,7 +540,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiMigrationPolicy.isArbitrated(this)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(this, this.getTarget(), this.level().getGameTime());
          }
-         ServantFlightCombatService.tickIndependentController(this);
+         if (!lancelotArmoryControlled) ServantFlightCombatService.tickIndependentController(this);
          this.tickManaHealthConversion();
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         

@@ -163,7 +163,7 @@ public final class ServantSprintCollisionHelper {
       boolean fiery = entity instanceof GawainEntity gawainEntity && (GawainCombatHelper.hasSunBlessing(gawainEntity) || isUnderSun(level, gawainEntity.blockPosition()));
       int hit = hitForwardTargets(level, entity, dir, fiery, heracles || lancelot ? 10.0F : 8.0F, heracles || lancelot ? 1.25 : 1.0,
          heracles || lancelot ? 0.26 : 0.2, 1.85, 1.55);
-      int broken = heracles && !entity.isSprinting() ? 0
+      int broken = (heracles || lancelot) && !entity.isSprinting() ? 0
          : breakForwardCube(level, entity, dir, heracles ? 32 : lancelot ? 30 : 27, heracles ? 45.0F : lancelot ? 44.0F : 42.0F);
       if (hit <= 0 && broken <= 0) {
          return;
@@ -264,7 +264,10 @@ public final class ServantSprintCollisionHelper {
       if (dir.lengthSqr() < 1.0E-4) {
          return 0;
       }
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner)) {
+      var definition = net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper.definitionOf(owner);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(owner)
+         || owner instanceof LancelotBerserkerEntity
+         || definition != null && "lancelot_berserker".equals(definition.id())) {
          if(!hasHeraclesForwardObstacle(level,owner,dir))return 0;
          var profile=new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY,3.0,Math.min(35,hardnessCap),48,80);
          return TerrainImpactService.impactWallTunnel(level,owner,owner.position(),dir,profile,3,3,(int)Math.ceil(owner.getBbHeight()))?1:0;

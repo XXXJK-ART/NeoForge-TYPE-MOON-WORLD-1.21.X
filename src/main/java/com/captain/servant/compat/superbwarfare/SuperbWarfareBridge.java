@@ -23,7 +23,7 @@ interface SuperbWarfareBridge {
 
     boolean hasActiveSummonedA10(ServerPlayer player);
 
-    int countOwnedVehicles(ServerPlayer player);
+    int countOwnedVehicles(LivingEntity player);
 
     boolean forceTypeMoonDamage(Entity entity, DamageSource source, float amount);
 

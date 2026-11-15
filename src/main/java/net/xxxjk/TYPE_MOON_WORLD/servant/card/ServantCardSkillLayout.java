@@ -290,7 +290,11 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Hunt Step", "lancelot_hunt_step", 8.0, 100);
             case 4 -> new ServantCardSkillAction("Mana Reversal", "lancelot_mana_reversal", 15.0, 360);
             case 5 -> new ServantCardSkillAction("Mad Roar", "lancelot_berserk_roar", 14.0, 320);
-            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
+            case 6 -> new ServantCardSkillAction("Breach Charge", "lancelot_breach_charge", 18.0, 220);
+            case 7 -> new ServantCardSkillAction("Rampage Quake", "lancelot_rampage_quake", 24.0, 360);
+            case 8 -> crouching
+               ? new ServantCardSkillAction("Knight Armory", "lancelot_knight_armory", 0.0, 20)
+               : new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
             case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 1200);
             default -> null;
          };

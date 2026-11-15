@@ -144,7 +144,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (!(level() instanceof ServerLevel server)) return;
       int nextPhase = Math.max(getCombatPhase(), computeCombatPhase());
       if (nextPhase != getCombatPhase()) setCombatPhase(nextPhase);
-      if (getCombatPhase() >= 2) getPersistentData().putBoolean(TAG_MOUNT_UNLOCKED, true);
       ensureHakuryu(server);
       updateRidingArmor();
       tickAokoSecondStrikes(server);

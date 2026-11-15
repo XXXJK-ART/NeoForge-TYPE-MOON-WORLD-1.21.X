@@ -91,8 +91,17 @@ public class LancelotBerserkerEntity extends ServantEntity {
    }
 
    @Override
+   public void triggerBasicAttackAnimation() {
+      if (!this.isAlive() || this.isSpiritualTransitionLocked()) return;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(
+         this, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD);
+      ServantVoiceHelper.tryPlayAttack(this);
+   }
+
+   @Override
    public void die(DamageSource cause) {
       LancelotCombatHelper.stopAroundight(this, false);
+      LancelotCombatHelper.clearManaReversal(this);
       super.die(cause);
    }
 

@@ -123,6 +123,10 @@ public final class ServantDuelPacing {
       servant.getPersistentData().putLong(PREFIX + "NextBasic", now + 4);
    }
 
+   public static int rangedBasicRecoveryTicks(String servantId) {
+      return "baobhan_sith".equals(servantId) ? 8 : RANGED_BASIC_RECOVERY_TICKS;
+   }
+
    private static boolean basic(ServantEntity servant, LivingEntity target, long now) {
       servant.faceToward(target.position());
       servant.getLookControl().setLookAt(target, 60, 60);
@@ -158,7 +162,7 @@ public final class ServantDuelPacing {
          return ServantCombatExchangeService.beginBasic(servant, target, now);
       }
       if (attacked) {
-         data.putLong(PREFIX + "NextBasic", now + RANGED_BASIC_RECOVERY_TICKS);
+         data.putLong(PREFIX + "NextBasic", now + rangedBasicRecoveryTicks(servant.getServantId()));
          data.putInt(PREFIX + "BasicAttacks", data.getInt(PREFIX + "BasicAttacks") + 1);
          ServantCombatExchangeService.activity(servant, now);
       }

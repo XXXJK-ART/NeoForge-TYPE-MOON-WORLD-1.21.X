@@ -1961,6 +1961,9 @@ public final class ServantCardTransformManager {
          case "lancelot_hunt_step" -> ServantCardLancelotBerserkerSkills.performHuntStep(player);
          case "lancelot_mana_reversal" -> ServantCardLancelotBerserkerSkills.performManaReversal(player);
          case "lancelot_berserk_roar" -> ServantCardLancelotBerserkerSkills.performBerserkRoar(player);
+         case "lancelot_breach_charge" -> ServantCardLancelotBerserkerSkills.performBreachCharge(player);
+         case "lancelot_rampage_quake" -> ServantCardLancelotBerserkerSkills.performRampageQuake(player);
+         case "lancelot_knight_armory" -> { if (!ServantCardLancelotBerserkerSkills.performKnightArmoryMenu(player)) return false; }
          case "lancelot_knight_of_owner" -> { if (!ServantCardLancelotBerserkerSkills.performKnightOfOwner(player)) return false; }
          case "lancelot_aroundight" -> { if (!ServantCardLancelotBerserkerSkills.performAroundight(player, vars)) return false; }
          case "iskandar_bucephalus" -> { if (!ServantCardIskandarSkills.performBucephalus(player)) return false; }

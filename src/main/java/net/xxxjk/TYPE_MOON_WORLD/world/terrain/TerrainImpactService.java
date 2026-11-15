@@ -35,6 +35,11 @@ public final class TerrainImpactService {
 
    public static boolean impact(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
                                 TerrainImpactProfile profile, Permission permission, Shape shape) {
+      return impact(level, source, center, profile, permission, shape, Integer.MIN_VALUE);
+   }
+
+   private static boolean impact(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                 TerrainImpactProfile profile, Permission permission, Shape shape, int minimumYInclusive) {
       if (level == null || center == null || profile == null || profile.tier() == TerrainImpactProfile.Tier.NONE
          || profile.radius() <= 0.0 || !allowed(level, permission)) return false;
 
@@ -47,6 +52,7 @@ public final class TerrainImpactService {
       DeferredTerrainDestruction.BlockPredicate predicate = (serverLevel, pos, distanceSqr, radius, origin) -> {
          if (!CombatTerrainProtection.canRemove(serverLevel, pos)) return false;
          BlockState state = serverLevel.getBlockState(pos);
+         if (pos.getY() < minimumYInclusive) return false;
          if (minimumSelfFootY != null && pos.getY() < minimumSelfFootY) return false;
          if (NeoForge.EVENT_BUS.post(new TerrainImpactBlockEvent(serverLevel, source, pos, state, profile, shape.name())).isCanceled()) return false;
          if (physicalDebris[0] < profile.physicalDebrisCount()
@@ -103,6 +109,17 @@ public final class TerrainImpactService {
       return impactDirectional(level, source, center, direction, profile, permission, length, width, height, false);
    }
 
+   public static boolean impactKnightOfOwnerBreakthrough(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
+                                                          Vec3 direction, TerrainImpactProfile profile,
+                                                          double length, int width, int height, int minimumYInclusive) {
+      if (level == null || center == null || profile == null || direction == null
+         || direction.lengthSqr() < 1.0E-6 || profile.tier() == TerrainImpactProfile.Tier.NONE || !allowed(level, permission(source))) return false;
+      DeferredTerrainDestruction.protectNextCombatJob();
+      DeferredTerrainDestruction.queueDirectionalCut(level, center, direction.normalize(), Math.max(1.0, length),
+         Math.max(1.0, width), Math.max(1.0, height), false, profile.maximumHardness(), minimumYInclusive);
+      return impact(level, source, center, profile, permission(source), Shape.AIR_SPHERE, minimumYInclusive);
+   }
+
    private static boolean impactDirectional(ServerLevel level, @Nullable LivingEntity source, Vec3 center,
                                             Vec3 direction, TerrainImpactProfile profile,
                                             Permission permission, double length, int width, int height, boolean wallTunnel) {
@@ -111,7 +128,7 @@ public final class TerrainImpactService {
       Vec3 horizontal = direction.multiply(1.0, 0.0, 1.0);
       if (horizontal.lengthSqr() < 1.0E-4) return false;
       horizontal = horizontal.normalize();
-      if (isHeracles(source)) return impactHeraclesWall(level, source, center, horizontal, profile, permission);
+      if (usesBodyWallImpact(source)) return impactHeraclesWall(level, source, center, horizontal, profile, permission);
       double cutLength = Math.max(1.0, length);
       double cutWidth = Math.max(1.0, width);
       double cutHeight = Math.max(1.0, height);
@@ -126,6 +143,11 @@ public final class TerrainImpactService {
    private static boolean isHeracles(@Nullable LivingEntity source) {
       var definition = source == null ? null : net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper.definitionOf(source);
       return definition != null && "heracles".equals(definition.id());
+   }
+
+   private static boolean usesBodyWallImpact(@Nullable LivingEntity source) {
+      var definition = source == null ? null : net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper.definitionOf(source);
+      return definition != null && ("heracles".equals(definition.id()) || "lancelot_berserker".equals(definition.id()));
    }
 
    /** Small routine impacts retain their one-layer boundary. */
@@ -153,7 +175,7 @@ public final class TerrainImpactService {
             if(CombatTerrainProtection.canRemoveWithinSurfaceDepth(level,at,depth))snapshot.put(at,level.getBlockState(at));
          }
       }
-      return queueSnapshot(level,source,new Vec3(feet.x,y+.5,feet.z),profile,snapshot,profile.radius()+2,depth);
+      return queueSnapshot(level,source,new Vec3(feet.x,y+.5,feet.z),profile,snapshot,profile.radius()+2,depth,Integer.MIN_VALUE);
    }
 
    private static boolean impactHeraclesWall(ServerLevel level, LivingEntity source, Vec3 center, Vec3 forward,
@@ -188,16 +210,18 @@ public final class TerrainImpactService {
          snapshot.put(pos,state);
       }
       if(snapshot.isEmpty())return false;
-      return queueSnapshot(level,source,origin.add(forward.scale(1.5)).add(0,height*.5,0),profile,snapshot,6,0);
+      return queueSnapshot(level,source,origin.add(forward.scale(1.5)).add(0,height*.5,0),profile,snapshot,6,0,Integer.MIN_VALUE);
    }
 
    private static boolean queueSnapshot(ServerLevel level, LivingEntity source, Vec3 center, TerrainImpactProfile profile,
-                                         java.util.Map<BlockPos,BlockState> snapshot, double scanRadius, int groundDepth) {
+                                         java.util.Map<BlockPos,BlockState> snapshot, double scanRadius, int groundDepth,
+                                         int minimumYInclusive) {
       List<TerrainDebrisMessage.Sample> debris=new ArrayList<>();
       // The exact snapshot owns the bounds. Ground uses an explicit original-
       // surface depth, while horizontal wall cuts preserve the captured footing.
       DeferredTerrainDestruction.queueSphereDetailed(level,center,scanRadius,profile.maximumHardness(),3,
          (world,pos,distance,radius,origin)->snapshot.containsKey(pos) && world.getBlockState(pos).equals(snapshot.get(pos))
+            && pos.getY() >= minimumYInclusive
             && (groundDepth==0 || CombatTerrainProtection.canRemoveWithinSurfaceDepth(world,pos,groundDepth))
             && !NeoForge.EVENT_BUS.post(new TerrainImpactBlockEvent(world,source,pos,world.getBlockState(pos),profile,"HERACLES_SNAPSHOT")).isCanceled(),
          (world,pos,state,removed)->addVisualSample(debris,profile,pos,state),

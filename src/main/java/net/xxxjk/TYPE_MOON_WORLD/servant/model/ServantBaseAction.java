@@ -14,6 +14,14 @@ public final class ServantBaseAction {
    public static final int MURAMASA_DOWNWARD_SLASH = 40;
    public static final int MURAMASA_THRUST = 41;
    public static final int MURAMASA_SPINNING_SLASH = 42;
+   public static final int LANCELOT_FRENZY_SLASH_0 = 50;
+   public static final int LANCELOT_FRENZY_SLASH_1 = 51;
+   public static final int LANCELOT_FRENZY_SLASH_2 = 52;
+   public static final int LANCELOT_FRENZY_FLURRY = 53;
+   public static final int LANCELOT_SWORD_SLASH_0 = 54;
+   public static final int LANCELOT_SWORD_SLASH_1 = 55;
+   public static final int LANCELOT_SWORD_SLASH_2 = 56;
+   public static final int LANCELOT_SWORD_FLURRY = 57;
    public static final int ZHAO_YUN_COMBO = 14;
    public static final int ZHAO_YUN_HELD_DANCE = 15;
    public static final int ZHAO_YUN_RECOVERY = 16;
@@ -26,7 +34,8 @@ public final class ServantBaseAction {
    public static boolean isAttack(int action) {
       return action == SWORD || action == FIST || isContinuous(action)
          || action == ZHAO_YUN_THRUST || action == ZHAO_YUN_SWEEP || action == ZHAO_YUN_DANCE || action == ZHAO_YUN_RECOVERY
-         || action == MURAMASA_DOWNWARD_SLASH || action == MURAMASA_THRUST || action == MURAMASA_SPINNING_SLASH;
+         || action == MURAMASA_DOWNWARD_SLASH || action == MURAMASA_THRUST || action == MURAMASA_SPINNING_SLASH
+         || action >= LANCELOT_FRENZY_SLASH_0 && action <= LANCELOT_SWORD_FLURRY;
    }
 
    public static boolean isContinuous(int action) {
@@ -59,6 +68,14 @@ public final class ServantBaseAction {
          case MURAMASA_DOWNWARD_SLASH -> "muramasa_downward_slash";
          case MURAMASA_THRUST -> "muramasa_thrust";
          case MURAMASA_SPINNING_SLASH -> "muramasa_spinning_slash";
+         case LANCELOT_FRENZY_SLASH_0 -> "lancelot_frenzy_slash_0";
+         case LANCELOT_FRENZY_SLASH_1 -> "lancelot_frenzy_slash_1";
+         case LANCELOT_FRENZY_SLASH_2 -> "lancelot_frenzy_slash_2";
+         case LANCELOT_FRENZY_FLURRY -> "lancelot_frenzy_flurry";
+         case LANCELOT_SWORD_SLASH_0 -> "lancelot_sword_slash_0";
+         case LANCELOT_SWORD_SLASH_1 -> "lancelot_sword_slash_1";
+         case LANCELOT_SWORD_SLASH_2 -> "lancelot_sword_slash_2";
+         case LANCELOT_SWORD_FLURRY -> "lancelot_sword_flurry";
          case ZHAO_YUN_COMBO -> "zhao_yun_spear_combo";
          case ZHAO_YUN_HELD_DANCE -> "zhao_yun_spear_held_dance";
          case ZHAO_YUN_RECOVERY -> "zhao_yun_spear_recovery";

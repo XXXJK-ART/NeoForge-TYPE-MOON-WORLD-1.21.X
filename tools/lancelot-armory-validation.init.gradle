@@ -1,0 +1,25 @@
+// GameTest's flat world must include the mod's registered custom dimensions.
+// This fixture and the optional runtime jars are used only by development runs.
+allprojects {
+    layout.buildDirectory.set(file('build/lancelot-armory-verification'))
+    afterEvaluate { project ->
+        def gameTestRun = gradle.startParameter.taskNames.any { it.toLowerCase().contains('gametest') }
+        // NeoGradle can retain Java destinations resolved before buildDirectory
+        // changes; set both compile and runtime outputs explicitly for isolation.
+        project.sourceSets.all { source ->
+            def classesDir = project.layout.buildDirectory.dir("classes/java/${source.name}")
+            def resourceSuffix = gameTestRun && source.name == 'main' ? '-gametest' : ''
+            def resourcesDir = project.layout.buildDirectory.dir("resources/${source.name}${resourceSuffix}")
+            project.tasks.named(source.compileJavaTaskName).configure { destinationDirectory.set(classesDir) }
+            source.output.classesDirs.setFrom(classesDir)
+            source.output.resourcesDir = resourcesDir.get().asFile
+            project.tasks.named(source.processResourcesTaskName).configure { destinationDir = resourcesDir.get().asFile }
+        }
+        if (gameTestRun) {
+            project.sourceSets.main.resources.srcDir 'tools/np-fixes-fixtures/resources'
+        }
+        def mode = project.findProperty('fateSupportCompat') ?: 'none'
+        project.runs.gameTestServer.workingDirectory project.file("build/lancelot-armory-runs/${mode}/gametest")
+        project.runs.client.workingDirectory project.file("build/lancelot-armory-runs/${mode}/client")
+    }
+}

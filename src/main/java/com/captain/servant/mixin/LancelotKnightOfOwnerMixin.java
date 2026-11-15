@@ -10,12 +10,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = ServantCardLancelotBerserkerSkills.class, remap = false)
 public abstract class LancelotKnightOfOwnerMixin {
-    @Inject(method = "performKnightOfOwner", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "performKnightOfOwner", at = @At("HEAD"), cancellable = true, require = 0)
     private static void fatesupport$integrateSuperbWarfare(
             ServerPlayer player,
             CallbackInfoReturnable<Boolean> callbackInfo
     ) {
-        if (KnightArmoryService.ownerizeHeldSuperbWarfareGun(player)) {
+        if (!ServantCardLancelotBerserkerSkills.hasKnightOfOwnerTarget(player)
+                && KnightArmoryService.ownerizeHeldSuperbWarfareGun(player)) {
             callbackInfo.setReturnValue(true);
         }
     }

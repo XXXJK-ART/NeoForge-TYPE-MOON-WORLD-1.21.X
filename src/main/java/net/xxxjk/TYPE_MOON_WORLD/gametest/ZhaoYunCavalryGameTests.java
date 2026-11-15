@@ -96,19 +96,25 @@ public final class ZhaoYunCavalryGameTests {
    }
 
    @GameTest(template = "empty", timeoutTicks = 35, batch = "zhaoyun_cavalry")
-   public static void phaseTwoUnlocksAndMountsHakuryu(GameTestHelper h) {
+   public static void combatPhasesStayOnFootBeforeFirstNpRelease(GameTestHelper h) {
       var rider = ModEntities.ZHAO_YUN_RIDER.get().create(h.getLevel());
       rider.setPos(arena(h).getBottomCenter());
       rider.setHealth(rider.getMaxHealth() * 0.65F);
       h.getLevel().addFreshEntity(rider);
       h.runAfterDelay(2, () -> {
          h.assertTrue(rider.getCombatPhase() >= 2, "health threshold did not enter phase two");
-         h.assertTrue(rider.getVehicle() == rider.getHakuryu() && rider.getHakuryu() != null,
-            "phase two did not summon and mount Hakuryu");
-         var mount = rider.getHakuryu();
-         rider.discard();
-         mount.discard();
-         h.succeed();
+         h.assertTrue(!rider.isPassenger() && rider.getHakuryu() == null,
+            "phase two summoned Hakuryu before the first NP release");
+         h.assertTrue(!rider.getPersistentData().getBoolean(ZhaoYunRiderEntity.TAG_MOUNT_UNLOCKED),
+            "phase two unlocked Hakuryu before the first NP release");
+         rider.setHealth(rider.getMaxHealth() * 0.3F);
+         h.runAfterDelay(2, () -> {
+            h.assertTrue(rider.getCombatPhase() == 3, "health threshold did not enter phase three");
+            h.assertTrue(!rider.isPassenger() && rider.getHakuryu() == null,
+               "phase three summoned Hakuryu before the first NP release");
+            rider.discard();
+            h.succeed();
+         });
       });
    }
 
@@ -117,6 +123,8 @@ public final class ZhaoYunCavalryGameTests {
       var rider = ModEntities.ZHAO_YUN_RIDER.get().create(h.getLevel());
       rider.setPos(arena(h).getBottomCenter());
       rider.setHealth(rider.getMaxHealth() * 0.65F);
+      // This horse was already unlocked by an earlier NP release.
+      rider.getPersistentData().putBoolean(ZhaoYunRiderEntity.TAG_MOUNT_UNLOCKED, true);
       h.getLevel().addFreshEntity(rider);
       var target = EntityType.IRON_GOLEM.create(h.getLevel());
       target.setNoAi(true);
@@ -125,7 +133,7 @@ public final class ZhaoYunCavalryGameTests {
       rider.setTarget(target);
       h.runAfterDelay(2, () -> {
          var mount = rider.getHakuryu();
-         h.assertTrue(mount != null && rider.getVehicle() == mount, "phase two mount missing");
+         h.assertTrue(mount != null && rider.getVehicle() == mount, "previously unlocked mount missing");
          rider.setCurrentMp(rider.getMaxMp());
          h.assertTrue(rider.startChangbanpo(), "NP chant rejected");
          h.assertTrue(rider.isChangbanpoCharging(), "NP did not enter chant");
@@ -230,13 +238,24 @@ public final class ZhaoYunCavalryGameTests {
       h.assertTrue(rider.isChangbanpoCharging() && !rider.startChangbanpo(), "NPC did not reserve its pending cast");
       h.assertTrue(rider.getCurrentMp() == mana, "NPC paid for the pending NP twice");
       long release = NoblePhantasmCastService.releaseAt(rider);
+      h.runAfterDelay(release - h.getLevel().getGameTime() - 2, () -> {
+         h.assertTrue(!rider.isPassenger() && rider.getHakuryu() == null,
+            "first NP chant summoned Hakuryu before release");
+         h.assertTrue(!rider.getPersistentData().getBoolean(ZhaoYunRiderEntity.TAG_MOUNT_UNLOCKED),
+            "first NP chant unlocked Hakuryu before release");
+      });
       h.runAfterDelay(release - h.getLevel().getGameTime() + 2, () -> {
          h.assertTrue(rider.isChangbanpoActive() && rider.getVehicle() == rider.getHakuryu(), "NPC release added another chant or failed to mount");
          h.assertTrue(rider.getPersistentData().getInt("TypeMoonNpCastCount") == 1, "NPC restarted its pending cast");
          var horse = rider.getHakuryu();
-         rider.discard();
-         if (horse != null) horse.discard();
-         h.succeed();
+         rider.endChangbanpo();
+         h.runAfterDelay(2, () -> {
+            h.assertTrue(!rider.isChangbanpoActive() && horse != null && rider.getVehicle() == horse,
+               "NPC lost its horse after NP ended");
+            rider.discard();
+            if (horse != null) horse.discard();
+            h.succeed();
+         });
       });
    }
 

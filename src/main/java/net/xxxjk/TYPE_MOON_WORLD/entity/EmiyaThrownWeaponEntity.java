@@ -31,6 +31,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lancelot.LancelotCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -55,6 +56,7 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
    private boolean maxDistanceInitialized;
    private boolean arcInitialized;
    private int lastBreakthroughTick;
+   private int knightOfOwnerMinimumBreakY = Integer.MIN_VALUE;
 
    public EmiyaThrownWeaponEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -85,6 +87,9 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       this.entityData.set(PIERCING_IMPACT, enabled);
       if (enabled) {
          this.entityData.set(BREAK_LOW_HARDNESS, true);
+         if (LancelotCombatHelper.isKnightOfOwner(this.getItem())) {
+            this.knightOfOwnerMinimumBreakY = Mth.floor(this.getY()) - 2;
+         }
       }
    }
 
@@ -200,8 +205,14 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       if (!this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
          Vec3 motion = this.getDeltaMovement();
          Vec3 direction = motion.lengthSqr() > 1.0E-4 ? motion.normalize() : this.getLookAngle();
-         TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
-            result.getLocation(), direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), 3.8, 2, 2);
+         if (this.knightOfOwnerMinimumBreakY != Integer.MIN_VALUE) {
+            TerrainImpactService.impactKnightOfOwnerBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+               result.getLocation(), direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), 3.8, 2, 2,
+               this.knightOfOwnerMinimumBreakY);
+         } else {
+            TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+               result.getLocation(), direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), 3.8, 2, 2);
+         }
          this.setPos(result.getLocation().add(direction.scale(0.45)));
       }
    }
@@ -303,8 +314,14 @@ public class EmiyaThrownWeaponEntity extends ThrowableItemProjectile {
       }
       this.lastBreakthroughTick = this.tickCount;
       double length = Math.max(2.5, Math.min(5.0, Math.max(motion.length(), travel.length()) + 1.8));
-      TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
-         currentPosition, direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), length, 2, 2);
+      if (this.knightOfOwnerMinimumBreakY != Integer.MIN_VALUE) {
+         TerrainImpactService.impactKnightOfOwnerBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+            currentPosition, direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), length, 2, 2,
+            this.knightOfOwnerMinimumBreakY);
+      } else {
+         TerrainImpactService.impactForwardBreakthrough(serverLevel, this.getOwner() instanceof LivingEntity living ? living : null,
+            currentPosition, direction, TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), length, 2, 2);
+      }
    }
 
    private boolean exceededMaxFlightDistance() {

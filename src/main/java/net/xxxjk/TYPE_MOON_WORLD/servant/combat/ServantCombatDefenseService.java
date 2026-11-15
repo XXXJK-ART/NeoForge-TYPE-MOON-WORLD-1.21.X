@@ -11,6 +11,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.SwordItem;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.LancelotWeaponItem;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.Vec3;
@@ -420,6 +422,30 @@ public final class ServantCombatDefenseService {
 
    public static void broadcastBaseAttack(LivingEntity entity, int action) {
       if (!(entity.level() instanceof ServerLevel level)) return;
+      if (action != net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.STOP
+         && isLancelotAttack(entity)
+         && (action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD
+            || action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.FIST
+            || action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD_COMBO
+            || action == net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.FIST_COMBO)) {
+         boolean sword = entity.getMainHandItem().getItem() instanceof SwordItem
+            || entity.getMainHandItem().getItem() instanceof LancelotWeaponItem weapon
+               && weapon.weaponType() == LancelotWeaponItem.WeaponType.AROUNDIGHT;
+         int sequence = entity.getPersistentData().getInt("LancelotBasicMotion");
+         boolean combo = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.isContinuous(action);
+         if (combo) {
+            action = sword
+               ? net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.LANCELOT_SWORD_FLURRY
+               : net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.LANCELOT_FRENZY_FLURRY;
+         } else if (sword) {
+            action = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.LANCELOT_SWORD_SLASH_0
+               + Math.floorMod(sequence, 3);
+         } else {
+            action = net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.LANCELOT_FRENZY_SLASH_0
+               + Math.floorMod(sequence, 3);
+         }
+         entity.getPersistentData().putInt("LancelotBasicMotion", sequence + 1);
+      }
       if (entity.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.YAJIAO_QIANG.get())
          && (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ZhaoYunRiderEntity
             || entity instanceof ServerPlayer player
@@ -451,6 +477,13 @@ public final class ServantCombatDefenseService {
       for (ServerPlayer viewer : level.players()) if (viewer.distanceToSqr(entity) <= 128.0 * 128.0) {
          ModNetwork.sendToPlayer(viewer, payload);
       }
+   }
+
+   private static boolean isLancelotAttack(LivingEntity entity) {
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity) return true;
+      if (!(entity instanceof ServerPlayer player)) return false;
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      return vars.servant_card_transformed && "lancelot_berserker".equals(vars.servant_card_id);
    }
 
    /** Also covers native techniques and hitscan shots that publish no shared telegraph. */
