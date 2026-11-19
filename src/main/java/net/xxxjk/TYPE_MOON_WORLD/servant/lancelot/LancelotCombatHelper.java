@@ -80,7 +80,7 @@ public final class LancelotCombatHelper {
    public static final float ETERNAL_ARMS_MASTERSHIP_BYPASS_GUARD_CHANCE = 0.30F;
    public static final double AROUNDIGHT_CORE_ATTRIBUTE_MULTIPLIER = 2.0;
    public static final double AROUNDIGHT_DRAW_MP_COST = 50.0;
-   public static final double AROUNDIGHT_DRAIN_MP = 5.0;
+   public static final double AROUNDIGHT_DRAIN_MP = 15.0;
    public static final int AROUNDIGHT_DRAIN_INTERVAL = 20;
    public static final int UNABLE_DURATION_TICKS = 45;
    public static final int PROJECTILE_INTERCEPT_COOLDOWN = 2;

@@ -180,7 +180,7 @@ class LancelotBerserkerResourcesTest {
       assertEquals(240, LancelotCombatHelper.MANA_REVERSAL_DURATION_TICKS);
       assertEquals(360, LancelotCombatHelper.MANA_REVERSAL_COOLDOWN_TICKS);
       assertEquals(50.0, LancelotCombatHelper.AROUNDIGHT_DRAW_MP_COST, 1.0E-9);
-      assertEquals(5.0, LancelotCombatHelper.AROUNDIGHT_DRAIN_MP, 1.0E-9);
+      assertEquals(15.0, LancelotCombatHelper.AROUNDIGHT_DRAIN_MP, 1.0E-9);
       assertEquals(20, LancelotCombatHelper.AROUNDIGHT_DRAIN_INTERVAL);
       assertEquals(2.0, LancelotCombatHelper.AROUNDIGHT_CORE_ATTRIBUTE_MULTIPLIER, 1.0E-9);
       assertEquals(2, LancelotCombatHelper.PROJECTILE_INTERCEPT_COOLDOWN);
