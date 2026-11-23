@@ -4,8 +4,8 @@
   "display_name": "Diarmuid Ua Duibhne",
   "display_name_zh": "迪尔姆德·奥迪那",
   "class_type": "lancer",
-  "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "lancer", "male", "lawful", "neutral", "earth", "fianna_knights", "knight"],
+  "faction": "earth",
+  "traits": ["servant", "humanoid", "living_human", "human_kind", "seven_knights", "lancer", "male", "lawful", "balanced", "earth", "heaven_or_earth_servant", "beloved", "fianna_knights", "knight"],
   "parameters": {
     "endurance": "C",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "D",
     "magic_plus": false,
     "luck": "E",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "B"
   },
   "model": {
     "geometry": "",
@@ -37,22 +38,21 @@
     "default_weapon": "typemoonworld:gae_dearg",
     "immune_to_stone_axe_debuff": false,
     "combat_actions": [
-      "diarmuid_spear_combo",
-      "gae_dearg_break",
-      "gae_buidhe_curse",
-      "knight_strategy",
-      "mana_burst_jump",
-      "dualspear_reposition"
+      "diarmuid_cross_thrust", "diarmuid_advancing_thrust", "diarmuid_yellow_double",
+      "diarmuid_red_sweep", "diarmuid_rising_thrust", "diarmuid_low_spin",
+      "diarmuid_retreating_thrust", "diarmuid_mana_leap", "diarmuid_cross_guard",
+      "diarmuid_figure_eight", "diarmuid_rose_dance"
     ]
   },
   "skills": [
     "magic_resistance_b",
-    "riding_b",
+    "true_mind_eye_b",
     "love_spot_c",
     "knight_strategy_b",
     "mana_burst_jump_a"
   ],
-  "noble_phantasm": "",
+  "noble_phantasm": "gae_dearg",
+  "noble_phantasms": ["gae_dearg", "gae_buidhe"],
   "personality": {
     "obedience": "loyal",
     "principle": "orderly",

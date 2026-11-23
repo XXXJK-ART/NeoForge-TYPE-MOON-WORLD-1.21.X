@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
@@ -554,6 +556,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
       AABB hitBox = this.getBoundingBox()
          .expandTowards(this.chargeDirection.scale(speed + 1.1))
          .inflate(this.chargeWidth, 0.95, this.chargeWidth);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && !this.getPassengers().contains(entity) && entity.isAlive()
             && !EntityUtils.isImmunePlayerTarget(entity)
@@ -571,6 +574,7 @@ public abstract class IskandarMountEntity extends PathfinderMob implements GeoEn
          target.push(this.chargeDirection.x * getChargeKnockback(), 0.28, this.chargeDirection.z * getChargeKnockback());
          target.hurtMarked = true;
          onChargeHit(level, source, target);
+      }
       }
       this.chargeTicksRemaining--;
       if (this.chargeTicksRemaining <= 0) {

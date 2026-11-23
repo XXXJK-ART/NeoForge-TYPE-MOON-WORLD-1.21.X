@@ -1,13 +1,11 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -22,15 +20,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
-import net.xxxjk.TYPE_MOON_WORLD.block.ModBlocks;
-import net.xxxjk.TYPE_MOON_WORLD.block.custom.UBWWeaponBlock;
-import net.xxxjk.TYPE_MOON_WORLD.block.entity.UBWWeaponBlockEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.TsumukariWaveProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicCircuitColorHelper;
@@ -43,6 +35,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantCombatTempoService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatPhase;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -71,20 +65,13 @@ public final class MuramasaCombatHelper {
    private static final String LAST_CONTACT = "MuramasaLastContact";
    private static final String LAST_ATTACK = "MuramasaLastAttack";
    private static final String LAST_SKILL = "MuramasaLastSkill";
-   private static final String FIELD_ACTIVE = "MuramasaFieldActive";
-   private static final String FIELD_RESTORE_TICK = "MuramasaFieldRestoreTick";
-   private static final String FIELD_TERRAIN = "MuramasaFieldTerrain";
-   private static final String FIELD_CENTER_X = "MuramasaFieldCenterX";
-   private static final String FIELD_CENTER_Z = "MuramasaFieldCenterZ";
-   private static final String FIELD_COLLAPSING = "MuramasaFieldCollapsing";
+   private static final String SWORD_TECHNIQUE_COOLDOWN = "MuramasaSwordTechniqueCooldown:";
    private static final ResourceLocationLike DAMAGE_ID = new ResourceLocationLike("muramasa_damage");
    private static final ResourceLocationLike SPEED_ID = new ResourceLocationLike("muramasa_speed");
    private static final ResourceLocationLike KNOCKBACK_ID = new ResourceLocationLike("muramasa_knockback");
    private static final int WEAPON_ROTATION_TICKS = 1200;
    private static final int CHARGE_TICKS = 30;
    private static final int TSUMUKARI_SPECIAL_CHARGE_PERCENT = 10;
-   private static final int NP_EXPAND_TICKS = 200;
-   private static final int NP_COLLAPSE_TICKS = 80;
 
    private MuramasaCombatHelper() {
    }
@@ -97,6 +84,10 @@ public final class MuramasaCombatHelper {
       CompoundTag data = entity.getPersistentData();
       if (data.contains(LAST_PASSIVE_STATE_TICK) && data.getLong(LAST_PASSIVE_STATE_TICK) == now) return;
       data.putLong(LAST_PASSIVE_STATE_TICK, now);
+      if (data.getBoolean(NP_PENDING)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(entity)) {
+         cancelNoblePhantasmSummon(entity);
+      }
       MuramasaDissolutionService.tick(entity);
       if (!entity.isAlive()) {
          return;
@@ -107,10 +98,6 @@ public final class MuramasaCombatHelper {
       }
       refreshModifiers(entity, now);
       rotateWeapon(entity, now);
-      if (entity.getPersistentData().getBoolean(FIELD_ACTIVE)
-         && now >= entity.getPersistentData().getLong(FIELD_RESTORE_TICK)) {
-         restoreFieldTerrain(entity);
-      }
    }
 
    public static boolean tick(SenkoMuramasaEntity entity, ServantAiContext context) {
@@ -366,6 +353,19 @@ public final class MuramasaCombatHelper {
          performKarmaSlash(entity, target, level);
          return true;
       }
+      if (phase != ServantCombatPhase.PROBING && distance <= 4.5 && lineOfSight
+         && now >= data.getLong("MuramasaSwordTechniqueNextTick")) {
+         MuramasaSwordTechnique technique = switch (entity.getRandom().nextInt(3)) {
+            case 0 -> MuramasaSwordTechnique.DOWNWARD_SLASH;
+            case 1 -> MuramasaSwordTechnique.THRUST;
+            default -> MuramasaSwordTechnique.SPINNING_SLASH;
+         };
+         if (performSwordTechnique(entity, technique)) {
+            data.putLong("MuramasaSwordTechniqueNextTick", now + technique.cooldownTicks());
+            lockAction(entity, data, now, 8L);
+            return true;
+         }
+      }
       if (phase != ServantCombatPhase.PROBING
          && now >= data.getLong("MuramasaSwordFieldCooldown")
          && entity.getCurrentMp() >= 40.0
@@ -507,12 +507,14 @@ public final class MuramasaCombatHelper {
             return;
          }
          AABB area = entity.getBoundingBox().inflate(8.0);
+         try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : level.getEntitiesOfClass(
             LivingEntity.class, area,
             candidate -> candidate != entity && candidate.isAlive()
                && !entity.isAlliedTo(candidate) && !EntityUtils.isImmunePlayerTarget(candidate))) {
             applyNoDefenseDamage(entity, living, 28.0F);
             living.igniteForSeconds(4.0F);
+         }
          }
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.SNOWFLAKE,
             entity.getX(), entity.getY() + 1.0, entity.getZ(), 140, 8.0, 1.1, 8.0, 0.1);
@@ -562,7 +564,7 @@ public final class MuramasaCombatHelper {
 
    private static void rotateWeapon(SenkoMuramasaEntity entity, long now) {
       CompoundTag data = entity.getPersistentData();
-      if (data.getBoolean(NP_USED)) {
+      if (data.getBoolean(NP_USED) || data.getBoolean(NP_PENDING)) {
          return;
       }
       if (entity.isPerformingAction() || entity.isAttackSwinging()
@@ -626,68 +628,33 @@ public final class MuramasaCombatHelper {
 
    private static void summonTsumukari(SenkoMuramasaEntity entity, ServerLevel level) {
       CompoundTag data = entity.getPersistentData();
-      data.putBoolean(NP_USED, true);
       data.putBoolean(NP_PENDING, true);
       data.putLong(NP_LAST, level.getGameTime());
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 50.0));
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.noteNpcPayment(entity, 50);
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "muramasa_summon", 1200, ticks -> entity.getPersistentData().putLong(NP_LAST, entity.level().getGameTime() - (1200) + ticks), () -> { });
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
+      long voiceEnd = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "muramasa_summon", 1200,
+         ticks -> data.putLong(NP_LAST, entity.level().getGameTime() - 1200 + ticks), () -> cancelNoblePhantasmSummon(entity));
       entity.triggerNamedActionAnimation("np");
-      ServantVoiceHelper.tryPlayMuramasaNp(entity);
       entity.getNavigation().stop();
-      // The field starts at the same moment as the Noble Phantasm voice.
-      finishTsumukariSummon(entity);
-
+      data.putLong(ACTION_LOCK_UNTIL, voiceEnd);
+      MuramasaNoblePhantasmPresentation.begin(entity, (int)(voiceEnd - level.getGameTime()));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
+         MuramasaNoblePhantasmPresentation.complete(entity);
+         data.putBoolean(NP_USED, true);
+         data.putBoolean(NP_PENDING, false);
       });
-      return;
    }
 
-   private static void finishTsumukariSummon(SenkoMuramasaEntity entity) {
-      if (!entity.isAlive() || !(entity.level() instanceof ServerLevel level)) {
-         return;
-      }
+   public static void cancelNoblePhantasmSummon(SenkoMuramasaEntity entity) {
+      MuramasaNoblePhantasmPresentation.cancel(entity);
       CompoundTag data = entity.getPersistentData();
-      if (!data.getBoolean(NP_PENDING)) {
-         return;
-      }
-      VFXServerEffects.spawnOriented(level, "muramasa_no_gen_kensai",
-         entity.position().add(0.0, 0.1, 0.0), entity.getLookAngle(), 128.0);
-      spawnMuramasaFieldEffects(level, entity);
-      level.playSound(null, entity.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.HOSTILE, 0.8F, 0.7F);
-      data.putLong(ACTION_LOCK_UNTIL, level.getGameTime() + NP_EXPAND_TICKS + NP_COLLAPSE_TICKS + 2L);
-      TYPE_MOON_WORLD.queueServerWork(NP_EXPAND_TICKS, () -> revealTsumukari(entity));
-   }
-
-   private static void revealTsumukari(SenkoMuramasaEntity entity) {
-      if (!entity.isAlive() || !(entity.level() instanceof ServerLevel level)) {
-         return;
-      }
-      CompoundTag data = entity.getPersistentData();
-      if (!data.getBoolean(NP_PENDING)) {
-         return;
-      }
-      expandMuramasaTerrain(level, entity, 25);
-      data.putBoolean(FIELD_COLLAPSING, true);
-      setProjectedWeapon(entity, ModItems.TSUMUKARI_MURAMASA.get());
-      shatterMuramasaFieldSwords(level, entity);
-      scheduleMuramasaCollapse(level, entity, 0);
-      scheduleTsumukariHandEffects(level, entity, 0);
-      TYPE_MOON_WORLD.queueServerWork(NP_COLLAPSE_TICKS, () -> completeTsumukariSummon(entity));
-      level.playSound(null, entity.blockPosition(), SoundEvents.ITEM_PICKUP, SoundSource.HOSTILE, 0.75F, 0.55F);
-   }
-
-   private static void completeTsumukariSummon(SenkoMuramasaEntity entity) {
-      if (!entity.isAlive() || !(entity.level() instanceof ServerLevel level)) {
-         return;
-      }
-      CompoundTag data = entity.getPersistentData();
-      if (!data.getBoolean(NP_PENDING)) {
-         return;
-      }
-      restoreFieldTerrain(entity);
       data.putBoolean(NP_PENDING, false);
-      level.playSound(null, entity.blockPosition(), SoundEvents.ITEM_PICKUP, SoundSource.HOSTILE, 0.75F, 0.55F);
+      data.putBoolean(NP_USED, false);
+      data.remove(ACTION_LOCK_UNTIL);
+   }
+
+   public static boolean isSummonPending(SenkoMuramasaEntity entity) {
+      return entity.getPersistentData().getBoolean(NP_PENDING);
    }
 
    private static void startCharge(SenkoMuramasaEntity entity, LivingEntity target, ServerLevel level) {
@@ -813,274 +780,6 @@ public final class MuramasaCombatHelper {
       }
    }
 
-   private static void spawnMuramasaFieldEffects(ServerLevel level, SenkoMuramasaEntity entity) {
-      Vec3 origin = entity.position().add(0.0, 0.15, 0.0);
-
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-         origin.x, origin.y + 0.8, origin.z, 2, 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
-         origin.x, origin.y + 0.85, origin.z, 90, 0.9, 0.75, 0.9, 0.08);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
-         origin.x, origin.y + 0.9, origin.z, 36, 0.75, 0.65, 0.75, 0.05);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-         origin.x, origin.y + 1.0, origin.z, 24, 0.8, 0.9, 0.8, 0.12);
-
-      placeMuramasaField(level, entity);
-      scheduleMuramasaBarrier(level, entity, 0);
-      VFXServerEffects.screenFlash(level, origin, 48.0, 5, 0.24F);
-   }
-
-   private static void placeMuramasaField(ServerLevel level, SenkoMuramasaEntity entity) {
-      CompoundTag data = entity.getPersistentData();
-      if (data.getBoolean(FIELD_ACTIVE)) {
-         return;
-      }
-
-      ListTag terrain = new ListTag();
-      data.put(FIELD_TERRAIN, terrain);
-      data.putBoolean(FIELD_ACTIVE, true);
-      data.putBoolean(FIELD_COLLAPSING, false);
-      data.putInt(FIELD_CENTER_X, entity.blockPosition().getX());
-      data.putInt(FIELD_CENTER_Z, entity.blockPosition().getZ());
-      int restoreDelay = NP_EXPAND_TICKS + NP_COLLAPSE_TICKS + 2;
-      data.putLong(FIELD_RESTORE_TICK, level.getGameTime() + restoreDelay);
-      TYPE_MOON_WORLD.queueServerWork(1, () -> expandMuramasaTerrain(level, entity, 0));
-   }
-
-   private static void expandMuramasaTerrain(ServerLevel level, SenkoMuramasaEntity entity, int radius) {
-      if (!entity.isAlive() || entity.level() != level
-         || !entity.getPersistentData().getBoolean(FIELD_ACTIVE)
-         || entity.getPersistentData().getBoolean(FIELD_COLLAPSING)) {
-         return;
-      }
-      CompoundTag data = entity.getPersistentData();
-      ListTag terrain = data.getList(FIELD_TERRAIN, Tag.TAG_COMPOUND);
-      int centerX = data.getInt(FIELD_CENTER_X);
-      int centerZ = data.getInt(FIELD_CENTER_Z);
-      int outerSquared = radius * radius;
-      int innerSquared = Math.max(0, radius - 1) * Math.max(0, radius - 1);
-
-      for (int dx = -radius; dx <= radius; dx++) {
-         for (int dz = -radius; dz <= radius; dz++) {
-            int distanceSquared = dx * dx + dz * dz;
-            if (distanceSquared > outerSquared || (radius > 0 && distanceSquared <= innerSquared)) {
-               continue;
-            }
-            int x = centerX + dx;
-            int z = centerZ + dz;
-            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-            BlockPos groundPos = new BlockPos(x, y, z);
-            if (!level.hasChunkAt(groundPos) || level.getBlockEntity(groundPos) != null) {
-               continue;
-            }
-            BlockState original = level.getBlockState(groundPos);
-            if (!original.is(Blocks.BEDROCK) && original.getDestroySpeed(level, groundPos) >= 0.0F) {
-               BlockState replacement = Blocks.RED_SANDSTONE.defaultBlockState();
-               if (!original.equals(replacement) && level.setBlock(groundPos, replacement, 3)) {
-                  rememberFieldBlock(terrain, groundPos, original, replacement);
-               }
-            }
-
-            long seed = mix64(groundPos.asLong() ^ entity.getUUID().getMostSignificantBits());
-            if ((seed & 15L) != 0L) {
-               continue;
-            }
-            BlockPos swordPos = groundPos.above();
-            if (!level.hasChunkAt(swordPos) || level.getBlockEntity(swordPos) != null
-               || !level.getBlockState(swordPos).canBeReplaced()) {
-               continue;
-            }
-            Direction facing = Direction.fromYRot((seed & 0xFFFFL) * 360.0 / 65536.0);
-            BlockState swordState = ((UBWWeaponBlock)ModBlocks.UBW_WEAPON_BLOCK.get()).defaultBlockState()
-               .setValue(UBWWeaponBlock.FACING, facing.getAxis().isHorizontal() ? facing : Direction.NORTH)
-               .setValue(UBWWeaponBlock.ROTATION_A, (seed & 1L) != 0L)
-               .setValue(UBWWeaponBlock.ROTATION_B, (seed & 2L) != 0L)
-               .setValue(UBWWeaponBlock.ROTATION_C, (seed & 4L) != 0L);
-            BlockState swordOriginal = level.getBlockState(swordPos);
-            if (!level.setBlock(swordPos, swordState, 3)) {
-               continue;
-            }
-            rememberFieldBlock(terrain, swordPos, swordOriginal, swordState);
-            if (level.getBlockEntity(swordPos) instanceof UBWWeaponBlockEntity tile) {
-               ItemStack sword = new ItemStack(Items.IRON_SWORD);
-               project(sword);
-               tile.setStoredItem(sword);
-            }
-         }
-      }
-
-      if (radius < 25) {
-         TYPE_MOON_WORLD.queueServerWork(8, () -> expandMuramasaTerrain(level, entity, radius + 1));
-      }
-   }
-
-   private static void rememberFieldBlock(ListTag terrain, BlockPos pos, BlockState original, BlockState replacement) {
-      CompoundTag entry = new CompoundTag();
-      entry.putLong("pos", pos.asLong());
-      entry.putInt("original", Block.getId(original));
-      entry.putInt("replacement", Block.getId(replacement));
-      terrain.add(entry);
-   }
-
-   private static void restoreFieldTerrain(SenkoMuramasaEntity entity) {
-      if (!(entity.level() instanceof ServerLevel level)) {
-         return;
-      }
-      CompoundTag data = entity.getPersistentData();
-      ListTag terrain = data.getList(FIELD_TERRAIN, Tag.TAG_COMPOUND);
-      for (int i = terrain.size() - 1; i >= 0; i--) {
-         CompoundTag entry = terrain.getCompound(i);
-         BlockPos pos = BlockPos.of(entry.getLong("pos"));
-         if (!level.hasChunkAt(pos)) {
-            continue;
-         }
-         BlockState current = level.getBlockState(pos);
-         BlockState replacement = Block.stateById(entry.getInt("replacement"));
-         if (current.equals(replacement)) {
-            level.setBlock(pos, Block.stateById(entry.getInt("original")), 3);
-         }
-      }
-      data.remove(FIELD_TERRAIN);
-      data.putBoolean(FIELD_ACTIVE, false);
-      data.remove(FIELD_RESTORE_TICK);
-      data.remove(FIELD_CENTER_X);
-      data.remove(FIELD_CENTER_Z);
-      data.remove(FIELD_COLLAPSING);
-   }
-
-   private static void scheduleMuramasaBarrier(ServerLevel level, SenkoMuramasaEntity entity, int step) {
-      if (step > 50) {
-         return;
-      }
-      TYPE_MOON_WORLD.queueServerWork(step == 0 ? 1 : 4, () -> {
-         if (!entity.isAlive() || entity.level() != level) {
-            return;
-         }
-         double radius = 0.5 + 24.5 * step / 50.0;
-         spawnMuramasaBarrierRing(level, entity, radius);
-         scheduleMuramasaBarrier(level, entity, step + 1);
-      });
-   }
-
-   private static void scheduleMuramasaCollapse(ServerLevel level, SenkoMuramasaEntity entity, int tick) {
-      if (tick > NP_COLLAPSE_TICKS) {
-         return;
-      }
-      TYPE_MOON_WORLD.queueServerWork(tick == 0 ? 1 : 4, () -> {
-         if (!entity.isAlive() || entity.level() != level) {
-            return;
-         }
-         double progress = Math.min(1.0, tick / (double)NP_COLLAPSE_TICKS);
-         double radius = 25.0 * (1.0 - progress);
-         if (radius > 0.25) {
-            spawnMuramasaBarrierRing(level, entity, radius);
-         }
-         scheduleMuramasaCollapse(level, entity, tick + 4);
-      });
-   }
-
-   private static void shatterMuramasaFieldSwords(ServerLevel level, SenkoMuramasaEntity entity) {
-      ListTag terrain = entity.getPersistentData().getList(FIELD_TERRAIN, Tag.TAG_COMPOUND);
-      int shattered = 0;
-      for (int i = 0; i < terrain.size(); i++) {
-         CompoundTag entry = terrain.getCompound(i);
-         if (!Block.stateById(entry.getInt("replacement")).is(ModBlocks.UBW_WEAPON_BLOCK.get())) {
-            continue;
-         }
-         BlockPos pos = BlockPos.of(entry.getLong("pos"));
-         if (!level.hasChunkAt(pos) || !level.getBlockState(pos).is(ModBlocks.UBW_WEAPON_BLOCK.get())) {
-            continue;
-         }
-         net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-            pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 16, 0.18, 0.4, 0.18, 0.08);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
-            pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 12, 0.32, 0.42, 0.32, 0.1);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT,
-            pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 8, 0.22, 0.35, 0.22, 0.12);
-         shattered++;
-      }
-      if (shattered > 0) {
-         level.playSound(null, entity.blockPosition(), SoundEvents.GLASS_BREAK, SoundSource.HOSTILE, 1.5F, 0.55F);
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.SNOWFLAKE,
-            entity.getX(), entity.getY() + 1.0, entity.getZ(), shattered * 3, 8.0, 3.0, 8.0, 0.12);
-      }
-   }
-
-   private static void scheduleTsumukariHandEffects(ServerLevel level, SenkoMuramasaEntity entity, int tick) {
-      if (tick > NP_COLLAPSE_TICKS) {
-         return;
-      }
-      TYPE_MOON_WORLD.queueServerWork(tick == 0 ? 1 : 4, () -> {
-         if (!entity.isAlive() || entity.level() != level) {
-            return;
-         }
-         spawnTsumukariHandEffects(level, entity, tick);
-         scheduleTsumukariHandEffects(level, entity, tick + 4);
-      });
-   }
-
-   private static void spawnTsumukariHandEffects(ServerLevel level, SenkoMuramasaEntity entity, int tick) {
-      Vec3 hand = entity.position().add(entity.getLookAngle().scale(0.35)).add(0.0, entity.getBbHeight() * 0.68, 0.0);
-      int count = 12 + Math.min(24, tick / 3);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
-         hand.x, hand.y, hand.z, count, 0.28, 0.3, 0.28, 0.08);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
-         hand.x, hand.y, hand.z, count / 2, 0.22, 0.24, 0.22, 0.05);
-      level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-         hand.x, hand.y, hand.z, count / 2, 0.2, 0.25, 0.2, 0.1);
-      if ((tick & 7) == 0) {
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT,
-            hand.x, hand.y, hand.z, 32, 0.5, 0.45, 0.5, 0.15);
-      }
-   }
-
-   private static void spawnMuramasaBarrierRing(ServerLevel level, SenkoMuramasaEntity entity, double radius) {
-      double y = entity.getY() + 0.08;
-      int points = Math.max(24, Math.min(72, (int)(radius * 3.0)));
-      for (int i = 0; i < points; i++) {
-         double angle = Math.PI * 2.0 * i / points;
-         double x = entity.getX() + Math.cos(angle) * radius;
-         double z = entity.getZ() + Math.sin(angle) * radius;
-         level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
-            x, y, z, 1, 0.0, 0.12, 0.0, 0.025);
-         if ((i & 3) == 0) {
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
-               x, y + 0.12, z, 1, 0.0, 0.08, 0.0, 0.018);
-         }
-         if ((i & 7) == 0) {
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-               x, y + 0.45, z, 1, 0.0, 0.1, 0.0, 0.04);
-         }
-      }
-      spawnMuramasaHemisphereShell(level, entity, radius);
-   }
-
-   private static void spawnMuramasaHemisphereShell(ServerLevel level, SenkoMuramasaEntity entity, double radius) {
-      if (radius < 1.0) {
-         return;
-      }
-      int latitudeBands = Math.max(3, Math.min(6, (int)(radius / 4.0)));
-      int longitudePoints = Math.max(24, Math.min(72, (int)(radius * 2.5)));
-      for (int latitude = 1; latitude <= latitudeBands; latitude++) {
-         double polar = (Math.PI * 0.5) * latitude / latitudeBands;
-         double horizontalRadius = Math.sin(polar) * radius;
-         double height = Math.cos(polar) * radius;
-         for (int longitude = 0; longitude < longitudePoints; longitude++) {
-            double angle = Math.PI * 2.0 * longitude / longitudePoints;
-            double x = entity.getX() + Math.cos(angle) * horizontalRadius;
-            double z = entity.getZ() + Math.sin(angle) * horizontalRadius;
-            double y = entity.getY() + 0.1 + height;
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
-               x, y, z, 1, 0.0, 0.03, 0.0, 0.015);
-            if ((longitude + latitude) % 3 == 0) {
-               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
-                  x, y, z, 1, 0.0, 0.04, 0.0, 0.025);
-            }
-         }
-      }
-   }
-
    private static void spawnMuramasaReleaseEffects(ServerLevel level, SenkoMuramasaEntity entity, int percent) {
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
       Vec3 forward = horizontalLook(entity);
@@ -1117,15 +816,9 @@ public final class MuramasaCombatHelper {
       return horizontal.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : horizontal.normalize();
    }
 
-   private static long mix64(long value) {
-      value ^= value >>> 30;
-      value *= 0xBF58476D1CE4E5B9L;
-      value ^= value >>> 27;
-      value *= 0x94D049BB133111EBL;
-      return value ^ (value >>> 31);
-   }
-
    public static void applyNoDefenseDamage(LivingEntity attacker, LivingEntity target, float amount) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, amount,
+         defender -> applyNoDefenseDamage(attacker, defender, amount))) return;
       if (attacker == null || target == null || amount <= 0.0F || !target.isAlive() || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
@@ -1168,6 +861,82 @@ public final class MuramasaCombatHelper {
          damage *= 1.30;
       }
       return damage * 1.50; // Karma Eye / precision strike guarantees a critical, maximum-damage hit.
+   }
+
+   public static boolean performSwordTechnique(LivingEntity attacker, MuramasaSwordTechnique technique) {
+      if (attacker == null || technique == null || !attacker.isAlive() || ServantCombatSystem.cannotAct(attacker)
+         || !hasSword(attacker)) return false;
+      if (attacker instanceof ServerPlayer player) {
+         LivingEntity target = findTechniqueTarget(player, technique);
+         return performSwordTechnique(player, target, technique);
+      }
+      if (attacker == null || technique == null || !(attacker.level() instanceof ServerLevel level)
+         || ServantCombatSystem.cannotAct(attacker) || !hasSword(attacker)
+         || currentMana(attacker) + 1.0E-6 < technique.manaCost()) return false;
+      long now = level.getGameTime();
+      if (now < attacker.getPersistentData().getLong(SWORD_TECHNIQUE_COOLDOWN + technique.id())) return false;
+      LivingEntity target = findTechniqueTarget(attacker, technique);
+      if (target == null) return false;
+      if (!(attacker instanceof SenkoMuramasaEntity entity)) return false;
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - technique.manaCost()));
+      attacker.getPersistentData().putLong(SWORD_TECHNIQUE_COOLDOWN + technique.id(), now + technique.cooldownTicks());
+      boolean landed = performSwordTechnique(attacker, target, technique);
+      if (!landed) {
+         attacker.getPersistentData().remove(SWORD_TECHNIQUE_COOLDOWN + technique.id());
+         entity.setCurrentMp(Math.min(entity.getMaxMp(), entity.getCurrentMp() + technique.manaCost()));
+      }
+      return landed;
+   }
+
+   private static boolean performSwordTechnique(LivingEntity attacker, LivingEntity target, MuramasaSwordTechnique technique) {
+      if (target == null || !target.isAlive() || attacker.level() != target.level()
+         || attacker.distanceTo(target) > technique.range() || !attacker.hasLineOfSight(target)
+         || !EntityUtils.isValidCombatTarget(attacker, target)) return false;
+      if (technique == MuramasaSwordTechnique.SPINNING_SLASH) {
+         var victims = attacker.level().getEntitiesOfClass(LivingEntity.class,
+            attacker.getBoundingBox().inflate(technique.range()), candidate -> candidate != attacker && candidate.isAlive()
+               && attacker.distanceTo(candidate) <= technique.range() && attacker.hasLineOfSight(candidate)
+               && EntityUtils.isValidCombatTarget(attacker, candidate));
+         if (victims.isEmpty()) return false;
+         for (LivingEntity victim : victims.stream().limit(3).toList()) applySwordTechniqueDamage(attacker, victim, technique);
+      } else applySwordTechniqueDamage(attacker, target, technique);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(attacker, technique.animationAction());
+      if (attacker.level() instanceof ServerLevel level) {
+         level.sendParticles(ParticleTypes.SWEEP_ATTACK, attacker.getX(), attacker.getY() + attacker.getBbHeight() * 0.55,
+            attacker.getZ(), technique == MuramasaSwordTechnique.SPINNING_SLASH ? 8 : 3, 0.25, 0.3, 0.25, 0.0);
+      }
+      return true;
+   }
+
+   private static void applySwordTechniqueDamage(LivingEntity attacker, LivingEntity target, MuramasaSwordTechnique technique) {
+      var base = attacker instanceof ServerPlayer player ? player.damageSources().playerAttack(player) : attacker.damageSources().mobAttack(attacker);
+      float damage = (float)(attacker.getAttributeValue(Attributes.ATTACK_DAMAGE) * technique.damageMultiplier());
+      target.hurt(new CombatDamageSource(base, AttackOrigin.skill("senko_muramasa", technique.id())), damage);
+   }
+
+   private static LivingEntity findTechniqueTarget(LivingEntity attacker, MuramasaSwordTechnique technique) {
+      if (attacker instanceof ServerPlayer player) {
+         LivingEntity lookedAt = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillUtils.findLookTarget(player, technique.range(), 2.0);
+         if (lookedAt != null) return lookedAt;
+         if (technique != MuramasaSwordTechnique.SPINNING_SLASH) return null;
+      }
+      if (attacker instanceof SenkoMuramasaEntity entity && entity.getTarget() != null
+         && entity.distanceTo(entity.getTarget()) <= technique.range() && entity.hasLineOfSight(entity.getTarget())
+         && EntityUtils.isValidCombatTarget(entity, entity.getTarget())) return entity.getTarget();
+      if (technique != MuramasaSwordTechnique.SPINNING_SLASH) return null;
+      return attacker.level().getEntitiesOfClass(LivingEntity.class, attacker.getBoundingBox().inflate(technique.range()),
+         candidate -> candidate != attacker && candidate.isAlive() && EntityUtils.isValidCombatTarget(attacker, candidate))
+         .stream().findFirst().orElse(null);
+   }
+
+   private static boolean hasSword(LivingEntity entity) {
+      return entity.getMainHandItem().getItem() instanceof SwordItem;
+   }
+
+   private static double currentMana(LivingEntity entity) {
+      if (entity instanceof SenkoMuramasaEntity servant) return servant.getCurrentMp();
+      if (entity instanceof ServerPlayer player) return player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().mana();
+      return 0.0;
    }
 
    private static boolean hasDivinity(SenkoMuramasaEntity entity) {
@@ -1226,7 +995,11 @@ public final class MuramasaCombatHelper {
    }
 
    public static void cleanup(SenkoMuramasaEntity entity) {
-      restoreFieldTerrain(entity);
+      if (entity.getPersistentData().getBoolean(NP_PENDING)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.cancel(entity, false);
+         cancelNoblePhantasmSummon(entity);
+      }
+      MuramasaNoblePhantasmPresentation.cancel(entity);
       AttributeInstance attack = entity.getAttribute(Attributes.ATTACK_DAMAGE);
       AttributeInstance speed = entity.getAttribute(Attributes.ATTACK_SPEED);
       AttributeInstance knockback = entity.getAttribute(Attributes.KNOCKBACK_RESISTANCE);

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +39,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceServi
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.DeferredTerrainDestruction;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -253,12 +257,14 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    private void applyWindDamage(ServerLevel level, LivingEntity owner) {
       AABB area = owner.getBoundingBox().inflate(WIND_RADIUS);
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e)
             && !EntityUtils.isImmunePlayerTarget(e) && e.distanceToSqr(owner) <= WIND_RADIUS * WIND_RADIUS)) {
          hurtWithoutIFrames(target, source, 50.0F);
          Vec3 push = target.position().subtract(owner.position());
          if (push.lengthSqr() > 1.0E-4) { push = push.normalize().scale(0.28); target.push(push.x, 0.12, push.z); }
+      }
       }
    }
 
@@ -274,6 +280,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
       search = search.inflate(BEAM_HALF_WIDTH + 2, BEAM_HALF_HEIGHT + 2, BEAM_HALF_WIDTH + 2);
       float pulse = BEAM_DAMAGE_TOTAL * getPowerScale() * clashDamageScale / BEAM_DAMAGE_PULSES;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment101 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, search,
          e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e))) {
          for (Vec3 forward : sweepDirections) {
@@ -283,40 +290,16 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
             break;
          }
       }
+      }
    }
 
    static List<Vec3> sweepDirections(Vec3 previous, Vec3 current) {
-      Vec3 to = normalized(current);
-      Vec3 from = previous == null ? to : normalized(previous);
-      double angle = Math.acos(Math.max(-1.0, Math.min(1.0, from.dot(to))));
-      int steps = Math.max(1, (int)Math.ceil(angle / BEAM_SWEEP_STEP_RADIANS));
-      List<Vec3> directions = new ArrayList<>(steps + 1);
-      for (int step = 0; step <= steps; step++) {
-         double progress = step / (double)steps;
-         Vec3 interpolated = from.scale(1.0 - progress).add(to.scale(progress));
-         directions.add(interpolated.lengthSqr() < 1.0E-6 ? to : interpolated.normalize());
-      }
-      return directions;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamSweepGeometry.directions(previous, current);
    }
 
    static boolean intersectsBeam(AABB targetBounds, Vec3 start, Vec3 forward) {
-      Vec3 direction = normalized(forward);
-      Vec3 worldUp = Math.abs(direction.y) > 0.95 ? new Vec3(0, 0, 1) : new Vec3(0, 1, 0);
-      Vec3 right = direction.cross(worldUp).normalize();
-      Vec3 up = right.cross(direction).normalize();
-      Vec3 center = targetBounds.getCenter();
-      Vec3 rel = center.subtract(start);
-      double halfX = targetBounds.getXsize() * 0.5;
-      double halfY = targetBounds.getYsize() * 0.5;
-      double halfZ = targetBounds.getZsize() * 0.5;
-      double alongRadius = projectedRadius(direction, halfX, halfY, halfZ);
-      double along = rel.dot(direction);
-      if (along + alongRadius < -3.0 || along - alongRadius > BEAM_LENGTH) return false;
-      double beamAlong = Math.max(0.0, Math.min(BEAM_LENGTH, along));
-      double widthScale = Math.max(0.22, Math.sin(Math.PI * beamAlong / BEAM_LENGTH));
-      double allowedWidth = along < 0.0 ? 2.8 : BEAM_HALF_WIDTH * Math.pow(widthScale, 0.35);
-      return Math.abs(rel.dot(right)) <= allowedWidth + projectedRadius(right, halfX, halfY, halfZ)
-         && Math.abs(rel.dot(up)) <= BEAM_HALF_HEIGHT + projectedRadius(up, halfX, halfY, halfZ);
+      return net.xxxjk.TYPE_MOON_WORLD.servant.combat.BeamSweepGeometry.intersects(targetBounds, start, forward,
+         BEAM_LENGTH, BEAM_HALF_WIDTH, BEAM_HALF_HEIGHT);
    }
 
    private static double projectedRadius(Vec3 axis, double halfX, double halfY, double halfZ) {
@@ -360,9 +343,11 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
          double radius = 60.0;
          float damage = 200.0F * getPowerScale() * clashDamageScale;
          DamageSource source = level.damageSources().explosion(this, owner);
+         try (var carrySegment102 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius),
             e -> e.isAlive() && e != owner && !GilgameshDuelState.areDuelPartners(owner, e) && !EntityUtils.isImmunePlayerTarget(e) && e.distanceToSqr(center) <= radius * radius)) {
             hurtWithoutIFrames(target, source, damage);
+         }
          }
          VFXServerEffects.spawn(level, "ea_impact", center, 256.0);
          level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 16, 2.5, 2.5, 2.5, 0.0);
@@ -440,6 +425,7 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
    }
 
    private static void queueImpactTerrainInWaves(ServerLevel level, Vec3 center, double radius) {
+      radius = NoblePhantasmTerrainLimits.radius(radius);
       int waves = Math.max(1, (int)Math.ceil(radius / 2.0));
       double step = radius / waves;
       for (int wave = 1; wave <= waves; wave++) {
@@ -449,7 +435,8 @@ public class GilgameshEaBeamEntity extends Entity implements BeamClashParticipan
             double current = index * step;
             DeferredTerrainDestruction.queueShell(level, center, current, previous, 48,
                (serverLevel, pos, distanceSqr, shellRadius, origin) -> {
-                  if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null) return false;
+                  if (!serverLevel.hasChunkAt(pos) || serverLevel.getBlockEntity(pos) != null
+                     || !NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos)) return false;
                   BlockState state = serverLevel.getBlockState(pos);
                   float hardness = state.getDestroySpeed(serverLevel, pos);
                   return !state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0 && hardness <= 80

@@ -29,8 +29,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantManeuverService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashEntity;
-import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.SowaExpertiseHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.CuChulainnCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.EmiyaArcherEntity;
@@ -89,6 +89,7 @@ public final class ServantCombatSystem {
    }
 
    public static boolean tickBeforeAi(ServantEntity entity) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.motionLocked(entity)) { entity.getNavigation().stop();return true; }
       if (entity.level().isClientSide()) {
          return false;
       }
@@ -138,10 +139,16 @@ public final class ServantCombatSystem {
          entity.setDeltaMovement(entity.getDeltaMovement().multiply(0.25, 1.0, 0.25));
          return true;
       }
+      if (ServantCombatDefenseService.isGuarding(entity) || ServantCombatDefenseService.isDodgeActive(entity, now)) {
+         entity.getNavigation().stop();
+         if (ServantCombatDefenseService.isGuarding(entity)) entity.setCombatPose(2, 6);
+         return true;
+      }
       return false;
    }
 
    public static boolean tryRunComboAction(ServantEntity attacker, LivingEntity target) {
+      if (attacker instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity) return false;
       if (attacker.level().isClientSide()
          || target == null
          || !target.isAlive()
@@ -190,6 +197,7 @@ public final class ServantCombatSystem {
       }
       DamageSource source = event.getSource();
       boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean deathFlight = NoblePhantasmDamageClassifier.isCuDeathFlightDamage(source);
       if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
          recordIncomingDamage(servant, event.getAmount());
          return;
@@ -197,7 +205,7 @@ public final class ServantCombatSystem {
 
       long now = servant.level().getGameTime();
       CompoundTag data = servant.getPersistentData();
-      if (!guaranteedHit && !PaleRiderDamageTypes.isInfection(source)
+      if (!guaranteedHit && !deathFlight && !PaleRiderDamageTypes.isInfection(source)
          && (now < data.getLong(TAG_INVULN_UNTIL) || isUntargetable(servant))) {
          event.setCanceled(true);
          spawnGuardFx(servant, ParticleTypes.END_ROD, SoundEvents.SHIELD_BLOCK, 1.45F);
@@ -213,6 +221,9 @@ public final class ServantCombatSystem {
       if (source.getEntity() instanceof ServantEntity attacker
          && source.getDirectEntity() == attacker
          && !(source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource)
+         && !net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTechniqueDamage(source)
+         && !(source instanceof CombatDamageSource named && "diarmuid_ua_duibhne".equals(named.origin().servant()))
+         && !(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity)
          && ServantCombatExchangeService.ordinary(attacker, servant)) {
          event.setAmount(event.getAmount() * 0.55F);
       }
@@ -220,20 +231,34 @@ public final class ServantCombatSystem {
          event.setAmount((float)(event.getAmount() * (1.0 + ServantCombatFormulas.guardBreakDamageBonus(params))));
       }
 
+      ServantCombatDefenseService.afterArmor(event, hit -> {
+         handleAfterBaseDefense(servant, hit);
+         return hit.isCanceled();
+      });
+   }
+
+   private static void handleAfterBaseDefense(ServantEntity servant, LivingIncomingDamageEvent event) {
+      DamageSource source = event.getSource();
+      long now = servant.level().getGameTime();
+      boolean guaranteedHit = source.is(FanaticDamageTypes.GUARANTEED_HITS);
+      boolean deathFlight = NoblePhantasmDamageClassifier.isCuDeathFlightDamage(source);
       if (!skillsSuppressed(servant) && !SowaExpertiseHelper.rollBypass(source)) {
          boolean ushiwakamaruMelee = servant instanceof UshiwakamaruRiderEntity
             && source.getEntity() instanceof LivingEntity && source.getDirectEntity() == source.getEntity();
          boolean unavoidable = guaranteedHit || UshiwakamaruCombatHelper.isGuaranteedHit(source, now);
-         if (!unavoidable && !PaleRiderDamageTypes.isInfection(source)
-            && ServantCombatDefenseService.trySkillAutoDodge(servant)) {
+         if (!unavoidable && !deathFlight && !PaleRiderDamageTypes.isInfection(source)
+            && ServantCombatDefenseService.trySkillAutoDodge(servant,source,event.getAmount())) {
             event.setCanceled(true); event.setAmount(0); return;
          }
-         // NPC servants keep their reaction-based defense.  Player cards use
-         // the explicit guard/dodge inputs handled by ServantCombatDefenseService.
-         if (!ushiwakamaruMelee && !unavoidable
-            && !PaleRiderDamageTypes.isInfection(source)
-            && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source)
-            && tryAutoDodge(servant, source, params, now)) {
+         boolean guardBypass = LancelotCombatHelper.rollsEternalArmsGuardBypass(source);
+         // Counted skill evasion remains first, then ordinary evasion, then a
+         // probabilistic active guard. Passive defense still applies on contact.
+         var reaction = ServantCombatDefenseService.reactToIncomingAttack(servant, source, event.getAmount(),
+            !unavoidable && !guardBypass, !ushiwakamaruMelee && !unavoidable
+               && !deathFlight
+               && !PaleRiderDamageTypes.isInfection(source)
+               && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(source));
+         if (reaction == DefenseRules.NpcReaction.DODGE) {
             if (source.is(DamageTypeTags.IS_EXPLOSION)) {
                event.setAmount(Math.min(event.getAmount(), event.getAmount() * 0.5F));
             } else {
@@ -241,7 +266,7 @@ public final class ServantCombatSystem {
             }
             return;
          }
-         Float reduced = LancelotCombatHelper.rollsEternalArmsGuardBypass(source)
+         Float reduced = guardBypass || unavoidable
             ? null : ServantCombatDefenseService.applyGuardHit(servant, source, event.getAmount());
          if (reduced != null) {
             ServantCombatDefenseService.markGuarded(event);
@@ -263,6 +288,12 @@ public final class ServantCombatSystem {
    }
 
    public static void broadcastNoblePhantasmWindup(ServantEntity caster, LivingEntity target, int windupTicks, boolean ranged) {
+      broadcastNoblePhantasmWindup(caster, target, windupTicks, ranged, true);
+   }
+
+   public static void broadcastNoblePhantasmWindup(
+      ServantEntity caster, LivingEntity target, int windupTicks, boolean ranged, boolean dodgeable
+   ) {
       if (!(caster.level() instanceof ServerLevel level) || windupTicks <= 0) {
          return;
       }
@@ -272,7 +303,8 @@ public final class ServantCombatSystem {
          ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "noble_phantasm/" + caster.getServantId()),
          windupTicks,
          ranged,
-         5
+         5,
+         dodgeable
       );
       AABB box = caster.getBoundingBox().inflate(20.0);
       List<ServantEntity> responders = level.getEntitiesOfClass(
@@ -331,7 +363,7 @@ public final class ServantCombatSystem {
    }
 
    public static double currentStamina(ServantEntity entity) {
-      if (entity == null) return 0.0;
+      if (entity == null || entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       CompoundTag data = entity.getPersistentData();
       if (!data.contains(TAG_STAMINA)) {
          initializeResources(entity, data, effectiveParams(entity, entity.getDefinition()));
@@ -340,6 +372,7 @@ public final class ServantCombatSystem {
    }
 
    public static boolean tryConsumeStamina(ServantEntity entity, double amount) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return false;
       double cost = Math.max(0.0, amount);
       double available = currentStamina(entity);
       if (available + 1.0E-6 < cost) return false;
@@ -352,6 +385,7 @@ public final class ServantCombatSystem {
    }
 
    private static void initializeResources(ServantEntity entity, CompoundTag data, ServantParams params) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return;
       double staminaMax = ServantCombatFormulas.staminaMax(params);
       if (!data.contains(TAG_STAMINA)) {
          data.putDouble(TAG_STAMINA, staminaMax);
@@ -362,6 +396,7 @@ public final class ServantCombatSystem {
    }
 
    private static void tickResourceRegen(ServantEntity entity, CompoundTag data, ServantParams params, long now) {
+      if (entity instanceof HundredFacesHassanPersonaEntity) return;
       if (entity.tickCount % 5 != 0) {
          return;
       }
@@ -484,7 +519,7 @@ public final class ServantCombatSystem {
       if (!ServantMasterProtection.isProtectedMaster(attacker, target)) {
          ServantCombatService.beginSharedHit(attacker);
          try {
-            launcherHit = target.hurt(attacker.damageSources().mobAttack(attacker), damage);
+            launcherHit = target.hurt(new CombatDamageSource(attacker.damageSources().mobAttack(attacker), AttackOrigin.skill(attacker.getServantId(), "launcher")), damage);
          } finally {
             ServantCombatService.endSharedHit(attacker);
          }
@@ -593,18 +628,25 @@ public final class ServantCombatSystem {
          * (1 - ServantDefenseTraits.resolve(servant).dodgeReduction())),
          Math.max(ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0), ServantCombatFormulas.perfectDodgeInvulnerabilityTicks(params)));
       if (now < servant.getPersistentData().getLong(TAG_LAST_DODGE_TICK) + cooldown) return false;
-      double cost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45)
-         : ServantCombatFormulas.dodgeMpCost(params);
-      if (servant.getCurrentMp() < cost) return false;
+      boolean persona = servant instanceof HundredFacesHassanPersonaEntity;
+      double cost = 0.0;
+      if (!persona) {
+         cost = emiya ? Math.max(1.0, ServantCombatFormulas.dodgeMpCost(params) * 0.45)
+            : ServantCombatFormulas.dodgeMpCost(params);
+         if (servant.getCurrentMp() < cost) return false;
+      }
       int agility = ServantCombatFormulas.agilityStep(params);
       boolean urgent = servant.getHealth() <= servant.getMaxHealth() * (emiya ? 0.85F : 0.55F)
          || source.getDirectEntity() instanceof Projectile
          || getPhase(servant) == ServantCombatPhase.DECISIVE || emiya;
       if (agility < 3 && !urgent) return false;
       double chance = ServantCombatFormulas.baseDodgeChance(params, urgent) + (emiya ? 0.12 : 0.0);
+      if (servant instanceof HundredFacesHassanPersonaEntity) {
+         chance *= HundredFacesHassanRules.PERSONA_DODGE_CHANCE_MULTIPLIER;
+      }
       if (servant.getRandom().nextDouble() > Math.min(0.92, chance)) return false;
       CompoundTag data = servant.getPersistentData();
-      servant.setCurrentMp(servant.getCurrentMp() - cost);
+      if (!persona) servant.setCurrentMp(servant.getCurrentMp() - cost);
       data.putLong(TAG_LAST_DODGE_TICK, now);
       data.putLong(ServantCombatDefenseService.TAG_DODGE_COOLDOWN, now + cooldown);
       data.putLong(TAG_INVULN_UNTIL, now + ServantCombatFormulas.dodgeInvulnerabilityTicks(params) + (emiya ? 5 : 0));
@@ -662,14 +704,8 @@ public final class ServantCombatSystem {
          spawnGuardFx(responder, ParticleTypes.END_ROD, SoundEvents.BEACON_ACTIVATE, 1.2F);
          return;
       }
-      DamageSource responseSource = caster.damageSources().mobAttack(caster);
-      if (ServantCombatFormulas.agilityStep(params) >= 3
-         && !LancelotCombatHelper.rollsEternalArmsDodgeBypass(responseSource)
-         && tryAutoDodge(responder, responseSource, params, now)) {
-         return;
-      }
-      if (!LancelotCombatHelper.rollsEternalArmsGuardBypass(responseSource)
-         && ServantCombatDefenseService.setGuarding(responder, true)) return;
+      // The published telegraph uses the shared weighted reaction near impact.
+      // Reacting here would both reroll that decision and waste a dodge at chant start.
       if (ServantCombatDefenseService.isGuarding(responder)
          || now < responder.getPersistentData().getLong(TAG_INVULN_UNTIL)) {
          return;
@@ -984,9 +1020,7 @@ public final class ServantCombatSystem {
 
    private static double adjustedPoiseRegenPerSecond(ServantParams params, ServantEntity entity) {
       double poiseRegen = ServantCombatFormulas.poiseRegenPerSecond(params);
-      if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return poiseRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
-      }
+      if (entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedPoiseRecovery(poiseRegen);
       }
@@ -1001,9 +1035,7 @@ public final class ServantCombatSystem {
 
    private static double adjustedStaminaRegenPerSecond(ServantParams params, ServantEntity entity) {
       double staminaRegen = ServantCombatFormulas.staminaRegenPerSecond(params);
-      if (entity instanceof HundredFacesHassanPersonaEntity) {
-         return staminaRegen * HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER;
-      }
+      if (entity instanceof HundredFacesHassanPersonaEntity) return 0.0;
       if (entity instanceof ArashEntity) {
          return ArashCombatRules.boostedDefenseRecovery(staminaRegen);
       }

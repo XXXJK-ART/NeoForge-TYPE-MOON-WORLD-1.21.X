@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantParams;
-import net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank;
 
 public final class HundredFacesHassanRules {
    public static final String TAG_TOTAL_SPLIT_COUNT = "HundredFacesTotalSplitCount";
@@ -12,17 +11,14 @@ public final class HundredFacesHassanRules {
    public static final int RETREAT_COOLDOWN_TICKS = 400;
    public static final int RETREAT_DURATION_TICKS = 200;
    public static final int TARGET_SCAN_INTERVAL_TICKS = 20;
-   public static final int DIRK_COOLDOWN_TICKS = 70;
-   public static final int PERSONA_DIRK_COOLDOWN_TICKS = 120;
+   public static final int DIRK_COOLDOWN_TICKS = 40;
    /** 匕首出手后保留显形时间，动作结束即可重新进入隐匿。 */
    public static final int PERSONA_DIRK_EXPOSURE_TICKS = 10;
    public static final int SHADOW_STEP_COOLDOWN_TICKS = 120;
-   public static final int PERSONA_SHADOW_STEP_COOLDOWN_TICKS = 180;
    public static final int SHADOW_LUNGE_COOLDOWN_TICKS = 90;
-   public static final int PERSONA_SHADOW_LUNGE_COOLDOWN_TICKS = 150;
    public static final int KNIFE_FEINT_COOLDOWN_TICKS = 75;
-   public static final int STAB_COMBO_COOLDOWN_TICKS = 42;
    public static final int REPOSITION_COOLDOWN_TICKS = 100;
+   public static final double PERSONA_DODGE_CHANCE_MULTIPLIER = 0.5;
 
    public static final float HUMANOID_BASE_WIDTH = 0.6F;
    public static final float HUMANOID_BASE_HEIGHT = 1.8F;
@@ -33,32 +29,31 @@ public final class HundredFacesHassanRules {
    public static final double MAIN_MOVEMENT_SPEED = 0.36;
    public static final double MAIN_CONCEALED_MOVEMENT_SPEED = 0.414;
    public static final double MAIN_RETREAT_MOVEMENT_SPEED = 0.504;
-   public static final double MP_DIRK_THROW = 6.0;
+   public static final double MP_DIRK_THROW = 8.0;
    public static final double MP_SHADOW_STEP = 10.0;
    public static final double MP_SHADOW_LUNGE = 7.0;
    public static final double MP_KNIFE_FEINT = 5.0;
-   public static final double MP_STAB_COMBO = 4.0;
+   public static final double MP_PRESENCE_CONCEALMENT = 16.0;
    public static final float MAIN_DIRK_DAMAGE = 15.0F;
-   public static final float PERSONA_DIRK_DAMAGE = 5.0F;
    public static final double PERSONA_ATTACK_DAMAGE = 5.0;
+   public static final double PERSONA_BACKSTAB_DAMAGE_BONUS = 0.10;
    public static final double PERSONA_MOVEMENT_SPEED = 0.36;
    public static final double PERSONA_BASE_HEALTH = 100.0;
    public static final double PERSONA_MIN_HEALTH = 50.0;
-   public static final double PERSONA_BASE_ARMOR = 3.0;
-   public static final double PERSONA_MIN_ARMOR = 3.0;
-   public static final double PERSONA_KNOCKBACK_RESISTANCE = 0.2;
-   public static final double PERSONA_DEFENSE_RECOVERY_MULTIPLIER = 1.0;
+   /** Strength E maps to the ordinary Minecraft armor value used by each persona. */
+   public static final double PERSONA_BASE_ARMOR = 1.5;
+   public static final double PERSONA_MIN_ARMOR = 1.5;
 
    public static final ServantParams MAIN_FULL_PARAMS = ServantParams.of(
       "D", false, "C", false, "A", false, "C", false, "E", false
    );
    public static final ServantParams PERSONA_E_RANK_PARAMS = ServantParams.of(
-      "E", false, "E", false, "E", false, "E", false, "E", false
+      "E", false, "E", false, "A", false, "E", false, "E", false
    );
    /** 分身沿用本体参数，防御、闪避、韧度按战斗阶梯减半。 */
-   public static final ServantParams PERSONA_COMBAT_PARAMS = personaCombatParams(MAIN_FULL_PARAMS);
+   public static final ServantParams PERSONA_COMBAT_PARAMS = PERSONA_E_RANK_PARAMS;
    public static final ServantParams MAIN_FULL_SPLIT_PARAMS = ServantParams.of(
-      "E", false, "E", false, "E", false, "E", false, "E", false
+      "E", false, "E", false, "A", false, "E", false, "E", false
    );
    public static final double MAIN_BASE_HEALTH = MAIN_FULL_PARAMS.maxHealth();
    public static final double MAIN_BASE_ATTACK_DAMAGE = MAIN_FULL_PARAMS.attackDamage();
@@ -83,8 +78,7 @@ public final class HundredFacesHassanRules {
    }
 
    public static double personaArmorForCount(int liveCount) {
-      double t = countRatio(liveCount);
-      return PERSONA_BASE_ARMOR - (PERSONA_BASE_ARMOR - PERSONA_MIN_ARMOR) * t;
+      return PERSONA_BASE_ARMOR;
    }
 
    public static double mainHealthForSplitCount(int splitCount) {
@@ -114,33 +108,8 @@ public final class HundredFacesHassanRules {
       return fallback;
    }
 
-   public static ServantParams personaCombatParams(ServantParams base) {
-      ServantParams source = base == null ? MAIN_FULL_PARAMS : base;
-      return new ServantParams(
-         halfRank(source.endurance(), source.endurancePlus()), false,
-         source.strength() == null ? StatRank.E : halfRank(source.strength(), source.strengthPlus()), false,
-         source.agility() == null ? StatRank.E : halfRank(source.agility(), source.agilityPlus()), false,
-         source.magic(), source.magicPlus(), source.luck(), source.luckPlus());
-   }
-
-   private static StatRank halfRank(StatRank rank, boolean plus) {
-      int step = switch (rank == null ? StatRank.E : rank) {
-         case E -> 0;
-         case D -> 1;
-         case C -> 2;
-         case A_MINUS -> 2;
-         case B -> 3;
-         case A -> 4;
-         case A_PLUS_PLUS -> 6;
-      };
-      if (plus && rank != StatRank.A_PLUS_PLUS) step = Math.min(5, step + 1);
-      return switch (step / 2) {
-         case 1 -> StatRank.D;
-         case 2 -> StatRank.C;
-         case 3 -> StatRank.B;
-         case 4 -> StatRank.A;
-         default -> StatRank.E;
-      };
+   public static ServantParams personaCombatParams(ServantParams ignored) {
+      return PERSONA_E_RANK_PARAMS;
    }
 
    public static float visualScaleForHeight(float height) {
@@ -162,7 +131,21 @@ public final class HundredFacesHassanRules {
    public static int affordableSummonCount(double currentMp, int liveCount, int requested) {
       int capacity = Math.max(0, MAX_PERSONAS - Math.max(0, liveCount));
       int mpLimited = (int)Math.floor(Math.max(0.0, currentMp) / MP_PER_PERSONA);
-      return Math.max(0, Math.min(Math.min(requested, MAX_SUMMON_BATCH), Math.min(capacity, mpLimited)));
+      return Math.max(0, Math.min(Math.max(0, requested), Math.min(MAX_SUMMON_BATCH, Math.min(capacity, mpLimited))));
+   }
+
+   public static int affordableTotalSummonCount(double currentMp, int splitCount, int requested) {
+      int capacity = Math.max(0, MAX_PERSONAS - Math.max(0, splitCount));
+      int mpLimited = (int)Math.floor(Math.max(0.0, currentMp) / MP_PER_PERSONA);
+      return Math.max(0, Math.min(Math.max(0, requested), Math.min(capacity, mpLimited)));
+   }
+
+   public static boolean shouldGenerateDirk(boolean mainHandEmpty, boolean offHandEmpty) {
+      return mainHandEmpty && offHandEmpty;
+   }
+
+   public static double personaThrowMinimumRange(boolean throwingMode) {
+      return throwingMode ? 4.0 : 8.0;
    }
 
    private static double countRatio(int liveCount) {

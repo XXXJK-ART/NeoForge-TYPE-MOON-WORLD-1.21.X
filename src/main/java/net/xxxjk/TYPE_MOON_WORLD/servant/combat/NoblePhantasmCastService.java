@@ -45,7 +45,7 @@ public final class NoblePhantasmCastService {
       final Runnable cleanup;
       final List<Credit> credits = new ArrayList<>();
       double npcPaid;
-      boolean cancelled, released, queued;
+      boolean cancelled, damageInterrupted, released, queued;
       Cast(LivingEntity caster, String action, int cooldown, IntConsumer setCooldown, Runnable cleanup) {
          this.caster = caster; this.action = action; this.cooldown = cooldown;
          this.setCooldown = setCooldown; this.cleanup = cleanup;
@@ -53,7 +53,7 @@ public final class NoblePhantasmCastService {
          form = caster instanceof ServerPlayer p ? p.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).servantCardState().id() : "";
          voiceStart = caster.level().getGameTime();
          voiceEnd = voiceStart + POLICIES.get(action).voiceTicks();
-         releaseAt = NoblePhantasmCastRules.instant(action) ? voiceStart : NoblePhantasmCastRules.releaseAt(voiceStart, voiceEnd);
+         releaseAt = NoblePhantasmCastRules.instant(action) ? voiceStart : NoblePhantasmCastRules.releaseAt(action, voiceStart, voiceEnd);
       }
    }
 
@@ -88,6 +88,9 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       return cast != null && cast.cancelled;
    }
+   public static boolean interruptedByDamage(LivingEntity caster) {
+      Cast cast=CASTS.get(caster.getUUID());return cast!=null && cast.damageInterrupted;
+   }
    public static boolean awaitVoice(LivingEntity caster) {
       Cast cast = CASTS.get(caster.getUUID());
       if (cast == null) return false;
@@ -95,6 +98,10 @@ public final class NoblePhantasmCastService {
       if (caster.level().getGameTime() < cast.releaseAt) return true;
       cast.released = true;
       return false;
+   }
+   public static Object attackToken(LivingEntity caster) {
+      Cast cast = CASTS.get(caster.getUUID());
+      return cast == null || cast.cancelled ? new Object() : cast;
    }
    public static boolean configured(String action) { return POLICIES.containsKey(action); }
    public static long voiceEnd(LivingEntity caster) {
@@ -113,7 +120,7 @@ public final class NoblePhantasmCastService {
       Cast cast = CASTS.get(caster.getUUID());
       long now = caster.level().getGameTime();
       if (cast == null || cast.cancelled || cast.released || !NoblePhantasmCastRules.interruptible(cast.action)) return false;
-      return NoblePhantasmCastRules.interruptibleAt(now, cast.voiceStart, cast.voiceEnd);
+      return NoblePhantasmCastRules.interruptibleAt(cast.action, now, cast.voiceStart, cast.voiceEnd);
    }
 
    public static long begin(LivingEntity caster, String action, int cooldown, IntConsumer setCooldown, Runnable cleanup) {
@@ -129,9 +136,17 @@ public final class NoblePhantasmCastService {
       caster.getPersistentData().putInt("TypeMoonNpCastCount", caster.getPersistentData().getInt("TypeMoonNpCastCount") + 1);
       caster.getPersistentData().putString("TypeMoonNpCastAction", action);
       caster.getPersistentData().putLong("TypeMoonNpVoiceEnd", cast.voiceEnd);
-      if (!NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
+      if ("cu_gae_bolg".equals(action)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.chant(caster);
+      } else if (!action.endsWith("_short") && !NoblePhantasmCastRules.instant(action) && caster.level() instanceof ServerLevel level) {
          SoundEvent sound = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + action));
-         level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
+         if ("zhao_yun_changbanpo".equals(action)) {
+            // A riding invocation travels with its caster, rather than fading
+            // in and out as Hakuryu leaves the original sound position.
+            level.playSound(null, caster, sound, SoundSource.VOICE, 1.2F, 1.0F);
+         } else {
+            level.playSound(null, caster.blockPosition(), sound, SoundSource.VOICE, 1.2F, 1.0F);
+         }
       }
       return cast.voiceEnd;
    }
@@ -145,6 +160,18 @@ public final class NoblePhantasmCastService {
       if (cast != null && !cast.cancelled && !cast.released) {
          if (credit.player() == null) cast.npcPaid += credit.amount(); else cast.credits.add(credit);
       } else PAYMENTS.computeIfAbsent(caster.getUUID(), unused -> new ArrayList<>()).add(credit);
+   }
+
+   /** Returns true when this service has taken ownership of the effect. */
+   public static void noteHajunEntryPayment(LivingEntity caster, ServerPlayer payer, boolean card, double amount) {
+      if (amount <= 0) return;
+      Credit credit = new Credit(payer == null ? null : payer.getUUID(), card, amount);
+      Cast cast = CASTS.get(caster.getUUID());
+      // The second installment can follow the voice release; it still belongs
+      // to this Hajun token, never to the next noble phantasm.
+      if (cast != null && !cast.cancelled && "oda_hajun".equals(cast.action)) {
+         if (payer == null) cast.npcPaid += amount; else cast.credits.add(credit);
+      } else notePayment(caster, credit);
    }
 
    /** Returns true when this service has taken ownership of the effect. */
@@ -196,7 +223,10 @@ public final class NoblePhantasmCastService {
    }
 
    @SubscribeEvent public static void afterDamage(LivingDamageEvent.Post event) {
-      if (event.getNewDamage() > 0 && inWindow(event.getEntity())) cancel(event.getEntity(), true);
+      if (event.getNewDamage() > 0 && inWindow(event.getEntity())) {
+         CASTS.get(event.getEntity().getUUID()).damageInterrupted=true;
+         cancel(event.getEntity(), true);
+      }
    }
    @SubscribeEvent public static void tick(EntityTickEvent.Post event) {
       if (!(event.getEntity() instanceof LivingEntity entity) || entity.level().isClientSide()) return;
@@ -213,24 +243,54 @@ public final class NoblePhantasmCastService {
       cast.cancelled = true;
       cast.cleanup.run();
       if (interrupted) {
-         if (caster instanceof ServantEntity servant) servant.setCurrentMp(Math.min(servant.getMaxMp(), servant.getCurrentMp() + cast.npcPaid * 0.5));
-         for (Credit credit : cast.credits) {
-            ServerPlayer payer = caster.getServer() == null ? null : caster.getServer().getPlayerList().getPlayer(credit.player());
-            if (payer == null) continue;
-            var vars = payer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (credit.card()) vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), vars.servantCardState().mana() + credit.amount() * 0.5));
-            else vars.magicState().setMana(vars.magicState().mana() + credit.amount() * 0.5);
-            vars.syncMana(payer);
-         }
+         refund(cast, 0.5);
          cast.setCooldown.accept(NoblePhantasmCastRules.interruptedCooldown(cast.cooldown));
       }
       caster.getPersistentData().remove("TypeMoonNpCastAction");
       caster.getPersistentData().remove("TypeMoonNpVoiceEnd");
+      if("cu_gae_bolg".equals(cast.action)) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.cancelChant(caster);return;
+      }
       if (caster.level() instanceof ServerLevel level) {
          var stop = new net.minecraft.network.protocol.game.ClientboundStopSoundPacket(
             ResourceLocation.fromNamespaceAndPath("typemoonworld", "np_chant_" + cast.action), SoundSource.VOICE);
          for (ServerPlayer player : level.players()) player.connection.send(stop);
       }
+   }
+
+   /** An effect may fail its final preconditions before creating any attack. */
+   public static void failHajunEntry(LivingEntity caster) {
+      Cast cast = CASTS.get(caster.getUUID());
+      if (cast == null || cast.cancelled || !"oda_hajun".equals(cast.action)) return;
+      cast.cancelled = true;
+      cast.cleanup.run();
+      refund(cast, 1.0);
+      cast.setCooldown.accept(0);
+      caster.getPersistentData().remove("TypeMoonNpCastAction");
+      caster.getPersistentData().remove("TypeMoonNpVoiceEnd");
+   }
+
+   private static void refund(Cast cast, double fraction) {
+      LivingEntity caster = cast.caster;
+      if (caster instanceof ServantEntity servant)
+         servant.setCurrentMp(Math.min(servant.getMaxMp(), servant.getCurrentMp() + cast.npcPaid * fraction));
+      for (Credit credit : cast.credits) {
+         ServerPlayer payer = caster instanceof ServerPlayer player && player.getUUID().equals(credit.player())
+            ? player : caster.getServer() == null ? null : caster.getServer().getPlayerList().getPlayer(credit.player());
+         if (payer == null) continue;
+         var vars = payer.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (credit.card()) vars.servantCardState().setMana(Math.min(vars.servantCardState().maxMana(), vars.servantCardState().mana() + credit.amount() * fraction));
+         else vars.magicState().setMana(vars.magicState().mana() + credit.amount() * fraction);
+         vars.syncMana(payer);
+      }
+   }
+
+   /** An effect may fail its final preconditions before creating any attack. */
+   public static void failBeforeEffect(LivingEntity caster) {
+      Cast cast = EFFECT_CONTEXT.get();
+      if (cast == null || cast.caster != caster || CASTS.get(caster.getUUID()) != cast) return;
+      cast.released = false;
+      cancel(caster, true);
    }
 
    @SubscribeEvent public static void logout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
@@ -251,7 +311,7 @@ public final class NoblePhantasmCastService {
       if (NoblePhantasmCastRules.instant(cast.action)) return false;
       String key = BuiltInRegistries.SOUND_EVENT.getKey(sound).getPath();
       if (key.endsWith("_short")) return false;
-      return key.contains("voice_np") || key.contains("voice_excalibur") || key.contains("voice_gae_bolg")
+      return key.contains("voice_np") || (key.contains("voice_excalibur") && !key.contains("voice_excalibur_release")) || key.contains("voice_gae_bolg")
          || key.contains("voice_zabaniya") || key.contains("voice_wu_er_da") || key.contains("voice_ea_") || key.contains("voice_bellerophon")
          || key.contains("voice_tsumukari") || key.contains("voice_gallatin") || key.contains("voice_hajun");
    }

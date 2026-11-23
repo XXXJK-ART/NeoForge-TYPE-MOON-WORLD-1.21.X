@@ -123,6 +123,10 @@ public final class ServantDuelPacing {
       servant.getPersistentData().putLong(PREFIX + "NextBasic", now + 4);
    }
 
+   public static int rangedBasicRecoveryTicks(String servantId) {
+      return "baobhan_sith".equals(servantId) ? 8 : RANGED_BASIC_RECOVERY_TICKS;
+   }
+
    private static boolean basic(ServantEntity servant, LivingEntity target, long now) {
       servant.faceToward(target.position());
       servant.getLookControl().setLookAt(target, 60, 60);
@@ -146,20 +150,26 @@ public final class ServantDuelPacing {
          } else if (id.equals("nightingale")) {
             var bullet = new net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity(servant.level(), servant);
             bullet.setPos(origin); bullet.shoot(direction.x, direction.y, direction.z, 3, 0); servant.level().addFreshEntity(bullet);
-         } else {
+         } else if (usesGenericMagicBoltBasic(id)) {
             MedeaMagicBoltEntity bolt = new MedeaMagicBoltEntity(servant.level(), servant);
             bolt.setMagicDamage(12); bolt.setPos(origin); bolt.shoot(direction.x, direction.y, direction.z, 1.8F, 0);
             servant.level().addFreshEntity(bolt);
+         } else {
+            return false;
          }
          servant.triggerBasicAttackAnimation(); attacked = true;
       } else if (!ranged && distance <= ServantCombatTempoService.basicAttackReach(servant, target)) {
          return ServantCombatExchangeService.beginBasic(servant, target, now);
       }
       if (attacked) {
-         data.putLong(PREFIX + "NextBasic", now + RANGED_BASIC_RECOVERY_TICKS);
+         data.putLong(PREFIX + "NextBasic", now + rangedBasicRecoveryTicks(servant.getServantId()));
          data.putInt(PREFIX + "BasicAttacks", data.getInt(PREFIX + "BasicAttacks") + 1);
          ServantCombatExchangeService.activity(servant, now);
       }
       return attacked;
+   }
+
+   static boolean usesGenericMagicBoltBasic(String servantId) {
+      return "medea".equals(servantId) || "paracelsus".equals(servantId);
    }
 }

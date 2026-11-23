@@ -1,0 +1,13 @@
+// Opt-in client smoke check, excluded from the release JAR.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('artoriaResetSmoke') {
+            java.srcDir 'tools/artoria-reset-smoke/java'
+            resources.srcDir 'tools/artoria-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_artoria_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/artoria-client-run')
+    }
+}

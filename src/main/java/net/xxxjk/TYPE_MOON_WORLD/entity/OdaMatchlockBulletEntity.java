@@ -51,6 +51,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
    private float knockback;
    public OdaMatchlockBulletEntity source(Ability value) { ability = value; return this; }
    public Ability ability() { return ability; }
+   public float getDirectDamage() { return this.entityData.get(DIRECT_DAMAGE); }
    public OdaMatchlockBulletEntity tracking(LivingEntity target) { trackingTarget = target; return this; }
    public OdaMatchlockBulletEntity pursuit(UUID id, int index) { pursuitId = id; pursuitIndex = index; return this; }
    public OdaMatchlockBulletEntity knockback(float value) { knockback = value; return this; }
@@ -143,7 +144,6 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
 
       if (this.level().isClientSide) {
          captureTrace();
-         this.level().addParticle(ParticleTypes.END_ROD, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
          this.level().addParticle(ParticleTypes.SMALL_FLAME, this.getX(), this.getY(), this.getZ(), 0.0, 0.0, 0.0);
       } else if (this.tickCount > MAX_LIFE) {
          this.discard();
@@ -151,7 +151,7 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
          Vec3 back = motion.lengthSqr() > 1.0E-4 ? motion.normalize().scale(-0.12) : Vec3.ZERO;
          Vec3 pos = this.position().add(back);
          level.sendParticles(ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 1, 0.02, 0.02, 0.02, 0.0);
-         level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y, pos.z, 1, 0.01, 0.01, 0.01, 0.0);
+         level.sendParticles(ParticleTypes.ASH, pos.x, pos.y, pos.z, 1, 0.01, 0.01, 0.01, 0.0);
       }
    }
 
@@ -194,10 +194,9 @@ public class OdaMatchlockBulletEntity extends ThrowableItemProjectile {
       if (this.level() instanceof ServerLevel level) {
          int kind = this.entityData.get(BULLET_KIND);
          int intensity = kind == 2 ? 3 : kind == 3 ? 2 : 1;
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, intensity, 0.0, 0.0, 0.0, 0.0);
-         level.sendParticles(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 10 + intensity * 6, 0.12 * intensity, 0.12 * intensity, 0.12 * intensity, 0.04);
-         level.sendParticles(blockImpact ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 8 + intensity * 8, 0.18 * intensity, 0.16 * intensity, 0.18 * intensity, 0.02);
-         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 4 + intensity * 5, 0.1 * intensity, 0.1 * intensity, 0.1 * intensity, 0.02);
+         level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 1 + intensity, 0.04 * intensity, 0.04 * intensity, 0.04 * intensity, 0.008);
+         level.sendParticles(ParticleTypes.ASH, pos.x, pos.y, pos.z, 2 + intensity * 2, 0.1 * intensity, 0.08 * intensity, 0.1 * intensity, 0.006);
+         level.sendParticles(blockImpact ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE, pos.x, pos.y, pos.z, 3 + intensity * 2, 0.14 * intensity, 0.1 * intensity, 0.14 * intensity, 0.012);
          level.playSound(null, pos.x, pos.y, pos.z, kind == 2 ? SoundEvents.GENERIC_EXPLODE.value() : SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, kind == 2 ? 0.8F : 0.55F, kind == 2 ? 1.2F : 1.75F);
       }
       this.discard();

@@ -1,5 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
 import com.example.typemoonaddon.entity.SeaMonsterEntity;
 import com.example.typemoonaddon.registry.AddonEntities;
@@ -193,12 +197,12 @@ public final class ServantCardGillesDeRaisSkills {
       if (target == null) {
          return false;
       }
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 160, 1, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1, false, true, true));
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 160, 1, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1, false, true, true), MagicComplexity.TWO_VERSE);
       if (player.getRandom().nextFloat() < 0.45F) {
-         target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0, false, true, true));
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.BLINDNESS, 80, 0, false, true, true), MagicComplexity.TWO_VERSE);
       }
-      target.hurt(player.damageSources().magic(), 6.0F);
+      target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "gilles_magecraft", MagicComplexity.TWO_VERSE, player), 6.0F);
       if (player.level() instanceof ServerLevel level) {
          ServantCardSkillUtils.spawnLineParticles(level, player.getEyePosition(), target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), ParticleTypes.SQUID_INK);
          level.playSound(null, player.blockPosition(), AddonSounds.GILLES_VOICE_GAZE.get(), SoundSource.PLAYERS, 1.0F, 0.95F);
@@ -222,7 +226,7 @@ public final class ServantCardGillesDeRaisSkills {
       float amount = 8.0F;
       float before = target.getHealth();
       target.invulnerableTime = 0;
-      boolean hit = target.hurt(player.damageSources().magic(), amount);
+      boolean hit = target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "gilles_magecraft", MagicComplexity.TWO_VERSE, player), amount);
       target.invulnerableTime = 0;
       if (!hit) {
          return false;
@@ -266,7 +270,7 @@ public final class ServantCardGillesDeRaisSkills {
       }
       GillesDeRaisCombatHelper.addPollutionZone(level.dimension(), center, 5.0, 120, 5.0F, player.getUUID(), null);
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(5.0), entity -> isEnemy(player, entity))) {
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1, false, true, true));
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 1, false, true, true), MagicComplexity.TWO_VERSE);
       }
       level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.35, center.z, 64, 1.6, 0.35, 1.6, 0.04);
       level.playSound(null, BlockPos.containing(center), SoundEvents.SQUID_SQUIRT, SoundSource.PLAYERS, 1.0F, 0.65F);
@@ -330,18 +334,20 @@ public final class ServantCardGillesDeRaisSkills {
          return false;
       }
       int affected = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(8.0), entity -> isEnemy(player, entity))) {
          Vec3 away = target.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() < 1.0E-4) {
             away = player.getLookAngle().multiply(-1.0, 0.0, -1.0);
          }
          away = away.normalize();
-         target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0, false, true, true));
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 2, false, true, true));
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.BLINDNESS, 80, 0, false, true, true), MagicComplexity.TWO_VERSE);
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 2, false, true, true), MagicComplexity.TWO_VERSE);
          target.push(away.x * 1.2, 0.22, away.z * 1.2);
          target.hurtMarked = true;
-         target.hurt(player.damageSources().magic(), 10.0F);
+         target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), "gilles_magecraft", MagicComplexity.TWO_VERSE, player), 10.0F);
          affected++;
+      }
       }
       if (affected <= 0) {
          return false;

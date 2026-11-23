@@ -40,7 +40,8 @@ public abstract class PlayerRendererMixin {
       cancellable = true
    )
    private void applyRightHandCastingPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player, CallbackInfo ci) {
-      if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+      if (ServantCardConcealmentClient.isShadowHassanMaskOnly(player)
+         || ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
          ci.cancel();
          return;
       }
@@ -58,7 +59,8 @@ public abstract class PlayerRendererMixin {
       cancellable = true
    )
    private void applyLeftHandCastingPose(PoseStack poseStack, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player, CallbackInfo ci) {
-      if (ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
+      if (ServantCardConcealmentClient.isShadowHassanMaskOnly(player)
+         || ServantCardConcealmentClient.isPerfectlyConcealed(player)) {
          ci.cancel();
          return;
       }
@@ -138,6 +140,10 @@ public abstract class PlayerRendererMixin {
    }
 
    private void applyFirstPersonCastingPose(AbstractClientPlayer player, HumanoidArm armToRender) {
+      if (net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.isGuarding(player)) {
+         net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose(player, ((PlayerRenderer)(Object)this).getModel());
+         return;
+      }
       Minecraft minecraft = Minecraft.getInstance();
       if (minecraft.player != null && minecraft.player.getId() == player.getId()) {
          boolean ganderCharging = TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging();

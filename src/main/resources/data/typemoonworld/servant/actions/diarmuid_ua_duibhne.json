@@ -2,69 +2,486 @@
   "servant": "diarmuid_ua_duibhne",
   "actions": [
     {
-      "id": "typemoonworld:diarmuid/spear_combo",
-      "tags": ["melee", "interrupt", "pursuit"],
+      "id": "typemoonworld:diarmuid/cross_thrust",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
       "minimum_range": 0,
       "maximum_range": 5,
-      "mana_cost": 2,
-      "stamina_cost": 8,
-      "timing": {"windup": 3, "active": 5, "recovery": 6},
-      "threat": {"shape": "cone", "radius": 2, "length": 5, "danger": 3, "blockable": true, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 1},
-      "terrain_impact": "small"
-    },
-    {
-      "id": "typemoonworld:diarmuid/gae_dearg_break",
-      "tags": ["melee", "control", "interrupt"],
-      "minimum_range": 0,
-      "maximum_range": 4,
-      "mana_cost": 0,
-      "stamina_cost": 7,
-      "timing": {"windup": 3, "active": 4, "recovery": 7},
-      "threat": {"shape": "point", "radius": 2, "length": 0, "danger": 3, "blockable": true, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 0},
+      "mana_cost": 6,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 4,
+        "active": 5,
+        "recovery": 5
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
       "terrain_impact": "none"
     },
     {
-      "id": "typemoonworld:diarmuid/gae_buidhe_curse",
-      "tags": ["melee", "control", "interrupt"],
+      "id": "typemoonworld:diarmuid/advancing_thrust",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
       "minimum_range": 0,
-      "maximum_range": 4,
-      "mana_cost": 0,
-      "stamina_cost": 7,
-      "timing": {"windup": 3, "active": 4, "recovery": 7},
-      "threat": {"shape": "point", "radius": 2, "length": 0, "danger": 4, "blockable": true, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 0},
+      "maximum_range": 5,
+      "mana_cost": 12,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 6,
+        "active": 1,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
       "terrain_impact": "none"
     },
     {
-      "id": "typemoonworld:diarmuid/knight_strategy",
-      "tags": ["guard", "melee"],
+      "id": "typemoonworld:diarmuid/yellow_double",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
       "minimum_range": 0,
-      "maximum_range": 10,
+      "maximum_range": 3,
       "mana_cost": 10,
-      "stamina_cost": 3,
-      "timing": {"windup": 2, "active": 300, "recovery": 12},
-      "threat": {"shape": "point", "radius": 0, "length": 0, "danger": 2, "blockable": false, "dodgeable": false, "interruptible": false, "friendly_fire_radius": 0},
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 3,
+        "active": 5,
+        "recovery": 5
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 3,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
       "terrain_impact": "none"
     },
     {
-      "id": "typemoonworld:diarmuid/mana_burst_jump",
-      "tags": ["evade", "gap_closer", "pursuit"],
-      "minimum_range": 2,
-      "maximum_range": 12,
-      "mana_cost": 15,
-      "stamina_cost": 5,
-      "timing": {"windup": 2, "active": 200, "recovery": 10},
-      "threat": {"shape": "line", "radius": 1, "length": 12, "danger": 2, "blockable": false, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 0},
-      "terrain_impact": "none"
-    },
-    {
-      "id": "typemoonworld:diarmuid/dualspear_reposition",
-      "tags": ["evade", "melee", "intercept"],
+      "id": "typemoonworld:diarmuid/red_sweep",
+      "tags": [
+        "melee",
+        "area"
+      ],
       "minimum_range": 0,
-      "maximum_range": 8,
-      "mana_cost": 4,
-      "stamina_cost": 5,
-      "timing": {"windup": 1, "active": 8, "recovery": 8},
-      "threat": {"shape": "point", "radius": 0, "length": 0, "danger": 2, "blockable": false, "dodgeable": true, "interruptible": true, "friendly_fire_radius": 0},
+      "maximum_range": 5,
+      "mana_cost": 14,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 7,
+        "active": 1,
+        "recovery": 9
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/rising_thrust",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 14,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 6,
+        "active": 1,
+        "recovery": 9
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 4,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/low_spin",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 16,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 5,
+        "active": 5,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 4,
+        "length": 4,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/retreating_thrust",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 12,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 9,
+        "active": 1,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/mana_leap",
+      "tags": [
+        "gap_closer"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 6,
+      "mana_cost": 18,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 4,
+        "active": 17,
+        "recovery": 99
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 6,
+        "length": 6,
+        "danger": 3,
+        "blockable": false,
+        "dodgeable": false,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/cross_guard",
+      "tags": [
+        "gap_closer"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 16,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 11,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": false,
+        "dodgeable": false,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/figure_eight",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 24,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 6,
+        "active": 293,
+        "recovery": 1
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 4,
+        "length": 4,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/rose_dance",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 36,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 8,
+        "active": 23,
+        "recovery": 9
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 4,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/red_basic",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 1,
+        "recovery": 1
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/yellow_basic",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 3,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 1,
+        "recovery": 1
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 3,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/guard_counter",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 3,
+        "active": 1,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/double_spear_stance",
+      "tags": [
+        "guard"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 0,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 10,
+        "recovery": 0
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 0,
+        "danger": 3,
+        "blockable": false,
+        "dodgeable": false,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/red_dance",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 5,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 7,
+        "recovery": 3
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 5,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/yellow_dance",
+      "tags": [
+        "melee",
+        "pursuit"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 3,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 2,
+        "active": 7,
+        "recovery": 3
+      },
+      "threat": {
+        "shape": "cone",
+        "radius": 0.5,
+        "length": 3,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
+      "terrain_impact": "none"
+    },
+    {
+      "id": "typemoonworld:diarmuid/landing_sweep",
+      "tags": [
+        "melee",
+        "area"
+      ],
+      "minimum_range": 0,
+      "maximum_range": 4,
+      "mana_cost": 0,
+      "stamina_cost": 0,
+      "timing": {
+        "windup": 5,
+        "active": 5,
+        "recovery": 7
+      },
+      "threat": {
+        "shape": "sphere",
+        "radius": 4,
+        "length": 4,
+        "danger": 3,
+        "blockable": true,
+        "dodgeable": true,
+        "interruptible": true,
+        "friendly_fire_radius": 0
+      },
       "terrain_impact": "none"
     }
   ]

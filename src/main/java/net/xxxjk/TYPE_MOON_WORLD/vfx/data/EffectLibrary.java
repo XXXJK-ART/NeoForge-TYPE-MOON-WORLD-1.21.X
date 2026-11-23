@@ -64,16 +64,10 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
    private static final Map<String, String> LEGACY_EFFECT_ALIASES = Map.ofEntries(
       Map.entry("servant_enkidu_perfect_form", "servant_enkidu_transfiguration"),
       Map.entry("servant_heracles_nine_lives", "servant_heracles_slam"),
-      Map.entry("servant_li_shuwen_quanjing", "servant_sasaki_tsubame"),
-      Map.entry("servant_li_shuwen_wu_er_da_impact", "servant_sasaki_tsubame"),
-      Map.entry("servant_li_shuwen_wu_er_da_windup", "servant_sasaki_tsubame"),
-      Map.entry("servant_li_shuwen_yinyang", "servant_sasaki_tsubame"),
-      Map.entry("servant_li_wu_er_da", "servant_sasaki_tsubame"),
       Map.entry("servant_medea_barrier", "servant_ushiwakamaru_benkei_shield"),
       Map.entry("servant_medea_bind", "servant_enkidu_chain_of_heaven"),
       Map.entry("servant_medea_workshop", "magic_circle"),
-      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort"),
-      Map.entry("servant_oda_hajun", "demon_god_gaze_final_explosion")
+      Map.entry("servant_medusa_bloodfort_np", "servant_medusa_bloodfort")
    );
 
    private EffectLibrary() {
@@ -133,7 +127,7 @@ public class EffectLibrary extends SimpleJsonResourceReloadListener {
       apply(loaded, resourceManager, null);
    }
 
-   private static VFXEffectDefinition parseEffect(ResourceLocation id, JsonObject json) {
+   static VFXEffectDefinition parseEffect(ResourceLocation id, JsonObject json) {
       requireOnly(json, "duration", "emitters", "environment", "screen_effects", "notes");
       float duration = requiredFloat(json, "duration");
       JsonArray emittersJson = requiredArray(json, "emitters");

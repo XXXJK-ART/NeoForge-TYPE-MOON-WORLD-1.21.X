@@ -1,0 +1,13 @@
+// Real client audio/mounted NP regression; never packaged in the mod.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('zhaoYunCavalrySmoke') {
+            java.srcDir 'tools/zhao-yun-cavalry-smoke/java'
+            resources.srcDir 'tools/zhao-yun-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_zhao_yun_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/zhao-yun-cavalry-client-run')
+    }
+}

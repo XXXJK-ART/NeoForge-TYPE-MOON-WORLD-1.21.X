@@ -201,7 +201,7 @@ class AiCoreTest {
    @Test
    void phaseThresholdsAreStableAndExplicit() {
       assertEquals(ServantCombatPhase.PROBING, ServantPhaseService.desiredPhase(1.0F, 599L, 1.0F));
-      assertEquals(ServantCombatPhase.NORMAL, ServantPhaseService.desiredPhase(1.0F, 600L, 1.0F));
+      assertEquals(ServantCombatPhase.DECISIVE, ServantPhaseService.desiredPhase(1.0F, 600L, 1.0F));
       assertEquals(ServantCombatPhase.DECISIVE, ServantPhaseService.desiredPhase(1.0F, 0L, 1.65F));
       assertEquals(ServantCombatPhase.DECISIVE, ServantPhaseService.desiredPhase(1.0F, 600L, 1.2F));
       assertEquals(ServantCombatPhase.DECISIVE,

@@ -302,7 +302,8 @@ public class ChurchExecutorEntity extends HumanNpcEntity implements net.minecraf
          magicCooldown = 100;
       } else if (magicCooldown <= 0 && isDeadApostleTarget(target)) {
          if (hasSpiritualHealing()) {
-            target.hurt(damageSources().magic(), 6.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.06F);
+            target.hurt(net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(damageSources().magic(), "spiritual_healing", this),
+               6.0F + getPersistentData().getInt("ChurchSpiritualHealingProficiency") * 0.06F);
             magicCooldown = 80;
          }
       }

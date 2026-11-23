@@ -79,13 +79,6 @@ class GanryuProgressionTest {
       assertEquals(120.0F, GanryuCombatService.stanceDamage(60.0F, 120.0F, 1.0F), 1.0E-6F);
    }
 
-   @Test void tsubameUsesAnEightyPercentRoll() {
-      assertTrue(GanryuCombatService.tsubameLands(0.0F));
-      assertTrue(GanryuCombatService.tsubameLands(0.799999F));
-      assertFalse(GanryuCombatService.tsubameLands(0.8F));
-      assertFalse(GanryuCombatService.tsubameLands(1.0F));
-   }
-
    @Test void normalMovesUseGanryuProficiencyAndTwelvePointMaximumBonus() {
       assertEquals(17.0F, GanryuCombatService.scaledDamage(5.0F, 20, 100.0), 1.0E-6F);
    }

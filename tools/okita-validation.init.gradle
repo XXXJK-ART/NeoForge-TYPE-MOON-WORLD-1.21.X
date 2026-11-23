@@ -1,0 +1,6 @@
+// Opt-in isolated worlds for Okita's in-game checks.
+allprojects {
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/okita-gametest-run')
+    }
+}

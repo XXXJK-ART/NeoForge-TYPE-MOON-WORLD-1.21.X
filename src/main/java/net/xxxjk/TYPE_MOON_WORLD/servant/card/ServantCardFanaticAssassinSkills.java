@@ -75,24 +75,28 @@ public final class ServantCardFanaticAssassinSkills {
       if (!toxin) player.getPersistentData().remove(TOXIN_UNTIL);
       FanaticAssassinCombatHelper.spawnCardSustainedTechniqueEffects(player, level, temperature, nerves, toxin);
 
-      long lastCleanse = player.getPersistentData().getLong(LAST_MENTAL_CLEANSE);
-      if (now - lastCleanse >= FanaticAssassinRules.MENTAL_CLEANSE_INTERVAL) {
+      if (!player.getPersistentData().contains(LAST_MENTAL_CLEANSE)) {
+         player.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
+      } else if (FanaticAssassinRules.shouldCleanseMentalEffects(
+         now, player.getPersistentData().getLong(LAST_MENTAL_CLEANSE))) {
          cleanseMentalEffects(player);
          player.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
       }
    }
 
    public static void clear(ServerPlayer player) {
-      revealForAttack(player);
+      reveal(player);
       removeTemperatureArmor(player);
       discardOwnedJinn(player);
       clearRuntimeTags(player);
    }
 
-   public static void performConcealment(ServerPlayer player) {
+   public static boolean performConcealment(ServerPlayer player) {
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(player)) return false;
       long until = player.level().getGameTime() + 600L;
       player.getPersistentData().putLong(CONCEAL_UNTIL, until);
       ServantCardConcealmentHelper.apply(player, 600);
+      return true;
    }
 
    public static boolean performHeartbeat(ServerPlayer player) {
@@ -114,6 +118,7 @@ public final class ServantCardFanaticAssassinSkills {
       List<LivingEntity> targets = enemiesAround(player, FanaticAssassinRules.MARROW_RADIUS);
       if (targets.isEmpty()) return false;
       revealForAttack(player);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : targets) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().source(FanaticDamageTypes.MARROW, player), FanaticAssassinRules.MARROW_DAMAGE);
@@ -121,6 +126,7 @@ public final class ServantCardFanaticAssassinSkills {
             FanaticAssassinRules.CONFUSION_DURATION, 0, false, true, true), player);
          target.addEffect(new MobEffectInstance(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION,
             FanaticAssassinRules.CIRCUIT_DISRUPTION_DURATION, 0, false, true, true), player);
+      }
       }
       if (player.level() instanceof ServerLevel level) {
          FanaticAssassinCombatHelper.spawnMarrowFx(level, player, targets);
@@ -138,10 +144,12 @@ public final class ServantCardFanaticAssassinSkills {
       if (targets.isEmpty()) return false;
       revealForAttack(player);
       boolean toxin = isToxinActive(player);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : targets) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().playerAttack(player), FanaticAssassinRules.HAIR_DAMAGE);
          if (toxin) FanaticAssassinCombatHelper.applyToxin(player, target);
+      }
       }
       if (player.level() instanceof ServerLevel level) {
          FanaticAssassinCombatHelper.spawnHairFx(level, player, forward);
@@ -182,6 +190,7 @@ public final class ServantCardFanaticAssassinSkills {
       target.addEffect(new MobEffectInstance(ModMobEffects.STAGGER,
          FanaticAssassinRules.STUN_DURATION, 0, false, true, true), player);
       AABB blast = new AABB(center, center).inflate(FanaticAssassinRules.COMPUTER_SPLASH_RADIUS);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity bystander : player.level().getEntitiesOfClass(LivingEntity.class, blast,
          living -> living != player && living != target && living.isAlive())) {
          float splash = FanaticAssassinRules.computerSplashDamage(
@@ -189,6 +198,7 @@ public final class ServantCardFanaticAssassinSkills {
          if (splash <= 0.0F) continue;
          bystander.invulnerableTime = 0;
          bystander.hurt(player.damageSources().source(FanaticDamageTypes.COMPUTER_SPLASH, player), splash);
+      }
       }
       player.invulnerableTime = 0;
       player.hurt(player.damageSources().magic(), FanaticAssassinRules.COMPUTER_BACKLASH);
@@ -223,6 +233,11 @@ public final class ServantCardFanaticAssassinSkills {
    }
 
    public static void revealForAttack(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(player);
+      reveal(player);
+   }
+
+   private static void reveal(ServerPlayer player) {
       if (player == null || !player.getPersistentData().contains(CONCEAL_UNTIL)) return;
       player.getPersistentData().remove(CONCEAL_UNTIL);
       player.removeEffect(MobEffects.INVISIBILITY);

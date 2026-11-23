@@ -1,5 +1,8 @@
 package com.example.typemoonaddon.storm;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.StormMagic;
 import com.example.typemoonaddon.network.StormCastInputPayload;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
@@ -301,9 +304,10 @@ public final class StormService {
                 query,
                 target -> EntityUtils.isValidCombatTarget(player, target)
         );
-        DamageSource damageSource = player.damageSources().source(DamageTypes.MAGIC, player);
+        DamageSource damageSource = MagecraftDamageSource.of(player.damageSources().source(DamageTypes.MAGIC, player), "storm", player);
 
         pruneCooldowns(state, now);
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : targets) {
             Vec3 targetCenter = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
             if (!isInsideCyclone(targetCenter, cyclones, parameters.cycloneHeight)
@@ -320,6 +324,7 @@ public final class StormService {
             if (!isForceImmune(target)) {
                 applyCombinedCycloneForce(target, targetCenter, cyclones, parameters);
             }
+        }
         }
     }
 
@@ -630,9 +635,10 @@ public final class StormService {
                 pullArea,
                 target -> isFullTornadoTarget(player, target)
         );
-        DamageSource damageSource = player.damageSources().source(DamageTypes.MAGIC, player);
+        DamageSource damageSource = MagecraftDamageSource.of(player.damageSources().source(DamageTypes.MAGIC, player), "storm", player);
         pruneCooldownMap(state.hitCooldowns, now);
 
+        try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : targets) {
             Vec3 targetCenter = target.position().add(0.0D, target.getBbHeight() * 0.5D, 0.0D);
             FullTornado tornado = nearestEffectiveTornado(
@@ -659,6 +665,7 @@ public final class StormService {
             if (!isForceImmune(target)) {
                 applyFullTornadoPull(target, targetCenter, tornado, halfArea, insideCore);
             }
+        }
         }
     }
 

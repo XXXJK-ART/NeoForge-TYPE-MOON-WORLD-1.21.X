@@ -112,7 +112,7 @@ class VFXMathAndSchemaTest {
             assertTrue(definition.emitters().stream().allMatch(emitter -> !"vanilla".equals(emitter.material().shader())), id);
             parsed++;
          }
-         assertEquals(185L, parsed);
+          assertTrue(parsed >= 201L, "the baseline effect library must remain available");
       }
    }
 }

@@ -1,0 +1,16 @@
+{
+  "name": "oda_np_hajun_release",
+  "version": 3,
+  "description": "Oda Nobunaga flings her arms wide as the Demon King manifests.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 32,
+    "stopTick": 32,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -49, "roll": -78}, "leftArm": {"pitch": -49, "roll": 78}, "body": {"pitch": -5}, "head": {"pitch": -16}},
+      {"tick": 8, "rightArm": {"pitch": -25, "roll": -50}, "leftArm": {"pitch": -25, "roll": 50}, "body": {"pitch": 12}, "head": {"pitch": 4}},
+      {"tick": 16, "rightArm": {"pitch": -20, "roll": -46}, "leftArm": {"pitch": -20, "roll": 46}, "body": {"pitch": 0}, "head": {"pitch": 0}},
+      {"tick": 32, "rightArm": {"pitch": 0, "roll": 0}, "leftArm": {"pitch": 0, "roll": 0}, "body": {"pitch": 0}, "head": {"pitch": 0}}
+    ]
+  }
+}

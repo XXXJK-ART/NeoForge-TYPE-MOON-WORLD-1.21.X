@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -151,8 +153,12 @@ public final class NightingaleSupportService {
    }
 
    public static void createSafetyCircle(LivingEntity nightingale, ServerLevel level, Vec3 center, long now) {
-      AABB area = new AABB(center, center).inflate(NightingaleRules.SUPPORT_RANGE);
-      for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAlive)) {
+      AABB area = new AABB(center, center).inflate(NightingaleRules.SAFETY_CIRCLE_RADIUS);
+      List<LivingEntity> captured = level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAlive).stream()
+         .filter(entity -> entity.position().distanceToSqr(center) <= NightingaleRules.SAFETY_CIRCLE_RADIUS * NightingaleRules.SAFETY_CIRCLE_RADIUS)
+         .sorted(Comparator.comparingDouble(entity -> entity.position().distanceToSqr(center)))
+         .limit(NightingaleRules.SAFETY_CIRCLE_MAX_ENTITIES).toList();
+      for (LivingEntity target : captured) {
          if (isPaleRider(target)) {
             applyHealingReversal(nightingale, target, NightingaleRules.NOBLE_PHANTASM_HEAL);
          } else if (isAlly(nightingale, target)) {
@@ -163,7 +169,9 @@ public final class NightingaleSupportService {
             target.getPersistentData().putLong(NP_POWER_DOWN_UNTIL, now + 600L);
          }
       }
-      SAFETY_CIRCLES.add(new SafetyCircle(level.dimension().location(), nightingale.getUUID(), center, now + NightingaleRules.SAFETY_CIRCLE_DURATION));
+      Set<UUID> capturedIds = captured.stream().map(LivingEntity::getUUID).collect(Collectors.toUnmodifiableSet());
+      SAFETY_CIRCLES.add(new SafetyCircle(level.dimension().location(), center,
+         now + NightingaleRules.SAFETY_CIRCLE_DURATION, capturedIds));
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.8, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(160), 7.0, 1.2, 7.0, 0.08);
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y + 0.5, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(100), 6.5, 0.8, 6.5, 0.05);
       level.playSound(null, center.x, center.y, center.z, SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.5F, 1.15F);
@@ -174,9 +182,8 @@ public final class NightingaleSupportService {
       long now = level.getGameTime();
       prune(now);
       for (SafetyCircle circle : SAFETY_CIRCLES) {
-         if (!circle.dimension.equals(level.dimension().location()) || circle.center.distanceToSqr(target.position()) > 225.0) continue;
-         if (level.getEntity(circle.owner) instanceof LivingEntity nightingale
-            && isNightingaleSource(nightingale) && isAlly(nightingale, target)) return true;
+         if (!circle.dimension.equals(level.dimension().location())) continue;
+         if (circle.entities.contains(target.getUUID())) return true;
       }
       return false;
    }
@@ -188,8 +195,8 @@ public final class NightingaleSupportService {
          if (!circle.dimension.equals(level.dimension().location())) continue;
          for (int index = 0; index < 32; index++) {
             double angle = Math.PI * 2.0 * index / 32.0;
-            level.sendParticles(ParticleTypes.END_ROD, circle.center.x + Math.cos(angle) * 15.0,
-               circle.center.y + 0.15, circle.center.z + Math.sin(angle) * 15.0, 1, 0.0, 0.04, 0.0, 0.0);
+            level.sendParticles(ParticleTypes.END_ROD, circle.center.x + Math.cos(angle) * NightingaleRules.SAFETY_CIRCLE_RADIUS,
+               circle.center.y + 0.15, circle.center.z + Math.sin(angle) * NightingaleRules.SAFETY_CIRCLE_RADIUS, 1, 0.0, 0.04, 0.0, 0.0);
          }
       }
    }
@@ -226,5 +233,5 @@ public final class NightingaleSupportService {
       return target != source && !isAlly(source, target) && !EntityUtils.isImmunePlayerTarget(target);
    }
 
-   private record SafetyCircle(net.minecraft.resources.ResourceLocation dimension, UUID owner, Vec3 center, long until) {}
+   private record SafetyCircle(net.minecraft.resources.ResourceLocation dimension, Vec3 center, long until, Set<UUID> entities) {}
 }

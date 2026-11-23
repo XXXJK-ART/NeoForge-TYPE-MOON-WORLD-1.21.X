@@ -187,7 +187,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       boolean luckPlus = getBooleanOrDefault(json, "luck_plus", false);
 
       return ServantParams.of(endurance, endurancePlus, strength, strengthPlus,
-         agility, agilityPlus, magic, magicPlus, luck, luckPlus);
+         agility, agilityPlus, magic, magicPlus, luck, luckPlus).withNoblePhantasmRank(getStringOrDefault(json,"noble_phantasm_rank",""));
    }
 
    private ServantAnimations parseAnimations(JsonObject modelJson, String legacyAnimationPath) {
@@ -199,7 +199,7 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
       String idle = getStringOrDefault(animationsJson, "idle", "");
       String walk = getStringOrDefault(animationsJson, "walk", "");
       java.util.Map<String, String> actions = new java.util.LinkedHashMap<>();
-      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "dodge", "guard", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "float_idle", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "np", "spear_strike", "spear_spin", "spear_sweep", "spear_flourish", "spear_dance", "spear_lunging_thrust", "spear_driving_slash", "spear_sweeping_advance", "mounted_lance_charge", "mounted_sweeping_pass", "mounted_dragon_rein", "qinggang_sword", "riding", "dragon_gall", "riding_burst", "rescue", "seven_out", "changbanpo_no_ikki_gake"}) {
+      for (String key : new String[]{"roar", "slam", "jump_attack", "charge", "sweep", "slash", "teleport_behind", "stomp", "uppercut", "horizontal_swing", "revive", "slam_windup", "dodge", "guard", "tsurigameshi", "gae_bolg_throw", "rune_cast", "fly", "float_idle", "bend_over", "remove_blindfold", "no_cape", "no_bandages", "zabaniya", "dirk_throw", "assassin_stab", "shadow_step", "gallatin_chant", "gallatin_release", "gate_single", "gate_small", "gate_large", "gate_of_babylon", "gate_duel", "durandal_slash", "chain_of_heaven", "ea_unlock", "ea_release", "igalima_slash", "sulsagana_slash", "np", "spear_strike", "spear_spin", "spear_sweep", "spear_flourish", "spear_dance", "spear_lunging_thrust", "spear_driving_slash", "spear_sweeping_advance", "mounted_lance_charge", "mounted_sweeping_pass", "mounted_dragon_rein", "qinggang_sword", "riding", "dragon_gall", "riding_burst", "rescue", "seven_out", "changbanpo_no_ikki_gake", "bow_draw_start", "bow_draw_loop", "bow_draw_cancel", "bow_release", "retreat", "melee_knockback"}) {
          if (animationsJson.has(key)) {
             String value = animationsJson.get(key).getAsString();
             if (value != null && !value.isBlank()) {
@@ -208,6 +208,13 @@ public class ServantDefinitionLoader extends SimpleJsonResourceReloadListener {
          }
       }
 
+      // Heracles' shared executor uses named actions beyond the legacy action list.
+      for (String key : new String[]{"martial_0", "martial_1", "martial_2", "martial_3", "martial_4",
+         "martial_5", "martial_6", "martial_7", "martial_8", "martial_end", "frenzy", "frenzy_walk",
+         "frenzy_slash_0", "frenzy_slash_1", "frenzy_slash_2", "frenzy_impact", "adapt"}) {
+         String value = getStringOrDefault(animationsJson, key, "");
+         if (!value.isBlank()) actions.put(key, value);
+      }
       if ((idle == null || idle.isBlank()) && (walk == null || walk.isBlank()) && actions.isEmpty()) {
          return ServantAnimations.legacy(legacyAnimationPath);
       }

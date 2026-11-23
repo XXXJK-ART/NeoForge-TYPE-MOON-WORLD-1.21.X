@@ -42,10 +42,28 @@ public final class DeferredTerrainDestruction {
       if (radius > 0) add(level, new SphereJob(level, center, radius, radius, maxHardness, false, null, null).schedule(targetTicks));
    }
    public static void queueSphere(ServerLevel level, Vec3 center, double radius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
-      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback).schedule(targetTicks));
+      if (radius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(radius), radius, Float.MAX_VALUE, false, predicate, callback)
+         .maximumDownwardDepth(0).schedule(targetTicks));
+   }
+   /** Clears the complete sphere in distance order, including its center voxel. */
+   public static void queueRadialSphere(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
+      if (level != null && radius > 0) add(level, new RadialSphereJob(level, center, radius, callback));
+   }
+   /** Expands by one block per tick, clearing an upper hemisphere and a shallow ground depression. */
+   public static void queueRadialShallowImpact(ServerLevel level, Vec3 center, double radius, int depth, float maxHardness) {
+      if (level != null && radius > 0.0 && depth > 0) {
+         add(level, new RadialImpactJob(level, center, radius, depth, maxHardness));
+      }
    }
    public static void queueShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius, int targetTicks, BlockPredicate predicate, RemovalCallback callback) {
       if (currentRadius > 0 && predicate != null) add(level, new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback).inner(previousRadius).schedule(targetTicks));
+   }
+   public static void queueRestrictedShell(ServerLevel level, Vec3 center, double currentRadius, double previousRadius,
+                                           int maximumDownwardDepth, int targetTicks, BlockPredicate predicate,
+                                           RemovalCallback callback) {
+      if (level != null && currentRadius > 0.0 && predicate != null) add(level,
+         new SphereJob(level, center, (int)Math.ceil(currentRadius), currentRadius, Float.MAX_VALUE, true, predicate, callback)
+            .inner(previousRadius).maximumDownwardDepth(maximumDownwardDepth).schedule(targetTicks));
    }
    public static void queueEllipsoid(ServerLevel level, Vec3 center, int radius, int halfHeight, float maxHardness, int targetTicks) {
       if (radius > 0 && halfHeight > 0) add(level, new EllipsoidJob(level, center, radius, halfHeight, maxHardness).schedule(targetTicks));
@@ -117,6 +135,12 @@ public final class DeferredTerrainDestruction {
       add(level, job);
       return new ExpandingSphere(job);
    }
+
+   public static ExpandingSphere queueExpandingUpperSphere(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+      ExpandingSphereJob job = new ExpandingSphereJob(level, center, radius, completion, true);
+      add(level, job);
+      return new ExpandingSphere(job);
+   }
    /** Queues the exact swept volume between two consecutive blade poses. */
    public static void queueSweptBlade(ServerLevel level, Vec3 previousCenter, Vec3 currentCenter,
                                       Vec3 previousAxis, Vec3 currentAxis, Vec3 faceNormal,
@@ -141,11 +165,16 @@ public final class DeferredTerrainDestruction {
       return level == null ? new TickMetrics(0, 0L, 0) : LAST_METRICS.getOrDefault(level.dimension(), new TickMetrics(0, 0L, 0));
    }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length, double width, double height, boolean funnel) {
-      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel, 80.0F));
+      queueDirectionalCut(level, origin, direction, length, width, height, funnel, 80.0F);
    }
    public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length,
                                           double width, double height, boolean funnel, float maxHardness) {
-      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel, maxHardness));
+      queueDirectionalCut(level, origin, direction, length, width, height, funnel, maxHardness, Integer.MIN_VALUE);
+   }
+   public static void queueDirectionalCut(ServerLevel level, Vec3 origin, Vec3 direction, double length,
+                                          double width, double height, boolean funnel, float maxHardness,
+                                          int minimumYInclusive) {
+      add(level, new DirectionalJob(level, origin, direction, length, width, height, funnel, maxHardness, minimumYInclusive));
    }
    public static void queueUpperHemisphere(ServerLevel level, Vec3 center, double radius, double minimumYExclusive, float maxHardness) {
       if (level != null && radius > 0) add(level, new UpperHemisphereJob(level, center, radius, minimumYExclusive, maxHardness));
@@ -236,13 +265,85 @@ public final class DeferredTerrainDestruction {
    }
    private static final class SphereJob extends Job {
       final Vec3 center; final int scan; final double radius, radiusSqr; final float hardness; final boolean shellOnly; final BlockPredicate predicate; final RemovalCallback callback;
-      double innerSqr; int x, y, z, removed;
+      double innerSqr; int x, y, z, removed; int maximumDownwardDepth = -1;
       SphereJob(ServerLevel level, Vec3 center, int scan, double radius, float hardness, boolean shellOnly, BlockPredicate predicate, RemovalCallback callback) { super(level); this.center=center; this.scan=scan; this.radius=radius; this.radiusSqr=radius*radius; this.hardness=hardness; this.shellOnly=shellOnly; this.predicate=predicate; this.callback=callback; x=y=z=-scan; }
       SphereJob inner(double value) { innerSqr=Math.max(0,value*value); return this; }
+      SphereJob maximumDownwardDepth(int value) { maximumDownwardDepth = Math.max(0, value); return this; }
       SphereJob schedule(int targetTicks) { super.schedule(targetTicks, (long)(scan * 2 + 1) * (scan * 2 + 1) * (scan * 2 + 1)); return this; }
-      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
+      void advance() { int cx=x,cy=y,cz=z; cursor(); double d=cx*cx+cy*cy+cz*cz; if(d>radiusSqr || d<=innerSqr)return; BlockPos p=BlockPos.containing(center.x+cx,center.y+cy,center.z+cz); if(maximumDownwardDepth >= 0 && p.getY() < Mth.floor(center.y) - maximumDownwardDepth)return; if(valid(p,hardness) && (predicate==null || predicate.canRemove(level,p,d,radius,center))){ if(level.removeBlock(p,false)){removed++; if(callback!=null)callback.onRemoved(level,p,removed);} } }
       void cursor(){if(++z>scan){z=-scan;if(++y>scan){y=-scan;if(++x>scan)done=true;}}}
    }
+   private static final class RadialSphereJob extends Job {
+      final Vec3 center;
+      final RadialSphereCursor cursor;
+      final RemovalCallback callback;
+      int removed;
+
+      RadialSphereJob(ServerLevel level, Vec3 center, int radius, RemovalCallback callback) {
+         super(level);
+         this.center = center;
+         this.cursor = new RadialSphereCursor(radius);
+         this.callback = callback;
+      }
+
+      @Override void advance() {
+         var offset = cursor.next();
+         BlockPos pos = BlockPos.containing(center.x + offset.x(), center.y + offset.y(), center.z + offset.z());
+         done = !cursor.hasNext();
+         if (valid(pos, Float.MAX_VALUE) && level.removeBlock(pos, false)) {
+            removed++;
+            if (callback != null) callback.onRemoved(level, pos, removed);
+         }
+      }
+   }
+   private static final class RadialImpactJob extends Job {
+      final Vec3 center;
+      final double radius;
+      final int depth;
+      final float hardness;
+      final RadialSphereCursor cursor;
+      RadialSphereCursor.Offset next;
+
+      RadialImpactJob(ServerLevel level, Vec3 center, double radius, int depth, float hardness) {
+         super(level);
+         this.center = center;
+         this.radius = radius;
+         this.depth = Math.min(2, depth);
+         this.hardness = hardness;
+         this.cursor = new RadialSphereCursor(Mth.ceil(radius));
+         this.next = cursor.next();
+         this.sliceLimit = 512;
+      }
+
+      @Override boolean ready() {
+         double reached = Math.min(radius, Math.max(0L, level.getGameTime() - queuedAt));
+         return !done && next.distanceSqr() <= reached * reached;
+      }
+
+      @Override boolean supersedes(Job other) {
+         return other instanceof RadialImpactJob candidate && depth >= candidate.depth
+            && center.distanceTo(candidate.center) + candidate.radius <= radius + 1.0E-6
+            && overlappingImpactSupersedes(center, radius, hardness, queuedAt,
+               candidate.center, candidate.radius, candidate.hardness, candidate.queuedAt);
+      }
+
+      @Override void advance() {
+         var offset = next;
+         if (cursor.hasNext()) {
+            next = cursor.next();
+            done = next.distanceSqr() > radius * radius;
+         } else done = true;
+         BlockPos pos = BlockPos.containing(center.x + offset.x(), center.y + offset.y(), center.z + offset.z());
+         if (offset.y() < 0) {
+            double horizontalSqr = (double)offset.x() * offset.x() + (double)offset.z() * offset.z();
+            int columnDepth = Math.max(1, (int)Math.round(depth * Math.sqrt(Math.max(0.0,
+               1.0 - horizontalSqr / (radius * radius)))));
+            if (-offset.y() > columnDepth || !CombatTerrainProtection.canRemoveWithinSurfaceDepth(level, pos, depth)) return;
+         }
+         if (valid(pos, hardness)) level.removeBlock(pos, false);
+      }
+   }
+
    private static final class EllipsoidJob extends Job {
       final Vec3 center; final int radius,height; final float hardness; int x,y,z;
       EllipsoidJob(ServerLevel level,Vec3 center,int radius,int height,float hardness){super(level);this.center=center;this.radius=radius;this.height=height;this.hardness=hardness;x=z=-radius;y=-height;}
@@ -603,15 +704,20 @@ public final class DeferredTerrainDestruction {
    private static final class ExpandingSphereJob extends Job {
       final Vec3 center;
       final int maxRadius;
+      final boolean upperOnly;
       int shell, x, y, z;
       double targetRadius;
       boolean sealed;
 
       ExpandingSphereJob(ServerLevel level, Vec3 center, int radius, Runnable completion) {
+         this(level, center, radius, completion, false);
+      }
+      ExpandingSphereJob(ServerLevel level, Vec3 center, int radius, Runnable completion, boolean upperOnly) {
          super(level);
          this.center = center;
          this.maxRadius = Math.max(1, radius);
          this.completion = completion;
+         this.upperOnly = upperOnly;
       }
       void advanceTo(double radius) { targetRadius = Math.max(targetRadius, Math.min(maxRadius, radius)); }
       void seal() { sealed = true; targetRadius = maxRadius; }
@@ -620,7 +726,7 @@ public final class DeferredTerrainDestruction {
          int cx = x, cy = y, cz = z, currentShell = shell;
          cursor();
          if (Math.max(Math.max(Math.abs(cx), Math.abs(cy)), Math.abs(cz)) != currentShell) return;
-         if (cx * cx + cy * cy + cz * cz > maxRadius * maxRadius) return;
+         if (upperOnly && cy < 0 || cx * cx + cy * cy + cz * cz > maxRadius * maxRadius) return;
          BlockPos pos = BlockPos.containing(center.x + cx, center.y + cy, center.z + cz);
          if (valid(pos, Float.MAX_VALUE)) level.removeBlock(pos, false);
       }
@@ -805,9 +911,9 @@ public final class DeferredTerrainDestruction {
       }
    }
    private static final class DirectionalJob extends Job {
-      final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; final float maxHardness; int along, lateral, vertical;
-      DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel,float maxHardness){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;this.maxHardness=maxHardness;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
-      void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(valid(p,maxHardness))level.removeBlock(p,false);}
+      final Vec3 origin, forward, right, up; final double length, width, height; final boolean funnel; final float maxHardness; final int minimumYInclusive; int along, lateral, vertical;
+      DirectionalJob(ServerLevel level,Vec3 origin,Vec3 direction,double length,double width,double height,boolean funnel,float maxHardness,int minimumYInclusive){super(level);this.origin=origin;this.forward=direction.lengthSqr()<1e-6?new Vec3(0,0,1):direction.normalize();Vec3 worldUp=Math.abs(forward.y)>.95?new Vec3(0,0,1):new Vec3(0,1,0);this.right=forward.cross(worldUp).normalize();this.up=right.cross(forward).normalize();this.length=length;this.width=width;this.height=height;this.funnel=funnel;this.maxHardness=maxHardness;this.minimumYInclusive=minimumYInclusive;lateral=(int)-Math.ceil(width/2);vertical=(int)-Math.ceil(height/2);}
+      void advance(){double distance=along*.5,progress=distance/length;double factor;if(funnel)factor=progress<.35?Math.max(.08,progress/.35):progress>.8?Math.max(.1,1-(progress-.8)*4.5):1;else factor=Math.max(.18,Math.sin(Math.PI*Math.max(0,Math.min(1,progress))));double hw=width*.5*factor,hh=height*.5*factor;int lat=lateral,v=vertical;cursor();if(Math.abs(lat)>hw||Math.abs(v)>hh||distance<4)return;BlockPos p=BlockPos.containing(origin.add(forward.scale(distance)).add(right.scale(lat)).add(up.scale(v)));if(p.getY()>=minimumYInclusive&&valid(p,maxHardness))level.removeBlock(p,false);}
       void cursor(){int maxLat=(int)Math.ceil(width/2),maxY=(int)Math.ceil(height/2);if(++vertical>maxY){vertical=-maxY;if(++lateral>maxLat){lateral=-maxLat;if(++along>(int)Math.ceil(length*2))done=true;}}}
    }
    private static final class UpperHemisphereJob extends Job {

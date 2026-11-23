@@ -1,9 +1,15 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -79,6 +85,8 @@ public final class PlayerNoblePhantasmHelper {
    private static final String GAE_LOCKED_MELEE_PURSUIT_TAG = "TypeMoonGaeBulgLockedMeleePursuit";
    private static final String GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG = "TypeMoonGaeBulgLockedMeleePursuitUntil";
    private static final String EXCALIBUR_CHARGE_TAG = "TypeMoonExcaliburCharge";
+   private static final String EXCALIBUR_SHORT_CHARGE_TAG = "TypeMoonExcaliburShortCharge";
+   private static final String EXCALIBUR_SHORT_LAST_VFX_TAG = "TypeMoonExcaliburShortLastChargeVfx";
    private static final String EXCALIBUR_LAST_CHARGE_VFX_TAG = "TypeMoonExcaliburLastChargeVfx";
    private static final String EXCALIBUR_MIN_CHARGE_PAID_TAG = "TypeMoonExcaliburMinChargePaid";
    private static final String GOLDEN_EXCALIBUR_CHARGE_TAG = "TypeMoonGoldenExcaliburCharge";
@@ -104,9 +112,11 @@ public final class PlayerNoblePhantasmHelper {
    private static final double GAE_BULG_MELEE_PURSUIT_END_SPEED = 0.35;
    private static final int MIN_CHARGE_NP_RELEASE_TICKS = 30;
    private static final int EXCALIBUR_MAX_CHARGE_TICKS = 100;
+   private static final int EXCALIBUR_SHORT_MAX_CHARGE_TICKS = ArtoriaRules.EXCALIBUR_SHORT_CHARGE_TICKS;
    private static final int EXCALIBUR_RELEASE_TICKS = 150;
-   private static final int EXCALIBUR_DAMAGE_START_TICK = 58;
-   private static final int EXCALIBUR_PLAYER_COOLDOWN = 1200;
+   private static final int EXCALIBUR_DAMAGE_START_TICK = 0;
+   private static final int EXCALIBUR_PLAYER_COOLDOWN = 3600;
+   private static final double EXCALIBUR_MANA_COST = 150.0;
    private static final int GOLDEN_EXCALIBUR_MIN_CHARGE_TICKS = 10;
    private static final int GOLDEN_EXCALIBUR_MAX_CHARGE_TICKS = 40;
    private static final int GOLDEN_EXCALIBUR_RELEASE_TICKS = 30;
@@ -127,6 +137,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean consumeStrict(ServerPlayer player, double amount) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (vars.servant_card_transformed) {
          var before = ServantCardManaService.snapshot(player, vars);
@@ -244,7 +255,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!hasOneShotTsubame(stack)) {
          return false;
       }
-      LivingEntity target = findLookTarget(player, 5.5, 1.25);
+      LivingEntity target = findLookTarget(player, 8.0, 2.0);
       if (target == null) {
          player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
          return true;
@@ -252,32 +263,18 @@ public final class PlayerNoblePhantasmHelper {
       clearOneShotTsubame(stack);
       performTsubame(player, target);
       if (!player.getAbilities().instabuild) stack.shrink(1);
-      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
-            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
-         );
-         vars.syncPlayerVariables(player);
-      }
+      player.getCooldowns().addCooldown(stack.getItem(), 600);
       return true;
    }
 
    public static boolean triggerTsubameOnHit(ServerPlayer player, ItemStack stack, LivingEntity target) {
-      if (!hasOneShotTsubame(stack) || target == null || !target.isAlive() || player.distanceToSqr(target) > 16.0) {
+      if (!hasOneShotTsubame(stack) || target == null || !target.isAlive() || player.distanceToSqr(target) > 64.0) {
          return false;
       }
       clearOneShotTsubame(stack);
       performTsubame(player, target);
       if (!player.getAbilities().instabuild) stack.shrink(1);
-      player.getCooldowns().addCooldown(stack.getItem(), ONE_SHOT_PROJECTION_NP_COOLDOWN);
-      TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-      if (vars.servant_card_transformed) {
-         net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(
-            player, vars, Math.max(vars.servant_card_np_cooldown, ONE_SHOT_PROJECTION_NP_COOLDOWN)
-         );
-         vars.syncPlayerVariables(player);
-      }
+      player.getCooldowns().addCooldown(stack.getItem(), 600);
       return true;
    }
 
@@ -317,170 +314,36 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    public static boolean useDirk(ServerPlayer player, InteractionHand hand) {
+      ItemStack held = player.getItemInHand(hand);
+      if (held.isEmpty() || !held.is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.DIRK_SMALL_KNIFE.get())
+         || held.getDamageValue() >= held.getMaxDamage()) return false;
       DirkProjectileEntity projectile = new DirkProjectileEntity(player.level(), player);
-      projectile.setDamage(20.0F);
+      projectile.setDamage(10.0F);
       projectile.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
       Vec3 look = player.getLookAngle();
       projectile.shoot(look.x, look.y, look.z, 1.9F, 0.0F);
       player.level().addFreshEntity(projectile);
       player.level().playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.75F, 1.45F);
       if (!player.isCreative()) {
-         player.getItemInHand(hand).hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+         held.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
       }
       return true;
    }
 
    public static boolean useGaeBulgMelee(ServerPlayer player) {
-      LivingEntity target = findRandomGaeBulgMeleeTarget(player, 4.0);
-      if (target == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
-      ServantCardCuChulainnSkills.markCombat(player);
-      resolveGaeBulgHit(player, target);
-      addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
-      return true;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.noble(player,false,20);
    }
 
    public static void startGaeBulgDeathFlight(ServerPlayer player) {
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "cu_gae_bolg", GAE_BULG_ARMY_PLAYER_COOLDOWN, ticks -> net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.setNoblePhantasmCooldown(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES), ticks), () -> { clearGaeBulgUseState(player); });
-      CompoundTag data = player.getPersistentData();
-      boolean hadLock = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
-      LivingEntity target = resolveGaeBulgLockedTarget(player);
-      if (target == null) {
-         clearGaeBulgMeleeState(player);
-         target = findGaeBulgMeleeLockTarget(player);
-         hadLock = false;
-      }
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      data.remove(GAE_LOCK_CREATED_THIS_USE_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG);
-      data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
-      if (target != null) {
-         data.putBoolean(GAE_LOCKED_MELEE_CHARGE_TAG, true);
-         data.putInt(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks", 0);
-         if (!hadLock) {
-            data.putUUID(GAE_LOCKED_MELEE_TARGET_TAG, target.getUUID());
-            data.putLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_LOCK_TICKS);
-            data.putBoolean(GAE_LOCK_CREATED_THIS_USE_TAG, true);
-            player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.locked", target.getDisplayName()), true);
-            spawnGaeBulgLockFx(player, target);
-         }
-      } else {
-         data.putBoolean(GAE_DEATH_FLIGHT_TAG, true);
-         data.putInt(GAE_DEATH_FLIGHT_TAG + "Ticks", 0);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_flight_charge"), true);
-      }
-      startServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get());
+      net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.begin(player);
    }
 
    public static void tickGaeBulgUse(Level level, LivingEntity living, int useTicks) {
-      if (!(living instanceof ServerPlayer player)) {
-         return;
-      }
-      CompoundTag data = player.getPersistentData();
-      boolean lockedMelee = data.getBoolean(GAE_LOCKED_MELEE_CHARGE_TAG);
-      boolean deathFlight = data.getBoolean(GAE_DEATH_FLIGHT_TAG);
-      long lockUntil = data.getLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG);
-      if (!lockedMelee && !deathFlight) {
-         return;
-      }
-      if (lockedMelee && lockUntil > 0L && player.level().getGameTime() > lockUntil) {
-         clearGaeBulgMeleeState(player);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.lock_expired"), true);
-         return;
-      }
-      String tickTag = lockedMelee ? GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks" : GAE_DEATH_FLIGHT_TAG + "Ticks";
-      data.putInt(tickTag, Math.max(0, useTicks));
-      tickServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-      if (useTicks >= GAE_BULG_MELEE_MIN_CHARGE_TICKS && level instanceof ServerLevel serverLevel) {
-         serverLevel.sendParticles(GAE_BULG_CHARGE_PARTICLE, player.getX(), player.getY() + 1.0, player.getZ(), 8, 0.42, 0.58, 0.42, 0.02);
-         serverLevel.sendParticles(ParticleTypes.CRIT, player.getX(), player.getY() + 1.0, player.getZ(), 3, 0.38, 0.48, 0.38, 0.035);
-         if (lockedMelee && useTicks % 5 == 0) {
-            LivingEntity target = resolveGaeBulgLockedTarget(player);
-            if (target != null) {
-               Vec3 from = player.position().add(0.0, player.getBbHeight() * 0.65, 0.0);
-               Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.45, 0.0);
-               ServantCardSkillUtils.spawnLineParticles(serverLevel, from, to, ParticleTypes.CRIT);
-            }
-         }
-      }
+      if(living instanceof ServerPlayer player) net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.charge(player,useTicks);
    }
 
    public static boolean releaseGaeBulg(ServerPlayer player) {
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseGaeBulg(player))) return true;
-      CompoundTag data = player.getPersistentData();
-      boolean lockedMelee = data.getBoolean(GAE_LOCKED_MELEE_CHARGE_TAG);
-      boolean deathFlight = data.getBoolean(GAE_DEATH_FLIGHT_TAG);
-      boolean lockCreatedThisUse = data.getBoolean(GAE_LOCK_CREATED_THIS_USE_TAG);
-      int meleeCharged = data.getInt(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      int charged = data.getInt(GAE_DEATH_FLIGHT_TAG + "Ticks");
-      boolean hadLockedTarget = data.hasUUID(GAE_LOCKED_MELEE_TARGET_TAG);
-      LivingEntity lockedTarget = resolveGaeBulgLockedTarget(player);
-      stopServantCardChargeVoice(player, "cu_chulainn", ModSounds.CU_CHULAINN_VOICE_GAE_BOLG.get(), null);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG);
-      data.remove(GAE_LOCKED_MELEE_CHARGE_TAG + "Ticks");
-      data.remove(GAE_LOCK_CREATED_THIS_USE_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_TAG);
-      data.remove(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG);
-      data.remove(GAE_DEATH_FLIGHT_TAG);
-      data.remove(GAE_DEATH_FLIGHT_TAG + "Ticks");
-      data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
-      if (!lockedMelee && !deathFlight) {
-         return false;
-      }
-
-      int useTicks = lockedMelee ? meleeCharged : charged;
-      // A previously acquired melee lock must not turn a tap into an instant
-      // Death Thorn release. Every melee release observes the full charge.
-      if (lockedTarget != null && useTicks < GAE_BULG_MELEE_MIN_CHARGE_TICKS) {
-         return true;
-      }
-
-      if (useTicks >= GAE_DEATH_FLIGHT_CHARGE_TICKS) {
-         LivingEntity target = lockedTarget != null ? lockedTarget : findGaeBulgDeathFlightTarget(player);
-         Float armyDamage = consumeGaeBulgArmyManaAndDamage(player, useTicks);
-         if (armyDamage == null) {
-            return false;
-         }
-         ServantCardCuChulainnSkills.markCombat(player);
-         player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_flight_release"), true);
-         throwGaeBulgArmy(player, target, armyDamage);
-         addGaeBulgCooldown(player, GAE_BULG_ARMY_PLAYER_COOLDOWN);
-         return true;
-      }
-
-      if (lockedMelee && hadLockedTarget && lockedTarget == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      LivingEntity target = lockedTarget != null ? lockedTarget : findRandomGaeBulgMeleeTarget(player, GAE_BULG_MELEE_LOCK_RANGE);
-      if (target == null) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!CuChulainnCombatRules.canReleaseMeleeGaeBolg(player.distanceTo(target))) {
-         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
-         return true;
-      }
-      if (!consumeStrict(player, 20.0)) {
-         return false;
-      }
-      ServantCardCuChulainnSkills.markCombat(player);
-      data.putUUID(GAE_LOCKED_MELEE_TARGET_TAG, target.getUUID());
-      data.putLong(GAE_LOCKED_MELEE_TARGET_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_MELEE_PURSUIT_TICKS);
-      data.putBoolean(GAE_LOCKED_MELEE_PURSUIT_TAG, true);
-      data.putLong(GAE_LOCKED_MELEE_PURSUIT_UNTIL_TAG, player.level().getGameTime() + GAE_BULG_MELEE_PURSUIT_TICKS);
-      addGaeBulgCooldown(player, GAE_BULG_SINGLE_PLAYER_COOLDOWN);
-      player.displayClientMessage(Component.translatable("message.typemoonworld.gae_bulg.death_thorn_release"), true);
-      startGaeBulgMeleePursuit(player, target);
-      scheduleGaeBulgMeleePursuit(player);
-      return true;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.release(player);
    }
 
    public static void tickGaeBulgMeleePursuit(ServerPlayer player) {
@@ -557,68 +420,127 @@ public final class PlayerNoblePhantasmHelper {
       data.remove(GAE_DEATH_FLIGHT_PAID_TAG);
    }
 
-   public static void startExcaliburCharge(ServerPlayer player) {
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(player, "artoria_excalibur", EXCALIBUR_PLAYER_COOLDOWN, ticks -> addExcaliburCooldown(player, ticks), () -> { player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG); });
-      player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, 0);
-      player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
-      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
-      startServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get());
+   public static boolean startExcaliburCharge(ServerPlayer player) {
+      long now = player.level().getGameTime();
+      var d = player.getPersistentData();
+      if (NoblePhantasmCastService.chanting(player) || d.hasUUID(ArtoriaStateService.NP_BEAM)
+         || now < d.getLong(ArtoriaStateService.NP_READY) || !consumeStrict(player, ArtoriaRules.EXCALIBUR_MP)) return false;
+      NoblePhantasmCastService.begin(player, "artoria_excalibur", ArtoriaRules.EXCALIBUR_COOLDOWN,
+         ticks -> { d.putLong(ArtoriaStateService.NP_READY, player.level().getGameTime() + ticks); addExcaliburCooldown(player, ticks); },
+          () -> {
+             d.remove(EXCALIBUR_CHARGE_TAG); d.remove(EXCALIBUR_LAST_CHARGE_VFX_TAG); clearArtoriaExcaliburWindLock(player);
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+                player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.CANCEL);
+          });
+      d.putInt(EXCALIBUR_CHARGE_TAG, 0);
+      d.putLong(ArtoriaStateService.NP_READY, now + ArtoriaRules.EXCALIBUR_COOLDOWN);
+      addExcaliburCooldown(player, ArtoriaRules.EXCALIBUR_COOLDOWN);
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+         player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.FULL_NP);
+      ArtoriaStateService.autoReleaseWindBarrier(player);
+      revealArtoriaWindVeiledExcaliburForNp(player, (int)(NoblePhantasmCastService.releaseAt(player) - now) + 1);
+      TYPE_MOON_WORLD.queueServerWork(20, () -> {
+         if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);
+      });
+      NoblePhantasmCastService.deferEffect(player, () -> fireExcalibur(player));
+      return true;
+   }
+
+   /** Starts the three-second, quarter-power Excalibur release used by a normal right click. */
+   public static boolean startShortExcaliburCharge(ServerPlayer player) {
+      long now = player.level().getGameTime();
+      var d = player.getPersistentData();
+      if (!ArtoriaStateService.isArtoria(player) || NoblePhantasmCastService.chanting(player)
+         || d.hasUUID(ArtoriaStateService.NP_BEAM) || now < d.getLong(ArtoriaStateService.NP_SHORT_READY)
+         || !consumeStrict(player, ArtoriaRules.EXCALIBUR_SHORT_MP)) return false;
+      NoblePhantasmCastService.begin(player, "artoria_excalibur_short", ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN,
+         ticks -> { d.putLong(ArtoriaStateService.NP_SHORT_READY, player.level().getGameTime() + ticks); },
+          () -> {
+             d.remove(EXCALIBUR_SHORT_CHARGE_TAG); d.remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
+             net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+                player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.CANCEL);
+          });
+      d.putInt(EXCALIBUR_SHORT_CHARGE_TAG, 0);
+      d.putLong(ArtoriaStateService.NP_SHORT_READY, now + ArtoriaRules.EXCALIBUR_SHORT_COOLDOWN);
+      net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAnimationService.play(
+         player, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaExcaliburAction.SHORT_RELEASE);
+      ArtoriaStateService.autoReleaseWindBarrier(player);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_SHORT_CHARGE_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      TYPE_MOON_WORLD.queueServerWork(20, () -> {
+         if (NoblePhantasmCastService.chanting(player)) ArtoriaStateService.autoReleaseWindBarrier(player);
+      });
+      NoblePhantasmCastService.deferEffect(player, () -> fireShortExcalibur(player));
+      return true;
+   }
+
+   private static void fireExcalibur(ServerPlayer player) {
+      if (!player.getPersistentData().contains(EXCALIBUR_CHARGE_TAG) || !player.isUsingItem()
+         || !player.getUseItem().is(ModItems.EXCALIBUR.get()) || !(player.level() instanceof ServerLevel level)) return;
+      var d = player.getPersistentData();
+      d.remove(EXCALIBUR_CHARGE_TAG);
+      d.remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
+      Vec3 start = player.position().add(0, player.getBbHeight() * .66, 0).add(player.getLookAngle().scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, ArtoriaRules.EXCALIBUR_TICKS, 0, 1);
+      d.putUUID(ArtoriaStateService.NP_BEAM, beam.getUUID());
+      level.addFreshEntity(beam);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      revealArtoriaWindVeiledExcaliburForNp(player, ArtoriaRules.EXCALIBUR_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150);
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 2.5F, .85F);
+   }
+
+   private static void fireShortExcalibur(ServerPlayer player) {
+      if (!player.getPersistentData().contains(EXCALIBUR_SHORT_CHARGE_TAG)
+         || !player.isUsingItem() || !player.getUseItem().is(ModItems.EXCALIBUR.get())
+         || !(player.level() instanceof ServerLevel level)) return;
+      var d = player.getPersistentData();
+      d.remove(EXCALIBUR_SHORT_CHARGE_TAG);
+      d.remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
+      Vec3 start = player.position().add(0, player.getBbHeight() * .66, 0).add(player.getLookAngle().scale(1.2));
+      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start,
+         ArtoriaRules.EXCALIBUR_SHORT_TICKS, 0, 1.0F, false, true);
+      d.putUUID(ArtoriaStateService.NP_BEAM, beam.getUUID());
+      level.addFreshEntity(beam);
+      ArtoriaAbilityService.reveal(player, ArtoriaRules.EXCALIBUR_SHORT_TICKS + ArtoriaRules.REVEAL_AFTER_NP);
+      level.playSound(null, player.blockPosition(), ModSounds.ARTORIA_VOICE_EXCALIBUR_RELEASE.get(), SoundSource.VOICE, 1.1F, 1.0F);
+      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, ArtoriaRules.EXCALIBUR_SHORT_TICKS);
+      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.4F, 1.15F);
    }
 
    public static void tickExcaliburCharge(Level level, LivingEntity living, int useTicks) {
-      if (!(living instanceof ServerPlayer player)) {
-         return;
-      }
-      int charged = Math.min(EXCALIBUR_MAX_CHARGE_TICKS, useTicks);
-      player.getPersistentData().putInt(EXCALIBUR_CHARGE_TAG, charged);
+      if (!(living instanceof ServerPlayer player) || !NoblePhantasmCastService.chanting(player)) return;
       applyNoblePhantasmChargeSlow(player);
-      tickServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
-      if (useTicks >= SERVANT_CARD_CHARGE_SHORT_VOICE_TICKS) {
-         revealArtoriaWindVeiledExcaliburForNp(player, 12);
+      var d = player.getPersistentData();
+      d.putInt(EXCALIBUR_CHARGE_TAG, useTicks);
+      if (level.getGameTime() - d.getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32) {
+         d.putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, level.getGameTime());
+         VFXServerEffects.spawn((ServerLevel)level, "artoria_excalibur_charge", player, 128);
       }
-      if (useTicks >= MIN_CHARGE_NP_RELEASE_TICKS && useTicks <= EXCALIBUR_MAX_CHARGE_TICKS) {
-         double cost = player.getPersistentData().getBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG)
-            ? CHARGE_MANA_PER_TICK
-            : CHARGE_MANA_PER_TICK * MIN_CHARGE_NP_RELEASE_TICKS;
-         if (!consumeStrict(player, cost)) {
-            stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
-            player.releaseUsingItem();
-         } else {
-            player.getPersistentData().putBoolean(EXCALIBUR_MIN_CHARGE_PAID_TAG, true);
-            if (level instanceof ServerLevel serverLevel) {
-            long now = serverLevel.getGameTime();
-            if (now - player.getPersistentData().getLong(EXCALIBUR_LAST_CHARGE_VFX_TAG) >= 32L) {
-               player.getPersistentData().putLong(EXCALIBUR_LAST_CHARGE_VFX_TAG, now);
-               VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 128.0);
-            }
-            }
-         }
+   }
+
+   public static void tickShortExcaliburCharge(Level level, LivingEntity living, int useTicks) {
+      if (!(living instanceof ServerPlayer player) || !NoblePhantasmCastService.chanting(player)) return;
+      applyNoblePhantasmChargeSlow(player);
+      var d = player.getPersistentData();
+      int charge = Math.min(EXCALIBUR_SHORT_MAX_CHARGE_TICKS, useTicks);
+      d.putInt(EXCALIBUR_SHORT_CHARGE_TAG, charge);
+      if (level instanceof ServerLevel serverLevel && serverLevel.getGameTime() - d.getLong(EXCALIBUR_SHORT_LAST_VFX_TAG) >= 12) {
+         d.putLong(EXCALIBUR_SHORT_LAST_VFX_TAG, serverLevel.getGameTime());
+         VFXServerEffects.spawn(serverLevel, "artoria_excalibur_charge", player, 96);
       }
    }
 
    public static void releaseExcalibur(ServerPlayer player) {
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> releaseExcalibur(player))) return;
-      int charged = player.getPersistentData().getInt(EXCALIBUR_CHARGE_TAG);
-      stopServantCardChargeVoice(player, "artoria_pendragon", ModSounds.ARTORIA_VOICE_EXCALIBUR.get(), ModSounds.ARTORIA_VOICE_EXCALIBUR_SHORT.get());
+      // Releasing before the shared release point cancels; it never queues a short beam.
+      if (NoblePhantasmCastService.chanting(player)) NoblePhantasmCastService.cancel(player, true);
       player.getPersistentData().remove(EXCALIBUR_CHARGE_TAG);
       player.getPersistentData().remove(EXCALIBUR_LAST_CHARGE_VFX_TAG);
-      player.getPersistentData().remove(EXCALIBUR_MIN_CHARGE_PAID_TAG);
-      if (!(player.level() instanceof ServerLevel level)) {
-         return;
-      }
-      if (charged < MIN_CHARGE_NP_RELEASE_TICKS) {
-         level.playSound(null, player.blockPosition(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.45F, 1.65F);
-         return;
-      }
-      float powerScale = chargePower(charged, EXCALIBUR_MAX_CHARGE_TICKS);
-      Vec3 start = player.position().add(0.0, player.getBbHeight() * 0.66, 0.0).add(player.getLookAngle().normalize().scale(1.2));
-      ArtoriaExcaliburBeamEntity beam = new ArtoriaExcaliburBeamEntity(level, player, start, EXCALIBUR_RELEASE_TICKS, EXCALIBUR_DAMAGE_START_TICK, powerScale);
-      level.addFreshEntity(beam);
-      revealArtoriaWindVeiledExcaliburForNp(player, EXCALIBUR_RELEASE_TICKS + 100);
-      VFXServerEffects.spawn(level, "artoria_excalibur_beam", player, 150.0);
-      addExcaliburCooldown(player, scaledCooldown(EXCALIBUR_PLAYER_COOLDOWN, powerScale));
-      level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0F + powerScale * 1.5F, 0.85F);
-      level.playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.45F + powerScale * 0.65F, 1.65F);
+   }
+
+   public static void releaseShortExcalibur(ServerPlayer player) {
+      if (NoblePhantasmCastService.chanting(player)) NoblePhantasmCastService.cancel(player, true);
+      player.getPersistentData().remove(EXCALIBUR_SHORT_CHARGE_TAG);
+      player.getPersistentData().remove(EXCALIBUR_SHORT_LAST_VFX_TAG);
    }
 
    public static void startGoldenExcaliburCharge(ServerPlayer player) {
@@ -747,7 +669,7 @@ public final class PlayerNoblePhantasmHelper {
       return data.getInt(EXCALIBUR_CHARGE_TAG) > 0 || data.getInt(GALLATIN_CHARGE_TAG) > 0;
    }
 
-   private static void applyNoblePhantasmChargeSlow(ServerPlayer player) {
+   public static void applyNoblePhantasmChargeSlow(ServerPlayer player) {
       player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 6, 1, false, false, true));
    }
 
@@ -765,6 +687,7 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 end = start.add(dir.scale(5.0));
       AABB box = new AABB(start, end).inflate(1.1, 1.0, 1.1);
       boolean hit = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          hit = true;
          target.invulnerableTime = 0;
@@ -772,6 +695,7 @@ public final class PlayerNoblePhantasmHelper {
          target.invulnerableTime = 0;
          triggerPseudoSpiralExplosion(level, player, target.position().add(0.0, target.getBbHeight() * 0.45, 0.0));
          break;
+      }
       }
       if (!hit) {
          triggerPseudoSpiralExplosion(level, player, end);
@@ -1024,12 +948,14 @@ public final class PlayerNoblePhantasmHelper {
       Vec3 end = start.add(dir.scale(5.5));
       AABB box = new AABB(start, end).inflate(1.25, 0.9, 1.25);
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          if (hit.add(target.getId())) {
             target.invulnerableTime = 0;
             target.hurt(player.damageSources().mobAttack(player), 144.0F);
             target.invulnerableTime = 0;
          }
+      }
       }
       for (double t = 0.0; t <= 1.0; t += 0.12) {
          Vec3 pos = start.lerp(end, t);
@@ -1098,6 +1024,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void resolveGaeBulgHit(ServerPlayer player, LivingEntity target) {
+      if (ServantMasterDamageRouter.special(target, 250, defender -> resolveGaeBulgHit(player, defender))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
@@ -1109,6 +1036,7 @@ public final class PlayerNoblePhantasmHelper {
          && !(target instanceof EnkiduEntity)
          && player.getRandom().nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
       DamageSource source = player.damageSources().mobAttack(player);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,250,"cu_chulainn:gae_bolg",deathThorn)) return;
       int livesBeforeInitialHit = target.getPersistentData().getInt("GodHandLives");
       target.invulnerableTime = 0;
       target.hurt(source, 250.0F);
@@ -1134,35 +1062,7 @@ public final class PlayerNoblePhantasmHelper {
       if (!(player.level() instanceof ServerLevel level)) {
          return;
       }
-      VFXServerEffects.spawn(level, "servant_sasaki_tsubame", player, 96.0);
-      target.invulnerableTime = 0;
-      target.hurt(player.damageSources().mobAttack(player), 300.0F);
-      target.invulnerableTime = 0;
-      Vec3 from = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
-      Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
-      Vec3 slashDir = to.subtract(from);
-      if (slashDir.lengthSqr() < 1.0E-4) {
-         slashDir = player.getLookAngle();
-      }
-      slashDir = slashDir.normalize();
-      Vec3 perp = new Vec3(-slashDir.z, 0.0, slashDir.x);
-      for (int arc = 0; arc < 3; arc++) {
-         double arcOffset = (arc - 1) * 0.4;
-         for (double t = 0.0; t <= 1.0; t += 0.1) {
-            Vec3 pos = from.lerp(to, t);
-            double wave = Math.sin(t * Math.PI) * 0.3 * (arc + 1);
-            pos = pos.add(perp.scale(wave + arcOffset));
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, pos.x, pos.y, pos.z, 2, 0.0, 0.0, 0.0, 0.0);
-         }
-      }
-      level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, target.getX(), target.getY() + target.getBbHeight() * 0.3, target.getZ(), 25, 0.5, 0.6, 0.5, 0.08);
-      level.sendParticles(ParticleTypes.REVERSE_PORTAL, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 15, 0.4, 0.5, 0.4, 0.05);
-      level.sendParticles(ParticleTypes.SOUL, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 12, 0.3, 0.4, 0.3, 0.04);
-      level.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 8, 0.3, 0.3, 0.3, 0.15);
-      level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, player.getX(), player.getY() + player.getBbHeight() * 0.5, player.getZ(), 20, 0.3, 0.5, 0.3, 0.04);
-      level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.8F, 0.5F);
-      level.playSound(null, player.blockPosition(), SoundEvents.ENDER_EYE_DEATH, SoundSource.PLAYERS, 1.2F, 0.7F);
-      level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.5F, 0.6F);
+      net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.performTsubameGaeshi(player, target);
    }
 
    private static void performNineLives(ServerPlayer player, LivingEntity target) {
@@ -1407,6 +1307,7 @@ public final class PlayerNoblePhantasmHelper {
    private static void triggerPseudoSpiralExplosion(ServerLevel level, LivingEntity owner, Vec3 center) {
       double radius = 4.5;
       Set<Integer> damaged = new HashSet<>();
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius),
@@ -1424,6 +1325,7 @@ public final class PlayerNoblePhantasmHelper {
             }
          }
       }
+      }
       level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 2, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       breakSmallExplosionTerrain(level, owner, center);
@@ -1434,6 +1336,7 @@ public final class PlayerNoblePhantasmHelper {
       double range = GALLATIN_RANGE * (0.28 + powerScale * 0.72);
       double halfAngleCos = Math.cos(Math.toRadians(12.0 + 23.0 * powerScale));
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          player.getBoundingBox().inflate(range + 3.0),
@@ -1454,6 +1357,7 @@ public final class PlayerNoblePhantasmHelper {
          living.push(look.x * 5.0, 0.32, look.z * 5.0);
          living.hurtMarked = true;
       }
+      }
       spawnGallatinReleaseParticles(level, origin, look, range, powerScale);
       breakGallatinPath(level, origin, look, range, powerScale);
    }
@@ -1471,6 +1375,7 @@ public final class PlayerNoblePhantasmHelper {
    }
 
    private static void applyFixedDamage(ServerPlayer player, LivingEntity target, float damage) {
+      if (ServantMasterDamageRouter.special(target, damage, defender -> applyFixedDamage(player, defender, damage))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

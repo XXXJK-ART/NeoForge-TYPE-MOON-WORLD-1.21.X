@@ -46,8 +46,12 @@ class NightingaleRulesTest {
       assertEquals(600, NightingaleRules.NOBLE_PHANTASM_COOLDOWN);
       assertEquals(20, NightingaleRules.NOBLE_PHANTASM_WINDUP);
       assertEquals(100, NightingaleRules.SAFETY_CIRCLE_DURATION);
-      assertEquals(28.125F, 15.0F * NightingaleRules.outgoingMultiplier(true, false), 0.0001F);
-      assertEquals(36.5625F, 15.0F * NightingaleRules.outgoingMultiplier(true, true), 0.0001F);
+      assertEquals(40.0, NightingaleRules.SAFETY_CIRCLE_RADIUS);
+      assertEquals(100, NightingaleRules.SAFETY_CIRCLE_MAX_ENTITIES);
+      assertEquals(37.5F, 15.0F * NightingaleRules.outgoingMultiplier(true, false), 0.0001F);
+      assertEquals(48.75F, 15.0F * NightingaleRules.outgoingMultiplier(true, true), 0.0001F);
+      assertEquals(0.5F, NightingaleRules.incomingMultiplier(true));
+      assertEquals(1.0F, NightingaleRules.incomingMultiplier(false));
    }
 
    @Test

@@ -3,10 +3,13 @@
   "display_name": "Excalibur",
   "display_name_zh": "誓约胜利之剑",
   "rank": "A++",
-  "type": "anti_fortress",
+  "type": "castle",
   "mp_cost": 150,
-  "cooldown_ticks": 1200,
-  "windup_ticks": 120,
+  "cooldown_ticks": 3600,
+  "windup_ticks": 152,
   "duration_ticks": 150,
-  "description": "A sustained golden beam in Artoria's facing direction, dealing 500 damage per second across 150 x 24 x 14 blocks."
+  "description": "A sustained golden beam following the complete three-dimensional gaze, dealing 500 damage every 0.5 seconds for 15 pulses across 150 x 24 x 14 blocks.",
+  "pulse_interval_ticks": 10,
+  "pulse_count": 15,
+  "pulse_damage": 500
 }

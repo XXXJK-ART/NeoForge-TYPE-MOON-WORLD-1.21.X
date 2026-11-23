@@ -90,6 +90,14 @@ public final class ArashAimHelper {
       return Math.max(0.0, Math.log(remaining) / Math.log(PROJECTILE_DRAG));
    }
 
+   /** Initial velocity for vanilla's move, drag, then gravity integration. */
+   public static Vec3 ballisticVelocity(Vec3 displacement, double flightTicks, double gravity) {
+      double ticks = Math.max(1.0, flightTicks);
+      double dragSum = (1.0 - Math.pow(PROJECTILE_DRAG, ticks)) / (1.0 - PROJECTILE_DRAG);
+      double fall = gravity * (ticks - dragSum) / (1.0 - PROJECTILE_DRAG);
+      return new Vec3(displacement.x / dragSum, (displacement.y + fall) / dragSum, displacement.z / dragSum);
+   }
+
    public static boolean isWithinAimCone(Vec3 lookDirection, Vec3 toTarget, double maxAngleDegrees) {
       if (lookDirection.lengthSqr() < 1.0E-8 || toTarget.lengthSqr() < 1.0E-8) return false;
       double threshold = Math.cos(Math.toRadians(Math.max(0.1, Math.min(89.0, maxAngleDegrees))));

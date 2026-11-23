@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -50,9 +52,18 @@ public final class ServantTrueSweepService {
    }
 
    public static boolean triggerPlayerAttack(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (player != null && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) return false;
+      if (vars != null && "diarmuid_ua_duibhne".equals(vars.servant_card_id)) return false;
       if (player == null || vars == null || !vars.servant_card_transformed || !(player.level() instanceof ServerLevel level)) {
          return false;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.isOwner(player)
+         && (player.isShiftKeyDown() || net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.active(player)
+            || net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.busy(player))) {
+         return false;
+      }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(player)
+         && net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.busy(player)) return false;
       long now = level.getGameTime();
       CompoundTag data = player.getPersistentData();
       if (data.contains(PLAYER_LAST_ATTEMPT) && data.getLong(PLAYER_LAST_ATTEMPT) == now) {
@@ -61,16 +72,18 @@ public final class ServantTrueSweepService {
       data.putLong(PLAYER_LAST_ATTEMPT, now);
       int interval = intervalTicks(attributeValue(player, Attributes.ATTACK_SPEED, 4.0));
       long next = data.getLong(PLAYER_NEXT_SWEEP);
-      data.putLong(PLAYER_NEXT_SWEEP, now + interval);
       if (now < next) {
          return false;
       }
+      data.putLong(PLAYER_NEXT_SWEEP, now + interval);
       Vec3 look = PlayerNoblePhantasmHelper.horizontalLook(player);
       double range = sweepRange(player);
-      float damage = (float)attributeValue(player, Attributes.ATTACK_DAMAGE, 5.0);
-      int hits = sweep(level, player, look, range, damage, true);
-      spawnSweepFx(level, player, look, range, hits);
+      float strength = player.getAttackStrengthScale(0.5F);
+      float damage = (float)attributeValue(player, Attributes.ATTACK_DAMAGE, 5.0) * (0.2F + strength * strength * 0.8F);
+      player.resetAttackStrengthTicker();
       data.putLong(PLAYER_LAST_FIRED, now);
+      int hits = sweep(level, player, look, range, damage, true, 0.2F + strength * strength * 0.8F);
+      spawnSweepFx(level, player, look, range, hits);
       return true;
    }
 
@@ -85,11 +98,18 @@ public final class ServantTrueSweepService {
       return triggerPlayerAttack(player, vars);
    }
 
+   public static boolean usesNpcSweep(ServantEntity servant) {
+      return servant != null && !(servant instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.DiarmuidUaDuibhneEntity);
+   }
+
    public static boolean triggerNpcAttack(ServantEntity servant, @Nullable LivingEntity primaryTarget, long now) {
-      if (servant == null || !(servant.level() instanceof ServerLevel level)
+      if (!usesNpcSweep(servant) || !(servant.level() instanceof ServerLevel level)
          || primaryTarget != null && (!primaryTarget.isAlive() || primaryTarget.level() != servant.level())) {
          return false;
       }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.isOwner(servant)
+         && (net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnAbilityService.active(servant)
+            || net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnWeaponService.busy(servant))) return false;
       int interval = intervalTicks(attributeValue(servant, Attributes.ATTACK_SPEED, 4.0));
       CompoundTag data = servant.getPersistentData();
       if (data.contains(NPC_LAST_ATTEMPT) && data.getLong(NPC_LAST_ATTEMPT) == now) {
@@ -123,17 +143,12 @@ public final class ServantTrueSweepService {
          return false;
       }
       float damage = (float)attributeValue(servant, Attributes.ATTACK_DAMAGE, 5.0);
-      int hits = sweep(level, servant, normalizedForward, range, damage, false);
-      // Empty sweeps must not consume the sweep cadence or report successful
-      // contact to the tempo/targeting systems.  This keeps ordinary attacks
-      // available when the arc misses because of movement or facing updates.
-      if (hits <= 0) {
-         return false;
-      }
+      // A blocked strike still spends its attack window; it cannot retry as a second hit.
       data.putLong(NPC_NEXT_SWEEP, now + interval);
-      spawnSweepFx(level, servant, normalizedForward, range, hits);
       data.putLong(NPC_LAST_FIRED, now);
-      return true;
+      int hits = sweep(level, servant, normalizedForward, range, damage, false, 1.0F);
+      spawnSweepFx(level, servant, normalizedForward, range, hits);
+      return hits > 0;
    }
 
    public static boolean tryNpcSweep(ServantEntity servant, LivingEntity primaryTarget, long now) {
@@ -150,36 +165,40 @@ public final class ServantTrueSweepService {
       return instance != null ? instance.getValue() : fallback;
    }
 
-   private static int sweep(ServerLevel level, LivingEntity attacker, Vec3 forward, double range, float damage, boolean playerSource) {
+   private static int sweep(ServerLevel level, LivingEntity attacker, Vec3 forward, double range, float damage, boolean playerSource, float charge) {
       AABB area = attacker.getBoundingBox().inflate(range, 1.6, range).move(forward.scale(Math.min(0.8, range * 0.16)));
       int hits = 0;
+      boolean terrainTriggered = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          entity -> isSweepTarget(attacker, entity))) {
          Vec3 offset = target.position().subtract(attacker.position());
          if (offset.horizontalDistanceSqr() > range * range) continue;
          if (!HeraclesCombatRules.isInsideBasicSweepArc(forward.x, forward.z, offset.x, offset.z)) continue;
          if (!attacker.hasLineOfSight(target) && attacker.distanceTo(target) > 1.8F) continue;
-         target.invulnerableTime = 0;
-         float resolvedDamage = (float)ServantCombatService.calculateDamage(attacker, target, 1.0, false, null, 1.0);
-         ServantCombatService.beginSharedHit(attacker);
-         boolean hurt;
-         try {
-            hurt = target.hurt(playerSource && attacker instanceof ServerPlayer player
-               ? attacker.damageSources().playerAttack(player)
-               : attacker.damageSources().mobAttack(attacker), resolvedDamage);
-         } finally {
-            ServantCombatService.endSharedHit(attacker);
-         }
-         target.invulnerableTime = 0;
+         // A sweep only extends ordinary contact to an arc. Keep normal armor,
+         // outgoing passives and invulnerability instead of pre-resolving damage.
+         boolean hurt = target.hurt(playerSource && attacker instanceof ServerPlayer player
+            ? new CombatDamageSource(attacker.damageSources().playerAttack(player), AttackOrigin.of(attacker.damageSources().playerAttack(player)), charge)
+            : new CombatDamageSource(attacker.damageSources().mobAttack(attacker), AttackOrigin.of(attacker.damageSources().mobAttack(attacker)), charge), damage);
          if (hurt) {
             hits++;
+            if (!terrainTriggered && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.isHeracles(attacker)) {
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.impactGroundLayer(level,attacker,target.position(),
+                  net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL),
+                  playerSource?net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Permission.PLAYER:net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Permission.NPC);
+               terrainTriggered = true;
+            }
          }
-         Vec3 push = new Vec3(offset.x, 0.0, offset.z);
-         if (push.lengthSqr() > 1.0E-4) {
-            push = push.normalize();
-            target.push(push.x * 0.45, 0.08, push.z * 0.45);
-            target.hurtMarked = true;
+         if (hurt) {
+            Vec3 push = new Vec3(offset.x, 0.0, offset.z);
+            if (push.lengthSqr() > 1.0E-4) {
+               push = push.normalize();
+               target.push(push.x * 0.45, 0.08, push.z * 0.45);
+               target.hurtMarked = true;
+            }
          }
+      }
       }
       return hits;
    }

@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.special;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -367,7 +368,7 @@ public final class ArcaneMobilityService {
 
    private static void damageTouko(LivingEntity caster, Entity hit) {
       if (hit instanceof LivingEntity living) {
-         living.hurt(caster.damageSources().magic(), 20.0F);
+         living.hurt(MagecraftDamageSource.of(caster.damageSources().magic(), "touko_travel", caster), 20.0F);
       }
       finishTouko(caster, true);
    }

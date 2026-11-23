@@ -48,13 +48,18 @@ public final class CombatThreatService {
 
    public static CombatThreat publishWindup(LivingEntity caster, LivingEntity target, ResourceLocation actionId,
                                              int windupTicks, boolean ranged, int danger) {
+      return publishWindup(caster, target, actionId, windupTicks, ranged, danger, true);
+   }
+
+   public static CombatThreat publishWindup(LivingEntity caster, LivingEntity target, ResourceLocation actionId,
+                                              int windupTicks, boolean ranged, int danger, boolean dodgeable) {
       if (!(caster.level() instanceof ServerLevel level)) return null;
       long now = level.getGameTime();
       Vec3 aim = target == null ? caster.getLookAngle() : target.getEyePosition().subtract(caster.getEyePosition());
       CombatThreat threat = new CombatThreat(actionId, caster.getUUID(), target == null ? null : target.getUUID(),
          caster.getEyePosition(), aim, ranged ? CombatThreat.Shape.LINE : CombatThreat.Shape.SPHERE,
          ranged ? 1.5 : 4.0, ranged ? 48.0 : 4.0, Math.max(1, danger), now, now + windupTicks,
-         now + windupTicks + 8L, !ranged, true, true);
+         now + windupTicks + 8L, !ranged, dodgeable, true);
       publish(level, threat);
       return threat;
    }

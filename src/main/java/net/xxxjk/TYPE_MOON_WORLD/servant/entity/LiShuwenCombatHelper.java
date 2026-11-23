@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Collection;
 import java.util.List;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -25,6 +27,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lishuwen.LiShuwenSeasonedService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -147,7 +150,7 @@ public final class LiShuwenCombatHelper {
       }
       data.putLong(TAG_LAST_SELF_STATE_TICK, now);
       tickYinYangCleanup(entity, now);
-      clearMentalEffects(entity);
+      LiShuwenSeasonedService.tick(entity);
       if (entity.hasEffect(MobEffects.INVISIBILITY)) {
          if (now - data.getLong(TAG_LAST_STEALTH_TARGET_CLEAR) >= 10L) {
             data.putLong(TAG_LAST_STEALTH_TARGET_CLEAR, now);
@@ -186,7 +189,7 @@ public final class LiShuwenCombatHelper {
       if (entity.hasEffect(MobEffects.INVISIBILITY)) {
          reduced *= 0.05F;
       }
-      return reduced;
+      return LiShuwenSeasonedService.incomingDamage(entity, source, reduced);
    }
 
    public static boolean hasChineseMartialArts(LivingEntity entity) {
@@ -320,6 +323,7 @@ public final class LiShuwenCombatHelper {
       data.putDouble(TAG_WU_ER_DA_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_WU_ER_DA_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
+      VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_windup", entity, 96.0);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "li_shuwen_wu_er_da", WU_ER_DA_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_LAST_WU_ER_DA, entity.level().getGameTime() - (WU_ER_DA_COOLDOWN) + ticks), () -> { });
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
       entity.setWuErDaTargeting(true);
@@ -334,7 +338,6 @@ public final class LiShuwenCombatHelper {
          return;
       }
       ServantCombatSystem.broadcastNoblePhantasmWindup(entity, target, WU_ER_DA_WINDUP, false);
-      VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_windup", entity, 96.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.SCULK_SHRIEKER_SHRIEK, SoundSource.HOSTILE, 0.55F, 0.45F);
 
       });
@@ -375,6 +378,8 @@ public final class LiShuwenCombatHelper {
    }
 
    public static void resolveWuErDa(LivingEntity attacker, LivingEntity target, ServerLevel level, float roll) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.special(target, 200,
+         defender -> resolveWuErDa(attacker, defender, level, roll))) return;
       if (attacker == null || target == null || level == null || EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
@@ -382,16 +387,13 @@ public final class LiShuwenCombatHelper {
       boolean instantDeathTarget = isInstantDeathTarget(target);
       float chance = instantDeathChance(target);
       boolean killed = instantDeathTarget && roll < chance;
-      if (HeraclesGodHandHelper.isAdaptedToZabaniya(target)) {
-         HeraclesGodHandHelper.applyAdaptedSlow(target, 80);
-         killed = false;
-      }
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,wuErDaDamage(attacker),200,"li_shuwen:wu_er_da",killed)) { spawnWuErDaImpact(level,target,killed);return; }
       if (killed) {
-         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "wu_er_da")) {
+         if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "wu_er_da", net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.attackToken(attacker))) {
             spawnWuErDaImpact(level, target, false);
             return;
          }
-         if (HeraclesGodHandHelper.consumeLifeForZabaniya(target)) {
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"li_shuwen:wu_er_da")) {
             spawnWuErDaImpact(level, target, true);
             return;
          }
@@ -459,10 +461,12 @@ public final class LiShuwenCombatHelper {
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - TREMOR_PALM_MP_COST));
       entity.faceToward(target.position());
       entity.triggerPunchAnimation();
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(3.2), e -> canHit(entity, e))) {
          dealMartialDamage(entity, living, 0.82F);
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 1, false, true));
          push(living, living.position().subtract(entity.position()), 0.65, 0.12);
+      }
       }
       level.sendParticles(INK, entity.getX(), entity.getY() + 0.08, entity.getZ(), 26, 1.1, 0.06, 1.1, 0.025);
       level.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.45F, 1.65F);
@@ -528,25 +532,6 @@ public final class LiShuwenCombatHelper {
       target.getPersistentData().putLong(TAG_STUN_UNTIL, until);
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 4, false, true, true));
       target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 20, 1, false, true, true));
-   }
-
-   private static void clearMentalEffects(LiShuwenEntity entity) {
-      List<net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>> effects = List.of(MobEffects.CONFUSION, MobEffects.BLINDNESS, MobEffects.DARKNESS);
-      for (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect : effects) {
-         if (entity.hasEffect(effect)) {
-            entity.removeEffect(effect);
-         }
-      }
-      if (!(entity.level() instanceof ServerLevel level) || entity.tickCount % 20 != 0) {
-         return;
-      }
-      for (ServantEntity ally : level.getEntitiesOfClass(ServantEntity.class, entity.getBoundingBox().inflate(20.0), e -> e.isAlive() && e.isAlliedTo(entity))) {
-         for (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect : effects) {
-            if (ally.hasEffect(effect)) {
-               ally.removeEffect(effect);
-            }
-         }
-      }
    }
 
    private static boolean removeOneHarmfulEffect(LivingEntity entity) {

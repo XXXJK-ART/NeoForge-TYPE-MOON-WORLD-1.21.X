@@ -1,0 +1,14 @@
+{
+  "id": "zabaniya_cursed_arm",
+  "display_name": "Zabaniya: Delusional Heartbeat",
+  "display_name_zh": "妄想心音（扎巴尼央）",
+  "type": "anti_unit",
+  "rank": "C",
+  "mp_cost": 80,
+  "cooldown_ticks": 1400,
+  "windup_ticks": 20,
+  "range": 7.0,
+  "base_damage_multiplier": 55.0,
+  "effects": [{"effect_type":"extract_bound_core","params":{"chance":0.6,"lifetime_ticks":1200,"failure_damage":55.0,"curse_ticks":160}}],
+  "description_zh": "对具有心脏或驱动核心的目标以60%概率抽取对应物品，60秒内捏碎才触发死亡；赫拉克勒斯只消耗一条命且此后无法再抽取；恩奇都只会产出无效的神代泥土。无可抽取结构的目标不受影响。"
+}

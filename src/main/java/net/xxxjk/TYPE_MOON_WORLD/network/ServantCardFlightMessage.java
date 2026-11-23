@@ -40,7 +40,9 @@ public record ServantCardFlightMessage(boolean toggle, float forward, float stra
             && ServerPacketRateLimiter.allow(player, message.toggle ? "servant_card_flight_toggle" : "servant_card_flight_input",
                message.toggle ? 4 : 1)) {
             var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-            if (vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id)) player.getPersistentData().putBoolean("OdaFlightSprint", message.sprint);
+            player.getPersistentData().putBoolean("ServantCardFlightSprint", message.sprint);
+            player.getPersistentData().putBoolean("OdaFlightSprint",
+               vars.servant_card_transformed && "oda_nobunaga".equals(vars.servant_card_id) && message.sprint);
             ServantCardFlightController.setInput(player, message.toggle, message.forward, message.strafe, message.vertical);
          }
       });

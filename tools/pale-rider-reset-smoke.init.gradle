@@ -1,0 +1,12 @@
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('paleRiderResetSmoke') {
+            java.srcDir 'tools/pale-rider-reset-smoke/java'
+            resources.srcDir 'tools/pale-rider-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_palerider_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/pale-rider-client-run')
+    }
+}

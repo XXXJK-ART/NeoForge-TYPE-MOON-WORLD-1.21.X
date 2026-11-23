@@ -24,6 +24,7 @@ import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderOpenScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderPossessionInputMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderStateMessage;
+import net.xxxjk.TYPE_MOON_WORLD.network.PaleRiderGrayscaleMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorseEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ApocalypseHorsemanEntity;
@@ -35,6 +36,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SoulEchoEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.OwnedPaleRiderMob;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCorruptionService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderEntityIndex;
@@ -64,6 +67,7 @@ public final class ServantCardPaleRiderSkills {
    private static final String LAST_CALAMITY_TICK_TAG = "PaleRiderCardLastCalamityTick";
    private static final Map<ServerPlayer, Long> LAST_POSSESSION_INPUT_TICKS = new WeakHashMap<>();
    private static final Map<ServerPlayer, PaleRiderStateMessage> LAST_SENT_STATES = new WeakHashMap<>();
+   private static final Map<UUID, GrayscaleState> LAST_SENT_GRAYSCALE = new java.util.HashMap<>();
 
    private ServantCardPaleRiderSkills() {}
 
@@ -105,6 +109,7 @@ public final class ServantCardPaleRiderSkills {
       player.getPersistentData().remove(LAST_CALAMITY_TICK_TAG);
       player.removeEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY);
       player.noPhysics = false;
+      if (player.level() instanceof ServerLevel level) updateGrayscaleForLevel(level);
       sendIfSupported(player, new PaleRiderOpenScreenMessage(5, List.of()));
    }
 
@@ -130,6 +135,9 @@ public final class ServantCardPaleRiderSkills {
       }
 
       if (player.level() instanceof ServerLevel level) {
+         if (host == null && !player.getPersistentData().getBoolean(STEALTH_TAG)) {
+            PaleRiderCombatHelper.tickBodyParticles(player);
+         }
          if (player.tickCount % 10 == Math.floorMod(player.getId(), 10)) tickDomainMounts(player, level);
          LivingEntity domainAnchor = getDomainAnchor(player);
          if (domainAnchor != null) {
@@ -153,8 +161,42 @@ public final class ServantCardPaleRiderSkills {
                 LAST_SENT_STATES.put(player, state);
              }
           }
+         if (player.tickCount % 10 == 0) updateGrayscaleForLevel(level);
       }
    }
+
+   public static void updateGrayscaleForLevel(ServerLevel level) {
+      long now = level.getGameTime();
+      java.util.Set<UUID> connectedPlayers = new java.util.HashSet<>();
+      for (ServerPlayer viewer : level.players()) {
+         connectedPlayers.add(viewer.getUUID());
+         boolean affected = false;
+         for (ServerPlayer caster : level.players()) {
+            if (!isActiveCard(caster)) continue;
+            LivingEntity anchor = getDomainAnchor(caster);
+            if (anchor == null) continue;
+            double distance = viewer.distanceToSqr(anchor);
+            if ((isUnderworldActive(caster) && distance <= 64.0 * 64.0)
+               || (isCalamityActive(caster) && distance <= 40.0 * 40.0)) {
+               affected = true;
+               break;
+            }
+         }
+         if (!affected) {
+            affected = level.getEntitiesOfClass(PaleRiderEntity.class, viewer.getBoundingBox().inflate(64.0), PaleRiderEntity::hasAnyDomain)
+               .stream().anyMatch(rider -> (rider.isUnderworldActive() && viewer.distanceToSqr(rider) <= 64.0 * 64.0)
+                  || (rider.isCalamityActive() && viewer.distanceToSqr(rider) <= 40.0 * 40.0));
+         }
+         GrayscaleState previous = LAST_SENT_GRAYSCALE.get(viewer.getUUID());
+         if (previous == null || previous.active != affected || now - previous.sentTick >= 100L) {
+            ModNetwork.sendToPlayer(viewer, new PaleRiderGrayscaleMessage(affected));
+            LAST_SENT_GRAYSCALE.put(viewer.getUUID(), new GrayscaleState(affected, now));
+         }
+      }
+      LAST_SENT_GRAYSCALE.keySet().removeIf(uuid -> !connectedPlayers.contains(uuid));
+   }
+
+   private record GrayscaleState(boolean active, long sentTick) {}
 
    public static boolean spawnMenu(ServerPlayer player, boolean crouching) {
       if (!isActiveCard(player)) return false;
@@ -330,10 +372,12 @@ public final class ServantCardPaleRiderSkills {
       attackActor.setDeltaMovement(dir.x * 1.35, 0.2, dir.z * 1.35);
       attackActor.hasImpulse = true;
       if (player.level() instanceof ServerLevel level) {
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, attackActor.getBoundingBox().inflate(2.0),
             entity -> entity != attackActor && !PaleRiderInfectionService.arePaleRiderAllies(player, entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
             target.hurt(player.damageSources().playerAttack(player), 12.0F);
             PaleRiderInfectionService.infect(target, player, 5);
+         }
          }
       }
       return true;
@@ -344,6 +388,8 @@ public final class ServantCardPaleRiderSkills {
       HitResult hit = player.pick(16.0, 0.0F, false);
       if (!(hit instanceof BlockHitResult block)) return false;
       BlockPos pos = block.getBlockPos().relative(block.getDirection());
+      if (!player.level().noCollision(player, player.getBoundingBox().move(
+         pos.getX() + 0.5 - player.getX(), pos.getY() - player.getY(), pos.getZ() + 0.5 - player.getZ()))) return false;
       player.teleportTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
       return true;
    }
@@ -354,12 +400,14 @@ public final class ServantCardPaleRiderSkills {
       LivingEntity actor = getPossessedHost(player);
       if (actor == null) actor = player;
       final LivingEntity pulseActor = actor;
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, pulseActor.getBoundingBox().inflate(5.0),
          entity -> entity != pulseActor && !PaleRiderInfectionService.arePaleRiderAllies(player, entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
          target.hurt(player.damageSources().playerAttack(player), 10.0F);
          PaleRiderInfectionService.infect(target, player, 5);
          Vec3 push = target.position().subtract(pulseActor.position()).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 0.01) target.push(push.normalize().scale(0.5).add(0.0, 0.15, 0.0));
+      }
       }
       return true;
    }
@@ -379,6 +427,7 @@ public final class ServantCardPaleRiderSkills {
             VFXServerEffects.spawn(level, "pale_rider_underworld_open", anchor, 64.0);
          }
          else VFXServerEffects.spawn(level, "pale_rider_underworld_end", previousOrigin, 64.0);
+         updateGrayscaleForLevel(level);
       }
       return true;
    }
@@ -400,6 +449,7 @@ public final class ServantCardPaleRiderSkills {
          LivingEntity anchor = getDomainAnchor(player);
          if (active && anchor != null) VFXServerEffects.spawn(level, "pale_rider_calamity_open", anchor, 40.0);
          else VFXServerEffects.spawn(level, "pale_rider_calamity_end", previousOrigin, 40.0);
+         updateGrayscaleForLevel(level);
       }
       return true;
    }
@@ -543,17 +593,18 @@ public final class ServantCardPaleRiderSkills {
       long now = level.getGameTime();
       if (now - player.getPersistentData().getLong(LAST_CALAMITY_TICK_TAG) < 20L) return;
       player.getPersistentData().putLong(LAST_CALAMITY_TICK_TAG, now);
-      if (!vars.servantCardState().hasMana(10.0)) {
+      if (!ServantCardManaService.consumeSilently(player, vars, PaleRiderCombatRules.CALAMITY_UPKEEP_MP_PER_SECOND)) {
          toggleCalamity(player);
          return;
       }
-      vars.servantCardState().setMana(vars.servantCardState().mana() - 10.0);
       List<LivingEntity> enemies = level.getEntitiesOfClass(LivingEntity.class, domainAnchor.getBoundingBox().inflate(25.0),
          target -> target != player && target != domainAnchor && target.isAlive()
             && !PaleRiderInfectionService.arePaleRiderAllies(player, target) && !EntityUtils.isImmunePlayerTarget(target));
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
-         enemy.hurt(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player), 5.0F);
+         enemy.hurt(PaleRiderDamageTypes.noblePhantasm(player.damageSources().source(PaleRiderDamageTypes.FAMINE, player)), 5.0F);
          PaleRiderInfectionService.infect(enemy, player, 1);
+      }
       }
       if (!enemies.isEmpty() && now % 40L == 0L) {
          LivingEntity target = enemies.get(player.getRandom().nextInt(enemies.size()));

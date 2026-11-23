@@ -5,9 +5,10 @@ import net.minecraft.resources.ResourceLocation;
 public enum KnightArmoryEntry {
     IRON_ROD(0, "iron_rod", "typemoonworld:lancelot_iron_rod", null, 5, 10.0D),
     MP5(1, "mp5", "superbwarfare:mp_5", "superbwarfare:handgun_ammo", 60, 50.0D),
-    MINIGUN(2, "minigun", "superbwarfare:minigun", "superbwarfare:heavy_ammo", 20, 80.0D),
+    MINIGUN(2, "minigun", "superbwarfare:minigun", "superbwarfare:heavy_ammo", 180, 80.0D),
     AWM(3, "awm", "superbwarfare:awm", "superbwarfare:sniper_ammo", 60, 50.0D),
-    BARRETT(4, "barrett", "superbwarfare:m_98b", "superbwarfare:sniper_ammo", 60, 50.0D);
+    BARRETT(4, "barrett", "superbwarfare:m_98b", "superbwarfare:sniper_ammo", 60, 50.0D),
+    A10(5, "a10", null, null, 180, 450.0D);
 
     private final int networkId;
     private final String key;

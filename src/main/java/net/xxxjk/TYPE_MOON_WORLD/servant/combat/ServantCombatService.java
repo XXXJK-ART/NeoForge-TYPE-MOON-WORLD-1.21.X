@@ -33,12 +33,10 @@ public final class ServantCombatService {
       @Nullable java.util.List<ServantTraitTag> npSpecialConditions,
       double zoneABuffMultiplier
    ) {
+      defender = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.recipient(defender);
       ServantDefinition attackerDef = attacker.getDefinition();
-      double attackerAttack = attacker instanceof HundredFacesHassanEntity || attacker instanceof HundredFacesHassanPersonaEntity
-         ? attacker.getAttributeValue(Attributes.ATTACK_DAMAGE)
-         : attackerDef != null ? attackerDef.parameters().attackDamage() : 5.0;
+      double attackerAttack = attacker.getAttributeValue(Attributes.ATTACK_DAMAGE);
       ServantFaction attackerFaction = attackerDef != null ? attackerDef.faction() : null;
-      java.util.List<ServantTraitTag> attackerTraits = attackerDef != null ? attackerDef.traits() : java.util.Collections.emptyList();
 
       double baseDamage = ServantDamageCalculator.computeBaseDamage(attackerAttack, normalAttackMultiplier);
 
@@ -49,12 +47,13 @@ public final class ServantCombatService {
       double zoneB = ServantDamageCalculator.computeCritMultiplier(isCrit, critRate * 0.01);
 
       double factionMultiplier = ServantDamageCalculator.computeFactionMultiplier(attackerFaction, getDefenderFaction(defender));
-      java.util.List<ServantTraitTag> specialConditions = npSpecialConditions != null ? npSpecialConditions : attackerTraits;
+      // Identity tags describe the wielder, not the targets an attack is strong against.
+      java.util.List<ServantTraitTag> specialConditions = npSpecialConditions != null ? npSpecialConditions : List.of();
       java.util.List<ServantTraitTag> defenderTraitList = ServantIdentityHelper.traitsOf(defender);
       double traitMultiplier = attackerDef != null && "oda_nobunaga".equals(attackerDef.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(specialConditions, defenderTraitList);
       double zoneC = factionMultiplier * traitMultiplier;
 
-      double defenderArmor = defender.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR);
+      double defenderArmor = net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(defender) ? 0 : defender.getAttributeValue(Attributes.ARMOR);
       return ServantDamageCalculator.computeFinalDamage(baseDamage, zoneABuffMultiplier, zoneB, zoneC, defenderArmor);
    }
 
@@ -67,6 +66,7 @@ public final class ServantCombatService {
       @Nullable java.util.List<ServantTraitTag> specialConditions,
       double zoneABuffMultiplier
    ) {
+      defender = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter.recipient(defender);
       if (attacker instanceof ServantEntity servant) {
          return calculateDamage(servant, defender, normalAttackMultiplier, isCrit, specialConditions, zoneABuffMultiplier);
       }
@@ -78,10 +78,9 @@ public final class ServantCombatService {
       double critMultiplier = ServantDamageCalculator.computeCritMultiplier(isCrit, critRate * 0.01);
       double factionMultiplier = ServantDamageCalculator.computeFactionMultiplier(
          definition == null ? null : definition.faction(), getDefenderFaction(defender));
-      List<ServantTraitTag> traits = specialConditions != null ? specialConditions
-         : definition == null ? java.util.Collections.emptyList() : definition.traits();
+      List<ServantTraitTag> traits = specialConditions != null ? specialConditions : List.of();
       double traitMultiplier = definition != null && "oda_nobunaga".equals(definition.id()) ? 1 : ServantDamageCalculator.computeTraitMultiplier(traits, ServantIdentityHelper.traitsOf(defender));
-      double armor = defender.getAttributeValue(Attributes.ARMOR);
+      double armor = net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(defender) ? 0 : defender.getAttributeValue(Attributes.ARMOR);
       return ServantDamageCalculator.computeFinalDamage(base, zoneABuffMultiplier, critMultiplier,
          factionMultiplier * traitMultiplier, armor);
    }

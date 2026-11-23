@@ -1,0 +1,16 @@
+{
+  "name": "oda_skill_maou",
+  "version": 3,
+  "description": "Oda Nobunaga opens her arms as the Demon King manifests.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 34,
+    "stopTick": 34,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -14, "roll": -8}, "leftArm": {"pitch": -14, "roll": 8}, "body": {"pitch": 4}},
+      {"tick": 9, "rightArm": {"pitch": -46, "roll": -52}, "leftArm": {"pitch": -46, "roll": 52}, "body": {"pitch": -5}},
+      {"tick": 26, "rightArm": {"pitch": -46, "roll": -52}, "leftArm": {"pitch": -46, "roll": 52}, "body": {"pitch": -5}},
+      {"tick": 34, "rightArm": {"pitch": 0, "roll": 0}, "leftArm": {"pitch": 0, "roll": 0}, "body": {"pitch": 0}}
+    ]
+  }
+}

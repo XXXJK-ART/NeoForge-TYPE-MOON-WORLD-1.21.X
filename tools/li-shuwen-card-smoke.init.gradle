@@ -1,0 +1,13 @@
+// Launch with: gradlew runClient -I tools/li-shuwen-card-smoke.init.gradle
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('liShuwenCardSmoke') {
+            java.srcDir 'tools/li-shuwen-card-smoke/java'
+            resources.srcDir 'tools/li-shuwen-card-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_li_shuwen_card_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/li-shuwen-card-smoke-run')
+    }
+}

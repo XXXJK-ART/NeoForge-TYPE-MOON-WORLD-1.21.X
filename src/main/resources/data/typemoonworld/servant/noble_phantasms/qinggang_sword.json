@@ -3,7 +3,7 @@
   "display_name": "Qinggang Sword",
   "display_name_zh": "\u9752\u91ed\u5251",
   "rank": "C",
-  "type": "anti_personnel",
+  "type": "anti_unit",
   "mp_cost": 50,
   "cooldown_ticks": 400,
   "duration_ticks": 300,

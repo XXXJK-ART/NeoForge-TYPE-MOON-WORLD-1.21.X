@@ -540,6 +540,7 @@ public class ModItems {
     public static final DeferredItem<Item> SERVANT_CARD_LANCELOT_BERSERKER_LEGS = registerServantArmor("lancelot_berserker", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_CHEST = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_ARASH_LEGS = registerServantArmor("arash", net.minecraft.world.entity.EquipmentSlot.LEGS);
+    public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_HEAD = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.HEAD);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_CHEST = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.CHEST);
     public static final DeferredItem<Item> SERVANT_CARD_NIGHTINGALE_LEGS = registerServantArmor("nightingale", net.minecraft.world.entity.EquipmentSlot.LEGS);
     public static final DeferredItem<Item> SERVANT_CARD_ZHAO_YUN_RIDER_HEAD = registerServantArmor("zhao_yun_rider", net.minecraft.world.entity.EquipmentSlot.HEAD);
@@ -1100,11 +1101,6 @@ public class ModItems {
                                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_speed"),
                                             1.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
-                            .add(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE,
-                                    new net.minecraft.world.entity.ai.attributes.AttributeModifier(
-                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "gae_buidhe_range"),
-                                            2.0, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
-                                    net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> RULE_BREAKER = ITEMS.register("rule_breaker",
             () -> new RuleBreakerItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
@@ -1172,7 +1168,7 @@ public class ModItems {
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
     public static final DeferredItem<Item> DIRK_SMALL_KNIFE = ITEMS.register("dirk_small_knife",
-            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).durability(100)
+            () -> new DirkSmallKnifeItem(new Item.Properties().rarity(Rarity.UNCOMMON).stacksTo(1).durability(16)
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
                             .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
                                     new net.minecraft.world.entity.ai.attributes.AttributeModifier(
@@ -1185,6 +1181,12 @@ public class ModItems {
                                             1.8, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
                                     net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
                             .build())));
+    public static final DeferredItem<Item> ZABANIYA_HEART = ITEMS.register("zabaniya_heart",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), true));
+    public static final DeferredItem<Item> ZABANIYA_MECHANICAL_CORE = ITEMS.register("zabaniya_mechanical_core",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), true));
+    public static final DeferredItem<Item> ZABANIYA_DIVINE_CLAY = ITEMS.register("zabaniya_divine_clay",
+            () -> new net.xxxjk.TYPE_MOON_WORLD.item.custom.ZabaniyaCoreItem(new Item.Properties().stacksTo(1), false));
     public static final DeferredItem<Item> GAN_JIANG = ITEMS.register("gan_jiang",
             () -> new EmiyaProjectionItem(new Item.Properties().rarity(Rarity.RARE).stacksTo(1).fireResistant()
                     .attributes(net.minecraft.world.item.component.ItemAttributeModifiers.builder()
@@ -1588,7 +1590,8 @@ public class ModItems {
                 : slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()
                 : legs ? SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get() : Items.AIR;
             case "arash" -> (legs ? SERVANT_CARD_ARASH_LEGS : SERVANT_CARD_ARASH_CHEST).get();
-            case "nightingale" -> (legs ? SERVANT_CARD_NIGHTINGALE_LEGS : SERVANT_CARD_NIGHTINGALE_CHEST).get();
+            case "nightingale" -> head ? SERVANT_CARD_NIGHTINGALE_HEAD.get()
+                : legs ? SERVANT_CARD_NIGHTINGALE_LEGS.get() : SERVANT_CARD_NIGHTINGALE_CHEST.get();
             case "zhao_yun_rider" -> (head ? SERVANT_CARD_ZHAO_YUN_RIDER_HEAD : legs ? SERVANT_CARD_ZHAO_YUN_RIDER_LEGS : SERVANT_CARD_ZHAO_YUN_RIDER_CHEST).get();
             case "iskandar" -> slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? SERVANT_CARD_ISKANDAR_CHEST.get()
                 : legs ? SERVANT_CARD_ISKANDAR_LEGS.get()

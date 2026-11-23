@@ -33,6 +33,11 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_FAIL = register("sasaki_kojiro_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_VICTORY = register("sasaki_kojiro_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_KOJIRO_VOICE_TSURIGAMESHI = register("sasaki_kojiro_voice_tsurigameshi");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_DRAW = register("sasaki_blade_draw");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_SWING = register("sasaki_blade_swing");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_BLADE_IMPACT = register("sasaki_blade_impact");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_TSUBAME_RELEASE = register("sasaki_tsubame_release");
+   public static final DeferredHolder<SoundEvent, SoundEvent> SASAKI_TSUBAME_SLASH = register("sasaki_tsubame_slash");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_ROAR = register("heracles_voice_roar");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_FAIL = register("heracles_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> HERACLES_VOICE_VICTORY = register("heracles_voice_victory");
@@ -164,6 +169,8 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_FAIL = register("okita_souji_saber_voice_fail");
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_VICTORY = register("okita_souji_saber_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_NP = register("okita_souji_saber_voice_np");
+   public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_BATTLE_START = register("okita_souji_saber_voice_battle_start");
+   public static final DeferredHolder<SoundEvent, SoundEvent> OKITA_SOUJI_SABER_VOICE_FLAG = register("okita_souji_saber_voice_flag");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_SUMMON = register("jeanne_alter_voice_summon");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_ATTACK = register("jeanne_alter_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> JEANNE_ALTER_VOICE_SKILL = register("jeanne_alter_voice_skill");
@@ -182,6 +189,7 @@ public final class ModSounds {
    public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_VICTORY = register("nightingale_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> NIGHTINGALE_VOICE_NP = register("nightingale_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_FAIL = register("zhao_yun_voice_fail");
+   public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_ATTACK = register("zhao_yun_voice_attack");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_VICTORY = register("zhao_yun_voice_victory");
    public static final DeferredHolder<SoundEvent, SoundEvent> ZHAO_YUN_VOICE_NP = register("zhao_yun_voice_np");
    public static final DeferredHolder<SoundEvent, SoundEvent> SENKO_MURAMASA_VOICE_ATTACK = register("senko_muramasa_voice_attack");

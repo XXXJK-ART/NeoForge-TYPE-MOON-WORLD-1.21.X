@@ -9,9 +9,11 @@
   "duration_ticks": -1,
   "effects": [
     {
-      "effect_type": "magic_damage_reduction",
+      "effect_type": "magic_resistance",
       "params": {
-        "reduction": 0.05
+        "rank": "E",
+        "damage_reduction": 0.06,
+        "debuff_resistance": 0.06
       }
     }
   ]

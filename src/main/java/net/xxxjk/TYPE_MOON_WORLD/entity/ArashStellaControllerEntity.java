@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -388,6 +390,7 @@ public final class ArashStellaControllerEntity extends Entity {
       if (!finalDamageDone) {
          finalDamageDone = true;
          double endDamageRadius = ArashCombatRules.stellaEndDamageRadius(profile);
+         try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
             new AABB(center, center).inflate(endDamageRadius), this::canDamage)) {
             if (target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).distanceToSqr(center)
@@ -395,13 +398,16 @@ public final class ArashStellaControllerEntity extends Entity {
                hurtStellaTarget(level, target, profile.coreDamage());
             }
          }
+         }
          level.sendParticles(WHITE, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(420), 4.0, 4.0, 4.0, 0.6);
          level.sendParticles(GREEN, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(520), 7.0, 7.0, 7.0, 0.75);
          level.sendParticles(GOLD, center.x, center.y, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(280), 5.0, 5.0, 5.0, 0.5);
          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 2.0, 2.0, 2.0, 0.0);
       }
       if (sphere == null) {
-         sphere = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.round(profile.endRadius()),
+         DeferredTerrainDestruction.protectNextCombatJob();
+         sphere = DeferredTerrainDestruction.queueExpandingUpperSphere(level, center,
+            (int)Math.round(profile.endRadius()),
             () -> { if (!this.isRemoved() && this.level() instanceof ServerLevel current) finish(current); });
       }
       stageTicks++;
@@ -423,6 +429,7 @@ public final class ArashStellaControllerEntity extends Entity {
       AABB baseArea = pathBounds(start, end, skyRiftRadius);
       AABB area = new AABB(baseArea.minX, baseArea.minY, baseArea.minZ,
          baseArea.maxX, level.getMaxBuildHeight(), baseArea.maxZ);
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, this::canDamage)) {
          if (lineHits.contains(target.getUUID())) continue;
          Vec3 targetCenter = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
@@ -434,6 +441,7 @@ public final class ArashStellaControllerEntity extends Entity {
             lineHits.add(target.getUUID());
             hurtStellaTarget(level, target, damage);
          }
+      }
       }
    }
 

@@ -1,0 +1,18 @@
+{
+  "name": "servant_defense_active",
+  "version": 3,
+  "description": "Shared active guard animation imported from the common Blockbench guard motion.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 13,
+    "stopTick": 13,
+    "degrees": true,
+    "moves": [
+      {"tick":0,"head":{"pitch":5,"yaw":0,"roll":0},"torso":{"x":0,"y":0,"z":0,"pitch":0,"yaw":0,"roll":0},"rightArm":{"x":-5,"y":2,"z":0,"pitch":10,"yaw":0,"roll":0},"leftArm":{"x":5,"y":2,"z":0,"pitch":-12.5,"yaw":0,"roll":0},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":-10,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":0,"pitch":10,"yaw":0,"roll":0}},
+      {"tick":3,"head":{"pitch":-12.5,"yaw":0,"roll":0},"torso":{"x":0,"y":-1,"z":0,"pitch":22.5,"yaw":0,"roll":0},"rightArm":{"x":-3.4,"y":1.4,"z":-2.4,"pitch":-98.6339,"yaw":-27.1581,"roll":3.7937},"leftArm":{"x":3.86,"y":1,"z":-2.86,"pitch":-152.4963,"yaw":33.3918,"roll":-9.6846},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":20,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":-1,"pitch":2.5,"yaw":0,"roll":0}},
+      {"tick":6,"head":{"pitch":17.5,"yaw":0,"roll":0},"torso":{"x":0,"y":-1,"z":0,"pitch":0,"yaw":0,"roll":0},"rightArm":{"x":-3,"y":0,"z":-3,"pitch":-71.5153,"yaw":-39.8174,"roll":4.1827},"leftArm":{"x":3,"y":2,"z":-5,"pitch":-117.1054,"yaw":61.8582,"roll":-9.1476},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":-1,"pitch":2.5,"yaw":0,"roll":0}},
+      {"tick":9,"head":{"pitch":2.5,"yaw":0,"roll":0},"torso":{"x":0,"y":-1,"z":0,"pitch":7.5,"yaw":0,"roll":0},"rightArm":{"x":-3,"y":1,"z":-3,"pitch":-77.0605,"yaw":-34.8685,"roll":5.0807},"leftArm":{"x":3,"y":3,"z":-5,"pitch":-119.2403,"yaw":54.5678,"roll":-5.784},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":-1,"pitch":2.5,"yaw":0,"roll":0}},
+      {"tick":13,"head":{"pitch":2.5,"yaw":0,"roll":0},"torso":{"x":0,"y":-1,"z":0,"pitch":7.5,"yaw":0,"roll":0},"rightArm":{"x":-3,"y":1,"z":-3,"pitch":-77.0605,"yaw":-34.8685,"roll":5.0807},"leftArm":{"x":3,"y":3,"z":-5,"pitch":-119.2403,"yaw":54.5678,"roll":-5.784},"rightLeg":{"x":-1.9,"y":12,"z":0,"pitch":5,"yaw":0,"roll":0},"leftLeg":{"x":1.9,"y":12,"z":-1,"pitch":2.5,"yaw":0,"roll":0}}
+    ]
+  }
+}

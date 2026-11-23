@@ -35,10 +35,12 @@ public final class KnightArmoryScreen extends Screen {
                 continue;
             }
             Component name = Component.translatable("screen.fatesupport.knight_armory.entry." + entry.key());
+            name = name.copy().append(Component.literal("  " + (int)entry.manaCost() + " MP / "
+                    + entry.cooldownTicks() / 20 + "s"));
             addRenderableWidget(Button.builder(name, button -> {
                 PacketDistributor.sendToServer(new KnightArmorySelectPayload(entry.networkId()));
                 onClose();
-            }).bounds(width / 2 - 90, y, 180, 20).build());
+            }).bounds(width / 2 - 130, y, 260, 20).build());
             y += 26;
         }
     }

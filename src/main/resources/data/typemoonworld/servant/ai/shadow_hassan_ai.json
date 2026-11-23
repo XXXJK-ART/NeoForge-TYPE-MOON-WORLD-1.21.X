@@ -6,9 +6,9 @@
     "likes_high_places": false
   },
   "combat": {
-    "preferred_attack_distance": 2.0,
+    "preferred_attack_distance": 8.0,
     "retreat_health_ratio": 0.25,
-    "melee_preference": 1.0,
+    "melee_preference": 0.25,
     "berserk_health_ratio": 0.0,
     "berserk_damage_multiplier": 1.0
   },

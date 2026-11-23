@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -116,6 +118,7 @@ public final class UshiwakamaruCombatHelper {
 
       if (distance <= 3.1 && ready(entity.getPersistentData(), TAG_LAST_BASIC_ATTACK, now, BASIC_ATTACK_COOLDOWN)) {
          entity.getPersistentData().putLong(TAG_LAST_BASIC_ATTACK, now);
+         entity.triggerSwordAction(net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction.HORIZONTAL_SLASH.networkId());
          entity.doHurtTarget(target);
       } else if (distance > 2.7) {
          ServantNavigationHelper.moveToTargetThrottled(entity, target, 1.35, now, 5, 0.45, "UshiwakamaruChasePath");
@@ -379,10 +382,12 @@ public final class UshiwakamaruCombatHelper {
       entity.setDeltaMovement(thrustDirection.x * 1.05, Math.max(0.12, entity.getDeltaMovement().y), thrustDirection.z * 1.05);
       entity.hurtMarked = true;
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : victims) {
          dealMeleeDamage(entity, victim, damage);
          victim.push(thrustDirection.x * 0.7, 0.1, thrustDirection.z * 0.7);
          victim.hurtMarked = true;
+      }
       }
       VFXServerEffects.spawnOriented(level, "servant_ushiwakamaru_slash", origin, thrustDirection, 96.0);
       for (int step = 1; step <= 8; step++) {
@@ -472,6 +477,11 @@ public final class UshiwakamaruCombatHelper {
       if (distance < 8.0 && !lowHealth && !obstructed) {
          return false;
       }
+      Vec3 leap = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardUshiwakamaruRules.eightBoatLeapVector(
+         entity.position(), target.position(), target.getBbWidth() * 0.5 + 1.0);
+      if (leap == null || !level.noCollision(entity, entity.getBoundingBox().move(leap.subtract(entity.position())))) {
+         return false;
+      }
       data.putDouble(TAG_EIGHT_BOAT_POWER_SCALE, resource.powerScale());
       data.putBoolean(TAG_EIGHT_BOAT_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
@@ -480,6 +490,9 @@ public final class UshiwakamaruCombatHelper {
       data.putLong(TAG_EIGHT_BOAT_NEXT_DASH, now);
       data.putUUID(UshiwakamaruRiderEntity.TAG_EIGHT_BOAT_TARGET, target.getUUID());
       entity.setEightBoatTarget(target);
+      entity.teleportTo(leap.x, leap.y, leap.z);
+      entity.setDeltaMovement(entity.getDeltaMovement().add(0.0, 0.82, 0.0));
+      entity.hurtMarked = true;
       updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), EIGHT_BOAT_SPEED_ID, 2.0, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
       entity.triggerEightBoatAnimation();
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_eight_boat", entity, 128.0);
@@ -495,20 +508,22 @@ public final class UshiwakamaruCombatHelper {
       if (entity.getCurrentMp() < 30.0 || !ready(data, TAG_LAST_SPIDER_SLAYER, now, SPIDER_SLAYER_COOLDOWN)) {
          return false;
       }
-      if (enemies.size() < 3 && !isDemonic(target)) {
+      if (enemies.isEmpty()) {
          return false;
       }
       entity.setCurrentMp(entity.getCurrentMp() - 30.0);
       data.putLong(TAG_LAST_SPIDER_SLAYER, now);
       entity.triggerSpiderSlayerAnimation();
       VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer", entity, 128.0);
-      for (LivingEntity enemy : nearbyEnemies(entity, 15.0)) {
-         float damage = isDemonic(enemy) ? 150.0F : 100.0F;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
+      for (LivingEntity enemy : nearbyEnemies(entity, UshiwakamaruCombatRules.SPIDER_SLAYER_RANGE)) {
+         float damage = UshiwakamaruCombatRules.spiderSlayerDamage(isDemonic(enemy), entity.distanceTo(enemy));
          enemy.invulnerableTime = 0;
          enemy.hurt(entity.damageSources().magic(), damage);
          enemy.invulnerableTime = 0;
          VFXServerEffects.spawn(level, "servant_ushiwakamaru_spider_slayer_impact",
             enemy.position().add(0.0, enemy.getBbHeight() * 0.5, 0.0), 128.0);
+      }
       }
       level.sendParticles(ParticleTypes.SONIC_BOOM, entity.getX(), entity.getY() + 1.0, entity.getZ(), 20, 5.5, 1.0, 5.5, 0.0);
       level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, entity.getX(), entity.getY() + 0.8, entity.getZ(), 90, 6.5, 1.0, 6.5, 0.08);

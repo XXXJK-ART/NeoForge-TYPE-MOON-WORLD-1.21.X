@@ -1,0 +1,12 @@
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('hassanSmoke') {
+            java.srcDir 'tools/hassan-smoke/java'
+            resources.srcDir 'tools/hassan-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_hassan_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/hassan-client-run')
+    }
+}

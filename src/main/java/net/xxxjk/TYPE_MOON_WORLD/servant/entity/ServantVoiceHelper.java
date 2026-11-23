@@ -25,7 +25,11 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayAttack(ServantEntity servant) {
-      if (isCasterGilgamesh(servant)) {
+      if (servant instanceof HundredFacesHassanPersonaEntity) return;
+      if (isHeracles(servant)) {
+         if (servant.getRandom().nextFloat() > 0.42F) return;
+         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.2F, 0.95F, ModSounds.HERACLES_VOICE_ROAR.get());
+      } else if (isCasterGilgamesh(servant)) {
          if (servant.getRandom().nextFloat() > 0.45F) return;
          SoundEvent sound = servant.getRandom().nextBoolean()
             ? ModSounds.CASTER_GILGAMESH_VOICE_ATTACK_1.get()
@@ -37,10 +41,12 @@ public final class ServantVoiceHelper {
          }
          playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.SASAKI_KOJIRO_VOICE_ATTACK.get());
       } else if (isCuChulainn(servant)) {
-         if (servant.getRandom().nextFloat() > 0.4F) {
-            return;
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.attack(servant);
+      } else if (servant instanceof ZhaoYunRiderEntity) {
+         if (servant.level().getGameTime() < servant.getPersistentData().getLong("TypeMoonNpVoiceEnd")) return;
+         if (servant.getRandom().nextFloat() <= 0.45F) {
+            playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ZHAO_YUN_VOICE_ATTACK.get());
          }
-         playVoice(servant, "attack", ATTACK_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.CU_CHULAINN_VOICE_ATTACK.get());
       } else if (isMedea(servant)) {
          if (servant.getRandom().nextFloat() > 0.4F) {
             return;
@@ -194,7 +200,7 @@ public final class ServantVoiceHelper {
       } else if (isHeracles(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.15F, 0.92F, ModSounds.HERACLES_VOICE_VICTORY.get());
       } else if (isCuChulainn(servant)) {
-         playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.CU_CHULAINN_VOICE_VICTORY.get());
+         net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.victory(servant);
       } else if (isMedea(servant)) {
          playVoice(servant, "victory", VICTORY_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.MEDEA_VOICE_VICTORY.get());
       } else if (isMedusa(servant)) {
@@ -257,7 +263,8 @@ public final class ServantVoiceHelper {
       } else if (isHeracles(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.15F, 0.9F, ModSounds.HERACLES_VOICE_FAIL.get());
       } else if (isCuChulainn(servant)) {
-         playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.CU_CHULAINN_VOICE_FAIL.get());
+         // Death is emitted by the shared death event, including transformed players.
+         return;
       } else if (isMedea(servant)) {
          playVoice(servant, "fail", FAIL_VOICE_COOLDOWN, 1.0F, 0.95F, ModSounds.MEDEA_VOICE_FAIL.get());
       } else if (isMedusa(servant)) {
@@ -309,7 +316,7 @@ public final class ServantVoiceHelper {
 
    public static void tryPlayOkitaSoujiSaberNp(ServantEntity servant) {
       if (isOkitaSoujiSaber(servant)) {
-         SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+         SoundEvent sound = ModSounds.OKITA_VOICE_NP_SHORT.get();
          if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
             playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
          }
@@ -317,9 +324,22 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayOkitaSoujiSaberNp(OkitaSoujiSaberEntity servant) {
-      SoundEvent sound = ModSounds.OKITA_SOUJI_SABER_VOICE_NP.get();
+      SoundEvent sound = ModSounds.OKITA_VOICE_NP_SHORT.get();
       if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) {
          playVoiceForced(servant, "okita_souji_saber_np", 1.18F, 1.05F, sound);
+      }
+   }
+
+   public static void tryPlayOkitaSoujiSaberFlag(ServantEntity servant) {
+      if (isOkitaSoujiSaber(servant)) {
+         playVoiceForced(servant, "okita_souji_saber_flag", 1.12F, 1.0F, ModSounds.OKITA_SOUJI_SABER_VOICE_FLAG.get());
+      }
+   }
+
+   public static void tryPlayOkitaSoujiSaberBattleStart(ServantEntity servant) {
+      if (isOkitaSoujiSaber(servant)) {
+         playVoice(servant, "okita_souji_saber_battle_start", 240, 1.08F, 1.0F,
+            ModSounds.OKITA_SOUJI_SABER_VOICE_BATTLE_START.get());
       }
    }
 
@@ -426,7 +446,7 @@ public final class ServantVoiceHelper {
          return;
       }
 
-      playVoiceForced(servant, "diarmuid_np", 1.15F, 1.0F, ModSounds.DIARMUID_UA_DUIBHNE_VOICE_NP.get());
+      net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.yellowHit(servant);
    }
 
    public static void tryPlayProjection(ServantEntity servant) {
@@ -477,6 +497,15 @@ public final class ServantVoiceHelper {
       playVoice(servant, "invisible_air", SPECIAL_VOICE_COOLDOWN, 1.05F, 1.0F, ModSounds.ARTORIA_VOICE_INVISIBLE_AIR.get());
    }
 
+   /** Plays Artoria's attack line for an NPC skill that has no separate voice clip. */
+   public static void tryPlayArtoriaSkill(ServantEntity servant) {
+      if (!isArtoria(servant)) {
+         return;
+      }
+
+      playVoice(servant, "artoria_skill", ATTACK_VOICE_COOLDOWN, 1.0F, 1.0F, ModSounds.ARTORIA_VOICE_ATTACK.get());
+   }
+
    public static void tryPlayArtoriaExcaliburRelease(ServantEntity servant) {
       if (!isArtoria(servant)) {
          return;
@@ -502,8 +531,9 @@ public final class ServantVoiceHelper {
    }
 
    public static void tryPlayOdaNobunagaSkill(ServantEntity servant) {
-      if (isOdaNobunaga(servant)) {
-         playVoiceForced(servant, "oda_skill", 1.0F, 1.0F, ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
+      if (isOdaNobunaga(servant) && servant.getRandom().nextFloat() <= 0.4F) {
+         playVoice(servant, "oda_skill", SPECIAL_VOICE_COOLDOWN, 1.0F, 1.0F,
+            ModSounds.ODA_NOBUNAGA_VOICE_SKILL.get());
       }
    }
 
@@ -615,6 +645,8 @@ public final class ServantVoiceHelper {
       }
 
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
+      if (isDiarmuid(servant) && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.locked(servant)) return;
+      if (isCuChulainn(servant) && net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.locked(servant)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG)) {
@@ -631,6 +663,8 @@ public final class ServantVoiceHelper {
 
       data.putLong(GLOBAL_VOICE_TICK_TAG, now);
       data.putLong(categoryTag, now);
+      if (isDiarmuid(servant)) net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidVoiceService.lock(servant,
+         "attack".equals(category) ? 22 : 80);
       float finalPitch = pitch + (servant.getRandom().nextFloat() - 0.5F) * 0.08F;
       serverLevel.playSound(null, servant.getX(), servant.getY(), servant.getZ(), sound, SoundSource.HOSTILE, volume, finalPitch);
    }
@@ -641,6 +675,7 @@ public final class ServantVoiceHelper {
       }
 
       if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.suppressLegacyVoice(servant, sound)) return;
+      if (isCuChulainn(servant) && net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnVoiceService.locked(servant)) return;
       CompoundTag data = servant.getPersistentData();
       long now = serverLevel.getGameTime();
       if (now < data.getLong(VOICE_LOCK_UNTIL_TAG) && !"zhao_yun_np".equals(category)) {

@@ -7,10 +7,13 @@ public final class ServantCardActionPreconditions {
    public static boolean requiresLookTarget(String id) {
       return switch (id) {
          case "cybele", "charm", "chains", "gilgamesh_chains", "gilgamesh_ring_vault", "anti_mystery", "hasebe_repel", "oda_encircle_matchlocks", "rule_breaker",
-            "ushiwakamaru_moonlit_step", "ushiwakamaru_usumidori", "ushiwakamaru_eight_boat",
+            "ushiwakamaru_draw_cut", "ushiwakamaru_moonlit_step", "ushiwakamaru_usumidori", "ushiwakamaru_eight_boat",
             "shadow_hassan_ambush", "shadow_hassan_bind", "shadow_hassan_flurry", "shadow_hassan_slash", "shadow_hassan_meditative_sensitivity",
             "fanatic_heartbeat", "fanatic_computer",
-            "okita_ichimonji", "okita_kaifuu", "okita_stance_break", "okita_mumyoudan_zuki" -> true;
+            "okita_mumyoudan_zuki",
+            "shadow_step", "shadow_lunge", "knife_feint", "hundred_faces_knife_feint",
+            "hundred_faces_shadow_step", "hundred_faces_shadow_lunge",
+            "sasaki_tsubame_gaeshi", "muramasa_downward_slash", "muramasa_thrust" -> true;
          default -> false;
       };
    }
@@ -26,14 +29,25 @@ public final class ServantCardActionPreconditions {
          case "fanatic_heartbeat" -> 5.0;
          case "fanatic_computer" -> 2.0;
          case "rule_breaker" -> 5.0;
-         case "okita_ichimonji" -> 4.5;
-         case "okita_kaifuu" -> 3.0;
-         case "okita_mumyoudan_zuki" -> 4.0;
-         case "okita_stance_break" -> 4.0;
+         case "okita_mumyoudan_zuki" -> 5.0;
+         case "shadow_step" -> 8.0;
+         case "shadow_lunge" -> 6.5;
+         case "knife_feint" -> 9.0;
+         case "hundred_faces_knife_feint" -> 9.0;
+         case "hundred_faces_shadow_step" -> 8.0;
+         case "hundred_faces_shadow_lunge" -> 6.5;
+         case "elbow_strike", "trip_sweep" -> 3.0;
+         case "sasaki_crouch_cutback", "sasaki_vertical_slash", "sasaki_downward_slash", "sasaki_upward_slash",
+            "sasaki_horizontal_slash", "sasaki_thrust", "sasaki_spinning_slash", "sasaki_counter_stance" -> 4.0;
+         case "sasaki_tsubame_gaeshi" -> 8.0;
+         case "muramasa_downward_slash" -> 3.0;
+         case "muramasa_thrust" -> 4.5;
+         case "muramasa_spinning_slash" -> 4.0;
          case "oda_encircle_matchlocks" -> 30.0;
          case "anti_mystery", "chains", "gilgamesh_chains", "gilgamesh_ring_vault" -> 30.0;
          case "cybele", "charm", "bellerophon" -> 18.0;
          case "ushiwakamaru_moonlit_step" -> 12.0;
+         case "ushiwakamaru_draw_cut" -> 5.0;
          case "ushiwakamaru_usumidori" -> 14.0;
          case "ushiwakamaru_eight_boat" -> 32.0;
          default -> 8.0;

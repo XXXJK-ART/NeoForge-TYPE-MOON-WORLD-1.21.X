@@ -1,35 +1,20 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Witch;
 import net.minecraft.world.entity.player.Player;
-import net.xxxjk.TYPE_MOON_WORLD.api.MagicDefinitionRegistry;
-import net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper;
-import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.GanderProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.MagicBulletProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaBeamEffectEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.MedeaMagicBoltEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.MysticMagicianEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.RubyProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.SapphireProjectileEntity;
-import net.xxxjk.TYPE_MOON_WORLD.entity.TopazProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosBeastLogic;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.NeroChaosEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
-import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class MagicResistanceHelper {
    public static final String MAGIC_RESISTANCE_LEVEL_TAG = "MagicResistanceLevel";
@@ -97,13 +82,29 @@ public final class MagicResistanceHelper {
       if (stored > 0.0F) {
          return stored;
       }
-      ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
+      return damageReductionForDefinition(ServantIdentityHelper.definitionOf(entity), getMagicResistanceRank(entity));
+   }
+
+   public static float damageReductionForDefinition(ServantDefinition definition, MagicResistanceRank rank) {
+      float fallback = damageReductionForRank(rank);
       if (definition != null
          && "enkidu".equals(definition.id())
-         && getMagicResistanceRank(entity) == MagicResistanceRank.A) {
+         && rank == MagicResistanceRank.A) {
          return 0.55F;
       }
-      return damageReductionForRank(getMagicResistanceRank(entity));
+      if (definition != null) {
+         for (String skillId : definition.skillIds()) {
+            if (rankFromSkillId(skillId) != rank) continue;
+            var skill = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantSkillDataRegistry.get(skillId);
+            if (skill == null) continue;
+            for (var effect : skill.effects()) {
+               if ("magic_resistance".equals(effect.effectType()) && effect.params().containsKey("damage_reduction")) {
+                  return Math.clamp(effect.params().get("damage_reduction").asFloat(fallback), 0.0F, 1.0F);
+               }
+            }
+         }
+      }
+      return fallback;
    }
 
    public static float getDebuffResistance(LivingEntity entity) {
@@ -115,41 +116,38 @@ public final class MagicResistanceHelper {
    }
 
    public static float applyMagicDamageReduction(LivingEntity entity, DamageSource source, float amount) {
-      return applyMagicDamageReduction(entity, source, amount, ordinaryMagicComplexity(source));
+      MagecraftDamageSource magecraft = MagecraftDamageSource.find(source);
+      return magecraft == null ? amount : applyMagicDamageReduction(entity, source, amount, magecraft.complexity());
    }
 
    public static float applyMagicDamageReduction(LivingEntity entity, DamageSource source, float amount, MagicComplexity complexity) {
-      if (OriginBulletHelper.isOriginBulletDamage(source)) {
-         return amount;
-      }
+      if (net.xxxjk.TYPE_MOON_WORLD.combat.OriginBulletHelper.isOriginBulletDamage(source)) return amount;
+      if (source != null && source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return amount;
       if (source != null && source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) {
          return amount;
       }
-      if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source) || complexity == null) {
+      if (entity == null || MagecraftDamageSource.find(source) == null || amount <= 0.0F || complexity == null) {
          return amount;
       }
+      MagecraftDamageSource magecraft = MagecraftDamageSource.find(source);
+      if (NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, amount) && !magecraft.isNoblePhantasmMagic()) return amount;
+      if (Double.isFinite(magecraft.casterProficiency()) && MagicProficiencyContestHelper.blocksTargetEffect(
+         source.getEntity() instanceof LivingEntity caster ? caster : null, entity, magecraft.magicId(), magecraft.casterProficiency(), complexity)) return 0.0F;
       MagicResistanceRank rank = getMagicResistanceRank(entity);
       if (cancelsOrdinaryMagic(rank, complexity)) {
          return 0.0F;
       }
-      if (amount <= smallMagicImmunityThreshold(rank)) {
-         return 0.0F;
-      }
-      float adjusted = amount <= smallMagicHalfThreshold(rank) ? amount * 0.5F : amount;
-      return adjusted * (1.0F - getDamageReduction(entity, complexity));
+      return amount * (1.0F - getDamageReduction(entity));
    }
 
    public static float applyMagicDamageReduction(
       LivingEntity entity, DamageSource source, float amount, MagicComplexity complexity,
       LivingEntity caster, String magicId, double casterProficiency
    ) {
-      if (OriginBulletHelper.isOriginBulletDamage(source)) {
-         return amount;
-      }
       if (source != null && source.is(FanaticDamageTypes.BYPASSES_DEFENSES)) {
          return amount;
       }
-      if (entity == null || source == null || amount <= 0.0F || !isMagicDamage(source) || complexity == null) {
+      if (entity == null || source == null || !isMagicDamage(source) || amount <= 0.0F || complexity == null) {
          return amount;
       }
       if (MagicProficiencyContestHelper.blocksTargetEffect(caster, entity, magicId, casterProficiency, complexity)) {
@@ -159,7 +157,7 @@ public final class MagicResistanceHelper {
    }
 
    public static int applyDebuffResistance(LivingEntity entity, int durationTicks) {
-      if (entity == null || durationTicks <= 1) {
+      if (entity == null || durationTicks <= 0) {
          return durationTicks;
       }
       float reduction = getDebuffResistance(entity);
@@ -176,7 +174,7 @@ public final class MagicResistanceHelper {
    }
 
    public static int applyHarmfulMagicEffectResistance(LivingEntity entity, int durationTicks, MagicComplexity complexity) {
-      if (entity == null || durationTicks <= 1) {
+      if (entity == null || durationTicks <= 0) {
          return durationTicks;
       }
       MagicResistanceRank rank = getMagicResistanceRank(entity);
@@ -193,7 +191,7 @@ public final class MagicResistanceHelper {
       LivingEntity entity, int durationTicks, MagicComplexity complexity,
       LivingEntity caster, String magicId, double casterProficiency
    ) {
-      if (entity == null || durationTicks <= 1) {
+      if (entity == null || durationTicks <= 0) {
          return durationTicks;
       }
       MagicComplexity resolved = complexity == null ? MagicComplexity.ONE_VERSE : complexity;
@@ -218,12 +216,11 @@ public final class MagicResistanceHelper {
    public static int harmfulMagicEffectDurationCap(MagicResistanceRank rank, MagicComplexity complexity) {
       MagicComplexity resolved = complexity == null ? MagicComplexity.ONE_VERSE : complexity;
       return switch (rank == null ? MagicResistanceRank.NONE : rank) {
-         case EX -> resolved == MagicComplexity.HIGH_THAUMATURGY ? 20 : 0;
-         case A -> resolved.level() <= MagicComplexity.THREE_VERSE.level() ? 0 : 60;
-         case B -> resolved.level() <= MagicComplexity.TWO_VERSE.level() ? 0 : 80;
-         case C -> resolved.level() <= MagicComplexity.ONE_VERSE.level() ? 0 : 100;
-         case D -> resolved == MagicComplexity.SIMPLE_ACTION ? 0 : 140;
-         case E -> 200;
+         case EX, A -> 0;
+         case B -> resolved.level() <= MagicComplexity.THREE_VERSE.level() ? 0 : 80;
+         case C -> resolved.level() <= MagicComplexity.TWO_VERSE.level() ? 0 : 100;
+         case D -> resolved.level() <= MagicComplexity.ONE_VERSE.level() ? 0 : 140;
+         case E -> resolved == MagicComplexity.SIMPLE_ACTION ? 0 : 200;
          default -> Integer.MAX_VALUE;
       };
    }
@@ -233,10 +230,13 @@ public final class MagicResistanceHelper {
    }
 
    public static float applyNoblePhantasmMagicResistance(LivingEntity entity, float amount) {
-      if (entity == null || amount <= 0.0F) {
-         return amount;
-      }
-      return amount * (1.0F - getDamageReduction(entity));
+      // Ordinary Noble Phantasms are not magecraft and do not use Magic Resistance.
+      return amount;
+   }
+
+   public static float applyNoblePhantasmMagicResistance(LivingEntity entity, DamageSource source, float amount) {
+      MagecraftDamageSource magecraft = MagecraftDamageSource.find(source);
+      return magecraft != null && magecraft.isNoblePhantasmMagic() ? applyMagicDamageReduction(entity, source, amount) : amount;
    }
 
    public static float damageReductionForRank(MagicResistanceRank rank) {
@@ -263,39 +263,16 @@ public final class MagicResistanceHelper {
       };
    }
 
-   private static float smallMagicImmunityThreshold(MagicResistanceRank rank) {
-      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
-         case A -> 12.0F;
-         case B -> 8.0F;
-         case C -> 5.0F;
-         case D -> 3.0F;
-         case EX -> 40.0F;
-         case E -> 1.0F;
-         default -> 0.0F;
-      };
-   }
-
-   private static float smallMagicHalfThreshold(MagicResistanceRank rank) {
-      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
-         case A -> 30.0F;
-         case B -> 22.0F;
-         case C -> 16.0F;
-         case D -> 10.0F;
-         case EX -> 80.0F;
-         case E -> 6.0F;
-         default -> 0.0F;
-      };
-   }
-
    public static boolean cancelsOrdinaryMagic(MagicResistanceRank rank, MagicComplexity complexity) {
       MagicResistanceRank resolvedRank = rank == null ? MagicResistanceRank.NONE : rank;
       MagicComplexity resolvedComplexity = complexity == null ? MagicComplexity.ONE_VERSE : complexity;
       return switch (resolvedRank) {
          case EX -> true;
-         case A -> resolvedComplexity.level() <= MagicComplexity.THREE_VERSE.level();
-         case B -> resolvedComplexity.level() <= MagicComplexity.TWO_VERSE.level();
-         case C -> resolvedComplexity.level() <= MagicComplexity.ONE_VERSE.level();
-         case D -> resolvedComplexity == MagicComplexity.SIMPLE_ACTION;
+         case A -> resolvedComplexity.level() <= MagicComplexity.HIGH_THAUMATURGY.level();
+         case B -> resolvedComplexity.level() <= MagicComplexity.THREE_VERSE.level();
+         case C -> resolvedComplexity.level() <= MagicComplexity.TWO_VERSE.level();
+         case D -> resolvedComplexity.level() <= MagicComplexity.ONE_VERSE.level();
+         case E -> resolvedComplexity == MagicComplexity.SIMPLE_ACTION;
          default -> false;
       };
    }
@@ -304,14 +281,7 @@ public final class MagicResistanceHelper {
       if (magicId == null || magicId.isBlank()) {
          return MagicComplexity.ONE_VERSE;
       }
-      var definition = MagicDefinitionRegistry.get(magicId);
-      if (definition != null) {
-         return definition.resolvedResistanceComplexity();
-      }
-      ResourceLocation id = magicId == null || magicId.indexOf(':') < 0
-         ? ResourceLocation.fromNamespaceAndPath("typemoonworld", magicId == null ? "" : magicId)
-         : ResourceLocation.tryParse(magicId);
-      return MagicComplexity.infer(id, 0.0, null);
+      return MagecraftDamageSource.resolveComplexity(magicId);
    }
 
    private static MagicResistanceRank getDefinitionMagicResistanceRank(ServantDefinition definition) {
@@ -347,6 +317,9 @@ public final class MagicResistanceHelper {
          if (rank.startsWith("d")) {
             return MagicResistanceRank.D;
          }
+         if (rank.startsWith("ex")) {
+            return MagicResistanceRank.EX;
+         }
          if (rank.startsWith("e")) {
             return MagicResistanceRank.E;
          }
@@ -355,30 +328,7 @@ public final class MagicResistanceHelper {
    }
 
    public static boolean isMagicDamage(DamageSource source) {
-      if (source == null) {
-         return false;
-      }
-      if (source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
-         return false;
-      }
-      if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC)) {
-         return true;
-      }
-      if (source.is(FanaticDamageTypes.MARROW)) {
-         return true;
-      }
-
-      var direct = source.getDirectEntity();
-      return direct instanceof MedeaMagicBoltEntity
-         || direct instanceof MedeaBeamEffectEntity
-         || direct instanceof RubyProjectileEntity
-         || direct instanceof SapphireProjectileEntity
-         || direct instanceof TopazProjectileEntity
-         || direct instanceof MagicBulletProjectileEntity
-         || direct instanceof GanderProjectileEntity
-         || direct instanceof CyanWindFieldEntity
-         || direct instanceof ArtoriaExcaliburBeamEntity
-         || direct instanceof GilgameshEaBeamEntity;
+      return MagecraftDamageSource.find(source) != null;
    }
 
    private static MagicResistanceRank rankFromManaCapacity(LivingEntity entity) {
@@ -400,39 +350,4 @@ public final class MagicResistanceHelper {
       return MagicResistanceRank.NONE;
    }
 
-   private static float getDamageReduction(LivingEntity entity, MagicComplexity complexity) {
-      float base = getDamageReduction(entity);
-      if (complexity == MagicComplexity.HIGH_THAUMATURGY) {
-         return Math.min(0.95F, base * 0.7F);
-      }
-      if (complexity == MagicComplexity.THREE_VERSE) {
-         return Math.min(0.95F, base * 0.85F);
-      }
-      return base;
-   }
-
-   private static MagicComplexity ordinaryMagicComplexity(DamageSource source) {
-      if (source == null || OriginBulletHelper.isOriginBulletDamage(source)) {
-         return null;
-      }
-      var direct = source.getDirectEntity();
-      if (direct instanceof ArtoriaExcaliburBeamEntity || direct instanceof GilgameshEaBeamEntity) {
-         return null;
-      }
-      if (direct instanceof GanderProjectileEntity || direct instanceof MagicBulletProjectileEntity
-         || direct instanceof RubyProjectileEntity || direct instanceof SapphireProjectileEntity
-         || direct instanceof TopazProjectileEntity) {
-         return MagicComplexity.SIMPLE_ACTION;
-      }
-      if (direct instanceof CyanWindFieldEntity || direct instanceof MedeaMagicBoltEntity) {
-         return MagicComplexity.TWO_VERSE;
-      }
-      if (direct instanceof MedeaBeamEffectEntity) {
-         return MagicComplexity.HIGH_THAUMATURGY;
-      }
-      if (source.is(DamageTypes.MAGIC) || source.is(DamageTypes.INDIRECT_MAGIC) || source.is(FanaticDamageTypes.MARROW)) {
-         return MagicComplexity.ONE_VERSE;
-      }
-      return null;
-   }
 }

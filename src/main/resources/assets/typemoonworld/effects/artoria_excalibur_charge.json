@@ -61,7 +61,7 @@
         "segments": 96
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#88DAA520" },
+        { "t": 0.0, "color": "#88E5B52A" },
         { "t": 0.42, "color": "#FFFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
@@ -103,8 +103,8 @@
       },
       "color_over_life": [
         { "t": 0.0, "color": "#44FFD700" },
-        { "t": 0.35, "color": "#FFFFD700" },
-        { "t": 0.62, "color": "#FFFFFFFF" },
+        { "t": 0.35, "color": "#FFFFD04A" },
+        { "t": 0.62, "color": "#FFFFF0A0" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
@@ -125,33 +125,33 @@
     {
       "start_time": 0.0,
       "end_time": 2.2,
-      "rate": 210,
-      "particle_lifetime": 1.2,
-      "size_variance": 0.35,
-      "lifetime_variance": 0.25,
-      "position_variance": 0.02,
-      "velocity": [0.0, 0.02, 0.0],
-      "velocity_variance": 0.02,
+      "rate": 150,
+      "particle_lifetime": 0.42,
+      "size_variance": 0.18,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.008, 0.0],
+      "velocity_variance": 0.01,
       "max_vanilla_particles_per_tick": 1,
-      "component": { "type": "circle", "radius": 1.0, "segments": 140 },
+      "component": { "type": "circle", "radius": 0.68, "segments": 72 },
       "color_over_life": [
         { "t": 0.0, "color": "#22FFD700" },
         { "t": 0.45, "color": "#AAFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
       "size_over_life": [
-        { "t": 0.0, "size": 0.06 },
-        { "t": 0.5, "size": 0.18 },
-        { "t": 1.0, "size": 0.03 }
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.45, "size": 0.065 },
+        { "t": 1.0, "size": 0.012 }
       ],
-      "transform_over_life": [
-        { "t": 0.0, "pos": [0.0, -0.05, 0.0], "scale": [0.6, 0.6, 0.6], "easing": "ease_out_cubic" },
-        { "t": 0.55, "pos": [0.0, -0.08, 0.0], "scale": [3.0, 3.0, 3.0], "easing": "ease_out_cubic" },
-        { "t": 1.0, "pos": [0.0, -0.08, 0.0], "scale": [2.0, 2.0, 2.0] }
-      ],
-      "visibility_condition": "random() > 0.18",
+      "visibility_condition": "random() > 0.08",
       "blend": "ADDITIVE",
-      "particle_role": "EXCALIBUR_GROUND_RITUAL_RING"
+      "renderer": "BILLBOARD",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/particle_white.png", "bloom": 0.18 },
+      "particle_role": "EXCALIBUR_GROUND_CHARGE_MOTES",
+      "vanilla_particles": [
+        { "type": "end_rod", "count": 1, "spread": [0.025, 0.01, 0.025], "offset": [0.0, -0.08, 0.0], "speed": 0.01, "chance": 0.16 }
+      ]
     }
   ]
 }

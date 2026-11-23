@@ -1,0 +1,11 @@
+{
+  "rank": "C++",
+  "id": "independent_action_c_plus",
+  "display_name": "Independent Action C++",
+  "display_name_zh": "\u72ec\u7acb\u884c\u52a8 C++",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": []
+}

@@ -1,5 +1,7 @@
 package com.example.typemoonaddon.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import com.example.typemoonaddon.servant.GillesDeRaisCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardGillesDeRaisSkills;
@@ -430,12 +432,14 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         Vec3 center = target.position();
         AABB box = new AABB(center.x - 16.0, center.y - 6.0, center.z - 16.0,
                 center.x + 16.0, center.y + 8.0, center.z + 16.0);
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
                 living -> this.isValidTarget(living) && living.distanceToSqr(center) <= 256.0)) {
             living.invulnerableTime = 0;
             living.hurt(this.damageSources().mobAttack(this), 48.0F);
             living.push((living.getX() - this.getX()) * 0.36, 0.46, (living.getZ() - this.getZ()) * 0.36);
             living.hurtMarked = true;
+        }
         }
         level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY() + 0.8, target.getZ(), 12, 4.0, 0.8, 4.0, 0.02);
         level.sendParticles(ParticleTypes.LARGE_SMOKE, target.getX(), target.getY() + 0.6, target.getZ(), 48, 4.0, 1.0, 4.0, 0.02);
@@ -464,11 +468,13 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         Vec3 center = target.position();
         GillesDeRaisCombatHelper.addPollutionZone(level.dimension(), center, 22.0, 300, 14.0F, this.getSourceUuid(), this.getMasterUuid());
         this.breakCraterTerrain(level, center, 14.0, 5, 128);
+        try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(22.0), this::isValidTarget)) {
             living.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 120, 0, false, true, true));
             living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 180, 2, false, true, true));
             living.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, true, true));
             living.hurt(this.damageSources().magic(), 14.0F);
+        }
         }
         level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 90, 8.0, 1.4, 8.0, 0.04);
         level.sendParticles(ParticleTypes.SCULK_SOUL, center.x, center.y + 1.2, center.z, 60, 7.0, 1.2, 7.0, 0.03);
@@ -487,6 +493,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
         this.breakTerrainCross(level, center, forward, right);
         AABB box = new AABB(center.x - 22.0, center.y - 5.0, center.z - 22.0, center.x + 22.0, center.y + 12.0, center.z + 22.0);
+        try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, this::isValidTarget)) {
             Vec3 delta = living.position().subtract(center);
             double along = Math.abs(delta.dot(forward));
@@ -498,6 +505,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             living.hurt(this.damageSources().mobAttack(this), 32.0F);
             living.push(delta.x * 0.28, 0.38, delta.z * 0.28);
             living.hurtMarked = true;
+        }
         }
         level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 0.8, center.z, 16, 6.0, 1.0, 6.0, 0.03);
         level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 0.8, center.z, 80, 7.0, 1.6, 7.0, 0.05);
@@ -512,6 +520,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
         GillesDeRaisCombatHelper.addPollutionZone(level.dimension(), center, 26.0, 360, 16.0F, this.getSourceUuid(), this.getMasterUuid());
         this.breakCraterTerrain(level, center, 22.0, 9, 280);
         AABB box = new AABB(center.x - 28.0, center.y - 8.0, center.z - 28.0, center.x + 28.0, center.y + 14.0, center.z + 28.0);
+        try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, this::isValidTarget)) {
             double distance = Math.max(1.0, living.position().distanceTo(center));
             if (distance > 28.0) {
@@ -529,6 +538,7 @@ public final class HugeSeaMonsterEntity extends PathfinderMob implements GeoEnti
             living.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0, false, true, true));
             living.push(away.x * (1.0 + falloff), 0.65 + falloff * 0.35, away.z * (1.0 + falloff));
             living.hurtMarked = true;
+        }
         }
         level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y + 1.0, center.z, 28, 9.0, 1.4, 9.0, 0.04);
         level.sendParticles(ParticleTypes.SQUID_INK, center.x, center.y + 1.2, center.z, net.xxxjk.TYPE_MOON_WORLD.vfx.ParticleBudget.count(120), 11.0, 2.0, 11.0, 0.06);

@@ -7,5 +7,14 @@
   "mp_cost": 0,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": []
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 80,
+        "attack": 8,
+        "speed_additive": 0.04
+      }
+    }
+  ]
 }

@@ -185,11 +185,9 @@ public final class ServantCardMedusaSkills {
 
    private static void applyMedusaCardCybele(ServerPlayer player, LivingEntity target) {
       if (HeraclesGodHandHelper.isAdaptedToCybele(target)) {
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2, false, true, true));
          return;
       }
-      if (HeraclesGodHandHelper.hasGodHand(target)) {
-         HeraclesGodHandHelper.consumeLifeForCybele(target);
+      if (HeraclesGodHandHelper.consumeLifeForCybele(target)) {
          return;
       }
 
@@ -263,6 +261,7 @@ public final class ServantCardMedusaSkills {
          return;
       }
       float damage = noble ? 24.0F + player.getRandom().nextInt(7) : 15.0F;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius, radius, radius),
@@ -279,6 +278,7 @@ public final class ServantCardMedusaSkills {
             vars.servant_card_mana = Math.min(vars.servant_card_max_mana, vars.servant_card_mana + dealt);
             spawnMedusaBloodfortVictimAura(level, victim, dealt);
          }
+      }
       }
       vars.syncPlayerVariables(player);
    }
@@ -551,6 +551,7 @@ public final class ServantCardMedusaSkills {
    private static void applyMedusaChargeHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
       Vec3 forward = medusaPegasusMotionForward(pegasus);
       AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(3.2)).inflate(2.3, 1.8, 2.3);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_HIT_UNTIL_TAG, now + 20L);
          pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
@@ -562,17 +563,20 @@ public final class ServantCardMedusaSkills {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, true, true));
          }
       }
+      }
    }
 
    private static void applyMedusaRideCollisionHits(ServerPlayer player, MedusaPegasusEntity pegasus, long now) {
       Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 1.0, 1.5);
       AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(2.0, 1.6, 2.0);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now))) {
          victim.getPersistentData().putLong(MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, now + 10L);
          victim.invulnerableTime = 0;
          victim.hurt(player.damageSources().playerAttack(player), 50.0F);
          victim.invulnerableTime = 0;
          pushAwayFrom(pegasus, victim, 1.0, 0.3);
+      }
       }
    }
 
@@ -590,11 +594,13 @@ public final class ServantCardMedusaSkills {
          return;
       }
       AABB area = pegasus.getBoundingBox().inflate(5.0, 2.0, 5.0);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, target -> isMedusaChargeVictim(player, pegasus, target, MEDUSA_BELLEROPHON_COLLISION_HIT_UNTIL_TAG, level.getGameTime()))) {
          victim.invulnerableTime = 0;
          victim.hurt(player.damageSources().playerAttack(player), 100.0F);
          victim.invulnerableTime = 0;
          pushAwayFrom(pegasus, victim, 1.2, 0.55);
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION, pegasus.getX(), pegasus.getY() + 0.4, pegasus.getZ(), 6, 1.8, 0.4, 1.8, 0.0);
       level.sendParticles(ParticleTypes.CLOUD, pegasus.getX(), pegasus.getY() + 0.2, pegasus.getZ(), 32, 2.3, 0.2, 2.3, 0.08);
@@ -642,7 +648,7 @@ public final class ServantCardMedusaSkills {
       data.remove(MEDUSA_PEGASUS_COAST_TICKS_TAG);
    }
 
-   private static void clearMedusaEyes(ServerPlayer player) {
+   public static void clearMedusaEyes(ServerPlayer player) {
       CompoundTag data = player.getPersistentData();
       data.remove(MEDUSA_EYES_ACTIVE_TAG);
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
@@ -1140,6 +1146,7 @@ public final class ServantCardMedusaSkills {
       }
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.45, 0.0);
       Vec3 forward = dir.lengthSqr() < 1.0E-4 ? PlayerNoblePhantasmHelper.horizontalLook(player) : new Vec3(dir.x, 0.0, dir.z).normalize();
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(range, 2.0, range), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.35, 0.0).subtract(origin);
          if (to.length() > range || forward.dot(new Vec3(to.x, 0.0, to.z).normalize()) < 0.35) {
@@ -1148,6 +1155,7 @@ public final class ServantCardMedusaSkills {
          living.invulnerableTime = 0;
          living.hurt(player.damageSources().playerAttack(player), damage);
          living.invulnerableTime = 0;
+      }
       }
    }
 

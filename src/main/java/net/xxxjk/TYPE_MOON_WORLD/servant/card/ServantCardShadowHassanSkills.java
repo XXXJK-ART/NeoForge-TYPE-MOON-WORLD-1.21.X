@@ -6,12 +6,17 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.AABB;
@@ -20,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanPursuitData;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanRules;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -29,14 +35,27 @@ import org.joml.Vector3f;
 public final class ServantCardShadowHassanSkills {
    public static final String SERVANT_ID = "shadow_hassan";
    public static final int COMPLETE_CONCEALMENT_AMPLIFIER = 1;
+   public static final long ACTIVE_CONCEALMENT_DURATION_TICKS = 100L;
+   public static final int ACTIVE_CONCEALMENT_MANA_COST = 20;
+   public static final int ACTIVE_CONCEALMENT_COOLDOWN_TICKS = 200;
    private static final String TAG_CONCEALED = "ShadowHassanCardConcealed";
+   private static final String TAG_PASSIVE_CONCEALED = "ShadowHassanCardPassiveConcealed";
+   private static final String TAG_ACTIVE_CONCEALMENT_UNTIL = "ShadowHassanActiveConcealmentUntil";
    private static final String TAG_BODY_INVISIBILITY_MANAGED = "ShadowHassanCardBodyInvisibilityManaged";
    private static final String TAG_NP_CONSUMED = "ShadowHassanCardNpConsumed";
    private static final String TAG_DARK_WARNING = "ShadowHassanCardDarkWarningTick";
    private static final String TAG_EXPOSED_UNTIL = "ShadowHassanCardExposedUntil";
    private static final String TAG_SLASH_UNTIL = "ShadowHassanCardSlashUntil";
-   private static final int PASSIVE_MANA_INTERVAL = 20;
-   private static final double PASSIVE_MANA_RESTORE = 5.0;
+   private static final String TAG_POSSESSION_HOST = "ShadowHassanPossessionHost";
+   private static final String TAG_POSSESSION_DIMENSION = "ShadowHassanPossessionDimension";
+   private static final String TAG_POSSESSION_NEXT_MANA = "ShadowHassanPossessionNextMana";
+   private static final String TAG_POSSESSION_PREVIOUS_NO_PHYSICS = "ShadowHassanPossessionPreviousNoPhysics";
+   private static final String TAG_POSSESSION_PREVIOUS_NO_GRAVITY = "ShadowHassanPossessionPreviousNoGravity";
+   private static final String TAG_POSSESSION_EXIT_REASON = "ShadowHassanPossessionExitReason";
+   private static final String TAG_POSSESSION_CAMERA_ACTIVE = "ShadowHassanPossessionCameraActive";
+   private static final String TAG_SHADOW_STEP_READY = "ShadowHassanCardShadowStepReady";
+   private static final ResourceLocation DARK_MOVEMENT_MODIFIER = ResourceLocation.fromNamespaceAndPath(
+      TYPE_MOON_WORLD.MOD_ID, "shadow_hassan_total_darkness_movement");
    private static final int SLASH_STRIKE_COUNT = 200;
    private static final int SLASH_STRIKES_PER_TICK = 2;
    private static final long SLASH_DURATION_TICKS = 100L;
@@ -47,62 +66,71 @@ public final class ServantCardShadowHassanSkills {
    public static void initialize(ServerPlayer player) {
       clear(player);
       player.getPersistentData().putBoolean(TAG_BODY_INVISIBILITY_MANAGED, true);
-      // Presence concealment is the card's default state; attacks briefly reveal it.
-      setConcealed(player, true);
+      setConcealed(player, false);
       setNoblePhantasmConsumed(player, false);
    }
 
    public static void clear(ServerPlayer player) {
+      if (isPossessing(player)) endPossession(player, "card_removed", false);
       boolean managedInvisibility = player.getPersistentData().getBoolean(TAG_BODY_INVISIBILITY_MANAGED) || isConcealed(player);
       player.getPersistentData().remove(TAG_CONCEALED);
+      player.getPersistentData().remove(TAG_PASSIVE_CONCEALED);
+      player.getPersistentData().remove(TAG_ACTIVE_CONCEALMENT_UNTIL);
       player.getPersistentData().remove(TAG_BODY_INVISIBILITY_MANAGED);
       if (managedInvisibility) player.removeEffect(MobEffects.INVISIBILITY);
       player.getPersistentData().remove(TAG_DARK_WARNING);
       player.getPersistentData().remove(TAG_EXPOSED_UNTIL);
       player.getPersistentData().remove(TAG_SLASH_UNTIL);
+      player.getPersistentData().remove(TAG_SHADOW_STEP_READY);
+      setDarkMovement(player, false);
       if (managedInvisibility) player.setInvisible(false);
    }
 
    public static void tick(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (!isShadowHassan(player, vars)) return;
       player.getPersistentData().putBoolean(TAG_BODY_INVISIBILITY_MANAGED, true);
-      maintainBodyInvisibility(player, isConcealed(player));
-
-      int light = player.level().getMaxLocalRawBrightness(player.blockPosition());
-      if (ShadowHassanRules.isTotalDarkness(light)) {
-         player.setDeltaMovement(Vec3.ZERO);
-         player.hurtMarked = true;
-         player.fallDistance = 0.0F;
-         return;
+      boolean totalDarkness = ShadowHassanRules.isTotalDarkness(player.level(), player.blockPosition());
+      setDarkMovement(player, totalDarkness);
+      if (isPossessing(player)) {
+         if (!tickPossession(player, vars)) return;
+      } else if (player.tickCount % ShadowHassanRules.MANA_RESTORE_INTERVAL_TICKS == 0
+         && isInShadowZone(player, null)) {
+         restoreMana(player, vars, ShadowHassanRules.MANA_RESTORE_PER_SECOND);
       }
-      if (player.tickCount % PASSIVE_MANA_INTERVAL == 0 && ShadowHassanRules.isShadowLight(light)) {
-         restoreMana(player, vars, PASSIVE_MANA_RESTORE);
-      }
+      refreshConcealment(player);
       if (!isConcealed(player) && player.tickCount % 4 == 0 && player.level() instanceof ServerLevel level) {
          spawnVisibleShadowParticles(level, player);
       }
    }
 
    public static boolean toggleConcealment(ServerPlayer player) {
-      if (!isShadowHassan(player)) return false;
-      boolean concealed = !wantsConcealment(player);
-      setConcealed(player, concealed);
-      player.displayClientMessage(Component.translatable(concealed
-         ? "message.typemoonworld.shadow_hassan_card.concealment_on"
-         : "message.typemoonworld.shadow_hassan_card.concealment_off"), true);
+      if (!isShadowHassan(player) || isPossessing(player) || !isActiveConcealment(player)) return false;
+      player.getPersistentData().remove(TAG_ACTIVE_CONCEALMENT_UNTIL);
+      refreshConcealment(player);
+      return true;
+   }
+
+   public static boolean performActiveConcealment(ServerPlayer player) {
+      if (!isShadowHassan(player) || isPossessing(player)
+         || !ShadowHassanRules.isDirectSunOrMoonlight(player.level(), player.blockPosition())) return false;
+      player.getPersistentData().putLong(TAG_ACTIVE_CONCEALMENT_UNTIL,
+         player.level().getGameTime() + ACTIVE_CONCEALMENT_DURATION_TICKS);
+      refreshConcealment(player);
       return true;
    }
 
    public static void revealForAttack(ServerPlayer player) {
-      if (!isShadowHassan(player) || !wantsConcealment(player)) return;
+      if (!isShadowHassan(player)) return;
       player.getPersistentData().putLong(TAG_EXPOSED_UNTIL,
          player.level().getGameTime() + ShadowHassanRules.CONCEALMENT_EXPOSURE_TICKS);
+      player.getPersistentData().remove(TAG_ACTIVE_CONCEALMENT_UNTIL);
+      setConcealedState(player, false);
       maintainBodyInvisibility(player, false);
    }
 
    public static boolean canAttack(ServerPlayer player) {
       if (!isShadowHassan(player)) return true;
-      if (!ShadowHassanRules.isTotalDarkness(player.level().getMaxLocalRawBrightness(player.blockPosition()))) return true;
+      if (isPossessing(player) || !ShadowHassanRules.isTotalDarkness(player.level(), player.blockPosition())) return !isPossessing(player);
       long now = player.level().getGameTime();
       if (now >= player.getPersistentData().getLong(TAG_DARK_WARNING)) {
          player.getPersistentData().putLong(TAG_DARK_WARNING, now + 20L);
@@ -112,24 +140,37 @@ public final class ServantCardShadowHassanSkills {
    }
 
    public static boolean performShadowLantern(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
-      if (!canUseShadow(player)) return false;
-      restoreMana(player, vars, 25.0);
-      return true;
+      return isShadowHassan(player) && !isPossessing(player);
+   }
+
+   public static boolean performShadowPossession(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel)) return false;
+      if (isPossessing(player)) return endPossession(player, "player_released", true);
+      if (!canAttack(player)) return false;
+      LivingEntity target = validPossessionTarget(player);
+      if (target == null) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.no_target"), true);
+         return false;
+      }
+      return beginPossession(player, target);
    }
 
    public static boolean performShadowWandering(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return false;
-      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 18.0, 2.0);
-      if (!canUseShadow(player, target)) return false;
-      Vec3 desired;
-      if (target != null) {
-         Vec3 forward = horizontal(target.getLookAngle());
-         desired = target.position().subtract(forward.scale(2.0));
-      } else {
-         desired = player.position().add(horizontal(player.getLookAngle()).scale(8.0));
-      }
-      BlockPos destination = findNearestShadow(level, player, desired, 5, target);
-      return teleport(player, destination);
+      if (isPossessing(player)) return endPossession(player, "player_released", true);
+      if (!canAttack(player)) return false;
+      LivingEntity target = validPossessionTarget(player);
+      if (target != null) return beginPossession(player, target);
+      if (!canUseShadow(player, null)) return false;
+      long now = level.getGameTime();
+      if (now < player.getPersistentData().getLong(TAG_SHADOW_STEP_READY)) return false;
+      Vec3 desired = player.position().add(horizontal(player.getLookAngle()).scale(8.0));
+      BlockPos destination = findNearestShadow(level, player, desired, ShadowHassanRules.SHADOW_POINT_SEARCH_RADIUS, null,
+         player.position(), ShadowHassanRules.SHADOW_STEP_MAX_DISTANCE);
+      if (!teleport(player, destination)) return false;
+      player.getPersistentData().putLong(TAG_SHADOW_STEP_READY,
+         now + ShadowHassanRules.SHADOW_STEP_COOLDOWN_TICKS);
+      return true;
    }
 
    public static boolean performShadowAmbush(ServerPlayer player) {
@@ -137,7 +178,8 @@ public final class ServantCardShadowHassanSkills {
       LivingEntity target = validBladeTarget(player, 18.0);
       if (target == null || !canUseShadow(player, target)) return false;
       Vec3 behind = target.position().subtract(horizontal(target.getLookAngle()).scale(1.8));
-      BlockPos destination = findNearestShadow(level, player, behind, 5, target);
+      BlockPos destination = findNearestShadow(level, player, behind, ShadowHassanRules.SHADOW_POINT_SEARCH_RADIUS,
+         target, player.position(), ShadowHassanRules.SHADOW_STEP_MAX_DISTANCE);
       if (!teleport(player, destination)) return false;
       revealForAttack(player);
       directStrike(player, target, 34.0F);
@@ -149,7 +191,7 @@ public final class ServantCardShadowHassanSkills {
    public static boolean performShadowBind(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return false;
       LivingEntity target = validBladeTarget(player, 16.0);
-      if (target == null || !canUseShadow(player, target)) return false;
+      if (target == null || !canAttack(player)) return false;
       revealForAttack(player);
       directStrike(player, target, 12.0F);
       target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120, 0, false, false, true));
@@ -162,7 +204,7 @@ public final class ServantCardShadowHassanSkills {
    public static boolean performShadowFlurry(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return false;
       LivingEntity target = validBladeTarget(player, 7.0);
-      if (target == null || !canUseShadow(player, target)) return false;
+      if (target == null || !canAttack(player)) return false;
       revealForAttack(player);
       for (int delay : new int[]{0, 4, 8}) {
          TYPE_MOON_WORLD.queueServerWork(delay, () -> {
@@ -207,7 +249,8 @@ public final class ServantCardShadowHassanSkills {
          ? player.position().subtract(horizontal(player.getLookAngle()).scale(12.0))
          : player.position().add(horizontal(player.position().subtract(threat.position())).scale(12.0));
       BlockPos destination = findRetreatShadow(level, player, away, threat);
-      return teleport(player, destination);
+      return destination != null && ShadowHassanRules.isWithinShadowStepRange(player.position(), Vec3.atBottomCenterOf(destination))
+         && teleport(player, destination);
    }
 
    public static boolean performMeditativeSensitivity(ServerPlayer player) {
@@ -243,8 +286,42 @@ public final class ServantCardShadowHassanSkills {
    }
 
    public static boolean isConcealed(ServerPlayer player) {
-      return wantsConcealment(player)
+      return (wantsConcealment(player) || isActiveConcealment(player))
          && player.level().getGameTime() >= player.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
+   }
+
+   public static boolean isActiveConcealment(ServerPlayer player) {
+      return player != null && player.getPersistentData().getLong(TAG_ACTIVE_CONCEALMENT_UNTIL)
+         > player.level().getGameTime();
+   }
+
+   public static boolean isPassiveConcealed(ServerPlayer player) {
+      return player != null && player.getPersistentData().getBoolean(TAG_PASSIVE_CONCEALED)
+         && player.level().getGameTime() >= player.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
+   }
+
+   public static boolean isPossessing(ServerPlayer player) {
+      return player != null && player.getPersistentData().hasUUID(TAG_POSSESSION_HOST);
+   }
+
+   public static boolean isPossessingHost(ServerPlayer player, java.util.UUID hostUuid) {
+      return isPossessing(player) && hostUuid.equals(player.getPersistentData().getUUID(TAG_POSSESSION_HOST));
+   }
+
+   public static boolean hasPossessionTarget(ServerPlayer player) {
+      return validPossessionTarget(player) != null;
+   }
+
+   public static boolean blocksPlayerInput(ServerPlayer player) {
+      return isPossessing(player);
+   }
+
+   public static void onDamageApplied(ServerPlayer player) {
+      if (isPossessing(player)) endPossession(player, "external_damage", true);
+   }
+
+   public static void forceEndPossession(ServerPlayer player, String reason, boolean expose) {
+      endPossession(player, reason, expose);
    }
 
    private static boolean wantsConcealment(ServerPlayer player) {
@@ -273,35 +350,203 @@ public final class ServantCardShadowHassanSkills {
       return target;
    }
 
+   @Nullable
+   private static LivingEntity validPossessionTarget(ServerPlayer player) {
+      LivingEntity target = ServantCardSkillUtils.findLookTarget(player, ShadowHassanRules.POSSESSION_RANGE, 2.0);
+      if (target == null || target == player || !target.isAlive() || target.isRemoved()
+         || target.level() != player.level() || !player.hasLineOfSight(target)
+         || EntityUtils.isImmunePlayerTarget(target)) return null;
+      return target;
+   }
+
+   private static boolean beginPossession(ServerPlayer player, LivingEntity host) {
+      if (!(player.level() instanceof ServerLevel level)) return false;
+      boolean inRange = player.distanceToSqr(host)
+         <= (double)ShadowHassanRules.POSSESSION_RANGE * ShadowHassanRules.POSSESSION_RANGE;
+      boolean legalTarget = host.isAlive() && !host.isRemoved() && host != player && host.level() == level
+         && !EntityUtils.isImmunePlayerTarget(host);
+      if (!ShadowHassanRules.canBeginPossession(ShadowHassanRules.isTotalDarkness(level, player.blockPosition()),
+         ShadowHassanRules.hasUsableShadowAnchor(level, host), inRange, player.hasLineOfSight(host), legalTarget)
+         || !canUseShadow(player, host)) return false;
+      BlockPos anchor = ShadowHassanRules.findNearestShadowPoint(level, player, host.position(), 2, host, null,
+         Double.MAX_VALUE);
+      if (anchor == null) return false;
+      var data = player.getPersistentData();
+      data.putUUID(TAG_POSSESSION_HOST, host.getUUID());
+      data.putString(TAG_POSSESSION_DIMENSION, level.dimension().location().toString());
+      data.putLong(TAG_POSSESSION_NEXT_MANA, level.getGameTime() + ShadowHassanRules.POSSESSION_MANA_INTERVAL_TICKS);
+      data.putBoolean(TAG_POSSESSION_PREVIOUS_NO_PHYSICS, player.noPhysics);
+      data.putBoolean(TAG_POSSESSION_PREVIOUS_NO_GRAVITY, player.isNoGravity());
+      data.putBoolean(TAG_POSSESSION_CAMERA_ACTIVE, false);
+      data.putString(TAG_POSSESSION_EXIT_REASON, "");
+      player.noPhysics = true;
+      player.setNoGravity(true);
+      moveToAnchor(player, anchor);
+      if (!setPossessionCamera(player, host)) {
+         endPossession(player, "camera_unavailable", false);
+         return false;
+      }
+      data.putBoolean(TAG_POSSESSION_CAMERA_ACTIVE, true);
+      return true;
+   }
+
+   private static boolean tickPossession(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
+      if (!(player.level() instanceof ServerLevel level)) {
+         endPossession(player, "dimension_unavailable", true);
+         return false;
+      }
+      var data = player.getPersistentData();
+      if (!level.dimension().location().toString().equals(data.getString(TAG_POSSESSION_DIMENSION))) {
+         endPossession(player, "dimension_changed", true);
+         return false;
+      }
+      Entity loaded = level.getEntity(data.getUUID(TAG_POSSESSION_HOST));
+      if (!(loaded instanceof LivingEntity host) || !host.isAlive() || host.isRemoved()) {
+         endPossession(player, "host_unavailable", true);
+         return false;
+      }
+      if (vars.servantCardState().mana() <= 0.0) {
+         endPossession(player, "mana_depleted", true);
+         return false;
+      }
+      if (!ShadowHassanRules.hasUsableShadowAnchor(level, host)) {
+         endPossession(player, "shadow_lost", true);
+         return false;
+      }
+      BlockPos anchor = ShadowHassanRules.findNearestShadowPoint(level, player, host.position(), 2, host, null,
+         Double.MAX_VALUE);
+      if (anchor == null) {
+         endPossession(player, "shadow_lost", true);
+         return false;
+      }
+      moveToAnchor(player, anchor);
+      if (!data.getBoolean(TAG_POSSESSION_CAMERA_ACTIVE)) {
+         if (!setPossessionCamera(player, host)) {
+            endPossession(player, "camera_unavailable", false);
+            return false;
+         }
+         data.putBoolean(TAG_POSSESSION_CAMERA_ACTIVE, true);
+      }
+      player.setDeltaMovement(Vec3.ZERO);
+      player.hurtMarked = true;
+      long nextMana = data.getLong(TAG_POSSESSION_NEXT_MANA);
+      if (level.getGameTime() >= nextMana) {
+         vars.servantCardState().setMana(ShadowHassanRules.possessionManaAfterInterval(
+            vars.servantCardState().mana(), vars.servantCardState().maxMana(), isInShadowZone(player, host)));
+         vars.syncMana(player);
+         data.putLong(TAG_POSSESSION_NEXT_MANA, level.getGameTime() + ShadowHassanRules.POSSESSION_MANA_INTERVAL_TICKS);
+         if (vars.servantCardState().mana() <= 0.0) {
+            endPossession(player, "mana_depleted", true);
+            return false;
+         }
+      }
+      return true;
+   }
+
+   private static void moveToAnchor(ServerPlayer player, BlockPos anchor) {
+      player.setPos(anchor.getX() + 0.5, anchor.getY(), anchor.getZ() + 0.5);
+      player.fallDistance = 0.0F;
+   }
+
+   private static boolean endPossession(ServerPlayer player, String reason, boolean expose) {
+      var data = player.getPersistentData();
+      if (!data.hasUUID(TAG_POSSESSION_HOST)) return false;
+      data.putString(TAG_POSSESSION_EXIT_REASON, reason);
+      data.remove(TAG_POSSESSION_HOST);
+      data.remove(TAG_POSSESSION_DIMENSION);
+      data.remove(TAG_POSSESSION_NEXT_MANA);
+      data.remove(TAG_POSSESSION_CAMERA_ACTIVE);
+      player.noPhysics = data.getBoolean(TAG_POSSESSION_PREVIOUS_NO_PHYSICS);
+      data.remove(TAG_POSSESSION_PREVIOUS_NO_PHYSICS);
+      player.setNoGravity(data.getBoolean(TAG_POSSESSION_PREVIOUS_NO_GRAVITY));
+      data.remove(TAG_POSSESSION_PREVIOUS_NO_GRAVITY);
+      setPossessionCamera(player, player);
+      player.setDeltaMovement(Vec3.ZERO);
+      if (expose) revealForAttack(player);
+      return true;
+   }
+
+   private static boolean setPossessionCamera(ServerPlayer player, Entity camera) {
+      if (player == null || camera == null || camera.isRemoved() || camera.level() != player.level()) return false;
+      try {
+         player.setCamera(camera);
+         return true;
+      } catch (RuntimeException ignored) {
+         return false;
+      }
+   }
+
+   private static boolean isInShadowZone(LivingEntity body, @Nullable LivingEntity caster) {
+      return ShadowHassanRules.isUsableShadowZone(body.level(), body.blockPosition(), caster);
+   }
+
+   @Nullable
+   private static LivingEntity nearbyShadowCaster(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return null;
+      AABB search = player.getBoundingBox().inflate(4.0);
+      return level.getEntitiesOfClass(LivingEntity.class, search,
+         candidate -> candidate != player && ShadowHassanRules.castsSunlightShadow(level, candidate)
+            && player.blockPosition().distSqr(candidate.blockPosition()) <= 16.0).stream().findFirst().orElse(null);
+   }
+
+   private static void setDarkMovement(ServerPlayer player, boolean dark) {
+      AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
+      if (speed == null) return;
+      if (dark) {
+         if (!speed.hasModifier(DARK_MOVEMENT_MODIFIER)) {
+            speed.addTransientModifier(new AttributeModifier(DARK_MOVEMENT_MODIFIER,
+               ShadowHassanRules.TOTAL_DARKNESS_MOVEMENT_MULTIPLIER - 1.0,
+               AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+         }
+      } else {
+         speed.removeModifier(DARK_MOVEMENT_MODIFIER);
+      }
+   }
+
    private static boolean canUseShadow(ServerPlayer player) {
       return canUseShadow(player, null);
    }
 
    private static boolean canUseShadow(ServerPlayer player, @Nullable LivingEntity target) {
       if (!canAttack(player)) return false;
-      int light = player.level().getMaxLocalRawBrightness(player.blockPosition());
-      if (ShadowHassanRules.isShadowLight(light)) return true;
-      if (player.level() instanceof ServerLevel level && target != null && ShadowHassanRules.castsSunlightShadow(level, target)) return true;
+      if (isInShadowZone(player, target)) return true;
       player.displayClientMessage(Component.translatable("message.typemoonworld.shadow_hassan_card.no_shadow"), true);
       return false;
    }
 
    private static void setConcealed(ServerPlayer player, boolean concealed) {
-      player.getPersistentData().putBoolean(TAG_CONCEALED, concealed);
+      setConcealedState(player, concealed);
       player.getPersistentData().remove(TAG_EXPOSED_UNTIL);
       maintainBodyInvisibility(player, concealed);
    }
 
+   private static void refreshConcealment(ServerPlayer player) {
+      var data = player.getPersistentData();
+      long now = player.level().getGameTime();
+      long activeUntil = data.getLong(TAG_ACTIVE_CONCEALMENT_UNTIL);
+      if (activeUntil > 0L && now >= activeUntil) data.remove(TAG_ACTIVE_CONCEALMENT_UNTIL);
+      boolean exposed = now < data.getLong(TAG_EXPOSED_UNTIL);
+      boolean passive = !exposed && isInShadowZone(player, nearbyShadowCaster(player));
+      boolean active = !exposed && isActiveConcealment(player);
+      data.putBoolean(TAG_PASSIVE_CONCEALED, passive);
+      setConcealedState(player, passive || active);
+      maintainBodyInvisibility(player, passive || active);
+   }
+
+   private static void setConcealedState(ServerPlayer player, boolean concealed) {
+      player.getPersistentData().putBoolean(TAG_CONCEALED, concealed);
+   }
+
    private static void maintainBodyInvisibility(ServerPlayer player, boolean completeConcealment) {
-      player.setInvisible(completeConcealment);
       if (completeConcealment) {
-         ServantCardConcealmentHelper.maintain(player, 40, COMPLETE_CONCEALMENT_AMPLIFIER);
+         ServantCardConcealmentHelper.clearEnemyAggroForMaskOnly(player);
       } else {
          MobEffectInstance invisibility = player.getEffect(MobEffects.INVISIBILITY);
          if (invisibility != null && invisibility.getAmplifier() >= COMPLETE_CONCEALMENT_AMPLIFIER) {
             player.removeEffect(MobEffects.INVISIBILITY);
          }
       }
+      player.setInvisible(false);
    }
 
    private static boolean isNoblePhantasmConsumed(ServerPlayer player) {
@@ -332,7 +577,7 @@ public final class ServantCardShadowHassanSkills {
 
    private static void directStrike(ServerPlayer player, LivingEntity target, float damage) {
       target.invulnerableTime = 0;
-      target.hurt(player.damageSources().playerAttack(player), damage);
+      target.hurt(ShadowHassanDamageSource.forTarget(player.damageSources().playerAttack(player), target), damage);
       target.invulnerableTime = 0;
       target.hurtTime = 0;
       target.hurtDuration = 0;
@@ -345,44 +590,19 @@ public final class ServantCardShadowHassanSkills {
 
    @Nullable
    private static BlockPos findNearestShadow(ServerLevel level, ServerPlayer player, Vec3 desired, int radius) {
-      return findNearestShadow(level, player, desired, radius, null);
+      return findNearestShadow(level, player, desired, radius, null, null, Double.MAX_VALUE);
    }
 
    @Nullable
    private static BlockPos findNearestShadow(ServerLevel level, ServerPlayer player, Vec3 desired, int radius,
-      @Nullable LivingEntity sunlightShadowCaster) {
-      BlockPos base = BlockPos.containing(desired);
-      boolean targetCastsShadow = sunlightShadowCaster != null && ShadowHassanRules.castsSunlightShadow(level, sunlightShadowCaster);
-      BlockPos best = null;
-      double bestDistance = Double.MAX_VALUE;
-      for (BlockPos candidate : BlockPos.betweenClosed(base.offset(-radius, -2, -radius), base.offset(radius, 2, radius))) {
-         if (!isValidShadowDestination(level, player, candidate, targetCastsShadow ? sunlightShadowCaster : null)) continue;
-         double distance = candidate.distToCenterSqr(desired.x, desired.y, desired.z);
-         if (distance < bestDistance) {
-            bestDistance = distance;
-            best = candidate.immutable();
-         }
-      }
-      return best;
+      @Nullable LivingEntity shadowCaster, @Nullable Vec3 origin, double maxTravel) {
+      return ShadowHassanRules.findNearestShadowPoint(level, player, desired, radius, shadowCaster, origin, maxTravel);
    }
 
    @Nullable
    private static BlockPos findRetreatShadow(ServerLevel level, ServerPlayer player, Vec3 desired, @Nullable LivingEntity threat) {
-      BlockPos center = player.blockPosition();
-      BlockPos best = null;
-      double bestScore = Double.NEGATIVE_INFINITY;
-      for (BlockPos candidate : BlockPos.betweenClosed(center.offset(-16, -3, -16), center.offset(16, 3, 16))) {
-         if (candidate.distSqr(center) > 16.0 * 16.0 || !isValidShadowDestination(level, player, candidate)) continue;
-         Vec3 position = Vec3.atBottomCenterOf(candidate);
-         double threatDistance = threat == null ? 0.0 : threat.distanceToSqr(position);
-         double desiredDistance = position.distanceToSqr(desired);
-         double score = threatDistance - desiredDistance * 0.25;
-         if (score > bestScore) {
-            bestScore = score;
-            best = candidate.immutable();
-         }
-      }
-      return best;
+      return ShadowHassanRules.findNearestShadowPoint(level, player, desired,
+         ShadowHassanRules.SHADOW_POINT_SEARCH_RADIUS, threat, player.position(), ShadowHassanRules.SHADOW_STEP_MAX_DISTANCE);
    }
 
    private static boolean isValidShadowDestination(ServerLevel level, ServerPlayer player, BlockPos pos) {
@@ -391,17 +611,7 @@ public final class ServantCardShadowHassanSkills {
 
    private static boolean isValidShadowDestination(ServerLevel level, ServerPlayer player, BlockPos pos,
       @Nullable LivingEntity sunlightShadowCaster) {
-      boolean naturalShadow = ShadowHassanRules.isShadowLight(level.getMaxLocalRawBrightness(pos));
-      boolean castShadow = sunlightShadowCaster != null
-         && pos.distSqr(sunlightShadowCaster.blockPosition()) <= 16.0;
-      if (!(naturalShadow || castShadow)
-         || !level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
-         || !level.getBlockState(pos).getCollisionShape(level, pos).isEmpty()
-         || !level.getBlockState(pos.above()).getCollisionShape(level, pos.above()).isEmpty()
-         || !level.getWorldBorder().isWithinBounds(pos)) return false;
-      Vec3 destination = Vec3.atBottomCenterOf(pos);
-      AABB moved = player.getBoundingBox().move(destination.subtract(player.position()));
-      return level.noCollision(player, moved);
+      return ShadowHassanRules.isValidShadowPoint(level, pos, player, sunlightShadowCaster);
    }
 
    private static boolean teleport(ServerPlayer player, @Nullable BlockPos destination) {

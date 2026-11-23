@@ -16,6 +16,7 @@ public record AiActionDescriptor(
    double maximumRange,
    double manaCost,
    double staminaCost,
+   int cooldownTicks,
    Timing timing,
    ThreatSpec threat,
    TerrainImpactProfile.Tier terrainTier,
@@ -58,6 +59,7 @@ public record AiActionDescriptor(
       Codec.DOUBLE.optionalFieldOf("maximum_range", 4.0).forGetter(AiActionDescriptor::maximumRange),
       Codec.DOUBLE.optionalFieldOf("mana_cost", 0.0).forGetter(AiActionDescriptor::manaCost),
       Codec.DOUBLE.optionalFieldOf("stamina_cost", 0.0).forGetter(AiActionDescriptor::staminaCost),
+      Codec.INT.optionalFieldOf("cooldown_ticks", 0).forGetter(AiActionDescriptor::cooldownTicks),
       TIMING_CODEC.optionalFieldOf("timing", new Timing(0, 1, 0)).forGetter(AiActionDescriptor::timing),
       THREAT_CODEC.optionalFieldOf("threat", ThreatSpec.NONE).forGetter(AiActionDescriptor::threat),
       TIER_CODEC.optionalFieldOf("terrain_impact", TerrainImpactProfile.Tier.NONE).forGetter(AiActionDescriptor::terrainTier),
@@ -70,10 +72,17 @@ public record AiActionDescriptor(
       maximumRange = Math.max(minimumRange, maximumRange);
       manaCost = Math.max(0.0, manaCost);
       staminaCost = Math.max(0.0, staminaCost);
+      cooldownTicks = Math.max(0, cooldownTicks);
       timing = timing == null ? new Timing(0, 1, 0) : timing;
       threat = normalizeThreat(tags, minimumRange, maximumRange, threat);
       terrainTier = terrainTier == null ? TerrainImpactProfile.Tier.NONE : terrainTier;
       maneuver = maneuver == null ? ManeuverSpec.NONE : maneuver;
+   }
+
+   public AiActionDescriptor(ResourceLocation id, Set<Tag> tags, double minimumRange, double maximumRange,
+                             double manaCost, double staminaCost, Timing timing, ThreatSpec threat,
+                             TerrainImpactProfile.Tier terrainTier, ManeuverSpec maneuver) {
+      this(id, tags, minimumRange, maximumRange, manaCost, staminaCost, 0, timing, threat, terrainTier, maneuver);
    }
 
    private static ThreatSpec normalizeThreat(Set<Tag> tags, double minimumRange, double maximumRange, ThreatSpec threat) {
@@ -105,7 +114,7 @@ public record AiActionDescriptor(
       return new ThreatSpec(shape, radius, length, danger, blockable, dodgeable, interruptible, collateralRadius);
    }
 
-   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON,
+   public enum Tag { MELEE, PROJECTILE, AREA, NOBLE_PHANTASM, GUARD, EVADE, INTERRUPT, HEAL, CONTROL, SUMMON, SUPPORT,
       LAUNCHER, PURSUIT, INTERCEPT, GAP_CLOSER, ANTI_AIR, COUNTER, FINISHER, TERRAIN_BREAK }
    public record Timing(int windupTicks, int activeTicks, int recoveryTicks) {
       public Timing { windupTicks=Math.max(0,windupTicks); activeTicks=Math.max(1,activeTicks); recoveryTicks=Math.max(0,recoveryTicks); }

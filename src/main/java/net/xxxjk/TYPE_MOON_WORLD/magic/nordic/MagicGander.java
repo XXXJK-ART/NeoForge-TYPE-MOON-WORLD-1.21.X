@@ -253,7 +253,7 @@ public final class MagicGander {
       return player.getPersistentData().getBoolean(TAG_CHARGING);
    }
 
-   private static void clearCharge(ServerPlayer player) {
+   public static void clearCharge(ServerPlayer player) {
       discardChargingPreview(player);
       CompoundTag tag = player.getPersistentData();
       tag.putBoolean(TAG_CHARGING, false);

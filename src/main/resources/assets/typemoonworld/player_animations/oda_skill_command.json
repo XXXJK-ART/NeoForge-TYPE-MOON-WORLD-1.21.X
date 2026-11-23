@@ -1,0 +1,16 @@
+{
+  "name": "oda_skill_command",
+  "version": 3,
+  "description": "Oda Nobunaga signals her matchlock formation into position.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 24,
+    "stopTick": 24,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -12, "yaw": -8, "roll": -8}, "leftArm": {"pitch": -10, "yaw": 8, "roll": 8}},
+      {"tick": 5, "rightArm": {"pitch": -83, "yaw": -18, "roll": -24}, "leftArm": {"pitch": -37, "yaw": 18, "roll": 26}, "body": {"yaw": -8}},
+      {"tick": 17, "rightArm": {"pitch": -83, "yaw": -18, "roll": -24}, "leftArm": {"pitch": -37, "yaw": 18, "roll": 26}, "body": {"yaw": -8}},
+      {"tick": 24, "rightArm": {"pitch": 0, "yaw": 0, "roll": 0}, "leftArm": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"yaw": 0}}
+    ]
+  }
+}

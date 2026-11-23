@@ -91,8 +91,17 @@ public class LancelotBerserkerEntity extends ServantEntity {
    }
 
    @Override
+   public void triggerBasicAttackAnimation() {
+      if (!this.isAlive() || this.isSpiritualTransitionLocked()) return;
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(
+         this, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD);
+      ServantVoiceHelper.tryPlayAttack(this);
+   }
+
+   @Override
    public void die(DamageSource cause) {
       LancelotCombatHelper.stopAroundight(this, false);
+      LancelotCombatHelper.clearManaReversal(this);
       super.die(cause);
    }
 
@@ -120,10 +129,16 @@ public class LancelotBerserkerEntity extends ServantEntity {
          this.setItemInHand(InteractionHand.MAIN_HAND,
             LancelotCombatHelper.knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), this));
       }
-      this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_HEAD.get()));
-      this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()));
-      this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get()));
-      this.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
+      if (!this.getItemBySlot(EquipmentSlot.HEAD).is(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_HEAD.get())) {
+         this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_HEAD.get()));
+      }
+      if (!this.getItemBySlot(EquipmentSlot.CHEST).is(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get())) {
+         this.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_CHEST.get()));
+      }
+      if (!this.getItemBySlot(EquipmentSlot.LEGS).is(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get())) {
+         this.setItemSlot(EquipmentSlot.LEGS, new ItemStack(ModItems.SERVANT_CARD_LANCELOT_BERSERKER_LEGS.get()));
+      }
+      if (!this.getItemBySlot(EquipmentSlot.FEET).isEmpty()) this.setItemSlot(EquipmentSlot.FEET, ItemStack.EMPTY);
       this.setDropChance(EquipmentSlot.HEAD, 0.0F);
       this.setDropChance(EquipmentSlot.CHEST, 0.0F);
       this.setDropChance(EquipmentSlot.LEGS, 0.0F);

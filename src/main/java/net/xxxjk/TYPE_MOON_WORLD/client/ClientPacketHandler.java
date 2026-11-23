@@ -142,12 +142,20 @@ public class ClientPacketHandler {
       CommandSpellVisualClient.apply(playerId, masterActive, commandSpells, style, poseActive);
    }
 
-   public static void handleConcealmentState(UUID entityId, boolean concealed) {
-      ObserverConcealmentClient.apply(entityId, concealed);
+   public static void handleConcealmentState(UUID entityId, boolean concealed, boolean perfect) {
+      ObserverConcealmentClient.apply(entityId, concealed, perfect);
    }
 
    public static void handleEnkiduDetectionHighlight(List<Integer> entityIds, int ticks) {
       EnkiduDetectionHighlightClient.apply(entityIds, ticks);
+   }
+
+   public static void handleServantPerception(List<net.xxxjk.TYPE_MOON_WORLD.network.ServantPerceptionMessage.Target> targets) {
+      ServantPerceptionHighlightClient.apply(targets);
+   }
+
+   public static void handleSharedSenses(boolean active, int entityId) {
+      SharedSensesClient.apply(active, entityId);
    }
 
    public static void handleDuelScreenFlash(int ticks, float strength) {

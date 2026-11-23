@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -1123,9 +1125,11 @@ public final class EnkiduCombatHelper {
       }
       look = look.lengthSqr() < 1.0E-4 ? new Vec3(0.0, 0.0, 1.0) : look.normalize();
       AABB sweepBox = entity.getBoundingBox().inflate(3.2, 1.0, 3.2).move(look.scale(1.25));
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, sweepBox,
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
          applyMeleeDamage(entity, living, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (0.58 + phase.id() * 0.08)), 0.28, false);
+      }
       }
       Vec3 fx = entity.position().add(look.scale(1.8)).add(0.0, entity.getBbHeight() * 0.48, 0.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, fx.x, fx.y, fx.z, 3, 0.0, 0.0, 0.0, 0.0);
@@ -1259,6 +1263,7 @@ public final class EnkiduCombatHelper {
       Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
       AABB area = entity.getBoundingBox().inflate(6.5, 1.4, 6.5).move(forward.scale(2.4));
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area,
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
@@ -1266,6 +1271,7 @@ public final class EnkiduCombatHelper {
             continue;
          }
          applyMeleeDamage(entity, living, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.25 + phase.id() * 0.13) + 8.0F), 0.7, false);
+      }
       }
       for (int i = -5; i <= 5; i++) {
          Vec3 fx = origin.add(forward.scale(2.2 + Math.abs(i) * 0.18)).add(side.scale(i * 0.58));
@@ -1369,12 +1375,14 @@ public final class EnkiduCombatHelper {
       entity.triggerNamedActionAnimation("presence_detection");
       VFXServerEffects.spawnReplayable(level, "servant_enkidu_presence_detection", entity, 0.65F);
       spawnPlantPatch(level, entity.position(), 5, 100, true);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : nearby) {
          living.invulnerableTime = 0;
          living.hurt(entity.damageSources().magic(), 10.0F + phase.id() * 3.0F);
          living.invulnerableTime = 0;
          living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0, false, true, true));
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 70, 0, false, true, true));
+      }
       }
       level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GRASS_BREAK, SoundSource.HOSTILE, 1.1F, 0.65F);
       return true;
@@ -1526,6 +1534,7 @@ public final class EnkiduCombatHelper {
             level.sendParticles(ParticleTypes.POOF, fx.x, fx.y, fx.z, 12, 0.35, 0.45, 0.35, 0.08);
             level.sendParticles(ParticleTypes.CRIT, fx.x, fx.y + 0.25, fx.z, 8, 0.22, 0.28, 0.22, 0.08);
             AABB hitBox = new AABB(surface).inflate(1.2, height + 0.6, 1.2);
+            try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, hitBox,
                e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
                living.invulnerableTime = 0;
@@ -1533,6 +1542,7 @@ public final class EnkiduCombatHelper {
                living.invulnerableTime = 0;
                living.setDeltaMovement(living.getDeltaMovement().add(forward.x * 0.22, 0.48, forward.z * 0.22));
                living.hurtMarked = true;
+            }
             }
          });
       }
@@ -2444,6 +2454,7 @@ public final class EnkiduCombatHelper {
 
    private static void applyEnumaAreaDamage(EnkiduEntity entity, ServerLevel level, Vec3 impact, double radius, float damage, LivingEntity directTarget) {
       AABB box = new AABB(impact, impact).inflate(radius);
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box,
          e -> e != entity && e.isAlive() && !e.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(e))) {
          double distance = Math.max(1.0, living.position().distanceTo(impact));
@@ -2454,6 +2465,7 @@ public final class EnkiduCombatHelper {
             }
             applyNoDefenseDamage(entity, living, scaled);
          }
+      }
       }
    }
 
@@ -2530,6 +2542,7 @@ public final class EnkiduCombatHelper {
    }
 
    private static void applyNoDefenseDamage(EnkiduEntity entity, LivingEntity target, float amount) {
+      if (ServantMasterDamageRouter.special(target, amount, defender -> applyNoDefenseDamage(entity, defender, amount))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

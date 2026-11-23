@@ -6,7 +6,7 @@
   "type": "active",
   "mp_cost": 150,
   "cooldown_ticks": 2400,
-  "duration_ticks": 1200,
+  "duration_ticks": 0,
   "effects": [],
   "description": "Manifests up to fifty captured souls in a moving fifty-block underworld.",
   "description_zh": "在随本体移动的五十格冥界中实体化至多五十个已捕获灵魂。"

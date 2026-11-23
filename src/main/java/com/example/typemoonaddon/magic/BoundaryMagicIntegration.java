@@ -1,5 +1,8 @@
 package com.example.typemoonaddon.magic;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicTranslationKeys;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.entity.BoundaryMarkEntity;
@@ -337,6 +340,7 @@ public final class BoundaryMagicIntegration {
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box,
                 entity -> entity.isAlive() && containsBoundary(mark, entity.position()) && isAffected(mark, entity));
         updatePresenceReports(mark, owner, level, entities);
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity entity : entities) {
             switch (mark.getBoundaryType()) {
                 case "sensing_boundary" -> {
@@ -351,7 +355,7 @@ public final class BoundaryMagicIntegration {
                 case "guard_boundary" -> {
                     if (entity != owner) {
                         float damage = (float) (0.75D + scaledPower(mark) * 0.45D * powerScale);
-                        entity.hurt(level.damageSources().magic(), damage);
+                        entity.hurt(MagecraftDamageSource.of(level.damageSources().magic(), mark.getBoundaryType(), owner), damage);
                         level.sendParticles(ParticleTypes.ENCHANTED_HIT, entity.getX(), entity.getY(0.55D),
                                 entity.getZ(), 8, 0.25D, 0.35D, 0.25D, 0.02D);
                     }
@@ -363,6 +367,7 @@ public final class BoundaryMagicIntegration {
                 default -> {
                 }
             }
+        }
         }
     }
 

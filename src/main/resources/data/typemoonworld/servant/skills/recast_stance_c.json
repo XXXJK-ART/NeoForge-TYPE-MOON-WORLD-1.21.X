@@ -1,11 +1,11 @@
 {
   "rank": "C",
   "id": "recast_stance_c",
-  "display_name": "recast stance c",
-  "display_name_zh": "recast stance c",
-  "type": "passive",
-  "mp_cost": 0,
-  "cooldown_ticks": 0,
-  "duration_ticks": 0,
+  "display_name": "Disengage C",
+  "display_name_zh": "重整旗鼓 C",
+  "type": "active",
+  "mp_cost": 18,
+  "cooldown_ticks": 1000,
+  "duration_ticks": 60,
   "effects": []
 }

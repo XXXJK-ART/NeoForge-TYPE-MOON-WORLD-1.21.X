@@ -10,12 +10,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = LancelotCombatHelper.class, remap = false)
 public abstract class LancelotCombatHelperMixin {
-    @Inject(method = "countHeldKnightOfOwnerItems", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "countHeldKnightOfOwnerItems(Lnet/minecraft/world/entity/LivingEntity;)I", at = @At("RETURN"), cancellable = true, require = 0)
+    private static void fatesupport$countNpcOwnedVehicles(
+            net.minecraft.world.entity.LivingEntity owner,
+            CallbackInfoReturnable<Integer> callbackInfo
+    ) {
+        if (!(owner instanceof ServerPlayer) && owner != null) {
+            callbackInfo.setReturnValue(Math.min(LancelotCombatHelper.KNIGHT_OF_OWNER_ITEM_LIMIT,
+                    callbackInfo.getReturnValueI() + SuperbWarfareLoader.countOwnedVehicles(owner)));
+        }
+    }
+
+    @Inject(method = "countHeldKnightOfOwnerItems(Lnet/minecraft/server/level/ServerPlayer;)I", at = @At("RETURN"), cancellable = true, require = 0)
     private static void fatesupport$countOwnedVehicles(
             ServerPlayer player,
             CallbackInfoReturnable<Integer> callbackInfo
     ) {
-        callbackInfo.setReturnValue(callbackInfo.getReturnValueI()
-                + SuperbWarfareLoader.countOwnedVehicles(player));
+        callbackInfo.setReturnValue(Math.min(LancelotCombatHelper.KNIGHT_OF_OWNER_ITEM_LIMIT,
+                callbackInfo.getReturnValueI() + SuperbWarfareLoader.countOwnedVehicles(player)));
     }
 }

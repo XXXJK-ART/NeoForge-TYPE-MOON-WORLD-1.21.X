@@ -4,8 +4,8 @@
   "display_name": "Cu Chulainn",
   "display_name_zh": "库·丘林",
   "class_type": "lancer",
-  "faction": "human",
-  "traits": ["divine", "servant", "humanoid", "living_human", "lancer", "male"],
+  "faction": "heaven",
+  "traits": ["divine", "servant", "humanoid", "lancer", "male", "heaven", "lawful", "balanced", "heaven_or_earth_servant", "beloved", "human_kind", "seven_knights"],
   "parameters": {
     "endurance": "C",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "C",
     "magic_plus": false,
     "luck": "E",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "B"
   },
   "model": {
     "geometry": "",
@@ -57,13 +58,15 @@
     "magic_resistance_c",
     "protection_from_arrows_b",
     "recast_stance_c",
+    "four_branches_a",
     "divinity_b"
   ],
-  "noble_phantasm": "",
+  "noble_phantasm": "cu_gae_bolg_thorn",
+  "noble_phantasms": ["cu_gae_bolg_thorn", "cu_gae_bolg_flight"],
   "personality": {
     "obedience": "cooperative",
     "principle": "orderly",
-    "morality": "neutral",
+    "morality": "balanced",
     "social": "enthusiastic",
     "combat": "frenzied",
     "special_principles": ["spare_canines"],

@@ -57,9 +57,6 @@ public final class JeanneAlterEntity extends ServantEntity {
       ItemStack current = this.getItemInHand(hand);
       if (!current.is(expected.getItem())) {
          this.setItemInHand(hand, expected);
-      } else if (forceClientSync) {
-         this.setItemInHand(hand, ItemStack.EMPTY);
-         this.setItemInHand(hand, current.copy());
       }
       this.setDropChance(hand == InteractionHand.MAIN_HAND
          ? net.minecraft.world.entity.EquipmentSlot.MAINHAND

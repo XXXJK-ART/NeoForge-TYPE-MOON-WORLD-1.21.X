@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,6 +21,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
 
 public class MedeaBeamEffectEntity extends Entity {
@@ -132,7 +136,9 @@ public class MedeaBeamEffectEntity extends Entity {
       }
 
       LivingEntity owner = this.ownerUuid != null && serverLevel.getEntity(this.ownerUuid) instanceof LivingEntity living ? living : null;
-      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource source = MagecraftDamageSource.of(
+         owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic(),
+         "medea_magic", MagicComplexity.HIGH_THAUMATURGY, owner);
       Set<Integer> hitIds = new HashSet<>();
       Vec3 start = this.position();
       Vec3 end = this.getEndPos();
@@ -144,6 +150,7 @@ public class MedeaBeamEffectEntity extends Entity {
       for (double step = 0.0; step <= 1.0; step += 0.08) {
          Vec3 sample = start.lerp(end, step);
          AABB segmentBox = new AABB(sample, sample).inflate(0.85, 0.85, 0.85);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : serverLevel.getEntitiesOfClass(
             LivingEntity.class,
             segmentBox,
@@ -157,6 +164,7 @@ public class MedeaBeamEffectEntity extends Entity {
                living.hurt(source, this.damage);
                living.invulnerableTime = 0;
             }
+         }
          }
       }
    }

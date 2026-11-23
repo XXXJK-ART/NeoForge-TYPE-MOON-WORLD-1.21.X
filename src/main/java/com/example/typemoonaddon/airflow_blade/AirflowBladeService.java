@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.airflow_blade;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.entity.AirflowBladeEntity;
 import com.example.typemoonaddon.kimaris.KimarisService;
 import com.example.typemoonaddon.magic.AirflowBladeMagic;
@@ -437,7 +438,7 @@ public final class AirflowBladeService {
                         && center.distanceToSqr(target.getBoundingBox().getCenter()) <= radius * radius);
         targets.sort(Comparator.comparingDouble(target ->
                 center.distanceToSqr(target.getBoundingBox().getCenter())));
-        DamageSource source = owner.damageSources().source(DamageTypes.MAGIC, owner);
+        DamageSource source = MagecraftDamageSource.of(owner.damageSources().source(DamageTypes.MAGIC, owner), "airflow_blade", owner);
         int limit = Math.min(MAX_EXPLOSION_TARGETS, targets.size());
         for (int index = 0; index < limit; index++) {
             LivingEntity target = targets.get(index);
@@ -454,7 +455,7 @@ public final class AirflowBladeService {
     }
 
     private static void damageSingle(LivingEntity owner, LivingEntity target, float damage) {
-        DamageSource source = owner.damageSources().source(DamageTypes.MAGIC, owner);
+        DamageSource source = MagecraftDamageSource.of(owner.damageSources().source(DamageTypes.MAGIC, owner), "airflow_blade", owner);
         int previousInvulnerability = target.invulnerableTime;
         target.invulnerableTime = 0;
         if (!target.hurt(source, damage)) {

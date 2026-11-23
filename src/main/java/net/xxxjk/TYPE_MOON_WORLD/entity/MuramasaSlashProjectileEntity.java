@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -102,6 +104,7 @@ public class MuramasaSlashProjectileEntity extends Projectile {
       double height = 2.0 + charge;
       AABB box = this.getBoundingBox().inflate(radius, height, radius);
 
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (Entity e : this.level().getEntities(this, box, ex -> ex instanceof LivingEntity && ex != this.getOwner() && !EntityUtils.isImmunePlayerTarget(ex))) {
          e.invulnerableTime = 0;
          e.hurt(this.damageSources().mobProjectile(this, (LivingEntity)this.getOwner()), damage);
@@ -110,6 +113,7 @@ public class MuramasaSlashProjectileEntity extends Projectile {
          if (this.getOwner() instanceof LivingEntity owner && e instanceof LivingEntity target) {
             EntityUtils.triggerSwarmAnger(this.level(), owner, target);
          }
+      }
       }
    }
 

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos.MutableBlockPos;
@@ -678,6 +680,7 @@ public class StoneManEntity extends PathfinderMob implements GeoEntity {
       DamageSource source = this.damageSources().mobAttack(this);
       AABB area = new AABB(center, center).inflate(3.8F, 1.6, 3.8F);
 
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : this.level().getEntitiesOfClass(LivingEntity.class, area)) {
          if (victim != this && victim.isAlive() && !victim.isAlliedTo(this) && !EntityUtils.isImmunePlayerTarget(victim)) {
             float damage = victim == primaryTarget ? this.rollDamage(1.0F) : this.rollDamage(0.75F);
@@ -697,6 +700,7 @@ public class StoneManEntity extends PathfinderMob implements GeoEntity {
                victim.hurtMarked = true;
             }
          }
+      }
       }
 
       if (this.level() instanceof ServerLevel serverLevel) {

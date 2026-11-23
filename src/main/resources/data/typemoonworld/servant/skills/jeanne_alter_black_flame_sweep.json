@@ -1,0 +1,11 @@
+{
+  "rank": "E",
+  "id": "jeanne_alter_black_flame_sweep",
+  "display_name": "Black Flame Sweep",
+  "display_name_zh": "黑焰横扫",
+  "type": "active",
+  "mp_cost": 28,
+  "cooldown_ticks": 180,
+  "duration_ticks": 14,
+  "description_zh": "锁定7格内目标，在其周围引爆半径3.8格的黑焰，主目标造成48点火焰伤害，波及目标造成21.6点并点燃5秒。"
+}

@@ -15,6 +15,7 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.entity.RoninEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.OkitaShinsengumiEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.magic.npc.NpcCombatTemperament;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -88,6 +89,9 @@ public final class KendoNpcCombatController {
          default -> 10;
       };
       if (proficiency >= 80.0) recovery = Math.max(7, recovery - 2);
+      if (npc instanceof OkitaShinsengumiEntity soldier) {
+         recovery = Math.max(recovery, 18 + soldier.getFormationIndex() % 5);
+      }
       npc.getPersistentData().putLong(NEXT_SKILL, now + recovery);
    }
 
@@ -127,9 +131,7 @@ public final class KendoNpcCombatController {
       npc.hurtMarked = true;
       float base = (float)Math.max(2.0, npc.getAttributeValue(Attributes.ATTACK_DAMAGE));
       float damage = base * switch (move) { case DRAW -> 1.25F; case THRUST -> 1.12F; case GUARD -> 0.95F; default -> 1.0F; };
-      target.invulnerableTime = 0;
       boolean hit = target.hurt(npc.damageSources().mobAttack(npc), damage);
-      target.invulnerableTime = 0;
       if (hit) {
          target.addEffect(new MobEffectInstance(ModMobEffects.STAGGER, move == Move.GUARD ? 5 : 8, 0, false, true, true));
          if (move == Move.DRAW) target.addEffect(new MobEffectInstance(ModMobEffects.OFF_BALANCE, 18, 0, false, true, true));

@@ -237,12 +237,8 @@ public final class GanryuNpcCombatController {
          npc.setDeltaMovement(npc.getDeltaMovement().add(direction.scale(-0.38)).add(0.0, 0.03, 0.0));
          npc.hurtMarked = true;
       }
-      if (move == GanryuMove.TSUBAME_GAESHI && npc.getRandom().nextFloat() >= 0.8F) {
-         fx(npc, target, true);
-         return;
-      }
       float damage = switch (move) {
-         case TSUBAME_GAESHI -> 120.0F;
+         case TSUBAME_GAESHI -> 450.0F;
          case FLOWER_BUD -> 20.0F;
          case SPARROW_SLASH -> 8.0F;
          case SPRING_BUD, SPRING_BUD_SECOND -> 9.0F;
@@ -262,14 +258,16 @@ public final class GanryuNpcCombatController {
          target.push(direction.x * 0.15, 0.35, direction.z * 0.15);
          target.hurtMarked = true;
       }
-      fx(npc, target, false);
+      if (move != GanryuMove.TSUBAME_GAESHI) fx(npc, target, false);
    }
 
    private static void hurtTarget(PathfinderMob npc, LivingEntity target, float damage, boolean tsubame) {
+      if (tsubame) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.performTsubameGaeshi(npc, target);
+         return;
+      }
       target.invulnerableTime = 0;
-      target.hurt(tsubame
-         ? npc.damageSources().source(GanryuCombatService.TSUBAME_DAMAGE, npc)
-         : npc.damageSources().mobAttack(npc), damage);
+      target.hurt(npc.damageSources().mobAttack(npc), damage);
       target.invulnerableTime = 0;
    }
 

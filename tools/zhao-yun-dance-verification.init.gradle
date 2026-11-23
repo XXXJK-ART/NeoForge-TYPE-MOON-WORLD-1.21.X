@@ -1,0 +1,11 @@
+// Keep this change's compilation and runtime checks separate from other workspace builds.
+allprojects {
+    beforeEvaluate { project ->
+        project.layout.buildDirectory = project.layout.projectDirectory.dir('build/zhao-yun-dance-verification')
+    }
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/zhao-yun-dance-gametest')
+        project.runs.client.workingDirectory project.file('build/zhao-yun-dance-client')
+        project.runs.server.workingDirectory project.file('build/zhao-yun-dance-server')
+    }
+}

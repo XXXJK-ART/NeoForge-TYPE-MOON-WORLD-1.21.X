@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLancelotBerserkerSkills;
@@ -25,6 +26,7 @@ public final class KnightArmoryService {
     public static final String SHOTS_TAG = "FateSupportKnightShots";
     public static final String EXPIRES_TAG = "FateSupportKnightItemExpires";
     private static final String UNLOCKS_TAG = "FateSupportKnightArmoryUnlocks";
+    private static final String UNLOCK_OVERRIDE_TAG = "FateSupportKnightArmoryUnlockOverride";
     private static final String COOLDOWN_PREFIX = "FateSupportKnightArmoryCooldown_";
     private static final int DEFAULT_UNLOCKS = KnightArmoryEntry.IRON_ROD.bit();
 
@@ -33,6 +35,7 @@ public final class KnightArmoryService {
 
     public static boolean open(ServerPlayer player) {
         if (!player.isAlive() || SpiritualizationService.isRestricted(player)
+                || LancelotCombatHelper.isUnable(player, player.level().getGameTime())
                 || !ServantCardLancelotBerserkerSkills.isActiveCard(player)) {
             return false;
         }
@@ -47,6 +50,7 @@ public final class KnightArmoryService {
     public static void select(ServerPlayer player, int networkId) {
         KnightArmoryEntry entry = KnightArmoryEntry.byNetworkId(networkId);
         if (entry == null || !player.isAlive() || SpiritualizationService.isRestricted(player)
+                || LancelotCombatHelper.isUnable(player, player.level().getGameTime())
                 || !ServantCardLancelotBerserkerSkills.isActiveCard(player)
                 || ServantCardLancelotBerserkerSkills.isAroundightActive(player)
                 || !isUnlocked(player, entry)) {
@@ -54,6 +58,10 @@ public final class KnightArmoryService {
         }
 
         long now = player.level().getGameTime();
+        if (entry == KnightArmoryEntry.A10) {
+            summonA10Skill(player);
+            return;
+        }
         if (entry != KnightArmoryEntry.IRON_ROD && !SuperbWarfareLoader.isAvailable()) {
             player.displayClientMessage(Component.translatable("message.fatesupport.knight_armory.integration_missing"), true);
             return;
@@ -74,7 +82,11 @@ public final class KnightArmoryService {
             ), true);
             return;
         }
-        if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
+        int requiredUnits = 1;
+        if (entry == KnightArmoryEntry.AWM || entry == KnightArmoryEntry.BARRETT) {
+            requiredUnits += ammunition(entry).getCount();
+        }
+        if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) < requiredUnits) {
             player.displayClientMessage(Component.translatable(
                     "message.fatesupport.knight_vehicle.capacity"), true);
             return;
@@ -82,15 +94,14 @@ public final class KnightArmoryService {
 
         double manaCost = entry.manaCost();
         TypeMoonWorldModVariables.PlayerVariables variables = variables(player);
+        var paymentBefore = ServantCardManaService.snapshot(player, variables);
         if (!ServantCardManaService.consume(player, variables, manaCost)) {
             return;
         }
 
         ItemStack result = ownerizedWeapon(player, entry);
         if (result.isEmpty()) {
-            variables.servant_card_mana = Math.min(variables.servant_card_max_mana,
-                    variables.servant_card_mana + manaCost);
-            variables.syncServantCardRuntime(player);
+            ServantCardManaService.restore(player, variables, paymentBefore);
             player.displayClientMessage(Component.translatable("message.fatesupport.knight_armory.integration_missing"), true);
             return;
         }
@@ -112,7 +123,9 @@ public final class KnightArmoryService {
     }
 
     public static boolean summonA10Skill(ServerPlayer player) {
-        if (!SuperbWarfareLoader.isAvailable()
+        if (!player.isAlive() || SpiritualizationService.isRestricted(player)
+                || LancelotCombatHelper.isUnable(player, player.level().getGameTime())
+                || !SuperbWarfareLoader.isAvailable()
                 || !ServantCardLancelotBerserkerSkills.isActiveCard(player)) {
             if (!SuperbWarfareLoader.isAvailable()) {
                 player.displayClientMessage(Component.translatable(
@@ -126,7 +139,8 @@ public final class KnightArmoryService {
             return false;
         }
         TypeMoonWorldModVariables.PlayerVariables variables = variables(player);
-        int cooldown = ServantCardTransformManager.getSkillCooldown(variables, 7);
+        long now = player.level().getGameTime();
+        long cooldown = cooldownUntil(player, KnightArmoryEntry.A10) - now;
         if (cooldown > 0) {
             player.displayClientMessage(Component.translatable(
                     "message.fatesupport.knight_armory.cooldown",
@@ -139,21 +153,19 @@ public final class KnightArmoryService {
                     "message.fatesupport.knight_armory.a10_exists"), true);
             return false;
         }
-        if (!ServantCardManaService.consume(player, variables, 450.0D)) {
+        if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
+            player.displayClientMessage(Component.translatable("message.fatesupport.knight_vehicle.capacity"), true);
+            return false;
+        }
+        var paymentBefore = ServantCardManaService.snapshot(player, variables);
+        if (!ServantCardManaService.consume(player, variables, KnightArmoryEntry.A10.manaCost())) {
             return false;
         }
         if (!SuperbWarfareLoader.summonA10(player, false)) {
-            variables.servant_card_mana = Math.min(variables.servant_card_max_mana,
-                    variables.servant_card_mana + 450.0D);
-            variables.syncServantCardRuntime(player);
+            ServantCardManaService.restore(player, variables, paymentBefore);
             return false;
         }
-        ServantCardTransformManager.setSkillCooldownUntil(
-                player,
-                variables,
-                7,
-                player.level().getGameTime() + 3_600L
-        );
+        startCooldown(player, KnightArmoryEntry.A10);
         return true;
     }
 
@@ -173,6 +185,10 @@ public final class KnightArmoryService {
             SuperbWarfareLoader.initializeOwnerizedGun(held);
             return true;
         }
+        if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
+            player.displayClientMessage(Component.translatable("message.fatesupport.knight_vehicle.capacity"), true);
+            return false;
+        }
         ItemStack ownerized = markOwnerizedGun(LancelotCombatHelper.knightOfOwnerStack(held.copy(), player), player);
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ownerized);
         KnightArmoryEntry entry = entryFor(ownerized);
@@ -191,11 +207,25 @@ public final class KnightArmoryService {
     }
 
     public static int unlockedMask(ServerPlayer player) {
-        int mask = player.getPersistentData().getInt(UNLOCKS_TAG) | DEFAULT_UNLOCKS;
-        if (!SuperbWarfareLoader.isAvailable()) {
-            return DEFAULT_UNLOCKS;
+        int mask = DEFAULT_UNLOCKS;
+        if (SuperbWarfareLoader.isAvailable()) {
+            for (KnightArmoryEntry entry : KnightArmoryEntry.values()) {
+                if (entry == KnightArmoryEntry.A10 || BuiltInRegistries.ITEM.containsKey(entry.itemId())) {
+                    mask |= entry.bit();
+                }
+            }
         }
-        return mask;
+        return player.getPersistentData().getBoolean(UNLOCK_OVERRIDE_TAG)
+                ? mask & (player.getPersistentData().getInt(UNLOCKS_TAG) | DEFAULT_UNLOCKS) : mask;
+    }
+
+    public static long cooldownUntil(LivingEntity owner, KnightArmoryEntry entry) {
+        return owner.getPersistentData().getLong(COOLDOWN_PREFIX + entry.key());
+    }
+
+    public static void startCooldown(LivingEntity owner, KnightArmoryEntry entry) {
+        owner.getPersistentData().putLong(COOLDOWN_PREFIX + entry.key(),
+                owner.level().getGameTime() + entry.cooldownTicks());
     }
 
     public static void setAllUnlocked(ServerPlayer player, boolean unlocked) {
@@ -206,6 +236,7 @@ public final class KnightArmoryService {
             }
         }
         player.getPersistentData().putInt(UNLOCKS_TAG, mask);
+        player.getPersistentData().putBoolean(UNLOCK_OVERRIDE_TAG, true);
         player.displayClientMessage(Component.translatable(
                 unlocked ? "message.fatesupport.knight_armory.unlocked_all"
                         : "message.fatesupport.knight_armory.cleared"
@@ -226,10 +257,10 @@ public final class KnightArmoryService {
         return stack;
     }
 
-    public static ItemStack markOwnerizedGun(ItemStack stack, ServerPlayer owner) {
+    public static ItemStack markOwnerizedGun(ItemStack stack, LivingEntity owner) {
         markOwnerized(stack, owner);
         CompoundTag tag = customData(stack);
-        tag.putLong(EXPIRES_TAG, owner.level().getGameTime() + 600L);
+        tag.putLong(EXPIRES_TAG, owner.level().getGameTime() + KnightArmoryRules.WEAPON_DURATION_TICKS);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         return stack;
     }
@@ -288,17 +319,15 @@ public final class KnightArmoryService {
         return false;
     }
 
-    private static ItemStack ownerizedWeapon(ServerPlayer player, KnightArmoryEntry entry) {
+    public static ItemStack ownerizedWeapon(LivingEntity player, KnightArmoryEntry entry) {
         Item item = entry.itemId() == null ? null : BuiltInRegistries.ITEM.get(entry.itemId());
         if (item == null || !BuiltInRegistries.ITEM.containsKey(entry.itemId())) {
             return ItemStack.EMPTY;
         }
-        ItemStack stack = markOwnerizedGun(
-                LancelotCombatHelper.knightOfOwnerStack(new ItemStack(item), player),
-                player
-        );
+        ItemStack stack = LancelotCombatHelper.knightOfOwnerStack(new ItemStack(item), player);
         stack = ServantCardTransformManager.markGeneratedItem(stack, true, false);
-        markOwnerizedGun(stack, player);
+        if (entry == KnightArmoryEntry.IRON_ROD) markOwnerized(stack, player);
+        else markOwnerizedGun(stack, player);
         SuperbWarfareLoader.initializeOwnerizedGun(stack);
         return stack;
     }
@@ -308,7 +337,8 @@ public final class KnightArmoryService {
         if (ammo.isEmpty()) {
             return ammo;
         }
-        return markOwnerizedAmmo(LancelotCombatHelper.knightOfOwnerStack(ammo, player), player);
+        return markOwnerizedAmmo(ServantCardTransformManager.markGeneratedItem(
+                LancelotCombatHelper.knightOfOwnerStack(ammo, player), true, false), player);
     }
 
     private static ItemStack ammunition(KnightArmoryEntry entry) {

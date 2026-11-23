@@ -1,0 +1,12 @@
+{
+  "rank": "C",
+  "id": "self_modification_c",
+  "display_name": "Self-Modification C",
+  "display_name_zh": "自我改造 C",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [{"effect_type":"self_modification_stages","params":{"trigger":"servant_kill","max_stages":3,"max_health_per_stage":50.0,"attack_per_stage":5.0,"heal_per_stage":50.0}}],
+  "description_zh": "击杀一名从者后被动进化一次，最多三次；每阶增加50最大生命、5攻击并恢复50生命。"
+}

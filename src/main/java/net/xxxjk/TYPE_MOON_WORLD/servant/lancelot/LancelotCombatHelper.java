@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.lancelot;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Comparator;
 import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
@@ -63,8 +65,14 @@ public final class LancelotCombatHelper {
    public static final String LAST_THROW_TAG = "LancelotLastThrow";
    public static final String LAST_GROUND_SLAM_TAG = "LancelotLastGroundSlam";
    public static final String AROUNDIGHT_HEALTH_SYNCED_TAG = "LancelotAroundightHealthSynced";
+   public static final String KNIGHT_OF_OWNER_RESERVED_TAG = "LancelotKnightOfOwnerReserved";
+   public static final String MANA_REVERSAL_UNTIL_TAG = "LancelotManaReversalUntil";
+   public static final String MANA_REVERSAL_COOLDOWN_UNTIL_TAG = "LancelotManaReversalCooldownUntil";
    public static final double KNIGHT_OF_OWNER_MP_COST = 10.0;
    public static final int KNIGHT_OF_OWNER_ITEM_LIMIT = 30;
+   public static final double MANA_REVERSAL_MP_COST = 15.0;
+   public static final int MANA_REVERSAL_DURATION_TICKS = 240;
+   public static final int MANA_REVERSAL_COOLDOWN_TICKS = 360;
    public static final double ETERNAL_ARMS_MASTERSHIP_RECOVERY_MULTIPLIER = 2.0;
    public static final double ETERNAL_ARMS_MASTERSHIP_MAX_RECOVERY_MULTIPLIER = 2.0;
    public static final double ETERNAL_ARMS_MASTERSHIP_WEAPON_DAMAGE_MULTIPLIER = 1.5;
@@ -72,11 +80,11 @@ public final class LancelotCombatHelper {
    public static final float ETERNAL_ARMS_MASTERSHIP_BYPASS_GUARD_CHANCE = 0.30F;
    public static final double AROUNDIGHT_CORE_ATTRIBUTE_MULTIPLIER = 2.0;
    public static final double AROUNDIGHT_DRAW_MP_COST = 50.0;
-   public static final double AROUNDIGHT_DRAIN_MP = 5.0;
+   public static final double AROUNDIGHT_DRAIN_MP = 15.0;
    public static final int AROUNDIGHT_DRAIN_INTERVAL = 20;
    public static final int UNABLE_DURATION_TICKS = 45;
    public static final int PROJECTILE_INTERCEPT_COOLDOWN = 2;
-   public static final int THROW_COOLDOWN = 76;
+   public static final int THROW_COOLDOWN = 140;
    public static final double KNIGHT_OF_OWNER_THROW_MAX_DISTANCE = 200.0;
    private static final ResourceLocation AROUNDIGHT_DAMAGE_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "lancelot_aroundight_damage");
@@ -90,6 +98,8 @@ public final class LancelotCombatHelper {
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "lancelot_aroundight_attack_speed");
    private static final ResourceLocation KILL_BUFF_DAMAGE_ID =
       ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "lancelot_battle_kill_damage");
+   private static final ResourceLocation MANA_REVERSAL_DAMAGE_ID =
+      ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "lancelot_mana_reversal_damage");
    private static final DustParticleOptions DARK_DUST = new DustParticleOptions(new Vector3f(0.03F, 0.02F, 0.04F), 1.25F);
    private static final DustParticleOptions PURPLE_DUST = new DustParticleOptions(new Vector3f(0.28F, 0.08F, 0.48F), 1.0F);
 
@@ -108,6 +118,7 @@ public final class LancelotCombatHelper {
       tickAroundight(entity, level, now);
       ensureCombatLoadout(entity);
       tickBlessingBuff(entity, now);
+      tickManaReversal(entity, now);
       maybeInterceptProjectile(entity, level, now);
       spawnModeParticles(entity, level);
    }
@@ -122,6 +133,30 @@ public final class LancelotCombatHelper {
 
    public static boolean canUseKnightOfOwner(LivingEntity entity) {
       return entity != null && !isAroundightMode(entity);
+   }
+
+   public static boolean tryManaReversal(LancelotBerserkerEntity entity, ServerLevel level) {
+      long now = level.getGameTime();
+      CompoundTag data = entity.getPersistentData();
+      if (now < data.getLong(MANA_REVERSAL_UNTIL_TAG)
+         || now < data.getLong(MANA_REVERSAL_COOLDOWN_UNTIL_TAG)
+         || entity.getCurrentMp() < MANA_REVERSAL_MP_COST) return false;
+      entity.setCurrentMp(entity.getCurrentMp() - MANA_REVERSAL_MP_COST);
+      data.putLong(MANA_REVERSAL_UNTIL_TAG, now + MANA_REVERSAL_DURATION_TICKS);
+      data.putLong(MANA_REVERSAL_COOLDOWN_UNTIL_TAG, now + MANA_REVERSAL_COOLDOWN_TICKS);
+      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID, 0.20,
+         AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      level.sendParticles(PURPLE_DUST, entity.getX(), entity.getY() + 1.0, entity.getZ(), 26,
+         0.45, 0.65, 0.45, 0.06);
+      return true;
+   }
+
+   public static void clearManaReversal(LivingEntity entity) {
+      if (entity == null) return;
+      removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID);
+      CompoundTag data = entity.getPersistentData();
+      data.remove(MANA_REVERSAL_UNTIL_TAG);
+      data.remove(MANA_REVERSAL_COOLDOWN_UNTIL_TAG);
    }
 
    public static boolean hasEternalArmsMastership(LivingEntity entity) {
@@ -252,11 +287,37 @@ public final class LancelotCombatHelper {
       for (ItemStack stack : player.getInventory().offhand) {
          if (isKnightOfOwnerOwnedBy(stack, player)) count += stack.getCount();
       }
-      return Math.min(KNIGHT_OF_OWNER_ITEM_LIMIT, count);
+      count += player.getPersistentData().getInt(KNIGHT_OF_OWNER_RESERVED_TAG);
+      return Math.min(KNIGHT_OF_OWNER_ITEM_LIMIT, Math.max(0, count));
+   }
+
+   public static int countHeldKnightOfOwnerItems(LivingEntity owner) {
+      if (owner instanceof ServerPlayer player) return countHeldKnightOfOwnerItems(player);
+      if (owner == null) return 0;
+      int count = 0;
+      if (isKnightOfOwnerOwnedBy(owner.getMainHandItem(), owner)) count += owner.getMainHandItem().getCount();
+      if (isKnightOfOwnerOwnedBy(owner.getOffhandItem(), owner)) count += owner.getOffhandItem().getCount();
+      count += owner.getPersistentData().getInt(KNIGHT_OF_OWNER_RESERVED_TAG);
+      return Math.min(KNIGHT_OF_OWNER_ITEM_LIMIT, Math.max(0, count));
    }
 
    public static int remainingKnightOfOwnerCapacity(ServerPlayer player) {
       return Math.max(0, KNIGHT_OF_OWNER_ITEM_LIMIT - countHeldKnightOfOwnerItems(player));
+   }
+
+   public static int remainingKnightOfOwnerCapacity(LivingEntity owner) {
+      return Math.max(0, KNIGHT_OF_OWNER_ITEM_LIMIT - countHeldKnightOfOwnerItems(owner));
+   }
+
+   /** Reserve a generated counter item so projectiles cannot bypass the shared 30-item budget. */
+   public static int reserveKnightOfOwnerItems(LivingEntity owner, int requested) {
+      if (owner == null || requested <= 0) return 0;
+      int accepted = Math.min(requested, remainingKnightOfOwnerCapacity(owner));
+      if (accepted <= 0) return 0;
+      CompoundTag data = owner.getPersistentData();
+      data.putInt(KNIGHT_OF_OWNER_RESERVED_TAG,
+         Math.min(KNIGHT_OF_OWNER_ITEM_LIMIT, data.getInt(KNIGHT_OF_OWNER_RESERVED_TAG) + accepted));
+      return accepted;
    }
 
    public static int ownerizableCount(ServerPlayer player, ItemStack stack) {
@@ -334,6 +395,7 @@ public final class LancelotCombatHelper {
       if (now - data.getLong(LAST_THROW_TAG) < THROW_COOLDOWN) return false;
       ItemStack held = entity.getMainHandItem();
       if (held.isEmpty()) return false;
+      if (remainingKnightOfOwnerCapacity(entity) <= 0 && !isKnightOfOwner(held)) return false;
       ItemStack thrown = held.copy();
       thrown.setCount(1);
       knightOfOwnerStack(thrown, entity);
@@ -352,6 +414,7 @@ public final class LancelotCombatHelper {
       level.addFreshEntity(projectile);
       data.putLong(LAST_THROW_TAG, now);
       entity.setItemInHand(InteractionHand.MAIN_HAND, knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), entity));
+      reserveKnightOfOwnerItems(entity, 1);
       ServantVoiceHelper.tryPlayAttack(entity);
       level.playSound(null, entity.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 0.9F, 0.72F);
       return true;
@@ -370,6 +433,7 @@ public final class LancelotCombatHelper {
       double radius = phaseTwo ? 5.8 : 4.6;
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * (phaseTwo ? 1.35 : 1.05));
       AABB area = entity.getBoundingBox().inflate(radius, 2.25, radius);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, candidate -> isSlamTarget(entity, candidate))) {
          living.invulnerableTime = 0;
          living.hurt(entity.damageSources().mobAttack(entity), damage);
@@ -382,8 +446,10 @@ public final class LancelotCombatHelper {
             living.push(0.0, phaseTwo ? 0.65 : 0.45, 0.0);
          }
       }
-      TerrainImpactProfile profile = TerrainImpactProfile.of(phaseTwo ? TerrainImpactProfile.Tier.HEAVY : TerrainImpactProfile.Tier.MEDIUM);
-      TerrainImpactService.impact(level, entity, entity.position().add(0.0, 0.18, 0.0), profile, TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      }
+      TerrainImpactService.impactHeraclesGround(level, entity, entity.position(),
+         new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY, radius, 35.0F, 48, 80),
+         TerrainImpactService.Permission.NPC, 2);
       level.sendParticles(DARK_DUST, entity.getX(), entity.getY() + 0.35, entity.getZ(),
          phaseTwo ? 90 : 62, radius * 0.35, 0.22, radius * 0.35, 0.11);
       level.playSound(null, entity.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, phaseTwo ? 1.7F : 1.35F, 0.42F);
@@ -426,15 +492,18 @@ public final class LancelotCombatHelper {
       GilgameshGateWeaponProjectileEntity gateProjectile = projectile instanceof GilgameshGateWeaponProjectileEntity gate ? gate : null;
       ItemStack stack = stackForProjectile(projectile, entity);
       projectile.discard();
-      if (target != null && canOwnerize(stack) && entity.getCurrentMp() >= KNIGHT_OF_OWNER_MP_COST) {
+      boolean hasCapacity = remainingKnightOfOwnerCapacity(entity) > 0;
+      if (target != null && hasCapacity && canOwnerize(stack) && entity.getCurrentMp() >= KNIGHT_OF_OWNER_MP_COST) {
          entity.setCurrentMp(entity.getCurrentMp() - KNIGHT_OF_OWNER_MP_COST);
          Vec3 start = entity.getEyePosition().add(entity.getLookAngle().scale(0.5));
          Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
          Vec3 dir = aim.subtract(start);
          if (dir.lengthSqr() > 1.0E-4) {
             if (gateProjectile != null) {
+               reserveKnightOfOwnerItems(entity, 1);
                spawnKnightOfOwnerGateCounter(level, entity, target, start, dir, gateProjectile);
             } else {
+               reserveKnightOfOwnerItems(entity, 1);
                EmiyaThrownWeaponEntity counter = new EmiyaThrownWeaponEntity(level, entity, stack);
                counter.setPos(start);
                counter.setMaxFlightDistance(KNIGHT_OF_OWNER_THROW_MAX_DISTANCE);
@@ -534,6 +603,16 @@ public final class LancelotCombatHelper {
          return;
       }
       updateKillBuff(entity, data.getInt(BATTLE_KILLS_TAG));
+   }
+
+   private static void tickManaReversal(LancelotBerserkerEntity entity, long now) {
+      if (now >= entity.getPersistentData().getLong(MANA_REVERSAL_UNTIL_TAG)) {
+         removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID);
+         entity.getPersistentData().remove(MANA_REVERSAL_UNTIL_TAG);
+      } else {
+         updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID, 0.20,
+            AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+      }
    }
 
    private static void updateKillBuff(LancelotBerserkerEntity entity, int kills) {

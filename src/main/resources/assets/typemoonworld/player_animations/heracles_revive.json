@@ -1,0 +1,104 @@
+{
+  "name": "heracles_revive",
+  "version": 3,
+  "description": "Short physical recovery; locomotion and combat remain authoritative.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 7,
+    "stopTick": 7,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 18,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": 20,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -22,
+          "yaw": -8,
+          "roll": -8
+        },
+        "leftArm": {
+          "pitch": -20,
+          "yaw": 8,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 2,
+        "body": {
+          "pitch": 28,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": 28,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -32,
+          "yaw": -12,
+          "roll": -10
+        },
+        "leftArm": {
+          "pitch": -30,
+          "yaw": 12,
+          "roll": 10
+        }
+      },
+      {
+        "tick": 3,
+        "body": {
+          "pitch": -6,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": -10,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -14,
+          "yaw": -8,
+          "roll": -8
+        },
+        "leftArm": {
+          "pitch": -12,
+          "yaw": 8,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 7,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "head": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "divinity_d",
+  "rank": "D",
+  "display_name": "Divinity D",
+  "display_name_zh": "神性 D",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [
+    {
+      "effect_type": "attribute_bonus",
+      "params": {
+        "health": 40,
+        "attack": 4,
+        "speed_additive": 0.02
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@
   "display_name": "Hassan of the Shadow",
   "display_name_zh": "\u5e7d\u5f0b\u4e4b\u54c8\u6851",
   "class_type": "assassin",
-  "faction": "earth",
+  "faction": "human",
   "traits": [
     "servant",
     "humanoid",
@@ -12,10 +12,9 @@
     "male",
     "lawful",
     "evil",
-    "conceptual_existence",
-    "shadow_servant",
-    "true_assassin",
-    "old_man_of_the_mountain"
+    "human_kind",
+    "seven_knights",
+    "ea_special"
   ],
   "parameters": {
     "endurance": "C",
@@ -27,7 +26,8 @@
     "magic": "D",
     "magic_plus": false,
     "luck": "E",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "EX"
   },
   "model": {
     "geometry": "typemoonworld:geo/empty.geo.json",
@@ -49,7 +49,8 @@
       "shadow_flurry",
       "shadow_bind",
       "shadow_slash",
-      "shadow_reposition"
+      "shadow_reposition",
+      "shadow_possession"
     ]
   },
   "skills": [

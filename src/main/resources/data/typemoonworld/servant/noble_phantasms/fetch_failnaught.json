@@ -5,7 +5,7 @@
   "display_name_zh": "痛幻哭奏",
   "type": "anti_unit",
   "rank": "E",
-  "mp_cost": 50,
+  "mp_cost": 35,
   "over_charge_supported": false,
   "over_charge_levels": 1,
   "base_damage_multiplier": 1.0,
@@ -13,10 +13,7 @@
   "effects": [
     {
       "effect_type": "curse_bombardment",
-      "params": {
-        "damage_per_medium": 50,
-        "burst_double_at_curse_layers": 5
-      }
+      "params": {}
     }
   ],
   "special_attack_conditions": ["curse_medium"],

@@ -1,9 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -19,23 +16,17 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.BattlefieldAreaService;
 import net.xxxjk.TYPE_MOON_WORLD.entity.UBWProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
-import net.xxxjk.TYPE_MOON_WORLD.init.ModSounds;
-import net.xxxjk.TYPE_MOON_WORLD.item.custom.TsumukariMuramasaItem;
-import net.xxxjk.TYPE_MOON_WORLD.magic.MuramasaSlashHandler;
 import net.xxxjk.TYPE_MOON_WORLD.network.OpenMuramasaForgeScreenMessage;
 import net.xxxjk.TYPE_MOON_WORLD.network.ModNetwork;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaSwordTechnique;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
-import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
 public final class ServantCardSenkoMuramasaSkills {
    public static final String WORKSHOP_ACTIVE = "ServantCardMuramasaWorkshopActive";
@@ -69,13 +60,18 @@ public final class ServantCardSenkoMuramasaSkills {
          vars.syncMana(player);
       }
       if (data.getBoolean(NP_PENDING)) {
-         player.setDeltaMovement(Vec3.ZERO);
+         if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.chanting(player)) cancelNoblePhantasm(player);
+         else {
+            player.setDeltaMovement(Vec3.ZERO);
+            player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 6, 10, false, false, false));
+         }
       }
    }
 
    public static void clear(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars) {
       if (player == null) return;
       endWorkshop(player);
+      cancelNoblePhantasm(player);
       CompoundTag data = player.getPersistentData();
       for (String key : List.of(TRIAL_UNTIL, KARMA_UNTIL, FLAME_UNTIL, TEMPER_UNTIL, NP_PENDING)) {
          data.remove(key);
@@ -99,6 +95,7 @@ public final class ServantCardSenkoMuramasaSkills {
    }
 
    public static boolean forge(ServerPlayer player, int choice) {
+      if (ServantMasterCarryService.isCarryingMaster(player)) return false;
       if (!isMuramasa(player) || choice < 0 || choice > 3) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       if (!ServantCardManaService.consume(player, vars, 10.0)) return false;
@@ -233,89 +230,28 @@ public final class ServantCardSenkoMuramasaSkills {
       return true;
    }
 
+   public static boolean performSwordTechnique(ServerPlayer player, MuramasaSwordTechnique technique) {
+      return MuramasaCombatHelper.performSwordTechnique(player, technique);
+   }
+
    public static boolean performNoblePhantasm(ServerPlayer player) {
       if (!isMuramasa(player) || isNpUsed(player) || !(player.level() instanceof ServerLevel level)) return false;
-      player.getPersistentData().putBoolean(NP_USED, true);
+      long voiceEnd = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.voiceEnd(player);
+      if (voiceEnd <= level.getGameTime()) return false;
       player.getPersistentData().putBoolean(NP_PENDING, true);
-      player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 293, 10, false, false, false));
-      ServantCardVoiceHelper.tryPlaySkill(player, "muramasa_no_gen_kensai");
-      expandField(level, player, 0);
-      TYPE_MOON_WORLD.queueServerWork(200, () -> revealTsumukari(player));
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaNoblePhantasmPresentation.begin(player, (int)(voiceEnd - level.getGameTime()));
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(player, () -> {
+         if (!isMuramasa(player) || !player.getPersistentData().getBoolean(NP_PENDING)) return;
+         net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaNoblePhantasmPresentation.complete(player);
+         player.getPersistentData().putBoolean(NP_USED, true);
+         player.getPersistentData().putBoolean(NP_PENDING, false);
+      });
       return true;
    }
 
-   private static void expandField(ServerLevel level, ServerPlayer player, int radius) {
-      if (!player.isAlive() || !player.getPersistentData().getBoolean(NP_PENDING)) return;
-      double r = Math.min(25.0, radius);
-      int points = Math.max(24, (int)(r * 5.0));
-      for (int i = 0; i < points; i++) {
-         double angle = Math.PI * 2.0 * i / points;
-         double x = player.getX() + Math.cos(angle) * r;
-         double z = player.getZ() + Math.sin(angle) * r;
-         level.sendParticles(ParticleTypes.FLAME, x, player.getY() + 0.1, z, 1, 0.0, 0.08, 0.0, 0.02);
-         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, player.getY() + 0.35, z, 1, 0.0, 0.04, 0.0, 0.01);
-      }
-      level.sendParticles(ParticleTypes.ENCHANT, player.getX(), player.getY() + 0.5, player.getZ(), 14, Math.max(0.2, r * 0.45), 0.5, Math.max(0.2, r * 0.45), 0.04);
-      if (radius < 25) TYPE_MOON_WORLD.queueServerWork(8, () -> expandField(level, player, radius + 1));
-   }
-
-   private static void revealTsumukari(ServerPlayer player) {
-      if (!player.isAlive() || !(player.level() instanceof ServerLevel level)) return;
-      player.setItemInHand(InteractionHand.MAIN_HAND, MuramasaCombatHelper.projectedStack(ModItems.TSUMUKARI_MURAMASA.get()));
-      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 2, 0, 0, 0, 0);
-      level.sendParticles(ParticleTypes.END_ROD, player.getX(), player.getY() + 1.0, player.getZ(), 120, 1.5, 1.2, 1.5, 0.15);
-      level.sendParticles(ParticleTypes.SNOWFLAKE, player.getX(), player.getY() + 1.0, player.getZ(), 180, 12.0, 3.0, 12.0, 0.12);
-      replaceTemporaryRedField(level, player, 16, 16 * 20);
-      player.getPersistentData().putBoolean(NP_PENDING, false);
-      for (int i = 25; i >= 0; i--) {
-         final int step = i;
-         TYPE_MOON_WORLD.queueServerWork((25 - i) * 3, () -> {
-            if (!player.isAlive()) return;
-            double r = step;
-            int points = Math.max(20, (int)(r * 4.0));
-            for (int j = 0; j < points; j++) {
-               double angle = Math.PI * 2.0 * j / points;
-               level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, player.getX() + Math.cos(angle) * r, player.getY() + 0.15,
-                  player.getZ() + Math.sin(angle) * r, 1, 0, 0.04, 0, 0.01);
-            }
-         });
-      }
-   }
-
-   private static void replaceTemporaryRedField(ServerLevel level, ServerPlayer player, int radius, int restoreDelay) {
-      Map<BlockPos, BlockState> originals = new HashMap<>();
-      BlockPos center = player.blockPosition();
-      int radiusSquared = radius * radius;
-      int limit = 900;
-      for (int dx = -radius; dx <= radius && originals.size() < limit; dx++) {
-         for (int dz = -radius; dz <= radius && originals.size() < limit; dz++) {
-            if (dx * dx + dz * dz > radiusSquared) {
-               continue;
-            }
-            int x = center.getX() + dx;
-            int z = center.getZ() + dz;
-            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-            BlockPos pos = new BlockPos(x, y, z);
-            if (!level.hasChunkAt(pos) || level.getBlockEntity(pos) != null) {
-               continue;
-            }
-            BlockState original = level.getBlockState(pos);
-            BlockState replacement = Blocks.RED_SANDSTONE.defaultBlockState();
-            if (original.is(Blocks.BEDROCK) || original.equals(replacement) || original.getDestroySpeed(level, pos) < 0.0F) {
-               continue;
-            }
-            if (level.setBlock(pos, replacement, 3)) {
-               originals.put(pos.immutable(), original);
-            }
-         }
-      }
-      TYPE_MOON_WORLD.queueServerWork(restoreDelay, () -> {
-         for (Map.Entry<BlockPos, BlockState> entry : originals.entrySet()) {
-            if (level.hasChunkAt(entry.getKey()) && level.getBlockState(entry.getKey()).is(Blocks.RED_SANDSTONE)) {
-               level.setBlock(entry.getKey(), entry.getValue(), 3);
-            }
-         }
-      });
+   public static void cancelNoblePhantasm(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.entity.MuramasaNoblePhantasmPresentation.cancel(player);
+      player.getPersistentData().remove(NP_PENDING);
    }
 
    private static void refreshModifiers(ServerPlayer player, long now) {

@@ -4,8 +4,8 @@
   "display_name": "Artoria Pendragon",
   "display_name_zh": "阿尔托莉雅·潘德拉贡",
   "class_type": "saber",
-  "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "saber", "female", "lawful", "good"],
+  "faction": "earth",
+  "traits": ["servant", "humanoid", "human_kind", "saber", "female", "earth", "heaven_or_earth_servant", "lawful", "good", "riding", "dragon", "arthur", "king", "round_table", "seven_knights"],
   "parameters": {
     "endurance": "B",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "A",
     "magic_plus": false,
     "luck": "A",
-    "luck_plus": true
+    "luck_plus": true,
+    "noble_phantasm_rank": "A++"
   },
   "model": {
     "geometry": "",
@@ -53,10 +54,11 @@
     "riding_b",
     "artoria_instinct_a",
     "mana_burst_a",
-    "charisma_b",
+    "leadership_b",
     "dragon_core"
   ],
   "noble_phantasm": "excalibur_beam",
+  "noble_phantasms": ["excalibur_beam", "invisible_air", "avalon_artoria"],
   "personality": {
     "obedience": "compliant",
     "principle": "orderly",

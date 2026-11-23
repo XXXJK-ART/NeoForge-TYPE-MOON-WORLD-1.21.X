@@ -1,7 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,7 +11,6 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceRank;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantDamageCalculator;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
-import net.xxxjk.TYPE_MOON_WORLD.servant.entity.SasakiKojiroCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantFaction;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
@@ -51,6 +49,7 @@ public final class ServantCardTraitService {
       data.putBoolean("TypeMoonServantLike", true);
 
       applyPassiveSkillTags(player, definition);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(player);
    }
 
    public static void tick(ServerPlayer player) {
@@ -110,19 +109,20 @@ public final class ServantCardTraitService {
 
       double multiplier = 1.0;
       multiplier *= ServantDamageCalculator.computeFactionMultiplier(attackerDefinition.faction(), ServantIdentityHelper.factionOf(defender));
-      multiplier *= ServantDamageCalculator.computeTraitMultiplier(
-         specialAttackConditions(attackerDefinition),
-         ServantIdentityHelper.traitsOf(defender)
-      );
+      // Target-specific bonuses belong to the skill or NP that defines them.
 
       CompoundTag data = attacker.getPersistentData();
-      if (data.getBoolean("MadEnhancementActive")) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterSkills.isJeanneAlter(attacker)) {
+         if (attacker.getRandom().nextFloat() < 0.17F) multiplier *= 2.77D;
+         return (float)Math.max(0.0, amount * multiplier);
+      }
+      if (data.getBoolean("MadEnhancementActive") && net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.highest(attackerDefinition.skillIds(),"mad_enhancement_")==0) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("MadEnhancementDamageBonus"));
       }
       if (!"oda_nobunaga".equals(attackerDefinition.id()) && data.getBoolean("IndependentActionActive") && attacker.getRandom().nextFloat() < 0.18F) {
          multiplier *= 1.0 + Math.max(0.0F, data.getFloat("IndependentActionCritDamageBonus"));
       }
-      if (data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
+      if (!"heracles".equals(attackerDefinition.id()) && data.getBoolean("CritDamageBoostActive") && attacker.getRandom().nextFloat() < 0.16F) {
          multiplier *= Math.max(1.0F, data.getFloat("CritDamageMultiplier"));
       }
       if (data.getBoolean("ClairvoyanceActive") && attacker.getRandom().nextFloat() < 0.12F) {
@@ -131,7 +131,7 @@ public final class ServantCardTraitService {
 
       float result = (float)Math.max(0.0, amount * multiplier);
       if (data.getBoolean("DivinityActive")) {
-         result += Math.max(0.0F, data.getFloat("DivinityFlatDamage"));
+         result += net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.legacyDivinity(attacker);
       }
       return result;
    }
@@ -143,24 +143,17 @@ public final class ServantCardTraitService {
          MagicResistanceHelper.setMagicResistance(
             player,
             magicResistance,
-            MagicResistanceHelper.damageReductionForRank(magicResistance),
+            MagicResistanceHelper.damageReductionForDefinition(definition, magicResistance),
             debuffResistanceForRank(magicResistance)
          );
       }
 
-      if (hasSkill(definition, "battle_continuation_a")) {
-         data.putBoolean("BattleContinuationActive", true);
-         if (!data.contains("BattleContinuationCooldown")) {
-            data.putInt("BattleContinuationCooldown", 0);
-         }
-         data.putInt("BattleContinuationMaxCooldown", 6000);
-      }
       if (hasSkill(definition, "emiya_style_battle_continuation")) {
          data.putBoolean("EmiyaStyleBattleContinuationActive", true);
       }
       if (hasSkill(definition, "artoria_instinct_a")) {
          data.putBoolean("ArtoriaInstinctAActive", true);
-         data.putFloat("ArtoriaInstinctCertainHitNegationChance", 0.95F);
+         data.putFloat("ArtoriaInstinctCertainHitNegationChance", 0.50F);
       }
       if (hasSkill(definition, "mana_burst_a")) {
          data.putBoolean("ArtoriaManaBurstAAvailable", true);
@@ -168,23 +161,17 @@ public final class ServantCardTraitService {
       if (hasSkill(definition, "charisma_b")) {
          data.putBoolean("ArtoriaCharismaBAvailable", true);
       }
+      if (hasSkill(definition, "dragon_core")) {
+         data.putBoolean("DragonCoreActive", true);
+         data.putDouble("DragonCoreManaRegenMultiplier", 2.0D);
+      }
       if (hasSkillPrefix(definition, "divinity_") || definition.traits().contains(ServantTraitTag.DIVINE)) {
          data.putBoolean("DivinityActive", true);
          data.putFloat("DivinityFlatDamage", divinityFlatDamage(definition));
       }
-      if (hasSkill(definition, "mad_enhancement_b")) {
-         data.putBoolean("MadEnhancementActive", true);
-         data.putFloat("MadEnhancementPenalty", 0.3F);
-         data.putFloat("MadEnhancementDamageBonus", 0.15F);
-      }
-      if (hasSkill(definition, "false_mind_eye_b")) {
+      if (hasSkill(definition, "false_mind_eye_b") && !"heracles".equals(definition.id())) {
          data.putBoolean("CritDamageBoostActive", true);
          data.putFloat("CritDamageMultiplier", 2.0F);
-      }
-      if (hasSkill(definition, "true_mind_eye_b")) {
-         data.putBoolean(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG, true);
-         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG, 0.55F);
-         data.putFloat(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG, 0.35F);
       }
       if (hasSkill(definition, "projection_magic_c")) {
          data.putBoolean("ProjectionMagicActive", true);
@@ -210,7 +197,7 @@ public final class ServantCardTraitService {
          data.putBoolean("IndependentActionActive", true);
          data.putFloat("IndependentActionCritDamageBonus", 0.05F);
       }
-      if (hasSkill(definition, "riding_a_plus")) {
+      if (hasSkill(definition, "riding_a") || hasSkill(definition, "riding_a_plus")) {
          data.putBoolean("RidingAPlusActive", true);
          data.putFloat("RidingAPlusSpeedBonus", 0.5F);
          data.putFloat("RidingAPlusArmorBonus", 0.2F);
@@ -226,15 +213,18 @@ public final class ServantCardTraitService {
       data.remove(MagicResistanceHelper.MAGIC_RESISTANCE_DAMAGE_REDUCTION_TAG);
       data.remove(MagicResistanceHelper.MAGIC_RESISTANCE_DEBUFF_RESIST_TAG);
       data.remove("BattleContinuationActive");
-      data.remove("BattleContinuationCooldown");
+
       data.remove("BattleContinuationMaxCooldown");
       data.remove("BattleContinuationRecoveryActive");
       data.remove("BattleContinuationLastHealTick");
       data.remove("EmiyaStyleBattleContinuationActive");
       data.remove("ArtoriaInstinctAActive");
       data.remove("ArtoriaInstinctCertainHitNegationChance");
+      data.remove("ArtoriaInstinctCharges");
       data.remove("ArtoriaManaBurstAAvailable");
       data.remove("ArtoriaCharismaBAvailable");
+      data.remove("DragonCoreActive");
+      data.remove("DragonCoreManaRegenMultiplier");
       data.remove("DivinityActive");
       data.remove("DivinityFlatDamage");
       data.remove("MadEnhancementActive");
@@ -243,9 +233,6 @@ public final class ServantCardTraitService {
       data.remove("CritDamageBoostActive");
       data.remove("CritDamageMultiplier");
       data.remove("CritDamageTicksRemaining");
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_ACTIVE_TAG);
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_DODGE_CHANCE_TAG);
-      data.remove(SasakiKojiroCombatHelper.MINDSEYE_BLOCK_CHANCE_TAG);
       data.remove("ProjectionMagicActive");
       data.remove("ProjectionMagicSwordDiscount");
       data.remove("ProjectionMagicLifetimeTicks");
@@ -261,26 +248,6 @@ public final class ServantCardTraitService {
       data.remove("RidingBActive");
       data.remove("RidingBSpeedBonus");
       data.remove("RidingBArmorBonus");
-   }
-
-   private static List<ServantTraitTag> specialAttackConditions(ServantDefinition definition) {
-      EnumSet<ServantTraitTag> conditions = EnumSet.noneOf(ServantTraitTag.class);
-      switch (definition.id()) {
-         case "oda_nobunaga" -> { }
-         case "enkidu" -> {
-            conditions.add(ServantTraitTag.DIVINE);
-            conditions.add(ServantTraitTag.CELESTIAL);
-         }
-         case "medusa" -> conditions.add(ServantTraitTag.MALE);
-         case "artoria_pendragon", "gawain" -> conditions.add(ServantTraitTag.DRAGON);
-         case "cursed_arm_hassan", "li_shuwen", "sasaki_kojiro" -> {
-            conditions.add(ServantTraitTag.HUMANOID);
-            conditions.add(ServantTraitTag.LIVING_HUMAN);
-         }
-         default -> {
-         }
-      }
-      return new ArrayList<>(conditions);
    }
 
    private static String traitKeyList(List<ServantTraitTag> traits) {
@@ -341,6 +308,9 @@ public final class ServantCardTraitService {
       if (rank.startsWith("d")) {
          return MagicResistanceRank.D;
       }
+      if (rank.startsWith("ex")) {
+         return MagicResistanceRank.EX;
+      }
       if (rank.startsWith("e")) {
          return MagicResistanceRank.E;
       }
@@ -348,12 +318,7 @@ public final class ServantCardTraitService {
    }
 
    private static float debuffResistanceForRank(MagicResistanceRank rank) {
-      return switch (rank == null ? MagicResistanceRank.NONE : rank) {
-         case A -> 0.25F;
-         case B -> 0.175F;
-         case C -> 0.10F;
-         default -> 0.0F;
-      };
+      return MagicResistanceHelper.debuffResistanceForRank(rank);
    }
 
    private static float divinityFlatDamage(ServantDefinition definition) {

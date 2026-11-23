@@ -12,15 +12,16 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.xxxjk.TYPE_MOON_WORLD.client.ClientPacketHandler;
 import org.jetbrains.annotations.NotNull;
 
-public record ConcealmentStateMessage(UUID entityId, boolean concealed) implements CustomPacketPayload {
+public record ConcealmentStateMessage(UUID entityId, boolean concealed, boolean perfect) implements CustomPacketPayload {
    public static final Type<ConcealmentStateMessage> TYPE = new Type<>(
       ResourceLocation.fromNamespaceAndPath("typemoonworld", "concealment_state"));
    public static final StreamCodec<RegistryFriendlyByteBuf, ConcealmentStateMessage> STREAM_CODEC = StreamCodec.of(
       (buffer, message) -> {
          buffer.writeUUID(message.entityId());
          buffer.writeBoolean(message.concealed());
+         buffer.writeBoolean(message.perfect());
       },
-      buffer -> new ConcealmentStateMessage(buffer.readUUID(), buffer.readBoolean()));
+      buffer -> new ConcealmentStateMessage(buffer.readUUID(), buffer.readBoolean(), buffer.readBoolean()));
 
    @Override
    @NotNull
@@ -32,7 +33,7 @@ public record ConcealmentStateMessage(UUID entityId, boolean concealed) implemen
       if (context.flow() != PacketFlow.CLIENTBOUND) return;
       context.enqueueWork(() -> {
          if (FMLEnvironment.dist == Dist.CLIENT) {
-            ClientPacketHandler.handleConcealmentState(message.entityId(), message.concealed());
+            ClientPacketHandler.handleConcealmentState(message.entityId(), message.concealed(), message.perfect());
          }
       });
    }

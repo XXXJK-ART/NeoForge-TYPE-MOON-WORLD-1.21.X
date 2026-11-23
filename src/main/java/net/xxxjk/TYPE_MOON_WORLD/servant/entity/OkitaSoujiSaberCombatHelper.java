@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,24 +31,22 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantAiContext;
 import net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantNavigationHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.ServantNoblePhantasmResourceService;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroAction;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SwordActionAnimationService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import org.joml.Vector3f;
 
 public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_FLAG_POOL = "OkitaFlagPool";
    private static final String TAG_FLAG_POOL_INIT = "OkitaFlagPoolInitialized";
-   private static final String TAG_HAORI_INIT = "OkitaHaoriInitialized";
+   private static final String TAG_FLAG_DEAD_MASK = "OkitaFlagDeadMask";
    private static final String TAG_SHUKUCHI_COOLDOWN = "OkitaShukuchiCooldown";
    private static final String TAG_SHUKUCHI_UNTIL = "OkitaShukuchiUntil";
    private static final String TAG_MUMYOUDAN_COOLDOWN = "OkitaMumyoudanCooldown";
-   private static final String TAG_MUMYOUDAN_POWER_SCALE = "OkitaMumyoudanPowerScale";
-   private static final String TAG_MUMYOUDAN_OVERDRAFT = "OkitaMumyoudanOverdraft";
    private static final String TAG_WEAK_UNTIL = "OkitaWeakConstitutionUntil";
    private static final String TAG_FLAG_COOLDOWN = "OkitaFlagCooldown";
    private static final String TAG_ICHIMONJI_COOLDOWN = "OkitaIchimonjiCooldown";
    private static final String TAG_KAIFUU_COOLDOWN = "OkitaKaifuuCooldown";
-   private static final String TAG_HAORI_RUSH_COOLDOWN = "OkitaHaoriRushCooldown";
-   private static final String TAG_HAORI_RUSH_UNTIL = "OkitaHaoriRushUntil";
    private static final String TAG_FEIGNED_RETREAT_COOLDOWN = "OkitaFeignedRetreatCooldown";
    private static final String TAG_STANCE_BREAK_COOLDOWN = "OkitaStanceBreakCooldown";
    private static final String TAG_COMMAND_COOLDOWN = "OkitaCommandCooldown";
@@ -55,36 +55,26 @@ public final class OkitaSoujiSaberCombatHelper {
    private static final String TAG_TARGET_ACQUIRED = "OkitaTargetAcquiredTick";
    private static final String TAG_LAST_PRESSURE_REPOSITION = "OkitaLastPressureReposition";
    private static final String SHINSENGUMI_OWNER_TAG = "OkitaShinsengumiOwner";
-   private static final int FLAG_POOL_MAX = 13;
-   private static final int SHUKUCHI_COOLDOWN = 10;
+   private static final int FLAG_POOL_MAX = OkitaShinsengumiEntity.FLAG_MEMBER_COUNT;
+   private static final int SHUKUCHI_COOLDOWN = 60;
    private static final int SHUKUCHI_DURATION = 200;
    private static final double SHUKUCHI_MP_COST = 0.0;
-   private static final int MUMYOUDAN_COOLDOWN = 300;
+   private static final int MUMYOUDAN_COOLDOWN = 3600;
    private static final double MUMYOUDAN_MP_COST = 20.0;
    private static final int WEAK_DURATION = 300;
    private static final int FLAG_COOLDOWN = 2400;
    private static final double FLAG_MP_COST = 100.0;
    private static final int FLAG_DURATION = 2400;
-   private static final int ICHIMONJI_COOLDOWN = 60;
+   private static final int ICHIMONJI_COOLDOWN = 45;
    private static final int KAIFUU_COOLDOWN = 90;
-   private static final int HAORI_RUSH_COOLDOWN = 260;
-   private static final int HAORI_RUSH_DURATION = 200;
    private static final int FEIGNED_RETREAT_COOLDOWN = 140;
    private static final int STANCE_BREAK_COOLDOWN = 180;
    private static final int COMMAND_COOLDOWN = 80;
    private static final double ICHIMONJI_MP_COST = 8.0;
    private static final double KAIFUU_MP_COST = 10.0;
-   private static final double HAORI_RUSH_MP_COST = 18.0;
    private static final double FEIGNED_RETREAT_MP_COST = 8.0;
    private static final double STANCE_BREAK_MP_COST = 14.0;
    private static final double COMMAND_MP_COST = 6.0;
-   private static final ResourceLocation HAORI_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_health");
-   private static final ResourceLocation HAORI_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_attack");
-   private static final ResourceLocation HAORI_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_speed");
-   private static final ResourceLocation HAORI_ATTACK_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_attack_speed");
-   private static final ResourceLocation HAORI_RUSH_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_rush_speed");
-   private static final ResourceLocation HAORI_RUSH_ATTACK_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_rush_attack_speed");
-   private static final ResourceLocation HAORI_RUSH_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_haori_rush_attack");
    private static final ResourceLocation SHUKUCHI_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_shukuchi_speed");
    private static final ResourceLocation SHUKUCHI_ATTACK_SPEED_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_shukuchi_attack_speed");
    private static final ResourceLocation WEAK_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "okita_weak_attack");
@@ -99,15 +89,22 @@ public final class OkitaSoujiSaberCombatHelper {
          return;
       }
       tickPersistentState(entity);
+      if (entity.isPerformingAction()) return;
       LivingEntity target = context.target();
       if (!isValidTarget(entity, target)) {
          target = entity.getTarget();
       }
       if (!isValidTarget(entity, target)) {
+         entity.getPersistentData().remove("OkitaVoiceTarget");
          entity.setTarget(null);
          return;
       }
 
+      String targetId = target.getStringUUID();
+      if (!targetId.equals(entity.getPersistentData().getString("OkitaVoiceTarget"))) {
+         entity.getPersistentData().putString("OkitaVoiceTarget", targetId);
+         ServantVoiceHelper.tryPlayOkitaSoujiSaberBattleStart(entity);
+      }
       entity.setTarget(target);
       entity.getLookControl().setLookAt(target, 60.0F, 60.0F);
       long now = level.getGameTime();
@@ -138,24 +135,18 @@ public final class OkitaSoujiSaberCombatHelper {
       if (tryFlagOfSincerity(entity, target, level, now, nearbyEnemies, emergency)) {
          return;
       }
-      if (tryHaoriRush(entity, level, now, targetAge, nearbyEnemies, emergency)) {
-         return;
-      }
       if (tryCommandShinsengumi(entity, target, level, now)) {
          return;
       }
       boolean shouldUseMumyoudan = shouldUseMumyoudanZuki(entity, target, distance, targetAge, nearbyEnemies, now);
-      if (shouldUseMumyoudan && distance > 2.8 && distance <= 5.5 && tryShukuchi(entity, target, level, now)) {
-         return;
-      }
+      // Mumyoudan-zuki owns its own Shukuchi approach so the NP reads as one
+      // continuous technique instead of two unrelated skills.
+      if (shouldUseMumyoudan && tryMumyoudanZuki(entity, target, level, now)) return;
       if (distance > 2.6 && distance <= 5.5 && shouldUseShukuchi(entity, target, targetAge, nearbyEnemies)
          && tryShukuchi(entity, target, level, now)) {
          return;
       }
       if (tryMindEye(entity, target, now, false)) {
-         return;
-      }
-      if (distance <= 3.8 && shouldUseMumyoudan && tryMumyoudanZuki(entity, target, level, now)) {
          return;
       }
       if (tryStanceBreak(entity, target, level, now)) {
@@ -196,19 +187,12 @@ public final class OkitaSoujiSaberCombatHelper {
          shukuchi ? 0.50 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), SHUKUCHI_ATTACK_SPEED_ID,
          shukuchi ? 0.40 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      boolean haoriRush = data.getLong(TAG_HAORI_RUSH_UNTIL) > now;
-      updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_RUSH_SPEED_ID,
-         haoriRush ? 0.35 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), HAORI_RUSH_ATTACK_SPEED_ID,
-         haoriRush ? 0.35 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_RUSH_ATTACK_ID,
-         haoriRush ? 0.15 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       boolean weak = isWeakConstitutionActive(entity);
       updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), WEAK_ATTACK_ID,
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
       updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), WEAK_SPEED_ID,
          weak ? -0.30 : 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      if (weak && entity.getTarget() != null && now % 5L == 0L) {
+      if (weak && !entity.isPerformingAction() && entity.getTarget() != null && now % 5L == 0L) {
          if (now % 10L == 0L && tryRetreatShukuchi(entity, entity.getTarget(), level, now)) {
             return;
          }
@@ -221,7 +205,6 @@ public final class OkitaSoujiSaberCombatHelper {
          return;
       }
       initializeFlagPool(entity);
-      applyHaori(entity);
    }
 
    public static void initializeFlagPool(OkitaSoujiSaberEntity entity) {
@@ -229,9 +212,11 @@ public final class OkitaSoujiSaberCombatHelper {
       if (!data.getBoolean(TAG_FLAG_POOL_INIT)) {
          data.putBoolean(TAG_FLAG_POOL_INIT, true);
          data.putInt(TAG_FLAG_POOL, FLAG_POOL_MAX);
+         data.putInt(TAG_FLAG_DEAD_MASK, 0);
       } else if (!data.contains(TAG_FLAG_POOL)) {
          data.putInt(TAG_FLAG_POOL, FLAG_POOL_MAX);
       }
+      if (!data.contains(TAG_FLAG_DEAD_MASK)) data.putInt(TAG_FLAG_DEAD_MASK, 0);
    }
 
    public static boolean isWeakConstitutionActive(OkitaSoujiSaberEntity entity) {
@@ -239,7 +224,18 @@ public final class OkitaSoujiSaberCombatHelper {
    }
 
    public static void decrementFlagPool(OkitaSoujiSaberEntity entity) {
+      decrementFlagPool(entity, -1);
+   }
+
+   public static void decrementFlagPool(OkitaSoujiSaberEntity entity, int formationIndex) {
       initializeFlagPool(entity);
+      CompoundTag data = entity.getPersistentData();
+      if (formationIndex >= 0 && formationIndex < FLAG_POOL_MAX) {
+         int bit = 1 << formationIndex;
+         if ((data.getInt(TAG_FLAG_DEAD_MASK) & bit) != 0) return;
+         data.putInt(TAG_FLAG_DEAD_MASK, data.getInt(TAG_FLAG_DEAD_MASK) | bit);
+      }
+      data.putInt(TAG_FLAG_POOL, Math.max(0, data.getInt(TAG_FLAG_POOL) - 1));
    }
 
    private static boolean tryShukuchi(OkitaSoujiSaberEntity entity, LivingEntity target, ServerLevel level, long now) {
@@ -256,7 +252,6 @@ public final class OkitaSoujiSaberCombatHelper {
       data.putLong(TAG_SHUKUCHI_COOLDOWN, now + SHUKUCHI_COOLDOWN);
       data.putLong(TAG_SHUKUCHI_UNTIL, now + SHUKUCHI_DURATION);
       Vec3 start = entity.position();
-      entity.triggerTeleportAnimation();
       entity.teleportTo(destination.x, destination.y, destination.z);
       entity.faceToward(target.position());
       level.sendParticles(ASAGI, start.x, start.y + 0.45, start.z, 16, 0.25, 0.35, 0.25, 0.03);
@@ -269,41 +264,22 @@ public final class OkitaSoujiSaberCombatHelper {
       CompoundTag data = entity.getPersistentData();
       ServantNoblePhantasmResourceService.CastDecision resource =
          ServantNoblePhantasmResourceService.evaluateNpcCast(entity, MUMYOUDAN_MP_COST);
-      int cooldown = MUMYOUDAN_COOLDOWN * (data.getBoolean(TAG_MUMYOUDAN_OVERDRAFT) ? 2 : 1);
       if (!entity.canUseMumyoudanZuki() || entity.isPerformingAction() || !resource.allowed()
          || ServantNoblePhantasmResourceService.isOverdraftWeak(entity)
          || now < data.getLong(TAG_MUMYOUDAN_COOLDOWN) || !entity.hasMasterNoblePhantasmPermission()
-         || !entity.getSensing().hasLineOfSight(target)) {
+         || !OkitaSoujiSaberTechniqueService.canStartMumyoudan(entity, target, level)) {
          return false;
       }
-      data.putDouble(TAG_MUMYOUDAN_POWER_SCALE, resource.powerScale());
-      data.putBoolean(TAG_MUMYOUDAN_OVERDRAFT, resource.overdraft());
       ServantNoblePhantasmResourceService.commitNpcCast(entity, resource);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(entity, "okita_mumyoudan_zuki", MUMYOUDAN_COOLDOWN, ticks -> entity.getPersistentData().putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + ticks), () -> { });
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(entity, () -> {
-      data.putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + cooldown);
-      entity.faceToward(target.position());
-      entity.triggerSlashAnimation();
-      ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
-
-      float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 3.0
-         * Math.max(0.2, Math.min(1.0, data.getDouble(TAG_MUMYOUDAN_POWER_SCALE))));
-      for (int i = 0; i < 3 && target.isAlive(); i++) {
-         target.stopUsingItem();
-         target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
-         target.removeEffect(MobEffects.ABSORPTION);
-         target.invulnerableTime = 0;
-         target.hurt(entity.damageSources().source(OkitaSoujiSaberDamageTypes.MUMYOUDAN_ZUKI, entity), damage);
-         target.invulnerableTime = 0;
-      }
-      target.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", entity.level().getGameTime() + 100L);
-      level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 3, 0.0, 0.0, 0.0, 0.0);
-      level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 32, 0.25, 0.35, 0.25, 0.08);
-      level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 1.25F, 1.55F);
-      if (entity.getRandom().nextFloat() < 0.30F) {
-         triggerWeakConstitution(entity, entity.level().getGameTime());
-      }
-
+         data.putLong(TAG_MUMYOUDAN_COOLDOWN, entity.level().getGameTime() + MUMYOUDAN_COOLDOWN);
+         entity.faceToward(target.position());
+         ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
+         OkitaSoujiSaberTechniqueService.beginMumyoudan(entity, target, () -> {
+            if (entity.getRandom().nextFloat() < 0.30F)
+               triggerWeakConstitution(entity, entity.level().getGameTime());
+         });
       });
       return true;
    }
@@ -320,19 +296,29 @@ public final class OkitaSoujiSaberCombatHelper {
       if (enemies < 3 && !emergency) {
          return false;
       }
-      int count = FLAG_POOL_MAX;
-      if (count <= 0) {
+       int available = Math.max(0, Math.min(FLAG_POOL_MAX, data.getInt(TAG_FLAG_POOL)));
+       if (available <= 0) {
          return false;
       }
+       java.util.Set<Integer> activeIndices = new java.util.HashSet<>();
+       for (OkitaShinsengumiEntity soldier : ownedShinsengumi(level, entity, 128.0)) {
+          activeIndices.add(soldier.getFormationIndex());
+       }
+       int deadMask = data.getInt(TAG_FLAG_DEAD_MASK);
+       java.util.List<Integer> spawnIndices = new java.util.ArrayList<>(available);
+       for (int i = 0; i < FLAG_POOL_MAX && spawnIndices.size() < available; i++) {
+          if ((deadMask & (1 << i)) == 0 && !activeIndices.contains(i)) spawnIndices.add(i);
+       }
+       if (spawnIndices.isEmpty()) return false;
       int summoned = 0;
-      for (int i = 0; i < count; i++) {
+       for (int index : spawnIndices) {
          OkitaShinsengumiEntity soldier = ModEntities.OKITA_SHINSENGUMI.get().create(level);
          if (soldier == null) {
             continue;
          }
-         Vec3 pos = findSummonPosition(level, entity, i, count);
+          Vec3 pos = findSummonPosition(level, entity, index, FLAG_POOL_MAX);
          soldier.moveTo(pos.x, pos.y, pos.z, entity.getYRot(), 0.0F);
-         soldier.initializeForOkita(entity, target, now + FLAG_DURATION);
+          soldier.initializeForOkita(entity, target, now + FLAG_DURATION, index);
          if (level.addFreshEntity(soldier)) {
             summoned++;
          }
@@ -342,30 +328,10 @@ public final class OkitaSoujiSaberCombatHelper {
       }
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - FLAG_MP_COST));
       data.putLong(TAG_FLAG_COOLDOWN, now + FLAG_COOLDOWN);
-      entity.triggerNamedActionAnimation("np");
-      ServantVoiceHelper.tryPlayOkitaSoujiSaberNp(entity);
+      SwordActionAnimationService.play(entity, SasakiKojiroAction.COUNTER_STANCE);
+      ServantVoiceHelper.tryPlayOkitaSoujiSaberFlag(entity);
       level.sendParticles(ASAGI, entity.getX(), entity.getY() + 1.1, entity.getZ(), 80, 1.8, 1.0, 1.8, 0.05);
       level.playSound(null, entity.blockPosition(), SoundEvents.RAID_HORN.value(), SoundSource.HOSTILE, 1.1F, 1.35F);
-      return true;
-   }
-
-   private static boolean tryHaoriRush(OkitaSoujiSaberEntity entity, ServerLevel level, long now, long targetAge,
-                                       int nearbyEnemies, boolean emergency) {
-      CompoundTag data = entity.getPersistentData();
-      if (entity.isPerformingAction() || ServantCombatSystem.cannotAct(entity) || entity.getCurrentMp() < HAORI_RUSH_MP_COST
-         || now < data.getLong(TAG_HAORI_RUSH_COOLDOWN) || data.getLong(TAG_HAORI_RUSH_UNTIL) > now) {
-         return false;
-      }
-      if (targetAge > 50L && nearbyEnemies < 3 && !emergency) {
-         return false;
-      }
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - HAORI_RUSH_MP_COST));
-      data.putLong(TAG_HAORI_RUSH_COOLDOWN, now + HAORI_RUSH_COOLDOWN);
-      data.putLong(TAG_HAORI_RUSH_UNTIL, now + HAORI_RUSH_DURATION);
-      entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, HAORI_RUSH_DURATION, 1, false, true, true));
-      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, HAORI_RUSH_DURATION, 0, false, true, true));
-      level.sendParticles(ASAGI, entity.getX(), entity.getY() + 0.9, entity.getZ(), 36, 0.45, 0.45, 0.45, 0.04);
-      level.playSound(null, entity.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 0.9F, 1.45F);
       return true;
    }
 
@@ -382,7 +348,13 @@ public final class OkitaSoujiSaberCombatHelper {
       entity.faceToward(target.position());
       entity.setDeltaMovement(direction.x * 1.15, Math.max(0.08, entity.getDeltaMovement().y), direction.z * 1.15);
       entity.hasImpulse = true;
-      entity.triggerSlashAnimation();
+      SasakiKojiroAction action = switch (entity.getRandom().nextInt(4)) {
+         case 1 -> SasakiKojiroAction.DOWNWARD_SLASH;
+         case 2 -> SasakiKojiroAction.UPWARD_SLASH;
+         case 3 -> SasakiKojiroAction.HORIZONTAL_SLASH;
+         default -> SasakiKojiroAction.VERTICAL_SLASH;
+      };
+      SwordActionAnimationService.play(entity, action);
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.35 + 6.0);
       List<LivingEntity> hit = hitForward(entity, 4.8, 0.68, damage, false);
       spawnSlashLine(level, entity.position().add(0.0, 0.9, 0.0), direction, 4.8);
@@ -399,6 +371,7 @@ public final class OkitaSoujiSaberCombatHelper {
       }
       float damage = (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.9 + 5.0);
       boolean hitAny = false;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : nearbyEnemies(entity, level, 3.2)) {
          if (target == null || !target.isAlive()) {
             continue;
@@ -409,12 +382,13 @@ public final class OkitaSoujiSaberCombatHelper {
          target.hasImpulse = true;
          hitAny = true;
       }
+      }
       if (!hitAny) {
          return false;
       }
       entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - KAIFUU_MP_COST));
       data.putLong(TAG_KAIFUU_COOLDOWN, now + KAIFUU_COOLDOWN);
-      entity.triggerSlashAnimation();
+      SwordActionAnimationService.play(entity, SasakiKojiroAction.SPINNING_SLASH);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, entity.getX(), entity.getY() + 0.8, entity.getZ(), 12, 1.0, 0.2, 1.0, 0.0);
       level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 1.0F, 1.35F);
       return true;
@@ -471,7 +445,7 @@ public final class OkitaSoujiSaberCombatHelper {
       target.removeEffect(MobEffects.ABSORPTION);
       target.getPersistentData().putLong("OkitaMumyoudanDefenseDisabledUntil", now + 100L);
       hurtPhysical(entity, target, (float)(entity.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 8.0));
-      entity.triggerSlashAnimation();
+      SwordActionAnimationService.play(entity, SasakiKojiroAction.OKITA_THRUST);
       spawnSlashLine(level, entity.position().add(0.0, 0.9, 0.0), target.position().subtract(entity.position()), 4.0);
       level.playSound(null, target.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 0.9F, 1.25F);
       return true;
@@ -491,21 +465,10 @@ public final class OkitaSoujiSaberCombatHelper {
       for (OkitaShinsengumiEntity soldier : soldiers) {
          soldier.assignOkitaOwnerTarget(entity, target);
       }
+      SwordActionAnimationService.play(entity, SasakiKojiroAction.COUNTER_STANCE);
       level.sendParticles(ASAGI, entity.getX(), entity.getY() + 1.0, entity.getZ(), 24, 1.0, 0.35, 1.0, 0.035);
       level.playSound(null, entity.blockPosition(), SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.HOSTILE, 0.9F, 1.4F);
       return true;
-   }
-
-   private static void applyHaori(OkitaSoujiSaberEntity entity) {
-      updateModifier(entity.getAttribute(Attributes.MAX_HEALTH), HAORI_HEALTH_ID, 0.0, AttributeModifier.Operation.ADD_VALUE);
-      updateModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), HAORI_ATTACK_ID, 0.0, AttributeModifier.Operation.ADD_VALUE);
-      updateModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), HAORI_SPEED_ID, 0.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      updateModifier(entity.getAttribute(Attributes.ATTACK_SPEED), HAORI_ATTACK_SPEED_ID, 0.10, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-      CompoundTag data = entity.getPersistentData();
-      if (!data.getBoolean(TAG_HAORI_INIT)) {
-         data.putBoolean(TAG_HAORI_INIT, true);
-         entity.setHealth(entity.getMaxHealth());
-      }
    }
 
    private static void triggerWeakConstitution(OkitaSoujiSaberEntity entity, long now) {
@@ -658,7 +621,6 @@ public final class OkitaSoujiSaberCombatHelper {
       data.putLong(TAG_SHUKUCHI_COOLDOWN, now + SHUKUCHI_COOLDOWN);
       data.putLong(TAG_SHUKUCHI_UNTIL, now + SHUKUCHI_DURATION);
       Vec3 start = entity.position();
-      entity.triggerTeleportAnimation();
       entity.teleportTo(destination.x, destination.y, destination.z);
       entity.faceToward(target.position());
       level.sendParticles(ASAGI, start.x, start.y + 0.45, start.z, 12, 0.25, 0.35, 0.25, 0.03);
@@ -746,6 +708,7 @@ public final class OkitaSoujiSaberCombatHelper {
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.5, 0.0);
       AABB area = entity.getBoundingBox().expandTowards(direction.scale(range)).inflate(1.3, 1.1, 1.3);
       List<LivingEntity> hit = new ArrayList<>();
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : entity.level().getEntitiesOfClass(LivingEntity.class, area, candidate -> isValidTarget(entity, candidate))) {
          Vec3 relative = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(origin);
          Vec3 horizontal = new Vec3(relative.x, 0.0, relative.z);
@@ -760,6 +723,7 @@ public final class OkitaSoujiSaberCombatHelper {
             hurtPhysical(entity, target, damage);
          }
          hit.add(target);
+      }
       }
       return hit;
    }

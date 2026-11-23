@@ -118,6 +118,7 @@ public final class ServantCardLancelotBerserkerSkills {
       data.remove(LancelotCombatHelper.AROUNDIGHT_MODE_TAG);
       data.remove(LancelotCombatHelper.AROUNDIGHT_DRAIN_TICK_TAG);
       data.remove(LancelotCombatHelper.UNABLE_UNTIL_TAG);
+      data.remove(LancelotCombatHelper.KNIGHT_OF_OWNER_RESERVED_TAG);
       removeAroundightModifiers(player);
       clearFairyBlessing(player);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID);
@@ -140,7 +141,8 @@ public final class ServantCardLancelotBerserkerSkills {
          1.25,
          0.26,
          32,
-         45.0F
+         45.0F,
+         true
       );
    }
 
@@ -180,10 +182,41 @@ public final class ServantCardLancelotBerserkerSkills {
       if (!(player.level() instanceof ServerLevel level)) return;
       double radius = LancelotCombatHelper.isAroundightMode(player) ? 5.6 : 4.6;
       damageRadius(player, radius, LancelotCombatHelper.isAroundightMode(player) ? 38.0F : 30.0F, 1.25, 0.44);
-      TerrainImpactService.impact(level, player, player.position().add(0.0, 0.18, 0.0),
-         TerrainImpactProfile.of(TerrainImpactProfile.Tier.MEDIUM), TerrainImpactService.Shape.UPPER_SURFACE_CRATER);
+      TerrainImpactService.impactHeraclesGround(level, player, player.position(),
+         new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY, radius, 35.0F, 48, 80),
+         TerrainImpactService.Permission.PLAYER, 2);
       level.sendParticles(DARK_DUST, player.getX(), player.getY() + 0.35, player.getZ(), 72, radius * 0.35, 0.2, radius * 0.35, 0.1);
       level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.25F, 0.48F);
+      player.swing(InteractionHand.MAIN_HAND, true);
+   }
+
+   public static void performBreachCharge(ServerPlayer player) {
+      Vec3 direction = PlayerNoblePhantasmHelper.horizontalLook(player);
+      player.setSprinting(true);
+      player.setDeltaMovement(player.getDeltaMovement().add(direction.x * 1.45, 0.08, direction.z * 1.45));
+      player.hurtMarked = true;
+      player.fallDistance = 0.0F;
+      strikeArc(player, 5.2, 34.0F, -0.05, 4, 1.2);
+      if (player.level() instanceof ServerLevel level) {
+         TerrainImpactService.impactWallTunnel(level, player, player.position(), direction,
+            new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY, 3.0, 35.0F, 48, 80), 3, 3,
+            (int)Math.ceil(player.getBbHeight()));
+         level.sendParticles(ParticleTypes.CLOUD, player.getX() + direction.x, player.getY() + 0.5,
+            player.getZ() + direction.z, 20, 0.55, 0.35, 0.55, 0.1);
+         level.playSound(null, player.blockPosition(), SoundEvents.RAVAGER_ATTACK, SoundSource.PLAYERS, 1.0F, 0.68F);
+      }
+   }
+
+   public static void performRampageQuake(ServerPlayer player) {
+      if (!(player.level() instanceof ServerLevel level)) return;
+      double radius = LancelotCombatHelper.isAroundightMode(player) ? 7.2 : 6.2;
+      damageRadius(player, radius, LancelotCombatHelper.isAroundightMode(player) ? 48.0F : 40.0F, 1.6, 0.62);
+      TerrainImpactService.impactHeraclesGround(level, player, player.position(),
+         new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY, radius, 35.0F, 56, 96),
+         TerrainImpactService.Permission.PLAYER, 2);
+      level.sendParticles(ParticleTypes.CLOUD, player.getX(), player.getY() + 0.25, player.getZ(), 48,
+         radius * 0.32, 0.18, radius * 0.32, 0.1);
+      level.playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 1.45F, 0.42F);
       player.swing(InteractionHand.MAIN_HAND, true);
    }
 
@@ -209,7 +242,6 @@ public final class ServantCardLancelotBerserkerSkills {
       long until = player.level().getGameTime() + 12L * 20L;
       player.getPersistentData().putLong(MANA_REVERSAL_UNTIL_TAG, until);
       ServantCardSkillUtils.addOrReplaceMultiplied(player.getAttribute(Attributes.ATTACK_DAMAGE), MANA_REVERSAL_DAMAGE_ID, 0.20);
-      player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 12 * 20, 0, false, true, true));
       if (player.level() instanceof ServerLevel level) {
          level.sendParticles(DARK_DUST, player.getX(), player.getY() + 1.0, player.getZ(), 46, 0.58, 0.72, 0.58, 0.09);
          level.playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.75F, 0.58F);
@@ -232,12 +264,12 @@ public final class ServantCardLancelotBerserkerSkills {
          player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.aroundight_seals_owner"), true);
          return false;
       }
+      LivingEntity target = lookedAtStealTarget(player);
+      if (target != null && hasStealableItem(target)) {
+         return tryStealAndOwnerize(player, target);
+      }
       ItemStack main = player.getMainHandItem();
       if (main.isEmpty()) {
-         LivingEntity target = lookedAtStealTarget(player);
-         if (target != null) {
-            return tryStealAndOwnerize(player, target);
-         }
          if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
             player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.owner_limit"), true);
             return false;
@@ -264,11 +296,36 @@ public final class ServantCardLancelotBerserkerSkills {
       return true;
    }
 
+   /** Opens the existing optional armory menu while preserving the core skill slot. */
+   public static boolean performKnightArmoryMenu(ServerPlayer player) {
+      if (LancelotCombatHelper.isAroundightMode(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.lancelot.aroundight_seals_owner"), true);
+         return false;
+      }
+      try {
+         Class<?> service = Class.forName("com.captain.servant.lancelot.KnightArmoryService");
+         Object result = service.getMethod("open", ServerPlayer.class).invoke(null, player);
+         return result instanceof Boolean opened && opened;
+      } catch (ReflectiveOperationException | LinkageError exception) {
+         return false;
+      }
+   }
+
    private static LivingEntity lookedAtStealTarget(ServerPlayer player) {
       HitResult hit = EntityUtils.getRayTraceTarget(player, 2.0);
       if (!(hit instanceof EntityHitResult entityHit) || !(entityHit.getEntity() instanceof LivingEntity living)
          || !validTarget(player, living)) return null;
       return living;
+   }
+
+   public static boolean hasKnightOfOwnerTarget(ServerPlayer player) {
+      LivingEntity target = player == null ? null : lookedAtStealTarget(player);
+      return target != null && hasStealableItem(target);
+   }
+
+   private static boolean hasStealableItem(LivingEntity target) {
+      return target != null && (LancelotCombatHelper.canOwnerize(target.getMainHandItem())
+         || LancelotCombatHelper.canOwnerize(target.getOffhandItem()));
    }
 
    private static boolean tryStealAndOwnerize(ServerPlayer player, LivingEntity target) {
@@ -334,6 +391,7 @@ public final class ServantCardLancelotBerserkerSkills {
 
       held.shrink(1);
       player.setItemInHand(hand, held.isEmpty() ? ItemStack.EMPTY : held);
+      if (LancelotCombatHelper.reserveKnightOfOwnerItems(player, 1) <= 0) return false;
       player.swing(hand, true);
       level.sendParticles(DARK_DUST, player.getX(), player.getY() + 0.95, player.getZ(), 24, 0.45, 0.55, 0.45, 0.07);
       level.playSound(null, player.blockPosition(), SoundEvents.TRIDENT_THROW.value(), SoundSource.PLAYERS, 0.9F, 0.72F);
@@ -430,6 +488,7 @@ public final class ServantCardLancelotBerserkerSkills {
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.52, 0.0);
       Vec3 forward = PlayerNoblePhantasmHelper.horizontalLook(player);
       int[] hits = {0};
+      try (var segment = ServantMasterDamageRouter.attackSegment()) {
       level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(range, 2.5, range), target -> validTarget(player, target)).stream()
          .sorted(Comparator.comparingDouble(player::distanceToSqr))
          .forEach(target -> {
@@ -448,10 +507,12 @@ public final class ServantCardLancelotBerserkerSkills {
                hits[0]++;
             }
          });
+      }
    }
 
    private static void damageRadius(ServerPlayer player, double radius, float damage, double knockback, double vertical) {
       if (!(player.level() instanceof ServerLevel level)) return;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.1, radius), target -> validTarget(player, target))) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().playerAttack(player), damage);
@@ -462,6 +523,7 @@ public final class ServantCardLancelotBerserkerSkills {
          away = away.normalize();
          target.push(away.x * knockback, vertical, away.z * knockback);
          target.hurtMarked = true;
+      }
       }
    }
 
@@ -596,7 +658,8 @@ public final class ServantCardLancelotBerserkerSkills {
          0.28,
          32,
          45.0F,
-         dir
+         dir,
+         true
       );
    }
 

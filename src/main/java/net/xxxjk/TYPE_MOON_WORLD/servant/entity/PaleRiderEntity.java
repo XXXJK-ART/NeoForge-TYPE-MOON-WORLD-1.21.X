@@ -58,18 +58,6 @@ public final class PaleRiderEntity extends ServantEntity {
    }
 
    @Override
-   public net.minecraft.world.entity.SpawnGroupData finalizeSpawn(
-      net.minecraft.world.level.ServerLevelAccessor level,
-      net.minecraft.world.DifficultyInstance difficulty,
-      net.minecraft.world.entity.MobSpawnType spawnType,
-      net.minecraft.world.entity.SpawnGroupData spawnData
-   ) {
-      net.minecraft.world.entity.SpawnGroupData result = super.finalizeSpawn(level, difficulty, spawnType, spawnData);
-      this.applyBaseStats(true);
-      return result;
-   }
-
-   @Override
    protected void customServerAiStep() {
       if (this.getPersistentData().getBoolean("PaleRiderCardProxy")) {
          this.getNavigation().stop();
@@ -85,13 +73,7 @@ public final class PaleRiderEntity extends ServantEntity {
          this.discard();
          return;
       }
-      if (this.level() instanceof ServerLevel level && this.isAlive() && !this.hasPossessedHost()
-         && this.tickCount % 8 == Math.floorMod(this.getId(), 8)) {
-         level.sendParticles(ParticleTypes.SQUID_INK, this.getX(), this.getY() + 0.9, this.getZ(), 4, 0.28, 0.85, 0.28, 0.015);
-         level.sendParticles(new DustParticleOptions(new Vector3f(0.025F, 0.025F, 0.03F), 1.5F),
-            this.getX(), this.getY() + 0.9, this.getZ(), 5, 0.3, 0.9, 0.3, 0.01);
-         level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 1.1, this.getZ(), 2, 0.3, 0.8, 0.3, 0.015);
-      }
+      if (!this.hasPossessedHost()) PaleRiderCombatHelper.tickBodyParticles(this);
    }
 
    @Override
@@ -315,7 +297,6 @@ public final class PaleRiderEntity extends ServantEntity {
    @Override
    public boolean hurt(DamageSource source, float amount) {
       if (this.redirectPossessedDamage(source, amount)) return false;
-      if (net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.isMagicDamage(source)) amount *= 0.8F;
       int soulTiers = PaleRiderCombatHelper.countLivingSoulTiers(this);
       if (this.isUnderworldActive() && soulTiers > 0) amount *= Math.max(0.0F, 1.0F - soulTiers * 0.05F);
       return super.hurt(source, amount);
@@ -356,19 +337,5 @@ public final class PaleRiderEntity extends ServantEntity {
       this.possessedHostUuid = tag.hasUUID("PaleRiderPossessedHost") ? tag.getUUID("PaleRiderPossessedHost") : null;
       this.combatTargetUuid = tag.hasUUID("PaleRiderCombatTarget") ? tag.getUUID("PaleRiderCombatTarget") : null;
       this.masterUuid = tag.hasUUID("PaleRiderMaster") ? tag.getUUID("PaleRiderMaster") : null;
-      this.applyBaseStats(false);
-   }
-
-   private void applyBaseStats(boolean refill) {
-      this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(400.0);
-      this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0);
-      this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.36);
-      this.getAttribute(Attributes.ARMOR).setBaseValue(12.0);
-      if (refill) {
-         this.setHealth(400.0F);
-         this.setCurrentMp(1000.0);
-      } else if (this.getHealth() > 400.0F) {
-         this.setHealth(400.0F);
-      }
    }
 }

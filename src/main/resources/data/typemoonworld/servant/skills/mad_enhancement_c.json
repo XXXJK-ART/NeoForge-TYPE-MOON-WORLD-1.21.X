@@ -11,10 +11,9 @@
     {
       "effect_type": "attribute_bonus",
       "params": {
-        "strength_rank_bonus": 1,
-        "endurance_rank_bonus": 1,
-        "agility_rank_bonus": 1,
-        "communication_penalty": 0.75
+        "health": 60,
+        "attack": 9,
+        "speed_additive": 0.06
       }
     }
   ]

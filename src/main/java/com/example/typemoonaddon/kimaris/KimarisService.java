@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.kimaris;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
 import com.example.typemoonaddon.orias.OriasService;
@@ -355,7 +356,7 @@ public final class KimarisService {
         if (target instanceof LivingEntity living) {
             queueIceSphere(caster, living, data);
             data.markFreezeDamageApplied();
-            living.hurt(caster.damageSources().source(DamageTypes.MAGIC, caster), FREEZE_DAMAGE);
+            living.hurt(MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "kimaris", caster), FREEZE_DAMAGE);
         }
         return true;
     }
@@ -410,7 +411,7 @@ public final class KimarisService {
         if (applyThawDamage && casterId != null && entity instanceof LivingEntity living) {
             ServerPlayer caster = level.getServer().getPlayerList().getPlayer(casterId);
             if (caster != null && caster.isAlive() && !caster.isRemoved() && caster.serverLevel() == level) {
-                living.hurt(caster.damageSources().source(DamageTypes.MAGIC, caster), THAW_DAMAGE);
+                living.hurt(MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "kimaris", caster), THAW_DAMAGE);
             }
         }
     }

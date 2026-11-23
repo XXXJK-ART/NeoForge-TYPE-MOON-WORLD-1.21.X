@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import com.mojang.math.Axis;
 import java.util.List;
 import java.util.UUID;
@@ -352,8 +354,7 @@ public final class MedusaCombatHelper {
          HeraclesGodHandHelper.applyAdaptedSlow(target, 100);
          return;
       }
-      if (HeraclesGodHandHelper.hasGodHand(target)) {
-         HeraclesGodHandHelper.consumeLifeForCybele(target);
+      if (HeraclesGodHandHelper.consumeLifeForCybele(target)) {
          return;
       }
 
@@ -500,6 +501,7 @@ public final class MedusaCombatHelper {
 
       float damage = noblePhantasm ? (24.0F + entity.getRandom().nextInt(7))
          * (float)Math.max(0.2, Math.min(1.0, entity.getPersistentData().getDouble(TAG_BLOODFORT_NP_POWER_SCALE))) : 15.0F;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius, radius, radius),
@@ -515,6 +517,7 @@ public final class MedusaCombatHelper {
             level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, victim.getX(), victim.getY() + victim.getBbHeight() * 0.6, victim.getZ(), 4, 0.2, 0.2, 0.2, 0.0);
             spawnBloodfortVictimAura(level, victim, dealt);
          }
+      }
       }
    }
 
@@ -736,6 +739,7 @@ public final class MedusaCombatHelper {
    private static void applyChargeHits(MedusaEntity entity, MedusaPegasusEntity pegasus, long now) {
       Vec3 forward = pegasus.getLookAngle().normalize();
       AABB hitBox = pegasus.getBoundingBox().expandTowards(forward.scale(2.8)).inflate(2.1, 1.2, 2.1);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_BELLEROPHON_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_BELLEROPHON_HIT_UNTIL, now + 20L);
          pullTowardPegasusHead(pegasus, victim, forward, 1.35, 0.3);
@@ -745,15 +749,18 @@ public final class MedusaCombatHelper {
             victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0, false, true, true));
          }
       }
+      }
    }
 
    private static void applyRideCollisionHits(MedusaEntity entity, MedusaPegasusEntity pegasus, long now) {
       Vec3 sweep = pegasus.getDeltaMovement().multiply(1.5, 0.5, 1.5);
       AABB hitBox = pegasus.getBoundingBox().expandTowards(sweep).inflate(1.9, 1.1, 1.9);
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : pegasus.level().getEntitiesOfClass(LivingEntity.class, hitBox, target -> isChargeVictim(entity, target, TAG_PEGASUS_COLLISION_HIT_UNTIL, now))) {
          victim.getPersistentData().putLong(TAG_PEGASUS_COLLISION_HIT_UNTIL, now + 10L);
          hurtPegasusVictim(entity, victim, 50.0F);
          pushAway(pegasus, victim, 1.0, 0.3);
+      }
       }
    }
 
@@ -771,9 +778,11 @@ public final class MedusaCombatHelper {
          return;
       }
       AABB area = pegasus.getBoundingBox().inflate(5.0, 2.0, 5.0);
+      try (var carrySegment302 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, target -> target != entity && target != pegasus && target.isAlive() && !target.isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(target))) {
          hurtPegasusVictim(entity, victim, 100.0F);
          pushAway(pegasus, victim, 1.2, 0.55);
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION, pegasus.getX(), pegasus.getY() + 0.4, pegasus.getZ(), 6, 1.8, 0.4, 1.8, 0.0);
       level.sendParticles(ParticleTypes.CLOUD, pegasus.getX(), pegasus.getY() + 0.2, pegasus.getZ(), 32, 2.3, 0.2, 2.3, 0.08);
@@ -1130,7 +1139,7 @@ public final class MedusaCombatHelper {
 
    private static void applyDivinityDamage(MedusaEntity entity, LivingEntity target) {
       if (entity.getPersistentData().getBoolean("DivinityActive")) {
-         float extra = entity.getPersistentData().getFloat("DivinityFlatDamage");
+         float extra = net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.legacyDivinity(entity);
          if (extra > 0.0F) {
             target.hurt(entity.damageSources().magic(), extra);
          }
@@ -1189,6 +1198,7 @@ public final class MedusaCombatHelper {
       entity.getNavigation().moveTo(entity.getX() + horizontal.x * 5.5, entity.getY(), entity.getZ() + horizontal.z * 5.5, 1.35);
 
       AABB hitBox = entity.getBoundingBox().expandTowards(horizontal.scale(4.8)).inflate(1.0, 0.8, 1.0);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -1197,6 +1207,7 @@ public final class MedusaCombatHelper {
          victim.hurt(entity.damageSources().mobAttack(entity), entity.isEyesReleased() ? 12.0F : 9.0F);
          applyDivinityDamage(entity, victim);
          pushAway(entity, victim, 0.9, 0.2);
+      }
       }
       spawnDashTrail(level, entity, horizontal, 4.8, ParticleTypes.CRIT);
    }
@@ -1221,6 +1232,7 @@ public final class MedusaCombatHelper {
       entity.getNavigation().moveTo(entity.getX() + move.x * 4.0, entity.getY(), entity.getZ() + move.z * 4.0, 1.28);
 
       AABB hitBox = entity.getBoundingBox().expandTowards(move.scale(3.8)).inflate(1.4, 0.8, 1.4);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -1229,6 +1241,7 @@ public final class MedusaCombatHelper {
          victim.hurt(entity.damageSources().mobAttack(entity), entity.isEyesReleased() ? 10.0F : 8.0F);
          applyDivinityDamage(entity, victim);
          pushAway(entity, victim, 0.65, 0.18);
+      }
       }
       spawnDashTrail(level, entity, move, 3.8, ParticleTypes.SWEEP_ATTACK);
    }
@@ -1254,6 +1267,7 @@ public final class MedusaCombatHelper {
       entity.getNavigation().stop();
 
       AABB hitBox = target.getBoundingBox().inflate(1.35, 0.75, 1.35);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -1264,6 +1278,7 @@ public final class MedusaCombatHelper {
          if (entity.getPersistentData().getLong(TAG_MONSTER_STRENGTH_UNTIL) > now) {
             victim.hurt(entity.damageSources().generic(), 3.0F);
          }
+      }
       }
       level.sendParticles(
          ParticleTypes.CRIT,
@@ -1331,6 +1346,7 @@ public final class MedusaCombatHelper {
       }
 
       AABB hitBox = entity.getBoundingBox().inflate(1.45, 0.6, 1.45);
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : entity.level().getEntitiesOfClass(
          LivingEntity.class,
          hitBox,
@@ -1368,6 +1384,7 @@ public final class MedusaCombatHelper {
                0.03
             );
          }
+      }
       }
    }
 

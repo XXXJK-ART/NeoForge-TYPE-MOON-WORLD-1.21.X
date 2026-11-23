@@ -9,9 +9,13 @@ public enum ServantTraitTag {
    GIANT("giant"),
    MECHANICAL("mechanical"),
    FAIRY_TALE("fairy_tale"),
+   FAIRY("fairy"),
    MOUNTED("mounted"),
    CHALDEAN("chaldean"),
    EARTH("earth"),
+   HEAVEN_OR_EARTH_SERVANT("heaven_or_earth_servant"),
+   GREEK_MYTHOLOGY_MALE("greek_mythology_male"),
+   ARGONAUT("argonaut"),
    RIDING("riding"),
    SUN_KNIGHT("sun_knight"),
 
@@ -46,6 +50,9 @@ public enum ServantTraitTag {
 
    SERVANT("servant"),
    SEVEN_KNIGHTS("seven_knights"),
+   BELOVED("beloved"),
+   FIANNA_KNIGHTS("fianna_knights"),
+   KNIGHT("knight"),
    SHADOW_SERVANT("shadow_servant"),
 
    CHAOTIC("chaotic"),
@@ -57,6 +64,7 @@ public enum ServantTraitTag {
    MAD("mad"),
 
    KING("king"),
+   ARTHUR("arthur"),
    NOBUNAGA("nobunaga"),
    ROMAN("roman"),
    GENJI("genji"),
@@ -76,6 +84,7 @@ public enum ServantTraitTag {
    FALSE_RIDER("false_rider"),
    SYSTEM_SERVANT("system_servant"),
    HASSAN_ORDER("hassan_order"),
+   SHINSENGUMI("shinsengumi"),
    FANATIC("fanatic"),
    DIVINE_TECHNIQUE_MIMIC("divine_technique_mimic");
 
@@ -90,16 +99,20 @@ public enum ServantTraitTag {
    }
 
    public static ServantTraitTag fromKey(String key) {
+      return findByKey(key).orElse(SERVANT);
+   }
+
+   public static java.util.Optional<ServantTraitTag> findByKey(String key) {
       if (key == null) {
-         return SERVANT;
+         return java.util.Optional.empty();
       }
 
       for (ServantTraitTag tag : values()) {
-         if (tag.key.equals(key.toLowerCase())) {
-            return tag;
+         if (tag.key.equals(key.toLowerCase(java.util.Locale.ROOT))) {
+            return java.util.Optional.of(tag);
          }
       }
 
-      return SERVANT;
+      return java.util.Optional.empty();
    }
 }

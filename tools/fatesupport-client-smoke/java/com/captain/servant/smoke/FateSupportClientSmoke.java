@@ -53,13 +53,16 @@ public final class FateSupportClientSmoke {
                     throw new AssertionError("support bindings must use the main mod category");
                 }
                 checkKey(mc, TelepathyClient.TELEPATHY_KEY, GLFW.GLFW_KEY_Y);
-                FateSupportNetwork.openArmoryScreen(KnightArmoryEntry.IRON_ROD.bit());
+                int mask = ModList.get().isLoaded("superbwarfare") ? 63 : KnightArmoryEntry.IRON_ROD.bit();
+                FateSupportNetwork.openArmoryScreen(mask);
                 if (!(mc.screen instanceof KnightArmoryScreen)) throw new AssertionError("armory handler was not initialized");
                 stage = 1;
             } else if (stage == 1 && ++screenTicks >= 4) {
                 if (!(mc.screen instanceof KnightArmoryScreen) || mc.screen.children().isEmpty()) {
                     throw new AssertionError("armory screen failed to initialize/render");
                 }
+                int expected = ModList.get().isLoaded("superbwarfare") ? 6 : 1;
+                if (mc.screen.children().size() != expected) throw new AssertionError("incorrect optional armory buttons");
                 LogUtils.getLogger().info("FATESUPPORT_CLIENT_SMOKE_PASS voicechat={} superbwarfare={} spirit=left_ctrl dodge=left_alt",
                         ModList.get().isLoaded("voicechat"), ModList.get().isLoaded("superbwarfare"));
                 stage = 2;

@@ -29,6 +29,8 @@ public final class ShadowHassanClientEvents {
 
    @SubscribeEvent(priority = EventPriority.HIGHEST)
    public static void hideConcealedEntity(RenderLivingEvent.Pre<?, ?> event) {
+      if (event.getEntity() instanceof net.minecraft.world.entity.player.Player player
+         && ServantCardConcealmentClient.isShadowHassanMaskOnly(player)) return;
       if (ServantCardConcealmentClient.isPerfectlyConcealed(event.getEntity())) {
          event.setCanceled(true);
       }

@@ -17,6 +17,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.NightingaleBulletEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CyanWindFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaWindDefenseSwordEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.CrimsonHoundProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DirkProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.DragonfangSoldierEntity;
@@ -141,6 +142,10 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.jeanne.JeanneAlterCursedLanceEntity;
 
 public class ModEntities {
    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(Registries.ENTITY_TYPE, "typemoonworld");
+   public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.CuSpearEntity>> CU_PERSISTENT_SPEAR = ENTITY_TYPES.register("cu_persistent_spear",
+      () -> Builder.of(net.xxxjk.TYPE_MOON_WORLD.entity.CuSpearEntity::new,MobCategory.MISC).sized(.5F,.5F).clientTrackingRange(16).updateInterval(1).build("cu_persistent_spear"));
+   public static final DeferredHolder<EntityType<?>, EntityType<net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity>> CU_RUNE_FIREBALL = ENTITY_TYPES.register("cu_rune_fireball",
+      () -> Builder.<net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity>of(net.xxxjk.TYPE_MOON_WORLD.entity.CuRuneFireballEntity::new,MobCategory.MISC).sized(.35F,.35F).clientTrackingRange(16).updateInterval(1).build("cu_rune_fireball"));
    public static final DeferredHolder<EntityType<?>, EntityType<VFXTriggerEntity>> VFX_TRIGGER = ENTITY_TYPES.register(
       "vfx_trigger",
       () -> Builder.<VFXTriggerEntity>of(VFXTriggerEntity::new, MobCategory.MISC)
@@ -153,7 +158,7 @@ public class ModEntities {
       "arash_particle_arrow",
       () -> Builder.<ArashParticleArrowEntity>of(
             (entityType, level) -> new ArashParticleArrowEntity((EntityType<? extends ThrowableItemProjectile>)entityType, level), MobCategory.MISC)
-         .sized(0.25F, 0.25F).clientTrackingRange(8).updateInterval(1).build("arash_particle_arrow")
+         .sized(0.25F, 0.25F).clientTrackingRange(64).updateInterval(1).build("arash_particle_arrow")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<ArashStellaControllerEntity>> ARASH_STELLA_CONTROLLER = ENTITY_TYPES.register(
       "arash_stella_controller",
@@ -302,6 +307,11 @@ public class ModEntities {
          .clientTrackingRange(96)
          .updateInterval(1)
          .build("spiritron_cannon_beam")
+   );
+   public static final DeferredHolder<EntityType<?>, EntityType<ArtoriaWindDefenseSwordEntity>> ARTORIA_WIND_DEFENSE_SWORD = ENTITY_TYPES.register(
+      "artoria_wind_defense_sword",
+      () -> Builder.<ArtoriaWindDefenseSwordEntity>of(ArtoriaWindDefenseSwordEntity::new, MobCategory.MISC)
+         .sized(0.25F, 1.0F).clientTrackingRange(32).updateInterval(1).build("artoria_wind_defense_sword")
    );
    public static final DeferredHolder<EntityType<?>, EntityType<RyougiShikiEntity>> RYOUGI_SHIKI = ENTITY_TYPES.register(
       "ryougi_shiki", () -> Builder.of(RyougiShikiEntity::new, MobCategory.CREATURE).sized(0.6F, 1.8F).build("ryougi_shiki")

@@ -1,0 +1,127 @@
+{
+    "emote":  {
+                  "beginTick":  0,
+                  "moves":  [
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  0,
+                                                    "yaw":  0,
+                                                    "roll":  0
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  0,
+                                                     "yaw":  0,
+                                                     "roll":  0
+                                                 },
+                                    "tick":  0,
+                                    "torso":  {
+                                                  "pitch":  0,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  -26.4033,
+                                                    "yaw":  -7.9814,
+                                                    "roll":  -15.6247
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  -42.5,
+                                                     "yaw":  0,
+                                                     "roll":  22.5
+                                                 },
+                                    "tick":  2,
+                                    "torso":  {
+                                                  "pitch":  37.5,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  -50,
+                                                    "yaw":  0,
+                                                    "roll":  -22.5
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  -30.0013,
+                                                     "yaw":  13.1247,
+                                                     "roll":  21.4688
+                                                 },
+                                    "tick":  8,
+                                    "torso":  {
+                                                  "pitch":  25,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  -50,
+                                                    "yaw":  0,
+                                                    "roll":  -22.5
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  -30.0013,
+                                                     "yaw":  13.1247,
+                                                     "roll":  21.4688
+                                                 },
+                                    "tick":  25,
+                                    "torso":  {
+                                                  "pitch":  25,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "tick":  25
+                                },
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  -17.5,
+                                                    "yaw":  0,
+                                                    "roll":  -22.5
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  34.9987,
+                                                     "yaw":  13.1247,
+                                                     "roll":  21.4688
+                                                 },
+                                    "tick":  30,
+                                    "torso":  {
+                                                  "pitch":  -17.5,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "leftArm":  {
+                                                    "pitch":  0,
+                                                    "yaw":  0,
+                                                    "roll":  0
+                                                },
+                                    "rightArm":  {
+                                                     "pitch":  0,
+                                                     "yaw":  0,
+                                                     "roll":  0
+                                                 },
+                                    "tick":  35,
+                                    "torso":  {
+                                                  "pitch":  0,
+                                                  "yaw":  0,
+                                                  "roll":  0
+                                              }
+                                },
+                                {
+                                    "tick":  50
+                                }
+                            ],
+                  "stopTick":  50,
+                  "endTick":  50,
+                  "degrees":  true
+              },
+    "description":  "Imported base servant upper-body animation; vanilla head look and leg movement are preserved.",
+    "name":  "servant_base_dodge_large_back",
+    "version":  3
+}

@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.combat;
 
 import java.util.List;
+import java.util.EnumSet;
 import javax.annotation.Nullable;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 
@@ -15,8 +16,9 @@ public final class ServantTraitAttackEvaluator {
       }
 
       double multiplier = 1.0;
+      EnumSet<ServantTraitTag> counted = EnumSet.noneOf(ServantTraitTag.class);
       for (ServantTraitTag condition : attackerConditions) {
-         if (defenderTraits.contains(condition)) {
+         if (condition != null && counted.add(condition) && defenderTraits.contains(condition)) {
             multiplier *= 1.5;
          }
       }

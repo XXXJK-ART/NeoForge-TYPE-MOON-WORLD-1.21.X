@@ -55,6 +55,7 @@ public record CastMagicMessage(int eventType, int pressedms) implements CustomPa
    }
 
    private static void handleEvent(ServerPlayer player, int eventType) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) return;
       if (player.hasEffect(ModMobEffects.STAGGER) || player.hasEffect(ModMobEffects.OFF_BALANCE)
          || BajiquanCombatService.isSparring(player)) return;
       switch (eventType) {

@@ -75,7 +75,7 @@ public final class SuperbWarfareLoader {
         return BRIDGE != null && BRIDGE.hasActiveSummonedA10(player);
     }
 
-    public static int countOwnedVehicles(ServerPlayer player) {
+    public static int countOwnedVehicles(LivingEntity player) {
         return BRIDGE == null ? 0 : BRIDGE.countOwnedVehicles(player);
     }
 

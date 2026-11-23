@@ -1,0 +1,72 @@
+{
+  "name": "heracles_action_5",
+  "version": 3,
+  "description": "Pursuit Back Throw",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 14,
+    "stopTick": 14,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 3,
+        "body": {
+          "pitch": 10
+        },
+        "rightArm": {
+          "pitch": -65
+        },
+        "leftArm": {
+          "pitch": -65
+        }
+      },
+      {
+        "tick": 4,
+        "body": {
+          "pitch": 10
+        },
+        "rightArm": {
+          "pitch": -65
+        },
+        "leftArm": {
+          "pitch": -65
+        }
+      },
+      {
+        "tick": 14,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

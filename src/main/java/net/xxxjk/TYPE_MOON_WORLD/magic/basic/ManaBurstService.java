@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.basic;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
@@ -23,8 +25,11 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.MagicProficiencyService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.WheelCastingModifierService;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
+import net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class ManaBurstService {
    public static final String MAGIC_ID = "mana_burst";
@@ -115,6 +120,7 @@ public final class ManaBurstService {
          double range = DIRECT_RANGE[level - 1];
          Vec3 end = eye.add(look.scale(range));
          Set<Integer> hit = new HashSet<>();
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, new AABB(eye, end).inflate(1.4), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
             Vec3 rel = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0).subtract(eye);
             double along = rel.dot(look);
@@ -122,10 +128,11 @@ public final class ManaBurstService {
             double side = rel.subtract(look.scale(along)).length();
             if (side <= 1.1) {
                target.invulnerableTime = 0;
-               target.hurt(player.damageSources().magic(), DIRECT_DAMAGE[level - 1]);
+               target.hurt(MagecraftDamageSource.of(player.damageSources().magic(), MAGIC_ID, player), DIRECT_DAMAGE[level - 1]);
                target.invulnerableTime = 0;
                spawnDirectImpactFx(serverLevel, target.position().add(0.0, target.getBbHeight() * 0.5, 0.0), level);
             }
+         }
          }
          spawnDirectBeamFx(serverLevel, eye, look, range, level);
          destroyDirectBeamBlocks(serverLevel, player, eye, look, range, level);
@@ -182,7 +189,8 @@ public final class ManaBurstService {
       if (player == null) {
          return;
       }
-      player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(player))
+         player.getPersistentData().putInt(JET_TICKS_TAG, maxJetTicks(level));
    }
 
    public static void tickExternalJetMovement(ServerPlayer player, int level) {
@@ -264,6 +272,15 @@ public final class ManaBurstService {
    }
 
    private static void applyBodyJetMovement(ServerPlayer player, CompoundTag data, int level, long now) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.isArtoria(player)) {
+         boolean fresh = now - data.getLong(INPUT_TICK_TAG) <= 6;
+         Vec3 forward = net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaAbilityService.horizontal(player);
+         Vec3 right = new Vec3(-forward.z, 0, forward.x);
+         Vec3 desired = fresh ? forward.scale(data.getFloat(INPUT_FORWARD_TAG)).add(right.scale(data.getFloat(INPUT_STRAFE_TAG))) : Vec3.ZERO;
+         net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaStateService.jet(player, desired,
+            fresh && data.getBoolean(INPUT_JUMP_TAG), fresh && data.getBoolean(INPUT_SNEAK_TAG));
+         return;
+      }
       boolean grounded = player.onGround();
       if (grounded) {
          data.putInt(JET_TICKS_TAG, maxJetTicks(level));
@@ -349,6 +366,25 @@ public final class ManaBurstService {
 
    private static void spawnJetFx(ServerLevel level, ServerPlayer player, Vec3 desired, boolean jump, boolean sneak, int levelRank) {
       Vec3 base = player.position().add(0.0, 0.18, 0.0);
+      if (ArtoriaStateService.isArtoria(player)) {
+         boolean emitted = false;
+         if (desired.lengthSqr() > 1.0E-4) {
+            spawnArtoriaJetFx(level, base, desired.normalize().scale(-1.0), false);
+            emitted = true;
+         }
+         if (jump) {
+            spawnArtoriaJetFx(level, player.position().add(0.0, 0.12, 0.0), JUMP_EXHAUST_DIRECTION, true);
+            emitted = true;
+         } else if (sneak) {
+            spawnArtoriaJetFx(level, player.position().add(0.0, player.getBbHeight() * 0.72, 0.0), SNEAK_EXHAUST_DIRECTION, false);
+            emitted = true;
+         }
+         if (!emitted) {
+            Vec3 lookBack = player.getLookAngle().multiply(-1.0, 0.0, -1.0);
+            spawnArtoriaJetFx(level, base, lookBack, false);
+         }
+         return;
+      }
       boolean emitted = false;
       if (desired.lengthSqr() > 1.0E-4) {
          Vec3 horizontalExhaust = desired.normalize().scale(-1.0);
@@ -365,6 +401,12 @@ public final class ManaBurstService {
       if (!emitted) {
          spawnJetStream(level, base, player.getLookAngle().multiply(-1.0, 0.0, -1.0), levelRank, false);
       }
+   }
+
+   private static void spawnArtoriaJetFx(ServerLevel level, Vec3 origin, Vec3 exhaustDirection, boolean intense) {
+      Vec3 direction = exhaustDirection.lengthSqr() > 1.0E-4 ? exhaustDirection.normalize() : JUMP_EXHAUST_DIRECTION;
+      VFXServerEffects.spawnOrientedScaled(level, "artoria_mana_burst_jet", origin, direction, 64.0,
+         intense ? 1.18F : 0.92F);
    }
 
    private static void spawnJetStream(ServerLevel level, Vec3 origin, Vec3 exhaustDirection, int levelRank, boolean intense) {

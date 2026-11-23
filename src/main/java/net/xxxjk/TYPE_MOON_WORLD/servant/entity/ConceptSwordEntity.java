@@ -50,7 +50,8 @@ public final class ConceptSwordEntity extends ThrowableItemProjectile {
       if (result.getEntity() instanceof LivingEntity living && owner instanceof LivingEntity livingOwner
          && !EntityUtils.isImmunePlayerTarget(living)
          && !net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.arePaleRiderAllies(living, livingOwner)) {
-         living.hurt(livingOwner.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD, this, livingOwner), this.damage);
+         living.hurt(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.noblePhantasm(
+            livingOwner.damageSources().source(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD, this, livingOwner)), this.damage);
       }
       this.discard();
    }

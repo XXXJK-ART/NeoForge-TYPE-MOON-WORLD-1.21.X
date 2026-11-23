@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -327,6 +329,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
 
    private void damageDiveSweep(ServerLevel level) {
       AABB area = this.getBoundingBox().inflate(2.8, 1.8, 2.8);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
          if (!this.diveHitTargets.add(victim.getUUID())) {
             continue;
@@ -340,6 +343,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          push = push.normalize();
          victim.push(push.x * 2.7, 0.55, push.z * 2.7);
          victim.hurtMarked = true;
+      }
       }
    }
 
@@ -365,6 +369,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       level.playSound(null, net.minecraft.core.BlockPos.containing(impactPos), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.HOSTILE, 2.0F, 0.58F);
       level.playSound(null, net.minecraft.core.BlockPos.containing(impactPos), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.HOSTILE, 1.85F, 0.92F);
       AABB area = new AABB(impactPos, impactPos).inflate(5.0, 2.6, 5.0);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
          victim.invulnerableTime = 0;
          victim.hurt(zeusDamageSource(level), DIVE_IMPACT_DAMAGE);
@@ -375,6 +380,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          push = push.normalize();
          victim.push(push.x * 2.4, 0.6, push.z * 2.4);
          victim.hurtMarked = true;
+      }
       }
    }
 
@@ -437,8 +443,10 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          return;
       }
       AABB area = this.getBoundingBox().inflate(LIGHTNING_AURA_RADIUS, 1.7, LIGHTNING_AURA_RADIUS);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
          target.hurt(zeusDamageSource(level), LIGHTNING_AURA_DAMAGE);
+      }
       }
    }
 
@@ -458,6 +466,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
       level.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 0.2, center.z, 2, 0.0, 0.0, 0.0, 0.0);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, 72, 3.2, 1.2, 3.2, 0.22);
       AABB area = this.getBoundingBox().inflate(8.0, 2.2, 8.0);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
          enemy.invulnerableTime = 0;
          enemy.hurt(zeusDamageSource(level), THUNDER_ROAR_DAMAGE);
@@ -469,6 +478,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          push = push.normalize();
          enemy.push(push.x * 1.8, 0.35, push.z * 1.8);
          enemy.hurtMarked = true;
+      }
       }
    }
 
@@ -509,9 +519,11 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
             continue;
          }
          AABB area = new AABB(base, base).inflate(2.2, 2.8, 2.2);
+         try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
             victim.invulnerableTime = 0;
             victim.hurt(zeusDamageSource(level), THUNDER_STRIKE_DAMAGE);
+         }
          }
          TerrainImpactService.impact(level, this, base.add(0.0, 0.15, 0.0), THUNDER_STRIKE_TERRAIN_PROFILE,
             TerrainImpactService.Shape.SURFACE_HEMISPHERE);
@@ -658,6 +670,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          breakGordiusImpactTerrain(level, source, center);
       }
       AABB area = new AABB(center, center).inflate(3.4, 1.8, 3.4);
+      try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : level.getEntitiesOfClass(LivingEntity.class, area, this::canThunderStrike)) {
          if (enemy == target) {
             continue;
@@ -671,6 +684,7 @@ public final class GordiusWheelEntity extends IskandarMountEntity {
          push = push.normalize();
          enemy.push(push.x * 1.4, 0.28, push.z * 1.4);
          enemy.hurtMarked = true;
+      }
       }
    }
 

@@ -15,7 +15,7 @@ class TalentPassiveRulesTest {
    void passiveRanksExposeApprovedValues() {
       assertEquals(20.0, PassiveRank.E.clairvoyanceProficiency());
       assertEquals(12.0, PassiveRank.A.maxZoom());
-      assertEquals(50.0, PassiveRank.A.healthBonus());
+      assertEquals(100.0, PassiveRank.A.healthBonus());
       assertEquals(10.0, PassiveRank.A.attackBonus());
       assertEquals(0.325, PassiveRank.B.dodgeChance());
       assertEquals(PassiveRank.D, PassiveRank.E.next());

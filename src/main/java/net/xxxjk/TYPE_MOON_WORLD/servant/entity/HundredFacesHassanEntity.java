@@ -34,11 +34,28 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    public enum PersonaMode {
       ASSASSINATION,
-      STEALTH,
-      TACTICS,
+      THROWING,
       POISON,
       SCOUT,
-      ZAID
+      INDUCE,
+      SUPPORT
+   }
+
+   private static final String TAG_MODE_VERSION = "HundredFacesModeVersion";
+
+   public static PersonaMode readStoredPersonaMode(CompoundTag tag, String key) {
+      int ordinal = tag.getInt(key);
+      if (tag.getInt(TAG_MODE_VERSION) < 2) {
+         return switch (ordinal) {
+            case 0 -> PersonaMode.ASSASSINATION;
+            case 2 -> PersonaMode.THROWING;
+            case 3 -> PersonaMode.POISON;
+            case 4, 5 -> PersonaMode.SCOUT;
+            default -> PersonaMode.SCOUT;
+         };
+      }
+      PersonaMode[] modes = PersonaMode.values();
+      return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : PersonaMode.SCOUT;
    }
 
    private static final EntityDataAccessor<Boolean> PRESENCE_CONCEALED = SynchedEntityData.defineId(
@@ -47,6 +64,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       HundredFacesHassanEntity.class, EntityDataSerializers.INT);
    private static final String TAG_EXPOSED_UNTIL = "HundredFacesExposedUntil";
    private static final String TAG_RETREAT_UNTIL = "HundredFacesRetreatUntil";
+   private static final String TAG_TRANSFER_CONCEALED_UNTIL = "HundredFacesTransferConcealedUntil";
    private static final ServantAnimations BUILT_IN_ANIMATIONS = new ServantAnimations(
       "animation.hundred_faces_hassan.standing",
       "animation.hundred_faces_hassan.walk",
@@ -74,7 +92,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
       builder.define(PRESENCE_CONCEALED, false);
-      builder.define(PERSONA_MODE, PersonaMode.STEALTH.ordinal());
+      builder.define(PERSONA_MODE, PersonaMode.SCOUT.ordinal());
    }
 
    @Override
@@ -94,21 +112,29 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       long now = level.getGameTime();
       boolean exposed = now < this.getPersistentData().getLong(TAG_EXPOSED_UNTIL);
       boolean retreating = now < this.getPersistentData().getLong(TAG_RETREAT_UNTIL);
-      boolean shouldConceal = retreating || (!exposed && this.getTarget() != null && this.distanceToSqr(this.getTarget()) > 9.0);
-      this.setPresenceConcealed(shouldConceal);
+      boolean transferConcealed = now < this.getPersistentData().getLong(TAG_TRANSFER_CONCEALED_UNTIL);
+      boolean shouldConceal = transferConcealed || !retreating && !exposed
+         && this.getTarget() != null && this.distanceToSqr(this.getTarget()) > 9.0;
+      this.setPresenceConcealed(shouldConceal, transferConcealed);
       this.applyMovementSpeed(retreating ? HundredFacesHassanRules.MAIN_RETREAT_MOVEMENT_SPEED
          : shouldConceal ? HundredFacesHassanRules.MAIN_CONCEALED_MOVEMENT_SPEED
          : HundredFacesHassanRules.MAIN_MOVEMENT_SPEED);
       this.applySplitAttributes(false);
-      if (this.tickCount % 40 == 0) this.ensureDirkLoadout();
-      if (retreating && this.tickCount % 10 == 0) HundredFacesHassanCombatHelper.cleanseHarmfulEffects(this);
       if (this.tickCount % 40 == 0) HundredFacesHassanCombatHelper.rescaleOwnedPersonas(this);
    }
 
    public void revealForCombat() {
       if (this.level().isClientSide()) return;
+      this.getPersistentData().remove(TAG_TRANSFER_CONCEALED_UNTIL);
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, this.level().getGameTime() + HundredFacesHassanRules.CONCEALMENT_EXPOSURE_TICKS);
       this.setPresenceConcealed(false);
+   }
+
+   public void applyBodyTransferConcealment(int ticks) {
+      long until = this.level().getGameTime() + Math.max(1, ticks);
+      this.getPersistentData().putLong(TAG_TRANSFER_CONCEALED_UNTIL, until);
+      this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, until);
+      this.setPresenceConcealed(true, true);
    }
 
    public boolean isPresenceConcealed() {
@@ -118,15 +144,16 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    public PersonaMode getPersonaMode() {
       int ordinal = this.entityData.get(PERSONA_MODE);
       PersonaMode[] modes = PersonaMode.values();
-      return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : PersonaMode.STEALTH;
+      return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : PersonaMode.SCOUT;
    }
 
    public void setPersonaMode(PersonaMode mode) {
-      this.entityData.set(PERSONA_MODE, mode == null ? PersonaMode.STEALTH.ordinal() : mode.ordinal());
+      this.entityData.set(PERSONA_MODE, mode == null ? PersonaMode.SCOUT.ordinal() : mode.ordinal());
    }
 
    public void startRetreat(long now) {
       this.getPersistentData().putLong(TAG_RETREAT_UNTIL, now + HundredFacesHassanRules.RETREAT_DURATION_TICKS);
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
    }
 
@@ -165,8 +192,6 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       setBase(Attributes.MAX_HEALTH, HundredFacesHassanRules.mainHealthForSplitCount(splitCount));
       setBase(Attributes.ATTACK_DAMAGE, HundredFacesHassanRules.mainAttackDamageForSplitCount(splitCount));
       setBase(Attributes.ARMOR, HundredFacesHassanRules.mainArmorForSplitCount(splitCount));
-      setBase(Attributes.KNOCKBACK_RESISTANCE, splitCount >= HundredFacesHassanRules.MAX_PERSONAS
-         ? HundredFacesHassanRules.PERSONA_KNOCKBACK_RESISTANCE : 1.0);
       if (this.getCurrentMp() > this.getMaxMp()) this.setCurrentMp(this.getMaxMp());
       if (resetHealth || this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
    }
@@ -184,17 +209,43 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    }
 
    private void ensureDirkLoadout() {
-      ItemStack held = this.getMainHandItem();
-      if (held.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         if (held.getCount() < 30) held.setCount(30);
+      ItemStack offhand = this.getOffhandItem();
+      ItemStack mainhand = this.getMainHandItem();
+      if (offhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         offhand.setCount(1);
+         if (offhand.getDamageValue() >= offhand.getMaxDamage()) offhand.setDamageValue(0);
+         if (mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          return;
       }
-      if (held.isEmpty()) {
-         this.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get(), 30));
+      if (mainhand.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         mainhand.setCount(1);
+         if (mainhand.getDamageValue() >= mainhand.getMaxDamage()) mainhand.setDamageValue(0);
+         if (offhand.isEmpty()) {
+            this.setItemInHand(InteractionHand.OFF_HAND, mainhand.copy());
+            this.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+         }
+         return;
       }
+      if (HundredFacesHassanRules.shouldGenerateDirk(mainhand.isEmpty(), offhand.isEmpty()))
+         this.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(ModItems.DIRK_SMALL_KNIFE.get()));
    }
 
    private void setPresenceConcealed(boolean concealed) {
+      this.setPresenceConcealed(concealed, false);
+   }
+
+   private void setPresenceConcealed(boolean concealed, boolean forced) {
+      if (concealed && !forced && !this.entityData.get(PRESENCE_CONCEALED)) {
+         if (this.getCurrentMp() < HundredFacesHassanRules.MP_PRESENCE_CONCEALMENT
+            || !net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(this)) {
+            concealed = false;
+         } else {
+            this.setCurrentMp(this.getCurrentMp() - HundredFacesHassanRules.MP_PRESENCE_CONCEALMENT);
+         }
+      }
+      if (concealed && !forced && !net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.canActivatePresenceConcealment(this)) {
+         concealed = false;
+      }
       boolean changed = this.entityData.get(PRESENCE_CONCEALED) != concealed;
       if (changed) this.entityData.set(PRESENCE_CONCEALED, concealed);
       this.setInvisible(false);
@@ -233,9 +284,14 @@ public final class HundredFacesHassanEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      if (target instanceof LivingEntity living && CursedArmHassanCombatHelper.refusesToHarm(this, living)) {
+         this.setTarget(null);
+         return false;
+      }
       if (target instanceof LivingEntity living && HundredFacesHassanCombatHelper.areSameHundredFacesSide(this, living)) {
          return false;
       }
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof LivingEntity living && this.getPersonaMode() == PersonaMode.POISON) {
@@ -248,8 +304,8 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    public boolean hurt(DamageSource source, float amount) {
       boolean hurt = super.hurt(source, amount);
       if (hurt) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
          this.revealForCombat();
-         HundredFacesHassanCombatHelper.tryReactiveDodge(this, source);
       }
       return hurt;
    }
@@ -293,6 +349,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
       super.addAdditionalSaveData(tag);
       tag.putBoolean("HundredFacesConcealed", this.isPresenceConcealed());
       tag.putInt("HundredFacesPersonaMode", this.entityData.get(PERSONA_MODE));
+      tag.putInt(TAG_MODE_VERSION, 2);
       tag.putLong(TAG_EXPOSED_UNTIL, this.getPersistentData().getLong(TAG_EXPOSED_UNTIL));
       tag.putLong(TAG_RETREAT_UNTIL, this.getPersistentData().getLong(TAG_RETREAT_UNTIL));
       tag.putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT, this.getTotalSplitCount());
@@ -301,7 +358,7 @@ public final class HundredFacesHassanEntity extends ServantEntity {
    @Override
    public void readAdditionalSaveData(CompoundTag tag) {
       super.readAdditionalSaveData(tag);
-      this.entityData.set(PERSONA_MODE, tag.getInt("HundredFacesPersonaMode"));
+      this.setPersonaMode(readStoredPersonaMode(tag, "HundredFacesPersonaMode"));
       this.getPersistentData().putLong(TAG_EXPOSED_UNTIL, tag.getLong(TAG_EXPOSED_UNTIL));
       this.getPersistentData().putLong(TAG_RETREAT_UNTIL, tag.getLong(TAG_RETREAT_UNTIL));
       this.getPersistentData().putInt(HundredFacesHassanRules.TAG_TOTAL_SPLIT_COUNT,

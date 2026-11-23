@@ -27,18 +27,32 @@ public class ArtoriaExcaliburBeamRenderer extends EntityRenderer<ArtoriaExcalibu
          return;
       }
       Vec3 forward = end.normalize();
-      Vec3 worldUp = Math.abs(forward.y) > 0.94 ? new Vec3(1.0, 0.0, 0.0) : new Vec3(0.0, 1.0, 0.0);
+      Vec3 worldUp = Math.abs(forward.y) > 0.95 ? new Vec3(0.0, 0.0, 1.0) : new Vec3(0.0, 1.0, 0.0);
       Vec3 right = forward.cross(worldUp).normalize();
       Vec3 up = right.cross(forward).normalize();
       float progress = Math.min(1.0F, entity.tickCount / (float)Math.max(1, entity.getDuration()));
       float fade = 1.0F - Math.max(0.0F, progress - 0.82F) / 0.18F;
-      float scale = entity.isGoldenVariant() ? 0.72F : 1.0F;
+      float scale = entity.isGoldenVariant() ? 0.72F : entity.isShortVariant() ? 0.9F : 1.0F;
       float width = (float)entity.beamHalfWidth() * scale;
-      int color = entity.isGoldenVariant() ? 0xFFFFC44A : 0xFFDDFBFF;
+      int color = entity.isGoldenVariant() ? 0xFFFFE04A : entity.isShortVariant() ? 0xFFE8FBFF : 0xFFDDFBFF;
       VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucentEmissive(BEAM_TEXTURE));
-      drawQuad(poseStack, consumer, end, right, width * 0.78F, color, fade * 0.26F);
-      drawQuad(poseStack, consumer, end, up, width * 0.52F, 0xFFFFFFFF, fade * 0.9F);
-      drawQuad(poseStack, consumer, end, right, width * 0.22F, 0xFFFFFFFF, fade);
+      drawTaperedQuad(poseStack, consumer, end, right, width, color, fade * (entity.isShortVariant() ? 0.5F : 0.42F));
+      drawQuad(poseStack, consumer, end, up, (float)entity.beamHalfHeight(), 0xFFFFFFFF, fade * (entity.isShortVariant() ? 0.82F : 0.96F));
+      drawQuad(poseStack, consumer, end, right, width * (entity.isShortVariant() ? 0.3F : 0.22F), 0xFFFFFFFF, fade);
+   }
+
+   private static void drawTaperedQuad(PoseStack poses, VertexConsumer consumer, Vec3 end, Vec3 axis, float width, int argb, float alpha) {
+      float r = ((argb >>> 16) & 255) / 255F, g = ((argb >>> 8) & 255) / 255F, b = (argb & 255) / 255F;
+      for (int i = 0; i < 24; i++) {
+         double from = i / 24.0, to = (i + 1) / 24.0;
+         float w0 = (float)(width * Math.pow(Math.max(.22, Math.sin(Math.PI * from)), .35));
+         float w1 = (float)(width * Math.pow(Math.max(.22, Math.sin(Math.PI * to)), .35));
+         Vec3 a = end.scale(from), z = end.scale(to);
+         vertex(poses.last(), consumer, (float)a.x, (float)a.y, (float)a.z, axis, -w0, r, g, b, alpha, (float)from, 0);
+         vertex(poses.last(), consumer, (float)a.x, (float)a.y, (float)a.z, axis, w0, r, g, b, alpha, (float)from, 1);
+         vertex(poses.last(), consumer, (float)z.x, (float)z.y, (float)z.z, axis, w1, r, g, b, alpha, (float)to, 1);
+         vertex(poses.last(), consumer, (float)z.x, (float)z.y, (float)z.z, axis, -w1, r, g, b, alpha, (float)to, 0);
+      }
    }
 
    private static void drawQuad(PoseStack poseStack, VertexConsumer consumer, Vec3 end, Vec3 axis,

@@ -29,6 +29,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneEffectDispatcher;
 import net.xxxjk.TYPE_MOON_WORLD.magic.rune.RuneProgram;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
@@ -151,9 +152,6 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
             if (this.getOwner() instanceof LivingEntity owner) {
                damage = MercurySwordMagicAmplifier.amplifyDamage(owner, damage);
             }
-            damage = MagicResistanceHelper.applyMagicDamageReduction(
-               target, this.damageSources().magic(), damage, MagicComplexity.SIMPLE_ACTION,
-               this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
             // Resolve effect bands against the projectile's actual base damage at impact.
             // This is where life drain, elemental bonuses, stasis and terminal effects become real.
             var runeTag = this.getPersistentData();
@@ -163,16 +161,17 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
                if (resolved != null && !resolved.failed()) damage = (float)Math.max(damage, resolved.damage());
             }
             target.invulnerableTime = 0;
-            target.hurt(this.damageSources().magic(), damage);
+            target.hurt(MagecraftDamageSource.of(this.damageSources().indirectMagic(this, this.getOwner()), this.sourceMagicId,
+               this.getOwner() instanceof LivingEntity owner ? owner : null, this.casterProficiency), damage);
             target.invulnerableTime = 0;
             int amplifier = this.slowPercent >= 0.3F ? 1 : 0;
             int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-               target, 60, MagicComplexity.SIMPLE_ACTION,
+               target, 60, MagicResistanceHelper.complexityForMagic(this.sourceMagicId),
                this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
             if (this.slowPercent > 0.0F && duration > 0) {
                target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, amplifier, false, true, true));
             }
-            if (duration > 0 || damage > 0.0F) {
+            if (duration > 0) {
                applyElementEffect(target);
             }
              spawnImpactParticles(this.position());
@@ -233,16 +232,21 @@ public class MagicBulletProjectileEntity extends ThrowableItemProjectile {
 
    private void explodeRune(Vec3 pos) {
       if (runeExplosionRadius <= 0.0D || !(this.level() instanceof ServerLevel level)) return;
-      level.explode(this, pos.x, pos.y, pos.z, (float)runeExplosionRadius, Level.ExplosionInteraction.NONE);
+      var source = MagecraftDamageSource.of(net.minecraft.world.level.Explosion.getDefaultDamageSource(level, this), this.sourceMagicId,
+         this.getOwner() instanceof LivingEntity owner ? owner : null, this.casterProficiency);
+      level.explode(this, source, null, pos, (float)runeExplosionRadius, false, Level.ExplosionInteraction.NONE);
    }
 
    private void applyElementEffect(LivingEntity target) {
       int element = getElement();
-      int duration = MagicResistanceHelper.applyDebuffResistance(target, 60);
+      MagicComplexity complexity = MagicResistanceHelper.complexityForMagic(this.sourceMagicId);
+      int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(target, element == ELEMENT_WATER ? 80 : 60, complexity,
+         this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
+      if (duration <= 0) return;
       if (element == ELEMENT_FIRE) {
          target.igniteForSeconds(3.0F);
       } else if (element == ELEMENT_WATER) {
-         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration + 20, 1, false, true, true));
+         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1, false, true, true));
       } else if (element == ELEMENT_EARTH) {
          target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, duration, 0, false, true, true));
       } else if (element == ELEMENT_WIND) {

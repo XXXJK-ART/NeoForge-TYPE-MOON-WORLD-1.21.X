@@ -5,7 +5,7 @@
   "display_name_zh": "佐佐木小次郎",
   "class_type": "assassin",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "chaotic", "evil"],
+  "traits": ["servant", "humanoid", "human", "human_kind", "seven_knights", "male", "neutral_alignment", "evil"],
   "parameters": {
     "endurance": "E",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "E",
     "magic_plus": false,
     "luck": "A",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": ""
   },
   "model": {
     "geometry": "",
@@ -36,17 +37,7 @@
     },
     "default_weapon": "typemoonworld:bizen_nagamitsu",
     "immune_to_stone_axe_debuff": false,
-    "combat_actions": [
-      "teleport_behind",
-      "combo",
-      "tsurigameshi",
-      "afterimage_slash",
-      "iaijutsu_step",
-      "sweep",
-      "slash",
-      "uppercut",
-      "horizontal_swing"
-    ]
+      "combat_actions": ["combo", "uppercut", "horizontal_swing"]
   },
   "skills": ["stealth_d", "spiritualization_b_plus", "souwa_expertise_b", "mindseye_a"],
   "noble_phantasm": "",

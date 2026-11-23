@@ -24,6 +24,28 @@
       "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 2, "approach_range": 36, "damage_scale": 1.0}
     },
     {
+      "id": "typemoonworld:jeanne_alter_black_flame_sweep",
+      "tags": ["area", "control"],
+      "minimum_range": 0.0,
+      "maximum_range": 7.0,
+      "mana_cost": 28,
+      "stamina_cost": 0,
+      "terrain_impact": "none",
+      "timing": {"windup": 5, "active": 2, "recovery": 9},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 5, "damage_scale": 1.0}
+    },
+    {
+      "id": "typemoonworld:jeanne_alter_chain_execution",
+      "tags": ["area", "control", "interrupt"],
+      "minimum_range": 7.0,
+      "maximum_range": 30.0,
+      "mana_cost": 38,
+      "stamina_cost": 0,
+      "terrain_impact": "small",
+      "timing": {"windup": 9, "active": 2, "recovery": 12},
+      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 2, "approach_range": 16, "damage_scale": 1.0}
+    },
+    {
       "id": "typemoonworld:jeanne_alter_le_grondement_du_haine",
       "tags": ["noble_phantasm", "area", "finisher"],
       "minimum_range": 0.0,
@@ -33,28 +55,6 @@
       "terrain_impact": "np",
       "timing": {"windup": 20, "active": 4, "recovery": 24},
       "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 4, "approach_range": 32, "damage_scale": 1.0}
-    },
-    {
-      "id": "typemoonworld:jeanne_alter_self_modification_ex",
-      "tags": ["guard", "melee"],
-      "minimum_range": 0.0,
-      "maximum_range": 20.0,
-      "mana_cost": 30,
-      "stamina_cost": 0,
-      "terrain_impact": "none",
-      "timing": {"windup": 6, "active": 1, "recovery": 8},
-      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 20, "damage_scale": 1.0}
-    },
-    {
-      "id": "typemoonworld:jeanne_alter_dragon_witch_ex",
-      "tags": ["area", "control"],
-      "minimum_range": 0.0,
-      "maximum_range": 24.0,
-      "mana_cost": 42,
-      "stamina_cost": 0,
-      "terrain_impact": "none",
-      "timing": {"windup": 6, "active": 1, "recovery": 8},
-      "maneuver": {"movement": "none", "control": "cast", "interrupt_level": 1, "approach_range": 24, "damage_scale": 1.0}
     },
     {
       "id": "typemoonworld:jeanne_alter_inferno_body",

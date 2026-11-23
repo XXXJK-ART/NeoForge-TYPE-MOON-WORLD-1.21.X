@@ -1,0 +1,104 @@
+{
+  "duration": 2.4,
+  "notes": [
+    "Three Thousand Worlds chant: an oversized iron-sight seal, rising gun-metal spiral, and expanding hot ring foreshadow the wide three-wave matchlock array."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.15,
+      "rate": 132,
+      "particle_lifetime": 1.05,
+      "size_variance": 0.13,
+      "lifetime_variance": 0.09,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.035, 0.0],
+      "velocity_variance": 0.025,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.08, 0.0], "rotate_with_entity": true },
+      "component": { "type": "bicircle_star", "radius": 1.0, "inner_radius": 0.66, "segments": 72 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.15, "color": "#FFFFE6A5" },
+        { "t": 0.6, "color": "#CCDD761C" },
+        { "t": 1.0, "color": "#009D3514" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.04 },
+        { "t": 0.38, "size": 0.28 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.3, 0.3, 0.3] },
+        { "t": 0.8, "scale": [2.7, 2.7, 2.7], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [2.2, 2.2, 2.2] }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "THREE_THOUSAND_CHANT_SIGHT_SIGIL",
+      "material": { "shader": "vfx_sdf", "bloom": 0.4, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 2.25,
+      "rate": 96,
+      "particle_lifetime": 1.0,
+      "size_variance": 0.14,
+      "lifetime_variance": 0.1,
+      "position_variance": 0.02,
+      "velocity": [0.0, 0.12, 0.0],
+      "velocity_variance": 0.03,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.15, 0.0], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 1.5, "turns": 2.2, "height": 3.2, "segments": 112 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.18, "color": "#DDCF7728" },
+        { "t": 0.58, "color": "#AAE69A45" },
+        { "t": 1.0, "color": "#003C1710" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.035 },
+        { "t": 0.38, "size": 0.22 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "TRANSLUCENT",
+      "particle_role": "THREE_THOUSAND_CHANT_UPDRAFT",
+      "material": { "shader": "vfx_energy", "bloom": 0.35, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [0.4, 0.4, 0.4], "offset": [0.0, 0.2, 0.0], "speed": 0.01, "chance": 0.2 },
+        { "type": "smoke", "count": 1, "spread": [0.24, 0.22, 0.24], "offset": [0.0, 0.15, 0.0], "speed": 0.008, "chance": 0.12 }
+      ]
+    },
+    {
+      "start_time": 0.12,
+      "end_time": 2.15,
+      "rate": 74,
+      "particle_lifetime": 0.82,
+      "size_variance": 0.1,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.025, 0.0],
+      "velocity_variance": 0.015,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 2.2, 0.0], "rotate_with_entity": true },
+      "component": { "type": "elliptic_torus", "radius_x": 1.7, "radius_z": 1.7, "tube_radius": 0.08, "u_segments": 64, "v_segments": 8 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00FFFFFF" },
+        { "t": 0.12, "color": "#FFFFF0C2" },
+        { "t": 0.42, "color": "#DDD98D39" },
+        { "t": 0.78, "color": "#8891332A" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.025 },
+        { "t": 0.35, "size": 0.12 },
+        { "t": 1.0, "size": 0.015 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [0.32, 0.35, 0.32] },
+        { "t": 0.8, "scale": [1.4, 0.5, 1.4], "easing": "ease_out_cubic" },
+        { "t": 1.0, "scale": [1.65, 0.38, 1.65] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "THREE_THOUSAND_CHANT_IRON_RING",
+      "material": { "shader": "vfx_energy", "bloom": 0.48, "soft_particles": true, "distortion": false }
+    }
+  ]
+}

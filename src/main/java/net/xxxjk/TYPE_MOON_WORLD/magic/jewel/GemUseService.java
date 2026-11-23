@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.jewel;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.component.DataComponents;
@@ -119,6 +122,7 @@ public final class GemUseService {
          spawnWhiteShockwaveParticles(serverLevel, player, radius, powerNormalized);
       }
 
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level()
          .getEntitiesOfClass(
             LivingEntity.class,
@@ -139,10 +143,11 @@ public final class GemUseService {
          double nz = dz / distance;
          double falloff = 1.0 - Math.min(1.0, distance / radius);
          float damage = (float)Math.max(0.5, baseDamage * (0.5 + 0.5 * falloff));
-         target.hurt(player.damageSources().indirectMagic(player, player), damage);
+         target.hurt(MagecraftDamageSource.of(player.damageSources().indirectMagic(player, player), "jewel_magic_release", player), damage);
          double horizontal = baseHorizontalKnockback * (0.35 + 0.65 * falloff);
          double vertical = baseVerticalKnockback * (0.45 + 0.55 * falloff);
          target.push(nx * horizontal, vertical, nz * horizontal);
+      }
       }
 
       heldStack.shrink(1);

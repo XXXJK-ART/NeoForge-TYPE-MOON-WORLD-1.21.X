@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -332,10 +334,12 @@ public final class GawainCombatHelper {
       spawnTrail(level, start, end, ParticleTypes.FLAME, 22);
       spawnTrail(level, start, end, ParticleTypes.END_ROD, 10);
       AABB box = new AABB(start, end).inflate(1.1, 1.1, 1.1);
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, box, e -> canHit(entity, e))) {
          damageTarget(entity, living, solar ? 48.0F : 34.0F);
          living.igniteForSeconds(solar ? 5.0F : 3.0F);
          pushAway(living, dir, 0.85, 0.18);
+      }
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.05F, 1.15F);
       return true;
@@ -350,6 +354,7 @@ public final class GawainCombatHelper {
       entity.triggerSweepAnimation();
       Vec3 dir = horizontalDirection(entity, target);
       int hit = 0;
+      try (var carrySegment301 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(3.8), e -> canHit(entity, e))) {
          Vec3 away = living.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
          if (away.lengthSqr() < 1.0E-4) {
@@ -361,6 +366,7 @@ public final class GawainCombatHelper {
          living.push(away.x * 1.15, 0.24, away.z * 1.15);
          living.hurtMarked = true;
          hit++;
+      }
       }
       Vec3 center = entity.position().add(dir.scale(1.25)).add(0.0, entity.getBbHeight() * 0.55, 0.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 4, 0.0, 0.0, 0.0, 0.0);
@@ -410,10 +416,12 @@ public final class GawainCombatHelper {
       level.sendParticles(ParticleTypes.SMOKE, center.x, center.y + 0.15, center.z, 10, 0.45, 0.6, 0.45, 0.04);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
       AABB hitBox = new AABB(center, center).inflate(1.8, 1.4, 1.8);
+      try (var carrySegment302 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, hitBox, e -> canHit(entity, e))) {
          damageTarget(entity, living, solar ? 18.0F : 12.0F);
          living.igniteForSeconds(solar ? 6.0F : 5.0F);
          pushAway(living, dir, 0.75, 0.18);
+      }
       }
    }
 
@@ -424,10 +432,12 @@ public final class GawainCombatHelper {
       double radius = solar ? 6.0 : 4.8;
       level.sendParticles(ParticleTypes.FLAME, center.x, center.y + 0.1, center.z, 30, radius * 0.55, 0.12, radius * 0.55, 0.035);
       level.sendParticles(ParticleTypes.ASH, center.x, center.y + 0.45, center.z, 24, radius * 0.55, 0.22, radius * 0.55, 0.02);
+      try (var carrySegment303 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(radius), e -> canHit(entity, e))) {
          damageTarget(entity, living, solar ? 18.0F : 12.0F);
          living.igniteForSeconds(solar ? 4.0F : 3.0F);
          living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 45, 0, false, true));
+      }
       }
    }
 
@@ -536,12 +546,14 @@ public final class GawainCombatHelper {
       for (double dist = 1.5; dist <= 12.0; dist += 0.75) {
          Vec3 pos = origin.add(look.scale(dist));
          level.sendParticles(ParticleTypes.FLAME, pos.x, pos.y, pos.z, 5, 0.22, 0.18, 0.22, 0.04);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(1.35), e -> canHit(entity, e))) {
             if (hit.add(living.getId())) {
                living.hurt(entity.damageSources().magic(), 80.0F);
                living.igniteForSeconds(4.0F);
                pushAway(living, look, 1.2, 0.22);
             }
+         }
          }
       }
       level.playSound(null, entity.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.HOSTILE, 1.2F, 0.85F);
@@ -550,6 +562,7 @@ public final class GawainCombatHelper {
    private static void performGallatinCone(GawainEntity entity, ServerLevel level, Vec3 look, float damage) {
       Vec3 origin = entity.position().add(0.0, entity.getBbHeight() * 0.55, 0.0);
       Set<Integer> hit = new HashSet<>();
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, entity.getBoundingBox().inflate(GALLATIN_RANGE + 3.0), e -> canHit(entity, e))) {
          Vec3 to = living.position().add(0.0, living.getBbHeight() * 0.45, 0.0).subtract(origin);
          Vec3 horizontal = new Vec3(to.x, 0.0, to.z);
@@ -567,12 +580,13 @@ public final class GawainCombatHelper {
             pushAway(living, look, 5.0, 0.32);
          }
       }
+      }
       spawnGallatinReleaseParticles(level, origin, look);
       breakGallatinPath(entity, level, origin, look);
    }
 
    private static void applyFixedDamageOverTicks(GawainEntity entity, LivingEntity target, float totalDamage, int ticks) {
-      float adjusted = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, totalDamage);
+      float adjusted = totalDamage;
       if (adjusted <= 0.0F) {
          return;
       }
@@ -588,7 +602,6 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamage(GawainEntity entity, LivingEntity target, float damage) {
-      damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
       if (damage <= 0.0F) {
          return;
       }
@@ -596,6 +609,7 @@ public final class GawainCombatHelper {
    }
 
    private static void applyFixedDamageRaw(GawainEntity entity, LivingEntity target, float damage) {
+      if (ServantMasterDamageRouter.special(target, damage, defender -> applyFixedDamageRaw(entity, defender, damage))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

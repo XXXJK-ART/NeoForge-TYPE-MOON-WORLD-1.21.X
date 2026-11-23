@@ -7,6 +7,7 @@
     "AbstractFurnaceBlockEntityMixin",
     "PrimedTntMixin",
     "EntityPassengerPositionMixin",
+    "ExplosionCarryDamageMixin",
     "AttributesMixin",
     "FurnaceFuelSlotMixin",
     "LivingEntityInputAccessor",
@@ -24,7 +25,10 @@
     "client.NeatHealthBarRendererMixin",
     "client.MixinMinecraft",
     "client.LocalPlayerHakuryuDismountMixin",
+    "client.LocalPlayerArashBowUseMixin",
     "client.PlayerModelMixin",
+    "client.SasakiTsubameFacingMixin",
+    "client.SasakiTsubameHeldItemMixin",
     "client.PlayerRendererMixin"
   ],
   "injectors": {

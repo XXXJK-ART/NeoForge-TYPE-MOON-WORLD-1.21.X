@@ -1,5 +1,8 @@
 package com.example.typemoonaddon.zagan;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.magic.ZaganMagic;
 import com.example.typemoonaddon.network.AddonSpellVisualPayload;
 import java.util.ArrayDeque;
@@ -231,7 +234,8 @@ public final class ZaganService {
     private static void pulse(ServerPlayer caster, ServerLevel level, CastState state, long now) {
         List<LivingEntity> targets = findTargets(caster, level, state.anchor);
         Set<UUID> current = new HashSet<>();
-        DamageSource source = level.damageSources().source(DamageTypes.MAGIC, caster);
+        DamageSource source = MagecraftDamageSource.of(level.damageSources().source(DamageTypes.MAGIC, caster), "zagan", caster);
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : targets) {
             current.add(target.getUUID());
             state.controls.computeIfAbsent(target.getUUID(), ignored ->
@@ -262,6 +266,7 @@ public final class ZaganService {
                         (float) WATER_BUBBLE_RADIUS, 1.0F, EFFECT_DURATION_TICKS,
                         target.getId(), VFX_OBSERVER_RADIUS);
             }
+        }
         }
         state.activeTargets.clear();
         state.activeTargets.addAll(current);

@@ -20,6 +20,26 @@ public abstract class SuperbWarfareVehicleMixin {
     @Shadow(remap = false)
     public abstract String getOverride();
 
+    @Inject(method = "canShoot", at = @At("HEAD"), cancellable = true, require = 1)
+    private void fatesupport$disableRammingAircraftTrigger(CallbackInfoReturnable<Boolean> callbackInfo) {
+        if (fatesupport$isRammingAircraft()) callbackInfo.setReturnValue(false);
+    }
+
+    @Inject(method = {
+            "vehicleShoot(Lnet/minecraft/world/entity/LivingEntity;Ljava/lang/String;Lnet/minecraft/world/phys/Vec3;)V",
+            "vehicleShoot(Lnet/minecraft/world/entity/LivingEntity;Ljava/lang/String;Ljava/util/UUID;Lnet/minecraft/world/phys/Vec3;)V",
+            "vehicleShoot(Lnet/minecraft/world/entity/LivingEntity;Ljava/util/UUID;Lnet/minecraft/world/phys/Vec3;)V"
+    }, at = @At("HEAD"), cancellable = true, require = 3)
+    private void fatesupport$disableRammingAircraftWeapons(CallbackInfo callbackInfo) {
+        if (fatesupport$isRammingAircraft()) callbackInfo.cancel();
+    }
+
+    private boolean fatesupport$isRammingAircraft() {
+        Entity vehicle = (Entity) (Object) this;
+        return vehicle.getPersistentData().getBoolean(SuperbWarfareLoader.VEHICLE_TAG)
+                && vehicle.getPersistentData().getBoolean(SuperbWarfareLoader.VEHICLE_A10_TAG);
+    }
+
     @Inject(method = "getMaxHealth", at = @At("RETURN"), cancellable = true, require = 0)
     private void fatesupport$doubleOwnerizedMaxHealth(CallbackInfoReturnable<Float> callbackInfo) {
         Entity vehicle = (Entity) (Object) this;

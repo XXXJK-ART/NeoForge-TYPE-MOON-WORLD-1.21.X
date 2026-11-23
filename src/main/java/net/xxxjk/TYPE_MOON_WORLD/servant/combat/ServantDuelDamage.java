@@ -17,6 +17,7 @@ public final class ServantDuelDamage {
       if (!(event.getSource().getEntity() instanceof ServantEntity)) return;
       if (event.getSource().is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
          || NoblePhantasmDamageClassifier.isNoblePhantasmDamage(event.getSource(), event.getOriginalAmount())) return;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService.isTechniqueDamage(event.getSource())) return;
       event.setAmount(event.getAmount() * ORDINARY_DAMAGE_SCALE);
    }
 }

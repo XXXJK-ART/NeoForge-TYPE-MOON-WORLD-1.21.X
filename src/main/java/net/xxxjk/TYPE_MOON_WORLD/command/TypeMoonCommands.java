@@ -1121,6 +1121,10 @@ public class TypeMoonCommands {
          boolean newState = !current;
          player.getPersistentData().putBoolean("TypeMoonNoCooldown", newState);
          if (newState) {
+            ServantCardUnlimitedMode.clearServantCardCooldowns(player);
+            player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).syncPlayerVariables(player);
+         }
+         if (newState) {
             ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("No Cooldown Mode: ON"), true);
          } else {
             ((CommandSourceStack)ctx.getSource()).sendSuccess(() -> Component.literal("No Cooldown Mode: OFF"), true);

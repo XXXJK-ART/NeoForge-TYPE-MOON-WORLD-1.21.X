@@ -1,5 +1,6 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.church;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import java.util.UUID;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -152,11 +153,11 @@ public final class BaptismRiteEventHandler {
       cleanse(target, proficiency);
       net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderInfectionService.cleanse(target, true);
       target.invulnerableTime = 0;
-      target.hurt(caster.damageSources().source(BAPTISM_DAMAGE, caster), damage);
+      target.hurt(MagecraftDamageSource.of(caster.damageSources().source(BAPTISM_DAMAGE, caster), "baptism_rite", caster), damage);
       target.invulnerableTime = 0;
       boolean sublimated = target.isAlive() && !(target instanceof ServerPlayer) && caster.getRandom().nextDouble() < chance;
       if (sublimated) {
-         target.hurt(caster.damageSources().source(BAPTISM_DAMAGE, caster), Math.max(target.getMaxHealth() * 2.0F, damage));
+         target.hurt(MagecraftDamageSource.of(caster.damageSources().source(BAPTISM_DAMAGE, caster), "baptism_rite", caster), Math.max(target.getMaxHealth() * 2.0F, damage));
       }
       spawnFinishParticles(caster, target, proficiency);
       SoundSource soundSource = caster instanceof ServerPlayer ? SoundSource.PLAYERS : SoundSource.HOSTILE;

@@ -23,41 +23,45 @@ public final class ConcealmentStateSync {
    public static void update(LivingEntity entity, boolean concealed) {
       if (entity.level().isClientSide) return;
       var data = entity.getPersistentData();
-      if (data.getBoolean(TAG_SYNCED) && data.getBoolean(TAG_LAST) == concealed) return;
+      boolean perfect = concealed && ServantConcealment.isPerfectlyConcealedForObservers(entity);
+      if (data.getBoolean(TAG_SYNCED) && data.getBoolean(TAG_LAST) == concealed
+         && data.getBoolean(TAG_LAST + "Perfect") == perfect) return;
       data.putBoolean(TAG_SYNCED, true);
       data.putBoolean(TAG_LAST, concealed);
-      broadcast(entity, concealed);
+      data.putBoolean(TAG_LAST + "Perfect", perfect);
+      broadcast(entity, concealed, perfect);
    }
 
    @SubscribeEvent
    public static void onStartTracking(PlayerEvent.StartTracking event) {
       if (!(event.getEntity() instanceof ServerPlayer tracker) || !(event.getTarget() instanceof LivingEntity target)) return;
       ModNetwork.sendToPlayer(tracker,
-         new ConcealmentStateMessage(target.getUUID(), ServantConcealment.isFullyConcealed(target)));
+         new ConcealmentStateMessage(target.getUUID(), ServantConcealment.isFullyConcealed(target),
+            ServantConcealment.isPerfectlyConcealedForObservers(target)));
    }
 
    @SubscribeEvent
    public static void onDeath(LivingDeathEvent event) {
-      if (!event.getEntity().level().isClientSide) broadcast(event.getEntity(), false);
+      if (!event.getEntity().level().isClientSide) broadcast(event.getEntity(), false, false);
    }
 
    @SubscribeEvent
    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-      if (event.getEntity() instanceof ServerPlayer player) broadcast(player, false);
+      if (event.getEntity() instanceof ServerPlayer player) broadcast(player, false, false);
    }
 
    @SubscribeEvent
    public static void onChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
-         broadcast(player, false);
+         broadcast(player, false, false);
          player.getPersistentData().remove(TAG_SYNCED);
       }
    }
 
-   private static void broadcast(LivingEntity entity, boolean concealed) {
+   private static void broadcast(LivingEntity entity, boolean concealed, boolean perfect) {
       try {
          PacketDistributor.sendToPlayersTrackingEntityAndSelf(
-            entity, new ConcealmentStateMessage(entity.getUUID(), concealed));
+            entity, new ConcealmentStateMessage(entity.getUUID(), concealed, perfect));
       } catch (UnsupportedOperationException ignored) {
          // Visual-only compatibility payload.
       }

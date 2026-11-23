@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
 import java.util.LinkedList;
 import java.util.List;
 import net.minecraft.core.particles.ParticleTypes;
@@ -91,9 +93,9 @@ public class TopazProjectileEntity extends ThrowableItemProjectile {
          List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, aabb);
          for (LivingEntity entity : entities) {
             if (entity != owner && !EntityUtils.isImmunePlayerTarget(entity)) {
-               entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, duration, 0));
-               entity.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, duration, 0));
-               entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1));
+               MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.GLOWING, duration, 0), "topaz_throw");
+               MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.BLINDNESS, duration, 0), "topaz_throw");
+               MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, 1), "topaz_throw");
                if (owner instanceof LivingEntity livingOwner) {
                   EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
                   if (!(livingOwner instanceof Player ownerPlayer && ownerPlayer.isCreative()) && entity instanceof Mob mob) {

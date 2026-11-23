@@ -2,6 +2,14 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "gradle: prepare IDE run",
+            "type": "shell",
+            "command": ".\\gradlew.bat",
+            "args": ["syncIdeRunClasses", "--console=plain"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": ["$javac"]
+        },
+        {
             "label": "gradle: compileJava with warnings",
             "type": "shell",
             "command": ".\\gradlew.bat",

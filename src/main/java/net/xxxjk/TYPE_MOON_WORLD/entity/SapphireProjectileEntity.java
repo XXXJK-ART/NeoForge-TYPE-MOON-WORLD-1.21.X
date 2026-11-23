@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -137,7 +139,7 @@ public class SapphireProjectileEntity extends ThrowableItemProjectile {
          for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, aabb)) {
             if (entity != owner && !EntityUtils.isImmunePlayerTarget(entity)) {
                int slowDuration = owner instanceof LivingEntity livingOwner ? MercurySwordMagicAmplifier.amplifyDuration(livingOwner, 100) : 100;
-               entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slowDuration, 1));
+               MagecraftEffects.add(entity, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slowDuration, 1), "sapphire_throw");
                if (owner instanceof LivingEntity livingOwner) {
                   EntityUtils.triggerSwarmAnger(level, livingOwner, entity);
                   if (!(livingOwner instanceof Player ownerPlayer && ownerPlayer.isCreative()) && entity instanceof Mob mob) {

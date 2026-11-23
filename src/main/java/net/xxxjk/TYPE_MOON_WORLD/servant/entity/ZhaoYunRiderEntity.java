@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -66,7 +68,6 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    private static final String TAG_ORBIT_LAST_DISTANCE = "ZhaoYunOrbitLastDistance";
    private static final String TAG_ORBIT_TARGET = "ZhaoYunOrbitTarget";
    private static final int NP_DURATION = 300;
-   private static final int NP_CHANT_DURATION = 60;
    private static final int NP_COOLDOWN = 800;
    private static final float NP_INITIAL_DAMAGE = 500.0F;
    private static final double NP_INITIAL_DISTANCE = 50.0;
@@ -85,6 +86,31 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    public ZhaoYunRiderEntity(EntityType<? extends ZhaoYunRiderEntity> type, Level level) {
       super(type, level, SERVANT_KEY);
+   }
+
+   @Override
+   public void triggerAttackSwing() {
+      boolean customBasic = hasActionAnimation("uppercut") || hasActionAnimation("horizontal_swing");
+      super.triggerAttackSwing();
+      if (customBasic) ServantVoiceHelper.tryPlayAttack(this);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(this,
+         net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.SWORD);
+   }
+
+   @Override
+   public void triggerNamedActionAnimation(String key) {
+      super.triggerNamedActionAnimation(key);
+      if (level().isClientSide()) return;
+      int action = switch (key) {
+         case "spear_lunging_thrust", "mounted_lance_charge" -> net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_THRUST;
+         case "spear_driving_slash", "mounted_sweeping_pass" -> net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_SWEEP;
+         case "spear_sweeping_advance", "mounted_dragon_rein" -> net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_DANCE;
+         default -> net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.NONE;
+      };
+      if (action != net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.NONE) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(this, action);
+         ServantVoiceHelper.tryPlayAttack(this);
+      }
    }
 
    @Override
@@ -153,6 +179,14 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          // loop. Prevent ordinary melee/navigation AI from competing with it.
          getNavigation().stop();
          setDeltaMovement(Vec3.ZERO);
+         return;
+      }
+      if (isChangbanpoCharging()) {
+         getNavigation().stop();
+         if (getTarget() != null && getTarget().isAlive() && level() instanceof ServerLevel level) {
+            tickDedicatedCombat(getTarget(), level.getGameTime());
+         }
+         if (isPassenger()) setDeltaMovement(Vec3.ZERO);
          return;
       }
       super.customServerAiStep();
@@ -286,6 +320,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    /** Small, unnamed weapon techniques shared by the normal combat AI. */
    private void tickZhaoYunTechniques(ServerLevel level) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.active(this)) return;
       if (isChangbanpoCasting()) return;
       LivingEntity target = getTarget();
       if (target == null || !target.isAlive() || isAlliedTo(target)
@@ -295,27 +330,35 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (now < getPersistentData().getLong(TAG_TECHNIQUE_COOLDOWN)) return;
 
       ZhaoYunHakuryuEntity mount = getVehicle() instanceof ZhaoYunHakuryuEntity value && value.isAlive() ? value : null;
+      if (mount != null && !mount.canStartCombatPass()) return;
       double distance = distanceTo(target);
-      int index = getPersistentData().getInt(TAG_TECHNIQUE_INDEX) % 3;
+      int index = Math.floorMod(getPersistentData().getInt(TAG_TECHNIQUE_INDEX), mount == null ? 3 : 5);
       boolean used;
       if (mount != null && distance >= 2.0 && distance <= 10.0) {
          used = switch (index) {
-            case 0 -> performMountedLanceCharge(level, mount, target);
-            case 1 -> performMountedSweepingPass(level, mount, target);
+            case 0, 2 -> {
+               Vec3 direction = horizontalDirection(target);
+               if (direction == null) yield false;
+               mount.beginCombatPass(direction, distance + 8.0,
+                  mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.8);
+               yield true;
+            }
+            case 1 -> performMountedLanceCharge(level, mount, target);
+            case 3 -> performMountedSweepingPass(level, mount, target);
             default -> performMountedDragonRein(level, mount, target);
          };
       } else if (mount == null && distance >= 1.8 && distance <= 8.0) {
          used = switch (index) {
             case 0 -> performSpearLungingThrust(level, target);
             case 1 -> performSpearDrivingSlash(level, target);
-            default -> performSpearSweepingAdvance(level, target);
+            default -> distance <= 4.0 && net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.start(this);
          };
       } else {
          return;
       }
       if (used) {
          getPersistentData().putInt(TAG_TECHNIQUE_INDEX, index + 1);
-         getPersistentData().putLong(TAG_TECHNIQUE_COOLDOWN, now + (mount == null ? 42L : 34L));
+         getPersistentData().putLong(TAG_TECHNIQUE_COOLDOWN, now + (mount == null ? 42L : 24L));
       }
    }
 
@@ -328,15 +371,31 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       }
       setTarget(target);
       getLookControl().setLookAt(target, 45.0F, 45.0F);
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.active(this)) return;
       if (isChangbanpoActive() || isPerformingAction()) return;
 
       double distance = distanceTo(target);
-      updateOrbitRecovery(target, distance, now);
-      boolean forceMelee = getPersistentData().getLong(TAG_FORCE_MELEE_UNTIL) > now;
       if (isChangbanpoCharging()) {
-         if (!isPassenger() && distance > 4.0) getNavigation().moveTo(target, 1.15);
+         if (getVehicle() instanceof ZhaoYunHakuryuEntity mount) {
+            Vec3 direction = horizontalDirection(target);
+            if (direction != null) {
+               mount.beginCombatPass(direction, distance + 8.0,
+                  mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.6);
+            }
+         } else if (distance > 4.0) {
+            getNavigation().moveTo(target, 1.15);
+         }
          return;
       }
+      if (getVehicle() instanceof ZhaoYunHakuryuEntity mount) {
+         // Hakuryu owns all mounted steering, including the committed pass.
+         // Orbit recovery must never inject a second velocity or pin it in melee.
+         resetOrbitRecovery();
+         tryMountedNormalThrust(mount, target);
+         return;
+      }
+      updateOrbitRecovery(target, distance, now);
+      boolean forceMelee = getPersistentData().getLong(TAG_FORCE_MELEE_UNTIL) > now;
       if (distance <= 5.5 && now - getPersistentData().getLong("ZhaoYunLastBasicAttack") >= 10L) {
          getPersistentData().putLong("ZhaoYunLastBasicAttack", now);
          resetOrbitRecovery();
@@ -442,8 +501,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (direction == null) return false;
       mount.setYRot((float)(Math.atan2(-direction.x, direction.z) * 180.0 / Math.PI));
       double speed = mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 4.8;
-      mount.setDeltaMovement(direction.x * speed, mount.getDeltaMovement().y, direction.z * speed);
-      mount.hasImpulse = true;
+      mount.beginCombatPass(direction, mount.distanceTo(target) + 8.0, speed);
       triggerNamedActionAnimation("mounted_lance_charge");
       hurtTechniqueTargets(level, mount.getBoundingBox().expandTowards(direction.scale(5.2)).inflate(1.0, 0.8, 1.0),
          getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.8, direction, 1.35, 0.35);
@@ -456,8 +514,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
       if (direction == null) return false;
       mount.setYRot((float)(Math.atan2(-direction.x, direction.z) * 180.0 / Math.PI));
       double speed = mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 3.3;
-      mount.setDeltaMovement(direction.x * speed, mount.getDeltaMovement().y, direction.z * speed);
-      mount.hasImpulse = true;
+      mount.beginCombatPass(direction, mount.distanceTo(target) + 8.0, speed);
       triggerNamedActionAnimation("mounted_sweeping_pass");
       hurtTechniqueTargets(level, mount.getBoundingBox().expandTowards(direction.scale(4.3)).inflate(1.8, 0.9, 1.8),
          getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.35, direction, 1.0, 0.25);
@@ -466,6 +523,9 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
    }
 
    private boolean performMountedDragonRein(ServerLevel level, ZhaoYunHakuryuEntity mount, LivingEntity target) {
+      Vec3 direction = horizontalDirection(target);
+      if (direction != null) mount.beginCombatPass(direction, mount.distanceTo(target) + 8.0,
+         mount.getAttributeValue(Attributes.MOVEMENT_SPEED) * 1.8);
       triggerNamedActionAnimation("mounted_dragon_rein");
       AABB area = mount.getBoundingBox().inflate(3.6, 1.0, 3.6);
       hurtTechniqueTargets(level, area, getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15,
@@ -474,6 +534,24 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          18, 1.4, 0.35, 1.4, 0.04);
       level.playSound(null, mount.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 1.2F, 0.65F);
       return true;
+   }
+
+   /** The card's ordinary right-click thrust, used on contact during a riding pass. */
+   public void tryMountedNormalThrust(ZhaoYunHakuryuEntity mount, LivingEntity target) {
+      if (!(level() instanceof ServerLevel level) || isChangbanpoCasting()
+         || mount.distanceToSqr(target) > 25.0 || isAlliedTo(target)) return;
+      long now = level.getGameTime();
+      if (now < getPersistentData().getLong("ZhaoYunNormalThrustUntil")) return;
+      Vec3 forward = mount.getLookAngle().multiply(1, 0, 1).normalize();
+      Vec3 toward = target.position().subtract(mount.position()).multiply(1, 0, 1);
+      if (toward.dot(forward) < 0) return;
+      getPersistentData().putLong("ZhaoYunNormalThrustUntil", now + 10L);
+      triggerNamedActionAnimation("mounted_lance_charge");
+      double damage = 4.0 + getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.25
+         + Math.min(7.0, mount.getDeltaMovement().horizontalDistance() * 7.0);
+      hurtTechniqueTargets(level, mount.getBoundingBox().expandTowards(forward.scale(4.2)).inflate(0.5, 0.7, 0.5),
+         damage, forward, 0.35, 0.1, true);
+      spawnMountedTechniqueFx(level, mount, forward, ParticleTypes.CRIT);
    }
 
    @Nullable
@@ -485,16 +563,24 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    private void hurtTechniqueTargets(ServerLevel level, AABB box, double damage, @Nullable Vec3 direction,
                                      double knockback, double verticalKnockback) {
+      hurtTechniqueTargets(level, box, damage, direction, knockback, verticalKnockback, false);
+   }
+
+   private void hurtTechniqueTargets(ServerLevel level, AABB box, double damage, @Nullable Vec3 direction,
+                                     double knockback, double verticalKnockback, boolean normalThrust) {
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, box,
          entity -> entity != this && entity != getHakuryu() && entity.isAlive()
             && !isAlliedTo(entity) && entity != getEntityMaster()
             && !EntityUtils.isImmunePlayerTarget(entity))) {
-         victim.hurt(damageSources().mobAttack(this), (float)damage);
+         boolean hit = victim.hurt(damageSources().mobAttack(this), (float)damage);
+         if (hit && normalThrust && isAokoSwordActive() && victim.isAlive()) queueAokoSecondStrike(victim);
          Vec3 push = direction != null ? direction : victim.position().subtract(position()).multiply(1.0, 0.0, 1.0).normalize();
          if (push.lengthSqr() > 1.0E-4) {
             victim.push(push.x * knockback, verticalKnockback, push.z * knockback);
             victim.hurtMarked = true;
          }
+      }
       }
    }
 
@@ -558,7 +644,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
 
    public boolean isChangbanpoCharging() {
       long chantUntil = getPersistentData().getLong(TAG_NP_CHANT_UNTIL);
-      return !isChangbanpoActive() && chantUntil > 0L && chantUntil >= level().getGameTime();
+      return !isChangbanpoActive() && chantUntil > 0L;
    }
 
    public boolean isChangbanpoCasting() {
@@ -611,17 +697,14 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          || !hasMasterNoblePhantasmPermission()
          || level.getGameTime() < getPersistentData().getLong(TAG_NP_COOLDOWN)) return false;
       ServantNoblePhantasmResourceService.commitNpcCast(this, resource);
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(this, "zhao_yun_changbanpo", NP_COOLDOWN, ticks -> this.getPersistentData().putLong(TAG_NP_COOLDOWN, this.level().getGameTime() + ticks), () -> { });
-      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(this, () -> {
-
-      getPersistentData().putLong(TAG_NP_CHANT_UNTIL, this.level().getGameTime() + NP_CHANT_DURATION);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.begin(this, "zhao_yun_changbanpo", NP_COOLDOWN, ticks -> this.getPersistentData().putLong(TAG_NP_COOLDOWN, this.level().getGameTime() + ticks), this::endChangbanpo);
+      getPersistentData().putLong(TAG_NP_CHANT_UNTIL,
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.releaseAt(this));
       getPersistentData().putLong(TAG_NP_COOLDOWN, level.getGameTime()
          + (resource.overdraft() ? NP_COOLDOWN * 2L : NP_COOLDOWN));
       getPersistentData().putBoolean(TAG_NP_OVERDRAFT, resource.overdraft());
       getPersistentData().putDouble(TAG_NP_POWER_SCALE, resource.powerScale());
-      ServantVoiceHelper.tryPlayZhaoYunNp(this);
-
-      });
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmCastService.deferEffect(this, () -> releaseChangbanpo(level));
       return true;
    }
 
@@ -775,6 +858,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
          && hitBox.intersects(master.getBoundingBox())) {
          master.startRiding(mount, true);
       }
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, hitBox,
          entity -> entity != this && entity != mount && entity.isAlive() && entity != getEntityMaster()
             && !isAlliedTo(entity) && !EntityUtils.isImmunePlayerTarget(entity))) {
@@ -790,6 +874,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             victim.hurt(damageSources().mobAttack(this), collisionDamage);
             victim.invulnerableTime = 0;
          }
+      }
       }
    }
 
@@ -845,7 +930,7 @@ public final class ZhaoYunRiderEntity extends ServantEntity {
             BlockState state = level.getBlockState(pos);
             float hardness = state.getDestroySpeed(level, pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK) && hardness >= 0.0F && hardness < 75.0F) {
-               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
+               level.destroyBlock(pos, false, mount);
                if (++broken >= maxBroken) break;
             }
          }

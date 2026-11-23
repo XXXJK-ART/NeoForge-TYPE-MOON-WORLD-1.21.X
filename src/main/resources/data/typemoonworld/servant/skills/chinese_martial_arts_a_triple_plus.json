@@ -1,8 +1,8 @@
 {
   "rank": "A+++",
   "id": "chinese_martial_arts_a_triple_plus",
-  "display_name": "Chinese Martial Arts A+++",
-  "display_name_zh": "中华武术 A+++",
+  "display_name": "Chinese Martial Arts (Bajiquan) A+++",
+  "display_name_zh": "中国武术（八极拳） A+++",
   "type": "passive",
   "mp_cost": 0,
   "cooldown_ticks": 0,

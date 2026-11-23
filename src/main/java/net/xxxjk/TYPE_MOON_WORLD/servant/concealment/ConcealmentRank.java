@@ -11,7 +11,7 @@ public enum ConcealmentRank {
    B(12, 80, 130),
    A_MINUS(8, 110, 170),
    A(4, 140, 220),
-   A_PLUS(0, 0, 0),
+   A_PLUS(1, 140, 220),
    EX(0, 0, 0);
 
    private final int maxParticles;
@@ -37,7 +37,7 @@ public enum ConcealmentRank {
    }
 
    public boolean isPerfect() {
-      return this == A_PLUS || this == EX;
+      return this == EX;
    }
 
    public static ConcealmentRank fromSkillId(String skillId) {

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 
@@ -27,13 +28,27 @@ class FanaticAssassinResourcesTest {
       assertEquals("A", params.get("agility").getAsString());
       assertEquals("C", params.get("magic").getAsString());
       assertEquals("D", params.get("luck").getAsString());
+      assertEquals("B+", params.get("noble_phantasm_rank").getAsString());
+      assertEquals("human", definition.get("faction").getAsString());
       assertEquals("phantasmal_lineage", definition.get("noble_phantasm").getAsString());
       assertEquals(8.0, json("data/typemoonworld/servant/ai/fanatic_assassin_ai.json")
          .getAsJsonObject("movement").get("follow_distance").getAsDouble());
-      String definitionText = definition.toString();
-      for (String trait : List.of("female", "assassin", "lawful", "good", "earth", "hassan_order", "fanatic", "divine_technique_mimic")) {
-         assertTrue(definitionText.contains(trait), trait);
-      }
+      Set<String> traits = definition.getAsJsonArray("traits").asList().stream()
+         .map(element -> element.getAsString()).collect(java.util.stream.Collectors.toSet());
+      assertEquals(Set.of("female", "human", "lawful", "good", "servant", "ea_special", "humanoid",
+         "human_kind", "seven_knights"), traits);
+   }
+
+   @Test
+   void fanaticismUsesTheSameResistanceAndCleanupRulesForNpcAndPlayerCard() throws Exception {
+      String entity = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinEntity.java"));
+      String card = Files.readString(JAVA.resolve("servant/card/ServantCardFanaticAssassinSkills.java"));
+      String cardEvents = Files.readString(JAVA.resolve("event/ServantCardFanaticAssassinEvents.java"));
+      assertTrue(entity.contains("FanaticAssassinRules.shouldCancelMentalAttack"));
+      assertTrue(cardEvents.contains("FanaticAssassinRules.shouldCancelMentalAttack"));
+      assertTrue(entity.contains("FanaticAssassinRules.shouldCleanseMentalEffects"));
+      assertTrue(card.contains("FanaticAssassinRules.shouldCleanseMentalEffects"));
+      assertTrue(entity.contains("FanaticLastMentalCleanse"));
    }
 
    @Test
@@ -99,13 +114,26 @@ class FanaticAssassinResourcesTest {
       String entity = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinEntity.java"));
       assertTrue(entity.contains("FanaticTechniqueUntil"));
       assertTrue(entity.contains("addAdditionalSaveData"));
-      assertFalse(entity.contains("this.setPresenceConcealed(true)"));
-      assertFalse(entity.contains("FanaticAssassinRules.RECONCEAL_DELAY"));
+      assertTrue(entity.contains("FanaticAssassinRules.shouldActivateConcealment"));
+      assertTrue(entity.contains("FanaticAssassinRules.PRESENCE_CONCEALMENT_MP"));
+      int spawn = entity.indexOf("finalizeSpawn(");
+      int tick = entity.indexOf("public void tick()", spawn);
+      assertTrue(entity.substring(spawn, tick).contains("this.setPresenceConcealed(false)"));
+      assertFalse(entity.substring(spawn, tick).contains("this.setPresenceConcealed(true)"));
       String jinnEntity = Files.readString(JAVA.resolve("servant/entity/FanaticAssassinJinnEntity.java"));
       assertTrue(jinnEntity.contains("FanaticJinnOwner"));
       assertTrue(jinnEntity.contains("FanaticJinnExpires"));
       assertTrue(jinnEntity.contains("this.nextAttackTick = now + 20L"));
       assertTrue(jinnEntity.contains("this.nextAttackTick = now + 40L"));
+   }
+
+   @Test
+   void fanaticNoblePhantasmCooldownIsExplicitAndConsistent() throws Exception {
+      JsonObject action = json("data/typemoonworld/servant/actions/fanatic_assassin.json")
+         .getAsJsonArray("actions").get(1).getAsJsonObject();
+      JsonObject np = json("data/typemoonworld/servant/noble_phantasms/phantasmal_lineage.json");
+      assertEquals(1800, action.get("cooldown_ticks").getAsInt());
+      assertEquals(1800, np.get("cooldown_ticks").getAsInt());
    }
 
    @Test

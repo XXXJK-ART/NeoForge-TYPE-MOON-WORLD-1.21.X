@@ -5,7 +5,7 @@
   "display_name_zh": "兰斯洛特",
   "class_type": "berserker",
   "faction": "earth",
-  "traits": ["servant", "humanoid", "living_human", "berserker", "male", "lawful", "mad", "earth", "round_table", "knight_of_the_lake"],
+  "traits": ["servant", "humanoid", "human_kind", "heaven_or_earth_servant", "berserker", "male", "lawful", "mad", "earth", "round_table"],
   "parameters": {
     "endurance": "A",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "C",
     "magic_plus": false,
     "luck": "B",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "A"
   },
   "model": {
     "geometry": "",

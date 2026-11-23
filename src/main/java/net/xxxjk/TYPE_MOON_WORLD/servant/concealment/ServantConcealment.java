@@ -1,8 +1,9 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.concealment;
 
 import java.util.List;
-import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -11,22 +12,26 @@ import net.minecraft.world.entity.player.Player;
 import net.xxxjk.TYPE_MOON_WORLD.martial.BajiquanCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.FanaticAssassinEntity;
+import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanPersonaEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ShadowHassanEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantDefinition;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardFanaticAssassinSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardLiShuwenSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills;
+import net.xxxjk.TYPE_MOON_WORLD.servant.sasaki.SasakiKojiroCombatService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.shadowhassan.ShadowHassanRules;
-import org.joml.Vector3f;
 
 /** Shared server-side controller for servant concealment and visibility leakage. */
 public final class ServantConcealment {
+   public static final String TAG_ATTACK_BREAK_COOLDOWN_UNTIL = "TypeMoonPresenceConcealmentCooldownUntil";
+   public static final int ATTACK_BREAK_COOLDOWN_TICKS = 100;
    private static final String TAG_MANAGED_SILENCE = "TypeMoonConcealmentManagedSilence";
    private static final String TAG_PREVIOUS_SILENCE = "TypeMoonConcealmentPreviousSilence";
    private static final String TAG_NEXT_PARTICLE_TICK = "TypeMoonConcealmentNextParticleTick";
    private static final String TAG_MANAGED_INVISIBLE = "TypeMoonConcealmentManagedInvisible";
-   private static final DustParticleOptions LEAK_PARTICLE = new DustParticleOptions(
-      new Vector3f(0.018F, 0.018F, 0.024F), 0.32F);
-
    private ServantConcealment() {
    }
 
@@ -46,6 +51,66 @@ public final class ServantConcealment {
       }
       return player.hasEffect(MobEffects.INVISIBILITY)
          || player.isInvisible() && !player.getPersistentData().getBoolean(TAG_MANAGED_INVISIBLE);
+   }
+
+   public static boolean isPerfectlyConcealedForObservers(LivingEntity entity) {
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+            return ServantCardShadowHassanSkills.isPassiveConcealed(player);
+         }
+      }
+      return isFullyConcealed(entity);
+   }
+
+   public static boolean suppressesAggroFrom(LivingEntity entity, LivingEntity observer) {
+      if (entity instanceof ServerPlayer player && ServantCardShadowHassanSkills.isActiveConcealment(player)
+         && !ServantCardShadowHassanSkills.isPassiveConcealed(player)) return false;
+      return isFullyConcealed(entity) && (!(observer instanceof ServantEntity) || rankOf(entity).isPerfect());
+   }
+
+   public static boolean canActivatePresenceConcealment(LivingEntity entity) {
+      if (entity == null || !hasRankedPresenceConcealment(entity) || rankOf(entity).isPerfect()) return true;
+      return entity.getPersistentData().getLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL) <= entity.level().getGameTime();
+   }
+
+   public static void startAttackBreakCooldown(LivingEntity entity) {
+      if (entity == null || entity.level().isClientSide() || !isConcealedForCooldown(entity)
+         || !hasRankedPresenceConcealment(entity) || rankOf(entity).isPerfect()) return;
+      long until = entity.level().getGameTime() + ATTACK_BREAK_COOLDOWN_TICKS;
+      entity.getPersistentData().putLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL,
+         Math.max(until, entity.getPersistentData().getLong(TAG_ATTACK_BREAK_COOLDOWN_UNTIL)));
+   }
+
+   public static void breakConcealment(LivingEntity entity) {
+      if (entity == null || entity.level().isClientSide() || !isFullyConcealed(entity)) return;
+      if (!(entity instanceof ServantEntity) && ServantIdentityHelper.definitionOf(entity) == null
+         && !(entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player))) return;
+
+      startAttackBreakCooldown(entity);
+
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.isHassan(entity))
+         net.xxxjk.TYPE_MOON_WORLD.servant.entity.HassanPresenceService.set(entity, false);
+      if (entity instanceof ServerPlayer player)
+         net.xxxjk.TYPE_MOON_WORLD.servant.card.HundredFacesPresenceService.set(player, false);
+
+      SasakiKojiroCombatService.setConcealed(entity, false);
+      if (entity instanceof ShadowHassanEntity hassan) hassan.revealForAttack();
+      if (entity instanceof FanaticAssassinEntity fanatic) fanatic.revealForCombat();
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity hundredFaces) hundredFaces.revealForCombat();
+      if (entity instanceof HundredFacesHassanPersonaEntity persona) persona.revealForCombat();
+      if (entity instanceof ServerPlayer player) {
+         ServantCardFanaticAssassinSkills.revealForAttack(player);
+         ServantCardShadowHassanSkills.revealForAttack(player);
+         ServantCardLiShuwenSkills.revealCircleRealm(player);
+         BajiquanCombatService.breakCircleRealm(player);
+      }
+      entity.removeEffect(MobEffects.INVISIBILITY);
+      entity.setInvisible(false);
+      entity.getPersistentData().remove(TAG_MANAGED_INVISIBLE);
+      entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
+      manageSilence(entity, false);
+      ConcealmentStateSync.update(entity, false);
    }
 
    public static void tick(LivingEntity entity) {
@@ -70,7 +135,7 @@ public final class ServantConcealment {
 
       if (entity.tickCount % 5 == 0 && entity.level() instanceof ServerLevel level) {
          for (Mob mob : level.getEntitiesOfClass(Mob.class, entity.getBoundingBox().inflate(48.0),
-            mob -> mob != entity && mob.getTarget() == entity)) {
+            mob -> mob != entity && mob.getTarget() == entity && suppressesAggroFrom(entity, mob))) {
             mob.setTarget(null);
             mob.getNavigation().stop();
          }
@@ -87,7 +152,14 @@ public final class ServantConcealment {
    }
 
    public static ConcealmentRank rankOf(LivingEntity entity) {
-      if (isParticleExempt(entity)) return ConcealmentRank.EX;
+      if (entity instanceof ServerPlayer player) {
+         TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
+            if (ServantCardShadowHassanSkills.isPassiveConcealed(player)) return ConcealmentRank.EX;
+            return ServantCardShadowHassanSkills.isActiveConcealment(player)
+               ? ConcealmentRank.A_PLUS : ConcealmentRank.EX;
+         }
+      }
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
       ConcealmentRank best = ConcealmentRank.NONE;
       if (definition != null) {
@@ -98,10 +170,25 @@ public final class ServantConcealment {
       return best == ConcealmentRank.NONE ? ConcealmentRank.E : best;
    }
 
+   private static boolean hasRankedPresenceConcealment(LivingEntity entity) {
+      for (String skillId : ServantIdentityHelper.skillIdsOf(entity)) {
+         if (ConcealmentRank.fromSkillId(skillId) != ConcealmentRank.NONE) return true;
+      }
+      return false;
+   }
+
+   private static boolean isConcealedForCooldown(LivingEntity entity) {
+      if (isFullyConcealed(entity)) return true;
+      if (entity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.HundredFacesHassanEntity hundredFaces) {
+         return hundredFaces.isPresenceConcealed();
+      }
+      return false;
+   }
+
    private static void tickLeakParticles(LivingEntity entity) {
       if (!(entity.level() instanceof ServerLevel level)) return;
       ConcealmentRank rank = rankOf(entity);
-      if (rank.isPerfect() || rank.maxParticles() <= 0) {
+      if (isParticleExempt(entity) || rank.isPerfect() || rank.maxParticles() <= 0) {
          entity.getPersistentData().remove(TAG_NEXT_PARTICLE_TICK);
          return;
       }
@@ -115,7 +202,8 @@ public final class ServantConcealment {
 
       int count = entity.getRandom().nextIntBetweenInclusive(1, rank.maxParticles());
       double horizontalSpread = Math.max(0.16, entity.getBbWidth() * 0.32);
-      level.sendParticles(LEAK_PARTICLE,
+      // Use the same fixed-size renderer as Sasaki Kojiro; rank changes only the leak count and cadence.
+      level.sendParticles(ParticleTypes.SQUID_INK,
          entity.getX(), entity.getY() + entity.getBbHeight() * 0.52, entity.getZ(), count,
          horizontalSpread, Math.max(0.24, entity.getBbHeight() * 0.30), horizontalSpread, 0.004);
       scheduleNextLeak(entity, rank, now);
@@ -130,12 +218,22 @@ public final class ServantConcealment {
       if (entity instanceof ShadowHassanEntity || entity instanceof LiShuwenEntity) return true;
       if (entity instanceof Player player && BajiquanCombatService.isCircleRealmActive(player)) return true;
       ServantDefinition definition = ServantIdentityHelper.definitionOf(entity);
+      // Pale Rider's black mist is its persistent body, not ranked concealment leakage.
+      if (definition != null && "pale_rider".equals(definition.id())) return true;
       if (definition != null && ("shadow_hassan".equals(definition.id()) || "li_shuwen".equals(definition.id()))) {
+         if ("shadow_hassan".equals(definition.id()) && entity instanceof ServerPlayer player) {
+            return !ServantCardShadowHassanSkills.isActiveConcealment(player)
+               || ServantCardShadowHassanSkills.isPassiveConcealed(player);
+         }
          return true;
       }
       if (entity instanceof Player player) {
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
-         return "shadow_hassan".equals(vars.servant_card_id) || "li_shuwen".equals(vars.servant_card_id);
+         if ("shadow_hassan".equals(vars.servant_card_id)) {
+            return player instanceof ServerPlayer serverPlayer
+               && !ServantCardShadowHassanSkills.isActiveConcealment(serverPlayer);
+         }
+         return "li_shuwen".equals(vars.servant_card_id);
       }
       return false;
    }
@@ -159,6 +257,10 @@ public final class ServantConcealment {
    private static void manageVanillaInvisibility(LivingEntity entity, boolean concealed) {
       var data = entity.getPersistentData();
       if (concealed) {
+         if (entity instanceof ServerPlayer player) {
+            var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+            if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) return;
+         }
          if (!entity.isInvisible()) {
             data.putBoolean(TAG_MANAGED_INVISIBLE, true);
             entity.setInvisible(true);

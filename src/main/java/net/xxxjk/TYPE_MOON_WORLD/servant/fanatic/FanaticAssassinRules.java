@@ -52,7 +52,9 @@ public final class FanaticAssassinRules {
    public static final int TOXIN_STANCE_DURATION = 240;
    public static final int TOXIN_DURATION = 160;
    public static final int JINN_LIFETIME = 600;
-   public static final int RECONCEAL_DELAY = 100;
+   public static final double PRESENCE_CONCEALMENT_RANGE = 6.0;
+   public static final int PRESENCE_CONCEALMENT_MP = 18;
+   public static final int PRESENCE_CONCEALMENT_COOLDOWN = 120;
    public static final int MENTAL_CLEANSE_INTERVAL = 1200;
    public static final float MENTAL_ATTACK_CANCEL_CHANCE = 0.70F;
 
@@ -91,6 +93,17 @@ public final class FanaticAssassinRules {
 
    public static boolean shouldCancelMentalAttack(float roll) {
       return roll >= 0.0F && roll < MENTAL_ATTACK_CANCEL_CHANCE;
+   }
+
+   public static boolean shouldCleanseMentalEffects(long now, long lastCleanse) {
+      return now >= lastCleanse && now - lastCleanse >= MENTAL_CLEANSE_INTERVAL;
+   }
+
+   public static boolean shouldActivateConcealment(boolean hasTarget, double distance, double currentMp,
+                                                   long now, long nextAllowedTick, boolean concealed,
+                                                   boolean concealmentReady) {
+      return hasTarget && !concealed && distance >= PRESENCE_CONCEALMENT_RANGE
+         && currentMp >= PRESENCE_CONCEALMENT_MP && now >= nextAllowedTick && concealmentReady;
    }
 
    public static boolean shouldAttemptCombo(float roll) {

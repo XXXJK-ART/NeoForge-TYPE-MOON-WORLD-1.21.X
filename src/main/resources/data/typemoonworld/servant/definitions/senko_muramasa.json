@@ -5,13 +5,14 @@
   "display_name_zh": "千子村正",
   "class_type": "saber",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "human", "human_kind", "male", "saber", "chaotic", "neutral_alignment", "balanced", "sapient"],
+  "traits": ["servant", "humanoid", "living_human", "human", "human_kind", "seven_knights", "male", "saber", "chaotic", "balanced"],
   "parameters": {
-    "endurance": "A",
-    "strength": "B",
-    "agility": "D",
-    "magic": "E",
-    "luck": "B"
+    "endurance": "A", "endurance_plus": false,
+    "strength": "B", "strength_plus": false,
+    "agility": "D", "agility_plus": false,
+    "magic": "E", "magic_plus": false,
+    "luck": "B", "luck_plus": false,
+    "noble_phantasm_rank": "A+"
   },
   "model": {
     "geometry": "",
@@ -22,7 +23,7 @@
     "dimensions": {"width": 0.6, "height": 1.8, "eye_height": 1.62},
     "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
     "default_weapon": "typemoonworld:redsword",
-    "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "charge", "np"]
+    "combat_actions": ["slash", "sweep", "uppercut", "horizontal_swing", "charge", "np", "muramasa_downward_slash", "muramasa_thrust", "muramasa_spinning_slash"]
   },
   "skills": [
     "magic_resistance_b",
@@ -39,9 +40,10 @@
     "sword_field_prototype"
   ],
   "noble_phantasm": "muramasa_no_gen_kensai",
+  "noble_phantasms": ["muramasa_no_gen_kensai", "muramasa_tsumukari"],
   "personality": {
     "obedience": "cooperative",
-    "principle": "neutral",
+    "principle": "chaotic",
     "morality": "neutral",
     "social": "normal",
     "combat": "balanced",

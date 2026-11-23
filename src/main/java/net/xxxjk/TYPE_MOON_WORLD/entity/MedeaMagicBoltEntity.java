@@ -26,7 +26,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.MedeaCombatHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterTargeting;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 import org.joml.Vector3f;
@@ -146,7 +148,10 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
          return;
       }
       LivingEntity owner = this.getOwner() instanceof LivingEntity livingOwner ? livingOwner : null;
-      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource base = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource source = this.getMode() == Mode.RULE_BREAKER
+         ? net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(base, "rule_breaker")
+         : MagecraftDamageSource.of(base, "medea_magic", MagicComplexity.TWO_VERSE, owner);
       this.piercedEntityIds.add(living.getId());
       living.invulnerableTime = 0;
       if (this.getMode() == Mode.RULE_BREAKER) {
@@ -154,7 +159,7 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       }
       living.hurt(source, this.getMagicDamage());
       living.invulnerableTime = 0;
-      applyModeHitEffects(living);
+      if (!net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper.blocksHarmfulMagicEffect(living, MagicComplexity.TWO_VERSE)) applyModeHitEffects(living);
       if (owner != null) {
          EntityUtils.triggerSwarmAnger(this.level(), owner, living);
       }
@@ -252,12 +257,12 @@ public class MedeaMagicBoltEntity extends ThrowableItemProjectile {
       switch (this.getMode()) {
          case FIRE_BOLT -> {
             living.setRemainingFireTicks(Math.max(living.getRemainingFireTicks(), 120));
-            living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 40, 0, false, true, true));
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects.add(living, new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 40, 0, false, true, true), MagicComplexity.TWO_VERSE);
          }
          case FROST_BOLT -> {
             living.setTicksFrozen(Math.max(living.getTicksFrozen(), 120));
-            living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 80, 3, false, true, true));
-            living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 60, 0, false, true, true));
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects.add(living, new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 80, 3, false, true, true), MagicComplexity.TWO_VERSE);
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects.add(living, new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 60, 0, false, true, true), MagicComplexity.TWO_VERSE);
          }
          case SUPER_BOLT -> living.knockback(1.2, this.getX() - living.getX(), this.getZ() - living.getZ());
          default -> {

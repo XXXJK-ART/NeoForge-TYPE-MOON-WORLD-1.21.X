@@ -2,6 +2,7 @@ package com.captain.servant.compat.superbwarfare;
 
 import com.atsuishio.superbwarfare.data.gun.GunData;
 import com.atsuishio.superbwarfare.data.gun.GunDataKt;
+import com.atsuishio.superbwarfare.data.gun.ShootParameters;
 import com.atsuishio.superbwarfare.entity.projectile.ProjectileEntity;
 import com.atsuishio.superbwarfare.entity.vehicle.A10Entity;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
@@ -9,6 +10,10 @@ import com.atsuishio.superbwarfare.init.ModEntities;
 import com.captain.servant.TypeMoonServant;
 import com.captain.servant.lancelot.KnightArmoryEntry;
 import com.captain.servant.lancelot.KnightArmoryService;
+import com.captain.servant.lancelot.KnightArmoryRules;
+import com.captain.servant.spiritual.SpiritualizationService;
+import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterProtection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Set;
@@ -39,7 +44,6 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
-import net.minecraft.world.level.levelgen.Heightmap.Types;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
@@ -77,6 +81,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
    private static final String NPC_A10_COOLDOWN_TAG = "FateSupportKnightNpcA10Cooldown";
    private static final String NPC_WEAPON_COOLDOWN_TAG = "FateSupportKnightNpcWeaponCooldown";
    private static final String NPC_LAST_WEAPON_TAG = "FateSupportKnightNpcLastWeapon";
+   private static final String NPC_HEAVY_LOCK_UNTIL_TAG = "FateSupportKnightNpcHeavyLockUntil";
    private static final String SUMMONED_A10_UUID_TAG = "FateSupportKnightSummonedA10";
    private static final String SUMMONED_A10_EXPIRES_TAG = "FateSupportKnightSummonedA10Expires";
    private static final String VEHICLE_DAMAGE_PROXY_UUID_TAG = "FateSupportVehicleDamageProxy";
@@ -85,10 +90,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
    private static final String LAST_TYPE_MOON_DAMAGE_TICK_TAG = "FateSupportLastTypeMoonDamageTick";
    private static final String LAST_TYPE_MOON_DAMAGE_SOURCE_TAG = "FateSupportLastTypeMoonDamageSource";
    private static final String LAST_TYPE_MOON_DAMAGE_AMOUNT_TAG = "FateSupportLastTypeMoonDamageAmount";
-   private static final long NPC_A10_DURATION = 400L;
-   private static final int A10_CANNON_INDEX = 0;
-   private static final int A10_ROCKET_INDEX = 1;
-   private static final int A10_MISSILE_INDEX = 3;
+   private static final String VEHICLE_DETONATED_TAG = "FateSupportKnightVehicleDetonated";
    private static final TagKey<Item> SNIPER_GUN_TAG = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("superbwarfare", "sniper_rifle"));
    private static final TagKey<Item> LAUNCHER_GUN_TAG = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("superbwarfare", "launcher"));
    private static final DustParticleOptions DARK_DUST = new DustParticleOptions(new Vector3f(0.06F, 0.01F, 0.09F), 1.35F);
@@ -169,56 +171,47 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
 
    @Override
    public boolean summonA10(ServerPlayer player, boolean npcVariant) {
-      if (LancelotCombatHelper.remainingKnightOfOwnerCapacity(player) <= 0) {
-         player.displayClientMessage(Component.translatable("message.fatesupport.knight_vehicle.capacity"), true);
-         return false;
-      } else {
-         ServerLevel level = player.serverLevel();
-         A10Entity a10 = (A10Entity)((EntityType)ModEntities.A_10A.get()).create(level);
-         if (a10 == null) {
-            return false;
-         } else {
-            a10.setPos(player.getX(), player.getY() + 15.0, player.getZ());
-            a10.setYRot(player.getYRot());
-            level.addFreshEntity(a10);
-            assimilateVehicle(a10, player.getUUID(), npcVariant ? 400L : 1200L, true, true, npcVariant);
-            a10.setEngineStart(true);
-            a10.setEngineStartOver(true);
-            a10.setPower(1.0F);
-            a10.setGearUp(true);
-            a10.setTargetSpeed(1.2);
-            a10.setAbsoluteSpeed(1.2);
-            Vec3 launchDirection = new Vec3(player.getLookAngle().x, 0.22, player.getLookAngle().z);
-            if (launchDirection.horizontalDistanceSqr() < 1.0E-4) {
-               float yaw = player.getYRot() * (float) (Math.PI / 180.0);
-               launchDirection = new Vec3((double)(-Mth.sin(yaw)), 0.22, (double)Mth.cos(yaw));
-            }
-
-            a10.setDeltaMovement(launchDirection.normalize().scale(1.2));
-            player.startRiding(a10, true);
-            player.getPersistentData().putUUID("FateSupportKnightSummonedA10", a10.getUUID());
-            player.getPersistentData().putLong("FateSupportKnightSummonedA10Expires", level.getGameTime() + (npcVariant ? 400L : 1200L));
-            return true;
-         }
-      }
+      return summonAircraft(player, false);
    }
 
-   private boolean summonNpcA10(LancelotBerserkerEntity npc, long now) {
-      ServerLevel level = (ServerLevel)npc.level();
-      A10Entity a10 = (A10Entity)((EntityType)ModEntities.A_10A.get()).create(level);
-      if (a10 == null) {
+   private boolean summonAircraft(LivingEntity owner, boolean npc) {
+      if (!(owner.level() instanceof ServerLevel level) || owner.isPassenger()
+            || LancelotCombatHelper.remainingKnightOfOwnerCapacity(owner) <= 0) return false;
+      A10Entity aircraft = ModEntities.A_10A.get().create(level);
+      if (aircraft == null) return false;
+      aircraft.setPos(owner.getX(), owner.getY() + 15.0, owner.getZ());
+      aircraft.setYRot(owner.getYRot());
+      AABB launchBox = aircraft.getBoundingBox();
+      if (launchBox.maxY >= level.getMaxBuildHeight()
+            || !level.getWorldBorder().isWithinBounds(launchBox)
+            || !level.noCollision(aircraft, launchBox)) {
+         if (owner instanceof ServerPlayer player) player.displayClientMessage(
+               Component.translatable("message.fatesupport.knight_armory.no_launch_space"), true);
          return false;
-      } else {
-         a10.setPos(npc.getX(), npc.getY() + 1.0, npc.getZ());
-         a10.setYRot(npc.getYRot());
-         level.addFreshEntity(a10);
-         assimilateVehicle(a10, npc.getUUID(), 400L, true, true, true);
-         npc.startRiding(a10, true);
-         npc.getPersistentData().putLong("FateSupportKnightNpcA10Cooldown", now + 2000L);
-         return true;
       }
+      assimilateVehicle(aircraft, owner.getUUID(), KnightArmoryRules.A10_DURATION_TICKS, true, true, npc);
+      aircraft.setEngineStart(true);
+      aircraft.setEngineStartOver(true);
+      aircraft.setPower(1.0F);
+      aircraft.setGearUp(true);
+      aircraft.setTargetSpeed(1.2);
+      aircraft.setAbsoluteSpeed(1.2);
+      Vec3 launch = new Vec3(owner.getLookAngle().x, 0.22, owner.getLookAngle().z);
+      if (launch.horizontalDistanceSqr() < 1.0E-4) {
+         float yaw = owner.getYRot() * (float)(Math.PI / 180.0);
+         launch = new Vec3(-Mth.sin(yaw), 0.22, Mth.cos(yaw));
+      }
+      aircraft.setDeltaMovement(launch.normalize().scale(1.2));
+      if (!level.addFreshEntity(aircraft)) return false;
+      if (!owner.startRiding(aircraft, true)) {
+         aircraft.discard();
+         return false;
+      }
+      owner.getPersistentData().putUUID(SUMMONED_A10_UUID_TAG, aircraft.getUUID());
+      owner.getPersistentData().putLong(SUMMONED_A10_EXPIRES_TAG,
+            level.getGameTime() + KnightArmoryRules.A10_DURATION_TICKS);
+      return true;
    }
-
    @Override
    public boolean hasActiveSummonedA10(ServerPlayer player) {
       if (!player.getPersistentData().hasUUID("FateSupportKnightSummonedA10")) {
@@ -242,14 +235,15 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
    }
 
    @Override
-   public int countOwnedVehicles(ServerPlayer player) {
+   public int countOwnedVehicles(LivingEntity player) {
       int count = 0;
 
       for (ServerLevel level : player.getServer().getAllLevels()) {
          for (VehicleEntity vehicle : level.getEntitiesOfClass(
             VehicleEntity.class,
             new AABB(-3.0E7, -2048.0, -3.0E7, 3.0E7, 2048.0, 3.0E7),
-            candidate -> candidate.getPersistentData().getBoolean("FateSupportKnightVehicle")
+            candidate -> (candidate.getPersistentData().getBoolean(VEHICLE_TAG)
+                  || candidate.getPersistentData().contains(VEHICLE_PENDING_UNTIL_TAG))
                   && candidate.getPersistentData().hasUUID("FateSupportKnightVehicleOwner")
                   && candidate.getPersistentData().getUUID("FateSupportKnightVehicleOwner").equals(player.getUUID())
          )) {
@@ -428,16 +422,30 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
    }
 
    private static boolean canDeployNpcA10(LancelotBerserkerEntity npc, LivingEntity target) {
-      if (!(npc.level() instanceof ServerLevel) || !npc.isAlive() || npc.isPassenger() || LancelotCombatHelper.isAroundightMode(npc)) {
-         return false;
-      }
-
-      if (target == null || !target.isAlive()) {
+      if (!(npc.level() instanceof ServerLevel) || !npc.isAlive() || npc.isPassenger()
+            || LancelotCombatHelper.isUnable(npc, npc.level().getGameTime())
+            || !KnightArmoryRules.npcCanUseAtHealth(KnightArmoryEntry.A10, npc.getHealth(), npc.getMaxHealth())
+            || !LancelotCombatHelper.canUseKnightOfOwner(npc)) {
          return false;
       }
 
       long now = npc.level().getGameTime();
-      return npc.getCurrentMp() >= 200.0 && npc.getPersistentData().getLong("FateSupportKnightNpcA10Cooldown") <= now;
+      boolean activeA10 = npc.getPersistentData().getLong(SUMMONED_A10_EXPIRES_TAG) > now;
+      if (!KnightArmoryRules.npcCanChooseHeavyWeapon(
+            KnightArmoryService.entryFor(npc.getMainHandItem()) == KnightArmoryEntry.MINIGUN,
+            activeA10, now, npc.getPersistentData().getLong(NPC_HEAVY_LOCK_UNTIL_TAG))) {
+         return false;
+      }
+
+      if (target == null || !EntityUtils.isValidCombatTarget(npc, target)
+            || ServantMasterProtection.isProtectedMaster(npc, target)) {
+         return false;
+      }
+
+      return npc.getCurrentMp() >= KnightArmoryEntry.A10.manaCost()
+            && KnightArmoryService.cooldownUntil(npc, KnightArmoryEntry.A10) <= now
+            && npc.getPersistentData().getLong(SUMMONED_A10_EXPIRES_TAG) <= now
+            && LancelotCombatHelper.remainingKnightOfOwnerCapacity(npc) > 0;
    }
 
    private boolean deployNpcA10(LancelotBerserkerEntity npc, LivingEntity target) {
@@ -446,12 +454,17 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
       }
 
       long now = npc.level().getGameTime();
-      npc.setCurrentMp(npc.getCurrentMp() - 200.0);
-      if (!this.summonNpcA10(npc, now)) {
-         npc.setCurrentMp(npc.getCurrentMp() + 200.0);
+      npc.setCurrentMp(npc.getCurrentMp() - KnightArmoryEntry.A10.manaCost());
+      if (!this.summonAircraft(npc, true)) {
+         npc.setCurrentMp(npc.getCurrentMp() + KnightArmoryEntry.A10.manaCost());
          return false;
       }
 
+      KnightArmoryService.startCooldown(npc, KnightArmoryEntry.A10);
+      npc.getPersistentData().putLong(NPC_HEAVY_LOCK_UNTIL_TAG,
+            now + KnightArmoryRules.NPC_HEAVY_WEAPON_LOCK_TICKS);
+      npc.getPersistentData().putInt(NPC_LAST_WEAPON_TAG, KnightArmoryEntry.A10.networkId());
+      npc.getNavigation().stop();
       ServantCombatSystem.broadcastNoblePhantasmWindup(npc, target, 20, true);
       return true;
    }
@@ -504,20 +517,48 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
       CompoundTag data = vehicle.getPersistentData();
       long now = level.getGameTime();
       if (data.contains("FateSupportKnightVehiclePendingUntil")) {
+         ServerPlayer assimilatingOwner = data.hasUUID(VEHICLE_OWNER_TAG)
+               ? level.getServer().getPlayerList().getPlayer(data.getUUID(VEHICLE_OWNER_TAG)) : null;
+         if (assimilatingOwner == null || assimilatingOwner.level() != level
+               || !assimilatingOwner.isAlive() || !ServantCardLancelotBerserkerSkills.isActiveCard(assimilatingOwner)
+               || LancelotCombatHelper.isAroundightMode(assimilatingOwner)) {
+            data.remove(VEHICLE_PENDING_UNTIL_TAG);
+            data.remove(VEHICLE_OWNER_TAG);
+            data.remove(VEHICLE_A10_TAG);
+            return;
+         }
          level.sendParticles(ParticleTypes.LARGE_SMOKE, vehicle.getX(), vehicle.getY() + 1.0, vehicle.getZ(), 8, 1.2, 0.7, 1.2, 0.04);
          level.sendParticles(DARK_DUST, vehicle.getX(), vehicle.getY() + 1.0, vehicle.getZ(), 12, 1.4, 0.8, 1.4, 0.02);
          if (now >= data.getLong("FateSupportKnightVehiclePendingUntil")) {
             UUID owner = data.getUUID("FateSupportKnightVehicleOwner");
             boolean a10 = data.getBoolean("FateSupportKnightVehicleA10");
             data.remove("FateSupportKnightVehiclePendingUntil");
-            assimilateVehicle(vehicle, owner, 1200L, a10, false, false);
+            assimilateVehicle(vehicle, owner, a10 ? KnightArmoryRules.A10_DURATION_TICKS : 1200L, a10, false, false);
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(owner);
             if (player != null) {
                player.displayClientMessage(Component.translatable("message.fatesupport.knight_vehicle.assimilated"), true);
             }
          }
       } else if (data.getBoolean("FateSupportKnightVehicle")) {
+         UUID ownerId = data.hasUUID(VEHICLE_OWNER_TAG) ? data.getUUID(VEHICLE_OWNER_TAG) : null;
+         Entity ownerEntity = ownerId == null ? null : level.getEntity(ownerId);
+         boolean summoned = data.getBoolean(VEHICLE_SUMMONED_TAG);
+         if (summoned && (!(ownerEntity instanceof LivingEntity living) || !living.isAlive()
+               || !isLancelot(ownerEntity) || LancelotCombatHelper.isAroundightMode((LivingEntity) ownerEntity)
+               || ownerEntity instanceof ServerPlayer player && SpiritualizationService.isRestricted(player))) {
+            releasePassengers(vehicle, now);
+            vehicle.discard();
+            return;
+         }
+         if (data.getBoolean(VEHICLE_A10_TAG) && KnightArmoryRules.shouldExplode(now,
+               data.getLong(VEHICLE_EXPIRES_TAG), vehicle.tickCount,
+               vehicle.horizontalCollision || vehicle.getCrash() || hasRammingImpact(vehicle, ownerEntity, level),
+               vehicle.verticalCollision || vehicle.onGround())) {
+            detonateAircraft(vehicle, now);
+            return;
+         }
          if (now >= data.getLong("FateSupportKnightVehicleExpires")) {
+            releasePassengers(vehicle, now);
             vehicle.discard();
          } else {
             vehicle.setEnergy(vehicle.getMaxEnergy());
@@ -542,6 +583,31 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
             }
          }
       }
+   }
+
+   private static void releasePassengers(VehicleEntity vehicle, long now) {
+      for (Entity passenger : java.util.List.copyOf(vehicle.getPassengers())) {
+         passenger.getPersistentData().putLong(CRASH_GRACE_TAG, now + 100L);
+         passenger.stopRiding();
+         passenger.fallDistance = 0.0F;
+      }
+   }
+
+   private static void detonateAircraft(VehicleEntity vehicle, long now) {
+      if (vehicle.isRemoved() || vehicle.getPersistentData().getBoolean(VEHICLE_DETONATED_TAG)) return;
+      vehicle.getPersistentData().putBoolean(VEHICLE_DETONATED_TAG, true);
+      releasePassengers(vehicle, now);
+      vehicle.vehicleExplosion(vehicle.computed().getDestroyInfo());
+      vehicle.discard();
+   }
+
+   private static boolean hasRammingImpact(VehicleEntity vehicle, Entity owner, ServerLevel level) {
+      if (!(owner instanceof LivingEntity living)) return false;
+      return !level.getEntitiesOfClass(LivingEntity.class, vehicle.getBoundingBox(),
+            candidate -> candidate != owner && !vehicle.hasPassenger(candidate)
+                  && !candidate.getPersistentData().getBoolean(DAMAGE_PROXY_TAG)
+                  && EntityUtils.isValidCombatTarget(living, candidate)
+                  && !ServantMasterProtection.isProtectedMaster(living, candidate)).isEmpty();
    }
 
    private void maintainDamageProxy(VehicleEntity vehicle, ServerLevel level) {
@@ -598,26 +664,8 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
 
    private void tickPlayerA10(VehicleEntity vehicle, ServerLevel level, UUID ownerId) {
       if (level.getEntity(ownerId) instanceof ServerPlayer owner && ServantCardLancelotBerserkerSkills.isActiveCard(owner)) {
-         LivingEntity target = level.getEntitiesOfClass(
-               LivingEntity.class,
-               vehicle.getBoundingBox().inflate(192.0),
-               candidate -> candidate.isAlive()
-                     && candidate != owner
-                     && (!(candidate instanceof Player player) || !player.isSpectator())
-                     && !isFriendlyDamageProxy(candidate, vehicle, owner, level)
-                     && !owner.isAlliedTo(candidate)
-                     && owner.hasLineOfSight(candidate)
-            )
-            .stream()
-            .min(Comparator.comparingDouble(vehicle::distanceToSqr))
-            .orElse(null);
-         String targetId = target == null ? "" : target.getStringUUID();
-         vehicle.setAiTurretTargetUUID(targetId);
-         vehicle.setAiPassengerWeaponTargetUUID(targetId);
-         if (target != null) {
-            vehicle.turretAutoAimFromUuid(targetId, owner);
-            vehicle.passengerWeaponAutoAimFormUuid(targetId, owner);
-         }
+         vehicle.setAiTurretTargetUUID("");
+         vehicle.setAiPassengerWeaponTargetUUID("");
 
          if (vehicle.tickCount < 20) {
             vehicle.setEngineStart(true);
@@ -628,25 +676,6 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
          }
 
          return;
-      }
-   }
-
-   private static boolean isFriendlyDamageProxy(LivingEntity candidate, VehicleEntity sourceVehicle, ServerPlayer owner, ServerLevel level) {
-      if (!(candidate instanceof ArmorStand proxy)
-         || !proxy.getPersistentData().getBoolean("FateSupportVehicleDamageProxyEntity")
-         || !proxy.getPersistentData().hasUUID("FateSupportVehicleDamageProxyTarget")) {
-         return false;
-      }
-
-      if (!(level.getEntity(proxy.getPersistentData().getUUID("FateSupportVehicleDamageProxyTarget")) instanceof VehicleEntity targetVehicle)) {
-         return true;
-      }
-
-      if (targetVehicle == sourceVehicle) {
-         return true;
-      } else {
-         CompoundTag targetData = targetVehicle.getPersistentData();
-         return targetData.hasUUID("FateSupportKnightVehicleOwner") && targetData.getUUID("FateSupportKnightVehicleOwner").equals(owner.getUUID());
       }
    }
 
@@ -661,42 +690,20 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
          vehicle.setPower(1.0F);
          vehicle.setForwardInputDown(true);
          vehicle.setSprintInputDown(true);
+         vehicle.setAiTurretTargetUUID("");
+         vehicle.setAiPassengerWeaponTargetUUID("");
          LivingEntity target = npc.getTarget();
-         if (target != null && target.isAlive()) {
-            String targetId = target.getStringUUID();
-            vehicle.setAiTurretTargetUUID(targetId);
-            vehicle.setAiPassengerWeaponTargetUUID(targetId);
-            vehicle.turretAutoAimFromUuid(targetId, npc);
-            vehicle.passengerWeaponAutoAimFormUuid(targetId, npc);
-            Vec3 offset = vehicle.position().subtract(target.position());
-            Vec3 radial = new Vec3(offset.x, 0.0, offset.z);
-            if (radial.lengthSqr() < 1.0E-4) {
-               radial = new Vec3(1.0, 0.0, 0.0);
-            }
-
-            radial = radial.normalize();
-            Vec3 tangent = new Vec3(-radial.z, 0.0, radial.x);
-            double distance = Math.sqrt(offset.x * offset.x + offset.z * offset.z);
-            double radialCorrection = Mth.clamp((distance - 35.0) / 18.0, -0.7, 0.7);
-            Vec3 flight = tangent.scale(0.72).add(radial.scale(-radialCorrection));
-            int groundY = level.getHeight(Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(vehicle.getX()), Mth.floor(vehicle.getZ()));
-            double desiredY = Math.max(target.getY() + 12.0, (double)groundY + 10.0);
-            double vertical = Mth.clamp((desiredY - vehicle.getY()) * 0.08, -0.18, 0.28);
-            Vec3 velocity = new Vec3(flight.x, vertical, flight.z);
-            if (velocity.horizontalDistanceSqr() > 1.0E-4) {
-               velocity = velocity.normalize().scale(0.78).add(0.0, vertical, 0.0);
-            }
-
-            vehicle.setDeltaMovement(velocity);
-            Vec3 aimPoint = target.getEyePosition().add(target.getDeltaMovement().scale(2.0));
-            Vec3 aimDirection = aimPoint.subtract(vehicle.getShootPos("Cannon", 1.0F));
+         if (target != null && EntityUtils.isValidCombatTarget(npc, target)
+               && !ServantMasterProtection.isProtectedMaster(npc, target)) {
+            Vec3 aimPoint = target.getBoundingBox().getCenter();
+            Vec3 aimDirection = aimPoint.subtract(vehicle.position());
             if (aimDirection.lengthSqr() < 1.0E-6) {
                return;
             }
 
             aimDirection = aimDirection.normalize();
+            vehicle.setDeltaMovement(aimDirection.scale(0.95));
             pointNpcA10At(vehicle, npc, aimDirection);
-            fireNpcA10Weapons(vehicle, npc, target, aimPoint, aimDirection);
          }
 
          return;
@@ -707,7 +714,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
 
    private static void pointNpcA10At(VehicleEntity vehicle, LancelotBerserkerEntity npc, Vec3 direction) {
       float yaw = (float)(Mth.atan2(-direction.x, direction.z) * 180.0F / (float)Math.PI);
-      float pitch = Mth.clamp((float)(Mth.atan2(-direction.y, direction.horizontalDistance()) * 180.0F / (float)Math.PI), -35.0F, 35.0F);
+      float pitch = (float)(Mth.atan2(-direction.y, direction.horizontalDistance()) * 180.0F / (float)Math.PI);
       vehicle.setYRot(yaw);
       vehicle.setXRot(pitch);
       vehicle.setServerYaw(yaw);
@@ -718,110 +725,94 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
       npc.setXRot(pitch);
    }
 
-   private static void fireNpcA10Weapons(VehicleEntity vehicle, LancelotBerserkerEntity npc, LivingEntity target, Vec3 aimPoint, Vec3 aimDirection) {
-      if (npc.hasLineOfSight(target)) {
-         Vec3 cannonDirection = vehicle.getShootVec("Cannon", 1.0F);
-         if (!(cannonDirection.lengthSqr() < 1.0E-6) && !(cannonDirection.normalize().dot(aimDirection) < 0.985)) {
-            double distance = (double)vehicle.distanceTo(target);
-            int seat = vehicle.getSeatIndex(npc);
-            if (seat >= 0) {
-               if (distance >= 10.0 && distance <= 160.0) {
-                  shootNpcA10Weapon(vehicle, npc, target, aimPoint, seat, 0);
-               }
-
-               if (distance >= 24.0 && distance <= 120.0 && vehicle.tickCount % 8 == 0) {
-                  shootNpcA10Weapon(vehicle, npc, target, aimPoint, seat, 1);
-               }
-
-               if (distance >= 40.0 && distance <= 192.0 && vehicle.tickCount % 30 == 0) {
-                  shootNpcA10Weapon(vehicle, npc, target, aimPoint, seat, 3);
-               }
-
-               vehicle.changeWeapon(seat, 0, false);
-            }
-         }
-      }
-   }
-
-   private static void shootNpcA10Weapon(VehicleEntity vehicle, LancelotBerserkerEntity npc, LivingEntity target, Vec3 aimPoint, int seat, int weaponIndex) {
-      vehicle.changeWeapon(seat, weaponIndex, false);
-      vehicle.vehicleShoot(npc, target.getUUID(), aimPoint);
-   }
-
    private void tickPlayerGuns(ServerPlayer player) {
       for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
          ItemStack stack = player.getInventory().getItem(slot);
          if (KnightArmoryService.isExpired(stack, player.level().getGameTime())) {
             player.getInventory().setItem(slot, ItemStack.EMPTY);
-         } else if (KnightArmoryService.isOwnerized(stack) && this.isGun(stack)) {
+         } else if (ServantCardLancelotBerserkerSkills.isActiveCard(player)
+               && isOwnedGun(stack, player) && this.isGun(stack)) {
             this.maintainOwnerizedGun(stack);
          }
       }
    }
 
    private void tickLancelotNpc(LancelotBerserkerEntity npc, ServerLevel level) {
+      long now = level.getGameTime();
+      if (KnightArmoryService.isExpired(npc.getMainHandItem(), now)) {
+         npc.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+      }
       LivingEntity target = npc.getTarget();
-      if (target != null && target.isAlive() && !LancelotCombatHelper.isAroundightMode(npc) && !npc.isPassenger()) {
-         long now = level.getGameTime();
-         if (this.shouldPrioritizeA10(npc) && npc.getRandom().nextFloat() < 0.015F && this.deployNpcA10(npc, target)) {
-            return;
+      if (target == null || !EntityUtils.isValidCombatTarget(npc, target)
+            || ServantMasterProtection.isProtectedMaster(npc, target)) {
+         target = level.getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(48),
+               candidate -> EntityUtils.isValidCombatTarget(npc, candidate)
+                     && !ServantMasterProtection.isProtectedMaster(npc, candidate))
+               .stream().min(Comparator.comparingDouble(npc::distanceToSqr)).orElse(null);
+         npc.setTarget(target);
+      }
+      if (target == null || !EntityUtils.isValidCombatTarget(npc, target)
+            || ServantMasterProtection.isProtectedMaster(npc, target)
+            || LancelotCombatHelper.isUnable(npc, now)
+            || npc.isSpiritualTransitionLocked()
+            || !LancelotCombatHelper.canUseKnightOfOwner(npc) || npc.isPassenger()) return;
+      boolean lowHealth = KnightArmoryRules.npcCanUseAtHealth(
+            KnightArmoryEntry.MINIGUN, npc.getHealth(), npc.getMaxHealth());
+      double distance = npc.distanceTo(target);
+      KnightArmoryEntry entry = KnightArmoryService.entryFor(npc.getMainHandItem());
+      long heavyLockUntil = npc.getPersistentData().getLong(NPC_HEAVY_LOCK_UNTIL_TAG);
+      if (entry == KnightArmoryEntry.MINIGUN) {
+         if (!lowHealth || distance <= 5.0 || now >= heavyLockUntil) {
+            npc.setItemSlot(EquipmentSlot.MAINHAND,
+                  LancelotCombatHelper.knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), npc));
+            entry = KnightArmoryEntry.IRON_ROD;
          }
-
-         double distance = (double)npc.distanceTo(target);
-         KnightArmoryEntry desired = distance < 5.0
-            ? KnightArmoryEntry.IRON_ROD
-            : (
-               distance > 18.0
-                  ? (npc.tickCount / 100 % 2 == 0 ? KnightArmoryEntry.AWM : KnightArmoryEntry.BARRETT)
-                  : (npc.tickCount / 100 % 2 == 0 ? KnightArmoryEntry.MP5 : KnightArmoryEntry.MINIGUN)
-            );
-         if (desired == KnightArmoryEntry.IRON_ROD) {
-            if (KnightArmoryService.entryFor(npc.getMainHandItem()) != KnightArmoryEntry.IRON_ROD
-               && npc.getPersistentData().getLong("FateSupportKnightNpcWeaponCooldown") <= now
-               && npc.getCurrentMp() >= 20.0) {
-               ItemStack rod = KnightArmoryService.markOwnerized(
-                  LancelotCombatHelper.knightOfOwnerStack(new ItemStack((ItemLike)ModItems.LANCELOT_IRON_ROD.get()), npc), npc
-               );
-               npc.setItemSlot(EquipmentSlot.MAINHAND, rod);
-               npc.setCurrentMp(npc.getCurrentMp() - 20.0);
-               npc.getPersistentData().putString("FateSupportKnightNpcLastWeapon", desired.key());
-               npc.getPersistentData().putLong("FateSupportKnightNpcWeaponCooldown", now + 100L);
-            }
-
-            KnightArmoryEntry heldEntry = KnightArmoryService.entryFor(npc.getMainHandItem());
-            if (heldEntry != null && heldEntry != KnightArmoryEntry.IRON_ROD) {
-               this.fireNpcGun(npc, target, heldEntry, level);
-            }
-         } else {
-            if (npc.getPersistentData().getLong("FateSupportKnightNpcWeaponCooldown") <= now
-               && !desired.key().equals(npc.getPersistentData().getString("FateSupportKnightNpcLastWeapon"))
-               && npc.getCurrentMp() >= 20.0) {
-               ItemStack stack = new ItemStack((ItemLike)BuiltInRegistries.ITEM.get(desired.itemId()));
-               stack = KnightArmoryService.markOwnerized(LancelotCombatHelper.knightOfOwnerStack(stack, npc), npc);
-               this.initializeOwnerizedGun(stack);
+      } else if (entry != KnightArmoryEntry.IRON_ROD) {
+         npc.setItemSlot(EquipmentSlot.MAINHAND,
+               LancelotCombatHelper.knightOfOwnerStack(new ItemStack(ModItems.LANCELOT_IRON_ROD.get()), npc));
+         entry = KnightArmoryEntry.IRON_ROD;
+      }
+      if (entry == KnightArmoryEntry.IRON_ROD && lowHealth
+            && now >= heavyLockUntil && npc.tickCount % 40 == 0
+            && LancelotCombatHelper.remainingKnightOfOwnerCapacity(npc) > 0) {
+         boolean activeA10 = npc.getPersistentData().getLong(SUMMONED_A10_EXPIRES_TAG) > now;
+         boolean heavyChoiceAvailable = KnightArmoryRules.npcCanChooseHeavyWeapon(false, activeA10, now, heavyLockUntil);
+         boolean a10Available = distance >= 18.0 && heavyChoiceAvailable && this.shouldPrioritizeA10(npc)
+               && npc.getCurrentMp() >= KnightArmoryEntry.A10.manaCost();
+         boolean minigunAvailable = distance >= 7.0 && distance <= 30.0 && heavyChoiceAvailable
+               && SuperbWarfareLoader.isAvailable()
+               && npc.getCurrentMp() >= KnightArmoryEntry.MINIGUN.manaCost();
+         KnightArmoryEntry desired = KnightArmoryRules.chooseNpcArmoryEntry(
+               true, a10Available, minigunAvailable, npc.getRandom().nextFloat());
+         if (desired == KnightArmoryEntry.A10 && this.deployNpcA10(npc, target)) return;
+         if (desired == KnightArmoryEntry.MINIGUN
+               && KnightArmoryService.cooldownUntil(npc, desired) <= now) {
+            ItemStack stack = KnightArmoryService.ownerizedWeapon(npc, desired);
+            if (!stack.isEmpty()) {
                npc.setItemSlot(EquipmentSlot.MAINHAND, stack);
-               npc.setCurrentMp(npc.getCurrentMp() - 20.0);
-               npc.getPersistentData().putString("FateSupportKnightNpcLastWeapon", desired.key());
-               npc.getPersistentData().putLong("FateSupportKnightNpcWeaponCooldown", now + 100L);
-            }
-
-            KnightArmoryEntry heldEntry = KnightArmoryService.entryFor(npc.getMainHandItem());
-            if (heldEntry != null && heldEntry != KnightArmoryEntry.IRON_ROD) {
-               this.fireNpcGun(npc, target, heldEntry, level);
+               npc.setCurrentMp(npc.getCurrentMp() - desired.manaCost());
+               KnightArmoryService.startCooldown(npc, desired);
+               npc.getPersistentData().putLong(NPC_HEAVY_LOCK_UNTIL_TAG,
+                     now + KnightArmoryRules.NPC_HEAVY_WEAPON_LOCK_TICKS);
+               npc.getPersistentData().putInt(NPC_LAST_WEAPON_TAG, desired.networkId());
+               entry = desired;
             }
          }
       }
+      if (entry == KnightArmoryEntry.MINIGUN && npc.hasLineOfSight(target)) {
+         npc.setSprinting(distance > 4.0);
+         npc.getNavigation().moveTo(target, 1.65);
+         this.fireNpcGun(npc, target, entry, level);
+      }
    }
-
    private void fireNpcGun(LancelotBerserkerEntity npc, LivingEntity target, KnightArmoryEntry entry, ServerLevel level) {
       ItemStack held = npc.getMainHandItem();
       if (this.isGun(held) && entry == KnightArmoryService.entryFor(held)) {
          GunData data = GunDataKt.toGunData(held);
-         int magazine = Math.max(1, data.compute().getMagazine());
-         data.ammo.set(magazine);
-         data.virtualAmmo.set(999999);
-         data.backupAmmoCount.set(999999);
-         data.tick(npc, false);
+         this.maintainOwnerizedGun(held);
+         data = GunDataKt.toGunData(held);
+         data.tick(npc, true);
+         if (data.shouldStartReloading(npc)) data.startReload();
 
          int interval = switch (entry) {
             case MINIGUN -> 2;
@@ -834,8 +825,15 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
          } else if (!data.canShoot(npc)) {
             data.save();
          } else {
-            Vec3 direction = target.getEyePosition().subtract(npc.getEyePosition()).normalize();
-            data.shoot(npc, 0.0, false, target.getUUID(), direction);
+            // targetPos only guides missiles. Ordinary bullets use shootDirection;
+            // do not depend on the delayed look control or another AI's rotation.
+            Vec3 origin = npc.getEyePosition();
+            Vec3 aimPoint = target.getEyePosition();
+            Vec3 direction = aimPoint.subtract(origin).normalize();
+            npc.faceVector(direction);
+            npc.setXRot((float)(-Mth.atan2(direction.y, direction.horizontalDistance()) * 180.0 / Math.PI));
+            data.shoot(new ShootParameters(npc, npc, level, origin, direction, data,
+                  0.0, false, target.getUUID(), aimPoint));
             data.save();
          }
       }
@@ -877,7 +875,8 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
          && entity.getRemovalReason() != null
          && entity.getRemovalReason().shouldDestroy()) {
          UUID ownerId = entity.getPersistentData().getUUID("FateSupportKnightVehicleOwner");
-         ServerPlayer owner = event.getLevel().getServer().getPlayerList().getPlayer(ownerId);
+         LivingEntity owner = event.getLevel() instanceof ServerLevel level && level.getEntity(ownerId) instanceof LivingEntity living
+               ? living : event.getLevel().getServer().getPlayerList().getPlayer(ownerId);
          if (owner != null
             && owner.getPersistentData().hasUUID("FateSupportKnightSummonedA10")
             && owner.getPersistentData().getUUID("FateSupportKnightSummonedA10").equals(entity.getUUID())) {
@@ -888,11 +887,12 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
 
    private void modifyGunProjectile(ProjectileEntity projectile) {
       Entity shooter = projectile.getOwner();
-      if (shooter instanceof LivingEntity living) {
+      if (shooter instanceof LivingEntity living && isLancelot(living) && LancelotCombatHelper.canUseKnightOfOwner(living)) {
          ItemStack gun = findOwnerizedGun(living, projectile.getGunItemId());
          if (!gun.isEmpty()) {
             KnightArmoryEntry entry = KnightArmoryService.entryFor(gun);
             projectile.getPersistentData().putBoolean("FateSupportKnightProjectile", true);
+            projectile.getPersistentData().putUUID(PROJECTILE_OWNER_TAG, living.getUUID());
             projectile.setCustomName(Component.literal("FateSupportKnightProjectile"));
             projectile.setRGB(new float[]{0.06F, 0.01F, 0.09F});
             if (entry != KnightArmoryEntry.AWM && entry != KnightArmoryEntry.BARRETT) {
@@ -901,7 +901,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
                projectile.setDamage(100.0F);
                projectile.setExplosionDamage(100.0F);
                projectile.setExplosionRadius(6.0F);
-               if (shooter instanceof ServerPlayer && KnightArmoryService.incrementShots(gun) >= 15) {
+               if (KnightArmoryService.incrementShots(gun) >= 15) {
                   gun.shrink(1);
                   shooter.sendSystemMessage(Component.translatable("message.fatesupport.knight_armory.sniper_spent"));
                }
@@ -912,20 +912,19 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
 
    private static ItemStack findOwnerizedGun(LivingEntity shooter, String gunId) {
       ItemStack held = shooter.getMainHandItem();
-      if (matchesGunId(held, gunId) && KnightArmoryService.isOwnerized(held)) {
-         return held;
-      } else {
-         if (shooter instanceof Player player) {
-            for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-               ItemStack stack = player.getInventory().getItem(slot);
-               if (KnightArmoryService.isOwnerized(stack) && matchesGunId(stack, gunId)) {
-                  return stack;
-               }
-            }
-         }
-
-         return ItemStack.EMPTY;
+      if (matchesGunId(held, gunId)) {
+         return isOwnedGun(held, shooter) ? held : ItemStack.EMPTY;
       }
+      ItemStack offhand = shooter.getOffhandItem();
+      return matchesGunId(offhand, gunId) && isOwnedGun(offhand, shooter) ? offhand : ItemStack.EMPTY;
+   }
+
+   private static boolean isOwnedGun(ItemStack stack, LivingEntity shooter) {
+      CompoundTag data = stack.getOrDefault(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+            net.minecraft.world.item.component.CustomData.EMPTY).copyTag();
+      return KnightArmoryService.isOwnerized(stack) && (data.hasUUID(KnightArmoryService.OWNER_UUID_TAG)
+            ? data.getUUID(KnightArmoryService.OWNER_UUID_TAG).equals(shooter.getUUID())
+            : LancelotCombatHelper.isKnightOfOwnerOwnedBy(stack, shooter));
    }
 
    private static boolean matchesGunId(ItemStack stack, String gunId) {
@@ -947,7 +946,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
    public void onIncomingDamage(LivingIncomingDamageEvent event) {
       LivingEntity living = event.getEntity();
       DamageSource source = event.getSource();
-      if (isOwnA10ProjectileDamage(living, source)) {
+      if (isFriendlyKnightDamage(living, source) || isOwnA10ProjectileDamage(living, source)) {
          event.setCanceled(true);
       } else {
          if (living instanceof ArmorStand proxy && proxy.getPersistentData().getBoolean("FateSupportVehicleDamageProxyEntity")) {
@@ -993,6 +992,20 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
       }
 
       return explodingVehicle != null && source.is(DamageTypeTags.IS_EXPLOSION);
+   }
+
+   private static boolean isFriendlyKnightDamage(LivingEntity victim, DamageSource source) {
+      Entity direct = source.getDirectEntity();
+      if (direct == null || !(victim.level() instanceof ServerLevel level)) return false;
+      CompoundTag data = direct.getPersistentData();
+      UUID ownerId = data.getBoolean(PROJECTILE_TAG) && data.hasUUID(PROJECTILE_OWNER_TAG)
+            ? data.getUUID(PROJECTILE_OWNER_TAG)
+            : data.getBoolean(VEHICLE_TAG) && data.hasUUID(VEHICLE_OWNER_TAG)
+                  ? data.getUUID(VEHICLE_OWNER_TAG) : null;
+      Entity owner = ownerId == null ? null : level.getEntity(ownerId);
+      return owner instanceof LivingEntity living && (owner == victim
+            || living.isAlliedTo(victim) || victim.isAlliedTo(living)
+            || ServantMasterProtection.isProtectedMaster(living, victim));
    }
 
    private static boolean isOwnA10ProjectileDamage(LivingEntity living, DamageSource source) {
@@ -1105,7 +1118,7 @@ public final class SuperbWarfareIntegration implements SuperbWarfareBridge {
       }
    }
 
-   private static void clearSummonedA10(ServerPlayer player) {
+   private static void clearSummonedA10(LivingEntity player) {
       player.getPersistentData().remove("FateSupportKnightSummonedA10");
       player.getPersistentData().remove("FateSupportKnightSummonedA10Expires");
    }

@@ -2,12 +2,13 @@
   "era": "mythology",
   "id": "arash",
   "display_name": "Arash",
+  "profile": {"sex": "male", "height_cm": 185, "weight_kg": 75, "origin": "Persian mythology", "region": "West Asia"},
   "display_name_zh": "阿拉什",
   "class_type": "archer",
   "faction": "human",
   "traits": [
-    "servant", "male", "archer", "human", "humanoid", "living_human", "sapient",
-    "chaotic", "balanced", "earth", "seven_knights", "ea_special"
+    "male", "earth", "heaven_or_earth_servant", "chaotic", "balanced", "servant",
+    "humanoid", "beloved", "human_kind", "seven_knights"
   ],
   "parameters": {
     "endurance": "A", "endurance_plus": false,
@@ -16,17 +17,28 @@
     "magic": "E", "magic_plus": false,
     "luck": "D", "luck_plus": false
   },
+  "noble_phantasm_rank": "B++",
   "model": {
     "geometry": "",
     "texture": "typemoonworld:textures/entity/arash.png",
-    "animation": ""
+    "animation": "animations/arash_bow.animation.json",
+    "animations": {
+      "idle": "animation.arash_bow.idle",
+      "walk": "animation.arash_bow.idle",
+      "bow_draw_start": "animation.arash_bow.draw",
+      "bow_draw_loop": "animation.arash_bow.draw",
+      "bow_draw_cancel": "animation.arash_bow.release",
+      "bow_release": "animation.arash_bow.release",
+      "retreat": "animation.arash_bow.retreat",
+      "melee_knockback": "animation.arash_bow.melee_knockback"
+    }
   },
   "specialization": {
     "dimensions": {"width": 0.6, "height": 1.85, "eye_height": 1.67},
     "hand_item_offset": {"x": 0.1, "y": -0.82, "z": -0.15},
     "default_weapon": "typemoonworld:arash_bow",
     "immune_to_stone_axe_debuff": false,
-    "combat_actions": ["bow_shot", "arrow_rain", "energy_small", "energy_large", "stella_chant", "stella_release"]
+    "combat_actions": ["bow_shot", "bow_draw_start", "bow_draw_loop", "bow_draw_cancel", "bow_release", "arrow_rain", "energy_small", "energy_large", "retreat", "melee_knockback", "stella_chant", "stella_release"]
   },
   "skills": [
     "stout_ex_arash", "clairvoyance_a_arash", "arrow_construction_a",

@@ -7,5 +7,5 @@
   "mp_cost": 0,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
-  "effects": [{"effect_type": "shadow_mana_recovery", "params": {"mana_per_second": 5.0}}]
+  "effects": [{"effect_type": "shadow_mana_recovery", "params": {"mana_per_second": 5.0, "interval_ticks": 20, "requires_shadow_zone": true, "total_darkness": false}}]
 }

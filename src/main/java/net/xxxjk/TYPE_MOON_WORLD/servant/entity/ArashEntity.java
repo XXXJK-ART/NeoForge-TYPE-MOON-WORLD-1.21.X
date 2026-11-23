@@ -105,7 +105,9 @@ public final class ArashEntity extends ServantEntity {
          }
          amount *= ArashCombatRules.STOUT_DAMAGE_MULTIPLIER;
       }
-      return super.hurt(source, amount);
+      boolean hurt = super.hurt(source, amount);
+      if (hurt && !this.level().isClientSide) ArashCombatHelper.interruptCharge(this);
+      return hurt;
    }
 
    private static boolean isDiseaseDamage(DamageSource source) {

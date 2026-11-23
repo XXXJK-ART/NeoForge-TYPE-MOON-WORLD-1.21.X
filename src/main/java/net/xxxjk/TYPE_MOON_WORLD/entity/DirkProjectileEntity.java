@@ -12,6 +12,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -27,6 +29,15 @@ import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 public class DirkProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> DAMAGE = SynchedEntityData.defineId(DirkProjectileEntity.class, EntityDataSerializers.FLOAT);
    private int lifeTime;
+   private double maxDistance = 18.0;
+   private net.minecraft.world.phys.Vec3 launchPosition;
+   private int slowTicks;
+   private int weaknessTicks;
+
+   public void setOnHitEffects(int slowTicks, int weaknessTicks) {
+      this.slowTicks = Math.max(0, slowTicks);
+      this.weaknessTicks = Math.max(0, weaknessTicks);
+   }
 
    public DirkProjectileEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
       super(type, level);
@@ -40,7 +51,7 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
    @Override
    protected void defineSynchedData(SynchedEntityData.Builder builder) {
       super.defineSynchedData(builder);
-      builder.define(DAMAGE, 20.0F);
+      builder.define(DAMAGE, 10.0F);
    }
 
    public void setDamage(float damage) {
@@ -51,6 +62,11 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
       return this.entityData.get(DAMAGE);
    }
 
+   public void setMaxDistance(double distance) {
+      this.maxDistance = Math.max(1.0, distance);
+      this.launchPosition = this.position();
+   }
+
    @Override
    protected Item getDefaultItem() {
       return ModItems.DIRK_SMALL_KNIFE.get();
@@ -58,7 +74,9 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
 
    @Override
    protected boolean canHitEntity(Entity entity) {
-      if (entity instanceof LivingEntity living && this.getOwner() instanceof ServantEntity servant && CursedArmHassanCombatHelper.refusesToHarm(servant, living)) {
+      if (entity instanceof LivingEntity living && this.getOwner() instanceof LivingEntity owner
+         && !EntityUtils.isValidCombatTarget(owner, living)) return false;
+      if (entity instanceof LivingEntity living && this.getOwner() instanceof LivingEntity owner && CursedArmHassanCombatHelper.refusesToHarm(owner, living)) {
          return false;
       }
       if (entity instanceof LivingEntity living && this.getOwner() instanceof LivingEntity owner
@@ -72,6 +90,7 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
    public void tick() {
       super.tick();
       this.lifeTime++;
+      if (this.launchPosition == null) this.launchPosition = this.position();
       this.syncRotationToMotion();
       if (this.level().isClientSide()) {
          if (this.tickCount % 2 == 0) {
@@ -79,7 +98,7 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
          }
          return;
       }
-      if (this.lifeTime > 100) {
+      if (this.lifeTime > 100 || this.position().distanceToSqr(this.launchPosition) > this.maxDistance * this.maxDistance) {
          this.discard();
       }
    }
@@ -92,7 +111,7 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
       }
       if (result.getEntity() instanceof LivingEntity target) {
          LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
-         if (owner instanceof ServantEntity servant && CursedArmHassanCombatHelper.refusesToHarm(servant, target)) {
+         if (owner != null && CursedArmHassanCombatHelper.refusesToHarm(owner, target)) {
             this.discard();
             return;
          }
@@ -101,9 +120,17 @@ public class DirkProjectileEntity extends ThrowableItemProjectile {
             return;
          }
          DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().generic();
-         target.invulnerableTime = 0;
-         target.hurt(source, this.getDamage());
-         target.invulnerableTime = 0;
+         if (!EntityUtils.isValidCombatTarget(owner == null ? target : owner, target)) {
+            this.discard();
+            return;
+         }
+         boolean hit = target.hurt(source, this.getDamage());
+         if (hit && this.slowTicks > 0) {
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, this.slowTicks, 0, false, true, true), owner);
+         }
+         if (hit && this.weaknessTicks > 0) {
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, this.weaknessTicks, 0, false, true, true), owner);
+         }
          if (this.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.55, target.getZ(), 8, 0.2, 0.2, 0.2, 0.08);
             level.playSound(null, target.blockPosition(), SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 0.6F, 1.4F);

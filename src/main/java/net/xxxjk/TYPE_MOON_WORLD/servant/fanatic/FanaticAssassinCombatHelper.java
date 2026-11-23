@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.fanatic;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -184,12 +186,14 @@ public final class FanaticAssassinCombatHelper {
    private static void castMarrow(FanaticAssassinEntity entity, List<LivingEntity> enemies, long now) {
       commit(entity, "Marrow", FanaticAssassinRules.MARROW_MP, now, FanaticAssassinEntity.TECHNIQUE_MARROW, "marrow", 12);
       ServantVoiceHelper.tryPlayFanaticTechnique(entity, FanaticAssassinEntity.TECHNIQUE_MARROW);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : enemies) {
          target.invulnerableTime = 0;
          target.hurt(entity.damageSources().source(FanaticDamageTypes.MARROW, entity), FanaticAssassinRules.MARROW_DAMAGE);
          target.addEffect(new MobEffectInstance(ModMobEffects.REVERSE_MOVEMENT, FanaticAssassinRules.CONFUSION_DURATION, 0, false, true, true), entity);
          target.addEffect(new MobEffectInstance(ModMobEffects.FANATIC_CIRCUIT_DISRUPTION,
             FanaticAssassinRules.CIRCUIT_DISRUPTION_DURATION, 0, false, true, true), entity);
+      }
       }
       if (entity.level() instanceof ServerLevel level) {
          spawnMarrowFx(level, entity, enemies);
@@ -202,12 +206,14 @@ public final class FanaticAssassinCombatHelper {
       // LookControl applies its requested rotation later in the tick. Aim from the
       // actual target position so the first cast cannot use the previous heading.
       Vec3 forward = directionToTarget(entity, primaryTarget);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : enemiesAround(entity, FanaticAssassinRules.HAIR_RANGE)) {
          Vec3 to = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
          if (to.lengthSqr() <= 1.0E-5 || forward.dot(to.normalize()) < Math.cos(Math.PI / 4.0)) continue;
          target.invulnerableTime = 0;
          target.hurt(entity.damageSources().mobAttack(entity), FanaticAssassinRules.HAIR_DAMAGE);
          if (entity.isToxinStanceActive()) applyToxin(entity, target);
+      }
       }
       if (entity.level() instanceof ServerLevel level) {
          spawnHairFx(level, entity, forward);
@@ -243,12 +249,14 @@ public final class FanaticAssassinCombatHelper {
       target.hurt(entity.damageSources().source(FanaticDamageTypes.COMPUTER, entity), FanaticAssassinRules.COMPUTER_DAMAGE);
       target.addEffect(new MobEffectInstance(ModMobEffects.STAGGER, FanaticAssassinRules.STUN_DURATION, 0, false, true, true), entity);
       AABB blast = new AABB(center, center).inflate(FanaticAssassinRules.COMPUTER_SPLASH_RADIUS);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity bystander : entity.level().getEntitiesOfClass(LivingEntity.class, blast,
          living -> living != entity && living != target && living.isAlive())) {
          float splash = FanaticAssassinRules.computerSplashDamage(bystander.position().add(0.0, bystander.getBbHeight() * 0.5, 0.0).distanceTo(center));
          if (splash <= 0.0F) continue;
          bystander.invulnerableTime = 0;
          bystander.hurt(entity.damageSources().source(FanaticDamageTypes.COMPUTER_SPLASH, entity), splash);
+      }
       }
       entity.hurt(entity.damageSources().magic(), FanaticAssassinRules.COMPUTER_BACKLASH);
       if (entity.level() instanceof ServerLevel level) {
@@ -266,8 +274,6 @@ public final class FanaticAssassinCombatHelper {
    }
 
    private static void castJinn(FanaticAssassinEntity entity, long now) {
-      commit(entity, "Jinn", FanaticAssassinRules.JINN_MP, now,
-         FanaticAssassinEntity.TECHNIQUE_JINN, "jinn", 16);
       if (!(entity.level() instanceof ServerLevel level)) return;
       FanaticAssassinJinnEntity jinn = ModEntities.FANATIC_ASSASSIN_JINN.get().create(level);
       if (jinn == null) return;
@@ -276,7 +282,9 @@ public final class FanaticAssassinCombatHelper {
       float yaw = (float)Math.toDegrees(Math.atan2(-forward.x, forward.z));
       jinn.moveTo(entity.getX() + side.x * 1.5, entity.getY(), entity.getZ() + side.z * 1.5, yaw, 0.0F);
       jinn.initialize(entity, now + FanaticAssassinRules.JINN_LIFETIME);
-      level.addFreshEntity(jinn);
+      if (!level.addFreshEntity(jinn)) return;
+      commit(entity, "Jinn", FanaticAssassinRules.JINN_MP, now,
+         FanaticAssassinEntity.TECHNIQUE_JINN, "jinn", 16);
       spawnJinnSummonFx(level, entity, jinn);
    }
 

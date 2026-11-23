@@ -1,0 +1,15 @@
+allprojects {
+    layout.buildDirectory = file('build/diarmuid-third-person-verification')
+    afterEvaluate { project ->
+        project.tasks.named('test').configure { inputs.dir project.file('src/main/resources') }
+        project.runs.gameTestServer.workingDirectory project.file('build/diarmuid-third-person-gametest-run')
+        def smoke = project.sourceSets.create('diarmuidThirdPersonSmoke') {
+            java.srcDir 'tools/diarmuid-third-person-smoke/java'
+            resources.srcDir 'tools/diarmuid-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_diarmuid_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/diarmuid-third-person-run')
+    }
+}

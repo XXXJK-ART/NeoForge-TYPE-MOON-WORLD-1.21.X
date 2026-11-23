@@ -6,6 +6,7 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetCarriedItemPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +16,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -26,6 +29,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -39,6 +43,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ArashParticleArrowEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ArashStellaControllerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
+import net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashCombatRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ArashAimHelper;
@@ -53,6 +58,9 @@ public final class ServantCardArashSkills {
    public static final int STELLA_LOCKED_HOTBAR_SLOT = 0;
    public static final float CHANT_LOOK_TOLERANCE = 3.0F;
    public static final float BASE_DODGE_CHANCE = 0.10F;
+   public static final String ARROW_RAIN_CHARGE_START = "ArashArrowRainChargeStart";
+   public static final String ARROW_RAIN_CHARGE_RELEASE = "ArashArrowRainChargeRelease";
+   private static final String ARROW_RAIN_BOW_ID = "ArashArrowRainBowId";
 
    private static final ResourceLocation STOUT_HEALTH_ID = ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "servant_card_arash_stout_health");
@@ -77,7 +85,7 @@ public final class ServantCardArashSkills {
 
    private ServantCardArashSkills() { }
 
-   public static boolean isArash(ServerPlayer player) {
+   public static boolean isArash(Player player) {
       if (player == null) return false;
       TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       return vars.servantCardState().transformed() && "arash".equals(vars.servantCardState().id());
@@ -102,6 +110,11 @@ public final class ServantCardArashSkills {
          return;
       }
       applyStoutHealth(player, false);
+      if (player.getPersistentData().contains(ARROW_RAIN_CHARGE_START)
+         && (!player.isAlive() || !hasRequiredBow(player) || !player.isUsingItem()
+            || player.getUseItem() != player.getMainHandItem() || isPlayerChanting(player))) {
+         clearArrowRainCharge(player);
+      }
       if (isPlayerChanting(player)) maintainChantLock(player);
    }
 
@@ -110,6 +123,14 @@ public final class ServantCardArashSkills {
    }
 
    public static boolean performArrowRain(ServerPlayer player) {
+      int chargeTicks = player != null && player.getPersistentData().contains(ARROW_RAIN_CHARGE_RELEASE)
+         ? player.getPersistentData().getInt(ARROW_RAIN_CHARGE_RELEASE) : ArashCombatRules.ARROW_MAX_CHARGE_TICKS;
+      if (player != null) player.getPersistentData().remove(ARROW_RAIN_CHARGE_RELEASE);
+      return performArrowRain(player, chargeTicks);
+   }
+
+   public static boolean performArrowRain(ServerPlayer player, int chargeTicks) {
+      chargeTicks = Math.max(0, Math.min(ArashCombatRules.ARROW_MAX_CHARGE_TICKS, chargeTicks));
       boolean grandRain = player != null && player.isCrouching();
       int arrowCount = grandRain ? ArashCombatRules.CROUCH_RAIN_ARROW_COUNT : ArashCombatRules.RAIN_ARROW_COUNT;
       int arrowCost = grandRain ? ArashCombatRules.CROUCH_ARROW_RAIN_COST : ArashCombatRules.ARROW_RAIN_COST;
@@ -136,25 +157,86 @@ public final class ServantCardArashSkills {
          double time = Math.max(12.0, delta.horizontalDistance() / 2.2);
          Vec3 motion = new Vec3(delta.x / time, delta.y / time + 0.025 * time, delta.z / time);
          ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, player,
-            ArashParticleArrowEntity.RAIN, ArashCombatRules.RAIN_ARROW_DAMAGE);
+            ArashParticleArrowEntity.RAIN, ArashCombatRules.ARROW_MIN_DAMAGE, chargeTicks);
          arrow.setPos(start.x, start.y, start.z);
          arrow.setDeltaMovement(motion);
          level.addFreshEntity(arrow);
       }
       level.sendParticles(ParticleTypes.END_ROD, start.x, start.y, start.z, 32, 0.4, 0.35, 0.4, 0.12);
+      ArashBowItem.animateBow(player, player.getMainHandItem(), "release");
+      level.sendParticles(ParticleTypes.ELECTRIC_SPARK, start.x, start.y, start.z, 40, 0.2, 0.2, 0.2, 0.18);
+      level.playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.TRIDENT_THROW.value(),
+         net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.25F);
       return true;
+   }
+
+   public static void beginArrowRainCharge(ServerPlayer player) {
+      if (player == null) return;
+      if (!isArash(player) || !player.isAlive() || isPlayerChanting(player) || !equipExistingBow(player)) {
+         player.displayClientMessage(Component.translatable("message.typemoonworld.servant_card.arash_bow_required"), true);
+         return;
+      }
+      if (player.getPersistentData().contains(ARROW_RAIN_CHARGE_START)) return;
+      player.stopUsingItem();
+      player.getPersistentData().remove(ArashBowItem.INTERRUPTED_TAG);
+      player.getPersistentData().putLong(ARROW_RAIN_CHARGE_START, player.level().getGameTime());
+      player.getPersistentData().putLong(ARROW_RAIN_BOW_ID,
+         software.bernie.geckolib.animatable.GeoItem.getOrAssignId(player.getMainHandItem(), player.serverLevel()));
+      player.startUsingItem(InteractionHand.MAIN_HAND);
+      ArashBowItem.animateBow(player, player.getMainHandItem(), "draw");
+   }
+
+   private static boolean equipExistingBow(ServerPlayer player) {
+      if (hasRequiredBow(player)) return true;
+      var inventory = player.getInventory();
+      for (int slot = 0; slot < inventory.items.size(); slot++) {
+         if (!inventory.items.get(slot).is(ModItems.ARASH_BOW.get())) continue;
+         player.stopUsingItem();
+         if (slot < 9) inventory.selected = slot;
+         else {
+            ItemStack previous = inventory.items.get(inventory.selected);
+            inventory.items.set(inventory.selected, inventory.items.get(slot));
+            inventory.items.set(slot, previous);
+         }
+         inventory.setChanged();
+         player.connection.send(new ClientboundSetCarriedItemPacket(inventory.selected));
+         player.inventoryMenu.broadcastChanges();
+         return true;
+      }
+      return false;
+   }
+
+   public static void releaseArrowRainCharge(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      if (!data.contains(ARROW_RAIN_CHARGE_START)) return;
+      if (!isArash(player) || !player.isAlive() || !hasRequiredBow(player)
+         || !player.isUsingItem() || player.getUseItem() != player.getMainHandItem() || isPlayerChanting(player)) {
+         clearArrowRainCharge(player);
+         return;
+      }
+      int chargeTicks = Math.max(0, Math.min(ArashCombatRules.ARROW_MAX_CHARGE_TICKS,
+         (int)(player.level().getGameTime() - data.getLong(ARROW_RAIN_CHARGE_START))));
+      player.stopUsingItem();
+      data.remove(ARROW_RAIN_CHARGE_START);
+      data.remove(ArashBowItem.INTERRUPTED_TAG);
+      data.putInt(ARROW_RAIN_CHARGE_RELEASE, chargeTicks);
+      if (!ServantCardTransformManager.triggerAction(player, 0)) {
+         ArashBowItem.animateBow(player, player.getMainHandItem(), "cancel");
+      }
+      data.remove(ARROW_RAIN_CHARGE_RELEASE);
+      data.remove(ARROW_RAIN_BOW_ID);
    }
 
    public static boolean performSmallEnergyArrow(ServerPlayer player) {
       return consumeArrows(player, ArashCombatRules.ENERGY_ARROW_COST)
          && fireDirect(player, ArashParticleArrowEntity.SMALL_ENERGY,
-         (float)ArashCombatRules.SMALL_ENERGY_DAMAGE, 3.0);
+         (float)ArashCombatRules.ARROW_MIN_DAMAGE, 3.0, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
    }
 
    public static boolean performLargeEnergyArrow(ServerPlayer player) {
       return consumeArrows(player, ArashCombatRules.ENERGY_ARROW_COST)
          && fireDirect(player, ArashParticleArrowEntity.LARGE_ENERGY,
-         (float)ArashCombatRules.LARGE_ENERGY_DAMAGE, 2.7);
+         (float)ArashCombatRules.ARROW_MIN_DAMAGE, 2.7, ArashCombatRules.ARROW_MAX_CHARGE_TICKS);
    }
 
    public static boolean performArrowCreation(ServerPlayer player) {
@@ -204,12 +286,12 @@ public final class ServantCardArashSkills {
       return true;
    }
 
-   private static boolean fireDirect(ServerPlayer player, int variant, float damage, double speed) {
+   private static boolean fireDirect(ServerPlayer player, int variant, float damage, double speed, int chargeTicks) {
       if (!hasRequiredBow(player) || !(player.level() instanceof ServerLevel level)) return false;
       Vec3 look = player.getLookAngle().normalize();
       Vec3 start = player.getEyePosition().add(look.scale(0.8));
       Vec3 direction = ArashAimHelper.autoAimDirection(player, start, look, speed);
-      ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, player, variant, damage);
+      ArashParticleArrowEntity arrow = new ArashParticleArrowEntity(level, player, variant, damage, chargeTicks);
       arrow.setPos(start.x, start.y - 0.1, start.z);
       arrow.setDeltaMovement(direction.scale(speed));
       level.addFreshEntity(arrow);
@@ -447,6 +529,22 @@ public final class ServantCardArashSkills {
 
    private static void clearRuntimeTags(ServerPlayer player) {
       clearChantTags(player);
+      clearArrowRainCharge(player);
+   }
+
+   private static void clearArrowRainCharge(ServerPlayer player) {
+      CompoundTag data = player.getPersistentData();
+      boolean chargeActive = data.contains(ARROW_RAIN_CHARGE_START) || data.contains(ARROW_RAIN_CHARGE_RELEASE);
+      if (chargeActive && data.contains(ARROW_RAIN_BOW_ID)) {
+         ((ArashBowItem)ModItems.ARASH_BOW.get()).triggerAnim(player, data.getLong(ARROW_RAIN_BOW_ID), "bow_controller", "cancel");
+      }
+      data.remove(ARROW_RAIN_CHARGE_START);
+      data.remove(ARROW_RAIN_CHARGE_RELEASE);
+      data.remove(ARROW_RAIN_BOW_ID);
+      if (chargeActive && player.isUsingItem() && player.getUseItem().is(ModItems.ARASH_BOW.get())) {
+         player.stopUsingItem();
+      }
+      if (chargeActive) data.remove(ArashBowItem.INTERRUPTED_TAG);
    }
 
    private static void clearChantTags(ServerPlayer player) {
@@ -514,6 +612,24 @@ public final class ServantCardArashSkills {
    }
 
    @SubscribeEvent
+   public static void onDamageApplied(LivingDamageEvent.Post event) {
+      if (event.getNewDamage() <= 0.0F || !(event.getEntity() instanceof ServerPlayer player)) return;
+      CompoundTag data = player.getPersistentData();
+      boolean bowChargeInterrupted = player.isUsingItem() && player.getUseItem().is(ModItems.ARASH_BOW.get());
+      boolean rainChargeInterrupted = isArash(player) && data.contains(ARROW_RAIN_CHARGE_START);
+      if (!bowChargeInterrupted && !rainChargeInterrupted) return;
+      if (rainChargeInterrupted) {
+         clearArrowRainCharge(player);
+         return;
+      }
+      if (bowChargeInterrupted) {
+         ArashBowItem.animateBow(player, player.getUseItem(), "cancel");
+         data.putBoolean(net.xxxjk.TYPE_MOON_WORLD.item.custom.ArashBowItem.INTERRUPTED_TAG, true);
+         player.stopUsingItem();
+      }
+   }
+
+   @SubscribeEvent
    public static void onEffectApplicable(MobEffectEvent.Applicable event) {
       if (event.getEntity() instanceof ServerPlayer player && isArash(player)
          && isDiseaseEffect(event.getEffectInstance().getEffect())) {
@@ -560,6 +676,7 @@ public final class ServantCardArashSkills {
    public static void onDeath(LivingDeathEvent event) {
       if (event.getEntity() instanceof ServerPlayer player) {
          if (isPlayerChanting(player)) abortPlayerChantNoRefund(player);
+         clearArrowRainCharge(player);
          clearPlayerStellaSacrifice(player);
       }
    }
@@ -576,11 +693,17 @@ public final class ServantCardArashSkills {
 
    @SubscribeEvent
    public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-      if (event.getEntity() instanceof ServerPlayer player && isPlayerChanting(player)) abortPlayerChantNoRefund(player);
+      if (event.getEntity() instanceof ServerPlayer player) {
+         if (isPlayerChanting(player)) abortPlayerChantNoRefund(player);
+         clearArrowRainCharge(player);
+      }
    }
 
    @SubscribeEvent
    public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
-      if (event.getEntity() instanceof ServerPlayer player && isPlayerChanting(player)) abortPlayerChantNoRefund(player);
+      if (event.getEntity() instanceof ServerPlayer player) {
+         if (isPlayerChanting(player)) abortPlayerChantNoRefund(player);
+         clearArrowRainCharge(player);
+      }
    }
 }

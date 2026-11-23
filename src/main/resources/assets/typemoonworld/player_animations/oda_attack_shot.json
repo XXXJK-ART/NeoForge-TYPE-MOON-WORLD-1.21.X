@@ -1,0 +1,16 @@
+{
+  "name": "oda_attack_shot",
+  "version": 3,
+  "description": "Oda Nobunaga raises her matchlock and fires.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 12,
+    "stopTick": 12,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -12, "yaw": -8, "roll": -6}, "leftArm": {"pitch": -8, "yaw": 8, "roll": 6}},
+      {"tick": 3, "rightArm": {"pitch": -77, "yaw": -8, "roll": -8}, "leftArm": {"pitch": -66, "yaw": 9, "roll": 8}, "body": {"pitch": 4, "yaw": -4}},
+      {"tick": 5, "rightArm": {"pitch": -53, "yaw": -8, "roll": -8}, "leftArm": {"pitch": -56, "yaw": 9, "roll": 8}, "body": {"pitch": 0, "yaw": -4}},
+      {"tick": 12, "rightArm": {"pitch": 0, "yaw": 0, "roll": 0}, "leftArm": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"pitch": 0, "yaw": 0}}
+    ]
+  }
+}

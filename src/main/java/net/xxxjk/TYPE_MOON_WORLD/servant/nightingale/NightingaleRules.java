@@ -2,8 +2,8 @@ package net.xxxjk.TYPE_MOON_WORLD.servant.nightingale;
 
 public final class NightingaleRules {
    public static final float MAD_ENHANCEMENT_MULTIPLIER = 1.25F;
-   public static final float HUMANOID_ATTACK_MULTIPLIER = 1.5F;
-   public static final float HUMANOID_DEFENSE_MULTIPLIER = 0.75F;
+   public static final float HUMANOID_ATTACK_MULTIPLIER = 2.0F;
+   public static final float HUMANOID_DEFENSE_MULTIPLIER = 0.5F;
    public static final float ANGEL_DAMAGE_MULTIPLIER = 1.3F;
    public static final int STEEL_NURSING_COOLDOWN = 200;
    public static final int STEEL_NURSING_COST = 15;
@@ -15,6 +15,8 @@ public final class NightingaleRules {
    public static final int NOBLE_PHANTASM_COOLDOWN = 600;
    public static final int NOBLE_PHANTASM_WINDUP = 20;
    public static final int SAFETY_CIRCLE_DURATION = 100;
+   public static final double SAFETY_CIRCLE_RADIUS = 40.0;
+   public static final int SAFETY_CIRCLE_MAX_ENTITIES = 100;
    public static final double SUPPORT_RANGE = 15.0;
    public static final float NOBLE_PHANTASM_HEAL = 200.0F;
    public static final double NOBLE_PHANTASM_MANA = 50.0;
@@ -26,6 +28,10 @@ public final class NightingaleRules {
       if (humanoidTarget) multiplier *= HUMANOID_ATTACK_MULTIPLIER;
       if (angelCry) multiplier *= ANGEL_DAMAGE_MULTIPLIER;
       return multiplier;
+   }
+
+   public static float incomingMultiplier(boolean humanoidAttacker) {
+      return humanoidAttacker ? HUMANOID_DEFENSE_MULTIPLIER : 1.0F;
    }
 
    public static boolean shouldUseNoblePhantasm(float selfRatio, float lowestAllyRatio, int alliesAtOrBelowHalf) {

@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -195,6 +197,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
             return;
          }
          AABB box = new AABB(old, next).inflate(0.65);
+         try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
             e -> e.isAlive() && e != owner && !ServantMasterTargeting.isContractMaster(owner, e)
                && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
@@ -213,6 +216,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
                this.discard();
                break;
             }
+         }
          }
          if ((this.tickCount & 1) == 0) {
             int effectStride = this.entityData.get(EFFECT_STRIDE);
@@ -381,10 +385,12 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
             if (empowered) {
                Vec3 push = this.getDeltaMovement().normalize();
                target.push(push.x * 2.2, 0.55, push.z * 2.2);
+               try (var carrySegment100 = ServantMasterDamageRouter.attackSegment()) {
                for (LivingEntity nearby : level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(3.5),
                   e -> e.isAlive() && e != owner && e != target && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e))) {
                   hurtWithoutIFrames(nearby, owner.damageSources().mobProjectile(this, owner), 50.0F);
                   nearby.push(push.x * 1.2, 0.25, push.z * 1.2);
+               }
                }
                level.sendParticles(ParticleTypes.SWEEP_ATTACK, target.getX(), target.getY() + 1.0, target.getZ(), 20, 1.2, 0.45, 1.2, 0.0);
             }
@@ -398,6 +404,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
       if (empowered) this.entityData.set(EMPOWERED, false);
       double radius = empowered ? 10.0 : 2.0;
       DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      try (var carrySegment101 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius)),
           e -> e.isAlive() && e != owner && !e.isAlliedTo(owner) && !EntityUtils.isImmunePlayerTarget(e) && e.distanceToSqr(center) <= radius * radius)) {
          double normalized = Math.min(1.0, Math.sqrt(target.distanceToSqr(center)) / radius);
@@ -411,6 +418,7 @@ public class GilgameshGateWeaponProjectileEntity extends Entity implements GeoEn
             target.setDeltaMovement(movementBeforeHit);
             target.hurtMarked = true;
          }
+      }
       }
       level.sendParticles(VAJRA_PURPLE, center.x, center.y, center.z, empowered ? 220 : 42, radius * 0.48, radius * 0.48, radius * 0.48, empowered ? 0.24 : 0.1);
       level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z, empowered ? 180 : 34, radius * 0.6, radius * 0.6, radius * 0.6, empowered ? 0.32 : 0.14);

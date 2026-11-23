@@ -192,6 +192,20 @@ public class EntityUtils {
       }
    }
 
+   public static Vec3 getLeftHandCastAnchor(LivingEntity caster) {
+      if (caster instanceof Player player) {
+         InteractionHand leftHand = player.getMainArm() == HumanoidArm.LEFT ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+         return getHandCastAnchor(player, leftHand);
+      }
+      float yawRad = caster.getYRot() * (float) (Math.PI / 180.0);
+      Vec3 forward = new Vec3(-Math.sin(yawRad), 0.0, Math.cos(yawRad));
+      Vec3 up = new Vec3(0.0, 1.0, 0.0);
+      Vec3 right = forward.cross(up);
+      if (right.lengthSqr() < 1.0E-6) right = new Vec3(1.0, 0.0, 0.0);
+      else right = right.normalize();
+      return caster.getEyePosition().add(forward.scale(0.78)).subtract(right.scale(0.36)).add(up.scale(-0.22));
+   }
+
    public static boolean hasAnyEmptyHand(Player player) {
       return resolveEmptyCastingHand(player) != null;
    }

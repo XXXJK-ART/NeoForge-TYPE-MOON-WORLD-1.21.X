@@ -4,7 +4,7 @@
   "display_name": "No Second Strike",
   "display_name_zh": "无二打",
   "type": "anti_unit",
-  "rank": "EX",
+  "rank": "",
   "mp_cost": 8,
   "cooldown_ticks": 500,
   "windup_ticks": 0,

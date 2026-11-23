@@ -46,6 +46,8 @@
     "screen.fatesupport.knight_armory.entry.minigun":  "Minigun",
     "screen.fatesupport.knight_armory.entry.awm":  "AWM",
     "screen.fatesupport.knight_armory.entry.barrett":  "Barrett",
+    "screen.fatesupport.knight_armory.entry.a10":  "A-10 Attack Aircraft",
+    "message.fatesupport.knight_armory.no_launch_space":  "Not enough clear space above to launch safely",
     "skill.fatesupport.knight_a10":  "Knight of Owner\u0027s End",
     "message.fatesupport.knight_armory.sealed":  "Arondight seals Knight of Owner (Mad)",
     "message.fatesupport.knight_armory.cooldown":  "This summon is on cooldown: %ss",

@@ -1,0 +1,19 @@
+// Opt-in pressure presentation checks, isolated from normal IDE and release output.
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.layout.projectDirectory.dir('build-heracles-pressure'))
+}
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('heraclesPressureSmoke') {
+            java.srcDir 'tools/heracles-pressure-smoke/java'
+            resources.srcDir 'tools/heracles-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_heracles_smoke', smoke)
+        project.runs.server.modSources.add('typemoonworld_heracles_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build-heracles-pressure/client-run')
+        project.runs.server.workingDirectory project.file('build-heracles-pressure/server-run')
+        project.runs.gameTestServer.workingDirectory project.file('build-heracles-pressure/gametest-run')
+    }
+}

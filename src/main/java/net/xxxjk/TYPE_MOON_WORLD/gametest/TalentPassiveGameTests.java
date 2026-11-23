@@ -77,7 +77,7 @@ public final class TalentPassiveGameTests {
       vars.passive_ranks.put(PassiveService.MIND_EYE_TRUE, PassiveRank.A);
       vars.passive_ranks.put(PassiveService.INSTINCT, PassiveRank.A);
       PassiveService.reconcileAttributes(player, vars);
-      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth + 10.0, "Divinity E max health was incorrect");
+      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth + 20.0, "Divinity E max health was incorrect");
       helper.assertTrue(player.getAttributeValue(Attributes.ATTACK_DAMAGE) == baseAttack + 2.0, "Divinity E attack was incorrect");
       helper.assertTrue(ServantIdentityHelper.hasTrait(player, ServantTraitTag.DIVINE), "Divinity passive did not expose Divine identity");
       helper.assertTrue(!PassiveService.tryDodge(player, player.damageSources().fall()), "environmental fall damage was dodgeable");
@@ -121,7 +121,7 @@ public final class TalentPassiveGameTests {
       TalentService.resumeActiveEffects(player);
       helper.assertTrue(player.hasEffect(ModMobEffects.MONSTROUS_STRENGTH), "Monstrous Strength did not resume after card release");
       helper.assertTrue(player.hasEffect(MobEffects.NIGHT_VISION), "passive Clairvoyance did not resume after card release");
-      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth + 10.0, "Divinity health did not resume after card release");
+      helper.assertTrue(player.getAttributeValue(Attributes.MAX_HEALTH) == baseHealth + 20.0, "Divinity health did not resume after card release");
       helper.assertTrue(ServantIdentityHelper.hasTrait(player, ServantTraitTag.DIVINE), "passive Divinity identity did not resume after card release");
       helper.assertTrue(PassiveService.dodgeChance(vars) == 0.40, "player passive dodge did not resume after card release");
       helper.succeed();

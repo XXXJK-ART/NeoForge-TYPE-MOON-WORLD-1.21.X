@@ -5,7 +5,7 @@
   "display_name_zh": "牛若丸",
   "class_type": "rider",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "human", "female", "rider", "riding", "genji", "sapient", "balanced", "chaotic", "neutral_alignment"],
+  "traits": ["servant", "ea_special", "humanoid", "human", "female", "rider", "riding", "genji", "human_kind", "beloved", "fairy_tale", "balanced", "chaotic", "neutral_alignment"],
   "parameters": {
     "endurance": "C", "endurance_plus": false,
     "strength": "D", "strength_plus": false,
@@ -13,6 +13,7 @@
     "magic": "B", "magic_plus": false,
     "luck": "A", "luck_plus": false
   },
+  "noble_phantasm_rank": "A+",
   "model": {
     "geometry": "",
     "texture": "typemoonworld:textures/entity/ushiwakamaru_rider.png",

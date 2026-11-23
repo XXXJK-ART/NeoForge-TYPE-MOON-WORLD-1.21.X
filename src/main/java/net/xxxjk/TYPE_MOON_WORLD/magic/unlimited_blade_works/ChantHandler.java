@@ -1177,6 +1177,11 @@ public class ChantHandler {
       }
    }
 
+   public static void interruptForCarry(ServerPlayer player) {
+      var vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+      if (vars.is_chanting_ubw) interruptChant(player, vars, "message.typemoonworld.master_carry.skill_blocked");
+   }
+
    private static void interruptChant(ServerPlayer player, TypeMoonWorldModVariables.PlayerVariables vars, String reasonKey) {
       vars.is_chanting_ubw = false;
       vars.ubw_chant_progress = 0;

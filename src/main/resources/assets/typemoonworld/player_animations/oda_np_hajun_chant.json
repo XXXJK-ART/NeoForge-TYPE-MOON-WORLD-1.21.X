@@ -1,0 +1,17 @@
+{
+  "name": "oda_np_hajun_chant",
+  "version": 3,
+  "description": "Oda Nobunaga chants as the Demon King of the Sixth Heaven spreads her arms.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 112,
+    "stopTick": 112,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -12, "roll": -12}, "leftArm": {"pitch": -12, "roll": 12}, "body": {"pitch": 7}, "head": {"pitch": -8}},
+      {"tick": 36, "rightArm": {"pitch": -34, "roll": -44}, "leftArm": {"pitch": -34, "roll": 44}, "body": {"pitch": 4}, "head": {"pitch": -15}},
+      {"tick": 86, "rightArm": {"pitch": -49, "roll": -78}, "leftArm": {"pitch": -49, "roll": 78}, "body": {"pitch": -4}, "head": {"pitch": -22}},
+      {"tick": 104, "rightArm": {"pitch": -49, "roll": -78}, "leftArm": {"pitch": -49, "roll": 78}, "body": {"pitch": -4}, "head": {"pitch": -22}},
+      {"tick": 112, "rightArm": {"pitch": 0, "roll": 0}, "leftArm": {"pitch": 0, "roll": 0}, "body": {"pitch": 0}, "head": {"pitch": 0}}
+    ]
+  }
+}

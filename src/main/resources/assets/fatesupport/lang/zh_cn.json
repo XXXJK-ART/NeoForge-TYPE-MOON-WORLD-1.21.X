@@ -46,6 +46,8 @@
     "screen.fatesupport.knight_armory.entry.minigun":  "加特林",
     "screen.fatesupport.knight_armory.entry.awm":  "AWM",
     "screen.fatesupport.knight_armory.entry.barrett":  "巴雷特",
+    "screen.fatesupport.knight_armory.entry.a10":  "A-10 攻击机",
+    "message.fatesupport.knight_armory.no_launch_space":  "上方没有足够的安全起飞空间",
     "skill.fatesupport.knight_a10":  "骑士不徒手而亡",
     "message.fatesupport.knight_armory.sealed":  "无毁的湖光封印了骑士不死于徒手（狂）",
     "message.fatesupport.knight_armory.cooldown":  "该召唤物冷却中：%s秒",

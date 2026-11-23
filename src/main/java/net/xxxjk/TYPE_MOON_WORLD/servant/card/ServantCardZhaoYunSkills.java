@@ -175,6 +175,7 @@ public final class ServantCardZhaoYunSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.stop(player, false);
       CompoundTag data = player.getPersistentData();
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.ATTACK_DAMAGE), DRAGON_GALL_ATTACK);
       ServantCardSkillUtils.remove(player.getAttribute(Attributes.MOVEMENT_SPEED), DRAGON_GALL_SPEED);
@@ -211,6 +212,7 @@ public final class ServantCardZhaoYunSkills {
 
    public static boolean performBasicSpearCombo(ServerPlayer player) {
       if (!player.isCrouching()) return false;
+      spearMotion(player, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_DANCE);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       for (int i = 0; i < 3; i++) {
          final int hit = i;
@@ -236,12 +238,16 @@ public final class ServantCardZhaoYunSkills {
     * horizontal speed contributes a small capped damage bonus.
     */
    public static boolean performNormalSpearThrust(ServerPlayer player) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.active(player)) return false;
       CompoundTag playerData = player.getPersistentData();
       long now = player.level().getGameTime();
       if (playerData.getLong(TAG_NORMAL_THRUST_UNTIL) > now) {
          return false;
       }
       playerData.putLong(TAG_NORMAL_THRUST_UNTIL, now + 10L);
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(player,
+         net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_THRUST);
+      ServantCardVoiceHelper.tryPlayAttack(player);
 
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       ZhaoYunHakuryuEntity mount = player.getVehicle() instanceof ZhaoYunHakuryuEntity value
@@ -296,6 +302,7 @@ public final class ServantCardZhaoYunSkills {
    }
 
    public static boolean performSpearBreakthrough(ServerPlayer player) {
+      spearMotion(player, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_THRUST);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       ZhaoYunHakuryuEntity mount = player.getVehicle() instanceof ZhaoYunHakuryuEntity value
          && value.isAlive() ? value : null;
@@ -357,9 +364,11 @@ public final class ServantCardZhaoYunSkills {
 
    public static boolean performDragonSweep(ServerPlayer player) {
       if (!(player.level() instanceof ServerLevel level)) return false;
+      spearMotion(player, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_SWEEP);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.5, 0.0);
       AABB area = player.getBoundingBox().inflate(4.5, 1.8, 4.5);
       float damage = (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.15 + 10.0);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isEnemy(player, e))) {
          target.invulnerableTime = 0;
          target.hurt(player.damageSources().playerAttack(player), damage);
@@ -369,6 +378,7 @@ public final class ServantCardZhaoYunSkills {
          away = away.normalize();
          target.push(away.x * 1.0, 0.25, away.z * 1.0);
       }
+      }
       VFXServerEffects.spawn(level, "servant_zhao_yun_dragon_gall", player, 64.0);
       level.sendParticles(ParticleTypes.SWEEP_ATTACK, origin.x, origin.y, origin.z, 18, 2.8, 0.5, 2.8, 0.0);
       spawnSkillBurst(level, origin, 2.8, 30);
@@ -376,6 +386,7 @@ public final class ServantCardZhaoYunSkills {
    }
 
    public static boolean performMountedRush(ServerPlayer player) {
+      spearMotion(player, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_THRUST);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       ZhaoYunHakuryuEntity mount = getMount(player, TAG_SKILL_MOUNT_UUID);
       if (mount != null) {
@@ -394,6 +405,7 @@ public final class ServantCardZhaoYunSkills {
    }
 
    public static boolean performDragonFlash(ServerPlayer player) {
+      spearMotion(player, net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantBaseAction.ZHAO_YUN_THRUST);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
       ServantCardSkillUtils.hitForwardArc(player, dir, 7.0, (float)(player.getAttributeValue(Attributes.ATTACK_DAMAGE) * 2.0 + 18.0));
       spawnSlash(player, dir, ParticleTypes.END_ROD);
@@ -404,23 +416,7 @@ public final class ServantCardZhaoYunSkills {
    }
 
    public static boolean performSevenProbe(ServerPlayer player) {
-      for (int i = 0; i < 3; i++) {
-         final int step = i;
-         TYPE_MOON_WORLD.queueServerWork(i * 5, () -> {
-            if (!player.isAlive()) return;
-            LivingEntity target = ServantCardSkillUtils.findLookTarget(player, 12.0, 1.8);
-            Vec3 dir = target == null ? PlayerNoblePhantasmHelper.horizontalLook(player) : target.position().subtract(player.position()).normalize();
-            player.setDeltaMovement(new Vec3(dir.x * 0.95, Math.max(player.getDeltaMovement().y, 0.08), dir.z * 0.95));
-            ServantCardSkillUtils.hitForwardArc(player, dir, 4.5, 24.0F);
-            if (step == 2) ServantCardSkillUtils.hitForwardArc(player, dir, 6.0, 40.0F);
-            if (player.level() instanceof ServerLevel level) {
-               Vec3 at = player.position().add(dir.scale(1.8)).add(0.0, 0.9, 0.0);
-               spawnSkillBurst(level, at, step == 2 ? 1.2 : 0.85, step == 2 ? 32 : 24);
-               level.sendParticles(ParticleTypes.SWEEP_ATTACK, at.x, at.y, at.z, 8, 0.45, 0.35, 0.45, 0.02);
-            }
-         });
-      }
-      return true;
+      return net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.start(player);
    }
 
    public static boolean performHakuryuTrample(ServerPlayer player) {
@@ -428,10 +424,12 @@ public final class ServantCardZhaoYunSkills {
       ZhaoYunHakuryuEntity mount = getMount(player, TAG_SKILL_MOUNT_UUID);
       LivingEntity source = mount == null ? player : mount;
       AABB area = source.getBoundingBox().inflate(4.5, 1.6, 4.5);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> isEnemy(player, e))) {
          target.hurt(player.damageSources().playerAttack(player), 28.0F);
          target.push(0.0, 0.6, 0.0);
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 50, 1, false, true, true));
+      }
       }
       level.sendParticles(ParticleTypes.EXPLOSION, source.getX(), source.getY() + 0.2, source.getZ(), 16, 1.4, 0.25, 1.4, 0.0);
       spawnSkillBurst(level, source.position().add(0.0, 0.8, 0.0), 2.6, 28);
@@ -454,10 +452,16 @@ public final class ServantCardZhaoYunSkills {
       long now = player.level().getGameTime();
       if (data.getLong(TAG_NP_CHANT_UNTIL) > now || data.getLong(TAG_NP_UNTIL) > now
          || data.getLong(TAG_SKILL_MOUNT_COOLDOWN) > now) return false;
-      // A stale temporary horse must not be allowed to coexist with a new
-      // Noble Phantasm horse after a disconnect, failed dismount, or death.
-      discardMount(player, TAG_NP_MOUNT_UUID);
-      data.putLong(TAG_NP_CHANT_UNTIL, now + 3L * 20L);
+      // This effect is invoked at the shared cast's release time. Do not
+      // replay the recording or start another local three-second chant.
+      // The previous NP UUID may alias the persistent horse we are riding.
+      if (data.hasUUID(TAG_NP_MOUNT_UUID) && (!data.hasUUID(TAG_SKILL_MOUNT_UUID)
+         || !data.getUUID(TAG_NP_MOUNT_UUID).equals(data.getUUID(TAG_SKILL_MOUNT_UUID)))) {
+         discardMount(player, TAG_NP_MOUNT_UUID);
+      } else {
+         data.remove(TAG_NP_MOUNT_UUID);
+      }
+      data.putLong(TAG_NP_CHANT_UNTIL, now);
       data.remove(TAG_NP_UNTIL);
       data.remove(TAG_NP_INITIAL_DONE);
       data.putDouble(TAG_NP_INITIAL_DISTANCE, 0.0);
@@ -465,7 +469,6 @@ public final class ServantCardZhaoYunSkills {
       data.remove(TAG_NP_SAFE_Y);
       data.remove(TAG_NP_SAFE_Z);
       clearNpHitTags(data);
-      ServantCardVoiceHelper.tryPlaySkill(player, "zhao_yun_changbanpo");
       return true;
    }
 
@@ -563,8 +566,10 @@ public final class ServantCardZhaoYunSkills {
             Vec3 initialDirection = PlayerNoblePhantasmHelper.horizontalLook(player);
             data.putDouble(TAG_NP_INITIAL_DIR_X, initialDirection.x);
             data.putDouble(TAG_NP_INITIAL_DIR_Z, initialDirection.z);
+            mount.bindNoblePhantasmOwner(player);
             mount.setNpActive(true);
-            if (!player.startRiding(mount, true)) {
+            // Vanilla returns false for startRiding(theCurrentVehicle).
+            if (player.getVehicle() != mount && !player.startRiding(mount, true)) {
                mount.discard();
                data.remove(TAG_NP_MOUNT_UUID);
                data.remove(TAG_NP_UNTIL);
@@ -742,7 +747,7 @@ public final class ServantCardZhaoYunSkills {
             var state = level.getBlockState(pos);
             if (!state.isAir() && !state.is(Blocks.BEDROCK)
                && state.getDestroySpeed(level, pos) >= 0.0F && state.getDestroySpeed(level, pos) < 75.0F) {
-               net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection.removeBlock(level, pos, false);
+               level.destroyBlock(pos, false, mount);
                if (++broken >= 96) break;
             }
          }
@@ -820,6 +825,7 @@ public final class ServantCardZhaoYunSkills {
    private static void hitMountTargets(ServerPlayer player, ZhaoYunHakuryuEntity mount, double inflate, float damage) {
       if (!(player.level() instanceof ServerLevel level)) return;
       AABB area = mount.getBoundingBox().inflate(inflate, 1.4, inflate);
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area,
          e -> e != player && e != mount && isEnemy(player, e))) {
          String key = "ZhaoYunNpHit_" + target.getUUID();
@@ -838,6 +844,7 @@ public final class ServantCardZhaoYunSkills {
             level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY() + 0.5, target.getZ(),
                3, 0.2, 0.25, 0.2, 0.0);
          }
+      }
       }
       for (String key : List.copyOf(player.getPersistentData().getAllKeys())) {
          if (key.startsWith("ZhaoYunNpHit_")) {
@@ -926,6 +933,11 @@ public final class ServantCardZhaoYunSkills {
    }
 
    private static CompoundTag data(ServerPlayer player) { return player.getPersistentData(); }
+   private static void spearMotion(ServerPlayer player, int action) {
+      if (player.getMainHandItem().is(ModItems.YAJIAO_QIANG.get())) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(player, action);
+      }
+   }
    private static net.minecraft.resources.ResourceLocation id(String path) {
       return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, path);
    }

@@ -13,6 +13,8 @@ import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantIdentityHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LancelotBerserkerEntity;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantTraitTag;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
 import org.jetbrains.annotations.Nullable;
 
 public final class LancelotBerserkerCombatAi {
@@ -30,6 +32,7 @@ public final class LancelotBerserkerCombatAi {
    public static boolean tick(LancelotBerserkerEntity entity, ServerLevel level) {
       long now = level.getGameTime();
       if (LancelotCombatHelper.isUnable(entity, now)) {
+         entity.setSprinting(false);
          return true;
       }
       LivingEntity target = entity.getTarget();
@@ -38,18 +41,37 @@ public final class LancelotBerserkerCombatAi {
          entity.setTarget(target);
       }
       if (!isValidTarget(entity, target)) {
+         entity.setSprinting(false);
          return false;
       }
 
       CompoundTag data = entity.getPersistentData();
       entity.getLookControl().setLookAt(target, 60.0F, 60.0F);
+      // The optional integration owns aircraft flight and gunfire. Do not rush
+      // or throw the firearm while that controller is operating it, but keep
+      // the NPC moving toward its target while the gun is firing.
+      if (entity.isPassenger()) {
+         entity.getNavigation().stop();
+         return true;
+      }
       boolean phaseTwo = isPhaseTwo(entity, target);
+      double distance = entity.distanceTo(target);
+      if (com.captain.servant.compat.superbwarfare.SuperbWarfareLoader.isGun(entity.getMainHandItem())) {
+         entity.setSprinting(distance > 4.0);
+         entity.getNavigation().moveTo(target, phaseTwo ? 1.9 : 1.65);
+         if (distance > 7.0) rush(entity, target, now, phaseTwo);
+         return true;
+      }
       if (phaseTwo && shouldDrawAroundight(entity, target)) {
          LancelotCombatHelper.tryDrawAroundight(entity, level, target);
       }
+      if (phaseTwo) {
+         LancelotCombatHelper.tryManaReversal(entity, level);
+      }
       maybeRoar(entity, level, now, phaseTwo);
 
-      double distance = entity.distanceTo(target);
+      boolean sight = entity.hasLineOfSight(target);
+      entity.setSprinting(distance > 2.0);
       if (shouldGroundSlam(entity, target, distance)
          && LancelotCombatHelper.tryGroundSlam(entity, level, phaseTwo)) {
          return true;
@@ -67,19 +89,27 @@ public final class LancelotBerserkerCombatAi {
       } else {
          entity.getNavigation().moveTo(target, phaseTwo ? 1.45 : 1.25);
       }
+      if (entity.isSprinting() && (entity.horizontalCollision || !sight && entity.getNavigation().isDone())
+         && now >= data.getLong("LancelotNextPursuitWallBreak")) {
+         data.putLong("LancelotNextPursuitWallBreak", now + 12L);
+         Vec3 toward = target.position().subtract(entity.position());
+         TerrainImpactService.impactWallTunnel(level, entity, entity.position(), toward,
+            new TerrainImpactProfile(TerrainImpactProfile.Tier.HEAVY, 3.0, 35.0F, 48, 80),
+            3, 3, (int)Math.ceil(entity.getBbHeight()));
+      }
       return true;
    }
 
    private static boolean tryMaul(LancelotBerserkerEntity entity, LivingEntity target, long now, boolean phaseTwo) {
       CompoundTag data = entity.getPersistentData();
-      entity.getNavigation().moveTo(target, phaseTwo ? 1.72 : 1.55);
+      entity.getNavigation().moveTo(target, phaseTwo ? 1.95 : 1.72);
       Vec3 toward = target.position().subtract(entity.position()).multiply(1.0, 0.0, 1.0);
       if (toward.lengthSqr() > 1.0E-4) {
-         Vec3 rush = toward.normalize().scale(phaseTwo ? 0.36 : 0.26);
+         Vec3 rush = toward.normalize().scale(phaseTwo ? 0.44 : 0.32);
          entity.setDeltaMovement(entity.getDeltaMovement().add(rush.x, 0.02, rush.z));
          entity.hurtMarked = true;
       }
-      long interval = phaseTwo ? 6L : 8L;
+      long interval = phaseTwo ? 4L : 6L;
       if (now - data.getLong(LAST_MAUL_TICK) < interval) {
          return false;
       }
@@ -110,7 +140,10 @@ public final class LancelotBerserkerCombatAi {
       if (!awkwardReach && !chaseToss && !veryFar) {
          return false;
       }
-      float chance = phaseTwo ? 0.055F : 0.018F;
+      if (!entity.getMainHandItem().is(net.xxxjk.TYPE_MOON_WORLD.item.ModItems.LANCELOT_IRON_ROD.get())) {
+         return false;
+      }
+      float chance = phaseTwo ? 0.015F : 0.004F;
       if (veryFar || awkwardReach) {
          chance += phaseTwo ? 0.025F : 0.012F;
       }
@@ -132,8 +165,8 @@ public final class LancelotBerserkerCombatAi {
    }
 
    private static void rush(LancelotBerserkerEntity entity, LivingEntity target, long now, boolean phaseTwo) {
-      entity.getNavigation().moveTo(target, phaseTwo ? 1.82 : 1.62);
-      if (now - entity.getPersistentData().getLong(LAST_DASH_TICK) < (phaseTwo ? 24L : 34L)) {
+      entity.getNavigation().moveTo(target, phaseTwo ? 2.0 : 1.75);
+      if (now - entity.getPersistentData().getLong(LAST_DASH_TICK) < (phaseTwo ? 18L : 26L)) {
          return;
       }
       entity.getPersistentData().putLong(LAST_DASH_TICK, now);
@@ -157,12 +190,11 @@ public final class LancelotBerserkerCombatAi {
 
    private static void maybeRoar(LancelotBerserkerEntity entity, ServerLevel level, long now, boolean phaseTwo) {
       CompoundTag data = entity.getPersistentData();
-      if (now - data.getLong(LAST_ROAR_TICK) < (phaseTwo ? 260L : 420L) || entity.getCurrentMp() < 15.0) {
+      if (now - data.getLong(LAST_ROAR_TICK) < (phaseTwo ? 260L : 420L) || entity.getCurrentMp() < 8.0) {
          return;
       }
       data.putLong(LAST_ROAR_TICK, now);
-      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 15.0));
-      entity.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, phaseTwo ? 1 : 0, false, true, true));
+      entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 8.0));
       entity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 0, false, true, true));
       level.playSound(null, entity.blockPosition(), net.xxxjk.TYPE_MOON_WORLD.init.ModSounds.LANCELOT_BERSERKER_VOICE_ROAR.get(),
          net.minecraft.sounds.SoundSource.HOSTILE, 1.2F, 0.72F);

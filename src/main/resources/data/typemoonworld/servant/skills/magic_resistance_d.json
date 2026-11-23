@@ -12,8 +12,8 @@
       "effect_type": "magic_resistance",
       "params": {
         "rank": "D",
-        "damage_reduction": 0.15,
-        "debuff_resistance": 0.0
+        "damage_reduction": 0.12,
+        "debuff_resistance": 0.15
       }
     }
   ]

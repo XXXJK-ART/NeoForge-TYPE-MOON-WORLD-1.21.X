@@ -1,0 +1,13 @@
+// Opt-in client verification, isolated from development worlds and release artifacts.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('servantGuardSmoke') {
+            java.srcDir 'tools/servant-guard-smoke/java'
+            resources.srcDir 'tools/servant-guard-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_guard_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/servant-guard-client-run')
+    }
+}

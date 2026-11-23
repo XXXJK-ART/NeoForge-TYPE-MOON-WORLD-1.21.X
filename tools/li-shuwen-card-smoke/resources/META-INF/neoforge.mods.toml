@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="typemoonworld_li_shuwen_card_smoke"
+version="1.0"
+displayName="TYPE-MOON-WORLD Li Shuwen Card Smoke"
+[[dependencies.typemoonworld_li_shuwen_card_smoke]]
+modId="typemoonworld"
+type="required"
+versionRange="[4.0,)"
+ordering="AFTER"
+side="CLIENT"

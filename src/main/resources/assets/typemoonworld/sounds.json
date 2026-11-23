@@ -1,4 +1,19 @@
 {
+  "sasaki_blade_draw": {
+    "sounds": [{"name":"minecraft:item.armor.equip_iron","type":"event","volume":0.8,"pitch":1.25}]
+  },
+  "sasaki_blade_swing": {
+    "sounds": [{"name":"minecraft:entity.player.attack.sweep","type":"event","volume":1.0,"pitch":0.85}]
+  },
+  "sasaki_blade_impact": {
+    "sounds": [{"name":"minecraft:entity.player.attack.strong","type":"event","volume":1.0,"pitch":0.75}]
+  },
+  "sasaki_tsubame_release": {
+    "sounds": [{"name":"minecraft:entity.player.attack.knockback","type":"event","volume":1.0,"pitch":0.65}]
+  },
+  "sasaki_tsubame_slash": {
+    "sounds": [{"name":"typemoonworld:sfx/sasaki_kojiro/tsubame_slash"}]
+  },
   "arash_voice_attack": {
     "sounds": [
       {
@@ -1423,6 +1438,13 @@
       }
     ]
   },
+  "zhao_yun_voice_attack": {
+    "sounds": [
+      { "name": "typemoonworld:voice/zhao_yun/attack1", "stream": true },
+      { "name": "typemoonworld:voice/zhao_yun/attack2", "stream": true },
+      { "name": "typemoonworld:voice/zhao_yun/attack3", "stream": true }
+    ]
+  },
   "zhao_yun_voice_fail": {
     "sounds": [
       {
@@ -1592,7 +1614,14 @@
     "sounds": [
       {"name": "typemoonworld:voice/okita_souji_saber/attack1", "stream": true},
       {"name": "typemoonworld:voice/okita_souji_saber/attack2", "stream": true},
-      {"name": "typemoonworld:voice/okita_souji_saber/attack3", "stream": true}
+      {"name": "typemoonworld:voice/okita_souji_saber/attack3", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack4", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack5", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack6", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack7", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack8", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack9", "stream": true},
+      {"name": "typemoonworld:voice/okita_souji_saber/attack10", "stream": true}
     ]
   },
   "okita_souji_saber_voice_fail": {
@@ -1612,6 +1641,16 @@
   "okita_souji_saber_voice_np": {
     "sounds": [
       {"name": "typemoonworld:voice/okita_souji_saber/np", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_battle_start": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/battle_start1", "stream": true}
+    ]
+  },
+  "okita_souji_saber_voice_flag": {
+    "sounds": [
+      {"name": "typemoonworld:voice/okita_souji_saber/flag_of_sincerity", "stream": true}
     ]
   },
   "jeanne_alter_voice_summon": {
@@ -1768,7 +1807,7 @@
       {
         "name": "typemoonworld:voice/zhao_yun/np",
         "stream": true,
-        "pitch": 0.6808843537414966
+        "pitch": 1.0
       }
     ]
   },

@@ -29,6 +29,7 @@ public final class BaobhanSithCurseService {
    public static final String TAG_IMMUNE_UNTIL = "ImmuneUntil";
    public static final String TAG_BURST_UNTIL = "BurstUntil";
    public static final String TAG_CURSE_LAYERS = "CurseLayers";
+   public static final String TAG_MANA_STACKS = TAG_PREFIX + "ManaStacks";
    public static final String TAG_EXPIRES_AT = "ExpiresAt";
    public static final String TAG_STRENGTH_SCALE = "StrengthScale";
    public static final String MEDIUM_BLOOD = "Blood";
@@ -135,8 +136,10 @@ public final class BaobhanSithCurseService {
       trackCurseTarget(owner, target);
       curseTag.putInt(key, Math.min(5, curseTag.getInt(key) + amount));
       curseTag.putInt(TAG_CURSE_LAYERS, Math.min(20, curseTag.getInt(TAG_CURSE_LAYERS) + amount));
-      curseTag.putFloat(TAG_STRENGTH_SCALE, Math.max(0.2F, Math.min(1.0F, strengthScale)));
+      float sunlightScale = isSunlit(owner) ? 0.5F : 1.0F;
+      curseTag.putFloat(TAG_STRENGTH_SCALE, Math.max(0.2F, Math.min(strengthScale, sunlightScale)));
       curseTag.putLong(TAG_EXPIRES_AT, Math.max(curseTag.getLong(TAG_EXPIRES_AT), now + Math.max(20, durationTicks)));
+      owner.getPersistentData().putInt(TAG_MANA_STACKS, Math.min(10, owner.getPersistentData().getInt(TAG_MANA_STACKS) + 1));
       if (curseTag.getInt(TAG_CURSE_LAYERS) >= 5 && now >= curseTag.getLong(TAG_BURST_UNTIL)) {
          curseTag.putLong(TAG_BURST_UNTIL, now + 200L);
       }
@@ -166,6 +169,11 @@ public final class BaobhanSithCurseService {
 
    public static void tickOwnerCurses(ServerPlayer owner) {
       tickTrackedCurses(owner);
+   }
+
+   private static boolean isSunlit(LivingEntity entity) {
+      return entity.level() instanceof ServerLevel level
+         && level.isDay() && level.canSeeSky(entity.blockPosition()) && !level.isRaining();
    }
 
    public static void tickTrackedCurses(LivingEntity owner) {

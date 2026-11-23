@@ -28,6 +28,19 @@ class CombatBalanceRegressionTest {
    }
 
    @Test
+   void deathFlightIsMarkedAsUndodgeable() throws IOException {
+      String classifier = Files.readString(JAVA.resolve("servant/combat/NoblePhantasmDamageClassifier.java"));
+      String combat = Files.readString(JAVA.resolve("servant/combat/ServantCombatSystem.java"));
+      String cuModule = Files.readString(JAVA.resolve("servant/ai/module/CombatModule.java"));
+
+      assertTrue(classifier.contains("isCuDeathFlightDamage"));
+      assertTrue(classifier.contains("cu_gae_bolg_flight"));
+      assertTrue(combat.contains("NoblePhantasmDamageClassifier.isCuDeathFlightDamage(source)"));
+      assertTrue(combat.contains("&& !deathFlight"));
+      assertTrue(cuModule.contains("GAE_BOLG_WINDUP_TICKS, true, false"));
+   }
+
+   @Test
    void deathThornDoesNotOverrideGodHandRevival() throws IOException {
       String combat = Files.readString(JAVA.resolve("servant/ai/module/CombatModule.java"));
       String playerNp = Files.readString(JAVA.resolve("item/custom/PlayerNoblePhantasmHelper.java"));

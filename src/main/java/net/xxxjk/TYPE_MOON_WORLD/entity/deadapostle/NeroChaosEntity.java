@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.UUID;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -388,6 +390,7 @@ public class NeroChaosEntity extends DeadApostleEntity {
 
       data.putLong(TAG_CROWD_AOE_COOLDOWN, now + CROWD_AOE_COOLDOWN_TICKS);
       swing(InteractionHand.MAIN_HAND);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity enemy : enemies) {
          enemy.invulnerableTime = 0;
          enemy.hurt(damageSources().mobAttack(this), CROWD_AOE_DAMAGE);
@@ -396,6 +399,7 @@ public class NeroChaosEntity extends DeadApostleEntity {
          away = away.normalize();
          enemy.setDeltaMovement(enemy.getDeltaMovement().add(away.x * 0.7, 0.18, away.z * 0.7));
          enemy.hurtMarked = true;
+      }
       }
       if (level() instanceof ServerLevel serverLevel) {
          serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY() + getBbHeight() * 0.52, getZ(),

@@ -78,6 +78,13 @@ public class ServantCardHud {
       GuiGraphics gui = event.getGuiGraphics();
       int guiWidth = gui.guiWidth();
       int guiHeight = gui.guiHeight();
+      boolean carrying = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player);
+      boolean carried = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarriedMaster(player);
+      if (carrying || carried) {
+         Component status = Component.translatable(carrying ? "hud.typemoonworld.master_carry.carrying" : "hud.typemoonworld.master_carry.carried",
+            minecraft.options.keyShift.getTranslatedKeyMessage());
+         gui.drawCenteredString(minecraft.font, status, guiWidth / 2, guiHeight - 72, 0xFFFFDD88);
+      }
       if (isSurvivalLike(minecraft)) {
          int statusWidth = 81;
          int leftStatusX = guiWidth / 2 - 91;
@@ -128,7 +135,9 @@ public class ServantCardHud {
          gui,
          minecraft,
          Component.translatable(
-            vars.servant_card_flying
+            "diarmuid_ua_duibhne".equals(vars.servant_card_id)
+               ? "hud.typemoonworld.servant_card.diarmuid_jump"
+               : vars.servant_card_flying
                ? "hud.typemoonworld.servant_card.dash_np"
                : "hud.typemoonworld.servant_card.jump_np",
             effectiveJumpCharges(minecraft, vars),
@@ -376,7 +385,8 @@ public class ServantCardHud {
 
    private static int effectiveNpCooldown(Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars) {
       if ("ushiwakamaru_rider".equals(vars.servant_card_id)
-         || "okita_souji_saber".equals(vars.servant_card_id)) {
+         || "okita_souji_saber".equals(vars.servant_card_id)
+         || "sasaki_kojiro".equals(vars.servant_card_id)) {
          return effectiveSkillCooldowns(minecraft, vars)[9];
       }
       int syncedCooldown = effectiveRemainingTicks(minecraft, vars.servant_card_np_cooldown, vars.servant_card_np_cooldown_end);
@@ -413,10 +423,12 @@ public class ServantCardHud {
       double poise = ServantCardDefenseClientState.poise();
       double poiseMax = ServantCardDefenseClientState.poiseMax();
       if (staminaMax <= 0.0 && poiseMax <= 0.0) return;
-      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.guard_value",
-         Math.round(stamina), Math.round(staminaMax)), x, y, 0xFFE5B04A, 0.58F);
-      drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.poise_value",
-         Math.round(poise), Math.round(poiseMax)), x, y + 9, 0xFFB36BE8, 0.58F);
+      int barWidth = 80;
+      drawDefenseBar(gui, minecraft, x, y, barWidth,
+         "hud.typemoonworld.servant_card.guard_value", stamina, staminaMax, 0xCCE5B04A);
+      drawDefenseBar(gui, minecraft, x, y + 9, barWidth,
+         "hud.typemoonworld.servant_card.poise_value", poise, poiseMax, 0xCCB36BE8);
+
       long now = minecraft.level == null ? 0L : minecraft.level.getGameTime();
       long dodge = Math.max(0L, ServantCardDefenseClientState.dodgeCooldownEnd() - now);
       long broken = Math.max(0L, ServantCardDefenseClientState.guardBrokenEnd() - now);
@@ -430,6 +442,22 @@ public class ServantCardHud {
       if (ServantCardDefenseClientState.guardBroken()) dodgeText += " | " + Component.translatable("hud.typemoonworld.servant_card.guard_broken").getString();
       drawScaledString(gui, minecraft, Component.translatable("hud.typemoonworld.servant_card.dodge_value", dodgeText),
          x, y + 18, broken > 0L ? 0xFFFF5555 : 0xFFE0E0E0, 0.58F);
+   }
+
+   private static void drawDefenseBar(GuiGraphics gui, Minecraft minecraft, int x, int y, int width,
+                                      String labelKey, double value, double max,
+                                      int fillColor) {
+      int height = 7;
+      gui.fill(x, y, x + width, y + height, 0x80000000);
+      if (max > 0.0) {
+         int fill = (int)((width - 2) * Mth.clamp(value / max, 0.0, 1.0));
+         if (fill > 0) gui.fill(x + 1, y + 1, x + 1 + fill, y + height - 1, fillColor);
+      }
+      gui.renderOutline(x, y, width, height, 0x665A626E);
+      String text = Component.translatable(labelKey, Math.round(value), Math.round(Math.max(0.0, max))).getString();
+      float scale = 0.58F;
+      int textX = x + (int)((width - minecraft.font.width(text) * scale) / 2.0F);
+      drawScaledString(gui, minecraft, Component.literal(text), textX, y + 1, 0xFFFFFFFF, scale);
    }
 
    private static void drawGilgameshShield(GuiGraphics gui, Minecraft minecraft,
@@ -459,24 +487,28 @@ public class ServantCardHud {
    }
 
    private static void drawCooldownGrid(GuiGraphics gui, Minecraft minecraft, TypeMoonWorldModVariables.PlayerVariables vars, int x, int y) {
+      boolean carryDisabled = minecraft.player != null && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(minecraft.player);
       int[] cooldowns = effectiveSkillCooldowns(minecraft, vars);
       int selectedSlot = ServantCardSkillInputController.selectedSlot(vars);
+      boolean heracles = "heracles".equals(vars.servant_card_id);
       for (int i = 0; i < 10; i++) {
          int drawX = x;
          int drawY = y + i * 8;
          int ticks = i == 9 && !"gilgamesh".equals(vars.servant_card_id)
             && !"gilgamesh_caster".equals(vars.servant_card_id)
             && !"ushiwakamaru_rider".equals(vars.servant_card_id)
-            && !"okita_souji_saber".equals(vars.servant_card_id) ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
+            && !"sasaki_kojiro".equals(vars.servant_card_id)
+            && !"okita_souji_saber".equals(vars.servant_card_id) && !"diarmuid_ua_duibhne".equals(vars.servant_card_id) && !heracles ? effectiveNpCooldown(minecraft, vars) : cooldowns[i];
          String skillKey = ServantCardTransformManager.skillTranslationKey(vars.servant_card_id, i, false);
          boolean empty = skillKey.isBlank();
          Component label = empty
             ? Component.translatable("hud.typemoonworld.servant_card.none")
+            : carryDisabled ? Component.translatable("hud.typemoonworld.master_carry.disabled")
             : (ticks <= 0 ? Component.translatable(skillKey) : Component.literal(ticksToSeconds(ticks)));
          Component text = Component.literal(ServantCardKeybindConfig.keyName(ServantCardKeybindConfig.keyFor(vars.servant_card_id, i)))
             .append(":")
             .append(label);
-         int color = empty ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
+         int color = empty || carryDisabled ? 0xFF888888 : ticks <= 0 ? 0xFFD8F8D8 : 0xFFFFD180;
          float scale = 0.54F;
          int width = Math.min(142, Math.max(38, (int)(minecraft.font.width(text) * scale) + 5));
          gui.fill(drawX - 1, drawY - 1, drawX + width, drawY + 6, i == selectedSlot ? 0xAA2D7180 : 0x44000000);

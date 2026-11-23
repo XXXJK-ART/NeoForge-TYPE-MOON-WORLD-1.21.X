@@ -171,7 +171,8 @@ public final class NightingaleGameTests {
       helper.assertTrue(ServantCardTransformManager.transform(player, "nightingale"), "Nightingale card transform failed");
       helper.assertTrue(Math.abs(player.getMaxHealth() - 1000.0F) < 0.01F, "Nightingale card did not apply 1000 health");
       helper.assertTrue(Math.abs(player.getAttributeValue(Attributes.ATTACK_DAMAGE) - 40.0) < 0.01, "Nightingale card did not apply 40 attack");
-      helper.assertTrue(Math.abs(player.getAttributeValue(Attributes.ARMOR) - 30.0) < 0.01, "Nightingale card did not apply 30 armor");
+      helper.assertTrue(Math.abs(player.getAttributeValue(Attributes.ARMOR) - 27.0) < 0.01,
+         "Nightingale card did not apply 12 base armor plus its 15 armor bonus");
       helper.assertTrue(player.getMainHandItem().is(ModItems.NIGHTINGALE_GUN.get()), "Nightingale gun was not equipped");
 
       player.setHealth(700.0F);

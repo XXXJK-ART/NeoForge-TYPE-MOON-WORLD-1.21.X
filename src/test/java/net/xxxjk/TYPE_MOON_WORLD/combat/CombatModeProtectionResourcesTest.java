@@ -33,7 +33,7 @@ class CombatModeProtectionResourcesTest {
       assertTrue(cursedArm.contains("private static void resolveZabaniya"));
       assertTrue(cursedArm.contains("if (EntityUtils.isImmunePlayerTarget(target))"));
       assertTrue(gaeBolg.contains("private void applyDeathThorn"));
-      assertTrue(gaeBolg.contains("private void applyGuaranteedDamage"));
+      assertTrue(gaeBolg.contains("private boolean applyGuaranteedDamage"));
    }
 
    @Test

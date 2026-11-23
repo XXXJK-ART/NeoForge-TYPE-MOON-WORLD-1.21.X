@@ -1,5 +1,7 @@
 package com.captain.servant.emiya;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import com.captain.servant.compat.superbwarfare.SuperbWarfareLoader;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -189,6 +191,7 @@ public final class EmiyaSupportService {
             Set<Integer> hitEntityIds,
             double totalRadius
     ) {
+        try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
         for (LivingEntity target : level.getEntitiesOfClass(
                 LivingEntity.class,
                 new AABB(center, center).inflate(outerRadius),
@@ -200,7 +203,7 @@ public final class EmiyaSupportService {
             }
 
             float rawDamage = (float) Mth.lerp(distance / totalRadius, EXCALIBUR_CENTER_DAMAGE, EXCALIBUR_EDGE_DAMAGE);
-            float damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, rawDamage);
+            float damage = rawDamage;
             damage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(target, damage);
             target.invulnerableTime = 0;
             disableVanillaShield(target, owner);
@@ -213,6 +216,7 @@ public final class EmiyaSupportService {
                 target.push(knockback.x * 0.85D, 0.32D, knockback.z * 0.85D);
                 target.hurtMarked = true;
             }
+        }
         }
 
         SuperbWarfareLoader.damageVehiclesInAnnulus(

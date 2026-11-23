@@ -487,12 +487,14 @@ public final class ServantCardEnkiduSkills {
       level.sendParticles(ParticleTypes.HAPPY_VILLAGER, center.x, center.y + 0.12, center.z, 26, 0.75, 0.08, 0.75, 0.05);
       level.sendParticles(ParticleTypes.CRIT, center.x, center.y + 0.35, center.z, 18, 0.5, 0.18, 0.5, 0.08);
       level.playSound(null, BlockPos.containing(center), SoundEvents.ROOTED_DIRT_BREAK, SoundSource.PLAYERS, 1.15F, 0.85F);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(center, center).inflate(3.6, 2.4, 3.6), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          living.invulnerableTime = 0;
          living.hurt(player.damageSources().playerAttack(player), 28.0F);
          living.invulnerableTime = 0;
          living.setDeltaMovement(living.getDeltaMovement().add(0.0, 0.42, 0.0));
          living.hurtMarked = true;
+      }
       }
    }
 
@@ -504,6 +506,7 @@ public final class ServantCardEnkiduSkills {
       Vec3 side = new Vec3(-forward.z, 0.0, forward.x);
       Vec3 origin = player.position().add(0.0, player.getBbHeight() * 0.55, 0.0);
       AABB area = player.getBoundingBox().inflate(7.0, 1.6, 7.0).move(forward.scale(2.5));
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, area, e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 rel = living.position().subtract(player.position()).multiply(1.0, 0.0, 1.0);
          if (rel.lengthSqr() > 1.0E-4 && rel.normalize().dot(forward) < 0.15) {
@@ -514,6 +517,7 @@ public final class ServantCardEnkiduSkills {
          living.invulnerableTime = 0;
          living.push(forward.x * 0.7, 0.18, forward.z * 0.7);
          living.hurtMarked = true;
+      }
       }
       for (int i = -5; i <= 5; i++) {
          Vec3 fx = origin.add(forward.scale(2.2 + Math.abs(i) * 0.18)).add(side.scale(i * 0.58));
@@ -743,6 +747,7 @@ public final class ServantCardEnkiduSkills {
    }
 
    private static void applyEnumaAreaDamage(ServerPlayer player, ServerLevel level, Vec3 impact, double radius, float damage, LivingEntity directTarget) {
+      try (var segment = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, new AABB(impact, impact).inflate(radius), e -> e != player && e.isAlive() && !e.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(e))) {
          double distance = Math.max(1.0, living.position().distanceTo(impact));
          if (distance <= radius) {
@@ -752,6 +757,7 @@ public final class ServantCardEnkiduSkills {
             }
             applyNoDefenseDamage(player, living, scaled);
          }
+      }
       }
    }
 
@@ -823,13 +829,15 @@ public final class ServantCardEnkiduSkills {
    }
 
    private static void applyNoDefenseDamage(ServerPlayer player, LivingEntity target, float amount) {
+      if (ServantMasterDamageRouter.special(target, amount, defender -> applyNoDefenseDamage(player, defender, amount))) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }
-      target.removeEffect(MobEffects.DAMAGE_RESISTANCE);
-      target.removeEffect(MobEffects.ABSORPTION);
-      target.setAbsorptionAmount(0.0F);
-      EnkiduCombatHelper.markEnumaDamageBypass(target);
+      LivingEntity defender = ServantMasterDamageRouter.recipient(target);
+      defender.removeEffect(MobEffects.DAMAGE_RESISTANCE);
+      defender.removeEffect(MobEffects.ABSORPTION);
+      defender.setAbsorptionAmount(0.0F);
+      EnkiduCombatHelper.markEnumaDamageBypass(defender);
       target.invulnerableTime = 0;
       target.hurt(player.damageSources().magic(), amount);
       target.invulnerableTime = 0;

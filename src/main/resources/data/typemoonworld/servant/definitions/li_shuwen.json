@@ -5,7 +5,7 @@
   "display_name_zh": "李书文",
   "class_type": "assassin",
   "faction": "human",
-  "traits": ["servant", "humanoid", "living_human", "assassin", "male", "lawful", "evil", "earth"],
+  "traits": ["servant", "humanoid", "human", "human_kind", "seven_knights", "assassin", "male", "neutral_alignment", "evil", "ea_special"],
   "parameters": {
     "endurance": "D",
     "endurance_plus": false,
@@ -16,7 +16,8 @@
     "magic": "E",
     "magic_plus": false,
     "luck": "E",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": ""
   },
   "model": {
     "geometry": "",

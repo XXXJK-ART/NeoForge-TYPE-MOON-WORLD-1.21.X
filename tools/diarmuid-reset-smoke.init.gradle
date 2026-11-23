@@ -1,0 +1,12 @@
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('diarmuidResetSmoke') {
+            java.srcDir 'tools/diarmuid-reset-smoke/java'
+            resources.srcDir 'tools/diarmuid-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_diarmuid_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/diarmuid-client-run')
+    }
+}

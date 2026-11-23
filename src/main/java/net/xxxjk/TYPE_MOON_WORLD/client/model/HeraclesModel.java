@@ -3,6 +3,7 @@ package net.xxxjk.TYPE_MOON_WORLD.client.model;
 import net.minecraft.resources.ResourceLocation;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesEntity;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.animation.AnimationState;
 
 public class HeraclesModel extends BaseServantModel<HeraclesEntity> {
    public HeraclesModel() {
@@ -11,6 +12,33 @@ public class HeraclesModel extends BaseServantModel<HeraclesEntity> {
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "textures/entity/heracles.png"),
          ResourceLocation.fromNamespaceAndPath("typemoonworld", "animations/heracles.animation.json")
       );
+   }
+
+   @Override
+   public void setCustomAnimations(HeraclesEntity entity, long instanceId, AnimationState<HeraclesEntity> state) {
+      super.setCustomAnimations(entity, instanceId, state);
+      float reaction = entity.godHandReactionStrength(state.getPartialTick());
+      if (reaction > 0) {
+         GeoBone head = this.getAnimationProcessor().getBone("head");
+         GeoBone body = this.getAnimationProcessor().getBone("upper_body");
+         if (head != null) head.setRotX(head.getRotX() - reaction * .16F);
+         if (body != null) body.setRotX(body.getRotX() - reaction * .08F);
+      }
+      if (entity.getCombatPose() != 2) return;
+      float phase = Math.clamp(entity.getCombatPoseTicks() / 6.0F, 0.0F, 1.0F);
+      GeoBone rightArm = this.getAnimationProcessor().getBone("right arm");
+      GeoBone leftArm = this.getAnimationProcessor().getBone("left arm");
+      if (rightArm != null) {
+         // Gecko arm bones use the opposite pitch direction from PlayerModel.
+         rightArm.setRotX(1.05F * phase);
+         rightArm.setRotY(0.55F * phase);
+         rightArm.setRotZ(-0.18F * phase);
+      }
+      if (leftArm != null) {
+         leftArm.setRotX(1.05F * phase);
+         leftArm.setRotY(-0.55F * phase);
+         leftArm.setRotZ(0.18F * phase);
+      }
    }
 
    @Override

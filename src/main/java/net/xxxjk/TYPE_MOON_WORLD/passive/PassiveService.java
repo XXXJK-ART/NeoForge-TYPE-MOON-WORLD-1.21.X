@@ -160,6 +160,7 @@ public final class PassiveService {
       PassiveRank divinity = effectsSuppressed(vars) ? null : rank(vars, DIVINITY);
       updateModifier(player.getAttribute(Attributes.MAX_HEALTH), DIVINITY_HEALTH_ID, divinity == null ? 0.0 : divinity.healthBonus());
       updateModifier(player.getAttribute(Attributes.ATTACK_DAMAGE), DIVINITY_ATTACK_ID, divinity == null ? 0.0 : divinity.attackBonus());
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.modifier(player.getAttribute(Attributes.MOVEMENT_SPEED), "passive_divinity_speed", divinity == null ? 0 : (divinity.ordinal()+1)*.01, AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
       if (player.getHealth() > player.getMaxHealth()) player.setHealth(player.getMaxHealth());
    }
 
@@ -168,6 +169,6 @@ public final class PassiveService {
       AttributeModifier current = attribute.getModifier(id);
       if (current != null && Math.abs(current.amount() - amount) < 1.0E-9) return;
       if (current != null) attribute.removeModifier(id);
-      if (amount > 0.0) attribute.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
+      if (amount > 0.0) attribute.addPermanentModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
    }
 }

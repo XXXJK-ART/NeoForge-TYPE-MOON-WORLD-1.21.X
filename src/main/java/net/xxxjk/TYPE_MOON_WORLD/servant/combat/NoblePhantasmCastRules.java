@@ -5,10 +5,10 @@ import java.util.Set;
 /** Shared release policy for all NP entry points. */
 public final class NoblePhantasmCastRules {
    private static final Set<String> INSTANT = Set.of(
-      "okita_mumyoudan_zuki", "cursed_arm_hassan_zabaniya", "li_shuwen_wu_er_da", "lancelot_arondight"
+      "okita_mumyoudan_zuki", "cursed_arm_hassan_zabaniya", "li_shuwen_wu_er_da", "lancelot_arondight", "muramasa_tsumukari"
    );
    private static final Set<String> INTERRUPTIBLE = Set.of(
-      "artoria_excalibur", "gilgamesh_ea", "cu_gae_bolg", "gawain_gallatin", "muramasa_tsumukari",
+      "artoria_excalibur", "artoria_excalibur_short", "gilgamesh_ea", "cu_gae_bolg", "gawain_gallatin",
       "medusa_bellerophon", "paracelsus_elemental_sword", "jeanne_alter_np", "nightingale_pledge",
       "baobhan_sith_failnaught",
       "zhao_yun_changbanpo", "oda_three_thousand", "oda_hajun", "muramasa_summon"
@@ -30,6 +30,16 @@ public final class NoblePhantasmCastRules {
    public static int windowTicks() { return INTERRUPT_WINDOW_START_TICKS - RELEASE_LEAD_TICKS; }
    public static long releaseAt(long voiceStart, long voiceEnd) {
       return Math.max(voiceStart + 1L, voiceEnd - RELEASE_LEAD_TICKS);
+   }
+   public static long releaseAt(String action, long voiceStart, long voiceEnd) {
+      return "muramasa_summon".equals(action) ? voiceEnd : releaseAt(voiceStart, voiceEnd);
+   }
+   public static boolean interruptibleAt(String action, long now, long voiceStart, long voiceEnd) {
+      if ("muramasa_summon".equals(action)) {
+         return voiceEnd - voiceStart > INTERRUPT_WINDOW_START_TICKS
+            && now >= voiceEnd - INTERRUPT_WINDOW_START_TICKS && now < voiceEnd - FINAL_IMMUNE_TICKS;
+      }
+      return interruptibleAt(now, voiceStart, voiceEnd);
    }
    public static boolean interruptibleAt(long now, long voiceStart, long voiceEnd) {
       if (voiceEnd - voiceStart <= INTERRUPT_WINDOW_START_TICKS) return false;

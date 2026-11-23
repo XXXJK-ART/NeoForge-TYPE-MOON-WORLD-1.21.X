@@ -1,0 +1,21 @@
+{
+  "id": "battle_continuation_d",
+  "rank": "D",
+  "display_name": "Battle Continuation D",
+  "display_name_zh": "战斗续行 D",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 19200,
+  "duration_ticks": 40,
+  "effects": [
+    {
+      "effect_type": "lethal_survival",
+      "params": {
+        "health_ratio": 0.03,
+        "protection_ticks": 40,
+        "reduction": 0.8,
+        "heal_per_second": 4
+      }
+    }
+  ]
+}

@@ -31,6 +31,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 
@@ -184,21 +185,17 @@ public class ElementalMagicProjectileEntity extends ThrowableItemProjectile {
       if (this.getOwner() instanceof LivingEntity owner) {
          finalDamage = MercurySwordMagicAmplifier.amplifyElementalDamage(owner, this.getElement(), finalDamage);
       }
-      if (!this.pierceArmor) {
-         MagicComplexity complexity = this.radius > 0.0F ? MagicComplexity.TWO_VERSE : MagicComplexity.SIMPLE_ACTION;
-         finalDamage = MagicResistanceHelper.applyMagicDamageReduction(
-            target, this.damageSources().magic(), finalDamage, complexity,
-            this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
-      }
       target.invulnerableTime = 0;
-      target.hurt(this.damageSources().magic(), finalDamage);
+      target.hurt(MagecraftDamageSource.of(this.damageSources().indirectMagic(this, this.getOwner()), this.sourceMagicId,
+         this.getOwner() instanceof LivingEntity owner ? owner : null, this.casterProficiency), finalDamage);
       target.invulnerableTime = 0;
+      if (MagicResistanceHelper.blocksHarmfulMagicEffect(target, MagicResistanceHelper.complexityForMagic(this.sourceMagicId))) return;
       if (this.igniteSeconds > 0) {
          target.igniteForSeconds(this.igniteSeconds);
       }
       if (this.slowTicks > 0) {
          int amplifier = this.slowPercent >= 0.5F ? 2 : this.slowPercent >= 0.2F ? 0 : 0;
-         MagicComplexity complexity = this.radius > 0.0F ? MagicComplexity.TWO_VERSE : MagicComplexity.SIMPLE_ACTION;
+         MagicComplexity complexity = MagicResistanceHelper.complexityForMagic(this.sourceMagicId);
          int duration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
             target, this.slowTicks, complexity,
             this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);

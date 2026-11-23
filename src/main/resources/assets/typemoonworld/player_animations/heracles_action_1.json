@@ -1,0 +1,138 @@
+{
+  "name": "heracles_action_1",
+  "version": 3,
+  "description": "Heavy Ground Slam",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 13,
+    "stopTick": 13,
+    "moves": [
+      {
+        "tick": 0,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 4,
+        "body": {
+          "pitch": -20,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -175,
+          "yaw": 0,
+          "roll": -8
+        },
+        "leftArm": {
+          "pitch": -168,
+          "yaw": 0,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 5,
+        "body": {
+          "pitch": -24,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -175,
+          "yaw": 0,
+          "roll": -8
+        },
+        "leftArm": {
+          "pitch": -168,
+          "yaw": 0,
+          "roll": 8
+        }
+      },
+      {
+        "tick": 6,
+        "body": {
+          "pitch": 62,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -42,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": -42,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 8,
+        "body": {
+          "pitch": 58,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -42,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": -42,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 10,
+        "body": {
+          "pitch": 24,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": -25,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": -25,
+          "yaw": 0,
+          "roll": 0
+        }
+      },
+      {
+        "tick": 13,
+        "body": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "rightArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        },
+        "leftArm": {
+          "pitch": 0,
+          "yaw": 0,
+          "roll": 0
+        }
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
   "display_name": "Changbanpo no Ikki-gake",
   "display_name_zh": "长坂坡一骑驱",
   "rank": "EX",
-  "type": "anti_personnel",
+  "type": "anti_unit",
   "mp_cost": 80,
   "cooldown_ticks": 800,
   "range": 100,

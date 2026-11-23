@@ -45,13 +45,14 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
             String rateLimitKey = diarmuidDualWield
                ? (message.secondary ? "servant_card_diarmuid_mainhand_attack" : "servant_card_diarmuid_offhand_attack")
                : "servant_card_basic_attack";
-            if (!ServerPacketRateLimiter.allow(player, rateLimitKey, 1)) {
+            if (!ServerPacketRateLimiter.allow(player, rateLimitKey, diarmuidDualWield ? 0 : 1)) {
                return;
             }
             if (vars.servant_card_transformed && "shadow_hassan".equals(vars.servant_card_id)) {
                if (!net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.canAttack(player)) return;
                net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.revealForAttack(player);
             }
+            net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.breakConcealment(player);
             boolean trueSweepTriggered = vars.servant_card_transformed && !message.secondary
                && ServantTrueSweepService.triggerPlayerAttack(player, vars);
             if (trueSweepTriggered) {
@@ -61,6 +62,10 @@ public record ServantCardBasicAttackMessage(boolean secondary) implements Custom
             } else if (vars.servant_card_transformed && "gilgamesh_caster".equals(vars.servant_card_id) && message.secondary) {
                ServantCardCasterGilgameshSkills.performSlateBasic(player);
             } else if (diarmuidDualWield) {
+               if (!message.secondary && player.isShiftKeyDown()) {
+                  net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardTransformManager.triggerAction(player, -1);
+                  return;
+               }
                if (message.secondary) {
                   ServantCardDiarmuidSkills.performMainhandSpearThrust(player);
                } else {

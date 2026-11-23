@@ -1,0 +1,71 @@
+{
+  "duration": 1.6,
+  "notes": [
+    "Hajun chant: a restrained red-black seal contracts while ash lifts in a narrow column; no cyan soul flame."
+  ],
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 1.45,
+      "rate": 58,
+      "particle_lifetime": 0.72,
+      "size_variance": 0.16,
+      "lifetime_variance": 0.12,
+      "position_variance": 0.025,
+      "velocity": [0.0, 0.045, 0.0],
+      "velocity_variance": 0.025,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.04, 0.0], "rotate_with_entity": true },
+      "component": { "type": "bicircle_star", "radius": 1.0, "inner_radius": 0.72, "segments": 64 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00100A0A" },
+        { "t": 0.12, "color": "#CC8D241B" },
+        { "t": 0.55, "color": "#AA451018" },
+        { "t": 1.0, "color": "#00100A0A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.05 },
+        { "t": 0.38, "size": 0.17 },
+        { "t": 1.0, "size": 0.025 }
+      ],
+      "transform_over_life": [
+        { "t": 0.0, "scale": [1.5, 0.05, 1.5] },
+        { "t": 0.72, "scale": [0.5, 0.05, 0.5], "easing": "ease_in_cubic" },
+        { "t": 1.0, "scale": [0.28, 0.05, 0.28] }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_CHANT_SEAL",
+      "material": { "shader": "vfx_sdf", "bloom": 0.25, "soft_particles": true, "distortion": false }
+    },
+    {
+      "start_time": 0.0,
+      "end_time": 1.45,
+      "rate": 48,
+      "particle_lifetime": 0.8,
+      "size_variance": 0.2,
+      "lifetime_variance": 0.14,
+      "position_variance": 0.04,
+      "velocity": [0.0, 0.11, 0.0],
+      "velocity_variance": 0.05,
+      "binding": { "mode": "entity_yaw", "offset": [0.0, 0.1, 0.0], "rotate_with_entity": true },
+      "component": { "type": "helix", "radius": 1.25, "turns": 1.1, "height": 3.3, "segments": 56 },
+      "color_over_life": [
+        { "t": 0.0, "color": "#00000000" },
+        { "t": 0.16, "color": "#AA7F211B" },
+        { "t": 0.55, "color": "#88310B10" },
+        { "t": 1.0, "color": "#00100A0A" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.44, "size": 0.2 },
+        { "t": 1.0, "size": 0.02 }
+      ],
+      "blend": "ADDITIVE",
+      "particle_role": "ODA_HAJUN_CHANT_ASH_SPIRAL",
+      "material": { "shader": "vfx_smoke", "bloom": 0.1, "soft_particles": true, "distortion": false },
+      "vanilla_particles": [
+        { "type": "ash", "count": 1, "spread": [0.22, 0.22, 0.22], "offset": [0.0, 0.2, 0.0], "speed": 0.008, "chance": 0.18 },
+        { "type": "smoke", "count": 1, "spread": [0.12, 0.12, 0.12], "offset": [0.0, 0.15, 0.0], "speed": 0.006, "chance": 0.08 }
+      ]
+    }
+  ]
+}

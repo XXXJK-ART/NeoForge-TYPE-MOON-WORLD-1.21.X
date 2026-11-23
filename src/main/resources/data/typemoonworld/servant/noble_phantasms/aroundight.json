@@ -12,7 +12,7 @@
     {
       "effect_type": "aroundight_mode",
       "params": {
-        "drain_mp_per_second": 5,
+        "drain_mp_per_second": 15,
         "strength_multiplier": 2.0,
         "endurance_multiplier": 2.0,
         "agility_multiplier": 2.0,

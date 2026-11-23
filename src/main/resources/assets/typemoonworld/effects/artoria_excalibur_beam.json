@@ -62,8 +62,8 @@
       "binding": { "mode": "entity_yaw", "bone": "", "offset": [0.0, 0.35, 1.6], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 0.0, 150.0], "segments": 360 },
       "color_over_life": [
-        { "t": 0.0, "color": "#D8FFFFFF" },
-        { "t": 0.18, "color": "#CCFFF8CC" },
+        { "t": 0.0, "color": "#D8FFF4B0" },
+        { "t": 0.18, "color": "#CCFFE27A" },
         { "t": 0.62, "color": "#BBFFCC33" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],
@@ -82,7 +82,7 @@
       "visibility_condition": "random() > 0.08",
       "blend": "ADDITIVE",
       "particle_role": "EXCALIBUR_CORE_BEAM",
-      "material": { "shader": "vfx_energy", "bloom": 1.2, "soft_particles": true },
+      "material": { "shader": "vfx_energy", "bloom": 2.4, "soft_particles": true },
       "vanilla_particles": [
         { "type": "end_rod", "count": 1, "spread": [0.15, 0.15, 0.15], "offset": [0.0, 0.0, 0.0], "speed": 0.03, "chance": 0.25 }
       ],
@@ -139,8 +139,8 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 0.75], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 150.0, 0.0], "segments": 380 },
       "color_over_life": [
-        { "t": 0.0, "color": "#D8FFFFFF" },
-        { "t": 0.25, "color": "#CCFFF2AA" },
+        { "t": 0.0, "color": "#D8FFF4B0" },
+        { "t": 0.25, "color": "#CCFFE27A" },
         { "t": 0.7, "color": "#CCFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
@@ -180,8 +180,8 @@
       "binding": { "mode": "artoria_blade", "bone": "right arm", "offset": [0.34, 0.2, 0.75], "rotate_with_entity": true },
       "component": { "type": "line", "start": [0.0, 0.0, 0.0], "end": [0.0, 150.0, 0.0], "segments": 300 },
       "color_over_life": [
-        { "t": 0.0, "color": "#55FFFFFF" },
-        { "t": 0.25, "color": "#77FFE27A" },
+        { "t": 0.0, "color": "#55FFF1A0" },
+        { "t": 0.25, "color": "#77FFD95A" },
         { "t": 0.72, "color": "#66FFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
@@ -229,7 +229,7 @@
       },
       "color_over_life": [
         { "t": 0.0, "color": "#00FFD700" },
-        { "t": 0.18, "color": "#CCFFFFFF" },
+        { "t": 0.18, "color": "#CCFFF0A0" },
         { "t": 0.5, "color": "#CCFFD700" },
         { "t": 1.0, "color": "#00FFD700" }
       ],
@@ -311,8 +311,8 @@
         "segments": 420
       },
       "color_over_life": [
-        { "t": 0.0, "color": "#CCFFFFFF" },
-        { "t": 0.25, "color": "#BBFFE066" },
+        { "t": 0.0, "color": "#CCFFF1A0" },
+        { "t": 0.25, "color": "#BBFFD84A" },
         { "t": 0.75, "color": "#99FF9A00" },
         { "t": 1.0, "color": "#00FFAA00" }
       ],

@@ -1,0 +1,16 @@
+{
+  "name": "oda_np_three_thousand_release",
+  "version": 3,
+  "description": "Oda Nobunaga gives the release signal for Three Thousand Worlds.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 22,
+    "stopTick": 22,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -80, "yaw": -22, "roll": -34}, "leftArm": {"pitch": -80, "yaw": 22, "roll": 34}, "body": {"pitch": -8}},
+      {"tick": 6, "rightArm": {"pitch": -88, "yaw": -6, "roll": -10}, "leftArm": {"pitch": -88, "yaw": 6, "roll": 10}, "body": {"pitch": 6}},
+      {"tick": 10, "rightArm": {"pitch": -55, "yaw": -6, "roll": -10}, "leftArm": {"pitch": -55, "yaw": 6, "roll": 10}, "body": {"pitch": 0}},
+      {"tick": 22, "rightArm": {"pitch": 0, "yaw": 0, "roll": 0}, "leftArm": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"pitch": 0}}
+    ]
+  }
+}

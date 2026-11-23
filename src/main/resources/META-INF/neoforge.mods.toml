@@ -85,6 +85,15 @@ description='''An MC mod of TYPE-MOON'''
     ordering="NONE"
     side="BOTH"
 
+# Dependency for PlayerAnimator
+[[dependencies.typemoonworld]]
+    modId="playeranimator"
+    type="required"
+    reason="Type Moon World requires PlayerAnimator for player animation support."
+    versionRange="${playeranimator_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
 # Dependency for TerraBlender
 [[dependencies.typemoonworld]]
     modId="terrablender"

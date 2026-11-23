@@ -1,0 +1,37 @@
+{
+  "duration": 0.7,
+  "notes": "Brief release motes only. The three long blade trails follow their respective animated sword tips on the client.",
+  "emitters": [
+    {
+      "start_time": 0.0,
+      "end_time": 0.1,
+      "rate": 60.0,
+      "particle_lifetime": 0.2,
+      "size_variance": 0.04,
+      "lifetime_variance": 0.08,
+      "position_variance": 0.015,
+      "velocity": [0.0, 0.0, 1.8],
+      "velocity_variance": 0.06,
+      "component": {
+        "type": "sphere",
+        "radius": 0.04,
+        "segments": 8
+      },
+      "color_over_life": [
+        { "t": 0.0, "color": "#DFFFFFFF" },
+        { "t": 0.24, "color": "#FFFFFFFF" },
+        { "t": 0.62, "color": "#BDEBFFFF" },
+        { "t": 1.0, "color": "#00000000" }
+      ],
+      "size_over_life": [
+        { "t": 0.0, "size": 0.045 },
+        { "t": 0.28, "size": 0.06 },
+        { "t": 1.0, "size": 0.01 }
+      ],
+      "blend": "ADDITIVE",
+      "renderer": "BILLBOARD",
+      "material": { "shader": "vfx_energy", "texture": "typemoonworld:textures/particle/sasaki_tsubame_slash.png" },
+      "enable_trail": true
+    }
+  ]
+}

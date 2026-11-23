@@ -32,6 +32,10 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
       if (entity instanceof AbstractClientPlayer player) {
          if (player.getVehicle() instanceof OdaMatchlockGunEntity gun && gun.isMountMode()) {
             PlayerModel<?> model = (PlayerModel<?>)(Object)this;
+            if (gun.isChantLift()) {
+               net.xxxjk.TYPE_MOON_WORLD.client.OdaChantPose.apply(model, gun.chantPoseProgress(ageInTicks - player.tickCount));
+               return;
+            }
             model.body.xRot = 0.0F;
             model.body.yRot = 0.0F;
             model.rightLeg.xRot = Mth.cos(limbSwing * 0.6662F) * 0.7F * limbSwingAmount;
@@ -103,8 +107,15 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             carryModel.rightSleeve.copyFrom(carryModel.rightArm);
             carryModel.leftSleeve.copyFrom(carryModel.leftArm);
          } else if (ServantMasterCarryService.isCarriedMaster(player)) {
-            carryModel.rightArm.xRot = -0.72F;
-            carryModel.leftArm.xRot = -0.72F;
+            boolean casting = commandSpellPose || firearmPose || localPlayer && (
+               TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGanderCharging()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalGandrMachineGunCasting()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalTapCastPoseActive()
+               || TypeMoonWorldModKeyMappings.KeyEventListener.isLocalMachineGunFiringPoseActive());
+            if (!casting && !player.isUsingItem()) {
+               carryModel.rightArm.xRot = -0.72F;
+               carryModel.leftArm.xRot = -0.72F;
+            }
             carryModel.rightLeg.xRot = -1.05F;
             carryModel.leftLeg.xRot = -1.05F;
             carryModel.rightLeg.zRot = 0.18F;
@@ -114,6 +125,13 @@ public abstract class PlayerModelMixin<T extends LivingEntity> {
             carryModel.rightPants.copyFrom(carryModel.rightLeg);
             carryModel.leftPants.copyFrom(carryModel.leftLeg);
          }
+         net.xxxjk.TYPE_MOON_WORLD.client.SasakiTsubameAfterimageClient.applyOwnerPose(
+            player, (PlayerModel<?>)(Object)this, ageInTicks - player.tickCount);
+         net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyIdlePose(player,(PlayerModel<?>)(Object)this);
+         if (vars.servant_card_transformed && "diarmuid_ua_duibhne".equals(vars.servant_card_id))
+            net.xxxjk.TYPE_MOON_WORLD.client.DiarmuidActionAnimationClient.applyHandPose(player,(PlayerModel<?>)(Object)this,ageInTicks-player.tickCount);
+         if (net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.isGuarding(player))
+            net.xxxjk.TYPE_MOON_WORLD.client.ServantGuardPoseClient.applyPose(player, (PlayerModel<?>)(Object)this);
       }
    }
 

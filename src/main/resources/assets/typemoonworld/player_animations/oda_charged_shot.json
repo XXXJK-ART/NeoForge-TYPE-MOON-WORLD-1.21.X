@@ -1,0 +1,17 @@
+{
+  "name": "oda_charged_shot",
+  "version": 3,
+  "description": "Oda Nobunaga braces and steadies her matchlock before a charged shot.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 42,
+    "stopTick": 42,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -16, "yaw": -8, "roll": -8}, "leftArm": {"pitch": -12, "yaw": 10, "roll": 8}},
+      {"tick": 8, "rightArm": {"pitch": -54, "yaw": -8, "roll": -12}, "leftArm": {"pitch": -49, "yaw": 10, "roll": 12}, "body": {"pitch": 5}},
+      {"tick": 28, "rightArm": {"pitch": -76, "yaw": -8, "roll": -12}, "leftArm": {"pitch": -67, "yaw": 10, "roll": 12}, "body": {"pitch": 5}},
+      {"tick": 34, "rightArm": {"pitch": -49, "yaw": -8, "roll": -12}, "leftArm": {"pitch": -58, "yaw": 10, "roll": 12}, "body": {"pitch": 0}},
+      {"tick": 42, "rightArm": {"pitch": 0, "yaw": 0, "roll": 0}, "leftArm": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"pitch": 0}}
+    ]
+  }
+}

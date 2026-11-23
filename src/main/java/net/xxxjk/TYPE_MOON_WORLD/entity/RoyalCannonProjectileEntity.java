@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,11 +188,13 @@ public final class RoyalCannonProjectileEntity extends Entity {
    private void explode(ServerLevel level, LivingEntity owner, Vec3 pos) {
       float radius = Math.max(0.1F, explosionRadius);
       double radiusSqr = radius * radius;
+      try (var carrySegment300 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, new AABB(pos, pos).inflate(radius),
          e -> isValidVictim(owner, e) && e.position().add(0.0, e.getBbHeight() * 0.5, 0.0).distanceToSqr(pos) <= radiusSqr)) {
          if (hit.add(victim.getId())) {
             hurtVictim(owner, victim, damage);
          }
+      }
       }
 
       level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.85F, 1.32F);
@@ -224,7 +228,11 @@ public final class RoyalCannonProjectileEntity extends Entity {
 
    private void hurtVictim(LivingEntity owner, LivingEntity victim, float amount) {
       if (!isValidVictim(owner, victim)) return;
-      DamageSource source = owner.damageSources().mobProjectile(this, owner);
+      DamageSource base = owner.damageSources().mobProjectile(this, owner);
+      DamageSource source = explosive
+         ? net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(base, "royal_cannon")
+         : net.xxxjk.typemoonworld.api.MagecraftDamageSource.of(base, "gilgamesh_slate_magic",
+            net.xxxjk.typemoonworld.api.MagicComplexity.TWO_VERSE, owner);
       victim.invulnerableTime = 0;
       float finalDamage = owner instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.CasterGilgameshEntity caster
          ? CasterGilgameshCombatHelper.magicDamage(caster, amount)

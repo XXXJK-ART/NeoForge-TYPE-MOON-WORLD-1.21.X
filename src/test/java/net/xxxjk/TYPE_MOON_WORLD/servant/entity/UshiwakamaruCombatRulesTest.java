@@ -40,6 +40,14 @@ class UshiwakamaruCombatRulesTest {
    }
 
    @Test
+   void spiderSlayerScalesWithDistanceAndDemonicTrait() {
+      assertEquals(100.0F, UshiwakamaruCombatRules.spiderSlayerDamage(false, 0.0));
+      assertEquals(75.0F, UshiwakamaruCombatRules.spiderSlayerDamage(false, 7.5));
+      assertEquals(50.0F, UshiwakamaruCombatRules.spiderSlayerDamage(false, 15.0));
+      assertEquals(200.0F, UshiwakamaruCombatRules.spiderSlayerDamage(true, 0.0));
+   }
+
+   @Test
    void riderIsExposedAsARealArmorServantCard() {
       var card = ServantCardRegistry.byId("ushiwakamaru_rider");
       assertNotNull(card);

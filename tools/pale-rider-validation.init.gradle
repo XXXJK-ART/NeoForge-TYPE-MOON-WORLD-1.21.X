@@ -1,0 +1,9 @@
+// Isolated worlds for the Pale Rider adaptation checks; no release content added.
+allprojects {
+    afterEvaluate { project ->
+        project.runs.gameTestServer.workingDirectory project.file('build/pale-rider-gametest-run')
+        project.tasks.named('test').configure {
+            inputs.dir project.file('src/main/resources/data/typemoonworld/servant')
+        }
+    }
+}

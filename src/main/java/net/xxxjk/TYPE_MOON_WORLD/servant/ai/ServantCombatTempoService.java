@@ -11,7 +11,6 @@ import net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiIntent;
 import net.xxxjk.TYPE_MOON_WORLD.combat.ai.ServantPlannedActionExecutor;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService;
-import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantTrueSweepService;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile;
 import net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService;
@@ -174,8 +173,7 @@ public final class ServantCombatTempoService {
          servant.setDeltaMovement(motion.x * 0.28, motion.y, motion.z * 0.28);
          servant.hasImpulse = true;
       }
-      boolean sweep = ServantTrueSweepService.tryNpcSweep(servant, target, now);
-      boolean hit = sweep || servant.doBasicHurtTarget(target);
+      boolean hit = servant.doBasicHurtTarget(target);
       if (!telegraphed) servant.triggerBasicAttackAnimation();
       recordContact(servant, target, hit ? ContactType.DAMAGE : ContactType.BLOCKED, now);
       net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSpectacleService.exchangeFx(

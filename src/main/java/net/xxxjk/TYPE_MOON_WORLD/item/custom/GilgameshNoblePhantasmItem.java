@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
@@ -260,12 +262,14 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
          Vec3 origin = player.getEyePosition();
          Vec3 forward = direction.normalize();
          if ("fangtian_huaji".equals(weapon)) {
+            try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
             for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(10), e -> e.isAlive() && e != player && !e.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(e))) {
                Vec3 delta = target.position().subtract(player.position()); double distance = delta.length();
                if (distance > 10 || delta.lengthSqr() < 1.0E-6 || forward.dot(delta.normalize()) < 0.5) continue;
                float amount = (float)(100.0 - 50.0 * distance / 10.0);
                target.invulnerableTime = 0; target.hurt(player.damageSources().mobAttack(player), amount); target.invulnerableTime = 0;
                Vec3 push = delta.normalize().scale(2.2); target.push(push.x, .5, push.z);
+            }
             }
             return;
          }
@@ -275,6 +279,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
          double halfWidth = switch (weapon) { case "gram" -> 3.5; case "durandal" -> 3; default -> 3; };
          double halfHeight = 2.0;
          AABB box = new AABB(origin, origin.add(forward.scale(length))).inflate(halfWidth, halfHeight, halfWidth);
+         try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
          for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive() && e != player && !e.isAlliedTo(player) && !EntityUtils.isImmunePlayerTarget(e))) {
             Vec3 rel = target.position().add(0, target.getBbHeight() * .5, 0).subtract(origin);
             if (rel.dot(forward) < 0 || rel.dot(forward) > length || Math.abs(rel.dot(right)) > halfWidth || Math.abs(rel.dot(up)) > halfHeight) continue;
@@ -288,6 +293,7 @@ public class GilgameshNoblePhantasmItem extends Item implements NoblePhantasmIte
             if ("durandal".equals(weapon)) { target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 80, 1)); target.hurt(player.damageSources().magic(), 30.0F); }
             if ("gram".equals(weapon)) target.igniteForSeconds(6.0F);
             if ("harpe".equals(weapon)) { target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WITHER, 200, 0)); target.getPersistentData().putLong("HarpeCursedWoundUntil", level.getGameTime() + 200); }
+         }
          }
       });
    }

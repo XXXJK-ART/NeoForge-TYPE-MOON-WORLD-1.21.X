@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.combat.ai;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
@@ -181,6 +183,7 @@ public final class ServantPlannedActionExecutor {
    }
 
    static int cooldownTicks(AiActionDescriptor action) {
+      if (action.cooldownTicks() > 0) return action.cooldownTicks();
       return Math.max(8, action.timing().windupTicks() + action.timing().activeTicks()
          + action.timing().recoveryTicks() + action.maneuver().comboCost() * 2);
    }
@@ -276,6 +279,7 @@ public final class ServantPlannedActionExecutor {
       }
 
       boolean terrainTriggered = false;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : victims) {
          if (!runtime.hitTargets.add(victim.getUUID())) continue;
          if (requiresLineOfSight(action.threat().shape()) && !entity.getSensing().hasLineOfSight(victim)) continue;
@@ -284,7 +288,7 @@ public final class ServantPlannedActionExecutor {
          boolean damaged;
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.beginSharedHit(entity);
          try {
-            damaged = victim.hurt(entity.damageSources().mobAttack(entity), damage);
+            damaged = victim.hurt(new net.xxxjk.TYPE_MOON_WORLD.servant.combat.CombatDamageSource(entity.damageSources().mobAttack(entity), net.xxxjk.TYPE_MOON_WORLD.servant.combat.AttackOrigin.skill(entity.getServantId(), action.id().toString())), damage);
          } finally {
             net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatService.endSharedHit(entity);
          }
@@ -309,6 +313,7 @@ public final class ServantPlannedActionExecutor {
                TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
             terrainTriggered = true;
          }
+      }
       }
    }
 

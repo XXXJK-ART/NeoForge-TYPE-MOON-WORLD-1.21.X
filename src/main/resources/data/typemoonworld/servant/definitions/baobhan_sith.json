@@ -8,19 +8,18 @@
   "traits": [
     "servant",
     "female",
-    "archer",
     "fairy",
-    "vampiric",
+    "heaven_or_earth_servant",
+    "riding",
+    "demonic",
     "humanoid",
-    "sapient",
     "chaotic",
     "evil",
     "earth",
-    "seven_knights",
-    "fairy_knight",
-    "curse_weaver"
+    "seven_knights"
   ],
   "parameters": {
+    "noble_phantasm_rank": "E",
     "endurance": "C",
     "endurance_plus": false,
     "strength": "A",

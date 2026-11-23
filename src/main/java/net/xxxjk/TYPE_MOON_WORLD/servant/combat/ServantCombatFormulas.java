@@ -55,6 +55,9 @@ public final class ServantCombatFormulas {
    }
 
    public static double combatMovementSpeed(ServantParams params) {
+      if (params != null && params.agility() == StatRank.A_PLUS_PLUS) {
+         return params.movementSpeed();
+      }
       return switch (agilityStep(params)) {
          case 0 -> 0.200;
          case 1 -> 0.260;
@@ -117,7 +120,8 @@ public final class ServantCombatFormulas {
    }
 
    public static int parryWindowTicks(ServantParams params) {
-      return secondsToTicks(0.20 + defenseStep(params) * 0.01);
+      // Keep the perfect-defense input window readable and consistent across players and NPCs.
+      return secondsToTicks(0.50);
    }
 
    public static double blockStaminaCost(ServantParams params) {

@@ -52,7 +52,7 @@ public final class CombatRevisionGameTests {
       h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, attacker.damageSources().mobAttack(attacker), 20) == 0, "perfect guard did not block");
       h.assertTrue(defender.getPersistentData().getDouble(ServantCombatDefenseService.TAG_STAMINA) == full, "perfect guard spent defense");
       ServantCombatDefenseService.setGuarding(defender, false);
-      h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, attacker.damageSources().mobAttack(attacker), 20) == 10, "automatic guard reduction wrong");
+      h.assertTrue(ServantCombatDefenseService.applyGuardHit(defender, attacker.damageSources().mobAttack(attacker), 20) == null, "NPC guarded without choosing a guard");
       defender.getPersistentData().putDouble(ServantCombatDefenseService.TAG_STAMINA, 0);
       defender.getPersistentData().putDouble(ServantCombatDefenseService.TAG_POISE, 5);
       ServantCombatDefenseService.losePoise(defender, 10);

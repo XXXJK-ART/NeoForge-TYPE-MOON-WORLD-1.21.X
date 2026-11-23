@@ -25,15 +25,25 @@ public final class NoblePhantasmDamageClassifier {
 
    private NoblePhantasmDamageClassifier() {}
 
-   private static final class TypedSource extends DamageSource {
+   private static final class TypedSource extends DamageSource implements net.xxxjk.typemoonworld.api.WrappedDamageSource {
       final String npId;
+      final DamageSource base;
       TypedSource(DamageSource base, String npId) {
          super(base.typeHolder(), base.getDirectEntity(), base.getEntity(), base.getSourcePosition());
          this.npId = npId;
+         this.base = base;
       }
+      public DamageSource baseSource() { return base; }
    }
    /** Attach an existing NP record without changing its base damage type or other servants' damage rules. */
-   public static DamageSource withNoblePhantasm(DamageSource base, String npId) { return new TypedSource(base, npId); }
+   public static DamageSource withNoblePhantasm(DamageSource base, String npId) {
+      var source = new TypedSource(base, npId);
+      var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(npId);
+      return definition != null && definition.magicDamage()
+         ? net.xxxjk.typemoonworld.api.MagecraftDamageSource.noblePhantasm(source, npId, definition.magicComplexity(),
+            base.getEntity() instanceof net.minecraft.world.entity.LivingEntity caster ? caster : null)
+         : source;
+   }
 
    /** Known NP provenance only; ordinary area attacks must not pass this classifier. */
    public static net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType typeOf(DamageSource source) {
@@ -43,6 +53,7 @@ public final class NoblePhantasmDamageClassifier {
          var definition = net.xxxjk.TYPE_MOON_WORLD.servant.data.ServantNoblePhantasmDataRegistry.get(typed.npId);
          return definition == null ? null : definition.type();
       }
+      if (source instanceof net.xxxjk.typemoonworld.api.WrappedDamageSource wrapped) return typeOf(wrapped.baseSource());
       if (isParacelsusElementalSwordDamage(source) || source.is(net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderDamageTypes.CONCEPT_SWORD))
          return net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantNoblePhantasmDefinition.NpType.ARMY;
       Entity direct = source.getDirectEntity();
@@ -68,9 +79,13 @@ public final class NoblePhantasmDamageClassifier {
 
    public static boolean isNoblePhantasmDamage(DamageSource source, float originalDamage) {
       if (source == null) return false;
+      if (source instanceof TypedSource) return true;
+      if (source instanceof net.xxxjk.typemoonworld.api.WrappedDamageSource wrapped) return isNoblePhantasmDamage(wrapped.baseSource(), originalDamage);
       if (source instanceof net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaDamageSource oda) return oda.npType() != null;
       if (source.is(NOBLE_PHANTASM_DAMAGE) || source.is(ShadowHassanDamageTypes.MEDITATIVE_SENSITIVITY)) return true;
       Entity direct = source.getDirectEntity();
+      if (direct instanceof net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity spear
+         && spear.getMode() != net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity.Mode.SINGLE) return true;
       if (direct instanceof ArtoriaExcaliburBeamEntity
          || direct instanceof GaeBulgArmyProjectileEntity
          || direct instanceof PseudoSpiralSwordProjectileEntity) return true;
@@ -80,5 +95,15 @@ public final class NoblePhantasmDamageClassifier {
          || direct instanceof BrokenPhantasmProjectileEntity) return true;
       if (direct instanceof SwordBarrelProjectileEntity swordBarrel) return swordBarrel.isBrokenPhantasm();
       return direct instanceof EmiyaArcherEntity;
+   }
+
+   /** Death Flight is a sure hit; its damage may still be reduced by other defenses. */
+   public static boolean isCuDeathFlightDamage(DamageSource source) {
+      if (source == null) return false;
+      if (source instanceof TypedSource typed && "cu_gae_bolg_flight".equals(typed.npId)) return true;
+      if (source instanceof net.xxxjk.typemoonworld.api.WrappedDamageSource wrapped) return isCuDeathFlightDamage(wrapped.baseSource());
+      Entity direct = source.getDirectEntity();
+      return direct instanceof net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity spear
+         && spear.getMode() != net.xxxjk.TYPE_MOON_WORLD.entity.GaeBulgProjectileEntity.Mode.SINGLE;
    }
 }

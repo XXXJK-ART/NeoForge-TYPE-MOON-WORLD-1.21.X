@@ -61,7 +61,8 @@ public class RedSkeletonHajunEntity extends Entity implements GeoEntity {
       }
       followOwner(owner);
       if (this.tickCount % 5 == 0) {
-         level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, this.getX(), this.getY() + 2.2, this.getZ(), 10, 1.1, 1.2, 1.1, 0.02);
+         level.sendParticles(ParticleTypes.ASH, this.getX(), this.getY() + 2.2, this.getZ(), 6, 0.8, 0.8, 0.8, 0.004);
+         level.sendParticles(ParticleTypes.SMOKE, this.getX(), this.getY() + 2.2, this.getZ(), 2, 0.4, 0.5, 0.4, 0.004);
       }
    }
 

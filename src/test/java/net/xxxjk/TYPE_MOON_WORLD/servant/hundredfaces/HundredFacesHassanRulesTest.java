@@ -1,6 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.hundredfaces;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,26 @@ class HundredFacesHassanRulesTest {
       assertEquals(80, HundredFacesHassanRules.MAX_PERSONAS);
       assertEquals(10, HundredFacesHassanRules.MP_PER_PERSONA);
       assertEquals(10, HundredFacesHassanRules.MAX_SUMMON_BATCH);
+      assertEquals(80, HundredFacesHassanRules.affordableTotalSummonCount(1000.0, 0, 80));
       assertEquals(10, HundredFacesHassanRules.affordableSummonCount(1000.0, 0, 80));
       assertEquals(5, HundredFacesHassanRules.affordableSummonCount(50.0, 0, 10));
       assertEquals(2, HundredFacesHassanRules.affordableSummonCount(1000.0, 78, 10));
       assertEquals(0, HundredFacesHassanRules.affordableSummonCount(1000.0, 80, 10));
+   }
+
+   @Test
+   void daggerGenerationRequiresBothHandsToBeEmpty() {
+      assertTrue(HundredFacesHassanRules.shouldGenerateDirk(true, true));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(false, true));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(true, false));
+      assertFalse(HundredFacesHassanRules.shouldGenerateDirk(false, false));
+   }
+
+   @Test
+   void personaDodgeChanceIsHalved() {
+      assertEquals(0.5, HundredFacesHassanRules.PERSONA_DODGE_CHANCE_MULTIPLIER, 1.0E-9);
+      assertEquals(4.0, HundredFacesHassanRules.personaThrowMinimumRange(true), 1.0E-9);
+      assertEquals(8.0, HundredFacesHassanRules.personaThrowMinimumRange(false), 1.0E-9);
    }
 
    @Test
@@ -44,19 +61,20 @@ class HundredFacesHassanRulesTest {
    @Test
    void personaDurabilityDecaysButStaysThreateningAtFullSwarm() {
       assertEquals(100.0, HundredFacesHassanRules.personaHealthForCount(1), 1.0E-9);
-      assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(1), 1.0E-9);
+      assertEquals(1.5, HundredFacesHassanRules.personaArmorForCount(1), 1.0E-9);
       assertTrue(HundredFacesHassanRules.personaHealthForCount(10) < HundredFacesHassanRules.personaHealthForCount(1));
       assertEquals(50.0, HundredFacesHassanRules.personaHealthForCount(80), 1.0E-9);
-      assertEquals(3.0, HundredFacesHassanRules.personaArmorForCount(80), 1.0E-9);
+      assertEquals(1.5, HundredFacesHassanRules.personaArmorForCount(80), 1.0E-9);
    }
 
    @Test
    void personaNonSpeedRanksUseELevelBaseline() {
-      assertEquals(5.0F, HundredFacesHassanRules.PERSONA_DIRK_DAMAGE, 1.0E-6F);
       assertEquals(5.0, HundredFacesHassanRules.PERSONA_ATTACK_DAMAGE, 1.0E-9);
       assertEquals(200.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.manaPool(), 1.0E-9);
       assertEquals(2.0, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.critRatePercent(), 1.0E-9);
-      assertEquals(1.0, HundredFacesHassanRules.PERSONA_DEFENSE_RECOVERY_MULTIPLIER, 1.0E-9);
+      assertEquals(net.xxxjk.TYPE_MOON_WORLD.servant.model.StatRank.A,
+         HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.agility());
+      assertEquals(1.5, HundredFacesHassanRules.PERSONA_E_RANK_PARAMS.armor(), 1.0E-9);
    }
 
    @Test

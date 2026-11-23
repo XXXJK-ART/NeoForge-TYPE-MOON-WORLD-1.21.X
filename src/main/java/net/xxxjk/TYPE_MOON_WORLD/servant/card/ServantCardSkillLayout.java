@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.palerider.PaleRiderCombatRules;
+
 public final class ServantCardSkillLayout {
    private ServantCardSkillLayout() {
    }
@@ -8,25 +10,38 @@ public final class ServantCardSkillLayout {
       return switch (servantId == null ? "" : servantId) {
          case "artoria_pendragon" -> switch (slot) {
             case -1 -> new ServantCardSkillAction("Knight Combo", "artoria_small_combo", 16.0, 30);
-            case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst", 20.0, 0);
-            case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0, 220);
-            case 2 -> new ServantCardSkillAction("Charisma", "charisma", 30.0, 360);
-            case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0, 100);
-            case 4 -> new ServantCardSkillAction("Instinct A", "artoria_instinct", 18.0, 240);
-            case 5 -> new ServantCardSkillAction("Riding B", "artoria_riding", 20.0, 160);
-            case 6 -> new ServantCardSkillAction("Mana Burst: Light Cannon", "mana_burst_beam", 100.0, 300);
+            case 0 -> new ServantCardSkillAction("Mana Burst (Toggle)", "mana_burst",
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.BURST_START_MP, 0);
+            case 1 -> new ServantCardSkillAction("Strike Air: Hammer of the Wind King", "invisible_air_hammer", 60.0,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_HAMMER_COOLDOWN);
+            case 2 -> new ServantCardSkillAction("Knight Triple Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.KNIGHT_TRIPLE_SLASH,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.TRIPLE_SLASH_COOLDOWN);
+            case 3 -> new ServantCardSkillAction("Invisible Air Release", "invisible_air_release", 28.0,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_RELEASE_COOLDOWN);
+            case 4 -> new ServantCardSkillAction("Intercepting Thrust", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.INTERCEPT_THRUST_COOLDOWN);
+            case 5 -> new ServantCardSkillAction("Turning Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.SPINNING_SLASH,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.SPINNING_SLASH_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.SPINNING_SLASH_COOLDOWN);
+            case 6 -> new ServantCardSkillAction("Invisible Air: Wind Defense", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE_MP,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_DEFENSE_COOLDOWN);
+            case 7 -> new ServantCardSkillAction("Rising Slash", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.UPWARD_SLASH,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.UPWARD_SLASH_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.UPWARD_SLASH_COOLDOWN);
+            case 8 -> new ServantCardSkillAction("Guard Counter", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.GUARD_COUNTER,
+               net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.GUARD_COUNTER_MP, net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.GUARD_COUNTER_COOLDOWN);
+            case 9 -> new ServantCardSkillAction("Invisible Air", net.xxxjk.TYPE_MOON_WORLD.servant.artoria.ArtoriaRules.WIND_BARRIER_TOGGLE, 0.0, 0);
             default -> null;
          };
          case "okita_souji_saber" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Shukuchi B", "okita_shukuchi", 0.0, 10);
             case 1 -> new ServantCardSkillAction("Tennen Rishin-ryu: Ichimonji", "okita_ichimonji", 8.0, 60);
             case 2 -> new ServantCardSkillAction("Tennen Rishin-ryu: Kaifu", "okita_kaifuu", 10.0, 90);
-            case 3 -> new ServantCardSkillAction("Mind's Eye (False) A", "okita_mind_eye", 12.0, 160);
-            case 4 -> new ServantCardSkillAction("Oath Haori: Swift Advance", "okita_oath_haori", 18.0, 260);
+            case 3 -> new ServantCardSkillAction("Tennen Rishin-ryu: Thrust", "okita_thrust", 5.0, 16);
+            case 4 -> new ServantCardSkillAction("Tennen Rishin-ryu: Downward Slash", "okita_downward_slash", 8.0, 60);
             case 5 -> new ServantCardSkillAction("Coughing Feint", "okita_feigned_retreat", 8.0, 140);
             case 6 -> new ServantCardSkillAction("Stance-Breaking Thrust", "okita_stance_break", 14.0, 180);
             case 7 -> new ServantCardSkillAction("Shinsengumi Command", "okita_shinsengumi_command", 6.0, 80);
-            case 8 -> new ServantCardSkillAction("Mumyoudan-zuki", "okita_mumyoudan_zuki", 20.0, 300);
+            case 8 -> new ServantCardSkillAction("Mumyoudan-zuki", "okita_mumyoudan_zuki", 20.0, 3600);
             case 9 -> new ServantCardSkillAction("Flag of Sincerity", "okita_flag_of_sincerity", 100.0, 2400);
             default -> null;
          };
@@ -53,27 +68,14 @@ public final class ServantCardSkillLayout {
             case 9 -> new ServantCardSkillAction("Prelati's Spellbook: Huge Sea Monster", "gilles_uncontrolled_huge_sea_monster", 0.0, 1200);
             default -> null;
          };
-         case "cu_chulainn" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Spear Thrust", "cu_crouch_thrust", 0.0, 18);
-            case 0 -> new ServantCardSkillAction("Ansuz Rune", "cu_ansuz", 22.0, 120);
-            case 1 -> new ServantCardSkillAction("Laguz Rune", "cu_laguz", 20.0, 160);
-            case 2 -> new ServantCardSkillAction("Tiwaz Rune", "cu_tiwaz", 24.0, 260);
-            case 3 -> new ServantCardSkillAction("Algiz Rune", "cu_algiz", 30.0, 300);
-            case 4 -> new ServantCardSkillAction("Berkana Rune", "cu_berkana", 34.0, 400);
-            case 5 -> new ServantCardSkillAction("Disengage", "cu_disengage", 18.0, 400);
-            case 6 -> new ServantCardSkillAction("Rune Barrier", "cu_rune_barrier", 80.0, 600);
-            default -> null;
-         };
-         case "heracles" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Great Leap", "heracles_big_jump", 18.0, 120);
-            case 1 -> new ServantCardSkillAction("Ground Slam", "heracles_ground_slam", 32.0, 180);
-            case 2 -> new ServantCardSkillAction("Roar", "heracles_roar", 18.0, 180);
-            case 3 -> new ServantCardSkillAction("Valor A+", "heracles_valor", 20.0, 300);
-            case 4 -> new ServantCardSkillAction("Mind's Eye (False) B", "heracles_mind_eye", 18.0, 240);
-            case 5 -> new ServantCardSkillAction("Battle Continuation A", "heracles_battle_continuation", 35.0, 600);
-            case 9 -> new ServantCardSkillAction("Twelve Labors", "god_hand_status", 0.0, 20);
-            default -> null;
-         };
+         case "cu_chulainn" -> {
+            var spec=net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuChulainnRules.skill(slot);
+            yield spec==null?null:new ServantCardSkillAction(spec.id(),spec.id(),spec.mana(),spec.cooldown());
+         }
+         case "heracles" -> {
+            var spec = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.spec(slot);
+            yield spec == null ? null : new ServantCardSkillAction(spec.name(), spec.id(), spec.mana(), spec.cooldown());
+         }
          case "medea" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Workshop", "workshop", 0.0, 80);
             case 1 -> new ServantCardSkillAction("Auto Minor Magic", "medea_minor_magic", 0.0, 20);
@@ -98,12 +100,15 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "cursed_arm_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 180);
-            case 1 -> new ServantCardSkillAction("Self Modification", "self_mod", 28.0, 360);
+            case 0 -> new ServantCardSkillAction("Presence Concealment A+", "hassan_concealment", 18.0, 0);
+            case 1 -> new ServantCardSkillAction("Quick Stab", "hassan_quick_stab", 0.0, 30);
             case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
-            case 3 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
-            case 4 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
-            case 5 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            case 3 -> new ServantCardSkillAction("Throwing (Dagger) B", "dirk_throw", 8.0, 40);
+            case 4 -> new ServantCardSkillAction("Shadow Ambush", "shadow_step", 10.0, 120);
+            case 5 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 7.0, 85);
+            case 6 -> new ServantCardSkillAction("Single Dirk Throw", "knife_feint", 5.0, 70);
+            case 7 -> new ServantCardSkillAction("Elbow Strike", "elbow_strike", 6.0, 80);
+            case 8 -> new ServantCardSkillAction("Trip Sweep", "trip_sweep", 8.0, 160);
             case 9 -> new ServantCardSkillAction("Zabaniya", "zabaniya", 80.0, 1400);
             default -> null;
          };
@@ -120,14 +125,17 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "shadow_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction("Presence Concealment EX", "shadow_hassan_concealment", 0.0, 0);
-            case 1 -> new ServantCardSkillAction("Shadow Lantern A", "shadow_hassan_lantern", 0.0, 200);
-            case 2 -> new ServantCardSkillAction("Shadow Wandering A", "shadow_hassan_wandering", 15.0, 100);
+            case 0 -> new ServantCardSkillAction("气息遮断 EX", "shadow_hassan_concealment",
+               ServantCardShadowHassanSkills.ACTIVE_CONCEALMENT_MANA_COST,
+               ServantCardShadowHassanSkills.ACTIVE_CONCEALMENT_COOLDOWN_TICKS);
+            case 1 -> new ServantCardSkillAction("影灯笼 A", "shadow_hassan_lantern", 0.0, 0);
+            case 2 -> new ServantCardSkillAction("幽弋 A", "shadow_hassan_wandering", 15.0, 100);
             case 3 -> new ServantCardSkillAction("Shadow Ambush", "shadow_hassan_ambush", 20.0, 120);
             case 4 -> new ServantCardSkillAction("Shadow Bind", "shadow_hassan_bind", 18.0, 160);
             case 5 -> new ServantCardSkillAction("Shadow Blade Flurry", "shadow_hassan_flurry", 24.0, 180);
             case 6 -> new ServantCardSkillAction("Shadow Retreat", "shadow_hassan_retreat", 12.0, 140);
             case 7 -> new ServantCardSkillAction("Slash", "shadow_hassan_slash", 30.0, 300);
+            case 8 -> new ServantCardSkillAction("影中附身", "shadow_hassan_possession", 0.0, 0);
             case 9 -> new ServantCardSkillAction("Zabaniya: Meditative Sensitivity", "shadow_hassan_meditative_sensitivity", 0.0, 0);
             default -> null;
          };
@@ -146,13 +154,17 @@ public final class ServantCardSkillLayout {
             default -> null;
          };
          case "sasaki_kojiro" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Iaijutsu Step", "sasaki_crouch_combo", 10.0, 20);
-            case 0 -> new ServantCardSkillAction("Presence Concealment", "stealth", 18.0, 220);
-            case 1 -> new ServantCardSkillAction("Tsubame Gaeshi", "tsubame_gaeshi", 0.0, 300);
-            case 2 -> new ServantCardSkillAction("Afterimage", "sasaki_afterimage", 15.0, 160);
-            case 3 -> new ServantCardSkillAction("Mind's Eye (False)", "sasaki_mind_eye", 18.0, 240);
-            case 4 -> new ServantCardSkillAction("Sweep", "sasaki_sweep", 12.0, 80);
-            case 5 -> new ServantCardSkillAction("Transparency", "sasaki_transparency", 20.0, 600);
+            case -1 -> new ServantCardSkillAction("Crouching Cutback", "sasaki_crouch_cutback", 8.0, 20);
+            case 0 -> new ServantCardSkillAction("Presence Concealment D", "sasaki_presence_concealment", 18.0, 0);
+            case 1 -> new ServantCardSkillAction("Ichimonji: Vertical Slash", "sasaki_vertical_slash", 12.0, 80);
+            case 2 -> new ServantCardSkillAction("Falling Swallow", "sasaki_downward_slash", 8.0, 60);
+            case 3 -> new ServantCardSkillAction("Returning Swallow", "sasaki_upward_slash", 10.0, 80);
+            case 4 -> new ServantCardSkillAction("Ichimonji: Horizontal Slash", "sasaki_horizontal_slash", 12.0, 80);
+            case 5 -> new ServantCardSkillAction("Transparency B+", "sasaki_transparency", 20.0, 600);
+            case 6 -> new ServantCardSkillAction("Swallow-Piercing Thrust", "sasaki_thrust", 14.0, 100);
+            case 7 -> new ServantCardSkillAction("Turning Formation Breaker", "sasaki_spinning_slash", 16.0, 140);
+            case 8 -> new ServantCardSkillAction("Ganryu Stance Counter", "sasaki_counter_stance", 18.0, 180);
+            case 9 -> new ServantCardSkillAction("Tsubame Gaeshi", "sasaki_tsubame_gaeshi", 20.0, 600);
             default -> null;
          };
          case "oda_nobunaga" -> {
@@ -244,37 +256,33 @@ public final class ServantCardSkillLayout {
             case 2 -> new ServantCardSkillAction("Command", "pale_rider_command", 0.0, 20);
             case 3 -> new ServantCardSkillAction("Perfect Concealment", "pale_rider_stealth", 12.0, 100);
             case 4 -> new ServantCardSkillAction("Ash Transfer", "pale_rider_transfer", 20.0, 100);
-            case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", 12.0, 140);
-            case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", 8.0, 100);
-            case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", 18.0, 200);
-            case 8 -> new ServantCardSkillAction("Guidance of the Underworld", "pale_rider_underworld", 150.0, 2400);
-            case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", 300.0, 3600);
+            case 5 -> new ServantCardSkillAction("Plague Rush", "pale_rider_plague_rush", PaleRiderCombatRules.PLAGUE_RUSH_MP_COST, PaleRiderCombatRules.PLAGUE_RUSH_COOLDOWN_TICKS);
+            case 6 -> new ServantCardSkillAction("Ash Step", "pale_rider_ash_step", PaleRiderCombatRules.ASH_STEP_MP_COST, PaleRiderCombatRules.ASH_STEP_COOLDOWN_TICKS);
+            case 7 -> new ServantCardSkillAction("Death Pulse", "pale_rider_death_pulse", PaleRiderCombatRules.DEATH_PULSE_MP_COST, PaleRiderCombatRules.DEATH_PULSE_COOLDOWN_TICKS);
+            case 8 -> new ServantCardSkillAction("Guidance of the Underworld", "pale_rider_underworld", PaleRiderCombatRules.UNDERWORLD_CAST_MP_COST, PaleRiderCombatRules.UNDERWORLD_COOLDOWN_TICKS);
+            case 9 -> new ServantCardSkillAction("Sword, Famine, Death and Beast", "pale_rider_calamity", PaleRiderCombatRules.CALAMITY_CAST_MP_COST, PaleRiderCombatRules.CALAMITY_COOLDOWN_TICKS);
             default -> null;
          };
          case "hundred_faces_hassan" -> switch (slot) {
-            case 0 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
-               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
+            case 0 -> new ServantCardSkillAction("Knife Feint", "hundred_faces_knife_feint", 5.0, 75);
             case 1 -> new ServantCardSkillAction(crouching ? "Persona Direct Command" : "Persona Command",
                crouching ? "hundred_faces_single_command" : "hundred_faces_command", 0.0, 20);
-            case 2 -> new ServantCardSkillAction("Create Dirk", "hassan_dagger", 0.0, 40);
+            case 2 -> new ServantCardSkillAction("Persona Dirk", "hundred_faces_dagger", 0.0, 40);
             case 3 -> new ServantCardSkillAction("Persona Switch", "hundred_faces_switch", 0.0, 0);
-            case 4 -> new ServantCardSkillAction("Presence Concealment A+", "hundred_faces_concealment", 16.0, 110);
-            case 5 -> new ServantCardSkillAction("Dirk Throw", "dirk_throw", 8.0, 40);
-            case 6 -> new ServantCardSkillAction("Shadow Step", "shadow_step", 16.0, 120);
-            case 7 -> new ServantCardSkillAction("Shadow Lunge", "shadow_lunge", 20.0, 180);
+            case 4 -> new ServantCardSkillAction("Presence Concealment A", "hundred_faces_concealment", 16.0, 110);
+            case 5 -> new ServantCardSkillAction("Three Dirk Throw", "hundred_faces_dirk_throw", 8.0, 40);
+            case 6 -> new ServantCardSkillAction("Shadow Step Backstab", "hundred_faces_shadow_step", 10.0, 120);
+            case 7 -> new ServantCardSkillAction("Shadow Lunge", "hundred_faces_shadow_lunge", 7.0, 90);
+            case 8 -> new ServantCardSkillAction("Battle Retreat B", "hundred_faces_battle_retreat", 10.0, 400);
+            case 9 -> new ServantCardSkillAction(crouching ? "Zabaniya: Quantity Select" : "Zabaniya: One Face",
+               crouching ? "hundred_faces_summon_menu" : "hundred_faces_summon", 0.0, crouching ? 20 : 30);
             default -> null;
          };
-         case "diarmuid_ua_duibhne" -> switch (slot) {
-            case -1 -> new ServantCardSkillAction("Twin Spear Combo", "diarmuid_twin_spear_combo", 0.0, 18);
-            case 0 -> new ServantCardSkillAction("Gae Dearg Focus", "diarmuid_red_rose_focus", 12.0, 120);
-            case 1 -> new ServantCardSkillAction("Gae Buidhe Focus", "diarmuid_yellow_rose_focus", 12.0, 120);
-            case 2 -> new ServantCardSkillAction("Knight Strategy", "diarmuid_knight_strategy", 18.0, 300);
-            case 3 -> new ServantCardSkillAction("Mana Burst Jump", "diarmuid_mana_burst_jump", 18.0, 260);
-            case 4 -> new ServantCardSkillAction("Flower Step", "diarmuid_flower_step", 10.0, 100);
-            case 5 -> new ServantCardSkillAction("Disengage", "diarmuid_disengage", 14.0, 280);
-            case 6 -> new ServantCardSkillAction("Dual Spear Stance", "diarmuid_dual_wield", 0.0, 20);
-            default -> null;
-         };
+         case "diarmuid_ua_duibhne" -> {
+            var action = slot == 7 && crouching ? net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.CROSS_GUARD
+               : net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAction.bySlot(slot);
+            yield action == null || action.basic() ? null : new ServantCardSkillAction(action.path(), action.skillId(), action.mana(), action.cooldown());
+         }
          case "lancelot_berserker" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Mad Enhancement Combo", "lancelot_maul_combo", 8.0, 80);
             case 1 -> new ServantCardSkillAction("Feral Rush", "lancelot_feral_rush", 12.0, 140);
@@ -282,7 +290,11 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("Hunt Step", "lancelot_hunt_step", 8.0, 100);
             case 4 -> new ServantCardSkillAction("Mana Reversal", "lancelot_mana_reversal", 15.0, 360);
             case 5 -> new ServantCardSkillAction("Mad Roar", "lancelot_berserk_roar", 14.0, 320);
-            case 8 -> new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
+            case 6 -> new ServantCardSkillAction("Breach Charge", "lancelot_breach_charge", 18.0, 220);
+            case 7 -> new ServantCardSkillAction("Rampage Quake", "lancelot_rampage_quake", 24.0, 360);
+            case 8 -> crouching
+               ? new ServantCardSkillAction("Knight Armory", "lancelot_knight_armory", 0.0, 20)
+               : new ServantCardSkillAction("Knight of Owner", "lancelot_knight_of_owner", 10.0, 40);
             case 9 -> new ServantCardSkillAction("Aroundight", "lancelot_aroundight", 50.0, 1200);
             default -> null;
          };
@@ -315,7 +327,7 @@ public final class ServantCardSkillLayout {
          };
          case "ushiwakamaru_rider" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("Tengu Strategy", "ushiwakamaru_tengu_strategy", 25.0, 400);
-            case 1 -> new ServantCardSkillAction("Charisma", "ushiwakamaru_charisma", 15.0, 600);
+            case 1 -> new ServantCardSkillAction("Kurama Style: Draw Cut", "ushiwakamaru_draw_cut", 15.0, 600);
             case 2 -> new ServantCardSkillAction("Moonlit Step", "ushiwakamaru_moonlit_step", 6.0, 140);
             case 3 -> new ServantCardSkillAction("Sweeping Thrust", "ushiwakamaru_sweeping_thrust", 8.0, 120);
             case 4 -> new ServantCardSkillAction("Kurama Style: Eagle Drop", "ushiwakamaru_eagle_drop", 15.0, 200);
@@ -331,6 +343,8 @@ public final class ServantCardSkillLayout {
             case 1 -> new ServantCardSkillAction("Charged Arrow", "arash_energy_small", 8.0, 80);
             case 2 -> new ServantCardSkillAction("Heavy Charged Arrow", "arash_energy_large", 20.0, 240);
             case 3 -> new ServantCardSkillAction("Arrow Construction", "arash_arrow_creation", 1.0, 0);
+            case 4 -> new ServantCardSkillAction("Emergency Retreat", "arash_retreat", 18.0, 140);
+            case 5 -> new ServantCardSkillAction("Close-Range Knockback", "arash_melee_knockback", 12.0, 90);
             case 9 -> new ServantCardSkillAction("Stella", "arash_stella", 100.0, 3600);
             default -> null;
          };
@@ -348,7 +362,9 @@ public final class ServantCardSkillLayout {
             case 3 -> new ServantCardSkillAction("龙回首·横扫", "zhao_yun_dragon_sweep", 20.0, 160);
             case 4 -> new ServantCardSkillAction("白龙突进", "zhao_yun_mounted_rush", 18.0, 160);
             case 5 -> new ServantCardSkillAction("龙胆闪", "zhao_yun_dragon_flash", 22.0, 200);
-            case 6 -> new ServantCardSkillAction("七探蛇盘", "zhao_yun_seven_probe", 28.0, 280);
+            case 6 -> new ServantCardSkillAction("七探蛇盘（持续舞枪）", "zhao_yun_seven_probe",
+               net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.MANA,
+               net.xxxjk.TYPE_MOON_WORLD.servant.zhaoyun.ZhaoYunSpearDanceService.COOLDOWN);
             case 7 -> new ServantCardSkillAction("白龙踏阵", "zhao_yun_hakuryu_trample", 26.0, 320);
             case 8 -> new ServantCardSkillAction("青釭剑 C", "zhao_yun_qinggang", 50.0, 400);
             case 9 -> new ServantCardSkillAction("长坂坡一骑驱 EX", "zhao_yun_changbanpo", 150.0, 1200);
@@ -357,13 +373,19 @@ public final class ServantCardSkillLayout {
          case "senko_muramasa" -> switch (slot) {
             case 0 -> new ServantCardSkillAction("锻造", "muramasa_forge", 0.0, 0);
             case 1 -> new ServantCardSkillAction("阵地建造", "muramasa_workshop", 30.0, 1200);
-            case 2 -> new ServantCardSkillAction("试斩 B+", "muramasa_trial_slash", 10.0, 500);
+            case 2 -> crouching
+               ? new ServantCardSkillAction("muramasa_downward_slash", "muramasa_downward_slash", 8.0, 60)
+               : new ServantCardSkillAction("试斩 B+", "muramasa_trial_slash", 10.0, 500);
             case 3 -> new ServantCardSkillAction("业之瞳 A", "muramasa_karma_eye", 15.0, 600);
             case 4 -> new ServantCardSkillAction("焰 EX", "muramasa_flame", 0.0, 600);
-            case 5 -> new ServantCardSkillAction("投影连刃", "muramasa_projection_volley", 25.0, 400);
+            case 5 -> crouching
+               ? new ServantCardSkillAction("muramasa_thrust", "muramasa_thrust", 14.0, 100)
+               : new ServantCardSkillAction("投影连刃", "muramasa_projection_volley", 25.0, 400);
             case 6 -> new ServantCardSkillAction("锻火淬身", "muramasa_temper", 20.0, 600);
             case 7 -> new ServantCardSkillAction("宿业断斩", "muramasa_karma_slash", 35.0, 500);
-            case 8 -> new ServantCardSkillAction("刀剑荒野·试制", "muramasa_sword_field", 40.0, 600);
+            case 8 -> crouching
+               ? new ServantCardSkillAction("muramasa_spinning_slash", "muramasa_spinning_slash", 16.0, 140)
+               : new ServantCardSkillAction("刀剑荒野·试制", "muramasa_sword_field", 40.0, 600);
             case 9 -> new ServantCardSkillAction("无元剑制", "muramasa_no_gen_kensai", 50.0, 3600);
             default -> null;
          };

@@ -14,10 +14,7 @@
         "strength_rank": "B",
         "endurance_rank": "D",
         "agility_rank": "A++",
-        "magic_rank_unchanged": true,
-        "luck_rank_unchanged": true,
-        "attack_speed_multiplier": 1.1,
-        "weapon_damage_type": "magic"
+        "weapon_upgrade": "kiku_ichimonji_norimune"
       }
     }
   ],

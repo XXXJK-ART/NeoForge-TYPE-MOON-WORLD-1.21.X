@@ -4,8 +4,20 @@
   "display_name": "Heracles",
   "display_name_zh": "赫拉克勒斯",
   "class_type": "berserker",
-  "faction": "earth",
-  "traits": ["divine", "servant", "humanoid", "living_human", "berserker", "male", "chaotic", "evil"],
+  "faction": "heaven",
+  "traits": [
+    "male",
+    "divine",
+    "heaven_or_earth_servant",
+    "greek_mythology_male",
+    "argonaut",
+    "human_kind",
+    "humanoid",
+    "chaotic",
+    "mad",
+    "servant",
+    "seven_knights"
+  ],
   "parameters": {
     "endurance": "A",
     "endurance_plus": false,
@@ -16,7 +28,8 @@
     "magic": "A",
     "magic_plus": false,
     "luck": "B",
-    "luck_plus": false
+    "luck_plus": false,
+    "noble_phantasm_rank": "A"
   },
   "model": {
     "geometry": "typemoonworld:geo/heracles.geo.json",
@@ -34,7 +47,26 @@
       "teleport_behind": "animation.heracles.teleport_behind",
       "stomp": "animation.heracles.stomp",
       "uppercut": "animation.heracles.uppercut",
-      "horizontal_swing": "animation.heracles.horizontal_swing"
+      "horizontal_swing": "animation.heracles.horizontal_swing",
+      "martial_0": "animation.heracles.martial_0",
+      "martial_1": "animation.heracles.martial_1",
+      "martial_2": "animation.heracles.martial_2",
+      "martial_3": "animation.heracles.martial_3",
+      "martial_4": "animation.heracles.martial_4",
+      "martial_5": "animation.heracles.martial_5",
+      "martial_6": "animation.heracles.martial_6",
+      "martial_7": "animation.heracles.martial_7",
+      "martial_8": "animation.heracles.martial_8",
+      "martial_end": "animation.heracles.martial_end",
+      "frenzy": "animation.heracles.frenzy",
+      "frenzy_walk": "animation.heracles.frenzy_walk",
+      "frenzy_slash_0": "animation.heracles.frenzy_slash_0",
+      "frenzy_slash_1": "animation.heracles.frenzy_slash_1",
+      "frenzy_slash_2": "animation.heracles.frenzy_slash_2",
+      "frenzy_impact": "animation.heracles.frenzy_impact",
+      "revive": "animation.heracles.revive",
+      "slam_windup": "animation.heracles.slam_windup",
+      "adapt": "animation.heracles.adapt"
     }
   },
   "specialization": {
@@ -51,24 +83,17 @@
     "default_weapon": "typemoonworld:temple_stone_sword_axe",
     "immune_to_stone_axe_debuff": true,
     "combat_actions": [
-      "break_forward_blocks",
-      "roar",
-      "low_health_roar",
-      "jump_attack",
-      "charge",
-      "sweep",
-      "slash",
-      "teleport_behind",
-      "stomp",
-      "slam",
-      "earth_rend",
-      "shoulder_check",
-      "uppercut",
-      "horizontal_swing"
+      "break_forward_blocks"
     ]
   },
-  "skills": ["god_hand_passive", "mad_enhancement_b", "battle_continuation_a", "valor_a_plus", "false_mind_eye_b", "divinity_a"],
-  "noble_phantasm": "",
+  "skills": [
+    "god_hand_passive",
+    "mad_enhancement_b",
+    "battle_continuation_a",
+    "false_mind_eye_b",
+    "divinity_a"
+  ],
+  "noble_phantasm": "god_hand_np",
   "personality": {
     "obedience": "rebellious",
     "principle": "orderly",

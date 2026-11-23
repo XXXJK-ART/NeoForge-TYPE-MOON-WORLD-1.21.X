@@ -54,15 +54,19 @@ public class DiarmuidSpearItem extends SwordItem implements GeoItem, NoblePhanta
    }
 
    @Override
+   public int getMaxDamage(ItemStack stack) {
+      return DiarmuidCombatHelper.SPEAR_MAX_DURABILITY;
+   }
+
+   @Override
    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-      if (attacker instanceof DiarmuidUaDuibhneEntity diarmuid) {
+      if (!attacker.level().isClientSide() && net.xxxjk.TYPE_MOON_WORLD.servant.diarmuid.DiarmuidAbilityService.canHit(
+         attacker, target, this.spearType == SpearType.GAE_DEARG ? 5 : 3)) {
          if (this.spearType == SpearType.GAE_DEARG) {
-            DiarmuidCombatHelper.applyRedRoseHit(diarmuid, target);
+            DiarmuidCombatHelper.applyRedRoseHit(attacker, target);
          } else {
-            DiarmuidCombatHelper.applyYellowRoseHit(diarmuid, target);
+            DiarmuidCombatHelper.applyYellowRoseHit(attacker, target);
          }
-      } else if (attacker instanceof net.minecraft.server.level.ServerPlayer player && ServantCardDiarmuidSkills.isActiveCard(player)) {
-         ServantCardDiarmuidSkills.applySpearItemHit(player, target, this.spearType);
       }
       return super.hurtEnemy(stack, target, attacker);
    }

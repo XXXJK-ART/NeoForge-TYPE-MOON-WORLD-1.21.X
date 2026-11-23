@@ -19,11 +19,15 @@ public final class CombatTerrainProtection {
    private static final Map<Level, Map<Long, Integer>> FLOORS = new WeakHashMap<>();
    private CombatTerrainProtection() { }
    public static boolean canRemove(Level level, BlockPos pos) {
+      return canRemoveWithinSurfaceDepth(level,pos,0);
+   }
+   /** Explicit shallow-impact exception; the cached original surface prevents repeated digging. */
+   public static boolean canRemoveWithinSurfaceDepth(Level level, BlockPos pos, int depth) {
       if (level == null || !level.hasChunkAt(pos)) return false;
       Map<Long, Integer> floors = FLOORS.computeIfAbsent(level, unused -> new HashMap<>());
       long column = BlockPos.asLong(pos.getX(), 0, pos.getZ());
       int floor = floors.computeIfAbsent(column, unused -> findFloor(level, pos));
-      return pos.getY() > floor;
+      return pos.getY() > floor - Math.max(0,Math.min(2,depth));
    }
    private static int findFloor(Level level, BlockPos pos) {
       int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
@@ -42,15 +46,24 @@ public final class CombatTerrainProtection {
    public static boolean destroyBlock(Level level, BlockPos pos, boolean drops, net.minecraft.world.entity.Entity source) {
       return canRemove(level, pos) && level.destroyBlock(pos, drops, source);
    }
+   public static boolean destroyBlockWithinSurfaceDepth(Level level, BlockPos pos, boolean drops,
+                                                        net.minecraft.world.entity.Entity source, int depth) {
+      return canRemoveWithinSurfaceDepth(level, pos, depth) && level.destroyBlock(pos, drops, source);
+   }
    @SubscribeEvent public static void explosion(ExplosionEvent.Detonate event) {
       var source = event.getExplosion().getDirectSourceEntity();
       if (source == null) return;
       String name = source.getClass().getSimpleName();
       // NP controllers retain their established terrain permissions.
       boolean np = name.contains("Excalibur") || name.contains("EaBeam") || name.contains("GaeBulgArmy")
+         || name.contains("SpiritronCannon")
          || name.contains("Stella") || name.contains("BrokenPhantasm") || name.contains("RoyalCannon")
          || source.getPersistentData().getBoolean("TypeMoonNoblePhantasmTerrain");
-      if (np) return;
+      if (np) {
+         var center = event.getExplosion().center();
+         event.getAffectedBlocks().removeIf(pos -> !NoblePhantasmTerrainLimits.isAtOrAboveCenter(center, pos));
+         return;
+      }
       var id = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(source.getType());
       if (id != null && id.getNamespace().equals("typemoonworld")) event.getAffectedBlocks().removeIf(p -> !canRemove(event.getLevel(), p));
    }

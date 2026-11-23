@@ -9,6 +9,7 @@ import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicFieldEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ElementalMagicProjectileEntity;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class MagicEarthElement {
    private MagicEarthElement() {
@@ -51,7 +52,7 @@ public final class MagicEarthElement {
          if (target != null) {
             target.setDeltaMovement(target.getDeltaMovement().add(0.0, 0.8, 0.0));
             target.hurtMarked = true;
-            target.hurt(caster.damageSources().magic(), ElementalMagicHelper.applyPowerAffinity(vars, "earth_magic", ElementalMagicHelper.lerpDamage(p, 15.0F, 20.0F)));
+            target.hurt(MagecraftDamageSource.of(caster.damageSources().magic(), "earth_magic", caster), ElementalMagicHelper.applyPowerAffinity(vars, "earth_magic", ElementalMagicHelper.lerpDamage(p, 15.0F, 20.0F)));
             return true;
          }
          return ElementalMagicHelper.spawnProjectile(vars, "earth_magic", caster, ElementalMagicHelper.aimDirection(caster, null, 2.5), ElementalMagicProjectileEntity.ELEMENT_EARTH, ElementalMagicProjectileEntity.FORM_HIGH, ElementalMagicHelper.lerpDamage(p, 15.0F, 20.0F), 0.0F, 1.0F, 0, 20, 0.2F, 30.0, 2.5F, false, false, 0.7F) != null;

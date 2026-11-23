@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1882,6 +1884,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
          boxCenter.x - halfWidth, boxCenter.y - halfHeight, boxCenter.z - halfDepth, boxCenter.x + halfWidth, boxCenter.y + halfHeight, boxCenter.z + halfDepth
       );
 
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : serverLevel.getEntitiesOfClass(LivingEntity.class, slashBox, e -> e != this && e.isAlive())) {
          if (!EntityUtils.isSpectatorPlayer(target)
             && !(target instanceof MerlinEntity)
@@ -1894,6 +1897,7 @@ public class MerlinEntity extends PathfinderMob implements GeoEntity {
             Vec3 knockback = horizontalLook.scale(1.2);
             target.push(knockback.x, 0.4, knockback.z);
          }
+      }
       }
 
       this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 1.0F, 1.0F);

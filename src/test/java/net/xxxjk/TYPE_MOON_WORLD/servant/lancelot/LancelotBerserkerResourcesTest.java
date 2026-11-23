@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import dev.kosmx.playerAnim.minecraftApi.codec.AnimationCodecs;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,9 +30,12 @@ class LancelotBerserkerResourcesTest {
       assertEquals("A", definition.getAsJsonObject("parameters").get("endurance").getAsString());
       assertEquals("A", definition.getAsJsonObject("parameters").get("agility").getAsString());
       assertTrue(definition.getAsJsonObject("parameters").get("agility_plus").getAsBoolean());
-      for (String trait : new String[]{"servant", "humanoid", "living_human", "berserker", "male", "lawful", "mad", "earth", "round_table", "knight_of_the_lake"}) {
+      assertEquals("A", definition.getAsJsonObject("parameters").get("noble_phantasm_rank").getAsString());
+      for (String trait : new String[]{"servant", "humanoid", "human_kind", "heaven_or_earth_servant", "berserker", "male", "lawful", "mad", "earth", "round_table"}) {
          assertTrue(definition.getAsJsonArray("traits").contains(JsonParser.parseString("\"" + trait + "\"")), trait);
       }
+      assertFalse(definition.getAsJsonArray("traits").contains(JsonParser.parseString("\"living_human\"")));
+      assertFalse(definition.getAsJsonArray("traits").contains(JsonParser.parseString("\"knight_of_the_lake\"")));
 
       for (String path : new String[]{
          "data/typemoonworld/servant/ai/lancelot_berserker_ai.json",
@@ -57,6 +61,20 @@ class LancelotBerserkerResourcesTest {
       }) {
          assertTrue(Files.isRegularFile(RESOURCES.resolve(path)), path);
       }
+      for (String animation : new String[]{"lancelot_frenzy_slash_0", "lancelot_frenzy_slash_1", "lancelot_frenzy_slash_2", "lancelot_frenzy_flurry",
+         "lancelot_sword_slash_0", "lancelot_sword_slash_1", "lancelot_sword_slash_2", "lancelot_sword_flurry"}) {
+         assertTrue(Files.isRegularFile(RESOURCES.resolve("assets/typemoonworld/player_animations/" + animation + ".json")), animation);
+      }
+   }
+
+   @Test
+   void berserkAndSwordAnimationsDecodeAsPlayerAnimatorClips() throws Exception {
+      for (String animation : new String[]{"lancelot_frenzy_slash_0", "lancelot_frenzy_slash_1", "lancelot_frenzy_slash_2", "lancelot_frenzy_flurry",
+         "lancelot_sword_slash_0", "lancelot_sword_slash_1", "lancelot_sword_slash_2", "lancelot_sword_flurry"}) {
+         try (var stream = Files.newInputStream(RESOURCES.resolve("assets/typemoonworld/player_animations/" + animation + ".json"))) {
+            assertTrue(AnimationCodecs.deserialize("json", stream).iterator().hasNext(), animation);
+         }
+      }
    }
 
    @Test
@@ -68,6 +86,8 @@ class LancelotBerserkerResourcesTest {
       String entity = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/LancelotBerserkerEntity.java");
       String ai = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/lancelot/LancelotBerserkerCombatAi.java");
       String helper = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/lancelot/LancelotCombatHelper.java");
+      String armory = readJava("com/captain/servant/compat/superbwarfare/SuperbWarfareIntegration.java");
+      String servantEntity = readJava("net/xxxjk/TYPE_MOON_WORLD/servant/entity/ServantEntity.java");
       String gateEntity = readJava("net/xxxjk/TYPE_MOON_WORLD/entity/GilgameshGateWeaponProjectileEntity.java");
       String gateRenderer = readJava("net/xxxjk/TYPE_MOON_WORLD/client/renderer/GilgameshGateWeaponRenderer.java");
       String glint = readJava("net/xxxjk/TYPE_MOON_WORLD/client/renderer/ReinforcementRenderType.java");
@@ -97,6 +117,13 @@ class LancelotBerserkerResourcesTest {
       assertTrue(ai.contains("isPhaseTwo"));
       assertTrue(ai.contains("tryDrawAroundight"));
       assertTrue(ai.contains("throwHeldWeapon"));
+      assertTrue(ai.contains("isGun(entity.getMainHandItem())"));
+      assertTrue(ai.contains("entity.getNavigation().moveTo(target, phaseTwo ? 1.9 : 1.65)"));
+      assertTrue(ai.contains("LANCELOT_IRON_ROD"));
+      assertTrue(helper.contains("THROW_COOLDOWN = 140"));
+      assertTrue(armory.contains("NPC_HEAVY_LOCK_UNTIL_TAG"));
+      assertTrue(armory.contains("npc.getNavigation().moveTo(target, 1.65)"));
+      assertTrue(!servantEntity.contains("if (lancelotArmoryControlled) this.getNavigation().stop()"));
       assertTrue(!ai.toLowerCase().contains("probing"));
       assertTrue(helper.contains("maybeInterceptProjectile"));
       assertTrue(helper.contains("GilgameshGateWeaponProjectileEntity"));
@@ -116,7 +143,8 @@ class LancelotBerserkerResourcesTest {
       assertTrue(glint.contains("TRANSLUCENT_TRANSPARENCY"));
       assertTrue(mixin.contains("shouldUseKnightOfOwnerGlint"));
       assertTrue(layout.contains("case \"lancelot_berserker\""));
-      assertTrue(layout.contains("case 8 -> new ServantCardSkillAction(\"Knight of Owner\""));
+      assertTrue(layout.contains("case 8 -> crouching"));
+      assertTrue(layout.contains("lancelot_knight_armory"));
       assertTrue(layout.contains("case 9 -> new ServantCardSkillAction(\"Aroundight\""));
       assertTrue(layout.contains("\"lancelot_knight_of_owner\", 10.0, 40"));
       assertTrue(layout.contains("\"lancelot_aroundight\", 50.0, 1200"));
@@ -138,16 +166,21 @@ class LancelotBerserkerResourcesTest {
       assertTrue(masterProtection.contains("projectile.getOwner()"));
       assertTrue(commonEvents.contains("ServantMasterProtection.isProtectedMasterDamage"));
       assertFalse(commonEvents.contains("NoblePhantasmDamageClassifier.isNoblePhantasmDamage"));
-      assertNull(ServantCardSkillLayout.actionFor("lancelot_berserker", 6, false));
-      assertNull(ServantCardSkillLayout.actionFor("lancelot_berserker", 7, false));
+      assertEquals("lancelot_breach_charge", ServantCardSkillLayout.actionFor("lancelot_berserker", 6, false).effectId());
+      assertEquals("lancelot_rampage_quake", ServantCardSkillLayout.actionFor("lancelot_berserker", 7, false).effectId());
+      assertEquals("lancelot_knight_armory", ServantCardSkillLayout.actionFor("lancelot_berserker", 8, true).effectId());
+      assertEquals("lancelot_knight_of_owner", ServantCardSkillLayout.actionFor("lancelot_berserker", 8, false).effectId());
    }
 
    @Test
    void knightOfOwnerAndAroundightRulesAreDocumentedInRuntimeHelper() {
       assertEquals(10.0, LancelotCombatHelper.KNIGHT_OF_OWNER_MP_COST, 1.0E-9);
       assertEquals(30, LancelotCombatHelper.KNIGHT_OF_OWNER_ITEM_LIMIT);
+      assertEquals(15.0, LancelotCombatHelper.MANA_REVERSAL_MP_COST, 1.0E-9);
+      assertEquals(240, LancelotCombatHelper.MANA_REVERSAL_DURATION_TICKS);
+      assertEquals(360, LancelotCombatHelper.MANA_REVERSAL_COOLDOWN_TICKS);
       assertEquals(50.0, LancelotCombatHelper.AROUNDIGHT_DRAW_MP_COST, 1.0E-9);
-      assertEquals(5.0, LancelotCombatHelper.AROUNDIGHT_DRAIN_MP, 1.0E-9);
+      assertEquals(15.0, LancelotCombatHelper.AROUNDIGHT_DRAIN_MP, 1.0E-9);
       assertEquals(20, LancelotCombatHelper.AROUNDIGHT_DRAIN_INTERVAL);
       assertEquals(2.0, LancelotCombatHelper.AROUNDIGHT_CORE_ATTRIBUTE_MULTIPLIER, 1.0E-9);
       assertEquals(2, LancelotCombatHelper.PROJECTILE_INTERCEPT_COOLDOWN);

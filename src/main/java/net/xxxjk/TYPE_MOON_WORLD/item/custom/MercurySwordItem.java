@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.item.custom;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.List;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
@@ -115,6 +117,7 @@ public class MercurySwordItem extends SwordItem implements GeoItem, NoblePhantas
          }
       }
       AABB box = new AABB(start, end).inflate(0.9);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != player && e.isAlive() && !player.isAlliedTo(e) && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 center = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
          double along = center.subtract(start).dot(dir);
@@ -127,6 +130,7 @@ public class MercurySwordItem extends SwordItem implements GeoItem, NoblePhantas
             target.hurt(player.damageSources().magic(), damage);
             target.invulnerableTime = 0;
          }
+      }
       }
    }
 }

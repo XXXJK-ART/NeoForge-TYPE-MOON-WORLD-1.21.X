@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.demon_god_gaze;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.network.DemonGodGazeVisualPayload;
 import com.example.typemoonaddon.network.DemonGodGazeVisualPayload.TargetLayout;
 import com.example.typemoonaddon.registry.AddonSounds;
@@ -241,7 +242,7 @@ public final class DemonGodGazeService {
         AABB hitArea = new AABB(targetCenter, targetCenter).inflate(SHOT_HIT_RADIUS);
         if (target.getBoundingBox().intersects(hitArea)
                 && (targetState.damageAppliedMask & bit) == 0) {
-            DamageSource source = caster.damageSources().source(DamageTypes.MAGIC, caster);
+            DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(DamageTypes.MAGIC, caster), "demon_god_gaze", caster);
             int previousInvulnerability = target.invulnerableTime;
             target.invulnerableTime = 0;
             boolean hurt = target.hurt(source, DAMAGE_PER_CIRCLE);

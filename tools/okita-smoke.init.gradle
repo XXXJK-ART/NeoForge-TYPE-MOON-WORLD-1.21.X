@@ -1,0 +1,13 @@
+// Optional client probe; the verification mod never enters the release JAR.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('okitaSmoke') {
+            java.srcDir 'tools/okita-smoke/java'
+            resources.srcDir 'tools/okita-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_okita_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/okita-client-run')
+    }
+}

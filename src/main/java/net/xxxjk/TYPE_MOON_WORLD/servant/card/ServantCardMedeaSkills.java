@@ -1,5 +1,8 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.card;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
+
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -354,8 +357,8 @@ public final class ServantCardMedeaSkills {
       if (target == null) {
          return;
       }
-      target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3, false, true, true));
-      target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 1, false, true, true));
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3, false, true, true), MagicComplexity.TWO_VERSE);
+      MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 120, 1, false, true, true), MagicComplexity.TWO_VERSE);
       if (player.level() instanceof ServerLevel level) {
          VFXServerEffects.spawn(level, "servant_medea_bind", target, 96.0);
          level.sendParticles(ParticleTypes.SNOWFLAKE, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), 24, 0.45, 0.55, 0.45, 0.035);
@@ -375,6 +378,7 @@ public final class ServantCardMedeaSkills {
          projectile.setDeltaMovement(dir.scale(1.8).add(0.0, 0.18, 0.0));
          projectile.hurtMarked = true;
       }
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(radius, 2.0, radius), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          Vec3 away = living.position().subtract(player.position());
          if (away.horizontalDistanceSqr() > radius * radius || away.horizontalDistanceSqr() < 0.01) {
@@ -386,6 +390,7 @@ public final class ServantCardMedeaSkills {
          living.invulnerableTime = 0;
          living.push(dir.x * 1.15, 0.28, dir.z * 1.15);
          living.hurtMarked = true;
+      }
       }
       VFXServerEffects.spawn(level, "servant_medea_barrier", player, 128.0);
       for (double r = 1.0; r <= radius; r += 1.0) {
@@ -470,6 +475,7 @@ public final class ServantCardMedeaSkills {
 
       double radius = 5.75;
       float damage = (float)applyMedeaWorkshopDamage(player, 8.0);
+      try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          new AABB(center, center).inflate(radius, 3.2, radius),
@@ -478,6 +484,7 @@ public final class ServantCardMedeaSkills {
          living.invulnerableTime = 0;
          living.hurt(player.damageSources().playerAttack(player), damage);
          living.invulnerableTime = 0;
+      }
       }
 
       for (int i = 0; i < 3; i++) {
@@ -678,7 +685,7 @@ public final class ServantCardMedeaSkills {
       Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.55, 0.0);
       if (modeIndex == 3) {
          fireMedeaMinorBeam(player, level, spawn, aim);
-         target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 35, 0, false, true, true));
+         MagecraftEffects.add(target, new MobEffectInstance(MobEffects.GLOWING, 35, 0, false, true, true), MagicComplexity.TWO_VERSE);
          return;
       }
       MedeaMagicBoltEntity.Mode mode = switch (modeIndex) {

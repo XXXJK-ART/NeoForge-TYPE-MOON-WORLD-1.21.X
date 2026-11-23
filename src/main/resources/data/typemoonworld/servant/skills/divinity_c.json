@@ -2,24 +2,30 @@
   "rank": "C",
   "id": "divinity_c",
   "display_name": "Divinity C",
-  "display_name_zh": "\u795e\u6027 C",
+  "display_name_zh": "神性 C",
   "type": "passive",
   "mp_cost": 0,
   "cooldown_ticks": 0,
   "duration_ticks": 0,
   "effects": [
     {
-      "effect_type": "divinity",
+      "effect_type": "attribute_bonus",
       "params": {
-        "rank": "C",
-        "divine_damage_bonus": 0.06,
-        "anti_divine_resistance": 0.06
+        "health": 60,
+        "attack": 6,
+        "speed_additive": 0.03
       }
     }
   ],
   "ai": {
     "facts": [
-      {"type": "divinity", "strength": 0.6, "requires": ["living"]}
+      {
+        "type": "divinity",
+        "strength": 0.6,
+        "requires": [
+          "living"
+        ]
+      }
     ]
   }
 }

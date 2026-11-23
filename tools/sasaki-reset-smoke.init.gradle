@@ -1,0 +1,13 @@
+// Opt-in client check; kept out of release artifacts and other validation runs.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('sasakiResetSmoke') {
+            java.srcDir 'tools/sasaki-reset-smoke/java'
+            resources.srcDir 'tools/sasaki-reset-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_sasaki_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/sasaki-client-run')
+    }
+}

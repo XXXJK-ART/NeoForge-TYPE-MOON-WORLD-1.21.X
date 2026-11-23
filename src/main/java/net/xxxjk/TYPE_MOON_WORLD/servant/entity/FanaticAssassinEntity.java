@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.init.ModMobEffects;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinCombatHelper;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticAssassinRules;
 import net.xxxjk.TYPE_MOON_WORLD.servant.fanatic.FanaticDamageTypes;
+import net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment;
 import net.xxxjk.TYPE_MOON_WORLD.servant.model.ServantAnimations;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,7 +46,8 @@ public final class FanaticAssassinEntity extends ServantEntity {
       FanaticAssassinEntity.class, EntityDataSerializers.LONG);
    private static final ResourceLocation CRYSTAL_ARMOR_ID = ResourceLocation.fromNamespaceAndPath(
       "typemoonworld", "fanatic_crystal_armor");
-   private static final String LAST_REVEAL_TICK = "FanaticLastRevealTick";
+   private static final String NEXT_CONCEALMENT_TICK = "FanaticNextConcealmentTick";
+   private static final String LAST_MENTAL_CLEANSE = "FanaticLastMentalCleanse";
    private static final ServantAnimations BUILT_IN_ANIMATIONS = new ServantAnimations(
       "animation.fanatic_assassin.standing",
       "animation.fanatic_assassin.walk",
@@ -97,21 +99,30 @@ public final class FanaticAssassinEntity extends ServantEntity {
       this.tickCrystalArmor(now);
       this.tickTechniqueExpirations(level, now);
       this.tickConcealment(now);
-      if (this.tickCount % FanaticAssassinRules.MENTAL_CLEANSE_INTERVAL == 0) this.purgeMentalEffects();
+      long lastCleanse = this.getPersistentData().getLong(LAST_MENTAL_CLEANSE);
+      if (!this.getPersistentData().contains(LAST_MENTAL_CLEANSE)) {
+         this.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
+      } else if (FanaticAssassinRules.shouldCleanseMentalEffects(now, lastCleanse)) {
+         this.purgeMentalEffects();
+         this.getPersistentData().putLong(LAST_MENTAL_CLEANSE, now);
+      }
       FanaticAssassinCombatHelper.spawnSustainedTechniqueEffects(this, level);
    }
 
    private void tickConcealment(long now) {
-      boolean combat = this.getTarget() != null && this.getTarget().isAlive();
-      if (combat) {
+      net.minecraft.world.entity.LivingEntity target = this.getTarget();
+      boolean hasTarget = target != null && target.isAlive();
+      if (hasTarget) {
          this.getPersistentData().putLong("FanaticLastCombatTick", now);
-         // Presence concealment is an approach tool, not a combat idle state.
-         // Once a target is acquired the NPC must remain visible and keep its
-         // attack loop running instead of re-concealing every 30 ticks.
-         this.setPresenceConcealed(false);
-      } else {
-         // Keep an idle NPC visible so its owner can find and command it.
-         this.setPresenceConcealed(false);
+         boolean concealed = this.isPresenceConcealed();
+         if (FanaticAssassinRules.shouldActivateConcealment(hasTarget, this.distanceTo(target), this.getCurrentMp(),
+            now, this.getPersistentData().getLong(NEXT_CONCEALMENT_TICK), concealed,
+            ServantConcealment.canActivatePresenceConcealment(this))) {
+            this.getPersistentData().putLong(NEXT_CONCEALMENT_TICK,
+               now + FanaticAssassinRules.PRESENCE_CONCEALMENT_COOLDOWN);
+            this.setCurrentMp(this.getCurrentMp() - FanaticAssassinRules.PRESENCE_CONCEALMENT_MP);
+            this.setPresenceConcealed(true);
+         }
       }
    }
 
@@ -163,7 +174,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
 
    public void revealForCombat() {
       this.getPersistentData().putLong("FanaticLastCombatTick", this.level().getGameTime());
-      this.getPersistentData().putLong(LAST_REVEAL_TICK, this.level().getGameTime());
+      ServantConcealment.startAttackBreakCooldown(this);
       this.setPresenceConcealed(false);
    }
 
@@ -188,6 +199,7 @@ public final class FanaticAssassinEntity extends ServantEntity {
 
    @Override
    public boolean doHurtTarget(Entity target) {
+      net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
       this.revealForCombat();
       boolean hit = super.doHurtTarget(target);
       if (hit && target instanceof net.minecraft.world.entity.LivingEntity living) {
@@ -202,7 +214,10 @@ public final class FanaticAssassinEntity extends ServantEntity {
       if (source.is(FanaticDamageTypes.MENTAL_ATTACKS)
          && FanaticAssassinRules.shouldCancelMentalAttack(this.getRandom().nextFloat())) return false;
       boolean hurt = super.hurt(source, amount);
-      if (hurt) this.revealForCombat();
+      if (hurt) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.concealment.ServantConcealment.startAttackBreakCooldown(this);
+         this.revealForCombat();
+      }
       return hurt;
    }
 

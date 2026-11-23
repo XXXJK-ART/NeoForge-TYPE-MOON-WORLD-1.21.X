@@ -46,10 +46,10 @@ public final class CuChulainnCombatHelper {
    public static final double RUNE_BARRIER_MP_COST = 80.0;
    public static final String BERKANA_NEXT_HEAL_TICK_TAG = "CuBerkanaNextHealTick";
    public static final String EXHAUST_EXPIRES_TAG = "CuExhaustExpires";
-   public static final int SINGLE_GAE_BOLG_COOLDOWN = 160;
-   public static final int ARMY_GAE_BOLG_COOLDOWN = 2400;
+   public static final int SINGLE_GAE_BOLG_COOLDOWN = 600;
+   public static final int ARMY_GAE_BOLG_COOLDOWN = 1200;
    public static final int GAE_BOLG_WINDUP_TICKS = 10;
-   public static final int OUT_OF_COMBAT_RECOVERY_TICKS = 100;
+   public static final int OUT_OF_COMBAT_RECOVERY_TICKS = 1200;
    public static final int RUNE_CAST_COOLDOWN = 80;
    public static final int RECAST_RESET_TICKS = 200;
    private static final ResourceLocation TIWAZ_ATTACK_ID = ResourceLocation.fromNamespaceAndPath(TYPE_MOON_WORLD.MOD_ID, "cu_tiwaz_attack");
@@ -368,83 +368,9 @@ public final class CuChulainnCombatHelper {
    }
 
    public static void tickStatus(ServantEntity entity) {
-      if (!isCuChulainn(entity)) {
-         return;
-      }
-
-      long now = entity.level().getGameTime();
-      if (entity.getPersistentData().getFloat(RUNE_BARRIER_HP_TAG) > 0.0F
-         && entity.getPersistentData().getLong(RUNE_BARRIER_UNTIL_TAG) > now) {
-         entity.getNavigation().stop();
-         entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
-         entity.teleportTo(entity.getPersistentData().getDouble(RUNE_BARRIER_X_TAG), entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG), entity.getPersistentData().getDouble(RUNE_BARRIER_Z_TAG));
-         if (entity.tickCount % 12 == 0 && entity.level() instanceof ServerLevel level) {
-            double x = entity.getPersistentData().getDouble(RUNE_BARRIER_X_TAG);
-            double y = entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG) + entity.getBbHeight() * 0.5;
-            double z = entity.getPersistentData().getDouble(RUNE_BARRIER_Z_TAG);
-            double bottom = entity.getPersistentData().getDouble(RUNE_BARRIER_Y_TAG) + 0.05;
-            double top = bottom + entity.getBbHeight() + 0.1;
-            for (int i = 0; i < 8; i++) {
-               double t = i / 7.0, offset = -2.15 + t * 4.3;
-               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x - 2.15, bottom, z + offset, 2, 0.02, 0.02, 0.02, 0.01);
-               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + 2.15, top, z + offset, 2, 0.02, 0.02, 0.02, 0.01);
-               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + offset, bottom, z - 2.15, 2, 0.02, 0.02, 0.02, 0.01);
-               level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x + offset, top, z + 2.15, 2, 0.02, 0.02, 0.02, 0.01);
-            }
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y, z, 18, 2.15, 0.9, 2.15, 0.015);
-         }
-      } else if (entity.getPersistentData().getFloat(RUNE_BARRIER_HP_TAG) > 0.0F) {
-         clearRuneBarrier(entity);
-      }
-      long lastCombat = entity.getPersistentData().getLong(LAST_COMBAT_TICK_TAG);
-      LivingEntity target = entity.getTarget();
-      boolean outOfCombat = target == null || !target.isAlive() || entity.distanceToSqr(target) > 400.0;
-      if (lastCombat > 0 && outOfCombat && now - lastCombat >= OUT_OF_COMBAT_RECOVERY_TICKS) {
-         restoreOutOfCombat(entity);
-         entity.getPersistentData().remove(LAST_COMBAT_TICK_TAG);
-         lastCombat = 0;
-      }
-
-      if (lastCombat > 0 && now - lastCombat > RECAST_RESET_TICKS) {
-         entity.getPersistentData().putBoolean(RECAST_STANCE_USED_TAG, false);
-         entity.getPersistentData().putBoolean(GAE_BOLG_ARMY_USED_TAG, false);
-      }
-
-      for (RuneType runeType : RuneType.values()) {
-         if (runeType == RuneType.NONE) {
-            continue;
-         }
-
-         long runeExpires = entity.getPersistentData().getLong(runeExpireTag(runeType));
-         if (runeExpires <= 0) {
-            continue;
-         }
-
-         if (runeType == RuneType.BERKANA && now < runeExpires) {
-            long nextHealTick = entity.getPersistentData().getLong(BERKANA_NEXT_HEAL_TICK_TAG);
-            if (nextHealTick <= 0 || now >= nextHealTick) {
-               entity.heal(1.0F);
-               entity.getPersistentData().putLong(BERKANA_NEXT_HEAL_TICK_TAG, now + 1L);
-            }
-         }
-
-         if (now >= runeExpires) {
-            clearRune(entity, runeType);
-         }
-      }
-
-      long exhaustExpires = entity.getPersistentData().getLong(EXHAUST_EXPIRES_TAG);
-      if (exhaustExpires > 0 && now >= exhaustExpires) {
-         removeModifier(entity.getAttribute(Attributes.ATTACK_DAMAGE), EXHAUST_ATTACK_ID);
-         removeModifier(entity.getAttribute(Attributes.MOVEMENT_SPEED), EXHAUST_SPEED_ID);
-         entity.getPersistentData().remove(EXHAUST_EXPIRES_TAG);
-      }
-
-      long windupUntil = entity.getPersistentData().getLong(GAE_BOLG_WINDUP_UNTIL_TAG);
-      if (windupUntil > 0 && now >= windupUntil) {
-         entity.getPersistentData().remove(GAE_BOLG_WINDUP_UNTIL_TAG);
-      }
+      // Shared status is advanced once by CuChulainnEvents for cards and NPCs.
    }
+
 
    private static boolean isMedeaSmallMagic(DamageSource source, float amount) {
       Entity attacker = source.getEntity();
@@ -497,8 +423,8 @@ public final class CuChulainnCombatHelper {
    }
 
    public static int getLuckValue(LivingEntity target) {
-      if (target instanceof ServantEntity servant) {
-         var def = servant.getDefinition();
+      if (target != null) {
+         var def = ServantIdentityHelper.definitionOf(target);
          if (def != null) {
             var params = def.parameters();
             return params.luckPlus() ? params.luck().plusCoefficient() : params.luck().coefficient();

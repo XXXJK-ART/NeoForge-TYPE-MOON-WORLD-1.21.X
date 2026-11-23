@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.entity;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.particles.DustColorTransitionOptions;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -56,6 +59,9 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    private static final EntityDataAccessor<Float> ARMY_DAMAGE = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.FLOAT);
    private static final EntityDataAccessor<Integer> SPLIT_INDEX = SynchedEntityData.defineId(GaeBulgProjectileEntity.class, EntityDataSerializers.INT);
    private static final DustParticleOptions DEATH_THORN_TRAIL = new DustParticleOptions(new Vector3f(0.45F, 0.0F, 0.02F), 1.25F);
+   // Small fading motes replace the vanilla explosion sprite's expanding animation.
+   private static final DustColorTransitionOptions DEATH_FLIGHT_BURST = new DustColorTransitionOptions(
+      new Vector3f(1.0F, 0.12F, 0.2F), new Vector3f(0.35F, 0.0F, 0.035F), 1.4F);
    private static final int SINGLE_HOMING_TICKS = 60;
    private static final int DEATH_FLIGHT_MAX_LIFETIME_TICKS = 100;
    private static final double ARMY_EXPLOSION_DISTANCE_SQR = 4.0D;
@@ -288,10 +294,12 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          spear.setArmyDamage(splitDamage);
          spear.setDeathFlightCastId(deathFlightCastId);
          spear.setTrackedTarget(target);
+         spear.getPersistentData().putBoolean("CuResetAttack",this.getPersistentData().getBoolean("CuResetAttack"));
+         spear.getPersistentData().putString("NoblePhantasmId","cu_gae_bolg_flight");
          spear.setPos(origin.x, origin.y, origin.z);
          spear.noPhysics = true;
          spear.setNoGravity(true);
-         Vec3 aim = target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
+         Vec3 aim = target==null ? origin.add(this.getDeltaMovement().normalize().scale(24)) : target.position().add(0.0, target.getBbHeight() * 0.4, 0.0);
          Vec3 dir = aim.subtract(spear.position());
          if (dir.lengthSqr() < 1.0E-4) {
             dir = this.getDeltaMovement().lengthSqr() > 1.0E-4 ? this.getDeltaMovement() : this.getLookAngle();
@@ -305,29 +313,37 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       level.playSound(null, BlockPos.containing(origin), SoundEvents.TRIDENT_THROW.value(), SoundSource.HOSTILE, 1.8F, 0.52F);
    }
 
+   public void releasePhysicalCarrierSplits(ServerLevel level,LivingEntity target) {
+      getPersistentData().putBoolean("CuResetAttack",true);
+      spawnSplitSpears(level,target);
+   }
+
    private void resolveSplitBurst(ServerLevel level) {
       Vec3 burstCenter = this.position();
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
-      DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().magic();
+      DamageSource source = net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.withNoblePhantasm(
+         this.damageSources().explosion(this, owner), "cu_gae_bolg_flight");
       float damage = this.getArmyDamage();
       Set<Integer> damaged = new HashSet<>();
       AABB damageBox = new AABB(burstCenter, burstCenter).inflate(SPLIT_BURST_RADIUS);
+      try (var carrySegment200 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
-         e -> e.isAlive() && e != owner && !EntityUtils.isImmunePlayerTarget(e)
+         e -> isUsableTarget(e,owner)
       )) {
          if (living.distanceToSqr(burstCenter) > SPLIT_BURST_RADIUS * SPLIT_BURST_RADIUS || !damaged.add(living.getId())) {
             continue;
          }
-         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, damage);
+         float finalDamage = damage;
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
          finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
          if (finalDamage <= 0.0F) {
             continue;
          }
-         if (!this.tryConsumeGodHandLife(living, finalDamage, false)) {
-            this.applyGuaranteedDamage(living, source, finalDamage);
+         if (this.tryConsumeGodHandLife(living, finalDamage, false)
+            || !this.applyGuaranteedDamage(living, source, finalDamage)) {
+            continue;
          }
          Vec3 push = living.position().subtract(burstCenter).multiply(1.0, 0.0, 1.0);
          if (push.lengthSqr() > 1.0E-4) {
@@ -336,15 +352,15 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             living.hurtMarked = true;
          }
       }
+      }
 
       VFXServerEffects.spawn(level, "gae_bolg_army_impact", burstCenter, 128.0);
       this.spawnArmyExplosionShellEffects(level, burstCenter, SPLIT_BURST_RADIUS);
-      level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, burstCenter.x, burstCenter.y, burstCenter.z, 2, 0.2, 0.2, 0.2, 0.0);
+      level.sendParticles(DEATH_FLIGHT_BURST, burstCenter.x, burstCenter.y, burstCenter.z, 12, 0.2, 0.2, 0.2, 0.0);
       level.sendParticles(ParticleTypes.END_ROD, burstCenter.x, burstCenter.y, burstCenter.z, 5, 0.18, 0.18, 0.18, 0.0);
       level.sendParticles(ParticleTypes.CRIT, burstCenter.x, burstCenter.y, burstCenter.z, 96, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, SPLIT_BURST_RADIUS * 0.55, 0.16);
       level.sendParticles(ParticleTypes.CLOUD, burstCenter.x, burstCenter.y, burstCenter.z, 72, SPLIT_BURST_RADIUS * 0.42, SPLIT_BURST_RADIUS * 0.24, SPLIT_BURST_RADIUS * 0.42, 0.05);
       level.playSound(null, BlockPos.containing(burstCenter), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.65F, 0.72F);
-      this.breakLowHardnessTerrain(level, burstCenter, SPLIT_BURST_RADIUS, 0.0);
       this.breakSphereTerrain(level, burstCenter, SPLIT_BURST_RADIUS);
       this.discard();
    }
@@ -504,6 +520,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void resolveSingleTargetHit(LivingEntity target) {
+      if (ServantMasterDamageRouter.special(target, 250, this::resolveSingleTargetHit)) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          this.discard();
          return;
@@ -511,7 +528,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
 
       LivingEntity owner = this.getOwner() instanceof LivingEntity living ? living : null;
       DamageSource source = owner != null ? this.damageSources().mobProjectile(this, owner) : this.damageSources().generic();
-      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile")) {
+      if (ArtoriaPendragonCombatHelper.tryNegateCertainHitOrDeath(target, "gae_bolg_projectile", this)) {
          this.spawnSingleTargetImpact(target);
          this.discard();
          return;
@@ -520,7 +537,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          && !(target instanceof EmiyaArcherEntity)
          && !(target instanceof EnkiduEntity)
          && this.random.nextFloat() < CuChulainnCombatHelper.getDeathThornChance(target);
-      if (this.tryConsumeGodHandLife(target, 250.0F, deathThorn)) {
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.conceptHit(target,source,250,"cu_chulainn:gae_bolg",deathThorn)) {
          this.spawnSingleTargetImpact(target);
          this.discard();
          return;
@@ -552,7 +569,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       if (this.level() instanceof ServerLevel sl) {
          VFXServerEffects.spawn(sl, "gae_bolg_army_impact", center, 128.0);
          this.spawnArmyExplosionShellEffects(sl, center, radius);
-         sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z, 5, 0.3, 0.3, 0.3, 0.0);
+         sl.sendParticles(DEATH_FLIGHT_BURST, center.x, center.y, center.z, 20, 0.3, 0.3, 0.3, 0.0);
          sl.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z, 6, 0.15, 0.15, 0.15, 0.0);
          sl.sendParticles(ParticleTypes.CLOUD, center.x, center.y + 0.2, center.z, 40, 1.2, 0.4, 1.2, 0.04);
          sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, center.x, center.y + 0.4, center.z, 24, 0.9, 0.6, 0.9, 0.03);
@@ -605,7 +622,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          double x = currentRadius * Math.sin(phi) * Math.cos(theta);
          double y = currentRadius * Math.cos(phi);
          double z = currentRadius * Math.sin(phi) * Math.sin(theta);
-         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
+         level.sendParticles(DEATH_FLIGHT_BURST, center.x + x, center.y + y, center.z + z, 3, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.END_ROD, center.x + x, center.y + y, center.z + z, 1, 0.0, 0.0, 0.0, 0.0);
          level.sendParticles(ParticleTypes.CRIT, center.x + x, center.y + y, center.z + z, 3, 0.2, 0.2, 0.2, 0.03);
          if (i % 2 == 0) {
@@ -624,7 +641,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
          double angle = (Math.PI * 2.0) * i / ringCount;
          double px = center.x + Math.cos(angle) * currentRadius;
          double pz = center.z + Math.sin(angle) * currentRadius;
-         level.sendParticles(ParticleTypes.EXPLOSION, px, center.y + 0.35, pz, 1, 0.15, 0.15, 0.15, 0.0);
+         level.sendParticles(DEATH_FLIGHT_BURST, px, center.y + 0.35, pz, 2, 0.15, 0.15, 0.15, 0.0);
          level.sendParticles(ParticleTypes.CLOUD, px, center.y + 0.15, pz, 2, 0.1, 0.1, 0.1, 0.01);
       }
 
@@ -635,6 +652,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
       this.breakLowHardnessTerrain(level, center, currentRadius, previousRadius);
 
       AABB damageBox = new AABB(center, center).inflate(currentRadius);
+      try (var carrySegment201 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity living : level.getEntitiesOfClass(
          LivingEntity.class,
          damageBox,
@@ -645,7 +663,7 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         float finalDamage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(living, armyDamage);
+         float finalDamage = armyDamage;
          finalDamage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(living, finalDamage);
          finalDamage = this.consumeDeathFlightDamageBudget(level, living, finalDamage);
          if (finalDamage <= 0.0F) {
@@ -655,13 +673,16 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
             continue;
          }
 
-         this.applyGuaranteedDamage(living, source, finalDamage);
+         if (!this.applyGuaranteedDamage(living, source, finalDamage)) {
+            continue;
+         }
          Vec3 push = living.position().subtract(center);
          double horizontal = Math.sqrt(push.x * push.x + push.z * push.z);
          if (horizontal > 1.0E-4) {
             living.push(push.x / horizontal * 1.15, 0.4, push.z / horizontal * 1.15);
             living.hurtMarked = true;
          }
+      }
       }
    }
 
@@ -687,68 +708,53 @@ public class GaeBulgProjectileEntity extends ThrowableItemProjectile {
    }
 
    private void breakLowHardnessTerrain(ServerLevel level, Vec3 center, double currentRadius, double previousRadius) {
-      DeferredTerrainDestruction.queueShell(level, center, currentRadius, previousRadius, 36, (serverLevel, pos, distanceSqr, radius, origin) -> {
+      DeferredTerrainDestruction.queueRestrictedShell(level, center, currentRadius, previousRadius, 0, 36, (serverLevel, pos, distanceSqr, radius, origin) -> {
          BlockState state = serverLevel.getBlockState(pos);
          float hardness = state.getDestroySpeed(serverLevel, pos);
-         return !state.isAir()
+         return net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos)
+            && !state.isAir()
             && hardness >= 0.0F
             && hardness <= 35.0F
             && !state.is(Blocks.BEDROCK)
             && state.getExplosionResistance(serverLevel, pos, null) < 1200.0F;
       }, (serverLevel, pos, removed) -> {
          if ((removed & 127) == 0) {
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1, 0.2, 0.2, 0.2, 0.0);
+            serverLevel.sendParticles(DEATH_FLIGHT_BURST, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
          }
       });
    }
 
    private void breakSphereTerrain(ServerLevel level, Vec3 center, double radius) {
-      DeferredTerrainDestruction.ExpandingSphere terrain = DeferredTerrainDestruction.queueExpandingSphere(level, center, (int)Math.ceil(radius), null);
-      terrain.advanceTo(radius);
-      terrain.seal();
+      // One radial job: a parallel low-hardness sweep would clear the rim ahead of the blast.
+      DeferredTerrainDestruction.queueHemisphere(level, center, radius, false, Float.MAX_VALUE, 36,
+         (serverLevel, pos, distanceSqr, currentRadius, origin) ->
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.NoblePhantasmTerrainLimits.isAtOrAboveCenter(origin, pos),
+         (serverLevel, pos, previous, removed) -> {
+            if ((removed & 127) == 0) serverLevel.sendParticles(DEATH_FLIGHT_BURST,
+               pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 2, 0.2, 0.2, 0.2, 0.0);
+         }, null);
    }
 
-   private void applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
+   private boolean applyGuaranteedDamage(LivingEntity target, DamageSource source, float damage) {
       if (EntityUtils.isImmunePlayerTarget(target)) {
-         return;
+         return false;
       }
+      int previous = target.invulnerableTime;
       target.invulnerableTime = 0;
-      target.hurt(source, damage);
-      target.invulnerableTime = 0;
+      try {
+         return target.hurt(source, damage);
+      } finally {
+         target.invulnerableTime = previous;
+      }
    }
 
    private boolean tryConsumeGodHandLife(LivingEntity target, float incomingDamage, boolean deathThorn) {
-      CompoundTag targetData = target.getPersistentData();
-      if (targetData.getBoolean("CausalSevered") || !targetData.getBoolean("GodHandActive")) {
-         return false;
-      }
-
-      int livesLeft = targetData.getInt("GodHandLives");
-      if (livesLeft <= 0) {
-         return false;
-      }
-
-      boolean lethalByDamage = target.getHealth() <= incomingDamage;
-      if (!lethalByDamage && !deathThorn) {
-         return false;
-      }
-
-      target.setHealth(target.getMaxHealth());
-      targetData.putInt("GodHandLives", livesLeft - 1);
-      if (this.level() instanceof ServerLevel sl) {
-         sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,
-            target.getX(), target.getY() + 1.0, target.getZ(),
-            30, 0.6, 0.6, 0.6, 0.15);
-         sl.sendParticles(ParticleTypes.POOF,
-            target.getX(), target.getY() + 0.5, target.getZ(),
-            20, 0.5, 0.5, 0.5, 0.1);
-         sl.playSound(null, target.blockPosition(),
-            SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.8F);
-      }
-      return true;
+      return deathThorn && net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg");
    }
 
    private void applyDeathThorn(LivingEntity target, DamageSource source) {
+      if (ServantMasterDamageRouter.special(target, Float.MAX_VALUE, defender -> applyDeathThorn(defender, source))) return;
+      if (net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.special(target,"cu_chulainn:gae_bolg")) return;
       if (EntityUtils.isImmunePlayerTarget(target)) {
          return;
       }

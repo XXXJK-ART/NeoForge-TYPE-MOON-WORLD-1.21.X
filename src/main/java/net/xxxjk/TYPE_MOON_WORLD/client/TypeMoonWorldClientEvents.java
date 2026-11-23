@@ -25,6 +25,7 @@ import net.xxxjk.TYPE_MOON_WORLD.client.world.IonioiHetairoiDimensionEffects;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ExpandingRingEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.BloodstainEffectRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaExcaliburBeamRenderer;
+import net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArtoriaWindDefenseSwordRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GravityFieldShellRenderer;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderOrbShaderRegistry;
 import net.xxxjk.TYPE_MOON_WORLD.client.renderer.GanderProjectileRenderer;
@@ -295,7 +296,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.EMIYA_ARCHER.get(), context -> new HumanoidServantRenderer<>(context, "emiya_archer"));
       event.registerEntityRenderer(ModEntities.SENKO_MURAMASA.get(), context -> new HumanoidServantRenderer<>(context, "senko_muramasa"));
       event.registerEntityRenderer(ModEntities.ARASH.get(), context -> new HumanoidServantRenderer<>(context, "arash"));
-      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), NoopRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARASH_PARTICLE_ARROW.get(), net.xxxjk.TYPE_MOON_WORLD.client.renderer.ArashParticleArrowRenderer::new);
       event.registerEntityRenderer(ModEntities.ARASH_STELLA_CONTROLLER.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_PENDRAGON.get(), context -> new HumanoidServantRenderer<>(context, "artoria_pendragon"));
       event.registerEntityRenderer(ModEntities.ODA_NOBUNAGA.get(), context -> new HumanoidServantRenderer<>(context, "oda_nobunaga"));
@@ -356,6 +357,7 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.MEDEA_MAGIC_BOLT.get(), MedeaMagicBoltRenderer::new);
       event.registerEntityRenderer(ModEntities.MEDEA_BEAM_EFFECT.get(), MedeaBeamEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.ARTORIA_EXCALIBUR_BEAM.get(), ArtoriaExcaliburBeamRenderer::new);
+      event.registerEntityRenderer(ModEntities.ARTORIA_WIND_DEFENSE_SWORD.get(), ArtoriaWindDefenseSwordRenderer::new);
       event.registerEntityRenderer(ModEntities.SPIRITRON_CANNON_BEAM.get(), NoopRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_GATE_PROJECTILE.get(), GilgameshGateWeaponRenderer::new);
       event.registerEntityRenderer(ModEntities.GILGAMESH_CROSS_SLASH.get(), GilgameshCrossSlashRenderer::new);
@@ -371,6 +373,8 @@ public class TypeMoonWorldClientEvents {
       event.registerEntityRenderer(ModEntities.TSUMUKARI_WAVE_PROJECTILE.get(), TsumukariWaveProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.TSUMUKARI_LIGHT_COLUMN_EFFECT.get(), TsumukariLightColumnEffectRenderer::new);
       event.registerEntityRenderer(ModEntities.GAE_BULG_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
+      event.registerEntityRenderer(ModEntities.CU_PERSISTENT_SPEAR.get(),net.xxxjk.TYPE_MOON_WORLD.client.renderer.CuSpearRenderer::new);
+      event.registerEntityRenderer(ModEntities.CU_RUNE_FIREBALL.get(),net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
       event.registerEntityRenderer(ModEntities.GAE_BULG_ARMY_PROJECTILE.get(), GaeBulgProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.DIRK_PROJECTILE.get(), DirkProjectileRenderer::new);
       event.registerEntityRenderer(ModEntities.EMIYA_THROWN_WEAPON.get(), ProjectedItemProjectileRenderer::new);

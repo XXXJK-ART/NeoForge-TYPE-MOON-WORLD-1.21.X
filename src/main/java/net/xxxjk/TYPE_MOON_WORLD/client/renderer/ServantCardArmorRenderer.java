@@ -11,6 +11,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.xxxjk.TYPE_MOON_WORLD.client.model.ServantCardArmorModel;
+import net.xxxjk.TYPE_MOON_WORLD.client.ServantCardConcealmentClient;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.ServantCardArmorItem;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +57,12 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
                               @Nullable RenderType renderType, MultiBufferSource bufferSource,
                               @Nullable VertexConsumer buffer, boolean isReRender, float partialTick,
                               int packedLight, int packedOverlay, int colour) {
+      if (this.currentEntity instanceof Player player
+         && this.currentSlot == EquipmentSlot.HEAD
+         && "shadow_hassan".equals(animatable.servantId())
+         && ServantCardConcealmentClient.isShadowHassanStealthActive(player)) {
+         return;
+      }
       // ServantEntity is also a GeoEntity. GeckoLib skips its default
       // slot-visibility pass for GeoEntities, so apply our armor-slot
       // visibility explicitly before every armor render.
@@ -111,6 +118,10 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
          return;
       }
       String servantId = armor.servantId();
+      if ("nightingale".equals(servantId)
+         && this.currentEntity instanceof net.xxxjk.TYPE_MOON_WORLD.servant.entity.ServantEntity) {
+         hideBone("hair");
+      }
       switch (servantId) {
          case "enkidu", "medusa", "oda_nobunaga" -> {
             hideBone("hair1");
@@ -153,7 +164,7 @@ public class ServantCardArmorRenderer extends GeoArmorRenderer<ServantCardArmorI
       }
       return switch (armor.servantId()) {
          case "enkidu", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
-            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "nightingale" -> true;
          default -> false;
       };
    }

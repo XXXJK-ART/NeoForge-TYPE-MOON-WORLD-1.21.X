@@ -32,6 +32,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.nordic.MagicGander;
 import net.xxxjk.TYPE_MOON_WORLD.magic.player.MercurySwordMagicAmplifier;
 import net.xxxjk.TYPE_MOON_WORLD.servant.baobhan.BaobhanSithDamageTypes;
 import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagicResistanceHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import net.xxxjk.TYPE_MOON_WORLD.servant.skill.BaobhanSithServantSkills;
 import net.xxxjk.typemoonworld.api.MagicComplexity;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
@@ -49,6 +50,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    private static final DustParticleOptions BLACK_DUST = new DustParticleOptions(new Vector3f(0.05F, 0.05F, 0.05F), 1.0F);
    private static final DustParticleOptions RED_DUST = new DustParticleOptions(new Vector3f(0.95F, 0.08F, 0.12F), 1.1F);
    private static final EntityDataAccessor<Boolean> CHARGING_PREVIEW = SynchedEntityData.defineId(GanderProjectileEntity.class, EntityDataSerializers.BOOLEAN);
+   private static final EntityDataAccessor<Boolean> BAOBHAN_SITH_CURSE = SynchedEntityData.defineId(GanderProjectileEntity.class, EntityDataSerializers.BOOLEAN);
    private static final EntityDataAccessor<Float> VISUAL_SCALE = SynchedEntityData.defineId(GanderProjectileEntity.class, EntityDataSerializers.FLOAT);
    private int chargeSeconds = 1;
    private String sourceMagicId = "gander";
@@ -73,6 +75,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    protected void defineSynchedData(Builder builder) {
       super.defineSynchedData(builder);
       builder.define(CHARGING_PREVIEW, false);
+      builder.define(BAOBHAN_SITH_CURSE, false);
       builder.define(VISUAL_SCALE, 1.0F);
    }
 
@@ -95,6 +98,11 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
    public void setMagicSource(String magicId, double proficiency) {
       this.sourceMagicId = magicId == null || magicId.isBlank() ? "gander" : magicId;
       this.casterProficiency = Math.max(0.0, Math.min(100.0, proficiency));
+      this.entityData.set(BAOBHAN_SITH_CURSE, "baobhan_sith_curse".equals(this.sourceMagicId));
+   }
+
+   public boolean isBaobhanSithCurse() {
+      return this.entityData.get(BAOBHAN_SITH_CURSE);
    }
 
    public float getVisualScale() {
@@ -179,12 +187,10 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
                         livingTarget.invulnerableTime = 0;
                      } else {
                         livingTarget.hurt(this.damageSources().thrown(this, this.getOwner()), BASE_HIT_DAMAGE);
-                        curseDamage = MagicResistanceHelper.applyMagicDamageReduction(
-                           livingTarget, this.damageSources().magic(), curseDamage, MagicComplexity.SIMPLE_ACTION,
-                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
-                        livingTarget.hurt(this.damageSources().magic(), curseDamage);
+                        livingTarget.hurt(MagecraftDamageSource.of(this.damageSources().indirectMagic(this, this.getOwner()), this.sourceMagicId,
+                           this.getOwner() instanceof LivingEntity owner ? owner : null, this.casterProficiency), curseDamage);
                         effectDuration = MagicResistanceHelper.applyHarmfulMagicEffectResistance(
-                           livingTarget, duration, MagicComplexity.SIMPLE_ACTION,
+                           livingTarget, duration, MagicResistanceHelper.complexityForMagic(this.sourceMagicId),
                            this.getOwner() instanceof LivingEntity owner ? owner : null, this.sourceMagicId, this.casterProficiency);
                      }
                      if (effectDuration > 0) {
@@ -227,6 +233,7 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
       if (!(speed < 1.0E-4)) {
          Vec3 back = motion.normalize().scale(-0.15);
          Vec3 base = this.position().add(back);
+         double particleSpread = this.isBaobhanSithCurse() ? 0.022 : 0.04;
          boolean engravedGanderVisual = "gander".equals(GemEngravingService.getEngravedMagicId(this.getItem()));
          Vec3 center = this.position();
          double angle = this.tickCount * 0.42 + this.random.nextDouble() * Math.PI * 2.0;
@@ -240,8 +247,8 @@ public class GanderProjectileEntity extends ThrowableItemProjectile {
          }
 
          if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(BLACK_DUST, base.x, base.y, base.z, 2, 0.04, 0.04, 0.04, 0.0);
-            serverLevel.sendParticles(RED_DUST, base.x, base.y, base.z, 2, 0.03, 0.03, 0.03, 0.0);
+            serverLevel.sendParticles(BLACK_DUST, base.x, base.y, base.z, 2, particleSpread, particleSpread, particleSpread, 0.0);
+            serverLevel.sendParticles(RED_DUST, base.x, base.y, base.z, 2, particleSpread * 0.75, particleSpread * 0.75, particleSpread * 0.75, 0.0);
             if (engravedGanderVisual) {
                serverLevel.sendParticles(BLACK_DUST, center.x + blackOrbit.x, center.y + blackOrbit.y, center.z + blackOrbit.z, 1, 0.0, 0.0, 0.0, 0.0);
                serverLevel.sendParticles(RED_DUST, center.x + redOrbit.x, center.y + redOrbit.y, center.z + redOrbit.z, 1, 0.0, 0.0, 0.0, 0.0);

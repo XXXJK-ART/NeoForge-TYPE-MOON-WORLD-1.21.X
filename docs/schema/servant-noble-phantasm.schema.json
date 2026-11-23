@@ -4,6 +4,12 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "magic_damage": { "type": "boolean", "default": false },
+    "magic_complexity": {
+      "type": "string",
+      "enum": ["simple_action", "one_verse", "two_verse", "three_verse", "high_thaumaturgy"],
+      "default": "high_thaumaturgy"
+    },
     "id": {
       "type": "string",
       "maxLength": 128

@@ -516,10 +516,21 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             return;
          }
 
-         boolean combatHandled = ServantCombatSystem.tickBeforeAi(this);
+         // Firearms and aircraft have their own optional combat controller.
+         // Gate before the shared tactical AI, while retaining passive ticks below.
+         boolean lancelotArmoryControlled = this instanceof LancelotBerserkerEntity
+            && (this.isPassenger() || com.captain.servant.compat.superbwarfare.SuperbWarfareLoader.isGun(this.getMainHandItem()));
+         if (this.isPassenger()) this.getNavigation().stop();
+         boolean combatHandled = lancelotArmoryControlled || ServantCombatSystem.tickBeforeAi(this);
+         if (!combatHandled && this instanceof HeraclesEntity) {
+            combatHandled = net.xxxjk.TYPE_MOON_WORLD.servant.heracles.HeraclesAbilityService.npcCombat(this);
+         }
          net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.observe(this);
-         boolean pacingHandled = !combatHandled && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
-         boolean tacticalHandled = pacingHandled || !combatHandled && ServantTacticalController.tick(this);
+          boolean dedicatedArtoria = this instanceof ArtoriaPendragonEntity;
+          boolean pacingHandled = !dedicatedArtoria && !(this instanceof HeraclesEntity) && !combatHandled
+             && net.xxxjk.TYPE_MOON_WORLD.servant.ai.ServantDuelPacing.tick(this);
+          boolean tacticalHandled = pacingHandled || !dedicatedArtoria && !(this instanceof HeraclesEntity)
+             && !combatHandled && ServantTacticalController.tick(this);
          this.tacticalAiHandledTick = combatHandled || tacticalHandled ? this.level().getGameTime() : Long.MIN_VALUE;
          if (!combatHandled && !tacticalHandled) {
             super.customServerAiStep();
@@ -529,7 +540,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             && !net.xxxjk.TYPE_MOON_WORLD.combat.ai.AiMigrationPolicy.isArbitrated(this)) {
             net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatExchangeService.act(this, this.getTarget(), this.level().getGameTime());
          }
-         ServantFlightCombatService.tickIndependentController(this);
+         if (!lancelotArmoryControlled) ServantFlightCombatService.tickIndependentController(this);
          this.tickManaHealthConversion();
 
          /* 鍔ㄧ敾 tick 閫掑噺 */         
@@ -640,6 +651,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void tickManaHealthConversion() {
+      if (this instanceof HundredFacesHassanEntity || this instanceof HundredFacesHassanPersonaEntity) return;
       if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
          return;
       }
@@ -674,6 +686,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    }
 
    private void tickPassiveManaRegeneration() {
+      if (this instanceof HundredFacesHassanEntity || this instanceof HundredFacesHassanPersonaEntity) return;
       if (this.level().isClientSide() || !this.isAlive() || this.isSpiritualDissolving()) {
          return;
       }
@@ -700,8 +713,8 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       if (target == null || !(this.level() instanceof net.minecraft.server.level.ServerLevel)) {
          return false;
       }
-      if (ServantTrueSweepService.triggerNpcAttack(this, target, this.level().getGameTime())) {
-         return true;
+      if (ServantTrueSweepService.usesNpcSweep(this)) {
+         return ServantTrueSweepService.triggerNpcAttack(this, target, this.level().getGameTime());
       }
       LivingEntity resolvedTarget = EntityUtils.redirectMountedCombatTarget(this, target);
       return resolvedTarget != null && this.doHurtTarget(resolvedTarget);
@@ -783,11 +796,6 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
 
       ServantParams params = def.parameters();
       this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(params.maxHealth());
-      if (initializeDefaults) {
-         this.setHealth((float) params.maxHealth());
-      } else if (this.getHealth() > this.getMaxHealth()) {
-         this.setHealth(this.getMaxHealth());
-      }
       this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(params.attackDamage());
       this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(params.movementSpeed());
       this.getAttribute(Attributes.ARMOR).setBaseValue(params.armor());
@@ -812,12 +820,6 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          this.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(96.0);
       }
 
-      // Berserker 职阶额外移速补正（狂化加护）
-      if (def.classType() == ServantClassType.BERSERKER) {
-         double currentSpeed = this.getAttribute(Attributes.MOVEMENT_SPEED).getBaseValue();
-         this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(currentSpeed + 0.1);
-      }
-
       // 初始化被动技能
       ServantSkillRegistry.ensureInitialized();
       ServantExecutionContext ctx = new ServantExecutionContext(this, null, params.manaPool(), 0);
@@ -827,12 +829,15 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
             ServantSkillRegistry.execute(skillId, ctx);
       }
 
+      net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(this);
+      if (initializeDefaults) this.setHealth(this.getMaxHealth());
       this.refreshDimensions();
    }
 
    /**
     * 生成时自动装备默认武器到主手    */
    private void equipDefaultWeapon() {
+      if (this instanceof CuChulainnEntity && net.xxxjk.TYPE_MOON_WORLD.servant.cu.CuSpearLedger.outstanding(this)) return;
       if (!this.getMainHandItem().isEmpty()) {
          return;
       }
@@ -878,12 +883,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          return;
       }
       if (this.getItemBySlot(slot).is(armor)) {
-         if (forceClientSync) {
-            ItemStack current = this.getItemBySlot(slot).copy();
-            this.setItemSlot(slot, ItemStack.EMPTY);
-            this.setItemSlot(slot, current);
-            this.setDropChance(slot, 0.0F);
-         }
+         this.setDropChance(slot, 0.0F);
          return;
       }
       this.setItemSlot(slot, new ItemStack(armor));
@@ -907,7 +907,7 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
          case "artoria_pendragon", "gilgamesh_caster", "enkidu", "fanatic_assassin", "li_shuwen",
             "medea", "medusa", "oda_nobunaga", "paracelsus", "sasaki_kojiro",
             "hundred_faces_hassan", "diarmuid_ua_duibhne", "okita_souji_saber",
-            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "jeanne_alter" -> true;
+            "ushiwakamaru_rider", "zhao_yun_rider", "baobhan_sith", "jeanne_alter", "nightingale" -> true;
          default -> false;
       };
    }
@@ -1307,6 +1307,10 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
       boolean hasHorizontal = this.hasActionAnimation("horizontal_swing");
       if (!hasDiagonal && !hasHorizontal) {
          this.attackSwingTicks = 6;
+         if (!this.level().isClientSide()) {
+            int action = this.getMainHandItem().isEmpty() ? 1 : 0;
+            net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatDefenseService.broadcastBaseAttack(this, action);
+         }
          return;
       }
 
@@ -1457,6 +1461,20 @@ public abstract class ServantEntity extends PathfinderMob implements GeoEntity {
    @Override
    public void die(net.minecraft.world.damagesource.DamageSource cause) {
       super.die(cause);
+      // God Hand can cancel the death from inside super.die after restoring
+      // health. Do not leave a revived Heracles in the spiritual-death lock.
+      if (this.isAlive() || this.getHealth() > 0.0F) {
+         this.entityData.set(SPIRITUAL_DISSOLVING, false);
+         this.spiritualDissolveTicks = 0;
+         this.releaseSpiritualLock();
+         this.deathTime = 0;
+         this.hurtTime = 0;
+         this.hurtDuration = 0;
+         this.setPose(Pose.STANDING);
+         this.setTarget(null);
+         this.getNavigation().stop();
+         return;
+      }
       net.xxxjk.TYPE_MOON_WORLD.servant.card.MasterServantLinkService.onEntityServantDeath(this);
       ServantVoiceHelper.tryPlayFail(this);
       this.entityData.set(SPIRITUAL_DISSOLVING, true);

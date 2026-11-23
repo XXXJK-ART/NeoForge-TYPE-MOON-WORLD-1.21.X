@@ -1,0 +1,12 @@
+{
+  "rank": "A",
+  "id": "wind_protection_a",
+  "display_name": "Wind Protection A",
+  "display_name_zh": "避风的加护 A",
+  "type": "passive",
+  "mp_cost": 0,
+  "cooldown_ticks": 0,
+  "duration_ticks": 0,
+  "effects": [{"effect_type":"projectile_evasion_charges","params":{"charges":3,"restore_ticks":400,"wind_damage_multiplier":0.5}}],
+  "ai": {"facts":[{"type":"projectile_negation","strength":0.8}]}
+}

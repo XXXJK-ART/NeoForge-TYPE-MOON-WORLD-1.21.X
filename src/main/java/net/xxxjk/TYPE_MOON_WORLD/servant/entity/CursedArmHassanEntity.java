@@ -32,6 +32,8 @@ public class CursedArmHassanEntity extends ServantEntity {
    private static final String TAG_NO_CAPE = "CursedArmNoCape";
    private static final String TAG_NO_BANDAGES = "CursedArmNoBandages";
    private static final String TAG_SELF_MODIFICATION_LEVEL = "CursedArmSelfModificationLevel";
+   public static final String TAG_DIRK_AMMO = "CursedArmDirkAmmo";
+   public static final String TAG_DIRK_REPLENISH_TICK = "CursedArmDirkReplenishTick";
    private static final net.minecraft.resources.ResourceLocation HEALTH_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
       TYPE_MOON_WORLD.MOD_ID, "cursed_arm_self_mod_health");
    private static final net.minecraft.resources.ResourceLocation ATTACK_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
@@ -53,9 +55,21 @@ public class CursedArmHassanEntity extends ServantEntity {
    @Override
    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType spawnType, @Nullable SpawnGroupData groupData) {
       SpawnGroupData data = super.finalizeSpawn(level, difficulty, spawnType, groupData);
+      this.getPersistentData().putInt(TAG_DIRK_AMMO, 16);
+      this.getPersistentData().putLong(TAG_DIRK_REPLENISH_TICK, this.level().getGameTime());
       this.applySelfModificationAttributes();
       this.enforceEmptyRightHand();
       return data;
+   }
+
+   @Override
+   protected void customServerAiStep() {
+      if (HassanZabaniyaService.isExtractedItem(this.getMainHandItem())
+         || HassanZabaniyaService.isExtractedItem(this.getOffhandItem())) {
+         this.getNavigation().stop();
+         return;
+      }
+      super.customServerAiStep();
    }
 
    @Override
@@ -71,6 +85,7 @@ public class CursedArmHassanEntity extends ServantEntity {
             this.setNoBandages(false);
          }
          this.enforceEmptyRightHand();
+         HassanZabaniyaService.tickNpc(this);
       }
    }
 
@@ -79,10 +94,18 @@ public class CursedArmHassanEntity extends ServantEntity {
       if (hand == InteractionHand.MAIN_HAND && !stack.isEmpty()) {
          ItemStack rightHandStack = stack.copy();
          if (rightHandStack.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-            rightHandStack.setCount(Math.max(30, rightHandStack.getCount()));
+            rightHandStack.setCount(1);
          }
-         if (this.getOffhandItem().isEmpty()) {
+         ItemStack offhand = this.getOffhandItem();
+         if (HassanZabaniyaService.isExtractedItem(rightHandStack)) {
+            if (!offhand.isEmpty()) this.spawnAtLocation(offhand.copy());
             super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
+         } else if (HassanZabaniyaService.isExtractedItem(offhand)) {
+            this.spawnAtLocation(rightHandStack);
+         } else if (offhand.isEmpty()) {
+            super.setItemInHand(InteractionHand.OFF_HAND, rightHandStack);
+         } else {
+            this.spawnAtLocation(rightHandStack);
          }
          super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
          return;
@@ -96,11 +119,26 @@ public class CursedArmHassanEntity extends ServantEntity {
          return;
       }
       ItemStack moved = mainHand.copy();
-      if (moved.is(ModItems.DIRK_SMALL_KNIFE.get())) {
-         moved.setCount(Math.max(30, moved.getCount()));
+      if (HassanZabaniyaService.isExtractedItem(moved)) {
+         ItemStack offhand = this.getOffhandItem();
+         if (HassanZabaniyaService.isExtractedItem(offhand)) {
+            this.spawnAtLocation(moved);
+         } else {
+            if (!offhand.isEmpty()) this.spawnAtLocation(offhand.copy());
+            super.setItemInHand(InteractionHand.OFF_HAND, moved);
+         }
+         super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+         return;
       }
-      if (this.getOffhandItem().isEmpty()) {
+      if (moved.is(ModItems.DIRK_SMALL_KNIFE.get())) {
+         moved.setCount(1);
+      }
+      if (HassanZabaniyaService.isExtractedItem(this.getOffhandItem())) {
+         this.spawnAtLocation(moved);
+      } else if (this.getOffhandItem().isEmpty()) {
          super.setItemInHand(InteractionHand.OFF_HAND, moved);
+      } else {
+         this.spawnAtLocation(moved);
       }
       super.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
    }
@@ -110,12 +148,14 @@ public class CursedArmHassanEntity extends ServantEntity {
       if (amount <= 0.0F) {
          return false;
       }
-      return super.hurt(source, amount);
+      boolean hurt = super.hurt(source, amount);
+      if (hurt) CursedArmHassanCombatHelper.cancelZabaniyaWindup(this);
+      return hurt;
    }
 
    @Override
    public boolean doHurtTarget(Entity target) {
-      if (target instanceof net.minecraft.world.entity.LivingEntity living && CursedArmHassanCombatHelper.isProtectedPigKind(living)) {
+      if (target instanceof net.minecraft.world.entity.LivingEntity living && CursedArmHassanCombatHelper.refusesToHarm(this, living)) {
          this.setTarget(null);
          return false;
       }
@@ -171,12 +211,24 @@ public class CursedArmHassanEntity extends ServantEntity {
       this.refreshDimensions();
    }
 
+   public void evolveAfterServantKill() {
+      if (this.getSelfModificationLevel() >= 3) return;
+      this.setSelfModificationLevel(this.getSelfModificationLevel() + 1);
+      this.heal(50.0F);
+      if (this.level() instanceof net.minecraft.server.level.ServerLevel level) {
+         level.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL, this.getX(), this.getY() + this.getBbHeight() * 0.55,
+            this.getZ(), 24, 0.35, 0.45, 0.35, 0.03);
+         level.playSound(null, this.blockPosition(), net.minecraft.sounds.SoundEvents.SCULK_CATALYST_BLOOM,
+            net.minecraft.sounds.SoundSource.HOSTILE, 0.8F, 0.75F);
+      }
+   }
+
    public float getVisualScale() {
       return Math.min(1.05F, 0.9F + this.getSelfModificationLevel() * 0.05F);
    }
 
    public double getZabaniyaRange() {
-      return 5.0 + this.getSelfModificationLevel();
+      return 7.0;
    }
 
    public void triggerZabaniyaAnimation() {

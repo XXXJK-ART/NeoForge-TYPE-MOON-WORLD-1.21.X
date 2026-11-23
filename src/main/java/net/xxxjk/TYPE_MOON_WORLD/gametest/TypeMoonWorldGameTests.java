@@ -22,6 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.xxxjk.TYPE_MOON_WORLD.entity.ContenderBulletEntity;
+import net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity;
 import net.xxxjk.TYPE_MOON_WORLD.entity.deadapostle.DeadApostleEntity;
 import net.xxxjk.TYPE_MOON_WORLD.init.ModEntities;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.UshiwakamaruRiderEntity;
@@ -29,6 +30,7 @@ import net.xxxjk.TYPE_MOON_WORLD.item.ModItems;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.xxxjk.TYPE_MOON_WORLD.magic.MagicDisplayMetadata;
+import net.xxxjk.TYPE_MOON_WORLD.world.terrain.CombatTerrainProtection;
 
 @GameTestHolder("typemoonworld")
 @PrefixGameTestTemplate(false)
@@ -693,22 +695,26 @@ public final class TypeMoonWorldGameTests {
    public static void terrainLowerHemisphereProtectsUpperAndBlockEntities(GameTestHelper helper) {
       var level = helper.getLevel();
       var player = helper.makeMockServerPlayerInLevel();
-      BlockPos center = helper.absolutePos(new BlockPos(4, 4, 4));
+      BlockPos center = helper.absolutePos(new BlockPos(4, 40, 4));
+      prepareOriginalTerrainFloor(helper, center.below(), 3);
+      player.teleportTo(center.getX() + 8.5, center.getY() - 1.0, center.getZ() + 0.5);
       level.setBlock(center, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
       level.setBlock(center.above(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
-      level.setBlock(center.offset(1, -1, 0), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
-      level.setBlock(center.offset(-1, -1, 0), net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 3);
+      level.setBlock(center.offset(1, 0, 0), net.minecraft.world.level.block.Blocks.CHEST.defaultBlockState(), 3);
+      level.setBlock(center.offset(-1, 0, 0), net.minecraft.world.level.block.Blocks.BEDROCK.defaultBlockState(), 3);
       net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.impact(level, player, net.minecraft.world.phys.Vec3.atCenterOf(center),
          new net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile(
             net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL, 2.5, 6.0F, 0, 0),
          net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
       helper.runAfterDelay(12, () -> {
          helper.assertTrue(level.getBlockState(center).isAir(), "lower hemisphere did not remove its center block");
+         helper.assertTrue(level.getBlockState(center.below()).is(net.minecraft.world.level.block.Blocks.STONE),
+            "lower hemisphere removed the original ground");
          helper.assertTrue(level.getBlockState(center.above()).is(net.minecraft.world.level.block.Blocks.STONE),
             "lower hemisphere removed an upper-half block");
-         helper.assertTrue(level.getBlockState(center.offset(1, -1, 0)).is(net.minecraft.world.level.block.Blocks.CHEST),
+         helper.assertTrue(level.getBlockState(center.offset(1, 0, 0)).is(net.minecraft.world.level.block.Blocks.CHEST),
             "terrain impact removed a block entity");
-         helper.assertTrue(level.getBlockState(center.offset(-1, -1, 0)).is(net.minecraft.world.level.block.Blocks.BEDROCK),
+         helper.assertTrue(level.getBlockState(center.offset(-1, 0, 0)).is(net.minecraft.world.level.block.Blocks.BEDROCK),
             "terrain impact removed bedrock");
          helper.assertTrue(level.getEntitiesOfClass(net.minecraft.world.entity.item.FallingBlockEntity.class,
             new AABB(center).inflate(8.0)).isEmpty(), "terrain debris created FallingBlockEntity instances");
@@ -720,10 +726,12 @@ public final class TypeMoonWorldGameTests {
    public static void ordinarySelfImpactOnlyBreaksOneFloorLayer(GameTestHelper helper) {
       var level = helper.getLevel();
       var player = helper.makeMockServerPlayerInLevel();
-      BlockPos top = helper.absolutePos(new BlockPos(5, 5, 5));
+      BlockPos top = helper.absolutePos(new BlockPos(5, 40, 5));
+      prepareOriginalTerrainFloor(helper, top.below(), 3);
       for (int depth = 0; depth < 3; depth++) {
          level.setBlock(top.below(depth), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
       }
+      helper.assertTrue(CombatTerrainProtection.canRemove(level, top), "shallow impact layer was not destructible");
       player.teleportTo(top.getX() + 0.5, top.getY() + 1.0, top.getZ() + 0.5);
       net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.impact(level, player,
          player.position().add(0.0, 0.2, 0.0),
@@ -736,7 +744,19 @@ public final class TypeMoonWorldGameTests {
             "ordinary self impact broke more than one block below the caster");
          helper.assertTrue(level.getBlockState(top.below(2)).is(net.minecraft.world.level.block.Blocks.STONE),
             "ordinary self impact drilled through the protected lower floor");
-         helper.succeed();
+         net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.impact(level, player,
+            player.position().add(0.0, 0.2, 0.0),
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(
+               net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.SMALL),
+            net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
+         helper.runAfterDelay(10, () -> {
+            helper.assertTrue(level.getBlockState(top).isAir(), "the removed top floor layer reappeared");
+            for (int depth = 1; depth < 3; depth++) {
+               helper.assertTrue(level.getBlockState(top.below(depth)).is(net.minecraft.world.level.block.Blocks.STONE),
+                  "repeated self impacts dug into the original ground at depth " + depth);
+            }
+            helper.succeed();
+         });
       });
    }
 
@@ -744,7 +764,8 @@ public final class TypeMoonWorldGameTests {
    public static void mediumImpactLaunchesBoundedPhysicalBlocks(GameTestHelper helper) {
       var level = helper.getLevel();
       var player = helper.makeMockServerPlayerInLevel();
-      BlockPos center = helper.absolutePos(new BlockPos(5, 6, 5));
+      BlockPos center = helper.absolutePos(new BlockPos(5, 40, 5));
+      prepareOriginalTerrainFloor(helper, center.below(), 3);
       for (int x = -3; x <= 3; x++) {
          for (int z = -3; z <= 3; z++) {
             level.setBlock(center.offset(x, 0, z), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
@@ -757,7 +778,7 @@ public final class TypeMoonWorldGameTests {
          net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.of(
             net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactProfile.Tier.MEDIUM),
          net.xxxjk.TYPE_MOON_WORLD.world.terrain.TerrainImpactService.Shape.GROUND_LOWER_HEMISPHERE);
-      helper.runAfterDelay(6, () -> {
+      helper.runAfterDelay(12, () -> {
          var physical = level.getEntitiesOfClass(net.minecraft.world.entity.item.FallingBlockEntity.class,
             new AABB(center).inflate(16.0),
             net.xxxjk.TYPE_MOON_WORLD.world.terrain.PhysicalTerrainDebrisService::isPhysicalDebris);
@@ -765,23 +786,31 @@ public final class TypeMoonWorldGameTests {
          helper.assertTrue(physical.size() <= 4, "medium terrain impact exceeded its per-impact physical debris cap");
          helper.assertTrue(physical.stream().noneMatch(entity -> entity.dropItem),
             "physical terrain debris was allowed to create item drops");
+         helper.assertTrue(level.getBlockState(center.below()).is(net.minecraft.world.level.block.Blocks.STONE),
+            "physical debris was taken from the original ground");
          helper.succeed();
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 190)
+   private static void prepareOriginalTerrainFloor(GameTestHelper helper, BlockPos floor, int radius) {
+      var level = helper.getLevel();
+      for (int x = -radius; x <= radius; x++) {
+         for (int z = -radius; z <= radius; z++) {
+            BlockPos pos = floor.offset(x, 0, z);
+            level.setBlock(pos, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            // Capture the original ground before adding the destructible obstacles above it.
+            helper.assertTrue(!CombatTerrainProtection.canRemove(level, pos), "fixture floor was not protected");
+            helper.assertTrue(CombatTerrainProtection.canRemove(level, pos.above()), "fixture obstacle was not above ground");
+         }
+      }
+   }
+
+   @GameTest(template = "ancient_temple", timeoutTicks = 600)
    public static void eaAndExcaliburResolveBeamClash(GameTestHelper helper) {
       var level = helper.getLevel();
       var eaOwner = helper.makeMockServerPlayerInLevel();
       var excaliburOwner = helper.makeMockServerPlayerInLevel();
-      eaOwner.teleportTo(helper.absolutePos(new BlockPos(2, 100, 5)).getCenter().x,
-         helper.absolutePos(new BlockPos(2, 100, 5)).getY(), helper.absolutePos(new BlockPos(2, 100, 5)).getCenter().z);
-      excaliburOwner.teleportTo(helper.absolutePos(new BlockPos(26, 100, 5)).getCenter().x,
-         helper.absolutePos(new BlockPos(26, 100, 5)).getY(), helper.absolutePos(new BlockPos(26, 100, 5)).getCenter().z);
-      eaOwner.setYRot(-90.0F);
-      eaOwner.setYHeadRot(-90.0F);
-      excaliburOwner.setYRot(90.0F);
-      excaliburOwner.setYHeadRot(90.0F);
+      placeBeamClashOwners(helper, eaOwner, excaliburOwner);
       var eaMana = eaOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
       eaMana.player_mana = 10000.0;
       eaMana.player_max_mana = 10000.0;
@@ -796,27 +825,25 @@ public final class TypeMoonWorldGameTests {
       var ea = new net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity(level, eaOwner, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0));
       ea.requestRelease(net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.WIND_TICKS);
       level.addFreshEntity(ea);
-      var excalibur = new java.util.concurrent.atomic.AtomicReference<net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity>();
-      helper.runAfterDelay(80, () -> {
+      awaitEaBeam(helper, ea, false, () -> {
          var beam = new net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity(
             level, excaliburOwner, excaliburOwner.getEyePosition(), 220, 0, 1.0F);
-         excalibur.set(beam);
          level.addFreshEntity(beam);
-      });
-      helper.runAfterDelay(110, () -> {
-         helper.assertTrue(excalibur.get() != null && ea.isClashing() && excalibur.get().isClashing(),
-            "EA and Excalibur did not enter the shared beam clash state");
-      });
-      helper.runAfterDelay(175, () -> {
-         helper.assertTrue(!ea.isAlive(), "low-charge EA survived a full-power Excalibur clash");
-         helper.assertTrue(excalibur.get() != null && excalibur.get().isAlive() && !excalibur.get().isClashing(),
-            "Excalibur did not continue with residual output after winning the clash");
-         helper.succeed();
+         helper.runAfterDelay(20, () -> {
+            helper.assertTrue(ea.isClashing() && beam.isClashing(),
+               "EA and Excalibur did not enter the shared beam clash state");
+         });
+         helper.runAfterDelay(95, () -> {
+            helper.assertTrue(!ea.isAlive(), "low-charge EA survived a full-power Excalibur clash");
+            helper.assertTrue(beam.isAlive() && !beam.isClashing(),
+               "Excalibur did not continue with residual output after winning the clash");
+            helper.succeed();
+         });
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 210)
-   public static void fullEaOpeningDamageGapBeatsEqualManaExcalibur(GameTestHelper helper) {
+   @GameTest(template = "ancient_temple", timeoutTicks = 600)
+   public static void fullEaOpeningDamageGapConsumesExcaliburMana(GameTestHelper helper) {
       var level = helper.getLevel();
       var eaOwner = helper.makeMockServerPlayerInLevel();
       var excaliburOwner = helper.makeMockServerPlayerInLevel();
@@ -826,29 +853,25 @@ public final class TypeMoonWorldGameTests {
 
       var ea = new net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity(level, eaOwner, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0));
       level.addFreshEntity(ea);
-      var excalibur = new java.util.concurrent.atomic.AtomicReference<net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity>();
-      helper.runAfterDelay(145, () -> ea.requestRelease(
-         net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.WIND_TICKS
-            + net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.ORB_CHARGE_TICKS));
-      helper.runAfterDelay(160, () -> {
+      awaitEaBeam(helper, ea, true, () -> {
          setPlayerMana(eaOwner, 1000.0, 1000.0);
-         setPlayerMana(excaliburOwner, 1000.0, 1000.0);
          var beam = new net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity(
             level, excaliburOwner, excaliburOwner.getEyePosition(), 220, 0, 1.0F);
-         excalibur.set(beam);
+         double openingGap = ea.clashBaseDamage() - beam.clashBaseDamage();
+         helper.assertTrue(openingGap > 0.0, "full EA had no opening damage advantage");
+         setPlayerMana(excaliburOwner, openingGap, openingGap);
          level.addFreshEntity(beam);
-      });
-      helper.runAfterDelay(178, () -> {
-         helper.assertTrue(ea.isAlive() && !ea.isClashing(), "full EA did not survive the opening damage gap");
-         helper.assertTrue(excalibur.get() != null && !excalibur.get().isAlive(),
-            "equal-mana Excalibur survived after paying EA's 1000 damage gap");
-         helper.assertTrue(excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana <= 0.001,
-            "Excalibur owner did not spend all mana on the opening damage gap");
-         helper.succeed();
+         helper.runAfterDelay(18, () -> {
+            helper.assertTrue(ea.isAlive() && !ea.isClashing(), "full EA did not survive the opening damage gap");
+            helper.assertTrue(!beam.isAlive(), "Excalibur survived after spending all mana on the opening damage gap of " + openingGap);
+            helper.assertTrue(excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana <= 0.001,
+               "Excalibur owner did not spend all mana on the opening damage gap");
+            helper.succeed();
+         });
       });
    }
 
-   @GameTest(template = "ancient_temple", timeoutTicks = 210)
+   @GameTest(template = "ancient_temple", timeoutTicks = 600)
    public static void excaliburWithExtraManaContinuesAfterOpeningDamageGap(GameTestHelper helper) {
       var level = helper.getLevel();
       var eaOwner = helper.makeMockServerPlayerInLevel();
@@ -859,25 +882,45 @@ public final class TypeMoonWorldGameTests {
 
       var ea = new net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity(level, eaOwner, new net.minecraft.world.phys.Vec3(1.0, 0.0, 0.0));
       level.addFreshEntity(ea);
-      var excalibur = new java.util.concurrent.atomic.AtomicReference<net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity>();
-      helper.runAfterDelay(145, () -> ea.requestRelease(
-         net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.WIND_TICKS
-            + net.xxxjk.TYPE_MOON_WORLD.entity.GilgameshEaBeamEntity.ORB_CHARGE_TICKS));
-      helper.runAfterDelay(160, () -> {
+      awaitEaBeam(helper, ea, true, () -> {
          setPlayerMana(eaOwner, 1000.0, 1000.0);
-         setPlayerMana(excaliburOwner, 1600.0, 1600.0);
          var beam = new net.xxxjk.TYPE_MOON_WORLD.entity.ArtoriaExcaliburBeamEntity(
             level, excaliburOwner, excaliburOwner.getEyePosition(), 220, 0, 1.0F);
-         excalibur.set(beam);
+         double openingGap = ea.clashBaseDamage() - beam.clashBaseDamage();
+         helper.assertTrue(openingGap > 0.0, "full EA had no opening damage advantage");
+         double remainingMana = 600.0;
+         setPlayerMana(excaliburOwner, openingGap + remainingMana, openingGap + remainingMana);
          level.addFreshEntity(beam);
+         helper.runAfterDelay(2, () -> {
+            helper.assertTrue(ea.isClashing() && beam.isClashing(), "beams did not start their sustained clash");
+            double mana = excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
+            helper.assertTrue(Math.abs(mana - remainingMana) < 0.001,
+               "Excalibur did not pay exactly the opening damage gap of " + openingGap + "; remaining=" + mana);
+         });
+         helper.runAfterDelay(12, () -> {
+            double excaliburMana = excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
+            helper.assertTrue(ea.isClashing() && beam.isClashing(),
+               "extra-mana Excalibur did not enter the sustained clash after paying the opening gap");
+            helper.assertTrue(excaliburMana > 0.001 && excaliburMana < remainingMana,
+               "sustained clash did not drain the mana left after the opening damage gap");
+            helper.succeed();
+         });
       });
-      helper.runAfterDelay(172, () -> {
-         double excaliburMana = excaliburOwner.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES).player_mana;
-         helper.assertTrue(ea.isClashing() && excalibur.get() != null && excalibur.get().isClashing(),
-            "extra-mana Excalibur did not enter the sustained clash after paying the opening gap");
-         helper.assertTrue(excaliburMana > 0.001 && excaliburMana < 700.0,
-            "Excalibur owner did not pay the opening damage gap before the sustained contest");
-         helper.succeed();
+   }
+
+   private static void awaitEaBeam(GameTestHelper helper, GilgameshEaBeamEntity ea, boolean fullCharge, Runnable ready) {
+      helper.runAfterDelay(1, () -> {
+         helper.assertTrue(ea.isAlive(), "EA ended before its beam became active; stage=" + ea.getStage());
+         if (fullCharge && ea.getStage() == GilgameshEaBeamEntity.Stage.ORB_CHARGE && ea.getPowerScale() >= 1.0F) {
+            ea.requestRelease(GilgameshEaBeamEntity.WIND_TICKS + GilgameshEaBeamEntity.ORB_CHARGE_TICKS);
+         }
+         if (ea.isBeamDamageActive()) {
+            helper.assertTrue(!fullCharge || ea.getPowerScale() >= 1.0F, "EA released before reaching full charge");
+            ready.run();
+         } else {
+            // Chant duration belongs to the cast policy; measure clash time from the active beam.
+            awaitEaBeam(helper, ea, fullCharge, ready);
+         }
       });
    }
 
@@ -890,6 +933,10 @@ public final class TypeMoonWorldGameTests {
       eaOwner.setYHeadRot(-90.0F);
       excaliburOwner.setYRot(90.0F);
       excaliburOwner.setYHeadRot(90.0F);
+      eaOwner.setXRot(0.0F);
+      excaliburOwner.setXRot(0.0F);
+      eaOwner.setNoGravity(true);
+      excaliburOwner.setNoGravity(true);
    }
 
    private static void setPlayerMana(ServerPlayer player, double current, double maximum) {

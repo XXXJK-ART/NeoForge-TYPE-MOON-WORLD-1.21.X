@@ -5,13 +5,95 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.level.Level;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations.Action;
+import net.xxxjk.TYPE_MOON_WORLD.servant.oda.OdaNobunagaActionAnimations;
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.ServantCombatSystem;
 
 public class OdaNobunagaEntity extends ServantEntity {
    public static final String SERVANT_KEY = "oda_nobunaga";
+   private static final EntityDataAccessor<Boolean> COMBAT_READY = SynchedEntityData.defineId(
+      OdaNobunagaEntity.class, EntityDataSerializers.BOOLEAN
+   );
+   private static final EntityDataAccessor<String> ACTION_ANIMATION = SynchedEntityData.defineId(
+      OdaNobunagaEntity.class, EntityDataSerializers.STRING
+   );
+   private static final EntityDataAccessor<Integer> ACTION_ANIMATION_START = SynchedEntityData.defineId(
+      OdaNobunagaEntity.class, EntityDataSerializers.INT
+   );
 
    public OdaNobunagaEntity(EntityType<OdaNobunagaEntity> entityType, Level level) {
       super(entityType, level, SERVANT_KEY);
+   }
+
+   @Override
+   protected void defineSynchedData(SynchedEntityData.Builder builder) {
+      super.defineSynchedData(builder);
+      builder.define(COMBAT_READY, false);
+      builder.define(ACTION_ANIMATION, "");
+      builder.define(ACTION_ANIMATION_START, -1000);
+   }
+
+   @Override
+   public void tick() {
+      super.tick();
+      if (!this.level().isClientSide()) {
+         var target = this.getTarget();
+         this.entityData.set(COMBAT_READY, this.isAlive() && !this.isSpiritualTransitionLocked()
+            && !ServantCombatSystem.cannotAct(this) && target != null && target.isAlive()
+            && this.distanceToSqr(target) <= 1024.0 && this.hasLineOfSight(target));
+      }
+   }
+
+   public boolean isCombatReady() {
+      return this.entityData.get(COMBAT_READY);
+   }
+
+   @Override
+   public void triggerBasicAttackAnimation() {
+      if (this.isAlive() && !this.isSpiritualTransitionLocked() && !this.isPerformingAction()
+         && !ServantCombatSystem.cannotAct(this)) {
+         this.triggerNamedActionAnimation(Action.ATTACK_SLASH.animationId());
+      }
+   }
+
+   @Override
+   public void triggerNamedActionAnimation(String key) {
+      super.triggerNamedActionAnimation(key);
+      if (this.level().isClientSide()) return;
+      String action = normalizeAction(key);
+      if (action.isEmpty()) return;
+      this.entityData.set(ACTION_ANIMATION, action);
+      this.entityData.set(ACTION_ANIMATION_START, this.tickCount);
+   }
+
+   public String getActionAnimation() {
+      return this.entityData.get(ACTION_ANIMATION);
+   }
+
+   public float getActionAnimationAge(float partialTick) {
+      return this.tickCount + partialTick - this.entityData.get(ACTION_ANIMATION_START);
+   }
+
+   private static String normalizeAction(String key) {
+      if (key == null) return "";
+      for (Action action : Action.values()) {
+         if (action.animationId().equals(key)) return key;
+      }
+      return switch (key) {
+         case "bow_shot" -> Action.ATTACK_SHOT.animationId();
+         case "hasebe_thrust", "hasebe_breakthrough" -> Action.ATTACK_SLASH.animationId();
+         case "summon_guns" -> Action.SKILL_COMMAND.animationId();
+         case "maou" -> Action.SKILL_MAOU.animationId();
+         case "three_thousand" -> Action.NP_THREE_THOUSAND_CHANT.animationId();
+         case "three_thousand_release" -> Action.NP_THREE_THOUSAND_RELEASE.animationId();
+         case "hajun_chant" -> Action.NP_HAJUN_CHANT.animationId();
+         case "hajun_release" -> Action.NP_HAJUN_RELEASE.animationId();
+         default -> "";
+      };
    }
 
    @Override

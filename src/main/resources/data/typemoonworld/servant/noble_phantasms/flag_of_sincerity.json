@@ -12,14 +12,14 @@
       "effect_type": "summon_shinsengumi",
       "params": {
         "entity": "typemoonworld:okita_shinsengumi",
-        "count": 13,
+        "count": 12,
         "duration_ticks": 2400,
         "range": 20,
-        "pool_decrements_on_death": false,
+        "pool_decrements_on_death": true,
         "pool_decrements_on_timeout": false,
         "usable_during_weak_constitution": true
       }
     }
   ],
-  "description": "Summons thirteen Shinsengumi members for 120 seconds. Death does not reduce future summon count."
+  "description": "Summons up to twelve Shinsengumi members for 120 seconds. Death permanently reduces the remaining pool; timeout does not."
 }

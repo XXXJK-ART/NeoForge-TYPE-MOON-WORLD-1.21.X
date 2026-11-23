@@ -1,5 +1,6 @@
 package com.example.typemoonaddon.andrephius;
 
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 import com.example.typemoonaddon.TypeMoonAddon;
 import com.example.typemoonaddon.kimaris.KimarisService;
 import com.example.typemoonaddon.magic.AndrephiusMagic;
@@ -577,14 +578,13 @@ public final class AndrephiusService {
                     0.0F,
                     MAX_DAMAGE
             );
-            damage = MagicResistanceHelper.applyNoblePhantasmMagicResistance(target, damage);
             damage = HeraclesGodHandHelper.applyAntiHeraclesNoblePhantasmSpecialAttack(
                     target, damage);
             if (!Float.isFinite(damage) || damage <= 0.0F) {
                 return false;
             }
 
-            DamageSource source = caster.damageSources().source(LIGHTNING_DAMAGE, caster);
+            DamageSource source = MagecraftDamageSource.of(caster.damageSources().source(LIGHTNING_DAMAGE, caster), "andrephius", caster);
             target.invulnerableTime = 0;
             boolean hurt = target.hurt(source, damage);
             target.invulnerableTime = 0;

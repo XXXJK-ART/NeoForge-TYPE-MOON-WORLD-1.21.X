@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.magic.church;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -26,6 +28,7 @@ import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionContext;
 import net.xxxjk.TYPE_MOON_WORLD.magic.api.MagicExecutionResult;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.utils.ManaHelper;
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
 
 public final class BlackKeyMiracleService {
    public static final String THEOLOGY = "theology";
@@ -170,6 +173,7 @@ public final class BlackKeyMiracleService {
       }
       double scanRadius = 16.0 + proficiency * 0.16;
       int detonated = 0;
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(scanRadius),
          living -> living != caster && living.isAlive() && !caster.isAlliedTo(living)
             && living.hasEffect(ModMobEffects.CREMATION_RITE))) {
@@ -179,10 +183,11 @@ public final class BlackKeyMiracleService {
          float radius = (float)Math.min(6.0, 1.2 + layers * 0.35 + proficiency * 0.012);
          float damage = (float)(6.0 + layers * 2.5 + proficiency * 0.12);
          target.invulnerableTime = 0;
-         target.hurt(target.damageSources().magic(), damage);
+         target.hurt(MagecraftDamageSource.of(caster.damageSources().magic(), CREMATION_RITE, caster), damage);
          level.explode(caster, target.getX(), target.getY(0.45), target.getZ(), radius, false, Level.ExplosionInteraction.NONE);
          target.removeEffect(ModMobEffects.CREMATION_RITE);
          detonated++;
+      }
       }
       if (detonated > 0) {
          addProficiency(caster, CREMATION_RITE, Math.min(2.0, detonated * 0.25));

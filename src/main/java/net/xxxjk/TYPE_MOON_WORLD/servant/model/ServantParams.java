@@ -10,9 +10,20 @@ public record ServantParams(
    StatRank magic,
    boolean magicPlus,
    StatRank luck,
-   boolean luckPlus
+   boolean luckPlus,
+   String noblePhantasmRank
 ) {
    public ServantParams {
+      noblePhantasmRank = noblePhantasmRank == null ? "" : noblePhantasmRank;
+   }
+
+   public ServantParams(StatRank endurance, boolean endurancePlus, StatRank strength, boolean strengthPlus,
+                        StatRank agility, boolean agilityPlus, StatRank magic, boolean magicPlus, StatRank luck, boolean luckPlus) {
+      this(endurance,endurancePlus,strength,strengthPlus,agility,agilityPlus,magic,magicPlus,luck,luckPlus,"");
+   }
+
+   public ServantParams withNoblePhantasmRank(String rank) {
+      return new ServantParams(endurance,endurancePlus,strength,strengthPlus,agility,agilityPlus,magic,magicPlus,luck,luckPlus,rank);
    }
 
    private int effectiveCoefficient(StatRank rank, boolean plus) {
@@ -35,6 +46,9 @@ public record ServantParams(
    }
 
    public double movementSpeed() {
+      if (this.agility == StatRank.A_PLUS_PLUS) {
+         return StatRank.A.toMovementSpeed() * 3.0;
+      }
       return 0.16 + effectiveCoefficient(this.agility, this.agilityPlus) * 0.004;
    }
 

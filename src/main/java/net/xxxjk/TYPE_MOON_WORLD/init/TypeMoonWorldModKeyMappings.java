@@ -252,7 +252,18 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
+         if (event.isAttack() && net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.attacksBlocked(player)) {
+            event.setCanceled(true); event.setSwingHand(false); return;
+         }
          if (event.isUseItem()) {
+            if (net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumesUse()) {
+               event.setCanceled(true); event.setSwingHand(false); return;
+            }
+            if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarryingMaster(player)) {
+               net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumeUseUntilRelease();
+               if (minecraft.options.keyShift.isDown()) PacketDistributor.sendToServer(new net.xxxjk.TYPE_MOON_WORLD.network.MasterCarryDismountMessage());
+               event.setCanceled(true); event.setSwingHand(false); return;
+            }
             if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.ZhaoYunHakuryuEntity mount
                && !isHakuryuMountedUseReserved(player, vars)) {
                PacketDistributor.sendToServer(new HakuryuRideMessage(mount.getId()), new CustomPacketPayload[0]);
@@ -309,8 +320,9 @@ public class TypeMoonWorldModKeyMappings {
                return;
             }
          }
-         if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
-            PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
+          if (event.isUseItem() && isClientDiarmuidDualWieldActive(player, vars)) {
+             if (isClientDiarmuidHandReady(player, InteractionHand.MAIN_HAND))
+                PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(true), new CustomPacketPayload[0]);
             player.swing(InteractionHand.MAIN_HAND);
             event.setCanceled(true);
             event.setSwingHand(false);
@@ -346,17 +358,23 @@ public class TypeMoonWorldModKeyMappings {
             return;
          }
          if (vars.servant_card_transformed && !blockTarget) {
+            if (!isClientDiarmuidDualWieldActive(player, vars))
+               net.xxxjk.TYPE_MOON_WORLD.client.ServantBaseAttackInputClient.attack();
             PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
-            if (isClientDiarmuidDualWieldActive(player, vars)) {
+             if (isClientDiarmuidDualWieldActive(player, vars)) {
                player.swing(InteractionHand.OFF_HAND);
+               if (isClientDiarmuidHandReady(player, InteractionHand.OFF_HAND))
+                  PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
                event.setSwingHand(false);
                event.setCanceled(true);
             }
             return;
          }
-         if (isClientDiarmuidDualWieldActive(player, vars)
+          if (isClientDiarmuidDualWieldActive(player, vars)
             && (minecraft.hitResult == null || minecraft.hitResult.getType() != HitResult.Type.BLOCK)) {
             player.swing(InteractionHand.OFF_HAND);
+            if (isClientDiarmuidHandReady(player, InteractionHand.OFF_HAND))
+               PacketDistributor.sendToServer(new ServantCardBasicAttackMessage(false), new CustomPacketPayload[0]);
             event.setCanceled(true);
             event.setSwingHand(false);
             return;
@@ -390,6 +408,17 @@ public class TypeMoonWorldModKeyMappings {
       @SubscribeEvent
       public static void onPaleRiderMovementInput(MovementInputUpdateEvent event) {
          if (!(event.getEntity() instanceof Player player) || !player.isPassenger()) return;
+         if (net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterCarryService.isCarriedMaster(player)) {
+            event.getInput().forwardImpulse = 0.0F;
+            event.getInput().leftImpulse = 0.0F;
+            event.getInput().jumping = false;
+            event.getInput().shiftKeyDown = false;
+            return;
+         }
+         if (player.getVehicle() instanceof net.xxxjk.TYPE_MOON_WORLD.entity.OdaMatchlockGunEntity mount && mount.isMountMode()) {
+            event.getInput().shiftKeyDown = false;
+            return;
+         }
          TypeMoonWorldModVariables.PlayerVariables vars = player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES);
          if (vars.servant_card_transformed && "pale_rider".equals(vars.servant_card_id)
             && (PaleRiderClientState.possessing
@@ -649,7 +678,7 @@ public class TypeMoonWorldModKeyMappings {
                MysticEyesToggleMessage.pressAction(player, 0);
             }
 
-            if (TypeMoonWorldModKeyMappings.OPEN_PROJECTION_PRESET.isDown()) {
+            if (!net.xxxjk.TYPE_MOON_WORLD.client.ServantCarryInput.consumesTab() && TypeMoonWorldModKeyMappings.OPEN_PROJECTION_PRESET.isDown()) {
                if (!isTabDown) {
                   isTabDown = true;
                   if (!suppressScreens && vars.is_magus && vars.is_magic_circuit_open && !vars.selected_magics.isEmpty()) {
@@ -1189,9 +1218,16 @@ public class TypeMoonWorldModKeyMappings {
       private static boolean isClientDiarmuidDualWieldActive(Player player, TypeMoonWorldModVariables.PlayerVariables vars) {
          return vars.servant_card_transformed
             && "diarmuid_ua_duibhne".equals(vars.servant_card_id)
-            && vars.servant_card_action_mode == 1
-            && player.getMainHandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem
-            && player.getOffhandItem().getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem;
+            && vars.servant_card_action_mode == 1;
+      }
+
+      private static boolean isClientDiarmuidHandReady(Player player, InteractionHand hand) {
+         if (!isClientDiarmuidDualWieldActive(player, player.getData(TypeMoonWorldModVariables.PLAYER_VARIABLES))) return false;
+         ItemStack stack = player.getItemInHand(hand);
+         if (!(stack.getItem() instanceof net.xxxjk.TYPE_MOON_WORLD.item.custom.DiarmuidSpearItem spear)
+            || stack.getDamageValue() >= stack.getMaxDamage()) return false;
+         long until = player.getPersistentData().getLong("DiarmuidAction:hand_" + hand.name());
+         return player.level().getGameTime() >= until;
       }
 
       private static void triggerCast(Player player, int eventType, int pressedMs) {

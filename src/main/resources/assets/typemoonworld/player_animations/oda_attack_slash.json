@@ -1,0 +1,17 @@
+{
+  "name": "oda_attack_slash",
+  "version": 3,
+  "description": "Oda Nobunaga draws Heshikiri Hasebe back and cuts across.",
+  "emote": {
+    "beginTick": 0,
+    "endTick": 16,
+    "stopTick": 16,
+    "moves": [
+      {"tick": 0, "rightArm": {"pitch": -20, "yaw": -10, "roll": -12}, "leftArm": {"pitch": -8}, "body": {"yaw": 0}},
+      {"tick": 4, "rightArm": {"pitch": -64, "yaw": -24, "roll": -35}, "leftArm": {"pitch": -32, "yaw": 12}, "body": {"yaw": 10}},
+      {"tick": 8, "rightArm": {"pitch": -82, "yaw": 22, "roll": 62}, "leftArm": {"pitch": -48, "yaw": -14}, "body": {"yaw": -28, "pitch": 7}},
+      {"tick": 12, "rightArm": {"pitch": -38, "yaw": 8, "roll": 30}, "leftArm": {"pitch": -20}, "body": {"yaw": -9, "pitch": 0}},
+      {"tick": 16, "rightArm": {"pitch": 0, "yaw": 0, "roll": 0}, "leftArm": {"pitch": 0, "yaw": 0, "roll": 0}, "body": {"yaw": 0}}
+    ]
+  }
+}

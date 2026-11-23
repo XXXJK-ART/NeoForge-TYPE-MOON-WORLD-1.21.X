@@ -29,6 +29,7 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
          HeraclesServantSkills.registerBuiltin(INSTANCE);
          CasterGilgameshServantSkills.registerBuiltin(INSTANCE);
          SasakiKojiroServantSkills.registerBuiltin(INSTANCE);
+         LiShuwenServantSkills.registerBuiltin(INSTANCE);
          ParacelsusServantSkills.registerBuiltin(INSTANCE);
          MuramasaServantSkills.registerBuiltin(INSTANCE);
          loadAddonEntrypoints();
@@ -50,6 +51,17 @@ public final class ServantSkillRegistry implements IServantSkillRegistry {
          return ServantExecutionResult.NOT_HANDLED;
       }
 
+      String key = skillId.substring(skillId.indexOf(':') + 1);
+      if (key.equals("god_hand_passive")) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.heracles.GodHandService.initialize(context.caster());
+         return ServantExecutionResult.SUCCESS;
+      }
+      if (java.util.stream.Stream.of("mad_enhancement_", "divinity_", "battle_continuation_")
+         .anyMatch(prefix -> key.startsWith(prefix) && net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillRules.rank(key.substring(prefix.length())) > 0)
+         || key.equals("false_mind_eye_b") && net.xxxjk.TYPE_MOON_WORLD.servant.entity.HeraclesGodHandHelper.hasGodHand(context.caster())) {
+         net.xxxjk.TYPE_MOON_WORLD.servant.combat.CommonSkillService.reconcile(context.caster());
+         return ServantExecutionResult.SUCCESS;
+      }
       RegisteredSkill registered = REGISTRY.get(skillId);
       if (registered == null || registered.executor == null) {
          return ServantExecutionResult.NOT_HANDLED;

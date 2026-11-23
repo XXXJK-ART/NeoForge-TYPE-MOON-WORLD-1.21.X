@@ -9,17 +9,28 @@
   "display_name_zh": "战斗续行 A",
   "type": "passive",
   "mp_cost": 0,
-  "cooldown_ticks": 6000,
-  "duration_ticks": 0,
+  "cooldown_ticks": 12000,
+  "duration_ticks": 100,
   "effects": [
     {
-      "effect_type": "survival_trigger",
-      "params": { "activation_chance": 1.0, "cooldown_ticks": 6000 }
-    },
-    {
-      "effect_type": "damage_immunity",
-      "params": { "duration_ticks": 100, "cooldown_ticks": 6000 }
+      "effect_type": "lethal_survival",
+      "params": {
+        "health_ratio": 0.1,
+        "protection_ticks": 100,
+        "reduction": 0.8,
+        "heal_per_second": 10
+      }
     }
   ],
-  "ai": {"facts": [{"type": "revive", "strength": 0.8, "requires": ["low_health"]}]}
+  "ai": {
+    "facts": [
+      {
+        "type": "revive",
+        "strength": 0.8,
+        "requires": [
+          "low_health"
+        ]
+      }
+    ]
+  }
 }

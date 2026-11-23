@@ -1,0 +1,13 @@
+// Opt-in visual QA in an isolated world; excluded from release artifacts.
+allprojects {
+    afterEvaluate { project ->
+        def smoke = project.sourceSets.create('arashVfxSmoke') {
+            java.srcDir 'tools/arash-vfx-smoke/java'
+            resources.srcDir 'tools/arash-vfx-smoke/resources'
+            compileClasspath += project.sourceSets.main.output + project.configurations.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.configurations.runtimeClasspath
+        }
+        project.runs.client.modSources.add('typemoonworld_arash_vfx_smoke', smoke)
+        project.runs.client.workingDirectory project.file('build/arash-vfx-client-run')
+    }
+}

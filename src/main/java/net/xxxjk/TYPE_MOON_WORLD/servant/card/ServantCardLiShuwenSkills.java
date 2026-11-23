@@ -16,6 +16,7 @@ import net.xxxjk.TYPE_MOON_WORLD.TYPE_MOON_WORLD;
 import net.xxxjk.TYPE_MOON_WORLD.item.custom.PlayerNoblePhantasmHelper;
 import net.xxxjk.TYPE_MOON_WORLD.network.TypeMoonWorldModVariables;
 import net.xxxjk.TYPE_MOON_WORLD.servant.entity.LiShuwenCombatHelper;
+import net.xxxjk.TYPE_MOON_WORLD.servant.lishuwen.LiShuwenSeasonedService;
 import net.xxxjk.TYPE_MOON_WORLD.utils.EntityUtils;
 import net.xxxjk.TYPE_MOON_WORLD.vfx.VFXServerEffects;
 
@@ -37,6 +38,7 @@ public final class ServantCardLiShuwenSkills {
          clear(player);
          return;
       }
+      LiShuwenSeasonedService.tick(player);
       if (player.tickCount % 60 == 0 && player.getHealth() < player.getMaxHealth()) {
          player.heal(1.0F);
       }
@@ -52,6 +54,7 @@ public final class ServantCardLiShuwenSkills {
    }
 
    public static void clear(ServerPlayer player) {
+      LiShuwenSeasonedService.clear(player);
       player.getPersistentData().remove(CONCEALMENT_UNTIL_TAG);
    }
 
@@ -85,6 +88,7 @@ public final class ServantCardLiShuwenSkills {
    public static void performLiInterrupt(ServerPlayer player) {
       revealCircleRealm(player);
       Vec3 dir = PlayerNoblePhantasmHelper.horizontalLook(player);
+      try (var carrySegment0 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : player.level().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(4.5, 1.5, 4.5), e -> e.isAlive() && e != player && !EntityUtils.isImmunePlayerTarget(e))) {
          target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2, false, true, true));
          target.invulnerableTime = 0;
@@ -92,6 +96,7 @@ public final class ServantCardLiShuwenSkills {
          target.invulnerableTime = 0;
          target.push(dir.x * 0.4, 0.12, dir.z * 0.4);
          target.hurtMarked = true;
+      }
       }
       spawnLiHitFx(player, null);
    }
@@ -136,7 +141,7 @@ public final class ServantCardLiShuwenSkills {
       target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 30, 5, false, true, true));
       spawnLiHitFx(player, target);
       if (player.level() instanceof ServerLevel level) {
-         VFXServerEffects.spawn(level, "servant_li_wu_er_da", target, 96.0);
+         VFXServerEffects.spawn(level, "servant_li_shuwen_wu_er_da_windup", player, 96.0);
       }
       TYPE_MOON_WORLD.queueServerWork(10, () -> {
          if (!player.isAlive() || !target.isAlive()) {

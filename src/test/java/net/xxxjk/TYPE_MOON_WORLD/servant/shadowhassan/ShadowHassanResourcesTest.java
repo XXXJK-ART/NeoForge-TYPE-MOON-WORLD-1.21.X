@@ -30,6 +30,15 @@ class ShadowHassanResourcesTest {
       assertEquals("E", params.get("luck").getAsString());
       assertEquals("meditative_sensitivity", definition.get("noble_phantasm").getAsString());
       assertEquals("shadow_hassan_ai", definition.get("ai_config").getAsString());
+      assertEquals("ancient", definition.get("era").getAsString());
+      assertEquals("human", definition.get("faction").getAsString());
+      assertEquals("EX", params.get("noble_phantasm_rank").getAsString());
+      var traits = definition.getAsJsonArray("traits").toString();
+      for (String trait : List.of("servant", "humanoid", "assassin", "male", "lawful", "evil",
+         "human_kind", "seven_knights", "ea_special")) assertTrue(traits.contains("\"" + trait + "\""), trait);
+      for (String removed : List.of("conceptual_existence", "shadow_servant", "true_assassin", "old_man_of_the_mountain")) {
+         assertFalse(traits.contains("\"" + removed + "\""), removed);
+      }
       String actions = definition.getAsJsonObject("specialization").getAsJsonArray("combat_actions").toString();
       assertTrue(actions.contains("shadow_ambush"));
       assertTrue(actions.contains("shadow_flurry"));
@@ -52,6 +61,9 @@ class ShadowHassanResourcesTest {
          "data/typemoonworld/servant/skills/presence_concealment_ex_shadow_hassan.json",
          "data/typemoonworld/servant/skills/shadow_lantern_a.json",
          "data/typemoonworld/servant/skills/shadow_wandering_a.json",
+         "data/typemoonworld/servant/actions/shadow_hassan.json",
+         "data/typemoonworld/damage_type/shadow_penetration.json",
+         "data/typemoonworld/tags/damage_type/shadow_penetration.json",
          "data/typemoonworld/servant/noble_phantasms/meditative_sensitivity.json",
          "data/typemoonworld/damage_type/meditative_sensitivity.json",
          "data/typemoonworld/tags/entity_type/shadow_hassan_blade_immune.json",
@@ -72,12 +84,30 @@ class ShadowHassanResourcesTest {
    void servantCardUsesPlannedSlotsAndOptimizedTexture() throws IOException {
       String layout = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardSkillLayout.java"));
       String shadowLayout = layout.substring(layout.indexOf("case \"shadow_hassan\""), layout.indexOf("case \"emiya_archer\""));
-      for (int slot : List.of(0, 1, 2, 3, 4, 5, 6, 7, 9)) assertTrue(shadowLayout.contains("case " + slot + " ->"), "slot " + slot);
-      assertFalse(shadowLayout.contains("case 8 ->"));
+      for (int slot : List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)) assertTrue(shadowLayout.contains("case " + slot + " ->"), "slot " + slot);
+      var concealment = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout.actionFor("shadow_hassan", 0, false);
+      var lantern = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout.actionFor("shadow_hassan", 1, false);
+      var wandering = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout.actionFor("shadow_hassan", 2, false);
+      var possession = net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardSkillLayout.actionFor("shadow_hassan", 8, false);
+      assertEquals("shadow_hassan_concealment", concealment.effectId());
+      assertEquals(20.0, concealment.mpCost());
+      assertEquals(200, concealment.cooldownTicks());
+      assertEquals(100L, net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantCardShadowHassanSkills.ACTIVE_CONCEALMENT_DURATION_TICKS);
+      assertEquals("shadow_hassan_lantern", lantern.effectId());
+      assertEquals("shadow_hassan_wandering", wandering.effectId());
+      assertEquals(15.0, wandering.mpCost());
+      assertEquals(100, wandering.cooldownTicks());
+      assertEquals("shadow_hassan_possession", possession.effectId());
+      assertEquals(0.0, possession.mpCost());
+      assertEquals(0, possession.cooldownTicks());
 
       String skills = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardShadowHassanSkills.java"));
       assertTrue(skills.contains("ShadowHassanCardConcealed"));
-      assertTrue(skills.contains("ServantCardConcealmentHelper.maintain"));
+      assertTrue(skills.contains("performActiveConcealment"));
+      assertTrue(skills.contains("ACTIVE_CONCEALMENT_DURATION_TICKS = 100L"));
+      assertTrue(skills.contains("ACTIVE_CONCEALMENT_MANA_COST = 20"));
+      assertTrue(skills.contains("ACTIVE_CONCEALMENT_COOLDOWN_TICKS = 200"));
+      assertTrue(skills.contains("clearEnemyAggroForMaskOnly"));
       assertTrue(skills.contains("ShadowHassanCardBodyInvisibilityManaged"));
       assertTrue(skills.contains("COMPLETE_CONCEALMENT_AMPLIFIER"));
       assertTrue(skills.contains("revealForAttack"));
@@ -86,6 +116,20 @@ class ShadowHassanResourcesTest {
       assertTrue(skills.contains("hasMeditativeSensitivityTarget"));
       assertTrue(skills.contains("onPlayerDeath"));
       assertTrue(skills.contains("Player.PERSISTED_NBT_TAG"));
+      assertTrue(skills.contains("TAG_POSSESSION_HOST"));
+      assertTrue(skills.contains("TAG_POSSESSION_PREVIOUS_NO_GRAVITY"));
+      assertTrue(skills.contains("possessionManaAfterInterval"));
+      assertTrue(skills.contains("SHADOW_STEP_MAX_DISTANCE"));
+
+      var actions = json("data/typemoonworld/servant/actions/shadow_hassan.json").getAsJsonArray("actions");
+      assertEquals(12.0, actions.get(0).getAsJsonObject().get("maximum_range").getAsDouble());
+      assertEquals(15.0, actions.get(0).getAsJsonObject().get("mana_cost").getAsDouble());
+      assertEquals(18.0, actions.get(1).getAsJsonObject().get("maximum_range").getAsDouble());
+      assertEquals(20.0, actions.get(2).getAsJsonObject().get("mana_cost").getAsDouble());
+      assertEquals(18.0, actions.get(3).getAsJsonObject().get("mana_cost").getAsDouble());
+      assertEquals(24.0, actions.get(4).getAsJsonObject().get("mana_cost").getAsDouble());
+      assertEquals(30.0, actions.get(6).getAsJsonObject().get("mana_cost").getAsDouble());
+      assertEquals(100, actions.get(6).getAsJsonObject().getAsJsonObject("timing").get("active").getAsInt());
 
       String transformManager = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/card/ServantCardTransformManager.java"));
       assertTrue(transformManager.contains("ManaSnapshot manaBeforeAction"));
@@ -130,7 +174,9 @@ class ShadowHassanResourcesTest {
       assertTrue(renderer.contains("textures/entity/empty.png"));
       String entity = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/entity/ShadowHassanEntity.java"));
       assertTrue(entity.contains("builder.define(PRESENCE_CONCEALED, false)"));
-      assertTrue(entity.contains("this.setPresenceConcealed(hasCombatTarget && !exposed)"));
+      assertTrue(entity.contains("this.setPresenceConcealed(shadowed && !exposed)"));
+      assertTrue(entity.contains("ShadowHassanRules.isUsableShadowZone"));
+      assertTrue(entity.contains("tryStartPossession"));
       assertFalse(entity.contains("this.setPresenceConcealed(true)"));
       assertTrue(entity.contains("this.setInvisible(concealed)"));
       assertTrue(entity.contains("this.setSilent(concealed)"));
@@ -164,11 +210,32 @@ class ShadowHassanResourcesTest {
       assertTrue(clientEvents.contains("BlockHitResult.miss"));
       assertTrue(clientEvents.contains("minecraft.crosshairPickEntity = null"));
       assertTrue(clientEvents.contains("restoreConcealedHudTargetBeforeTick"));
+      String playerRendererEvents = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/ServantCardClientEvents.java"));
+      assertTrue(playerRendererEvents.contains("hideBaseModel"));
+      assertTrue(playerRendererEvents.contains("onRenderPlayerPost"));
+      String firstPersonItem = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/mixin/client/ItemInHandRendererMixin.java"));
+      assertTrue(firstPersonItem.contains("isShadowHassanMaskOnly(player)"));
+      String firstPersonArm = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/mixin/client/PlayerRendererMixin.java"));
+      assertTrue(firstPersonArm.contains("isShadowHassanMaskOnly(player)"));
+      String concealmentClient = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/ServantCardConcealmentClient.java"));
+      assertTrue(concealmentClient.contains("isShadowHassanMaskOnly"));
+      assertTrue(concealmentClient.contains("isShadowHassanStealthActive"));
+      String armorRenderer = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/renderer/ServantCardArmorRenderer.java"));
+      assertTrue(armorRenderer.contains("isShadowHassanStealthActive(player)"));
+      String concealmentMessage = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/network/ConcealmentStateMessage.java"));
+      assertTrue(concealmentMessage.contains("boolean concealed, boolean perfect"));
+      String concealmentRules = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/concealment/ServantConcealment.java"));
+      assertTrue(concealmentRules.contains("ConcealmentRank.A_PLUS"));
+      assertTrue(concealmentRules.contains("isPassiveConcealed"));
    }
 
    @Test
    void combatHelperProvidesAmbushFlurryAndBinding() throws IOException {
       String combat = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/shadowhassan/ShadowHassanCombatHelper.java"));
+      assertTrue(combat.contains("SLASH_STRIKE_COUNT = 200"));
+      assertTrue(combat.contains("SLASH_DURATION_TICKS = 100L"));
+      assertTrue(combat.contains("isFullyExposed()"));
+      assertTrue(combat.contains("isNpcAssassinationTarget"));
       assertTrue(combat.contains("if (ambush)"));
       assertTrue(combat.contains("sequence % 3 == 0"));
       assertTrue(combat.contains("queueStrike(hassan, target, 4"));
@@ -192,8 +259,8 @@ class ShadowHassanResourcesTest {
       assertTrue(authority.contains("entity.setSilent(true)"));
 
       String client = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/client/ServantCardConcealmentClient.java"));
-      assertTrue(client.contains("ObserverConcealmentClient.isConcealed(player.getUUID())"));
-      assertTrue(client.contains("ObserverConcealmentClient.isConcealed(entity.getUUID())"));
+      assertTrue(client.contains("ObserverConcealmentClient.isPerfectlyConcealed(player.getUUID())"));
+      assertTrue(client.contains("ObserverConcealmentClient.isPerfectlyConcealed(entity.getUUID())"));
       String sync = Files.readString(JAVA.resolve("net/xxxjk/TYPE_MOON_WORLD/servant/concealment/ConcealmentStateSync.java"));
       assertTrue(sync.contains("PlayerEvent.StartTracking"));
       assertTrue(sync.contains("sendToPlayersTrackingEntityAndSelf"));

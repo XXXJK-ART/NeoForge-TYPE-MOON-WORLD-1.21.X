@@ -1,5 +1,7 @@
 package net.xxxjk.TYPE_MOON_WORLD.servant.jeanne;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.card.ServantMasterDamageRouter;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -41,6 +43,7 @@ public final class JeanneAlterSkills {
    private static final String REPLENISHMENT = "JeanneAlterSelfReplenishmentAPlus";
    private static final String GRUDGE = "JeanneAlterGrudgeStacks";
    private static final String DREAM_UNTIL = "JeanneAlterEphemeralDreamUntil";
+   private static final String DREAM_INVULN_UNTIL = "JeanneAlterEphemeralDreamInvulnerableUntil";
    private static final String DREAM_READY = "JeanneAlterEphemeralDreamReadyAt";
    private static final String INFERNO_UNTIL = "JeanneAlterInfernoUntil";
    private static final String SELF_MOD_UNTIL = "JeanneAlterSelfModificationUntil";
@@ -49,11 +52,13 @@ public final class JeanneAlterSkills {
    private static final String INFERNO_PROC_READY = "JeanneAlterInfernoProcReadyAt";
    private static final String DEATH_LOCK_HEALTH = "JeanneAlterDeathLockHealth";
    private static final String DEATH_LOCK_UNTIL = "JeanneAlterDeathLockUntil";
-   private static final String DEATH_LOCK_READY = "JeanneAlterDeathLockReadyAt";
-   private static final int MAX_GRUDGE = 5;
-   private static final int DEATH_LOCK_TICKS = 10 * 20;
-   private static final int DEATH_LOCK_COOLDOWN = 20 * 60 * 20;
+   private static final String DEATH_LOCK_USED = "JeanneAlterDeathLockUsedThisLife";
+   private static final String LEGACY_DEATH_LOCK_READY = "JeanneAlterDeathLockReadyAt";
+   private static final int MAX_GRUDGE = JeanneAlterRules.MAX_GRUDGE;
+   private static final int DEATH_LOCK_TICKS = JeanneAlterRules.DEATH_LOCK_TICKS;
    private static final String FIRE_PILLAR_COOLDOWN = "JeanneAlterFirePillarUntil";
+   private static final String BLACK_FLAME_SWEEP_COOLDOWN = "JeanneAlterBlackFlameSweepUntil";
+   private static final String CHAIN_EXECUTION_COOLDOWN = "JeanneAlterChainExecutionUntil";
    private static final String CURSED_LANCE_COOLDOWN = "JeanneAlterCursedLanceUntil";
    private static final String SELF_MODIFICATION_COOLDOWN = "JeanneAlterSelfModificationUntil";
    private static final String DRAGON_WITCH_COOLDOWN = "JeanneAlterDragonWitchUntil";
@@ -63,9 +68,11 @@ public final class JeanneAlterSkills {
    private static final String NP_CAST_START = "JeanneAlterNpCastStart";
    private static final String NP_TARGET = "JeanneAlterNpTarget";
    private static final String NP_PHASE = "JeanneAlterNpPhase";
-   private static final float OBLIVION_CRIT_CHANCE = 0.16F;
-   private static final float SELF_MOD_CRIT_CHANCE = 0.45F;
-   private static final float SELF_MOD_CRIT_MULTIPLIER = 3.0F;
+   private static final String LANCE_IMPACT_AT = "JeanneAlterLanceImpactAt";
+   private static final String LANCE_TARGET = "JeanneAlterLanceTarget";
+   private static final String LANCE_CENTER_X = "JeanneAlterLanceCenterX";
+   private static final String LANCE_CENTER_Y = "JeanneAlterLanceCenterY";
+   private static final String LANCE_CENTER_Z = "JeanneAlterLanceCenterZ";
    private static final ResourceKey<DamageType> FLAME_DAMAGE = damageType("jeanne_alter_flame");
    private static final ResourceKey<DamageType> LANCE_DAMAGE = damageType("jeanne_alter_lance");
    private static final ResourceKey<DamageType> NP_DAMAGE = damageType("jeanne_alter_np");
@@ -80,7 +87,7 @@ public final class JeanneAlterSkills {
       CompoundTag data = caster.getPersistentData();
       data.putBoolean(OBLIVION, true);
       data.putBoolean("CritDamageBoostActive", true);
-      data.putFloat("CritDamageMultiplier", 2.0F);
+      data.putFloat("CritDamageMultiplier", 0.50F);
       data.putBoolean(ACTIVE, true);
       return ExecutionResult.SUCCESS;
    }
@@ -97,7 +104,7 @@ public final class JeanneAlterSkills {
       data.putBoolean(OBLIVION, true);
       data.putBoolean(REPLENISHMENT, true);
       data.putBoolean("CritDamageBoostActive", true);
-      data.putFloat("CritDamageMultiplier", 2.0F);
+      data.putFloat("CritDamageMultiplier", 0.50F);
    }
 
    private static ExecutionResult initializePassive(LivingEntity caster, String marker) {
@@ -108,6 +115,14 @@ public final class JeanneAlterSkills {
    }
    public static ExecutionResult firePillar(CardActionContext c) {
       return targetAction(c, 72.0F, 22, 140, "jeanne_alter_fire_pillar", 3.5D);
+   }
+
+   public static ExecutionResult blackFlameSweep(CardActionContext c) {
+      return targetAction(c, 48.0F, 28, 180, "jeanne_alter_black_flame_sweep", 3.8D, 7.0D);
+   }
+
+   public static ExecutionResult chainExecution(CardActionContext c) {
+      return targetAction(c, 64.0F, 38, 280, "jeanne_alter_fire_pillar", 5.0D, 30.0D, 7.0D);
    }
 
    public static ExecutionResult cursedLance(CardActionContext c) {
@@ -124,7 +139,7 @@ public final class JeanneAlterSkills {
       CompoundTag data = c.player().getPersistentData();
       data.putLong(SELF_MOD_UNTIL, c.player().level().getGameTime() + 400L);
       data.putBoolean("CritDamageBoostActive", false);
-      data.putFloat("CritDamageMultiplier", SELF_MOD_CRIT_MULTIPLIER);
+      data.putFloat("CritDamageMultiplier", 0.75F);
       playCardSkill(c.player(), "jeanne_alter_self_modification");
       return ExecutionResult.SUCCESS.withCost(30).withCooldown(500);
    }
@@ -146,8 +161,9 @@ public final class JeanneAlterSkills {
    }
    public static ExecutionResult ephemeralDream(CardActionContext c) {
       if (!canAffordCardAction(c.player(), 55.0D, false)) return ExecutionResult.FAILED;
-      c.player().getPersistentData().putLong(DREAM_UNTIL, c.player().level().getGameTime() + 120L);
-      c.player().setHealth(Math.max(1.0F, c.player().getHealth() - c.player().getMaxHealth() * 0.15F));
+      c.player().getPersistentData().putLong(DREAM_UNTIL, c.player().level().getGameTime() + 160L);
+      c.player().getPersistentData().putLong(DREAM_INVULN_UNTIL, c.player().level().getGameTime() + 20L);
+      c.player().setHealth(Math.max(1.0F, c.player().getHealth() - c.player().getMaxHealth() * 0.10F));
       playCardSkill(c.player(), "jeanne_alter_ephemeral_dream");
       return ExecutionResult.SUCCESS.withCost(55).withCooldown(800);
    }
@@ -168,6 +184,20 @@ public final class JeanneAlterSkills {
          return ExecutionResult.NOT_HANDLED;
       }
       return castNpcArea(c, FIRE_PILLAR_COOLDOWN, 22.0D, 140, 72.0F, 3.2D, "jeanne_alter_fire_pillar");
+   }
+
+   public static ExecutionResult combatBlackFlameSweep(ServantContext c) {
+      if (shouldUseNoblePhantasm(c)
+         || !canNpcCast(c, BLACK_FLAME_SWEEP_COOLDOWN, 28.0D, 180, 0.0D, 7.0D)) return ExecutionResult.NOT_HANDLED;
+      return castNpcArea(c, BLACK_FLAME_SWEEP_COOLDOWN, 28.0D, 180, 48.0F, 3.8D,
+         "jeanne_alter_black_flame_sweep");
+   }
+
+   public static ExecutionResult combatChainExecution(ServantContext c) {
+      if (shouldUseNoblePhantasm(c)
+         || !canNpcCast(c, CHAIN_EXECUTION_COOLDOWN, 38.0D, 280, 7.0D, 30.0D)) return ExecutionResult.NOT_HANDLED;
+      return castNpcArea(c, CHAIN_EXECUTION_COOLDOWN, 38.0D, 280, 64.0F, 5.0D,
+         "jeanne_alter_fire_pillar");
    }
 
    public static ExecutionResult combatCursedLance(ServantContext c) {
@@ -198,12 +228,14 @@ public final class JeanneAlterSkills {
       }
       JeanneAlterVoice.skill(caster);
       VFXServerEffects.spawn(level, "jeanne_alter_cursed_lance_hover", center, 128.0D);
-      for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
-         target.getBoundingBox().inflate(radius), e -> validTarget(caster, e))) {
-         victim.hurt(level.damageSources().source(LANCE_DAMAGE, caster), victim == target ? damage : damage * 0.45F);
-         victim.setRemainingFireTicks(100);
-      }
-      VFXServerEffects.spawn(level, "jeanne_alter_cursed_lance_impact", center, 128.0D);
+      CompoundTag state = caster.getPersistentData();
+      state.putLong(LANCE_IMPACT_AT, level.getGameTime() + 30L);
+      state.putUUID(LANCE_TARGET, target.getUUID());
+      state.putDouble(LANCE_CENTER_X, center.x);
+      state.putDouble(LANCE_CENTER_Y, center.y);
+      state.putDouble(LANCE_CENTER_Z, center.z);
+      state.putFloat("JeanneAlterLanceDamage", damage);
+      state.putDouble("JeanneAlterLanceRadius", radius);
    }
 
    public static ExecutionResult combatSelfModification(ServantContext c) {
@@ -215,7 +247,7 @@ public final class JeanneAlterSkills {
       servant.getPersistentData().putLong(SELF_MODIFICATION_COOLDOWN, c.gameTick() + 500L);
       servant.getPersistentData().putLong(SELF_MOD_UNTIL, c.gameTick() + 400L);
       servant.getPersistentData().putBoolean("CritDamageBoostActive", false);
-      servant.getPersistentData().putFloat("CritDamageMultiplier", SELF_MOD_CRIT_MULTIPLIER);
+      servant.getPersistentData().putFloat("CritDamageMultiplier", 0.75F);
       servant.setCurrentMp(Math.max(0.0D, servant.getCurrentMp() - 30.0D));
       servant.triggerNamedActionAnimation("cast");
       playNpcSkill(servant, "jeanne_alter_self_modification");
@@ -263,8 +295,9 @@ public final class JeanneAlterSkills {
          || c.gameTick() % 220L != 0L) return ExecutionResult.NOT_HANDLED;
       servant.getPersistentData().putLong(EPHEMERAL_DREAM_COOLDOWN, c.gameTick() + 800L);
       servant.setCurrentMp(Math.max(0.0D, servant.getCurrentMp() - 55.0D));
-      servant.getPersistentData().putLong(DREAM_UNTIL, c.gameTick() + 120L);
-      servant.setHealth(Math.max(1.0F, servant.getHealth() - servant.getMaxHealth() * 0.15F));
+      servant.getPersistentData().putLong(DREAM_UNTIL, c.gameTick() + 160L);
+      servant.getPersistentData().putLong(DREAM_INVULN_UNTIL, c.gameTick() + 20L);
+      servant.setHealth(Math.max(1.0F, servant.getHealth() - servant.getMaxHealth() * 0.10F));
       servant.triggerNamedActionAnimation("cast");
       playNpcSkill(servant, "jeanne_alter_ephemeral_dream");
       return ExecutionResult.SUCCESS;
@@ -298,7 +331,7 @@ public final class JeanneAlterSkills {
       DamageSource source = event.getSource();
       LivingEntity attacker = source.getEntity() instanceof LivingEntity living ? living : null;
       if (isJeanneAlter(victim)) {
-         if (victim.getPersistentData().getLong(DREAM_UNTIL) > victim.level().getGameTime()
+         if (victim.getPersistentData().getLong(DREAM_INVULN_UNTIL) > victim.level().getGameTime()
                && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
             return;
@@ -320,15 +353,11 @@ public final class JeanneAlterSkills {
             double missingHealth = Math.max(0.0D, 1.0D - attacker.getHealth() / Math.max(1.0F, attacker.getMaxHealth()));
             multiplier *= 1.0D + stacks * (isJeanneAuthoredDamage(source) ? 0.10D : 0.05D);
             multiplier *= 1.0D + missingHealth * 0.50D;
-            if (data.getLong(SELF_MOD_UNTIL) > now && attacker.getRandom().nextFloat() < SELF_MOD_CRIT_CHANCE) {
-               multiplier *= SELF_MOD_CRIT_MULTIPLIER;
-            } else if (!(attacker instanceof ServerPlayer)
-                  && data.getBoolean(OBLIVION) && attacker.getRandom().nextFloat() < OBLIVION_CRIT_CHANCE) {
-               multiplier *= 2.0D;
-            }
-            if (data.getLong(DREAM_UNTIL) > now) multiplier *= 1.55D;
+            if (!(attacker instanceof ServerPlayer) && !isJeanneAuthoredDamage(source)
+                  && attacker.getRandom().nextFloat() < 0.17F) multiplier *= 2.77D;
+            if (data.getLong(DREAM_UNTIL) > now && !isNoblePhantasmDamage(source)) multiplier *= 1.40D;
          }
-         if (data.getLong(DRAGON_WITCH_UNTIL) > now) {
+         if (data.getLong(DRAGON_WITCH_UNTIL) > now && !isNoblePhantasmDamage(source)) {
             multiplier *= Math.max(1.0D, data.getDouble(DRAGON_WITCH_MULTIPLIER));
          }
          if (multiplier > 1.0D) event.setAmount((float)(event.getAmount() * multiplier));
@@ -347,7 +376,7 @@ public final class JeanneAlterSkills {
          restoreDeathLockedHealth(victim, data);
          return;
       }
-      if (data.getLong(DEATH_LOCK_READY) > now) return;
+      if (data.getBoolean(DEATH_LOCK_USED) || event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
       float effectiveHealth = victim.getHealth() + Math.max(0.0F, victim.getAbsorptionAmount());
       if (event.getNewDamage() + 1.0E-4F < effectiveHealth) return;
       activateDeathLock(victim, now, Math.max(1.0F, victim.getHealth()));
@@ -378,10 +407,12 @@ public final class JeanneAlterSkills {
             data.putLong(INFERNO_PROC_READY, now + 12L);
             if (attacker.level() instanceof ServerLevel level) {
                VFXServerEffects.spawn(level, "jeanne_alter_inferno_pillar", victim, 96.0D);
+               try (var carrySegment1 = ServantMasterDamageRouter.attackSegment()) {
                for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
                      victim.getBoundingBox().inflate(2.8D), e -> validTarget(attacker, e))) {
                   target.hurt(level.damageSources().source(FLAME_DAMAGE, attacker), 52.0F);
                   target.setRemainingFireTicks(100);
+               }
                }
             }
          }
@@ -394,6 +425,11 @@ public final class JeanneAlterSkills {
             || !isJeanneAlter(entity)) return;
       CompoundTag data = entity.getPersistentData();
       long now = entity.level().getGameTime();
+      if (data.contains(LEGACY_DEATH_LOCK_READY)) {
+         data.putBoolean(DEATH_LOCK_USED, true);
+         data.remove(LEGACY_DEATH_LOCK_READY);
+      }
+      tickCursedLanceImpact(entity, data, now);
       if (data.getInt("JeanneAlterBuffNullCharges") > 0
             && data.getLong("JeanneAlterBuffNullUntil") <= now) {
          data.remove("JeanneAlterBuffNullCharges");
@@ -408,6 +444,13 @@ public final class JeanneAlterSkills {
             vars.syncMana(player);
          }
       }
+      applyDragonWitch(entity, now + 2L);
+      if (entity.level() instanceof ServerLevel level) {
+         for (LivingEntity ally : level.getEntitiesOfClass(LivingEntity.class,
+               entity.getBoundingBox().inflate(24.0D), e -> e != entity && e.isAlliedTo(entity))) {
+            applyDragonWitch(ally, now + 2L);
+         }
+      }
       if (data.getLong(DEATH_LOCK_UNTIL) > now) {
          restoreDeathLockedHealth(entity, data);
       } else if (data.contains(DEATH_LOCK_UNTIL)) {
@@ -418,9 +461,30 @@ public final class JeanneAlterSkills {
       if (data.getLong(SELF_MOD_UNTIL) > 0L && data.getLong(SELF_MOD_UNTIL) <= now) {
          data.remove(SELF_MOD_UNTIL);
          data.putBoolean("CritDamageBoostActive", data.getBoolean(OBLIVION));
-         data.putFloat("CritDamageMultiplier", data.getBoolean(OBLIVION) ? 2.0F : 1.0F);
+         data.putFloat("CritDamageMultiplier", data.getBoolean(OBLIVION) ? 0.50F : 1.0F);
       }
       tickNoblePhantasm(entity, data, now);
+   }
+
+   private static void tickCursedLanceImpact(LivingEntity caster, CompoundTag data, long now) {
+      long impactAt = data.getLong(LANCE_IMPACT_AT);
+      if (impactAt <= 0L || impactAt > now || !(caster.level() instanceof ServerLevel level)) return;
+      data.remove(LANCE_IMPACT_AT);
+      if (!data.hasUUID(LANCE_TARGET)) return;
+      LivingEntity primary = level.getEntity(data.getUUID(LANCE_TARGET)) instanceof LivingEntity living ? living : null;
+      Vec3 center = new Vec3(data.getDouble(LANCE_CENTER_X), data.getDouble(LANCE_CENTER_Y), data.getDouble(LANCE_CENTER_Z));
+      float damage = data.getFloat("JeanneAlterLanceDamage");
+      double radius = data.getDouble("JeanneAlterLanceRadius");
+      if (!validTarget(caster, primary) || damage <= 0.0F) return;
+      AABB area = new AABB(center, center).inflate(radius);
+      try (var carrySegment = ServantMasterDamageRouter.attackSegment()) {
+         for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area, e -> validTarget(caster, e))) {
+            victim.hurt(level.damageSources().source(LANCE_DAMAGE, caster), victim == primary ? damage : damage * 0.45F);
+            victim.setRemainingFireTicks(100);
+         }
+      }
+      VFXServerEffects.spawn(level, "jeanne_alter_cursed_lance_impact", center, 128.0D);
+      data.remove(LANCE_TARGET);
    }
 
    private static void activateDeathLock(LivingEntity victim, long now, float lockedHealth) {
@@ -428,9 +492,19 @@ public final class JeanneAlterSkills {
       float health = Math.min(victim.getMaxHealth(), 1.0F);
       data.putFloat(DEATH_LOCK_HEALTH, health);
       data.putLong(DEATH_LOCK_UNTIL, now + DEATH_LOCK_TICKS);
-      data.putLong(DEATH_LOCK_READY, now + DEATH_LOCK_COOLDOWN);
+      data.putBoolean(DEATH_LOCK_USED, true);
       victim.setHealth(health);
       victim.invulnerableTime = Math.max(victim.invulnerableTime, 10);
+   }
+
+   @net.neoforged.bus.api.SubscribeEvent
+   public static void onTrueDeath(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event) {
+      if (!event.isCanceled() && isJeanneAlter(event.getEntity())) {
+         event.getEntity().getPersistentData().remove(DEATH_LOCK_USED);
+         event.getEntity().getPersistentData().remove(LEGACY_DEATH_LOCK_READY);
+         event.getEntity().getPersistentData().remove(DEATH_LOCK_UNTIL);
+         event.getEntity().getPersistentData().remove(DEATH_LOCK_HEALTH);
+      }
    }
 
    private static void restoreDeathLockedHealth(LivingEntity victim, CompoundTag data) {
@@ -509,10 +583,12 @@ public final class JeanneAlterSkills {
 
    private static void damageNoblePhase(LivingEntity caster, LivingEntity target, float damage, boolean finalPhase) {
       if (target == null || !validTarget(caster, target) || !(caster.level() instanceof ServerLevel level)) return;
+      try (var carrySegment2 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(finalPhase ? 5.0D : 3.0D), e -> validTarget(caster, e))) {
          victim.hurt(level.damageSources().source(NP_DAMAGE, caster), victim == target ? damage : damage * 0.35F);
          victim.setRemainingFireTicks(160);
          if (finalPhase) applyNoblePhantasmDebuffs(victim);
+      }
       }
    }
 
@@ -546,7 +622,7 @@ public final class JeanneAlterSkills {
       data.putLong(DRAGON_WITCH_UNTIL, until);
       boolean dragon = ServantIdentityHelper.hasTrait(entity, ServantTraitTag.DRAGON)
          || entity.getType().toString().toLowerCase().contains("dragon");
-      data.putDouble(DRAGON_WITCH_MULTIPLIER, dragon ? 1.55D : 1.28D);
+      data.putDouble(DRAGON_WITCH_MULTIPLIER, dragon ? 1.30D : 1.15D);
    }
 
    public static boolean isJeanneAlter(LivingEntity entity) {
@@ -565,10 +641,12 @@ public final class JeanneAlterSkills {
       float damage = 50.0F + stacks * 20.0F;
       Vec3 center = caster.getBoundingBox().getCenter();
       VFXServerEffects.spawn(level, "jeanne_alter_grudge_burst", center);
+      try (var carrySegment3 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
             caster.getBoundingBox().inflate(7.0D), e -> validTarget(caster, e))) {
          target.hurt(level.damageSources().source(FLAME_DAMAGE, caster), damage);
          target.setRemainingFireTicks(100);
+      }
       }
       return true;
    }
@@ -577,37 +655,59 @@ public final class JeanneAlterSkills {
       if (entity == null) return;
       CompoundTag data = entity.getPersistentData();
       for (String key : new String[]{ACTIVE, AVENGER, OBLIVION, REPLENISHMENT, GRUDGE,
-            DREAM_UNTIL, DREAM_READY, INFERNO_UNTIL, DEATH_LOCK_HEALTH, DEATH_LOCK_UNTIL,
-            DEATH_LOCK_READY, INFERNO_PROC_READY, SELF_MOD_UNTIL, DRAGON_WITCH_UNTIL,
+            DREAM_UNTIL, DREAM_INVULN_UNTIL, DREAM_READY, INFERNO_UNTIL, DEATH_LOCK_HEALTH, DEATH_LOCK_UNTIL,
+            INFERNO_PROC_READY, SELF_MOD_UNTIL, DRAGON_WITCH_UNTIL,
             DRAGON_WITCH_MULTIPLIER, "JeanneAlterInfernoProcAt", "CritDamageBoostActive",
-            "CritDamageMultiplier", NP_CAST_START, NP_TARGET, NP_PHASE}) data.remove(key);
+            "CritDamageMultiplier", NP_CAST_START, NP_TARGET, NP_PHASE, LANCE_IMPACT_AT,
+            LANCE_TARGET, LANCE_CENTER_X, LANCE_CENTER_Y, LANCE_CENTER_Z,
+            "JeanneAlterLanceDamage", "JeanneAlterLanceRadius"}) data.remove(key);
    }
 
    public static boolean startFlagExplosion(ServerPlayer player) {
       if (player == null || !(player.level() instanceof ServerLevel level)) return false;
       LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(player, 32.0D, 2.0D);
       if (target == null) return false;
+      return flagExplosion(player, target, level);
+   }
+
+   /** Shared flag attack body used by the player item and NPC action adapters. */
+   public static boolean flagExplosion(LivingEntity caster, LivingEntity target, ServerLevel level) {
+      if (caster == null || target == null || level == null || !validTarget(caster, target)) return false;
+      try (var carrySegment4 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
-            target.getBoundingBox().inflate(7.0D), e -> validTarget(player, e))) {
-         victim.hurt(level.damageSources().source(FLAME_DAMAGE, player), 50.0F);
+            target.getBoundingBox().inflate(7.0D), e -> validTarget(caster, e))) {
+         victim.hurt(level.damageSources().source(FLAME_DAMAGE, caster), 50.0F);
          victim.setRemainingFireTicks(100);
       }
+      }
       VFXServerEffects.spawn(level, "jeanne_alter_flag_curse_finale", target, 96.0D);
-      JeanneAlterVoice.skill(player);
+      JeanneAlterVoice.skill(caster);
       return true;
    }
 
    private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
                                                 String effectId, double radius) {
+      return targetAction(c, damage, cost, cooldown, effectId, radius, 36.0D, 0.0D);
+   }
+
+   private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
+                                                String effectId, double radius, double range) {
+      return targetAction(c, damage, cost, cooldown, effectId, radius, range, 0.0D);
+   }
+
+   private static ExecutionResult targetAction(CardActionContext c, float damage, int cost, int cooldown,
+                                                String effectId, double radius, double range, double minimumRange) {
       ServerPlayer p = c.player();
       if (!canAffordCardAction(p, cost, false)) return ExecutionResult.FAILED;
-      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, 36.0D, 2.0D);
-      if (target == null) return ExecutionResult.FAILED;
+      LivingEntity target = ServantCardSkillUtils.findAutomaticLookTarget(p, range, 2.0D);
+      if (target == null || p.distanceTo(target) < minimumRange) return ExecutionResult.FAILED;
       if (!(p.level() instanceof ServerLevel level)) return ExecutionResult.FAILED;
+      try (var carrySegment5 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class,
          target.getBoundingBox().inflate(radius), e -> validTarget(p, e))) {
          victim.hurt(level.damageSources().source(FLAME_DAMAGE, p), victim == target ? damage : damage * 0.45F);
          victim.setRemainingFireTicks(100);
+      }
       }
       JeanneAlterVoice.skill(p);
       VFXServerEffects.spawn(level, effectId, target, 128.0D);
@@ -626,10 +726,12 @@ public final class JeanneAlterSkills {
       servant.triggerNamedActionAnimation("cast");
       JeanneAlterVoice.skill(servant);
       VFXServerEffects.spawn(level, effectId, primary, 128.0D);
+      try (var carrySegment6 = ServantMasterDamageRouter.attackSegment()) {
       for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
          primary.getBoundingBox().inflate(radius), e -> validTarget(servant, e))) {
          target.hurt(level.damageSources().source(FLAME_DAMAGE, servant), target == primary ? damage : damage * 0.45F);
          target.setRemainingFireTicks(100);
+      }
       }
       return ExecutionResult.SUCCESS;
    }
@@ -704,6 +806,19 @@ public final class JeanneAlterSkills {
 
    private static boolean isJeanneAuthoredDamage(DamageSource source) {
       return source != null && (source.is(FLAME_DAMAGE) || source.is(LANCE_DAMAGE) || source.is(NP_DAMAGE));
+   }
+
+   public static boolean isJeanneAuthoredDamageSource(DamageSource source) {
+      return isJeanneAuthoredDamage(source);
+   }
+
+   private static boolean isJeanneNpDamage(DamageSource source) {
+      return source != null && source.is(NP_DAMAGE);
+   }
+
+   private static boolean isNoblePhantasmDamage(DamageSource source) {
+      return isJeanneNpDamage(source)
+         || net.xxxjk.TYPE_MOON_WORLD.servant.combat.NoblePhantasmDamageClassifier.isNoblePhantasmDamage(source, 0.0F);
    }
 
    private static void restoreMana(LivingEntity entity, double amount) {

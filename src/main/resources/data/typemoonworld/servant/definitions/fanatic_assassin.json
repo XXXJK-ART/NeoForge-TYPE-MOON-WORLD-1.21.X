@@ -6,15 +6,15 @@
   "class_type": "assassin",
   "faction": "human",
   "traits": [
-    "servant", "humanoid", "living_human", "female", "assassin",
-    "lawful", "good", "earth", "hassan_order", "fanatic", "divine_technique_mimic"
+    "female", "human", "lawful", "good", "servant", "ea_special", "humanoid", "human_kind", "seven_knights"
   ],
   "parameters": {
     "endurance": "B", "endurance_plus": false,
     "strength": "C", "strength_plus": false,
     "agility": "A", "agility_plus": false,
     "magic": "C", "magic_plus": false,
-    "luck": "D", "luck_plus": false
+    "luck": "D", "luck_plus": false,
+    "noble_phantasm_rank": "B+"
   },
   "model": {
     "geometry": "",

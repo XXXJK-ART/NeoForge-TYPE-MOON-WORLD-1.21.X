@@ -1,5 +1,9 @@
 package com.example.typemoonaddon.servant;
 
+import net.xxxjk.TYPE_MOON_WORLD.servant.combat.MagecraftEffects;
+
+import net.xxxjk.typemoonworld.api.MagecraftDamageSource;
+import net.xxxjk.typemoonworld.api.MagicComplexity;
 import com.example.typemoonaddon.entity.GillesDeRaisEntity;
 import com.example.typemoonaddon.entity.GillesPollutionZoneService;
 import com.example.typemoonaddon.entity.HugeSeaMonsterEntity;
@@ -409,11 +413,11 @@ public final class GillesDeRaisCombatHelper {
         entity.setCurrentMp(Math.max(0.0, entity.getCurrentMp() - 10.0));
         entity.faceToward(target.position());
         entity.triggerNamedActionAnimation("gaze");
-        target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 160, 1, false, true, true));
-        target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1, false, true, true));
+        MagecraftEffects.add(target, new MobEffectInstance(MobEffects.WEAKNESS, 160, 1, false, true, true), MagicComplexity.TWO_VERSE);
+        MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 160, 1, false, true, true), MagicComplexity.TWO_VERSE);
         if (entity.getRandom().nextFloat() < 0.30F) {
-            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 20, 0, false, true, true));
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 8, false, true, true));
+            MagecraftEffects.add(target, new MobEffectInstance(MobEffects.BLINDNESS, 20, 0, false, true, true), MagicComplexity.TWO_VERSE);
+            MagecraftEffects.add(target, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 8, false, true, true), MagicComplexity.TWO_VERSE);
         }
         if (entity.level() instanceof ServerLevel level) {
             level.sendParticles(ParticleTypes.SCULK_SOUL, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
@@ -432,7 +436,7 @@ public final class GillesDeRaisCombatHelper {
         data.putLong(TAG_LAST_ABSORB, now);
         float before = target.getHealth();
         target.invulnerableTime = 0;
-        target.hurt(entity.damageSources().magic(), 8.0F);
+        target.hurt(MagecraftDamageSource.of(entity.damageSources().magic(), "gilles_magecraft", MagicComplexity.TWO_VERSE, entity), 8.0F);
         float drained = Math.max(0.0F, before - target.getHealth());
         if (drained > 0.0F) {
             data.putDouble(TAG_BOOK_MANA, Math.min(BOOK_MAX_MANA, data.getDouble(TAG_BOOK_MANA) + drained));
